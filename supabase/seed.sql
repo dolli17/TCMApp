@@ -62,6 +62,11 @@ truncate table
   public.courts
 cascade;
 
+-- WICHTIG: settings hat einen Fremdschluessel auf members (updated_by) und
+-- wird deshalb vom CASCADE oben mit geleert. Ohne booking.opening_time bricht
+-- create_booking sofort ab - die Standardwerte muessen also zurueck.
+select public.ensure_default_settings();
+
 -- ---------------------------------------------------------------------------
 -- Plaetze: acht Sandplaetze
 -- ---------------------------------------------------------------------------
