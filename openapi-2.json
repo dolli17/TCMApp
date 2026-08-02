@@ -1,0 +1,5033 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Die eBuSy API",
+    "description": "Mit Hilfe der eBuSy-API können Sie verschiedene Daten Ihres Systems abfragen oder bestimmte Resourcen erstellen.\nSo können Sie z.B eigene Belegungsansichten erstellen, oder Kassensysteme anbinden.\n\nDie API ist über Ihre Domain unter dem Pfad ***/api*** erreichbar: https://tennisclub-muckensturm.ebusy.de/api.\nAnweisungen, wie Sie das API-Modul Ihrem eBuSy-System hinzufügen können, finden Sie unter <a href=\"https://tennisclub-muckensturm.ebusy.de/backend/system/general/features/index\">https://tennisclub-muckensturm.ebusy.de/backend/system/general/features/index</a>.\n\nUm die API nutzen zu können, müssen Sie einen oder mehere API-Nutzer in Ihrem eBuSy-Backend erstellen.\nDie Verwaltung der API-Nutzer finden Sie unter *Allgemein > Schnittstellen > API-Nutzer*. Hier können Sie einen Benutzernamen und ein Passwort sowie die Berechtigungen für einen API-Nutzer festlegen.\n\nZur Authentifizierung müssen Sie bei jedem API-Aufruf einen Authorization-Header mit dem Benutzernamen und dem Passwort des API-Benutzers angeben:\n\n**Authorization**: Basic ZGVtbzpwQDU1dzByZA==\n\nDer Authentifizierungs-String ist der BASE64-kodierte String **Username:Passwort**",
+    "version": "1.0.1"
+  },
+  "servers": [
+    {
+      "url": "https://{domain}.ebusy.de/api",
+      "variables": {
+        "domain": {
+          "default": "demo8",
+          "description": "Die Subdomain Ihres eBuSy-Systems"
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "name": "Allgemein"
+    },
+    {
+      "name": "Abrechnung"
+    },
+    {
+      "name": "Vor-Ort-Verkauf"
+    },
+    {
+      "name": "Mitgliederverwaltung"
+    },
+    {
+      "name": "Hallenmodul"
+    },
+    {
+      "name": "Freiplatzmodul"
+    },
+    {
+      "name": "Veranstaltungsmodul"
+    }
+  ],
+  "paths": {
+    "/general/persons": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Alle Personen abfragen",
+        "operationId": "Alle Personen abfragen",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Pageoffset",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 50
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit (maximal 100)",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 100
+          },
+          {
+            "name": "modifiedSince",
+            "in": "query",
+            "description": "Ergebnis beinhaltet nur Datensätze die nach dem angegebenen Zeitpunkt geändert wurden.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "12/31/2023 00:00:00"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Personen"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/persons/by-customer-id/{customer_id}": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Personen per Kundennummer abfragen",
+        "operationId": "Personen per Kundennummer abfragen",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "description": "Kundennummer",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "12345"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Pageoffset",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 50
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit (maximal 100)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            },
+            "example": 100
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Personen"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/persons/by-group-id/{group_id}": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Personen per Gruppe abfragen",
+        "operationId": "Personen per Gruppe abfragen",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "description": "Id der Gruppe",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Pageoffset",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 50
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit (maximal 100)",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 100
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Personen"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/persons/by-membership-number/{membership_number}": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Personen per Mitgliedsnummer abfragen",
+        "operationId": "Personen per Mitgliedsnummer abfragen",
+        "parameters": [
+          {
+            "name": "membership_number",
+            "in": "path",
+            "description": "Mitgliedsnummer",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "12345"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Pageoffset",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 50
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit (maximal 100)",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 100
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Personen"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/person/by-id/{person_id}": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Person per Id abfragen",
+        "operationId": "Person per Id abfragen",
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "description": "ID der Person",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/person/by-username/{username}": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Person per Benutzername abfragen",
+        "operationId": "Person per Benutzername abfragen",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "Benutzername",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "maxmustermann"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/person/by-transponder/{transponder}": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Person per Transponder abfragen",
+        "operationId": "Person per Transponder abfragen",
+        "parameters": [
+          {
+            "name": "transponder",
+            "in": "path",
+            "description": "Transponder",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": 123456
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/person": {
+      "post": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Person erstellen",
+        "operationId": "Person erstellen",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Personendeskriptor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "Id der erstellten Person",
+                          "example": 1
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Name der erstellten Person",
+                          "example": "Max Mustermann"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ],
+        "x-codegen-request-body-name": "body"
+      }
+    },
+    "/general/person/{person_id}": {
+      "put": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Person vollständig aktualisieren",
+        "description": "**Achtung: Diese Methode löscht alle nicht gesetzten Werte!**",
+        "operationId": "Person vollständig aktualisieren",
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "description": "ID der Person",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": "1"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Personendeskriptor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "Id der erstellten Person",
+                          "example": 1
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Name der erstellten Person",
+                          "example": "Max Mustermann"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ],
+        "x-codegen-request-body-name": "body"
+      },
+      "patch": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Person teilweise aktualisieren",
+        "operationId": "Person teilweise aktualisieren",
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "description": "ID der Person",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": "1"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Personendeskriptor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "Id der erstellten Person",
+                          "example": 1
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Name der erstellten Person",
+                          "example": "Max Mustermann"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ],
+        "x-codegen-request-body-name": "body"
+      }
+    },
+    "/general/available-balance/by-id/{person_id}": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Guthaben nach Personen-Id abfragen",
+        "operationId": "Guthaben nach Personen-Id abfragen",
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "description": "ID der Person, für die das verfügbare Guthaben abgefragt werden soll",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "object",
+                      "properties": {
+                        "balance": {
+                          "type": "number",
+                          "description": "Guthabenstand",
+                          "example": 10.5
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/available-balance/by-transponder/{transponder}": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Guthaben nach Transpondernummer abfragen",
+        "operationId": "Guthaben nach Transpondernummer abfragen",
+        "parameters": [
+          {
+            "name": "transponder",
+            "in": "path",
+            "description": "Transponder der Person, für die das verfügbare Guthaben abgefragt werden soll",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "1234ABC"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "object",
+                      "properties": {
+                        "balance": {
+                          "type": "number",
+                          "description": "Guthabenstand",
+                          "example": 10.5
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/available-balance/by-id/{person_id}/charge": {
+      "post": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Guthaben nach Personen-Id belasten",
+        "operationId": "Guthaben nach Personen-Id belasten",
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "description": "ID der Person, für die das verfügbare Guthaben belastet werden soll",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Geldtransaktiondeskriptor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "string",
+                      "description": "leere response",
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/available-balance/by-id/{person_id}/deposit": {
+      "post": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Guthaben nach Personen-Id aufladen",
+        "operationId": "Guthaben nach Personen-Id aufladen",
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "description": "ID der Person, für die das verfügbare Guthaben aufgeladen werden soll",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Geldtransaktiondeskriptor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "string",
+                      "description": "leere response",
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/person/{person_id}/set-attributes": {
+      "post": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Attribute einer Person setzen",
+        "operationId": "Attribute einer Person setzen",
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "description": "ID der Person",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "attributes": {
+                    "type": "object",
+                    "properties": {
+                      "AttributId_1": {
+                        "type": "string, long",
+                        "description": "Id nach Text des zu setzenden Attributs (bei Freitextattributen), sonst Id nach Attributswert-Id",
+                        "example": "Attributswert-Text oder -Id"
+                      },
+                      "AttributId_2": {
+                        "type": "string, long",
+                        "description": "Id nach Text des zu setzenden Attributs (bei Freitextattributen), sonst Id nach Attributswert-Id",
+                        "example": "Attributswert-Text oder -Id"
+                      },
+                      "AttributId_n": {
+                        "type": "string, long",
+                        "description": "Id nach Text des zu setzenden Attributs (bei Freitextattributen), sonst Id nach Attributswert-Id",
+                        "example": "Attributswert-Text oder -Id"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "string",
+                      "description": "leere response",
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ],
+        "x-codegen-request-body-name": "body"
+      }
+    },
+    "/general/person/{person_id}/unset-attributes": {
+      "post": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Attribute einer Person entfernen",
+        "operationId": "Attribute einer Person entfernen",
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "description": "ID der Person",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "attributes": {
+                    "description": "Liste der Attribut-IDs, die entfernt werden sollen",
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "example": [
+                      1,
+                      2
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "string",
+                      "description": "leere response",
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ],
+        "x-codegen-request-body-name": "body"
+      }
+    },
+    "/general/groups": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Alle Gruppen abfragen",
+        "operationId": "Alle Gruppen abfragen",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Pageoffset",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 50
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit (maximal 100)",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 100
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Gruppen"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/modules": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Alle Module abfragen",
+        "operationId": "Alle Module abfragen",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Module"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/attributes": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Alle Attribute abfragen",
+        "operationId": "Alle Attribute abfragen",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "array",
+                      "description": "Alle Attribute, null im Fehlerfall",
+                      "items": {
+                        "$ref": "#/components/schemas/Attributdeskriptor"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/cash-coupons": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Alle Geldgutscheine abfragen",
+        "operationId": "Alle Geldgutscheine abfragen",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Pageoffset",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 50
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit (maximal 100)",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 100
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Geldgutscheine"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/cash-coupon": {
+      "post": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Geldgutschein erstellen",
+        "operationId": "Geldgutschein erstellen",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Geldgutscheindeskriptor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "Id des erstellten Gutscheins",
+                          "example": 1
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Name des erstellten Gutscheins",
+                          "example": "ABCDEF0123456789"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ],
+        "x-codegen-request-body-name": "body"
+      }
+    },
+    "/general/cash-coupon/by-id/{coupon_id}": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Gutschein per Id abfragen",
+        "operationId": "Gutschein per Id abfragen",
+        "parameters": [
+          {
+            "name": "coupon_id",
+            "in": "path",
+            "description": "ID des Gutscheins",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Geldgutschein"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/cash-coupon/by-id/{coupon_id}/charge": {
+      "post": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Gutschein per Id belasten",
+        "operationId": "Gutschein per Id belasten",
+        "parameters": [
+          {
+            "name": "coupon_id",
+            "in": "path",
+            "description": "ID des Gutscheins, der belastet werden soll",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Geldtransaktiondeskriptor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "string",
+                      "description": "leere response",
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/cash-coupon/by-id/{coupon_id}/deposit": {
+      "post": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Gutschein per Id aufladen",
+        "operationId": "Gutschein per Id aufladen",
+        "parameters": [
+          {
+            "name": "coupon_id",
+            "in": "path",
+            "description": "ID des Gutscheins, der aufgeladen werden soll",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Geldtransaktiondeskriptor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "string",
+                      "description": "leere response",
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/cash-coupon/by-id/{coupon_id}/invalidate": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Gutschein per Id entwerten",
+        "operationId": "Gutschein per Id entwerten",
+        "parameters": [
+          {
+            "name": "coupon_id",
+            "in": "path",
+            "description": "ID des Gutscheins, der entwertet werden soll",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "string",
+                      "description": "leere response",
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/cash-coupon/by-code/{coupon_code}": {
+      "$ref": "paths/general_cash-coupon_by-code_{coupon_code}.yaml"
+    },
+    "/general/cash-coupon/by-code/{coupon_code}/charge": {
+      "post": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Gutschein per Code belasten",
+        "operationId": "Gutschein per Code belasten",
+        "parameters": [
+          {
+            "name": "coupon_code",
+            "in": "path",
+            "description": "Code des Gutscheins, der belastet werden soll",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "ABCDEF0123456789"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Geldtransaktiondeskriptor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "string",
+                      "description": "leere response",
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/cash-coupon/by-code/{coupon_code}/deposit": {
+      "post": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Gutschein per Code aufladen",
+        "operationId": "Gutschein per Code aufladen",
+        "parameters": [
+          {
+            "name": "coupon_code",
+            "in": "path",
+            "description": "Code des Gutscheins, der aufgeladen werden soll",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "ABCDEF0123456789"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Geldtransaktiondeskriptor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "string",
+                      "description": "leere response",
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/general/cash-coupon/by-code/{coupon_code}/invalidate": {
+      "get": {
+        "tags": [
+          "Allgemein"
+        ],
+        "summary": "Gutschein per Code entwerten",
+        "operationId": "Gutschein per Code entwerten",
+        "parameters": [
+          {
+            "name": "coupon_code",
+            "in": "path",
+            "description": "Code des Gutscheins, der entwertet werden soll",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "ABCDEF0123456789"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "string",
+                      "description": "leere response",
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/accounting/payment-types": {
+      "get": {
+        "tags": [
+          "Abrechnung"
+        ],
+        "summary": "Alle global verfügbaren Zahlungsarten abfragen",
+        "operationId": "Alle global verfügbaren Zahlungsarten abfragen",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Zahlungsart"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/accounting/payment-types/{module_id}": {
+      "get": {
+        "tags": [
+          "Abrechnung"
+        ],
+        "summary": "Alle verfügbaren Zahlungsarten in einem Modul abfragen",
+        "operationId": "Alle verfügbaren Zahlungsarten in einem Modul abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls, für das die verfügbaren Zahlungsarten abgefragt werden soll",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Zahlungsart"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/accounting/custom-purchase": {
+      "post": {
+        "tags": [
+          "Abrechnung"
+        ],
+        "summary": "Globale manuelle Forderung erstellen",
+        "operationId": "Globale manuelle Forderung erstellen",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Forderung"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "Id der erstellten Forderung",
+                          "example": 12345
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Name der erstellten Forderung",
+                          "example": "Testforderung"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ],
+        "x-codegen-request-body-name": "body"
+      }
+    },
+    "/accounting/custom-purchase/{module_id}": {
+      "post": {
+        "tags": [
+          "Abrechnung"
+        ],
+        "summary": "Manuelle Forderung in einem Modul erstellen",
+        "operationId": "Manuelle Forderung in einem Modul erstellen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls, für das die manuelle Forderung erstellt werden soll",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Forderung"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "Id der erstellten Forderung",
+                          "example": 12345
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Name der erstellten Forderung",
+                          "example": "Testforderung"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ],
+        "x-codegen-request-body-name": "body"
+      }
+    },
+    "/accounting/custom-purchase/{custom_purchase_id}/cancel": {
+      "get": {
+        "tags": [
+          "Abrechnung"
+        ],
+        "summary": "Manuelle Forderung stornieren",
+        "operationId": "Manuelle Forderung stornieren",
+        "parameters": [
+          {
+            "name": "custom_purchase_id",
+            "in": "path",
+            "description": "ID der manuellen Forderung, die storniert werden soll",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "string",
+                      "description": "Leere response",
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/pos/items": {
+      "get": {
+        "tags": [
+          "Vor-Ort-Verkauf"
+        ],
+        "summary": "Alle Waren abfragen",
+        "operationId": "Alle Waren abfragen",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Kassenartikel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/pos/categories/{category}/items": {
+      "get": {
+        "tags": [
+          "Vor-Ort-Verkauf"
+        ],
+        "summary": "Waren per Kategorie abfragen",
+        "operationId": "Waren per Kategorie abfragen",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "path",
+            "description": "Kategorie der Waren",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "FOOD",
+                "DRINK",
+                "EQUIPMENT"
+              ]
+            },
+            "example": "DRINK"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Kassenartikel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/pos/order": {
+      "post": {
+        "tags": [
+          "Vor-Ort-Verkauf"
+        ],
+        "summary": "Bestellung erstellen",
+        "operationId": "Bestellung erstellen",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Kassenbestellungdeskriptor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "Id der erstellten Bestellung",
+                          "example": 12345
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Name der erstellten Bestellung",
+                          "example": ""
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ],
+        "x-codegen-request-body-name": "body"
+      }
+    },
+    "/pos/order/{orderId}/cancel": {
+      "get": {
+        "tags": [
+          "Vor-Ort-Verkauf"
+        ],
+        "summary": "Bestellung stornieren",
+        "operationId": "Bestellung stornieren",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "description": "ID der Bestellung, die storniert werden soll",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "string",
+                      "description": "Leere response",
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/court/modules/{module_id}/courts": {
+      "get": {
+        "tags": [
+          "Hallenmodul"
+        ],
+        "summary": "Alle Plätze eines Moduls abfragen",
+        "operationId": "Alle Plätze eines Moduls abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Platz"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/court/modules/{module_id}/courts/{court_id}/reservation": {
+      "get": {
+        "tags": [
+          "Hallenmodul"
+        ],
+        "summary": "Buchung eines Platzes zu einem bestimmten Zeitpunkt abfragen",
+        "operationId": "Buchung eines Platzes zu einem bestimmten Zeitpunkt abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls, für das die Buchung abgefragt werden sollen",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "court_id",
+            "in": "path",
+            "description": "ID des Platzes, für das die Buchung abgefragt werden sollen",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "timestamp",
+            "in": "query",
+            "description": "Datum im Format tt.mm.jj hh:mm",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "01.01.70 00:00"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/Buchung"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/court/modules/{module_id}/courts/{court_id}/reservations": {
+      "get": {
+        "tags": [
+          "Hallenmodul"
+        ],
+        "summary": "Alle Buchungen eines Platzes an einem bestimmten Datum abfragen",
+        "operationId": "Alle Buchungen eines Platzes an einem bestimmten Datum abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls, für das die Buchungen abgefragt werden sollen",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "court_id",
+            "in": "path",
+            "description": "ID des Platzes, für das die Buchungen abgefragt werden sollen",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Datum im Format tt.mm.jj",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "01.01.70"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Buchung"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/court/modules/{module_id}/reservations": {
+      "get": {
+        "tags": [
+          "Hallenmodul"
+        ],
+        "summary": "Alle Buchungen eines Moduls mit Datumsfilter abfragen.",
+        "operationId": "Alle Buchungen eines Moduls mit Datumsfilter abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls, für das die Buchungen abgefragt werden sollen",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "lastModifiedAfter",
+            "in": "query",
+            "description": "Datum der letzten Änderung an der Buchung im Format tt.mm.jj hh:mm. Es darf nur entweder fromDate und toDate angegeben werden, oder lastModifiedAfter.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "01.01.70 13:00"
+          },
+          {
+            "name": "includeCancelled",
+            "in": "query",
+            "description": "Wenn 1, werden auch stornierte/freigegebene Buchungen zurückgegeben",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "example": 1
+          },
+          {
+            "name": "fromDate",
+            "in": "query",
+            "description": "Start-Datum (inklusive) im Format tt.mm.jj. Es darf nur entweder fromDate und toDate angegeben werden, oder lastModifiedAfter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "01.01.70"
+          },
+          {
+            "name": "toDate",
+            "in": "query",
+            "description": "End-Datum (inkusive) im Format tt.mm.jj. Es darf nur entweder fromDate und toDate angegeben werden, oder lastModifiedAfter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "31.12.70"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Buchung"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/course/modules/{module_id}/courses": {
+      "get": {
+        "tags": [
+          "Kursmodul"
+        ],
+        "summary": "Alle Kurse in einem Modul in einem Datumsbereich abfragen",
+        "operationId": "Alle Kurspläne in einem Modul abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls, für das die Kurse abgefragt werden sollen",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "fromDate",
+            "in": "query",
+            "description": "Datum im Format tt.mm.jj",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "01.01.70"
+          },
+          {
+            "name": "fromDate",
+            "in": "query",
+            "description": "Datum im Format tt.mm.jj",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "01.01.70"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Kurs"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/event/modules/{module_id}/events": {
+      "get": {
+        "tags": [
+          "Veranstaltungsmodul"
+        ],
+        "summary": "Alle Veranstaltung in einem bestimmten Datumsbereich abfragen",
+        "operationId": "Alle Veranstaltung in einem bestimmten Datumsbereich abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls, für das die Veranstaltungen abgefragt werden sollen",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "fromDate",
+            "in": "query",
+            "description": "Start-Datum (inkusive) im Format tt.mm.jj, für dass die Veranstaltungen abgefragt werden sollen",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "01.01.70"
+          },
+          {
+            "name": "toDate",
+            "in": "query",
+            "description": "End-Datum (inklusive) im Format tt.mm.jj, für dass die Veranstaltungen abgefragt werden sollen",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "31.12.70"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Veranstaltung"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/lite/modules/{module_id}/courts": {
+      "get": {
+        "tags": [
+          "Freiplatzmodul"
+        ],
+        "summary": "Alle Plätze eines Moduls abfragen",
+        "operationId": "Alle Plätze eines Moduls abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls, für das die Plätze abgefragt werden sollen",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Platz"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/lite/modules/{module_id}/courts/{court_id}/reservation": {
+      "get": {
+        "tags": [
+          "Freiplatzmodul"
+        ],
+        "summary": "Buchung eines Platzes zu einem bestimmten Zeitpunkt abfragen",
+        "operationId": "Buchung eines Platzes zu einem bestimmten Zeitpunkt abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls, für das die Buchung abgefragt werden sollen",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "court_id",
+            "in": "path",
+            "description": "ID des Platzes, für das die Buchung abgefragt werden sollen",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "timestamp",
+            "in": "query",
+            "description": "Datum im Format tt.mm.jj hh:mm",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "01.01.70 00:00"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/Buchung"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/lite/modules/{module_id}/courts/{court_id}/reservations": {
+      "get": {
+        "tags": [
+          "Freiplatzmodul"
+        ],
+        "summary": "Alle Buchungen eines Platzes an einem bestimmten Datum abfragen",
+        "operationId": "Alle Buchungen eines Platzes an einem bestimmten Datum abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls, für das die Buchungen abgefragt werden sollen",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "court_id",
+            "in": "path",
+            "description": "ID des Platzes, für das die Buchungen abgefragt werden sollen",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Datum im Format tt.mm.jj",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "01.01.70"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Buchung"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/lite/modules/{module_id}/reservations": {
+      "get": {
+        "tags": [
+          "Freiplatzmodul"
+        ],
+        "summary": "Alle Buchungen eines Moduls mit Datumsfilter abfragen.",
+        "operationId": "Alle Buchungen eines Moduls mit Datumsfilter abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls, für das die Buchungen abgefragt werden sollen",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "lastModifiedAfter",
+            "in": "query",
+            "description": "Datum der letzten Änderung an der Buchung im Format tt.mm.jj hh:mm. Es darf nur entweder fromDate und toDate angegeben werden, oder lastModifiedAfter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "01.01.70 13:00"
+          },
+          {
+            "name": "includeCancelled",
+            "in": "query",
+            "description": "Wenn 1, werden auch stornierte/freigegebene Buchungen zurückgegeben",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "example": 1
+          },
+          {
+            "name": "fromDate",
+            "in": "query",
+            "description": "Start-Datum (inklusive) im Format tt.mm.jj. Es darf nur entweder fromDate und toDate angegeben werden, oder lastModifiedAfter",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "01.01.70"
+          },
+          {
+            "name": "toDate",
+            "in": "query",
+            "description": "End-Datum (inkusive) im Format tt.mm.jj. Es darf nur entweder fromDate und toDate angegeben werden, oder lastModifiedAfter",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "31.12.70"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Buchung"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/member/modules/{module_id}/memberships": {
+      "get": {
+        "tags": [
+          "Mitgliederverwaltung"
+        ],
+        "summary": "Alle Mitgliedschaften abfragen",
+        "operationId": "Alle Mitgliedschaften abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Pageoffset",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 50
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit (maximal 100)",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 100
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mitgliedschaften"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/member/modules/{module_id}/memberships/by-group-id/{group_id}": {
+      "get": {
+        "tags": [
+          "Mitgliederverwaltung"
+        ],
+        "summary": "Mitgliedschaften per Gruppe abfragen",
+        "operationId": "Mitgliedschaften per Gruppe abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "group_id",
+            "in": "path",
+            "description": "Id der Gruppe",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Pageoffset",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 50
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit (maximal 100)",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 100
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mitgliedschaften"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/member/modules/{module_id}/memberships/by-number/{membership_number}": {
+      "get": {
+        "tags": [
+          "Mitgliederverwaltung"
+        ],
+        "summary": "Mitgliedschaften per Mitgliedsnummer abfragen",
+        "operationId": "Mitgliedschaften per Mitgliedsnummer abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "membership_number",
+            "in": "path",
+            "description": "Mitgliedsnummer",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "12345"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Pageoffset",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 50
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit (maximal 100)",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 100
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mitgliedschaften"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/member/modules/{module_id}/memberships/by-person-id/{person_id}": {
+      "get": {
+        "tags": [
+          "Mitgliederverwaltung"
+        ],
+        "summary": "Mitgliedschaften per Personen-Id abfragen",
+        "operationId": "Mitgliedschaften per Personen-Id abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "person_id",
+            "in": "path",
+            "description": "Personen-Id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mitgliedschaften"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/member/modules/{module_id}/membership/by-id/{membership_id}": {
+      "get": {
+        "tags": [
+          "Mitgliederverwaltung"
+        ],
+        "summary": "Mitgliedschaft per Id abfragen",
+        "operationId": "Mitgliedschaft per Id abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "membership_id",
+            "in": "path",
+            "description": "ID der Mitgliedschaft",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "$ref": "#/components/schemas/Mitgliedschaftsdeskriptor"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/member/modules/{module_id}/membership": {
+      "post": {
+        "tags": [
+          "Mitgliederverwaltung"
+        ],
+        "summary": "Mitgliedschaft erstellen",
+        "operationId": "Mitgliedschaft erstellen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Mitgliedschaftsdeskriptor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "Id der erstellten Mitgliedschaft",
+                          "example": 1
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Beschreibung der erstellten Mitgliedschaft",
+                          "example": "Max Mustermann - 12345"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ],
+        "x-codegen-request-body-name": "body"
+      }
+    },
+    "/member/modules/{module_id}/membership/{membership_id}": {
+      "put": {
+        "tags": [
+          "Mitgliederverwaltung"
+        ],
+        "summary": "Mitgliedschaft vollständig aktualisieren",
+        "description": "**Achtung: Diese Methode löscht alle nicht gesetzten Werte!**",
+        "operationId": "Mitgliedschaft vollständig aktualisieren",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "membership_id",
+            "in": "path",
+            "description": "ID der Mitgliedschaft",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Mitgliedschaftsdeskriptor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "Id der aktualisierten Mitgliedschaft",
+                          "example": 1
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Beschreibung der aktualisierten Mitgliedschaft",
+                          "example": "Max Mustermann - 12345"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ],
+        "x-codegen-request-body-name": "body"
+      },
+      "patch": {
+        "tags": [
+          "Mitgliederverwaltung"
+        ],
+        "summary": "Mitgliedschaft teilweise aktualisieren",
+        "operationId": "Mitgliedschaft teilweise aktualisieren",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "membership_id",
+            "in": "path",
+            "description": "ID der Mitgliedschaft",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Mitgliedschaftsdeskriptor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Fehlercode"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+                      "example": null
+                    },
+                    "response": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "Id der aktualisierten Mitgliedschaft",
+                          "example": 1
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Beschreibung der aktualisierten Mitgliedschaft",
+                          "example": "Max Mustermann - 12345"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ],
+        "x-codegen-request-body-name": "body"
+      }
+    },
+    "/member/modules/{module_id}/membership-types": {
+      "get": {
+        "tags": [
+          "Mitgliederverwaltung"
+        ],
+        "summary": "Alle Mitgliedschaftsarten abfragen",
+        "operationId": "Alle Mitgliedschaftsarten abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Pageoffset",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 50
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit (maximal 100)",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 100
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mitgliedschaftsarten"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    },
+    "/member/modules/{module_id}/sections": {
+      "get": {
+        "tags": [
+          "Mitgliederverwaltung"
+        ],
+        "summary": "Alle Abteilungen abfragen",
+        "operationId": "Alle Abteilungen abfragen",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "description": "ID des Moduls",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Pageoffset",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": "50"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit (maximal 100)",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 100
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Abteilungen"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basic": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "basic": {
+        "type": "http",
+        "scheme": "basic"
+      }
+    },
+    "schemas": {
+      "Fehlercode": {
+        "type": "string",
+        "enum": [
+          "RESOURCE_NOT_FOUND",
+          "MISSING_DATA",
+          "AMBIGUOUS_DATA",
+          "INVALID_REQUEST",
+          "INSUFFICIENT_BALANCE"
+        ],
+        "example": null
+      },
+      "Response": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/Fehlercode"
+          },
+          "message": {
+            "type": "string",
+            "description": "Detaillierte Fehlermeldung im Fehlerfall, sonst null",
+            "example": null
+          }
+        }
+      },
+      "Page": {
+        "type": "object",
+        "properties": {
+          "empty": {
+            "type": "boolean",
+            "description": "Seite ist leer",
+            "example": false
+          },
+          "first": {
+            "type": "boolean",
+            "description": "Seite ist erste Seite",
+            "example": true
+          },
+          "last": {
+            "type": "boolean",
+            "description": "Seite ist letzte Seite",
+            "example": false
+          },
+          "number": {
+            "type": "integer",
+            "description": "Nummer dieser Seite",
+            "example": 1
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "description": "Elemente in dieser Seite",
+            "example": 50
+          },
+          "pageable": {
+            "type": "object",
+            "properties": {
+              "offset": {
+                "type": "integer",
+                "description": "Offset der Seite",
+                "example": 0
+              },
+              "pageNumber": {
+                "type": "integer",
+                "description": "Nummer der aktuellen Seite",
+                "example": 0
+              },
+              "pageSize": {
+                "type": "integer",
+                "description": "angefragte Seitengröße",
+                "example": 50
+              },
+              "paged": {
+                "type": "boolean",
+                "description": "immer wahr",
+                "example": true
+              },
+              "unpaged": {
+                "type": "boolean",
+                "description": "immer falsch",
+                "example": false
+              },
+              "sort": {
+                "type": "object",
+                "properties": {
+                  "sorted": {
+                    "type": "boolean",
+                    "description": "Gibt an, ob die Elemente der Seite sortiert sind",
+                    "example": true
+                  },
+                  "empty": {
+                    "type": "boolean",
+                    "description": "Gibt an, ob die Seite leer ist",
+                    "example": false
+                  },
+                  "unsorted": {
+                    "type": "boolean",
+                    "description": "Gibt an, ob die Elemente der Seite unsortiert sind",
+                    "example": false
+                  }
+                }
+              }
+            }
+          },
+          "size": {
+            "type": "integer",
+            "description": "angefragte Seitengröße",
+            "example": 50
+          },
+          "totalElements": {
+            "type": "integer",
+            "description": "insgesamt verfügbare Ergebnisse",
+            "example": 100
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "insgesamt verfügbare Seiten",
+            "example": 2
+          },
+          "sort": {
+            "type": "object",
+            "properties": {
+              "sorted": {
+                "type": "boolean",
+                "description": "Gibt an, ob die Elemente der Seite sortiert sind",
+                "example": true
+              },
+              "empty": {
+                "type": "boolean",
+                "description": "Gibt an, ob die Seite leer ist",
+                "example": false
+              },
+              "unsorted": {
+                "type": "boolean",
+                "description": "Gibt an, ob die Elemente der Seite unsortiert sind",
+                "example": false
+              }
+            }
+          }
+        }
+      },
+      "Attributwert": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Id",
+            "example": 12345
+          },
+          "name": {
+            "type": "string",
+            "description": "Name des Attributwerts",
+            "example": "Aktiv"
+          }
+        }
+      },
+      "Attributdeskriptor": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Beschreibung des Attributs",
+            "example": "Beschreibung"
+          },
+          "id": {
+            "type": "integer",
+            "description": "Id",
+            "example": 12345
+          },
+          "name": {
+            "type": "string",
+            "description": "Name des Attributs",
+            "example": "Mitgliedsstatus"
+          },
+          "values": {
+            "type": "array",
+            "description": "Verfügbare Attributwerte",
+            "items": {
+              "$ref": "#/components/schemas/Attributwert"
+            }
+          }
+        }
+      },
+      "Zahlungsbeziehung": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Personen-Id der Bezugsperson",
+            "example": 1
+          },
+          "modules": {
+            "type": "array",
+            "description": "Liste der Modul-Ids, für das der Hauptzahler zahlt",
+            "example": [
+              1,
+              2,
+              3
+            ]
+          },
+          "paysForVouchersAndCoupons": {
+            "type": "boolean",
+            "description": "Wahr, wenn der Hauptzahler Guthaben und Gutscheinkäufe zahlt",
+            "example": true
+          },
+          "paysForCustomPurchases": {
+            "type": "boolean",
+            "description": "Wahr, wenn der Hauptzahler für manuelle Forderungen zahlt",
+            "example": true
+          }
+        }
+      },
+      "Zahlungsart": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name der Zahlungsart",
+            "example": "Rechnung"
+          },
+          "ordinal": {
+            "type": "integer",
+            "description": "Nummer, die die Zahlungsart repräsentiert",
+            "example": 1
+          }
+        }
+      },
+      "Personendeskriptor": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Id (readonly)",
+            "example": 1
+          },
+          "address": {
+            "type": "object",
+            "properties": {
+              "city": {
+                "type": "string",
+                "description": "Stadt",
+                "example": "Musterstadt"
+              },
+              "country": {
+                "type": "string",
+                "description": "Land",
+                "example": "Deutschland"
+              },
+              "countryCode": {
+                "type": "string",
+                "description": "Land - ISO-3166-1 Alpha-2 Ländercode",
+                "example": "DE"
+              },
+              "postcode": {
+                "type": "string",
+                "description": "Postleitzahl",
+                "example": "12345"
+              },
+              "street": {
+                "type": "string",
+                "description": "Straße",
+                "example": "Musterstraße 12"
+              }
+            },
+            "description": "Adresse"
+          },
+          "alternativeAddress": {
+            "type": "string",
+            "description": "Alternative Rechnungsanschrift",
+            "example": "Max Mustermann\\nMusterstraße 10\\n12345 Musterstadt"
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "Archiviert Ja/Nein",
+            "example": true
+          },
+          "attributes": {
+            "type": "array",
+            "description": "Attribute (readonly)",
+            "items": {
+              "$ref": "#/components/schemas/Attributdeskriptor"
+            }
+          },
+          "bankAccount": {
+            "type": "object",
+            "properties": {
+              "bank": {
+                "type": "string",
+                "description": "Bankname",
+                "example": "Musterbank"
+              },
+              "holder": {
+                "type": "string",
+                "description": "Kontoinhaber",
+                "example": "Max Mustermann"
+              },
+              "number": {
+                "type": "string",
+                "description": "IBAN",
+                "example": "DE12 3456 7890 1234 5678 90"
+              }
+            },
+            "description": "Bankkonto"
+          },
+          "birthday": {
+            "type": "string",
+            "description": "Geburtsdatum",
+            "example": "1970-01-01"
+          },
+          "code": {
+            "type": "string",
+            "description": "Persönlicher Code",
+            "example": "12345"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Kommentar",
+            "example": "Musterkommentar"
+          },
+          "company": {
+            "type": "string",
+            "description": "Firmenname",
+            "example": "Muster GmbH"
+          },
+          "contact": {
+            "type": "object",
+            "properties": {
+              "email": {
+                "type": "string",
+                "description": "E-Mail-Adresse",
+                "example": "mmustermann@ebusy.de"
+              },
+              "mobile": {
+                "type": "string",
+                "description": "Mobilnummer",
+                "example": "01234-56789"
+              },
+              "phone": {
+                "type": "string",
+                "description": "Festnetznummer",
+                "example": "01234-56789"
+              },
+              "phoneBusiness": {
+                "type": "string",
+                "description": "Büronummer",
+                "example": "01234-56789"
+              }
+            },
+            "description": "Kontaktdaten"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Kundennummer",
+            "example": "12345"
+          },
+          "datevDebitorAccount": {
+            "type": "string",
+            "description": "DATEV Gegenkonto",
+            "example": "1234"
+          },
+          "firstname": {
+            "type": "string",
+            "description": "Vorname",
+            "example": "Max"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "FEMALE",
+              "MALE",
+              "DIVERSE"
+            ]
+          },
+          "lastname": {
+            "type": "string",
+            "description": "Nachname",
+            "example": "Mustermann"
+          },
+          "nationality": {
+            "type": "string",
+            "description": "Nationalität",
+            "example": "Deutschland"
+          },
+          "nationalityCode": {
+            "type": "string",
+            "description": "Nationalität - ISO-3166-1 Alpha-2 Ländercode",
+            "example": "DE"
+          },
+          "paidByInfo": {
+            "$ref": "#/components/schemas/Zahlungsbeziehung",
+            "description": "Informationen über den Hauptzahler (readonly)"
+          },
+          "paysForInfo": {
+            "type": "array",
+            "description": "Alle Personen, für die diese Person Hauptzahler ist (readonly)",
+            "items": {
+              "$ref": "#/components/schemas/Zahlungsbeziehung"
+            }
+          },
+          "pseudonym": {
+            "type": "string",
+            "description": "Pseudonym",
+            "example": "Maxi"
+          },
+          "salutation": {
+            "type": "string",
+            "enum": [
+              "FEMALE",
+              "MALE",
+              "NONE"
+            ]
+          },
+          "sepaMandate": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "description": "Mandatsdatum",
+                "example": "1970-01-01"
+              },
+              "lastUsedDate": {
+                "type": "string",
+                "description": "Letztes Verwendungsdatum",
+                "example": "1970-01-01"
+              },
+              "reference": {
+                "type": "string",
+                "description": "Mandatsreferenz",
+                "example": "SEPA-1234"
+              }
+            },
+            "description": "Sepamandat"
+          },
+          "title": {
+            "type": "string",
+            "description": "Titel der Person",
+            "example": "Dr."
+          },
+          "transponder": {
+            "type": "string",
+            "description": "Transponder",
+            "example": "1234ABC"
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "description": "Benutzer-Id (readonly)",
+                "example": 1
+              },
+              "defaultPaymentType": {
+                "$ref": "#/components/schemas/Zahlungsart"
+              },
+              "enabled": {
+                "type": "boolean",
+                "description": "Status des Benutzerkontos",
+                "example": true
+              },
+              "lastLoginDate": {
+                "type": "string",
+                "description": "Datum des letzten Logins",
+                "example": "1970-01-01 00:00:00"
+              },
+              "level": {
+                "type": "string",
+                "description": "Kontoart",
+                "enum": [
+                  "USER",
+                  "OPERATOR",
+                  "ADMINISTRATOR"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "description": "Benutzername",
+                "example": "mmustermann"
+              },
+              "termsOfUseAcceptedAt": {
+                "type": "string",
+                "description": "Datum der Zustimmung zu den Nutzungsbedingungen",
+                "example": "1970-01-01 00:00:00"
+              }
+            },
+            "description": "Benutzerdaten"
+          }
+        }
+      },
+      "Person_Page": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Page"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Personendeskriptor"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Personen": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Response"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "response": {
+                "$ref": "#/components/schemas/Person_Page"
+              }
+            }
+          }
+        ]
+      },
+      "Person": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Response"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "response": {
+                "$ref": "#/components/schemas/Personendeskriptor"
+              }
+            }
+          }
+        ]
+      },
+      "Geldtransaktiondeskriptor": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Datum der Transaktion (readonly)",
+            "example": "1970-01-01"
+          },
+          "text": {
+            "type": "string",
+            "description": "Text der Transaktion",
+            "example": "Aufladung"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Wert der Transaktion",
+            "example": 10
+          }
+        }
+      },
+      "Gruppendeskriptor": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Id",
+            "example": 12345
+          },
+          "name": {
+            "type": "string",
+            "description": "Name der Gruppe",
+            "example": "Vorstand"
+          }
+        }
+      },
+      "Gruppe_Page": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Page"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Gruppendeskriptor"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Gruppen": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Response"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "response": {
+                "$ref": "#/components/schemas/Gruppe_Page"
+              }
+            }
+          }
+        ]
+      },
+      "Modul": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "description": "Anzeigename des Moduls",
+            "example": "Zur Hallenbuchung"
+          },
+          "id": {
+            "type": "integer",
+            "description": "Interne, nicht-änderbare Id",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Name des Moduls",
+            "example": "Modul 1"
+          },
+          "type": {
+            "type": "string",
+            "description": "Typ der Moduls",
+            "enum": [
+              "COURT",
+              "LITE",
+              "EVENT",
+              "COURSE",
+              "MEMBER"
+            ],
+            "example": "COURT"
+          },
+          "begin": {
+            "type": "string",
+            "description": "Startzeit des Belegungsplans wenn type = COURT oder LITE, sonst null. Format hh:mm:ss",
+            "example": "08:00:00"
+          },
+          "end": {
+            "type": "string",
+            "description": "Endzeit des Belegungsplans wenn type = COURT oder LITE, sonst null. Format hh:mm:ss",
+            "example": "22:00:00"
+          },
+          "slotSizeMinutes": {
+            "type": "integer",
+            "description": "Slotgröße in Minuten wenn type = COURT oder LITE, sonst null.",
+            "example": 30
+          }
+        }
+      },
+      "Module": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Response"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "response": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Modul"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Geldgutscheindeskriptor": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Id (readonly)",
+            "example": 1
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "Archiviert Ja/Nein",
+            "example": false
+          },
+          "cancelled": {
+            "type": "boolean",
+            "description": "Storniert Ja/Nein (readonly)",
+            "example": true
+          },
+          "validToDate": {
+            "type": "string",
+            "description": "Gültigkeit",
+            "example": "1970-01-01"
+          },
+          "code": {
+            "type": "string",
+            "description": "Gutschein-Code",
+            "example": "ABCDEF012345"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Kommentar",
+            "example": "Musterkommentar"
+          },
+          "balance": {
+            "type": "number",
+            "description": "Aktueller Wert des Gutscheins",
+            "example": 10
+          },
+          "amount": {
+            "type": "number",
+            "description": "Ursprünglicher Wert des Gutscheins (readonly)",
+            "example": 15
+          },
+          "transactions": {
+            "type": "array",
+            "description": "Transaktionen (readonly)",
+            "items": {
+              "$ref": "#/components/schemas/Geldtransaktiondeskriptor"
+            }
+          }
+        }
+      },
+      "Geldgutschein_Page": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Page"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Geldgutscheindeskriptor"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Geldgutscheine": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Response"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "response": {
+                "$ref": "#/components/schemas/Geldgutschein_Page"
+              }
+            }
+          }
+        ]
+      },
+      "Geldgutschein": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Response"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "response": {
+                "$ref": "#/components/schemas/Geldgutscheindeskriptor"
+              }
+            }
+          }
+        ]
+      },
+      "Forderung": {
+        "required": [
+          "amount",
+          "invoiceText",
+          "tax"
+        ],
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Wert der Forderung in der Währung Ihres eBuSy-Systems",
+            "example": 2
+          },
+          "comment": {
+            "type": "string",
+            "description": "Interner Kommentar",
+            "example": "Mein Kommentar"
+          },
+          "couponCode": {
+            "type": "string",
+            "description": "Code des zu verwendenden Gutscheins. Wird benötigt, wenn useCashCoupon true ist",
+            "example": "0123456ABC"
+          },
+          "invoiceSubtext": {
+            "type": "string",
+            "description": "Rechnungs-Subtext der Forderung",
+            "example": "1 Wasser"
+          },
+          "invoiceText": {
+            "type": "string",
+            "description": "Rechnungstext der Forderung",
+            "example": "Getränkekauf"
+          },
+          "paymentType": {
+            "type": "number",
+            "description": "Ordinal der gewählten Zahlunsart. Nur benötigt, wenn useCashBalance und useCashCoupon false ist und der Wert der Forderung > 0 ist",
+            "example": 1
+          },
+          "personId": {
+            "type": "integer",
+            "description": "Id der Person, auf die die Forderung erstellt wird. Entweder personId oder transponder wird benötigt",
+            "example": 123456
+          },
+          "tax": {
+            "type": "number",
+            "description": "Steuersatz der Forderung",
+            "example": 0.19
+          },
+          "transponder": {
+            "type": "string",
+            "description": "Transpondernummer der Person, auf die die Forderung erstellt wird. Entweder personId oder transponder wird benötigt",
+            "example": "1234ABC"
+          },
+          "useCashBalance": {
+            "type": "boolean",
+            "description": "Wahr, wenn das Geldguthaben der Person zum Bezahlen verwendet werden soll",
+            "example": false
+          },
+          "useCashCoupon": {
+            "type": "boolean",
+            "description": "Wahr, wenn ein Gutschein zum Bezahlen verwendet werden soll",
+            "example": false
+          }
+        }
+      },
+      "Kassenartikeldeskriptor": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Id der Ware",
+            "example": 12345
+          },
+          "name": {
+            "type": "string",
+            "description": "Name der Ware",
+            "example": "Wasser"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Menge der Ware, aktuell immer -1",
+            "example": -1
+          },
+          "description": {
+            "type": "string",
+            "description": "Beschreibung der Ware",
+            "example": "0,5l PET-Flasche"
+          },
+          "category": {
+            "type": "string",
+            "description": "Kategorie der Ware",
+            "enum": [
+              "FOOD",
+              "DRINK",
+              "EQUIPMENT"
+            ],
+            "example": "DRINK"
+          },
+          "price": {
+            "type": "number",
+            "description": "Preis der Ware in der Währung Ihres eBuSy-Systems",
+            "example": 2.5
+          },
+          "tax": {
+            "type": "number",
+            "description": "Steuersatz der Ware",
+            "example": 0.19
+          }
+        }
+      },
+      "Kassenartikel": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Response"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "response": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Kassenartikeldeskriptor"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Kassenbestellungdeskriptor": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "Liste der Ids der Waren",
+            "items": {
+              "type": "integer"
+            },
+            "example": [
+              123,
+              456
+            ]
+          },
+          "comment": {
+            "type": "string",
+            "description": "Interner Kommentar",
+            "example": "Verkauf am Tresen"
+          },
+          "paymentType": {
+            "type": "integer",
+            "description": "Ordinal der gewählten Zahlungsart",
+            "example": 3
+          },
+          "personId": {
+            "type": "integer",
+            "description": "Id der Person. Entweder personId oder transponder wird benötigt",
+            "example": 123456
+          },
+          "transponder": {
+            "type": "string",
+            "description": "Transpondernummer der Person. Entweder personId oder transponder wird benötigt",
+            "example": "1234ABC"
+          }
+        }
+      },
+      "Platz": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Interne, nicht-änderbare Id",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Name",
+            "example": "Platz 1"
+          },
+          "position": {
+            "type": "number",
+            "description": "Anzeigeposition"
+          },
+          "shortName": {
+            "type": "string",
+            "description": "Kurzname",
+            "example": "P1"
+          },
+          "subline": {
+            "type": "string",
+            "description": "Untertitel",
+            "example": "Sandplatz"
+          }
+        }
+      },
+      "Bucher": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Id",
+            "example": 1
+          },
+          "company": {
+            "type": "string",
+            "description": "Firma",
+            "example": "productive web GbR"
+          },
+          "firstname": {
+            "type": "string",
+            "description": "Vorname",
+            "example": "Max"
+          },
+          "lastname": {
+            "type": "string",
+            "description": "Nachname",
+            "example": "Mustermann"
+          }
+        },
+        "description": "Spieler"
+      },
+      "MitspielerInfo": {
+        "type": "object",
+        "properties": {
+          "player": {
+            "$ref": "#/components/schemas/Bucher"
+          },
+          "type": {
+            "type": "string",
+            "description": "Art des Mitspielers",
+            "enum": [
+              "REGULAR",
+              "PARTNER_WANTED",
+              "GUEST"
+            ],
+            "example": "REGULAR"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Anzeigename",
+            "example": "Max"
+          }
+        },
+        "description": "Mitspieler-Information"
+      },
+      "Buchung": {
+        "type": "object",
+        "properties": {
+          "attributes": {
+            "type": "array",
+            "description": "Buchungsoptionen",
+            "items": {
+              "type": "object"
+            },
+            "example": [
+              {
+                "id": 1,
+                "name": "Flutlicht",
+                "value": "Ja"
+              }
+            ]
+          },
+          "courtId": {
+            "type": "integer",
+            "description": "Id des Platzes",
+            "example": 1
+          },
+          "date": {
+            "type": "string",
+            "description": "Datum der Buchung",
+            "example": "01.01.1970"
+          },
+          "lastModifiedDate": {
+            "type": "string",
+            "description": "Datum der letzten Änderung an der Buchung",
+            "example": "01.01.1970 13:00:00"
+          },
+          "displayText": {
+            "type": "string",
+            "description": "Anzeigename der Buchung, falls verfügbar",
+            "example": "Training Herren I"
+          },
+          "bookingTypeName": {
+            "type": "string",
+            "description": "Name der Buchungsart",
+            "example": "Einzelbuchung"
+          },
+          "source": {
+            "type": "string",
+            "description": "Quelle der Buchung",
+            "enum": [
+              "APP",
+              "API",
+              "WEB_FRONTEND",
+              "WEB_BACKEND",
+              "WEB_IMPORT",
+              "MIGRATION"
+            ],
+            "example": "WEB_FRONTEND"
+          },
+          "fromTime": {
+            "type": "string",
+            "description": "Begin der Buchung",
+            "example": "10:00"
+          },
+          "guestBooking": {
+            "type": "boolean",
+            "description": "Wahr, falls es sich um eine Gastbuchung handelt",
+            "example": true
+          },
+          "cancelled": {
+            "type": "boolean",
+            "description": "Wahr, wenn die Buchung storniert oder freigegeben wurde",
+            "example": true
+          },
+          "id": {
+            "type": "integer",
+            "description": "Interne, nicht-änderbare Id",
+            "example": 1
+          },
+          "person": {
+            "$ref": "#/components/schemas/Bucher"
+          },
+          "additionalPlayerInfos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "$ref": "#/components/schemas/MitspielerInfo"
+            }
+          },
+          "toTime": {
+            "type": "string",
+            "description": "Ende der Buchung",
+            "example": "11:00"
+          },
+          "type": {
+            "type": "string",
+            "description": "Art der Buchung",
+            "enum": [
+              "BOOKING",
+              "BLOCKING"
+            ],
+            "example": "BOOKING"
+          }
+        }
+      },
+      "Kursplan": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name des Kursplans",
+            "example": "Yoga-Kurse"
+          },
+          "id": {
+            "type": "integer",
+            "description": "Interne, nicht-änderbare Id",
+            "example": 1
+          },
+          "active": {
+            "type": "string",
+            "description": "Aktiv Ja/Nein",
+            "example": "Ja/Nein"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Kommentar",
+            "example": "nur im Sommer"
+          },
+          "archived": {
+            "type": "string",
+            "description": "Archiviert Ja/Nein",
+            "example": "Ja/Nein"
+          },
+          "description": {
+            "type": "string",
+            "description": "Beschreibung",
+            "example": "<p>Unsere Yoga-Kurse f&uuml;r Anf&auml;nger und Fortgeschrittene</p>"
+          },
+          "activationDate": {
+            "type": "string",
+            "description": "Datum der Aktivierung des Kursplans im Format tt.mm.jjjj",
+            "example": "13.02.2025"
+          }
+        }
+      },
+      "Kursgruppe": {
+        "type": "object",
+        "properties": {
+          "archived": {
+            "type": "string",
+            "description": "Archiviert Ja/Nein",
+            "example": "Ja/Nein"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Kommentar",
+            "example": "findet wöchentlich statt"
+          },
+          "description": {
+            "type": "string",
+            "description": "Beschreibung",
+            "example": "<p>Ein Yoga-Kurs für Einsteiger</p>"
+          },
+          "id": {
+            "type": "integer",
+            "description": "Interne, nicht-änderbare Id",
+            "example": 1
+          },
+          "location": {
+            "type": "string",
+            "description": "Kursort",
+            "example": "Kursraum 3"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name",
+            "example": "Anfänger-Yoga"
+          },
+          "registrationRequired": {
+            "type": "string",
+            "description": "Registrierung erforderlich Ja/Nein",
+            "example": "Ja/Nein"
+          }
+        }
+      },
+      "Kurstermin": {
+        "type": "object",
+        "properties": {
+          "dayOfWeek": {
+            "type": "enum",
+            "description": "Wochentag",
+            "example": "WEDENESDAY"
+          },
+          "fromTime": {
+            "type": "string",
+            "description": "Beginn im Format hh:mm:ss",
+            "example": "10:00:00"
+          },
+          "toTime": {
+            "type": "string",
+            "description": "Ende im Format hh:mm:ss",
+            "example": "12:00:00"
+          }
+        }
+      },
+      "Kurswiederholung": {
+        "type": "object",
+        "properties": {
+          "recurrenceInterval": {
+            "type": "enum",
+            "description": "Rythmus",
+            "example": "WEEKLY"
+          },
+          "recurrenceBegin": {
+            "type": "string",
+            "description": "Startdatum im Format tt.mm.jjjj",
+            "example": "01.02.2025"
+          },
+          "recurrenceEnd": {
+            "type": "string",
+            "description": "Enddatum im Format tt.mm.jjjj",
+            "example": "31.03.2025"
+          }
+        }
+      },
+      "Kurs": {
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "string",
+            "description": "Aktiv Ja/Nein",
+            "example": "Ja/Nein"
+          },
+          "activationDate": {
+            "type": "string",
+            "description": "Datum der Aktiviwerung des Kurses im Format tt.mm.jjjj",
+            "example": "13.02.2025"
+          },
+          "registrationFromDate": {
+            "type": "string",
+            "description": "Anmeldebeginn des Kurses im Format tt.mm.jjjj",
+            "example": "01.02.2025"
+          },
+          "registrationToDate": {
+            "type": "string",
+            "description": "Anmeldeschluß des Kurses im Format tt.mm.jjjj",
+            "example": "10.02.2025"
+          },
+          "declinedListCount": {
+            "type": "integer",
+            "description": "Anzahl abgelehnten Anfragen",
+            "example": 3
+          },
+          "id": {
+            "type": "integer",
+            "description": "Interne, nicht-änderbare Id",
+            "example": 1
+          },
+          "maxParticipants": {
+            "type": "integer",
+            "description": "Maximale Teilnehmeranzahl",
+            "example": 10
+          },
+          "participantCount": {
+            "type": "integer",
+            "description": "Anzahl der aktiven Teilnehmer",
+            "example": 4
+          },
+          "plan": {
+            "$ref": "#/components/schemas/Kursplan"
+          },
+          "courseGroup": {
+            "$ref": "#/components/schemas/Kursgruppe"
+          },
+          "repetitions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Kurstermin"
+            }
+          },
+          "recurrence": {
+            "$ref": "#/components/schemas/Kurswiederholung"
+          },
+          "requestListCount": {
+            "type": "integer",
+            "description": "Anzahl der offenen Anfragen",
+            "example": 3
+          },
+          "requestsOnly": {
+            "type": "string",
+            "description": "Nur auf Anfrage Ja/Nein",
+            "example": "Ja"
+          },
+          "waitingListCount": {
+            "type": "integer",
+            "description": "Anzahl der Teilnehmer auf der Warteliste",
+            "example": 3
+          },
+          "waitingQueue": {
+            "type": "string",
+            "description": "Warteschlange aktiv Ja/Nein",
+            "example": "Ja/Nein"
+          }
+        }
+      },
+      "Veranstaltung": {
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "string",
+            "description": "Aktiv Ja/Nein",
+            "example": "Ja/Nein"
+          },
+          "archived": {
+            "type": "string",
+            "description": "Archiviert Ja/Nein",
+            "example": "Ja/Nein"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Kommentar",
+            "example": "findet jährlich statt"
+          },
+          "declinedListCount": {
+            "type": "integer",
+            "description": "Anzahl abgelehnten Anfragen",
+            "example": 3
+          },
+          "description": {
+            "type": "string",
+            "description": "Beschreibung",
+            "example": "<p>Unsere j&auml;hrliche Mitgliederversammlung.</p>"
+          },
+          "id": {
+            "type": "integer",
+            "description": "Interne, nicht-änderbare Id",
+            "example": 1
+          },
+          "location": {
+            "type": "string",
+            "description": "Veranstaltungsort",
+            "example": "Vereinsheim"
+          },
+          "registrationFromDate": {
+            "type": "string",
+            "description": "Anmeldebeginn der Veranstaltung im Format tt.mm.jjjj",
+            "example": "01.02.2025"
+          },
+          "registrationToDate": {
+            "type": "string",
+            "description": "Anmeldeschluß der Veranstaltung im Format tt.mm.jjjj",
+            "example": "10.02.2025"
+          },
+          "maxParticipants": {
+            "type": "integer",
+            "description": "Maximale Teilnehmeranzahl",
+            "example": 10
+          },
+          "name": {
+            "type": "string",
+            "description": "Name",
+            "example": "Mitgliederversammlung"
+          },
+          "participantCount": {
+            "type": "integer",
+            "description": "Anzahl der aktiven Teilnehmer",
+            "example": 4
+          },
+          "price": {
+            "type": "string",
+            "description": "Preis",
+            "example": "10,00 €"
+          },
+          "registrationRequired": {
+            "type": "string",
+            "description": "Registrierung erforderlich Ja/Nein",
+            "example": "Ja/Nein"
+          },
+          "repetition": {
+            "type": "object",
+            "properties": {
+              "fromDate": {
+                "type": "string",
+                "description": "Endzeit",
+                "example": "06.06.2023"
+              },
+              "fromTime": {
+                "type": "string",
+                "description": "Startzeit",
+                "example": "20:00"
+              },
+              "toDate": {
+                "type": "string",
+                "description": "Startdatum",
+                "example": "06.06.2023"
+              },
+              "toTime": {
+                "type": "string",
+                "description": "Enddatum",
+                "example": "22:00"
+              }
+            }
+          },
+          "requestListCount": {
+            "type": "integer",
+            "description": "Anzahl der offenen Anfragen",
+            "example": 3
+          },
+          "requestsOnly": {
+            "type": "string",
+            "description": "Nur auf Anfrage Ja/Nein",
+            "example": "Ja"
+          },
+          "tax": {
+            "type": "string",
+            "description": "Steuersatz",
+            "example": "0%"
+          },
+          "waitingListCount": {
+            "type": "integer",
+            "description": "Anzahl der Teilnehmer auf der Warteliste",
+            "example": 3
+          },
+          "waitingQueue": {
+            "type": "string",
+            "description": "Warteschlange aktiv Ja/Nein",
+            "example": "Ja/Nein"
+          }
+        }
+      },
+      "Mitgliedschaftsdeskriptor": {
+        "required": [
+          "begin",
+          "membershipTypeId",
+          "personId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Id, nur bei Antwort",
+            "example": 1
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "Archiviert Ja/Nein",
+            "example": true
+          },
+          "begin": {
+            "type": "string",
+            "description": "Ende der Mitgliedschaft",
+            "example": "1970-01-01"
+          },
+          "cancellationDate": {
+            "type": "string",
+            "description": "Austrittsdatum",
+            "example": "1970-01-01"
+          },
+          "cancellationReason": {
+            "type": "string",
+            "description": "Austrittsgrund",
+            "example": "Austritt"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Kommentar",
+            "example": "Musterkommentar"
+          },
+          "consideredActive": {
+            "type": "boolean",
+            "description": "Aktiv oder passiv",
+            "example": true
+          },
+          "end": {
+            "type": "string",
+            "description": "Ende der Mitgliedschaft",
+            "example": "1970-01-01"
+          },
+          "membershipTypeId": {
+            "type": "integer",
+            "description": "Id der Mitgliedschaftsart",
+            "example": 1
+          },
+          "number": {
+            "type": "string",
+            "description": "Mitgliedsnummer",
+            "example": "12345"
+          },
+          "paymentType": {
+            "$ref": "#/components/schemas/Zahlungsart"
+          },
+          "personId": {
+            "type": "integer",
+            "description": "Id der Person",
+            "example": 1
+          },
+          "sections": {
+            "type": "array",
+            "description": "Liste der Abteilungs-Ids",
+            "items": {
+              "type": "integer"
+            },
+            "examle": [
+              1,
+              2
+            ]
+          },
+          "status": {
+            "type": "string",
+            "description": "Status der Mitgliedschaft",
+            "enum": [
+              "ACTIVE",
+              "REQUESTED",
+              "DECLINED"
+            ],
+            "example": "ACTIVE"
+          }
+        }
+      },
+      "Mitgliedschaft_Page": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Page"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Mitgliedschaftsdeskriptor"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Mitgliedschaften": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Response"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "response": {
+                "$ref": "#/components/schemas/Mitgliedschaft_Page"
+              }
+            }
+          }
+        ]
+      },
+      "Mitgliedschaftsart": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Id",
+            "example": 12345
+          },
+          "name": {
+            "type": "string",
+            "description": "Name der Mitgliedschaftsart",
+            "example": "Probemitglied"
+          }
+        }
+      },
+      "Mitgliedschaftsart_Page": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Page"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Mitgliedschaftsart"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Mitgliedschaftsarten": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Response"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "response": {
+                "$ref": "#/components/schemas/Mitgliedschaftsart_Page"
+              }
+            }
+          }
+        ]
+      },
+      "Abteilung": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Id",
+            "example": 12345
+          },
+          "name": {
+            "type": "string",
+            "description": "Name der Abteilung",
+            "example": "Tennis"
+          }
+        }
+      },
+      "Abteilung_Page": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Page"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Abteilung"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Abteilungen": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Response"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "response": {
+                "$ref": "#/components/schemas/Abteilung_Page"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "x-original-swagger-version": "2.0"
+}

@@ -1,0 +1,84 @@
+# ---------------------------------------------------------------------------
+# Secrets – dieses Repo ist oeffentlich. Nichts hiervon darf je committet werden.
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+*.p12
+*.keystore
+*.jks
+.mcp.json
+supabase/.env
+service-account*.json
+
+# Generierte SEPA-Dateien enthalten IBANs und Mandatsreferenzen
+*.pain008.xml
+sepa-out/
+exports/
+
+# ---------------------------------------------------------------------------
+# Abhaengigkeiten & Build
+# ---------------------------------------------------------------------------
+node_modules/
+.pnpm-store/
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Next.js
+.next/
+next-env.d.ts
+
+# Expo / React Native
+.expo/
+.expo-shared/
+*.jks
+android/
+ios/
+
+# ---------------------------------------------------------------------------
+# Supabase CLI
+# ---------------------------------------------------------------------------
+supabase/.temp/
+supabase/.branches/
+
+# ---------------------------------------------------------------------------
+# Tests & Tooling
+# ---------------------------------------------------------------------------
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+.eslintcache
+.turbo/
+.vitest/
+
+# ---------------------------------------------------------------------------
+# Editor & OS
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*~
+
+# ---------------------------------------------------------------------------
+# Agent-Werkzeuge (lokal installiert, nicht Teil des Projekts)
+# ---------------------------------------------------------------------------
+.agents/
+.claude/skills/
+
+# ---------------------------------------------------------------------------
+# Arbeitsdateien
+# ---------------------------------------------------------------------------
+scratch/
+tmp/
+*.log
