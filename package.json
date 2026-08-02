@@ -1,0 +1,34 @@
+{
+  "name": "tcm-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vereins-App des TC Muckensturm",
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:seed": "pnpm --filter @tcm/db seed",
+    "db:types": "supabase gen types typescript --local > packages/core/src/database.types.ts",
+    "db:test": "supabase test db",
+    "test": "pnpm -r test",
+    "test:core": "pnpm --filter @tcm/core test",
+    "e2e": "pnpm --filter @tcm/web e2e",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "dev": "pnpm --filter @tcm/web dev",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm db:test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.2",
+    "eslint": "^9.17.0",
+    "supabase": "^2.2.1",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.1",
+    "vitest": "^2.1.8"
+  }
+}
