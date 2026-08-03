@@ -1,16 +1,18 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { farben } from "@/lib/stil";
+import { ThemeAnbieter, useTheme } from "@/lib/theme";
 
-export default function Layout() {
+function Navigation() {
+  const { theme, farben } = useTheme();
   return (
     <>
-      <StatusBar style="auto" />
+      <StatusBar style={theme === "dunkel" ? "light" : "dark"} />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: farben.flaeche },
-          headerTintColor: farben.text,
-          contentStyle: { backgroundColor: farben.hintergrund },
+          headerStyle: { backgroundColor: farben.surf },
+          headerTintColor: farben.ink,
+          headerTitleStyle: { fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 19 },
+          contentStyle: { backgroundColor: farben.bg },
         }}
       >
         <Stack.Screen name="index" options={{ title: "TC Muckensturm" }} />
@@ -19,5 +21,13 @@ export default function Layout() {
         <Stack.Screen name="konto" options={{ title: "Mein Konto" }} />
       </Stack>
     </>
+  );
+}
+
+export default function Layout() {
+  return (
+    <ThemeAnbieter>
+      <Navigation />
+    </ThemeAnbieter>
   );
 }

@@ -1,124 +1,417 @@
-:root {
-  /* Sandplatz-Ton als Leitfarbe: der Verein hat acht davon. */
-  --sand: #c8663c;
-  --sand-hell: #e8d5cb;
-  --sand-dunkel: #9c4a29;
-  --linie: #d8d2cc;
-  --text: #24201d;
-  --text-leise: #6b625b;
-  --flaeche: #ffffff;
-  --hintergrund: #faf8f6;
-  --gruen: #3f7a4a;
-  --rot: #a63232;
-  --radius: 6px;
-}
+/* ===========================================================================
+   TC Muckensturm — Web
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --sand: #d9784f;
-    --sand-hell: #3a2a23;
-    --sand-dunkel: #e89873;
-    --linie: #3a3430;
-    --text: #ece7e3;
-    --text-leise: #a49a92;
-    --flaeche: #211d1a;
-    --hintergrund: #171412;
-    --gruen: #6aa876;
-    --rot: #d97070;
-  }
-}
+   Komponenten aus dem Designsystem "Tennis Club Redesign", übertragen auf die
+   Module dieser App. Die Farbtoken kommen aus @tcm/ui und sind dort die
+   einzige Quelle; hier stehen nur Formen, Abstände und Layout.
+
+   Zwei Layoutzustände:
+     < 768px  Bottom-Navigation, Inhalte einspaltig       (wie im Design)
+     >= 768px Seitenleiste links, Inhalte bis 1100px breit
+   =========================================================================== */
+
+@import "@fontsource/barlow/latin-400.css";
+@import "@fontsource/barlow/latin-500.css";
+@import "@fontsource/barlow/latin-600.css";
+@import "@fontsource/barlow/latin-700.css";
+@import "@fontsource/barlow-semi-condensed/latin-600.css";
+@import "@fontsource/barlow-semi-condensed/latin-700.css";
+@import "@fontsource/barlow-semi-condensed/latin-800.css";
+@import "@tcm/ui/tokens.css";
 
 * { box-sizing: border-box; }
 
+html, body { margin: 0; padding: 0; }
+
 body {
-  margin: 0;
-  background: var(--hintergrund);
-  color: var(--text);
-  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: var(--line-height);
+  letter-spacing: var(--tracking);
+  -webkit-font-smoothing: antialiased;
+  /* Kein waagerechtes Scrollen, egal wie schmal das Fenster wird. */
+  overflow-x: hidden;
 }
 
-a { color: var(--sand-dunkel); }
+.dpl { font-family: var(--font-display); }
+.tnum { font-variant-numeric: tabular-nums; }
 
-.kopf {
-  background: var(--flaeche);
-  border-bottom: 1px solid var(--linie);
-  padding: 0 1rem;
+a { color: var(--blue-ink); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------------------------------------------------------------------------
+   Grundgerüst
+   --------------------------------------------------------------------------- */
+.huelle { min-height: 100dvh; display: flex; flex-direction: column; }
+
+.inhalt {
+  flex: 1;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px var(--space-rand) 96px;
 }
-.kopf-innen {
-  max-width: 1100px; margin: 0 auto;
-  display: flex; align-items: center; gap: 1.5rem;
-  min-height: 56px; flex-wrap: wrap;
+
+/* --- Seitenleiste: erst ab Tablet ---------------------------------------- */
+.seitenleiste { display: none; }
+
+.marke {
+  display: flex; align-items: center; gap: 10px;
+  padding: 18px var(--space-rand) 14px;
 }
-.marke { font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; }
-.nav { display: flex; gap: 1rem; flex: 1; flex-wrap: wrap; }
-.nav a { color: var(--text-leise); text-decoration: none; padding: 0.25rem 0; }
-.nav a:hover, .nav a[aria-current="page"] { color: var(--text); border-bottom: 2px solid var(--sand); }
+.marke img { height: 30px; width: auto; display: block; }
+.marke .sub {
+  font-size: 11px; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted);
+}
 
-main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+.pagetitle {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 26px; letter-spacing: -.2px; line-height: 1;
+  margin: 0 0 2px;
+}
+.unterzeile { color: var(--ink-2); margin: 0 0 18px; font-size: 14px; }
 
-h1 { font-size: 1.5rem; margin: 0 0 0.25rem; letter-spacing: -0.02em; }
-h2 { font-size: 1.1rem; margin: 2rem 0 0.75rem; }
-.unterzeile { color: var(--text-leise); margin: 0 0 1.5rem; }
+.sectionlabel {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 22px 0 11px;
+}
+.sectionlabel h2 {
+  font-family: var(--font-display); font-weight: 700; font-size: 16px;
+  letter-spacing: .02em; text-transform: uppercase; color: var(--ink-2); margin: 0;
+}
 
+/* --- Bottom-Navigation: nur am Telefon ------------------------------------ */
+.bottomnav {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: flex; justify-content: space-around; align-items: flex-start;
+  padding: 9px 8px calc(8px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--surf) 88%, transparent);
+  border-top: 1px solid var(--line);
+  backdrop-filter: blur(12px);
+}
+.bottomnav a {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  color: var(--muted); font-size: 10px; font-weight: 600; text-decoration: none;
+  padding: 2px 0;
+}
+.bottomnav a[aria-current="page"] { color: var(--blue); }
+.bottomnav a:hover { text-decoration: none; }
+.bottomnav svg { width: 24px; height: 24px; }
+
+/* ---------------------------------------------------------------------------
+   Hero — Blickfang oben, Verlauf blau nach gold wie im Design
+   --------------------------------------------------------------------------- */
+.hero {
+  position: relative; border-radius: var(--radius-hero); overflow: hidden;
+  background:
+    radial-gradient(120% 120% at 88% -10%, color-mix(in srgb, var(--gold) 42%, transparent), transparent 46%),
+    linear-gradient(155deg, var(--blue) 0%, var(--blue-ink) 96%);
+  color: #fff; padding: 20px 20px 22px;
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--blue) 34%, transparent);
+  margin-bottom: 4px;
+}
+.hero .kicker {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .16em;
+  text-transform: uppercase; opacity: .85;
+}
+.hero h1 {
+  font-family: var(--font-display); font-weight: 700; font-size: 33px;
+  line-height: .98; letter-spacing: -.4px; margin: 9px 0 0; text-wrap: balance;
+}
+.hero .meta { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+.hero .pill {
+  flex: 1; min-width: 120px;
+  background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.16);
+  border-radius: 13px; padding: 9px 11px;
+}
+.hero .pill b {
+  display: block; font-family: var(--font-display); font-weight: 700;
+  font-size: 19px; line-height: 1.1;
+}
+.hero .pill span { font-size: 11px; opacity: .82; font-weight: 500; }
+.hero .bar {
+  margin-top: 12px; height: 8px; border-radius: 99px;
+  background: rgba(255,255,255,.24); overflow: hidden;
+}
+.hero .bar > i {
+  display: block; height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, #fff, var(--gold));
+}
+
+/* ---------------------------------------------------------------------------
+   Karten und Listen
+   --------------------------------------------------------------------------- */
 .karte {
-  background: var(--flaeche);
-  border: 1px solid var(--linie);
-  border-radius: var(--radius);
-  padding: 1rem;
+  background: var(--surf); border: 1px solid var(--line);
+  border-radius: var(--radius-kartegross); box-shadow: var(--shadow);
+  padding: 16px;
 }
 
+.mcard {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surf); border: 1px solid var(--line);
+  border-radius: var(--radius-karte); padding: 11px 13px;
+  box-shadow: var(--shadow-sm);
+}
+
+.kachel-reihe {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.kachel {
+  background: var(--surf); border: 1px solid var(--line);
+  border-radius: var(--radius-karte); box-shadow: var(--shadow-sm);
+  padding: 14px; text-align: left; font: inherit; color: inherit;
+}
+button.kachel { cursor: pointer; }
+button.kachel:hover { border-color: var(--blue); }
+.kachel .wert {
+  font-family: var(--font-display); font-size: 26px; font-weight: 700;
+  line-height: 1.1; letter-spacing: -.02em;
+}
+.kachel .titel { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+.kachel .preis { color: var(--blue-ink); font-weight: 700; margin-top: 6px; }
+
+/* ---------------------------------------------------------------------------
+   Knöpfe
+   --------------------------------------------------------------------------- */
 .knopf {
-  font: inherit; cursor: pointer;
-  background: var(--sand); color: #fff;
-  border: none; border-radius: var(--radius);
-  padding: 0.5rem 1rem;
+  appearance: none; border: 0; cursor: pointer;
+  font-family: var(--font-display); font-weight: 700; font-size: 16px;
+  border-radius: var(--radius-knopf); padding: 13px 16px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--blue); color: #fff;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--blue) 34%, transparent);
 }
-.knopf:hover { background: var(--sand-dunkel); }
-.knopf:disabled { opacity: 0.5; cursor: not-allowed; }
-.knopf.leise { background: transparent; color: var(--text-leise); border: 1px solid var(--linie); }
-.knopf.leise:hover { color: var(--text); border-color: var(--text-leise); }
+.knopf:hover { background: var(--blue-ink); }
+.knopf:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+.knopf.leise {
+  background: transparent; color: var(--ink);
+  border: 1.5px solid var(--line-2); box-shadow: none;
+}
+.knopf.leise:hover { border-color: var(--blue); color: var(--blue-ink); background: transparent; }
+.knopf.gold { background: var(--gold); color: #3a2600; box-shadow: none; }
+.knopf.klein { font-size: 13px; padding: 7px 11px; border-radius: 10px; }
+.knopf.block { width: 100%; }
 
+/* ---------------------------------------------------------------------------
+   Formulare
+   --------------------------------------------------------------------------- */
+label { display: block; margin-bottom: 14px; }
+label > span {
+  display: block; font-size: 12px; font-weight: 600;
+  color: var(--ink-2); margin-bottom: 7px;
+}
 input, select, textarea {
   font: inherit; width: 100%;
-  padding: 0.5rem 0.6rem;
-  border: 1px solid var(--linie); border-radius: var(--radius);
-  background: var(--flaeche); color: var(--text);
+  background: var(--surf); color: var(--ink);
+  border: 1.5px solid var(--line-2); border-radius: var(--radius-feld);
+  padding: 13px 14px;
 }
-label { display: block; margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-leise); }
-label span { display: block; margin-bottom: 0.25rem; }
+input:focus, select:focus, textarea:focus {
+  outline: 0; border-color: var(--blue);
+  box-shadow: 0 0 0 4px var(--blue-soft);
+}
 
-.hinweis { padding: 0.6rem 0.8rem; border-radius: var(--radius); margin: 0.75rem 0; }
-.hinweis.fehler { background: color-mix(in srgb, var(--rot) 12%, transparent); color: var(--rot); }
-.hinweis.erfolg { background: color-mix(in srgb, var(--gruen) 12%, transparent); color: var(--gruen); }
+/* Chips und Segment-Umschalter */
+.segtoggle {
+  display: flex; gap: 4px; padding: 4px;
+  background: var(--chip); border-radius: 13px; margin-bottom: 16px;
+}
+.segtoggle button {
+  flex: 1; border: 0; cursor: pointer; font-family: var(--font-display);
+  font-weight: 700; font-size: 15px; padding: 11px; border-radius: 9px;
+  background: transparent; color: var(--muted);
+}
+.segtoggle button[aria-pressed="true"] {
+  background: var(--surf); color: var(--ink); box-shadow: var(--shadow-sm);
+}
 
-/* Belegungsplan: Zeilen sind Uhrzeiten, Spalten die acht Plaetze. */
-.plan-huelle { overflow-x: auto; border: 1px solid var(--linie); border-radius: var(--radius); }
-.plan { border-collapse: collapse; width: 100%; min-width: 760px; background: var(--flaeche); }
-.plan th, .plan td { border: 1px solid var(--linie); padding: 0; text-align: left; }
-.plan thead th { padding: 0.5rem; font-size: 0.85rem; background: var(--hintergrund); position: sticky; top: 0; }
-.plan .zeit { width: 62px; padding: 0.35rem 0.5rem; font-variant-numeric: tabular-nums;
-              font-size: 0.85rem; color: var(--text-leise); background: var(--hintergrund); }
-.zelle { width: 100%; min-height: 34px; display: block; padding: 0.3rem 0.45rem;
-         font: inherit; font-size: 0.82rem; text-align: left; border: none;
-         background: transparent; color: inherit; cursor: pointer; }
-.zelle.frei:hover { background: var(--sand-hell); }
-.zelle.belegt { cursor: default; background: color-mix(in srgb, var(--sand) 14%, transparent); }
-.zelle.blockung { cursor: default; background: color-mix(in srgb, var(--text-leise) 14%, transparent);
-                  color: var(--text-leise); }
-.zelle.eigen { background: color-mix(in srgb, var(--gruen) 18%, transparent); }
-.zelle.gesperrt { cursor: not-allowed; color: var(--linie); }
+.marke-klein {
+  display: inline-block; font-size: 11px; font-weight: 600;
+  padding: 3px 8px; border-radius: 99px;
+  background: var(--blue-soft); color: var(--blue-ink);
+}
+.marke-klein.gold { background: var(--gold-soft); color: #7a5600; }
+.marke-klein.grau { background: var(--chip); color: var(--ink-2); }
 
-table.liste { width: 100%; border-collapse: collapse; background: var(--flaeche); }
-table.liste th, table.liste td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--linie); }
-table.liste th { font-size: 0.85rem; color: var(--text-leise); font-weight: 600; }
-table.liste td.zahl, table.liste th.zahl { text-align: right; font-variant-numeric: tabular-nums; }
+/* ---------------------------------------------------------------------------
+   Hinweise
+   --------------------------------------------------------------------------- */
+.hinweis {
+  padding: 12px 14px; border-radius: var(--radius-feld);
+  margin: 12px 0; font-size: 14px;
+  background: var(--chip); color: var(--ink-2);
+}
+.hinweis.fehler {
+  background: color-mix(in srgb, var(--red) 12%, transparent); color: var(--red);
+}
+.hinweis.erfolg {
+  background: color-mix(in srgb, var(--green) 12%, transparent); color: var(--green);
+}
 
-.marke-klein { font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 99px;
-               background: var(--sand-hell); color: var(--sand-dunkel); }
+/* ---------------------------------------------------------------------------
+   Tabellen
+   --------------------------------------------------------------------------- */
+.tabellenhuelle {
+  overflow-x: auto; background: var(--surf);
+  border: 1px solid var(--line); border-radius: var(--radius-kartegross);
+  box-shadow: var(--shadow);
+}
+table.liste { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.liste th {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted); text-align: left;
+  padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+table.liste td {
+  padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: middle;
+}
+table.liste tr:last-child td { border-bottom: 0; }
+table.liste .zahl {
+  text-align: right; font-variant-numeric: tabular-nums;
+  font-family: var(--font-display); font-weight: 700;
+}
 
-.kachel-reihe { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.75rem; }
-.kachel { background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--radius); padding: 0.9rem; }
-.kachel .wert { font-size: 1.6rem; font-weight: 650; letter-spacing: -0.02em; }
-.kachel .titel { font-size: 0.85rem; color: var(--text-leise); }
+.leer { color: var(--muted); padding: 32px 0; text-align: center; }
 
-.leer { color: var(--text-leise); padding: 2rem 0; text-align: center; }
+/* ---------------------------------------------------------------------------
+   Belegungsplan
+
+   Zwei Darstellungen derselben Daten. Am Telefon ist ein Raster mit acht
+   Spalten unbedienbar, deshalb dort eine Liste je Platz - wie in der
+   Expo-App. Umgeschaltet wird über die Breite, nicht über zwei Komponenten.
+   --------------------------------------------------------------------------- */
+.plan-raster { display: none; }
+
+.plan-listen { display: flex; flex-direction: column; gap: 10px; }
+.platzkarte {
+  background: var(--surf); border: 1px solid var(--line);
+  border-radius: var(--radius-kartegross); box-shadow: var(--shadow-sm);
+  padding: 14px;
+}
+.platzkarte > h3 {
+  font-family: var(--font-display); font-weight: 700; font-size: 18px;
+  margin: 0 0 4px;
+}
+.belegzeile {
+  border-left: 3px solid var(--blue); padding: 6px 0 6px 11px; margin-top: 8px;
+}
+.belegzeile.eigen { border-left-color: var(--green); }
+.belegzeile.blockung { border-left-color: var(--muted); }
+.belegzeile .zeit {
+  font-family: var(--font-display); font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.belegzeile .wer { font-weight: 600; }
+.belegzeile .mit { font-size: 12.5px; color: var(--muted); }
+
+.freie-slots { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.slotknopf {
+  font: inherit; font-size: 13px; font-variant-numeric: tabular-nums;
+  cursor: pointer; padding: 7px 11px; border-radius: 99px;
+  background: var(--chip); color: var(--ink-2); border: 1px solid var(--line);
+}
+.slotknopf:hover:not(:disabled) {
+  background: var(--blue-soft); color: var(--blue-ink); border-color: var(--blue);
+}
+.slotknopf:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ---------------------------------------------------------------------------
+   Anmeldung — "Crown" mit Verlauf, darauf ein aufliegendes Blatt
+   --------------------------------------------------------------------------- */
+.auth { min-height: 100dvh; display: flex; flex-direction: column; }
+.auth .crown {
+  position: relative; padding: 40px 26px 44px; color: #fff; overflow: hidden;
+  background:
+    radial-gradient(130% 120% at 85% 0%, color-mix(in srgb, var(--gold) 40%, transparent), transparent 50%),
+    linear-gradient(160deg, var(--blue), var(--blue-ink));
+}
+.auth .crown img { height: 34px; margin-bottom: 18px; display: block; }
+.auth .crown h1 {
+  font-family: var(--font-display); font-weight: 700; font-size: 30px;
+  line-height: 1.02; letter-spacing: -.3px; margin: 0; text-wrap: balance;
+}
+.auth .crown p { margin: 9px 0 0; font-size: 14px; opacity: .88; max-width: 280px; }
+.auth .sheet {
+  flex: 1; margin-top: -22px; background: var(--bg);
+  border-radius: 24px 24px 0 0; padding: 26px 22px 40px;
+  position: relative; z-index: 2;
+}
+.auth .sheet form { max-width: 380px; margin: 0 auto; }
+
+/* ---------------------------------------------------------------------------
+   Ab Tablet: Seitenleiste statt Bottom-Navigation
+   --------------------------------------------------------------------------- */
+@media (min-width: 768px) {
+  .huelle { flex-direction: row; }
+
+  .seitenleiste {
+    display: flex; flex-direction: column;
+    width: 240px; flex: 0 0 240px;
+    background: var(--surf); border-right: 1px solid var(--line);
+    height: 100dvh; position: sticky; top: 0;
+  }
+  .seitenleiste nav { display: flex; flex-direction: column; padding: 8px 12px; gap: 2px; }
+  .seitenleiste nav a {
+    display: flex; align-items: center; gap: 11px;
+    padding: 10px 12px; border-radius: 11px;
+    color: var(--ink-2); font-weight: 600; font-size: 14.5px; text-decoration: none;
+  }
+  .seitenleiste nav a:hover { background: var(--chip); color: var(--ink); }
+  .seitenleiste nav a[aria-current="page"] {
+    background: var(--blue-soft); color: var(--blue-ink);
+  }
+  .seitenleiste svg { width: 20px; height: 20px; flex: 0 0 auto; }
+  .seitenleiste .fuss {
+    margin-top: auto; padding: 14px 20px 20px;
+    border-top: 1px solid var(--line); font-size: 13px; color: var(--muted);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+
+  .bottomnav { display: none; }
+  .inhalt { padding: 24px 32px 48px; }
+
+  /* Der Belegungsplan hat hier Platz für das volle Raster. */
+  .plan-listen { display: none; }
+  .plan-raster { display: block; }
+}
+
+.plan-huelle {
+  overflow-x: auto; border: 1px solid var(--line);
+  border-radius: var(--radius-kartegross); background: var(--surf);
+  box-shadow: var(--shadow);
+}
+table.plan { border-collapse: collapse; width: 100%; min-width: 720px; }
+table.plan th, table.plan td { border: 1px solid var(--line); padding: 0; }
+table.plan thead th {
+  padding: 9px 6px; font-size: 12.5px; font-weight: 700;
+  font-family: var(--font-display); background: var(--surf-2);
+  position: sticky; top: 0; z-index: 1;
+}
+table.plan .zeit {
+  width: 64px; padding: 6px 8px; font-size: 12.5px; color: var(--muted);
+  font-variant-numeric: tabular-nums; background: var(--surf-2); text-align: right;
+}
+.zelle {
+  width: 100%; min-height: 38px; display: block; padding: 5px 8px;
+  font: inherit; font-size: 12.5px; text-align: left; border: 0;
+  background: transparent; color: inherit; cursor: pointer;
+}
+.zelle.frei:hover:not(:disabled) { background: var(--blue-soft); }
+.zelle.belegt { cursor: default; background: color-mix(in srgb, var(--blue) 12%, transparent); }
+.zelle.eigen { background: color-mix(in srgb, var(--green) 16%, transparent); }
+.zelle.blockung {
+  cursor: default; background: color-mix(in srgb, var(--muted) 16%, transparent);
+  color: var(--ink-2);
+}
+.zelle.gesperrt { cursor: not-allowed; color: var(--line-2); }
+.zelle:disabled { cursor: not-allowed; }
+
+/* Weniger Bewegung, wenn das System danach fragt */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}

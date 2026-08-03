@@ -60,7 +60,7 @@ export default async function MitgliederSeite({
 
   return (
     <>
-      <h1>Mitglieder</h1>
+      <h1 className="pagetitle">Mitglieder</h1>
       <p className="unterzeile">{mitglieder?.length ?? 0} Datensätze</p>
 
       <div className="kachel-reihe" style={{ marginBottom: "1.5rem" }}>
@@ -83,7 +83,7 @@ export default async function MitgliederSeite({
         <input name="q" defaultValue={q ?? ""} placeholder="Name suchen…" />
       </form>
 
-      <table className="liste">
+      <div className="tabellenhuelle"><table className="liste">
         <thead>
           <tr>
             <th>Nr.</th>
@@ -108,7 +108,7 @@ export default async function MitgliederSeite({
                   {m.last_name}, {m.first_name}
                   {m.billing_payer_id && <span className="marke-klein"> fremdgezahlt</span>}
                 </td>
-                <td style={{ color: m.email ? undefined : "var(--text-leise)" }}>
+                <td style={{ color: m.email ? undefined : "var(--muted)" }}>
                   {m.email ?? "keine"}
                 </td>
                 <td>
@@ -128,7 +128,7 @@ export default async function MitgliederSeite({
             );
           })}
         </tbody>
-      </table>
+      </table></div>
     </>
   );
 }

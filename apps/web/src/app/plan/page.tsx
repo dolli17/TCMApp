@@ -63,25 +63,38 @@ export default async function PlanSeite({
   const belegt = quota?.used ?? 0;
   const erlaubt = quota?.allowed ?? einstellungen.max_open_bookings;
   const heute = heuteInBerlin();
-  const maxTag = verschiebe(heute, einstellungen.lead_days);
 
   return (
     <>
-      <h1>Plätze</h1>
-      <p className="unterzeile">
-        {belegt} von {erlaubt} Buchungen offen · buchbar bis {lesbaresDatum(maxTag)}
-      </p>
+      <section className="hero">
+        <div className="kicker">Freiplätze</div>
+        <h1>{lesbaresDatum(datum)}</h1>
+        <div className="meta">
+          <div className="pill">
+            <b className="tnum">{belegt} / {erlaubt}</b>
+            <span>Buchungen offen</span>
+          </div>
+          <div className="pill">
+            <b className="tnum">{plaetzeRes.data?.length ?? 0}</b>
+            <span>Plätze</span>
+          </div>
+          <div className="pill">
+            <b>{einstellungen.lead_days} Tage</b>
+            <span>Vorlauf</span>
+          </div>
+        </div>
+      </section>
 
       <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "1rem" }}>
-        <Link className="knopf leise" href={`/plan?tag=${verschiebe(datum, -1)}`}>
+        <Link className="knopf leise klein" href={`/plan?tag=${verschiebe(datum, -1)}`}>
           ‹ Vortag
         </Link>
-        <strong style={{ minWidth: 220, textAlign: "center" }}>{lesbaresDatum(datum)}</strong>
-        <Link className="knopf leise" href={`/plan?tag=${verschiebe(datum, 1)}`}>
+        <strong style={{ minWidth: 200, textAlign: "center" }} className="dpl">{lesbaresDatum(datum)}</strong>
+        <Link className="knopf leise klein" href={`/plan?tag=${verschiebe(datum, 1)}`}>
           Folgetag ›
         </Link>
         {datum !== heute && (
-          <Link className="knopf leise" href="/plan">
+          <Link className="knopf leise klein" href="/plan">
             Heute
           </Link>
         )}
@@ -104,7 +117,6 @@ export default async function PlanSeite({
         schluss={String(einstellungen.closing_time).slice(0, 5)}
         rasterMinuten={einstellungen.slot_minutes}
         kontingentFrei={Math.max(erlaubt - belegt, 0)}
-        vorlaufTage={einstellungen.lead_days}
       />
     </>
   );

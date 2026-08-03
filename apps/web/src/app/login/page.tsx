@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import logo from "@tcm/ui/logo.png";
 import { createClient } from "@/lib/supabase/client";
 
 function Formular() {
@@ -39,38 +41,43 @@ function Formular() {
   }
 
   return (
-    <div style={{ maxWidth: 380, margin: "4rem auto" }}>
-      <h1>TC Muckensturm</h1>
-      <p className="unterzeile">Platzbuchung, Getränke und Beiträge.</p>
+    <div className="auth">
+      <div className="crown">
+        <Image src={logo} alt="TC Muckensturm" height={34} priority />
+        <h1>Willkommen zurück auf dem Platz.</h1>
+        <p>Plätze buchen, Getränke erfassen, Beiträge im Blick behalten.</p>
+      </div>
 
-      <form onSubmit={anmelden} className="karte">
-        <label>
-          <span>E-Mail</span>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="username"
-            required
-          />
-        </label>
-        <label>
-          <span>Passwort</span>
-          <input
-            type="password"
-            value={passwort}
-            onChange={(e) => setPasswort(e.target.value)}
-            autoComplete="current-password"
-            required
-          />
-        </label>
+      <div className="sheet">
+        <form onSubmit={anmelden}>
+          <label>
+            <span>E-Mail</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="username"
+              required
+            />
+          </label>
+          <label>
+            <span>Passwort</span>
+            <input
+              type="password"
+              value={passwort}
+              onChange={(e) => setPasswort(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </label>
 
-        {fehler && <div className="hinweis fehler">{fehler}</div>}
+          {fehler && <div className="hinweis fehler">{fehler}</div>}
 
-        <button className="knopf" style={{ width: "100%" }} disabled={laeuft}>
-          {laeuft ? "Anmelden…" : "Anmelden"}
-        </button>
-      </form>
+          <button className="knopf block" disabled={laeuft}>
+            {laeuft ? "Anmelden…" : "Anmelden"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

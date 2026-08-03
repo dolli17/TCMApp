@@ -106,7 +106,7 @@ export function KioskOberflaeche({
                 disabled={laeuft}
               >
                 <div style={{ fontWeight: 600, fontSize: "1.1rem" }}>{a.name}</div>
-                <div style={{ color: "var(--sand-dunkel)", fontWeight: 600 }}>
+                <div style={{ color: "var(--blue-ink)", fontWeight: 600 }}>
                   {formatCents(a.price_cents)}
                 </div>
               </button>

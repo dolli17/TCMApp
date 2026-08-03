@@ -30,7 +30,7 @@ export default async function GetraenkeSeite() {
 
   return (
     <>
-      <h1>Getränke</h1>
+      <h1 className="pagetitle">Getränke</h1>
       <p className="unterzeile">
         Jede Entnahme wird einzeln erfasst. Am Monatsende wird zusammengezählt.
       </p>

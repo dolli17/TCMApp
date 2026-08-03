@@ -144,7 +144,7 @@ export function SerienFormular({
       </div>
 
       {!istSportwart && (
-        <p style={{ fontSize: "0.85rem", color: "var(--text-leise)" }}>
+        <p style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
           Als Trainer kannst du nur Trainingszeiten blocken.
         </p>
       )}
@@ -176,7 +176,7 @@ export function SerienFormular({
             {kollisionen.length === 0 ? (
               "Keine Kollisionen."
             ) : (
-              <span style={{ color: "var(--rot)" }}>
+              <span style={{ color: "var(--red)" }}>
                 {kollisionen.length} bestehende Buchungen würden aufgehoben. Die
                 Betroffenen werden benachrichtigt.
               </span>
@@ -184,7 +184,8 @@ export function SerienFormular({
           </p>
 
           {kollisionen.length > 0 && (
-            <table className="liste">
+            <div className="tabellenhuelle">
+        <table className="liste">
               <thead>
                 <tr>
                   <th>Termin</th>
@@ -212,6 +213,7 @@ export function SerienFormular({
                 ))}
               </tbody>
             </table>
+        </div>
           )}
         </div>
       )}

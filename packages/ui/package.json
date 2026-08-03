@@ -8,7 +8,7 @@
   "exports": {
     ".": "./src/tokens.ts",
     "./tokens.css": "./src/tokens.css",
-    "./logo": "./assets/logo.png"
+    "./logo.png": "./assets/logo.png"
   },
   "scripts": {
     "build:css": "tsx scripts/build-css.ts",

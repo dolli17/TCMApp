@@ -1,16 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
-import { stil, farben } from "@/lib/stil";
-import {
-  ladeKontingent,
-  ladePlaetze,
-  ladeTagesplan,
-  storniereBuchung,
-} from "@/lib/daten";
+import { useTheme } from "@/lib/theme";
+import { ladeKontingent, ladePlaetze, ladeTagesplan, storniereBuchung } from "@/lib/daten";
 
-function heuteInBerlin(): string {
-  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
-}
+const heuteInBerlin = () =>
+  new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
 
 function verschiebe(datum: string, tage: number): string {
   const [j, m, t] = datum.split("-").map(Number);
@@ -21,27 +15,22 @@ function verschiebe(datum: string, tage: number): string {
 
 function lesbar(datum: string): string {
   const [j, m, t] = datum.split("-").map(Number);
-  return new Intl.DateTimeFormat("de-DE", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-  }).format(new Date(j!, (m ?? 1) - 1, t));
+  return new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "2-digit", month: "long" })
+    .format(new Date(j!, (m ?? 1) - 1, t));
 }
 
-function uhrzeit(iso: string): string {
-  return new Intl.DateTimeFormat("de-DE", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Europe/Berlin",
+const uhrzeit = (iso: string) =>
+  new Intl.DateTimeFormat("de-DE", {
+    hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin",
   }).format(new Date(iso));
-}
 
 /**
- * Auf dem Telefon ist eine Tabelle mit acht Spalten unbrauchbar. Deshalb wird
- * nach Platz gruppiert und die Belegung als Liste gezeigt - das laesst sich
- * mit einer Hand bedienen.
+ * Auf dem Telefon ist ein Raster mit acht Spalten unbrauchbar. Deshalb je
+ * Platz eine Karte mit den Belegungen darunter - einhaendig bedienbar. Die
+ * Web-App zeigt unter 768 Pixel dieselbe Form.
  */
 export default function Plan() {
+  const { stil, farben } = useTheme();
   const [datum, setDatum] = useState(heuteInBerlin());
   const [plaetze, setPlaetze] = useState<Awaited<ReturnType<typeof ladePlaetze>>>([]);
   const [belegung, setBelegung] = useState<Awaited<ReturnType<typeof ladeTagesplan>>>([]);
@@ -52,10 +41,7 @@ export default function Plan() {
   const laden = useCallback(async (tag: string) => {
     setLaedt(true);
     const [p, b, k] = await Promise.all([ladePlaetze(), ladeTagesplan(tag), ladeKontingent()]);
-    setPlaetze(p);
-    setBelegung(b);
-    setKontingent(k);
-    setLaedt(false);
+    setPlaetze(p); setBelegung(b); setKontingent(k); setLaedt(false);
   }, []);
 
   useEffect(() => {
@@ -73,29 +59,36 @@ export default function Plan() {
 
   return (
     <ScrollView style={stil.seite} contentContainerStyle={stil.inhalt}>
+      <View style={stil.hero}>
+        <Text style={stil.heroKicker}>Freiplätze</Text>
+        <Text style={stil.heroTitel}>{lesbar(datum)}</Text>
+        <View style={stil.heroPillen}>
+          <View style={stil.heroPille}>
+            <Text style={stil.heroPilleWert}>
+              {kontingent.used} / {kontingent.allowed}
+            </Text>
+            <Text style={stil.heroPilleLabel}>Buchungen offen</Text>
+          </View>
+          <View style={stil.heroPille}>
+            <Text style={stil.heroPilleWert}>{plaetze.length}</Text>
+            <Text style={stil.heroPilleLabel}>Plätze</Text>
+          </View>
+        </View>
+      </View>
+
       <View style={stil.zeile}>
-        <Pressable
-          style={[stil.karte, { paddingVertical: 8 }]}
-          onPress={() => setDatum(verschiebe(datum, -1))}
-          accessibilityRole="button"
-          accessibilityLabel="Vortag"
-        >
-          <Text>‹</Text>
+        <Pressable style={stil.knopfLeise} onPress={() => setDatum(verschiebe(datum, -1))}
+          accessibilityRole="button" accessibilityLabel="Vortag">
+          <Text style={stil.knopfLeiseText}>‹ Vortag</Text>
         </Pressable>
-        <Text style={{ fontWeight: "600" }}>{lesbar(datum)}</Text>
-        <Pressable
-          style={[stil.karte, { paddingVertical: 8 }]}
-          onPress={() => setDatum(verschiebe(datum, 1))}
-          accessibilityRole="button"
-          accessibilityLabel="Folgetag"
-        >
-          <Text>›</Text>
+        <Pressable style={stil.knopfLeise} onPress={() => setDatum(verschiebe(datum, 1))}
+          accessibilityRole="button" accessibilityLabel="Folgetag">
+          <Text style={stil.knopfLeiseText}>Folgetag ›</Text>
         </Pressable>
       </View>
 
       <Text style={stil.leise}>
-        {kontingent.used} von {kontingent.allowed} Buchungen offen. Buchungen, bei
-        denen du als Mitspieler eingetragen bist, zählen mit.
+        Buchungen, bei denen du als Mitspieler eingetragen bist, zählen mit.
       </Text>
 
       {meldung && (
@@ -103,7 +96,7 @@ export default function Plan() {
       )}
 
       {laedt ? (
-        <ActivityIndicator style={{ marginTop: 24 }} />
+        <ActivityIndicator style={{ marginTop: 24 }} color={farben.blue} />
       ) : (
         plaetze.map((platz) => {
           const eintraege = belegung
@@ -112,7 +105,9 @@ export default function Plan() {
 
           return (
             <View key={platz.id} style={stil.karte}>
-              <Text style={{ fontWeight: "600", fontSize: 16 }}>{platz.name}</Text>
+              <Text style={{ fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 18, color: farben.ink }}>
+                {platz.name}
+              </Text>
 
               {eintraege.length === 0 ? (
                 <Text style={stil.leise}>ganztägig frei</Text>
@@ -120,19 +115,14 @@ export default function Plan() {
                 eintraege.map((b) => (
                   <View
                     key={b.booking_id}
-                    style={{
-                      borderLeftWidth: 3,
-                      borderLeftColor: b.is_own
-                        ? farben.gruen
-                        : b.kind === "blocking"
-                          ? farben.textLeise
-                          : farben.sand,
-                      paddingLeft: 10,
-                      marginTop: 6,
-                    }}
+                    style={[
+                      stil.belegzeile,
+                      b.is_own && stil.belegzeileEigen,
+                      b.kind === "blocking" && stil.belegzeileBlockung,
+                    ]}
                   >
-                    <Text style={{ fontWeight: "600" }}>
-                      {uhrzeit(b.starts_at)}–{uhrzeit(b.ends_at)}
+                    <Text style={stil.text}>
+                      <Text style={stil.zahl}>{uhrzeit(b.starts_at)}–{uhrzeit(b.ends_at)}</Text>
                       {"  "}
                       {b.kind === "blocking" ? b.title : b.owner_name}
                     </Text>
@@ -140,11 +130,8 @@ export default function Plan() {
                       <Text style={stil.leise}>mit {b.players.join(", ")}</Text>
                     )}
                     {b.is_own && (
-                      <Pressable
-                        onPress={() => stornieren(b.booking_id)}
-                        accessibilityRole="button"
-                      >
-                        <Text style={{ color: farben.rot, marginTop: 4 }}>Stornieren</Text>
+                      <Pressable onPress={() => stornieren(b.booking_id)} accessibilityRole="button">
+                        <Text style={{ color: farben.red, marginTop: 4 }}>Stornieren</Text>
                       </Pressable>
                     )}
                   </View>

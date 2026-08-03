@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { formatCents } from "@tcm/core";
-import { stil, farben } from "@/lib/stil";
 import { bucheGetraenk, ladeEigeneGetraenke, ladeGetraenkekarte } from "@/lib/daten";
+import { useTheme } from "@/lib/theme";
 
 export default function Getraenke() {
+  const { stil, farben } = useTheme();
   const [karte, setKarte] = useState<Awaited<ReturnType<typeof ladeGetraenkekarte>>>([]);
   const [buchungen, setBuchungen] = useState<Awaited<ReturnType<typeof ladeEigeneGetraenke>>>([]);
   const [laedt, setLaedt] = useState(true);
@@ -37,7 +38,7 @@ export default function Getraenke() {
   if (laedt) {
     return (
       <View style={[stil.seite, { justifyContent: "center" }]}>
-        <ActivityIndicator />
+        <ActivityIndicator color={farben.blue} />
       </View>
     );
   }
@@ -50,7 +51,7 @@ export default function Getraenke() {
 
       <View style={stil.karte}>
         <Text style={stil.leise}>Offen in diesem Monat</Text>
-        <Text style={{ fontSize: 28, fontWeight: "700", color: farben.text }}>
+        <Text style={{ fontSize: 28, fontWeight: "700", color: farben.ink }}>
           {formatCents(summe)}
         </Text>
       </View>
@@ -66,7 +67,7 @@ export default function Getraenke() {
         >
           <View style={stil.zeile}>
             <Text style={{ fontWeight: "600", fontSize: 16 }}>{a.name}</Text>
-            <Text style={{ color: farben.sandDunkel, fontWeight: "700" }}>
+            <Text style={{ color: farben.blueInk, fontWeight: "700" }}>
               {formatCents(a.price_cents ?? 0)}
             </Text>
           </View>

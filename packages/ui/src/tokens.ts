@@ -118,7 +118,10 @@ export const radius = {
 } as const;
 
 export type ThemeName = "hell" | "dunkel";
-export type Farbpalette = (typeof farben)["hell"];
+// Bewusst nicht (typeof farben)["hell"]: das "as const" macht daraus
+// Literaltypen, und dann passt die dunkle Palette nicht mehr in denselben Typ.
+export type Farbname = keyof (typeof farben)["hell"];
+export type Farbpalette = Record<Farbname, string>;
 
 export function paletteFuer(theme: ThemeName): Farbpalette {
   return farben[theme];

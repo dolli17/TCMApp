@@ -3,11 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { buchen, stornieren } from "@/app/plan/aktionen";
 
-export interface Platz {
-  id: string;
-  name: string;
-  short_name: string;
-}
+export interface Platz { id: string; name: string; short_name: string }
 
 export interface Belegung {
   booking_id: string;
@@ -30,11 +26,7 @@ export interface Buchungsart {
   max_players: number;
 }
 
-export interface Mitglied {
-  id: string;
-  first_name: string;
-  last_name: string;
-}
+export interface Mitglied { id: string; first_name: string; last_name: string }
 
 interface Props {
   datum: string;
@@ -46,36 +38,36 @@ interface Props {
   schluss: string;
   rasterMinuten: number;
   kontingentFrei: number;
-  vorlaufTage: number;
 }
 
-/** Minuten seit Mitternacht in lokaler Zeit. */
+/** Minuten seit Mitternacht in deutscher Ortszeit. */
 function lokaleMinuten(iso: string): number {
-  const d = new Date(iso);
   const teile = new Intl.DateTimeFormat("de-DE", {
-    timeZone: "Europe/Berlin",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(d);
+    timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(new Date(iso));
   const h = Number(teile.find((t) => t.type === "hour")?.value ?? 0);
   const m = Number(teile.find((t) => t.type === "minute")?.value ?? 0);
   return h * 60 + m;
 }
 
-function zuMinuten(hhmm: string): number {
+const zuMinuten = (hhmm: string) => {
   const [h, m] = hhmm.split(":").map(Number);
   return (h ?? 0) * 60 + (m ?? 0);
-}
+};
 
-function alsUhrzeit(minuten: number): string {
-  return `${String(Math.floor(minuten / 60)).padStart(2, "0")}:${String(minuten % 60).padStart(2, "0")}`;
-}
+const alsUhrzeit = (min: number) =>
+  `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 
+/**
+ * Zwei Darstellungen derselben Daten: am Telefon eine Liste je Platz, ab
+ * Tablet das volle Raster. Ein Raster mit acht Spalten ist auf 390 Pixel
+ * unbedienbar - beides aus einer Komponente, damit die Zustaende nicht
+ * auseinanderlaufen.
+ */
 export function Belegungsplan(props: Props) {
   const [ausgewaehlt, setAusgewaehlt] = useState<{ courtId: string; minute: number } | null>(null);
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
-  const [laeuft, starteUebergang] = useTransition();
+  const [laeuft, starte] = useTransition();
 
   const oeffnungMin = zuMinuten(props.oeffnung);
   const schlussMin = zuMinuten(props.schluss);
@@ -86,134 +78,165 @@ export function Belegungsplan(props: Props) {
     return out;
   }, [oeffnungMin, schlussMin, props.rasterMinuten]);
 
-  /** Welche Belegung deckt diesen Platz zu dieser Minute ab? */
-  function belegungFuer(courtId: string, minute: number): Belegung | undefined {
+  function belegungFuer(courtId: string, minute: number) {
     return props.belegungen.find((b) => {
       if (b.court_id !== courtId) return false;
-      const von = lokaleMinuten(b.starts_at);
-      const bis = lokaleMinuten(b.ends_at);
-      return minute >= von && minute < bis;
+      return minute >= lokaleMinuten(b.starts_at) && minute < lokaleMinuten(b.ends_at);
     });
   }
 
-  /** Nur die erste Zeile einer Belegung zeigt den Text. */
-  function istBeginn(b: Belegung, minute: number): boolean {
-    return lokaleMinuten(b.starts_at) === minute;
+  function vergangen(minute: number): boolean {
+    const [j, mo, t] = props.datum.split("-").map(Number);
+    return new Date(j!, (mo ?? 1) - 1, t, Math.floor(minute / 60), minute % 60).getTime() < Date.now();
   }
 
-  function inVergangenheit(minute: number): boolean {
-    const [j, mo, t] = props.datum.split("-").map(Number);
-    const d = new Date(j!, (mo ?? 1) - 1, t, Math.floor(minute / 60), minute % 60);
-    return d.getTime() < Date.now();
-  }
+  const gesperrt = props.kontingentFrei <= 0;
 
   // Die Server Actions rufen bereits revalidatePath auf; ein zusaetzliches
-  // router.refresh() wuerde die Komponente neu einhaengen und die eben
-  // gesetzte Rueckmeldung sofort wieder verschlucken.
-  function abschicken(formData: FormData) {
-    starteUebergang(async () => {
-      const ergebnis = await buchen(formData);
-      setMeldung({ ok: ergebnis.ok, text: ergebnis.meldung });
-      if (ergebnis.ok) setAusgewaehlt(null);
+  // router.refresh() wuerde die Rueckmeldung sofort wieder verschlucken.
+  function abschicken(fd: FormData) {
+    starte(async () => {
+      const e = await buchen(fd);
+      setMeldung({ ok: e.ok, text: e.meldung });
+      if (e.ok) setAusgewaehlt(null);
     });
   }
 
-  function abbrechen(bookingId: string) {
-    starteUebergang(async () => {
-      const ergebnis = await stornieren(bookingId);
-      setMeldung({ ok: ergebnis.ok, text: ergebnis.meldung });
+  function abbrechen(id: string) {
+    starte(async () => {
+      const e = await stornieren(id);
+      setMeldung({ ok: e.ok, text: e.meldung });
     });
+  }
+
+  function waehle(courtId: string, minute: number) {
+    setAusgewaehlt({ courtId, minute });
   }
 
   return (
     <>
       {meldung && (
-        <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`}>{meldung.text}</div>
+        <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">
+          {meldung.text}
+        </div>
       )}
 
-      <div className="plan-huelle">
-        <table className="plan">
-          <thead>
-            <tr>
-              <th className="zeit">Zeit</th>
-              {props.plaetze.map((p) => (
-                <th key={p.id}>{p.name}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {zeilen.map((minute) => (
-              <tr key={minute}>
-                <td className="zeit">{alsUhrzeit(minute)}</td>
-                {props.plaetze.map((platz) => {
-                  const b = belegungFuer(platz.id, minute);
+      {/* --- Telefon: eine Karte je Platz ---------------------------------- */}
+      <div className="plan-listen">
+        {props.plaetze.map((platz) => {
+          const eigene = props.belegungen
+            .filter((b) => b.court_id === platz.id)
+            .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+          const frei = zeilen.filter((m) => !belegungFuer(platz.id, m) && !vergangen(m));
 
-                  if (b) {
-                    if (!istBeginn(b, minute)) return <td key={platz.id} />;
+          return (
+            <section key={platz.id} className="platzkarte" aria-label={platz.name}>
+              <h3>{platz.name}</h3>
 
-                    const spanne = Math.max(
-                      1,
-                      Math.round(
-                        (lokaleMinuten(b.ends_at) - lokaleMinuten(b.starts_at)) /
-                          props.rasterMinuten,
-                      ),
-                    );
-                    const klasse =
-                      b.kind === "blocking" ? "blockung" : b.is_own ? "belegt eigen" : "belegt";
+              {eigene.length === 0 ? (
+                <p className="mit" style={{ color: "var(--muted)", margin: 0 }}>ganztägig frei</p>
+              ) : (
+                eigene.map((b) => (
+                  <div
+                    key={b.booking_id}
+                    className={`belegzeile ${b.is_own ? "eigen" : b.kind === "blocking" ? "blockung" : ""}`}
+                  >
+                    <div>
+                      <span className="zeit">
+                        {alsUhrzeit(lokaleMinuten(b.starts_at))}–{alsUhrzeit(lokaleMinuten(b.ends_at))}
+                      </span>{" "}
+                      <span className="wer">{b.kind === "blocking" ? b.title : b.owner_name}</span>
+                    </div>
+                    {b.players.length > 0 && <div className="mit">mit {b.players.join(", ")}</div>}
+                    {b.is_own && !vergangen(lokaleMinuten(b.starts_at)) && (
+                      <button className="knopf leise klein" onClick={() => abbrechen(b.booking_id)} disabled={laeuft}>
+                        Stornieren
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
 
+              {frei.length > 0 && (
+                <div className="freie-slots">
+                  {frei.map((m) => (
+                    <button
+                      key={m}
+                      className="slotknopf"
+                      disabled={gesperrt}
+                      onClick={() => waehle(platz.id, m)}
+                      aria-label={`${platz.name} um ${alsUhrzeit(m)} buchen`}
+                    >
+                      {alsUhrzeit(m)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+          );
+        })}
+      </div>
+
+      {/* --- Ab Tablet: volles Raster -------------------------------------- */}
+      <div className="plan-raster">
+        <div className="plan-huelle">
+          <table className="plan">
+            <thead>
+              <tr>
+                <th className="zeit" scope="col">Zeit</th>
+                {props.plaetze.map((p) => <th key={p.id} scope="col">{p.name}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {zeilen.map((minute) => (
+                <tr key={minute}>
+                  <td className="zeit">{alsUhrzeit(minute)}</td>
+                  {props.plaetze.map((platz) => {
+                    const b = belegungFuer(platz.id, minute);
+
+                    if (b) {
+                      if (lokaleMinuten(b.starts_at) !== minute) return <td key={platz.id} />;
+                      const spanne = Math.max(1, Math.round(
+                        (lokaleMinuten(b.ends_at) - lokaleMinuten(b.starts_at)) / props.rasterMinuten,
+                      ));
+                      const klasse = b.kind === "blocking" ? "blockung" : b.is_own ? "belegt eigen" : "belegt";
+
+                      return (
+                        <td key={platz.id} rowSpan={spanne}>
+                          <span className={`zelle ${klasse}`}>
+                            <strong>{b.kind === "blocking" ? b.title : b.owner_name}</strong>
+                            {b.players.length > 0 && <><br />{b.players.join(", ")}</>}
+                            {b.is_own && !vergangen(minute) && (
+                              <>
+                                <br />
+                                <button className="knopf leise klein" style={{ marginTop: 4 }}
+                                  onClick={() => abbrechen(b.booking_id)} disabled={laeuft}>
+                                  Stornieren
+                                </button>
+                              </>
+                            )}
+                          </span>
+                        </td>
+                      );
+                    }
+
+                    const alt = vergangen(minute);
                     return (
-                      <td key={platz.id} rowSpan={spanne}>
-                        <span className={`zelle ${klasse}`}>
-                          <strong>{b.kind === "blocking" ? b.title : b.owner_name}</strong>
-                          {b.players.length > 0 && (
-                            <>
-                              <br />
-                              {b.players.join(", ")}
-                            </>
-                          )}
-                          {b.is_own && !inVergangenheit(minute) && (
-                            <>
-                              <br />
-                              <button
-                                className="knopf leise"
-                                style={{ marginTop: 4, padding: "0.1rem 0.4rem", fontSize: "0.75rem" }}
-                                onClick={() => abbrechen(b.booking_id)}
-                                disabled={laeuft}
-                              >
-                                Stornieren
-                              </button>
-                            </>
-                          )}
-                        </span>
+                      <td key={platz.id}>
+                        <button
+                          className={`zelle ${alt ? "gesperrt" : "frei"}`}
+                          disabled={alt || gesperrt}
+                          onClick={() => waehle(platz.id, minute)}
+                          aria-label={`${platz.name} um ${alsUhrzeit(minute)} buchen`}
+                        />
                       </td>
                     );
-                  }
-
-                  const vergangen = inVergangenheit(minute);
-                  const gewaehlt =
-                    ausgewaehlt?.courtId === platz.id && ausgewaehlt?.minute === minute;
-
-                  return (
-                    <td key={platz.id}>
-                      <button
-                        className={`zelle ${vergangen ? "gesperrt" : "frei"}`}
-                        disabled={vergangen || props.kontingentFrei <= 0}
-                        onClick={() => setAusgewaehlt({ courtId: platz.id, minute })}
-                        title={
-                          props.kontingentFrei <= 0
-                            ? "Kontingent ausgeschöpft"
-                            : `${platz.name} um ${alsUhrzeit(minute)} buchen`
-                        }
-                      >
-                        {gewaehlt ? "gewählt" : ""}
-                      </button>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {ausgewaehlt && (
@@ -233,38 +256,25 @@ export function Belegungsplan(props: Props) {
 }
 
 function BuchungsFormular({
-  datum,
-  platz,
-  minute,
-  arten,
-  verzeichnis,
-  laeuft,
-  onAbschicken,
-  onSchliessen,
+  datum, platz, minute, arten, verzeichnis, laeuft, onAbschicken, onSchliessen,
 }: {
-  datum: string;
-  platz: Platz;
-  minute: number;
-  arten: Buchungsart[];
-  verzeichnis: Mitglied[];
-  laeuft: boolean;
-  onAbschicken: (fd: FormData) => void;
-  onSchliessen: () => void;
+  datum: string; platz: Platz; minute: number; arten: Buchungsart[];
+  verzeichnis: Mitglied[]; laeuft: boolean;
+  onAbschicken: (fd: FormData) => void; onSchliessen: () => void;
 }) {
   const [art, setArt] = useState(arten[0]?.code ?? "einzel");
   const [mitspieler, setMitspieler] = useState<string[]>([""]);
   const [gaeste, setGaeste] = useState<string[]>([]);
 
-  const gewaehlteArt = arten.find((a) => a.code === art);
-  const maxWeitere = (gewaehlteArt?.max_players ?? 2) - 1;
+  const gewaehlt = arten.find((a) => a.code === art);
+  const maxWeitere = (gewaehlt?.max_players ?? 2) - 1;
 
-  // Startzeitpunkt als ISO in lokaler Zeit
   const [j, mo, t] = datum.split("-").map(Number);
   const start = new Date(j!, (mo ?? 1) - 1, t, Math.floor(minute / 60), minute % 60, 0, 0);
 
   return (
-    <div className="karte" style={{ marginTop: "1.5rem" }}>
-      <h2 style={{ marginTop: 0 }}>
+    <section className="karte" style={{ marginTop: 20 }} aria-label="Buchung anlegen">
+      <h2 className="pagetitle" style={{ fontSize: 20, marginBottom: 12 }}>
         {platz.name}, {alsUhrzeit(minute)} Uhr
       </h2>
 
@@ -276,32 +286,19 @@ function BuchungsFormular({
           <span>Buchungsart</span>
           <select name="bookingType" value={art} onChange={(e) => setArt(e.target.value)}>
             {arten.map((a) => (
-              <option key={a.code} value={a.code}>
-                {a.name} ({a.duration_minutes} Min.)
-              </option>
+              <option key={a.code} value={a.code}>{a.name} ({a.duration_minutes} Min.)</option>
             ))}
           </select>
         </label>
 
-        <span style={{ fontSize: "0.9rem", color: "var(--text-leise)" }}>
-          Mitspieler {gewaehlteArt?.requires_partner ? "(Pflicht)" : ""}
-        </span>
         {mitspieler.map((wert, i) => (
           <label key={i}>
-            <select
-              name="mitspieler"
-              value={wert}
-              onChange={(e) => {
-                const neu = [...mitspieler];
-                neu[i] = e.target.value;
-                setMitspieler(neu);
-              }}
-            >
+            <span>Mitspieler {gewaehlt?.requires_partner ? "(Pflicht)" : ""}</span>
+            <select name="mitspieler" value={wert}
+              onChange={(e) => { const n = [...mitspieler]; n[i] = e.target.value; setMitspieler(n); }}>
               <option value="">— auswählen —</option>
               {verzeichnis.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.last_name}, {m.first_name}
-                </option>
+                <option key={m.id} value={m.id}>{m.last_name}, {m.first_name}</option>
               ))}
             </select>
           </label>
@@ -310,49 +307,27 @@ function BuchungsFormular({
         {gaeste.map((wert, i) => (
           <label key={`g${i}`}>
             <span>Gast</span>
-            <input
-              name="gast"
-              value={wert}
-              placeholder="Name des Gastes"
-              onChange={(e) => {
-                const neu = [...gaeste];
-                neu[i] = e.target.value;
-                setGaeste(neu);
-              }}
-            />
+            <input name="gast" value={wert} placeholder="Name des Gastes"
+              onChange={(e) => { const n = [...gaeste]; n[i] = e.target.value; setGaeste(n); }} />
           </label>
         ))}
 
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-          {mitspieler.length + gaeste.length < maxWeitere && (
-            <>
-              <button
-                type="button"
-                className="knopf leise"
-                onClick={() => setMitspieler([...mitspieler, ""])}
-              >
-                + Mitglied
-              </button>
-              <button
-                type="button"
-                className="knopf leise"
-                onClick={() => setGaeste([...gaeste, ""])}
-              >
-                + Gast
-              </button>
-            </>
-          )}
-        </div>
+        {mitspieler.length + gaeste.length < maxWeitere && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+            <button type="button" className="knopf leise klein"
+              onClick={() => setMitspieler([...mitspieler, ""])}>+ Mitglied</button>
+            <button type="button" className="knopf leise klein"
+              onClick={() => setGaeste([...gaeste, ""])}>+ Gast</button>
+          </div>
+        )}
 
-        <div style={{ display: "flex", gap: "0.5rem" }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button className="knopf" disabled={laeuft}>
             {laeuft ? "Wird gebucht…" : "Verbindlich buchen"}
           </button>
-          <button type="button" className="knopf leise" onClick={onSchliessen}>
-            Abbrechen
-          </button>
+          <button type="button" className="knopf leise" onClick={onSchliessen}>Abbrechen</button>
         </div>
       </form>
-    </div>
+    </section>
   );
 }

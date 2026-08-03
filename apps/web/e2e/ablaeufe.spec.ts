@@ -49,10 +49,13 @@ test.describe("Anmeldung", () => {
   test("Mitglied kann sich anmelden und sieht den Belegungsplan", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
     await expect(page).toHaveURL(/\/plan/);
-    await expect(page.getByRole("heading", { name: "Plätze" })).toBeVisible();
+    // Der Hero traegt das Datum als Ueberschrift; "Freiplaetze" steht darueber.
+    await expect(page.locator(".hero")).toContainText("Freiplätze");
     await expect(page.locator("table.plan")).toBeVisible();
     // Acht Plaetze plus Zeitspalte
     await expect(page.locator("table.plan thead th")).toHaveCount(9);
+    // Am Telefon zeigt dieselbe Seite Karten statt Raster
+    await expect(page.locator(".plan-listen .platzkarte")).toHaveCount(8);
   });
 });
 
@@ -154,7 +157,7 @@ test.describe("Getränke", () => {
 test.describe("Berechtigungen", () => {
   test("normales Mitglied sieht keine Verwaltungspunkte", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
-    const nav = page.locator("nav.nav");
+    const nav = page.getByRole("navigation", { name: "Hauptmenü" }).first();
     await expect(nav.getByRole("link", { name: "Mitglieder" })).toHaveCount(0);
     await expect(nav.getByRole("link", { name: "Beiträge" })).toHaveCount(0);
   });
@@ -202,7 +205,7 @@ test.describe("Kiosk", () => {
   test("Kiosk-Gerät landet an der Theke und sieht die Namensliste", async ({ page }) => {
     await anmelden(page, NUTZER.kiosk);
     await expect(page).toHaveURL(/\/kiosk/);
-    await expect(page.getByRole("heading", { name: /Theke/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Theke/, level: 1 })).toBeVisible();
 
     // Namensauswahl vorhanden
     await expect(page.locator(".kachel-reihe button.kachel").first()).toBeVisible();

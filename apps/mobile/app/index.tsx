@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Link } from "expo-router";
-import { stil } from "@/lib/stil";
 import { supabase } from "@/lib/supabase";
 import { abmelden, anmelden } from "@/lib/daten";
+import { useTheme } from "@/lib/theme";
 
 export default function Start() {
+  const { stil, farben } = useTheme();
   const [pruefeSitzung, setPruefeSitzung] = useState(true);
   const [angemeldet, setAngemeldet] = useState(false);
 
@@ -25,7 +26,7 @@ export default function Start() {
   if (pruefeSitzung) {
     return (
       <View style={[stil.seite, { justifyContent: "center" }]}>
-        <ActivityIndicator />
+        <ActivityIndicator color={farben.blue} />
       </View>
     );
   }
@@ -34,6 +35,7 @@ export default function Start() {
 }
 
 function Anmeldung() {
+  const { stil } = useTheme();
   const [email, setEmail] = useState("");
   const [passwort, setPasswort] = useState("");
   const [fehler, setFehler] = useState<string | null>(null);
@@ -90,6 +92,7 @@ function Anmeldung() {
 }
 
 function Uebersicht({ onAbmelden }: { onAbmelden: () => void }) {
+  const { stil } = useTheme();
   return (
     <ScrollView style={stil.seite} contentContainerStyle={stil.inhalt}>
       <Text style={stil.titel}>Willkommen</Text>

@@ -66,7 +66,7 @@ export function Getraenkekarte({
           >
             <div style={{ fontWeight: 600 }}>{a.name}</div>
             {a.description && <div className="titel">{a.description}</div>}
-            <div style={{ marginTop: "0.4rem", color: "var(--sand-dunkel)", fontWeight: 600 }}>
+            <div style={{ marginTop: "0.4rem", color: "var(--blue-ink)", fontWeight: 600 }}>
               {formatCents(a.price_cents)}
             </div>
           </button>
@@ -77,6 +77,7 @@ export function Getraenkekarte({
       {buchungen.length === 0 ? (
         <p className="leer">Noch nichts entnommen.</p>
       ) : (
+        <div className="tabellenhuelle">
         <table className="liste">
           <thead>
             <tr>
@@ -144,8 +145,9 @@ export function Getraenkekarte({
             })}
           </tbody>
         </table>
+        </div>
       )}
-      <p style={{ color: "var(--text-leise)", fontSize: "0.85rem" }}>
+      <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
         Eigene Fehlbuchungen können {stornoFensterMinuten} Minuten lang zurückgenommen werden.
         Danach hilft der Vorstand weiter.
       </p>

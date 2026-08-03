@@ -35,7 +35,7 @@ export default async function SerienSeite() {
 
   return (
     <>
-      <h1>Serien-Blockungen</h1>
+      <h1 className="pagetitle">Serien-Blockungen</h1>
       <p className="unterzeile">
         Training und Verbandsspiele. Bestehende Buchungen werden verdrängt – die
         Vorschau zeigt vorher, wen es trifft.
@@ -47,11 +47,11 @@ export default async function SerienSeite() {
         istSportwart={angemeldet.roles.includes("sports_officer") || angemeldet.roles.includes("board")}
       />
 
-      <h2>Angelegte Serien</h2>
+      <h2 className="dpl">Angelegte Serien</h2>
       {(serienRes.data ?? []).length === 0 ? (
         <p className="leer">Noch keine Serien angelegt.</p>
       ) : (
-        <table className="liste">
+        <div className="tabellenhuelle"><table className="liste">
           <thead>
             <tr>
               <th>Titel</th>
@@ -76,7 +76,7 @@ export default async function SerienSeite() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
     </>
   );

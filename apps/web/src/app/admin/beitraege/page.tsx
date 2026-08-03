@@ -42,7 +42,7 @@ export default async function BeitraegeSeite({
 
   return (
     <>
-      <h1>Beitragslauf {jahr}</h1>
+      <h1 className="pagetitle">Beitragslauf {jahr}</h1>
       <p className="unterzeile">
         Vorschau. Es wird nichts erzeugt, solange nichts bestätigt ist.
       </p>
@@ -94,8 +94,8 @@ export default async function BeitraegeSeite({
         </div>
       )}
 
-      <h2>Positionen</h2>
-      <table className="liste">
+      <h2 className="dpl">Positionen</h2>
+      <div className="tabellenhuelle"><table className="liste">
         <thead>
           <tr>
             <th>Mitglied</th>
@@ -110,7 +110,7 @@ export default async function BeitraegeSeite({
           {zeilen.map((z) => (
             <tr key={z.member_id}>
               <td>{z.member_name}</td>
-              <td style={{ color: "var(--text-leise)" }}>{z.payer_name || "selbst"}</td>
+              <td style={{ color: "var(--muted)" }}>{z.payer_name || "selbst"}</td>
               <td>{z.fee_types}</td>
               <td className="zahl">{formatCents(z.amount_cents ?? 0)}</td>
               <td>
@@ -119,7 +119,7 @@ export default async function BeitraegeSeite({
                     {z.mandate_scope === "all_payments" ? "alle Zahlungen" : "nur Beiträge"}
                   </span>
                 ) : (
-                  <span style={{ color: "var(--rot)" }}>fehlt</span>
+                  <span style={{ color: "var(--red)" }}>fehlt</span>
                 )}
               </td>
               <td>
@@ -132,9 +132,9 @@ export default async function BeitraegeSeite({
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
 
-      <p style={{ color: "var(--text-leise)", fontSize: "0.85rem", marginTop: "1rem" }}>
+      <p style={{ color: "var(--muted)", fontSize: "0.85rem", marginTop: "1rem" }}>
         Der Lauf wird bewusst nicht automatisch gestartet. Nach dem Erzeugen der
         Forderungen geht zuerst die Vorabankündigung mit Betrag und Fälligkeit an
         die Mitglieder; erst nach Ablauf der Frist darf eingezogen werden.

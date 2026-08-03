@@ -1,5 +1,6 @@
 import { formatCents } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
+import { ThemeUmschalter } from "@/components/ThemeUmschalter";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,7 @@ export default async function KontoSeite() {
 
   return (
     <>
-      <h1>Mein Konto</h1>
+      <h1 className="pagetitle">Mein Konto</h1>
       <p className="unterzeile">
         {angemeldet?.member?.first_name} {angemeldet?.member?.last_name}
       </p>
@@ -75,11 +76,14 @@ export default async function KontoSeite() {
         </div>
       </div>
 
-      <h2>Forderungen</h2>
+      <h2 className="dpl">Erscheinungsbild</h2>
+      <ThemeUmschalter />
+
+      <h2 className="dpl">Forderungen</h2>
       {forderungen.length === 0 ? (
         <p className="leer">Keine Forderungen vorhanden.</p>
       ) : (
-        <table className="liste">
+        <div className="tabellenhuelle"><table className="liste">
           <thead>
             <tr>
               <th>Zeitraum</th>
@@ -104,7 +108,7 @@ export default async function KontoSeite() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
     </>
   );
