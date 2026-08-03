@@ -79,4 +79,4 @@ export async function getCurrentMember() {
 
 // Rollen-Helfer der Bequemlichkeit halber mit durchreichen: Server-Komponenten
 // brauchen fast immer beides.
-export { hasRole, isBoard, isTreasurer, isSportsOfficer, isTrainer } from "./rollen";
+export { hasRole, isAdmin } from "./rollen";

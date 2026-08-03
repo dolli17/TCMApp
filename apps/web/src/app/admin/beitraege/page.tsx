@@ -1,5 +1,5 @@
 import { formatCents } from "@tcm/core";
-import { createServerSupabase, getCurrentMember, isTreasurer } from "@/lib/supabase/server";
+import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +11,10 @@ export default async function BeitraegeSeite({
   const { jahr: jahrParam } = await searchParams;
   const angemeldet = await getCurrentMember();
 
-  if (!angemeldet || !isTreasurer(angemeldet.roles)) {
+  if (!angemeldet || !isAdmin(angemeldet.roles)) {
     return (
       <div className="hinweis fehler">
-        Diese Seite ist Kassenwart und Vorstand vorbehalten.
+        Diese Seite ist Administratoren vorbehalten.
       </div>
     );
   }

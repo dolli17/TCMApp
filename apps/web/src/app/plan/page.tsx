@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
 import { Belegungsplan } from "@/components/Belegungsplan";
 
 export const dynamic = "force-dynamic";
@@ -33,19 +33,22 @@ export default async function PlanSeite({
   const datum = tag && /^\d{4}-\d{2}-\d{2}$/.test(tag) ? tag : heuteInBerlin();
   const supabase = await createServerSupabase();
 
-  const [plaetzeRes, planRes, artenRes, einstellungRes, quotaRes, verzeichnisRes] =
+  const [angemeldet, [plaetzeRes, planRes, artenRes, einstellungRes, quotaRes, verzeichnisRes]] =
     await Promise.all([
+      getCurrentMember(),
+      Promise.all([
       supabase.from("courts").select("id, name, short_name").eq("active", true).order("position"),
       supabase.rpc("day_schedule", { p_date: datum }),
       supabase
         .from("booking_types")
-        .select("code, name, duration_minutes, requires_partner, max_players")
+        .select("code, name, duration_minutes, requires_partner, min_players, max_players")
         .eq("active", true)
         .eq("applies_to", "booking")
         .order("sort_order"),
       supabase.rpc("booking_settings"),
       supabase.rpc("my_booking_quota"),
       supabase.rpc("member_directory", { p_query: "" }),
+      ]),
     ]);
 
   const einstellungen = einstellungRes.data?.[0];
@@ -60,8 +63,11 @@ export default async function PlanSeite({
     );
   }
 
+  // 0 heisst unbegrenzt. Die Regel bleibt in der Datenbank erhalten, damit der
+  // Vorstand sie in knappen Zeiten wieder einschalten kann.
   const belegt = quota?.used ?? 0;
   const erlaubt = quota?.allowed ?? einstellungen.max_open_bookings;
+  const unbegrenzt = erlaubt <= 0;
   const heute = heuteInBerlin();
 
   return (
@@ -71,8 +77,8 @@ export default async function PlanSeite({
         <h1>{lesbaresDatum(datum)}</h1>
         <div className="meta">
           <div className="pill">
-            <b className="tnum">{belegt} / {erlaubt}</b>
-            <span>Buchungen offen</span>
+            <b className="tnum">{unbegrenzt ? belegt : `${belegt} / ${erlaubt}`}</b>
+            <span>{unbegrenzt ? "Buchungen offen" : "von deinem Kontingent"}</span>
           </div>
           <div className="pill">
             <b className="tnum">{plaetzeRes.data?.length ?? 0}</b>
@@ -100,7 +106,7 @@ export default async function PlanSeite({
         )}
       </div>
 
-      {belegt >= erlaubt && (
+      {!unbegrenzt && belegt >= erlaubt && (
         <div className="hinweis fehler">
           Dein Kontingent ist ausgeschöpft. Storniere eine Buchung, um neu zu buchen.
           Buchungen, bei denen du als Mitspieler eingetragen bist, zählen mit.
@@ -116,7 +122,10 @@ export default async function PlanSeite({
         oeffnung={String(einstellungen.opening_time).slice(0, 5)}
         schluss={String(einstellungen.closing_time).slice(0, 5)}
         rasterMinuten={einstellungen.slot_minutes}
-        kontingentFrei={Math.max(erlaubt - belegt, 0)}
+        anzeigeMinuten={einstellungen.display_minutes}
+        dauerMinuten={artenRes.data?.[0]?.duration_minutes ?? 60}
+        kontingentFrei={unbegrenzt ? null : Math.max(erlaubt - belegt, 0)}
+        istAdmin={isAdmin(angemeldet?.roles ?? [])}
       />
     </>
   );

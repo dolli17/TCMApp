@@ -77,21 +77,23 @@ from generate_series(1, 8) i;
 -- ---------------------------------------------------------------------------
 -- Buchungsarten
 --
--- Dauern aus dem Ist-Stand: 393 von 460 Buchungen waren exakt 60 Minuten,
--- Doppel eher 90.
+-- Alle Buchungsarten dauern 60 Minuten. Im Ist-Stand waren 393 von 460
+-- Buchungen exakt so lang; die Ausnahmen fielen mit dem Stundenraster weg.
+-- Blockungen duerfen weiter krumme Zeiten haben - ein Training faengt um
+-- 18:30 an, und daran aendert die Anzeige nichts.
 -- ---------------------------------------------------------------------------
 insert into public.booking_types
   (code, name, applies_to, duration_minutes, min_players, max_players,
    requires_partner, counts_towards_quota, allowed_roles, sort_order)
 values
   ('einzel', 'Einzel', 'booking', 60, 2, 2, true, true, null, 1),
-  ('doppel', 'Doppel', 'booking', 90, 3, 4, true, true, null, 2),
+  ('doppel', 'Doppel', 'booking', 60, 3, 4, true, true, null, 2),
   ('training', 'Training', 'blocking', 90, 0, 0, false, false,
-   array['trainer', 'sports_officer', 'board']::public.app_role[], 3),
+   array['admin']::public.app_role[], 3),
   ('verbandsspiel', 'Verbandsspiel', 'blocking', 240, 0, 0, false, false,
-   array['sports_officer', 'board']::public.app_role[], 4),
+   array['admin']::public.app_role[], 4),
   ('platzpflege', 'Platzpflege', 'blocking', 120, 0, 0, false, false,
-   array['sports_officer', 'board']::public.app_role[], 5);
+   array['admin']::public.app_role[], 5);
 
 -- ---------------------------------------------------------------------------
 -- Beitragsarten mit Platzhalterpreisen
@@ -396,20 +398,13 @@ update public.members m
 insert into public.member_roles (member_id, role)
 select id, 'member'::public.app_role from public.members;
 
--- Vorstand, Kassenwart, Sportwart, Trainer, Thekendienst
+-- Es gibt nur noch zwei Stufen. Admin wird der Vorstand samt Kassenwart und
+-- Sportwart - sieben Personen; alle uebrigen bleiben Mitglied.
 with nummeriert as (
   select id, row_number() over (order by created_at, id) as rn from public.members
 )
 insert into public.member_roles (member_id, role)
-select id, 'board'::public.app_role from nummeriert where rn <= 5
-union all
-select id, 'treasurer'::public.app_role from nummeriert where rn = 6
-union all
-select id, 'sports_officer'::public.app_role from nummeriert where rn = 7
-union all
-select id, 'trainer'::public.app_role from nummeriert where rn between 8 and 17
-union all
-select id, 'bar_duty'::public.app_role from nummeriert where rn between 18 and 60
+select id, 'admin'::public.app_role from nummeriert where rn <= 7
 on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
@@ -424,7 +419,7 @@ select
   (current_date - make_interval(days => floor(random() * 180)::int))::date,
   (array['Platzpflege Fruehjahr','Thekendienst','Anlagenpflege','Turnierhelfer'])
     [1 + floor(random() * 4)::int],
-  (select id from public.member_roles where role = 'sports_officer' limit 1),
+  (select member_id from public.member_roles where role = 'admin' limit 1),
   now()
 from public.member_fees mf
 join public.work_duty_rules wr

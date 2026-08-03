@@ -40,7 +40,7 @@ export async function serieVorschau(daten: {
 
 /**
  * Anlegen. Ohne verdraengen bricht der Aufruf ab, sobald ein Termin kollidiert -
- * der Sportwart muss das Verdraengen also ausdruecklich bestaetigen.
+ * der Admin muss das Verdraengen also ausdruecklich bestaetigen.
  */
 export async function serieAnlegen(daten: {
   courtId: string;

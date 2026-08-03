@@ -1,14 +1,10 @@
-import { createServerSupabase, getCurrentMember, isBoard } from "@/lib/supabase/server";
+import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 const ROLLEN_TEXT: Record<string, string> = {
   member: "Mitglied",
-  board: "Vorstand",
-  treasurer: "Kassenwart",
-  sports_officer: "Sportwart",
-  trainer: "Trainer",
-  bar_duty: "Thekendienst",
+  admin: "Admin",
 };
 
 export default async function MitgliederSeite({
@@ -19,8 +15,8 @@ export default async function MitgliederSeite({
   const { q } = await searchParams;
   const angemeldet = await getCurrentMember();
 
-  if (!angemeldet || !isBoard(angemeldet.roles)) {
-    return <div className="hinweis fehler">Diese Seite ist dem Vorstand vorbehalten.</div>;
+  if (!angemeldet || !isAdmin(angemeldet.roles)) {
+    return <div className="hinweis fehler">Diese Seite ist Administratoren vorbehalten.</div>;
   }
 
   const supabase = await createServerSupabase();

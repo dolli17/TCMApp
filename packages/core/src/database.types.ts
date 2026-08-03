@@ -1376,6 +1376,7 @@ export type Database = {
         Args: never
         Returns: {
           closing_time: string
+          display_minutes: number
           guest_fee_cents: number
           lead_days: number
           max_open_bookings: number
@@ -1421,9 +1422,11 @@ export type Database = {
           booking_id: string
           court_id: string
           ends_at: string
+          guest_names: string[]
           is_own: boolean
           kind: Database["public"]["Enums"]["booking_kind"]
           owner_name: string
+          player_member_ids: string[]
           players: string[]
           starts_at: string
           title: string
@@ -1547,22 +1550,28 @@ export type Database = {
         Args: { p_item_id: string; p_member_id: string; p_quantity?: number }
         Returns: string
       }
+      set_setting: {
+        Args: { p_key: string; p_value: string }
+        Returns: undefined
+      }
       setting_int: { Args: { p_key: string }; Returns: number }
       setting_text: { Args: { p_key: string }; Returns: string }
       setting_time: { Args: { p_key: string }; Returns: string }
+      update_booking_players: {
+        Args: {
+          p_booking_id: string
+          p_guest_names?: string[]
+          p_member_ids?: string[]
+        }
+        Returns: undefined
+      }
       void_drink_purchase: {
         Args: { p_purchase_id: string; p_reason?: string }
         Returns: undefined
       }
     }
     Enums: {
-      app_role:
-        | "member"
-        | "board"
-        | "treasurer"
-        | "sports_officer"
-        | "trainer"
-        | "bar_duty"
+      app_role: "member" | "admin"
       billing_period_status: "open" | "closed" | "charged"
       booking_kind: "booking" | "blocking"
       booking_status: "active" | "cancelled"
@@ -1713,14 +1722,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: [
-        "member",
-        "board",
-        "treasurer",
-        "sports_officer",
-        "trainer",
-        "bar_duty",
-      ],
+      app_role: ["member", "admin"],
       billing_period_status: ["open", "closed", "charged"],
       booking_kind: ["booking", "blocking"],
       booking_status: ["active", "cancelled"],

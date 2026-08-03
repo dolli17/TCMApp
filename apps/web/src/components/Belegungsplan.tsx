@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { buchen, stornieren } from "@/app/plan/aktionen";
+import { buchen, mitspielerAendern, stornieren } from "@/app/plan/aktionen";
+import { BuchungsFenster } from "@/components/BuchungsFenster";
 
 export interface Platz { id: string; name: string; short_name: string }
 
@@ -11,11 +12,14 @@ export interface Belegung {
   starts_at: string;
   ends_at: string;
   kind: "booking" | "blocking";
+  type_code: string;
   type_name: string;
   title: string | null;
   owner_name: string | null;
   is_own: boolean;
   players: string[];
+  player_member_ids: string[];
+  guest_names: string[];
 }
 
 export interface Buchungsart {
@@ -23,6 +27,7 @@ export interface Buchungsart {
   name: string;
   duration_minutes: number;
   requires_partner: boolean;
+  min_players: number;
   max_players: number;
 }
 
@@ -36,12 +41,19 @@ interface Props {
   verzeichnis: Mitglied[];
   oeffnung: string;
   schluss: string;
+  /** Buchungsraster in Minuten - 30, also :00 und :30. */
   rasterMinuten: number;
-  kontingentFrei: number;
+  /** Anzeigeraster in Minuten - 60, eine Zeile je Stunde. */
+  anzeigeMinuten: number;
+  /** Immer 60: die Dauer, die eine neue Buchung belegt. */
+  dauerMinuten: number;
+  /** null bedeutet unbegrenzt (Kontingent auf 0 gestellt). */
+  kontingentFrei: number | null;
+  istAdmin: boolean;
 }
 
 /** Minuten seit Mitternacht in deutscher Ortszeit. */
-function lokaleMinuten(iso: string): number {
+export function lokaleMinuten(iso: string): number {
   const teile = new Intl.DateTimeFormat("de-DE", {
     timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit", hour12: false,
   }).formatToParts(new Date(iso));
@@ -55,42 +67,97 @@ const zuMinuten = (hhmm: string) => {
   return (h ?? 0) * 60 + (m ?? 0);
 };
 
-const alsUhrzeit = (min: number) =>
+export const alsUhrzeit = (min: number) =>
   `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+
+/** Was im Fenster gerade bearbeitet wird. */
+export type Fenster =
+  | { modus: "buchen"; courtId: string; stunde: number }
+  | { modus: "verwalten"; belegung: Belegung };
 
 /**
  * Zwei Darstellungen derselben Daten: am Telefon eine Liste je Platz, ab
  * Tablet das volle Raster. Ein Raster mit acht Spalten ist auf 390 Pixel
  * unbedienbar - beides aus einer Komponente, damit die Zustaende nicht
  * auseinanderlaufen.
+ *
+ * Die Tabelle zeigt volle Stunden. Gebucht wird zur vollen oder halben Stunde,
+ * immer 60 Minuten lang - die Feinwahl passiert im Fenster. Eine Belegung
+ * sperrt jede Stunde, die sie beruehrt: das Dienstagstraining von 18:30 bis
+ * 20:00 waere sonst in einem Stundenraster unsichtbar, und der 18-Uhr-Platz
+ * saehe frei aus, obwohl er es nicht ist.
  */
 export function Belegungsplan(props: Props) {
-  const [ausgewaehlt, setAusgewaehlt] = useState<{ courtId: string; minute: number } | null>(null);
+  const [fenster, setFenster] = useState<Fenster | null>(null);
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
 
   const oeffnungMin = zuMinuten(props.oeffnung);
   const schlussMin = zuMinuten(props.schluss);
 
-  const zeilen = useMemo(() => {
+  /** Eine Zeile je Anzeigeintervall, also je volle Stunde. */
+  const stunden = useMemo(() => {
     const out: number[] = [];
-    for (let m = oeffnungMin; m < schlussMin; m += props.rasterMinuten) out.push(m);
+    for (let m = oeffnungMin; m + props.anzeigeMinuten <= schlussMin; m += props.anzeigeMinuten) {
+      out.push(m);
+    }
     return out;
-  }, [oeffnungMin, schlussMin, props.rasterMinuten]);
+  }, [oeffnungMin, schlussMin, props.anzeigeMinuten]);
 
-  function belegungFuer(courtId: string, minute: number) {
-    return props.belegungen.find((b) => {
-      if (b.court_id !== courtId) return false;
-      return minute >= lokaleMinuten(b.starts_at) && minute < lokaleMinuten(b.ends_at);
-    });
-  }
+  /** Alle Belegungen, die diese Stunde beruehren - nicht nur die, die darin beginnt. */
+  const belegungenIn = useMemo(() => {
+    const karte = new Map<string, Belegung[]>();
+    for (const b of props.belegungen) {
+      const von = lokaleMinuten(b.starts_at);
+      const bis = lokaleMinuten(b.ends_at);
+      for (const s of stunden) {
+        if (von < s + props.anzeigeMinuten && bis > s) {
+          const schluessel = `${b.court_id}|${s}`;
+          const liste = karte.get(schluessel);
+          if (liste) liste.push(b);
+          else karte.set(schluessel, [b]);
+        }
+      }
+    }
+    return karte;
+  }, [props.belegungen, props.anzeigeMinuten, stunden]);
 
-  function vergangen(minute: number): boolean {
+  const belegungFuer = (courtId: string, stunde: number) =>
+    belegungenIn.get(`${courtId}|${stunde}`)?.[0];
+
+  function zeitpunkt(minute: number): Date {
     const [j, mo, t] = props.datum.split("-").map(Number);
-    return new Date(j!, (mo ?? 1) - 1, t, Math.floor(minute / 60), minute % 60).getTime() < Date.now();
+    return new Date(j!, (mo ?? 1) - 1, t, Math.floor(minute / 60), minute % 60, 0, 0);
   }
 
-  const gesperrt = props.kontingentFrei <= 0;
+  const vergangen = (minute: number) => zeitpunkt(minute).getTime() < Date.now();
+
+  /**
+   * Kann auf diesem Platz um genau diese Minute eine Buchung beginnen?
+   * Geprueft wird gegen die volle Dauer, nicht nur gegen die Startminute -
+   * sonst laesst sich 18:00 anklicken, obwohl 18:30 schon belegt ist.
+   */
+  function startMoeglich(courtId: string, minute: number): boolean {
+    if (vergangen(minute)) return false;
+    if (minute + props.dauerMinuten > schlussMin) return false;
+    return !props.belegungen.some(
+      (b) =>
+        b.court_id === courtId &&
+        lokaleMinuten(b.starts_at) < minute + props.dauerMinuten &&
+        lokaleMinuten(b.ends_at) > minute,
+    );
+  }
+
+  /** Die :00- und :30-Startzeiten, die in dieser Stunde noch frei sind. */
+  function startzeitenIn(courtId: string, stunde: number): number[] {
+    const out: number[] = [];
+    for (let m = stunde; m < stunde + props.anzeigeMinuten; m += props.rasterMinuten) {
+      if (startMoeglich(courtId, m)) out.push(m);
+    }
+    return out;
+  }
+
+  const kontingentAus = props.kontingentFrei !== null && props.kontingentFrei <= 0;
 
   // Die Server Actions rufen bereits revalidatePath auf; ein zusaetzliches
   // router.refresh() wuerde die Rueckmeldung sofort wieder verschlucken.
@@ -98,19 +165,40 @@ export function Belegungsplan(props: Props) {
     starte(async () => {
       const e = await buchen(fd);
       setMeldung({ ok: e.ok, text: e.meldung });
-      if (e.ok) setAusgewaehlt(null);
+      if (e.ok) setFenster(null);
     });
   }
 
-  function abbrechen(id: string) {
+  function speichern(bookingId: string, mitgliedIds: string[], gaeste: string[]) {
     starte(async () => {
-      const e = await stornieren(id);
+      const e = await mitspielerAendern(bookingId, mitgliedIds, gaeste);
       setMeldung({ ok: e.ok, text: e.meldung });
+      if (e.ok) setFenster(null);
     });
   }
 
-  function waehle(courtId: string, minute: number) {
-    setAusgewaehlt({ courtId, minute });
+  function abbrechen(bookingId: string) {
+    starte(async () => {
+      const e = await stornieren(bookingId);
+      setMeldung({ ok: e.ok, text: e.meldung });
+      if (e.ok) setFenster(null);
+    });
+  }
+
+  /** Wer darf eine bestehende Buchung anfassen? */
+  function verwaltbar(b: Belegung): boolean {
+    if (props.istAdmin) return true;
+    return b.is_own && b.kind === "booking" && !vergangen(lokaleMinuten(b.starts_at));
+  }
+
+  function beschriftung(b: Belegung, stunde: number): string {
+    const von = lokaleMinuten(b.starts_at);
+    const bis = lokaleMinuten(b.ends_at);
+    const wer = b.kind === "blocking" ? (b.title ?? b.type_name) : (b.owner_name ?? "belegt");
+    // Nur anschreiben, wenn die Belegung die Stunde nicht ausfuellt - sonst
+    // steht in jeder Zelle noch einmal, was schon in der Zeitspalte steht.
+    const teilweise = von > stunde || bis < stunde + props.anzeigeMinuten;
+    return teilweise ? `${alsUhrzeit(von)}–${alsUhrzeit(bis)} ${wer}` : wer;
   }
 
   return (
@@ -127,7 +215,9 @@ export function Belegungsplan(props: Props) {
           const eigene = props.belegungen
             .filter((b) => b.court_id === platz.id)
             .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
-          const frei = zeilen.filter((m) => !belegungFuer(platz.id, m) && !vergangen(m));
+          const freieStunden = stunden.filter(
+            (s) => !belegungFuer(platz.id, s) && startzeitenIn(platz.id, s).length > 0,
+          );
 
           return (
             <section key={platz.id} className="platzkarte" aria-label={platz.name}>
@@ -136,38 +226,48 @@ export function Belegungsplan(props: Props) {
               {eigene.length === 0 ? (
                 <p className="mit" style={{ color: "var(--muted)", margin: 0 }}>ganztägig frei</p>
               ) : (
-                eigene.map((b) => (
-                  <div
-                    key={b.booking_id}
-                    className={`belegzeile ${b.is_own ? "eigen" : b.kind === "blocking" ? "blockung" : ""}`}
-                  >
-                    <div>
-                      <span className="zeit">
-                        {alsUhrzeit(lokaleMinuten(b.starts_at))}–{alsUhrzeit(lokaleMinuten(b.ends_at))}
-                      </span>{" "}
-                      <span className="wer">{b.kind === "blocking" ? b.title : b.owner_name}</span>
-                    </div>
-                    {b.players.length > 0 && <div className="mit">mit {b.players.join(", ")}</div>}
-                    {b.is_own && !vergangen(lokaleMinuten(b.starts_at)) && (
-                      <button className="knopf leise klein" onClick={() => abbrechen(b.booking_id)} disabled={laeuft}>
-                        Stornieren
-                      </button>
-                    )}
-                  </div>
-                ))
+                eigene.map((b) => {
+                  const inhalt = (
+                    <>
+                      <div>
+                        <span className="zeit">
+                          {alsUhrzeit(lokaleMinuten(b.starts_at))}–{alsUhrzeit(lokaleMinuten(b.ends_at))}
+                        </span>{" "}
+                        <span className="wer">{b.kind === "blocking" ? b.title : b.owner_name}</span>
+                      </div>
+                      {b.players.length > 0 && <div className="mit">mit {b.players.join(", ")}</div>}
+                    </>
+                  );
+                  const klasse = `belegzeile ${b.is_own ? "eigen" : b.kind === "blocking" ? "blockung" : ""}`;
+
+                  return verwaltbar(b) ? (
+                    <button
+                      key={b.booking_id}
+                      type="button"
+                      className={`${klasse} anklickbar`}
+                      onClick={() => setFenster({ modus: "verwalten", belegung: b })}
+                      aria-label={`Buchung ${alsUhrzeit(lokaleMinuten(b.starts_at))} auf ${platz.name} verwalten`}
+                    >
+                      {inhalt}
+                      <span className="mit verwalten-hinweis">Verwalten</span>
+                    </button>
+                  ) : (
+                    <div key={b.booking_id} className={klasse}>{inhalt}</div>
+                  );
+                })
               )}
 
-              {frei.length > 0 && (
+              {freieStunden.length > 0 && (
                 <div className="freie-slots">
-                  {frei.map((m) => (
+                  {freieStunden.map((s) => (
                     <button
-                      key={m}
+                      key={s}
                       className="slotknopf"
-                      disabled={gesperrt}
-                      onClick={() => waehle(platz.id, m)}
-                      aria-label={`${platz.name} um ${alsUhrzeit(m)} buchen`}
+                      disabled={kontingentAus}
+                      onClick={() => setFenster({ modus: "buchen", courtId: platz.id, stunde: s })}
+                      aria-label={`${platz.name} um ${alsUhrzeit(s)} buchen`}
                     >
-                      {alsUhrzeit(m)}
+                      {alsUhrzeit(s)}
                     </button>
                   ))}
                 </div>
@@ -188,46 +288,53 @@ export function Belegungsplan(props: Props) {
               </tr>
             </thead>
             <tbody>
-              {zeilen.map((minute) => (
-                <tr key={minute}>
-                  <td className="zeit">{alsUhrzeit(minute)}</td>
+              {stunden.map((stunde) => (
+                <tr key={stunde}>
+                  <td className="zeit">{alsUhrzeit(stunde)}</td>
                   {props.plaetze.map((platz) => {
-                    const b = belegungFuer(platz.id, minute);
+                    const b = belegungFuer(platz.id, stunde);
 
                     if (b) {
-                      if (lokaleMinuten(b.starts_at) !== minute) return <td key={platz.id} />;
-                      const spanne = Math.max(1, Math.round(
-                        (lokaleMinuten(b.ends_at) - lokaleMinuten(b.starts_at)) / props.rasterMinuten,
-                      ));
-                      const klasse = b.kind === "blocking" ? "blockung" : b.is_own ? "belegt eigen" : "belegt";
+                      const klasse =
+                        b.kind === "blocking" ? "blockung" : b.is_own ? "belegt eigen" : "belegt";
+                      const text = beschriftung(b, stunde);
+
+                      if (verwaltbar(b)) {
+                        return (
+                          <td key={platz.id}>
+                            <button
+                              type="button"
+                              className={`zelle ${klasse} anklickbar`}
+                              onClick={() => setFenster({ modus: "verwalten", belegung: b })}
+                              aria-label={`Buchung ${alsUhrzeit(stunde)} auf ${platz.name} verwalten`}
+                            >
+                              <strong>{text}</strong>
+                              {b.players.length > 0 && <><br />{b.players.join(", ")}</>}
+                            </button>
+                          </td>
+                        );
+                      }
 
                       return (
-                        <td key={platz.id} rowSpan={spanne}>
+                        <td key={platz.id}>
                           <span className={`zelle ${klasse}`}>
-                            <strong>{b.kind === "blocking" ? b.title : b.owner_name}</strong>
+                            <strong>{text}</strong>
                             {b.players.length > 0 && <><br />{b.players.join(", ")}</>}
-                            {b.is_own && !vergangen(minute) && (
-                              <>
-                                <br />
-                                <button className="knopf leise klein" style={{ marginTop: 4 }}
-                                  onClick={() => abbrechen(b.booking_id)} disabled={laeuft}>
-                                  Stornieren
-                                </button>
-                              </>
-                            )}
                           </span>
                         </td>
                       );
                     }
 
-                    const alt = vergangen(minute);
+                    const startzeiten = startzeitenIn(platz.id, stunde);
+                    const zu = startzeiten.length === 0;
+
                     return (
                       <td key={platz.id}>
                         <button
-                          className={`zelle ${alt ? "gesperrt" : "frei"}`}
-                          disabled={alt || gesperrt}
-                          onClick={() => waehle(platz.id, minute)}
-                          aria-label={`${platz.name} um ${alsUhrzeit(minute)} buchen`}
+                          className={`zelle ${zu ? "gesperrt" : "frei"}`}
+                          disabled={zu || kontingentAus}
+                          onClick={() => setFenster({ modus: "buchen", courtId: platz.id, stunde })}
+                          aria-label={`${platz.name} um ${alsUhrzeit(stunde)} buchen`}
                         />
                       </td>
                     );
@@ -239,95 +346,28 @@ export function Belegungsplan(props: Props) {
         </div>
       </div>
 
-      {ausgewaehlt && (
-        <BuchungsFormular
+      {fenster && (
+        <BuchungsFenster
+          fenster={fenster}
           datum={props.datum}
-          platz={props.plaetze.find((p) => p.id === ausgewaehlt.courtId)!}
-          minute={ausgewaehlt.minute}
+          plaetze={props.plaetze}
           arten={props.arten}
           verzeichnis={props.verzeichnis}
+          startzeiten={
+            fenster.modus === "buchen"
+              ? startzeitenIn(fenster.courtId, fenster.stunde)
+              : []
+          }
+          rasterMinuten={props.rasterMinuten}
+          anzeigeMinuten={props.anzeigeMinuten}
+          istAdmin={props.istAdmin}
           laeuft={laeuft}
-          onAbschicken={abschicken}
-          onSchliessen={() => setAusgewaehlt(null)}
+          onBuchen={abschicken}
+          onSpeichern={speichern}
+          onStornieren={abbrechen}
+          onSchliessen={() => setFenster(null)}
         />
       )}
     </>
-  );
-}
-
-function BuchungsFormular({
-  datum, platz, minute, arten, verzeichnis, laeuft, onAbschicken, onSchliessen,
-}: {
-  datum: string; platz: Platz; minute: number; arten: Buchungsart[];
-  verzeichnis: Mitglied[]; laeuft: boolean;
-  onAbschicken: (fd: FormData) => void; onSchliessen: () => void;
-}) {
-  const [art, setArt] = useState(arten[0]?.code ?? "einzel");
-  const [mitspieler, setMitspieler] = useState<string[]>([""]);
-  const [gaeste, setGaeste] = useState<string[]>([]);
-
-  const gewaehlt = arten.find((a) => a.code === art);
-  const maxWeitere = (gewaehlt?.max_players ?? 2) - 1;
-
-  const [j, mo, t] = datum.split("-").map(Number);
-  const start = new Date(j!, (mo ?? 1) - 1, t, Math.floor(minute / 60), minute % 60, 0, 0);
-
-  return (
-    <section className="karte" style={{ marginTop: 20 }} aria-label="Buchung anlegen">
-      <h2 className="pagetitle" style={{ fontSize: 20, marginBottom: 12 }}>
-        {platz.name}, {alsUhrzeit(minute)} Uhr
-      </h2>
-
-      <form action={onAbschicken}>
-        <input type="hidden" name="courtId" value={platz.id} />
-        <input type="hidden" name="startsAt" value={start.toISOString()} />
-
-        <label>
-          <span>Buchungsart</span>
-          <select name="bookingType" value={art} onChange={(e) => setArt(e.target.value)}>
-            {arten.map((a) => (
-              <option key={a.code} value={a.code}>{a.name} ({a.duration_minutes} Min.)</option>
-            ))}
-          </select>
-        </label>
-
-        {mitspieler.map((wert, i) => (
-          <label key={i}>
-            <span>Mitspieler {gewaehlt?.requires_partner ? "(Pflicht)" : ""}</span>
-            <select name="mitspieler" value={wert}
-              onChange={(e) => { const n = [...mitspieler]; n[i] = e.target.value; setMitspieler(n); }}>
-              <option value="">— auswählen —</option>
-              {verzeichnis.map((m) => (
-                <option key={m.id} value={m.id}>{m.last_name}, {m.first_name}</option>
-              ))}
-            </select>
-          </label>
-        ))}
-
-        {gaeste.map((wert, i) => (
-          <label key={`g${i}`}>
-            <span>Gast</span>
-            <input name="gast" value={wert} placeholder="Name des Gastes"
-              onChange={(e) => { const n = [...gaeste]; n[i] = e.target.value; setGaeste(n); }} />
-          </label>
-        ))}
-
-        {mitspieler.length + gaeste.length < maxWeitere && (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-            <button type="button" className="knopf leise klein"
-              onClick={() => setMitspieler([...mitspieler, ""])}>+ Mitglied</button>
-            <button type="button" className="knopf leise klein"
-              onClick={() => setGaeste([...gaeste, ""])}>+ Gast</button>
-          </div>
-        )}
-
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button className="knopf" disabled={laeuft}>
-            {laeuft ? "Wird gebucht…" : "Verbindlich buchen"}
-          </button>
-          <button type="button" className="knopf leise" onClick={onSchliessen}>Abbrechen</button>
-        </div>
-      </form>
-    </section>
   );
 }

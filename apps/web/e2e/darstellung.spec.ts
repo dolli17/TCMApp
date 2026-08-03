@@ -10,10 +10,11 @@ import { expect, test, type Page } from "@playwright/test";
 
 const PASSWORT = process.env.DEV_PASSWORD ?? "";
 const MITGLIED = process.env.DEV_USER_MEMBER ?? "";
+const ADMIN = process.env.DEV_USER_ADMIN ?? "";
 
-async function anmelden(page: Page) {
+async function anmelden(page: Page, email: string = MITGLIED) {
   await page.goto("/login");
-  await page.getByLabel("E-Mail").fill(MITGLIED);
+  await page.getByLabel("E-Mail").fill(email);
   await page.getByLabel("Passwort").fill(PASSWORT);
   await page.getByRole("button", { name: "Anmelden" }).click();
   await page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 20_000 });
@@ -97,6 +98,39 @@ test.describe("Layout", () => {
         expect(ueberbreite, `${pfad} ist ${ueberbreite}px zu breit`).toBeLessThanOrEqual(0);
       });
     }
+
+    test("die Bottom-Navigation eines Admins sprengt die Breite nicht", async ({ page }) => {
+      // Ein Admin hat sieben Einträge statt drei. Die Leiste scrollt dann in
+      // sich selbst - das Dokument darf sich nicht mitverschieben.
+      await anmelden(page, ADMIN);
+      await page.goto("/plan");
+
+      await expect(page.locator(".bottomnav a")).toHaveCount(7);
+      const ueberbreite = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(ueberbreite, `Die Seite ist ${ueberbreite}px zu breit`).toBeLessThanOrEqual(0);
+    });
+
+    test("das Buchungsfenster passt auf 390 Pixel", async ({ page }) => {
+      await anmelden(page);
+      await page.goto("/plan");
+
+      const slot = page.locator(".plan-listen .slotknopf").first();
+      test.skip((await slot.count()) === 0, "Heute ist keine Stunde mehr frei");
+      await slot.click();
+
+      const fenster = page.locator("dialog.fenster");
+      await expect(fenster).toBeVisible();
+
+      const breite = await fenster.evaluate((el) => el.getBoundingClientRect().width);
+      expect(breite).toBeLessThanOrEqual(390);
+
+      const ueberbreite = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(ueberbreite, `Die Seite ist ${ueberbreite}px zu breit`).toBeLessThanOrEqual(0);
+    });
   });
 
   test.describe("Rechner (1440px)", () => {

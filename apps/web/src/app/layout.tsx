@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import logo from "@tcm/ui/logo.png";
-import { getCurrentMember, isBoard, isTreasurer, isSportsOfficer } from "@/lib/supabase/server";
+import { getCurrentMember, isAdmin } from "@/lib/supabase/server";
 import { AbmeldeKnopf } from "@/components/AbmeldeKnopf";
 import { Fussmenue, Seitenmenue, type NavEintrag } from "@/components/Navigation";
 import { THEME_SKRIPT } from "@/components/ThemeUmschalter";
@@ -30,16 +30,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     { href: "/getraenke", label: "Getränke", kurz: "Getränke", symbol: "getraenk" },
     { href: "/konto", label: "Mein Konto", kurz: "Konto", symbol: "konto" },
   ];
-  if (isSportsOfficer(rollen)) {
-    eintraege.push({ href: "/admin/serien", label: "Serien", kurz: "Serien", symbol: "serie" });
-  }
-  if (isBoard(rollen)) {
-    eintraege.push({
-      href: "/admin/mitglieder", label: "Mitglieder", kurz: "Mitglieder", symbol: "mitglieder",
-    });
-  }
-  if (isTreasurer(rollen)) {
-    eintraege.push({ href: "/admin/beitraege", label: "Beiträge", kurz: "Beiträge", symbol: "beitrag" });
+  // Ein Admin sieht alles. Zwischenrollen gibt es nicht mehr, deshalb genuegt
+  // ein Block statt vier gestaffelter Pruefungen.
+  if (isAdmin(rollen)) {
+    eintraege.push(
+      { href: "/admin/serien", label: "Serien", kurz: "Serien", symbol: "serie" },
+      { href: "/admin/mitglieder", label: "Mitglieder", kurz: "Mitglieder", symbol: "mitglieder" },
+      { href: "/admin/beitraege", label: "Beiträge", kurz: "Beiträge", symbol: "beitrag" },
+      { href: "/admin/einstellungen", label: "Einstellungen", kurz: "Setup", symbol: "einstellung" },
+    );
   }
 
   return (

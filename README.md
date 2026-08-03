@@ -8,7 +8,8 @@ Rund 300 aktive Mitglieder, 8 Sandplätze.
 | Modul | Inhalt |
 |---|---|
 | Mitgliederverwaltung | Stammdaten, Mitgliedschaften, Rollen, Zahler-Beziehungen |
-| Freiplatzbuchung | 8 Plätze, Kontingent- und Vorlaufregeln, Serien-Blockungen |
+| Einstellungen | Alle Regelwerte im Admin-Dashboard änderbar |
+| Freiplatzbuchung | 8 Plätze, 60-Minuten-Buchungen zur vollen oder halben Stunde, Serien-Blockungen |
 | Getränkeabrechnung | Self-Service in der App und Kiosk-Tablet, monatliche Abrechnung |
 | Beiträge & SEPA | Jahresbeitragslauf, Mandatsverwaltung, `pain.008`-Export |
 | Arbeitsdienst | Soll-/Ist-Stunden, Ausgleich in Geld zum Jahresende |
@@ -17,7 +18,7 @@ Rund 300 aktive Mitglieder, 8 Sandplätze.
 
 - **Backend**: Supabase (Postgres, Auth, RLS, Edge Functions, Storage)
 - **Mobile**: Expo / React Native
-- **Web**: Next.js (Mitglieder-Web, Vorstands-Dashboard, Kiosk)
+- **Web**: Next.js (Mitglieder-Web, Admin-Dashboard, Kiosk)
 - **Tests**: pgTAP (Datenbank), Vitest (Logik), Playwright (E2E)
 
 ## Struktur
@@ -46,7 +47,24 @@ davon, was der Client tut.
 
 **Buchungsregeln laufen serverseitig.** Direkte Inserts auf `bookings` sind per RLS verboten;
 der einzige Weg führt über die Funktion `create_booking`, die alle Regeln prüft – inklusive des
-Kontingents jedes eingetragenen Mitspielers.
+Kontingents jedes eingetragenen Mitspielers. Das Kontingent steht derzeit auf **0**, also
+unbegrenzt; die Regel bleibt vollständig im Code, damit der Vorstand sie in knappen Zeiten
+über das Admin-Dashboard wieder einschalten kann.
+
+## Rollen
+
+Es gibt genau zwei Stufen: **Admin** und **Mitglied**. Admins sehen und ändern alles –
+Mitglieder, Beiträge, Serien, Einstellungen und jede fremde Buchung. Alle anderen sehen ihre
+eigenen Daten und verwalten ihre eigenen Buchungen bis zum Spielbeginn. Zwischenrollen
+(Kassenwart, Sportwart, Trainer, Thekendienst) gibt es bewusst nicht mehr: sie waren in einem
+Verein dieser Größe schwerer zu pflegen als sie nützten.
+
+## Anzeige und Buchung
+
+Der Belegungsplan zeigt **volle Stunden von 08 bis 21 Uhr**. Gebucht wird zur vollen oder
+halben Stunde, immer **60 Minuten** – die Feinwahl passiert im Buchungsfenster. Eine Belegung
+sperrt **jede Stunde, die sie berührt**: das Dienstagstraining von 18:30 bis 20:00 wäre sonst
+im Stundenraster unsichtbar und der 18-Uhr-Platz sähe frei aus.
 
 ## Entwicklung
 

@@ -93,6 +93,62 @@ export async function bucheplatz(
   return { ok: true, meldung: "Platz gebucht.", daten: data as string };
 }
 
+/**
+ * Tauscht die Mitspieler einer bestehenden Buchung komplett aus. Dieselbe RPC
+ * wie im Web - die Regeln stehen in der Datenbank, nicht doppelt in zwei Apps.
+ */
+export async function aendereMitspieler(
+  bookingId: string,
+  mitgliedIds: string[],
+  gaeste: string[] = [],
+): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("update_booking_players", {
+    p_booking_id: bookingId,
+    p_member_ids: mitgliedIds,
+    p_guest_names: gaeste.map((g) => g.trim()).filter((g) => g.length > 0),
+  });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Mitspieler aktualisiert." };
+}
+
+export async function ladeBuchungseinstellungen() {
+  const { data, error } = await supabase.rpc("booking_settings");
+  if (error) throw new Error(translateDbError(error));
+  return data?.[0] ?? null;
+}
+
+export async function ladeBuchungsarten() {
+  const { data, error } = await supabase
+    .from("booking_types")
+    .select("code, name, duration_minutes, requires_partner, min_players, max_players")
+    .eq("active", true)
+    .eq("applies_to", "booking")
+    .order("sort_order");
+  if (error) throw new Error(translateDbError(error));
+  return data ?? [];
+}
+
+/** Rollen des angemeldeten Mitglieds. Es gibt nur noch Admin und Mitglied. */
+export async function istAdmin(): Promise<boolean> {
+  const { data: sitzung } = await supabase.auth.getUser();
+  const authId = sitzung.user?.id;
+  if (!authId) return false;
+
+  const { data: mitglied } = await supabase
+    .from("members")
+    .select("id")
+    .eq("auth_user_id", authId)
+    .maybeSingle();
+  if (!mitglied) return false;
+
+  const { data: rollen } = await supabase
+    .from("member_roles")
+    .select("role")
+    .eq("member_id", mitglied.id);
+
+  return (rollen ?? []).some((r) => r.role === "admin");
+}
+
 export async function storniereBuchung(bookingId: string): Promise<Ergebnis> {
   const { error } = await supabase.rpc("cancel_booking", { p_booking_id: bookingId });
   if (error) return { ok: false, meldung: translateDbError(error) };

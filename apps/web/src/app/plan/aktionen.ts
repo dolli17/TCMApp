@@ -44,6 +44,34 @@ export async function buchen(formData: FormData): Promise<AktionsErgebnis> {
   return { ok: true, meldung: "Platz gebucht." };
 }
 
+/**
+ * Tauscht die Mitspieler einer bestehenden Buchung komplett aus.
+ *
+ * Die Oberflaeche schickt den Zustand, den der Benutzer sieht - nicht einzelne
+ * Zu- und Abgaenge. So sieht die Regelpruefung in der Datenbank immer die
+ * fertige Besetzung, und ein halb angewendeter Tausch kann nicht entstehen.
+ */
+export async function mitspielerAendern(
+  bookingId: string,
+  mitgliedIds: string[],
+  gaeste: string[],
+): Promise<AktionsErgebnis> {
+  const supabase = await createServerSupabase();
+
+  const { error } = await supabase.rpc("update_booking_players", {
+    p_booking_id: bookingId,
+    p_member_ids: mitgliedIds,
+    p_guest_names: gaeste.map((g) => g.trim()).filter((g) => g.length > 0),
+  });
+
+  if (error) {
+    return { ok: false, meldung: translateDbError(error) };
+  }
+
+  revalidatePath("/plan");
+  return { ok: true, meldung: "Mitspieler aktualisiert." };
+}
+
 export async function stornieren(bookingId: string): Promise<AktionsErgebnis> {
   const supabase = await createServerSupabase();
 

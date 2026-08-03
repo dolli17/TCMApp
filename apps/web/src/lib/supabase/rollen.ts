@@ -4,9 +4,8 @@ export function hasRole(roles: readonly string[], ...wanted: string[]): boolean 
   return wanted.some((w) => roles.includes(w));
 }
 
-/** Der Vorstand darf ueberall dort mit, wo eine Fachrolle gefragt ist. */
-export const isBoard = (r: readonly string[]) => r.includes("board");
-export const isTreasurer = (r: readonly string[]) => hasRole(r, "treasurer", "board");
-export const isSportsOfficer = (r: readonly string[]) => hasRole(r, "sports_officer", "board");
-export const isTrainer = (r: readonly string[]) =>
-  hasRole(r, "trainer", "sports_officer", "board");
+/**
+ * Es gibt nur noch zwei Stufen: Admin und Mitglied. Wer Admin ist, darf alles -
+ * Serien, Mitglieder, Beitraege, Einstellungen und jede fremde Buchung.
+ */
+export const isAdmin = (r: readonly string[]) => r.includes("admin");

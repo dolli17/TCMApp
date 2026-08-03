@@ -116,10 +116,10 @@ end; $f$;
 -- ---------------------------------------------------------------------------
 -- Bankdaten
 -- ---------------------------------------------------------------------------
-create or replace function tests.test_rls_kassenwart_sieht_bankdaten() returns setof text language plpgsql as $f$
+create or replace function tests.test_rls_admin_sieht_bankdaten() returns setof text language plpgsql as $f$
 declare kw record; normal record; opfer record; v_ba uuid; v_count integer;
 begin
-  select * into kw from tests.fixture_user('treasurer') limit 1;
+  select * into kw from tests.fixture_user('admin') limit 1;
   select * into normal from tests.fixture_user() limit 1;
   select * into opfer from tests.fixture_user() limit 1;
   insert into public.bank_accounts (member_id, iban_encrypted, iban_last4, holder)
@@ -130,25 +130,25 @@ begin
   perform set_config('role', 'postgres', true);
   perform tests.act_as(kw.auth_id);
   select count(*) into v_count from public.bank_accounts where id = v_ba;
-  return next is(v_count, 1, 'Kassenwart sieht die Bankverbindung');
+  return next is(v_count, 1, 'Admin sieht die Bankverbindung');
   perform set_config('role', 'postgres', true);
 end; $f$;
 
 create or replace function tests.test_rls_iban_spalte_gesperrt() returns setof text language plpgsql as $f$
 declare kw record;
 begin
-  select * into kw from tests.fixture_user('treasurer') limit 1;
+  select * into kw from tests.fixture_user('admin') limit 1;
   perform tests.act_as(kw.auth_id);
   return next throws_ok(
     'select iban_encrypted from public.bank_accounts limit 1', '42501', null,
-    'Auch der Kassenwart kann iban_encrypted nicht lesen - Spalten-Grant fehlt bewusst');
+    'Auch ein Admin kann iban_encrypted nicht lesen - Spalten-Grant fehlt bewusst');
   perform set_config('role', 'postgres', true);
 end; $f$;
 
 create or replace function tests.test_rls_decrypt_iban_nicht_aufrufbar() returns setof text language plpgsql as $f$
 declare kw record;
 begin
-  select * into kw from tests.fixture_user('treasurer') limit 1;
+  select * into kw from tests.fixture_user('admin') limit 1;
   perform tests.act_as(kw.auth_id);
   return next throws_ok(
     'select private.decrypt_iban(''\x00''::bytea)', '42501', null,
@@ -223,8 +223,8 @@ begin
   select * into a from tests.fixture_user() limit 1;
   perform tests.act_as(a.auth_id);
   return next throws_ok(
-    format('insert into public.member_roles (member_id, role) values (%L, ''board'')', a.member_id),
-    null, null, 'Mitglied kann sich selbst keine Vorstandsrolle geben');
+    format('insert into public.member_roles (member_id, role) values (%L, ''admin'')', a.member_id),
+    null, null, 'Mitglied kann sich selbst keine Adminrolle geben');
   perform set_config('role', 'postgres', true);
 end; $f$;
 

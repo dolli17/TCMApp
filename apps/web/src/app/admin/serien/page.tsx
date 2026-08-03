@@ -1,4 +1,4 @@
-import { createServerSupabase, getCurrentMember, isTrainer } from "@/lib/supabase/server";
+import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
 import { SerienFormular } from "@/components/SerienFormular";
 
 export const dynamic = "force-dynamic";
@@ -8,11 +8,9 @@ const WOCHENTAGE = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "
 export default async function SerienSeite() {
   const angemeldet = await getCurrentMember();
 
-  if (!angemeldet || !isTrainer(angemeldet.roles)) {
+  if (!angemeldet || !isAdmin(angemeldet.roles)) {
     return (
-      <div className="hinweis fehler">
-        Serien können nur Trainer, Sportwart oder Vorstand anlegen.
-      </div>
+      <div className="hinweis fehler">Serien können nur Administratoren anlegen.</div>
     );
   }
 
@@ -44,7 +42,6 @@ export default async function SerienSeite() {
       <SerienFormular
         plaetze={plaetzeRes.data ?? []}
         arten={artenRes.data ?? []}
-        istSportwart={angemeldet.roles.includes("sports_officer") || angemeldet.roles.includes("board")}
       />
 
       <h2 className="dpl">Angelegte Serien</h2>

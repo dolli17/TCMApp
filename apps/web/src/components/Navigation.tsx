@@ -35,6 +35,9 @@ const SYMBOLE = {
   beitrag: (
     <path d="M2 7h20v12H2zM2 11h20M6 15h4" strokeWidth="1.7" fill="none" strokeLinecap="round" />
   ),
+  einstellung: (
+    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.1a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-3-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.1-3l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 3 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1z" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+  ),
 } as const;
 
 function Symbol({ name }: { name: keyof typeof SYMBOLE }) {

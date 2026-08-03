@@ -9,18 +9,16 @@ const WOCHENTAGE = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "
 export function SerienFormular({
   plaetze,
   arten,
-  istSportwart,
 }: {
   plaetze: { id: string; name: string }[];
   arten: { code: string; name: string }[];
-  istSportwart: boolean;
 }) {
   const router = useRouter();
   const heute = new Date().toISOString().slice(0, 10);
 
   const [form, setForm] = useState({
     courtId: plaetze[0]?.id ?? "",
-    bookingTypeCode: istSportwart ? (arten[0]?.code ?? "training") : "training",
+    bookingTypeCode: arten[0]?.code ?? "training",
     weekday: 2,
     startTime: "18:30",
     endTime: "20:00",
@@ -75,7 +73,6 @@ export function SerienFormular({
           <select
             value={form.bookingTypeCode}
             onChange={(e) => setForm({ ...form, bookingTypeCode: e.target.value })}
-            disabled={!istSportwart}
           >
             {arten.map((a) => (
               <option key={a.code} value={a.code}>
@@ -142,12 +139,6 @@ export function SerienFormular({
           />
         </label>
       </div>
-
-      {!istSportwart && (
-        <p style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
-          Als Trainer kannst du nur Trainingszeiten blocken.
-        </p>
-      )}
 
       {meldung && <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`}>{meldung.text}</div>}
 

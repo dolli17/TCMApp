@@ -129,6 +129,44 @@ export function stilFuer(theme: ThemeName) {
     belegzeile: { borderLeftWidth: 3, borderLeftColor: f.blue, paddingLeft: 11, marginTop: 8 },
     belegzeileEigen: { borderLeftColor: f.green },
     belegzeileBlockung: { borderLeftColor: f.muted },
+
+    /** Freie Stunden als antippbare Marken unter der Platzkarte */
+    slotreihe: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 },
+    slot: {
+      borderWidth: 1, borderColor: f.line, backgroundColor: f.chip,
+      borderRadius: radius.chip, paddingVertical: 7, paddingHorizontal: 11,
+    },
+    slotAktiv: { backgroundColor: f.blue, borderColor: f.blue },
+    slotText: { fontSize: 13, color: f.ink2, fontVariant: ["tabular-nums"] },
+    slotTextAktiv: { color: "#fff" },
+
+    /** Modales Fenster - dieselbe Rolle wie <dialog> im Web */
+    fensterHuelle: {
+      flex: 1, justifyContent: "flex-end",
+      backgroundColor: theme === "hell" ? "rgba(9,22,34,.45)" : "rgba(0,0,0,.6)",
+    },
+    fenster: {
+      backgroundColor: f.surf, borderTopLeftRadius: radius.hero, borderTopRightRadius: radius.hero,
+      padding: abstand.rand, gap: abstand.m, maxHeight: "88%",
+    },
+    fensterTitel: {
+      fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 21, color: f.ink,
+    },
+
+    /** Gewaehlte Mitspieler als entfernbare Marken */
+    marke: {
+      flexDirection: "row", alignItems: "center", gap: 6,
+      backgroundColor: f.blueSoft, borderWidth: 1, borderColor: f.blue,
+      borderRadius: radius.chip, paddingVertical: 5, paddingLeft: 11, paddingRight: 7,
+    },
+    markeGast: { backgroundColor: f.goldSoft, borderColor: f.gold },
+    markeText: { fontSize: 13, color: f.ink, fontFamily: "Barlow_600SemiBold" },
+    markeWeg: { fontSize: 17, color: f.ink2, paddingHorizontal: 3 },
+
+    trefferzeile: {
+      paddingVertical: 10, paddingHorizontal: 11, borderRadius: 9,
+      backgroundColor: f.surf2,
+    },
   });
 }
 

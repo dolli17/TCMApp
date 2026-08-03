@@ -25,6 +25,7 @@ vi.mock("./supabase", () => ({
 }));
 
 const {
+  aendereMitspieler,
   anmelden,
   bucheGetraenk,
   bucheplatz,
@@ -143,5 +144,40 @@ describe("ladeKontingent", () => {
   it("liefert den Stand", async () => {
     rpc.mockResolvedValue({ data: [{ used: 1, allowed: 2 }], error: null });
     expect(await ladeKontingent()).toEqual({ used: 1, allowed: 2 });
+  });
+});
+
+describe("aendereMitspieler", () => {
+  it("schickt Mitglieder und Gaeste getrennt an die RPC", async () => {
+    rpc.mockResolvedValue({ error: null });
+    await aendereMitspieler("b-1", ["m-1", "m-2"], ["Gast Meier"]);
+
+    expect(rpc).toHaveBeenCalledWith("update_booking_players", {
+      p_booking_id: "b-1",
+      p_member_ids: ["m-1", "m-2"],
+      p_guest_names: ["Gast Meier"],
+    });
+  });
+
+  it("wirft leere Gastnamen weg und schneidet Leerzeichen ab", async () => {
+    // Ein leerer Name wuerde in der Datenbank auf einen Fehler laufen; das
+    // passiert regelmaessig, wenn jemand das Feld antippt und wieder verlaesst.
+    rpc.mockResolvedValue({ error: null });
+    await aendereMitspieler("b-1", [], ["  Anna Gast  ", "   ", ""]);
+
+    expect(rpc).toHaveBeenCalledWith("update_booking_players", {
+      p_booking_id: "b-1",
+      p_member_ids: [],
+      p_guest_names: ["Anna Gast"],
+    });
+  });
+
+  it("uebersetzt einen Datenbankfehler in einen lesbaren Satz", async () => {
+    rpc.mockResolvedValue({
+      error: { code: "42501", message: "Du kannst nur deine eigenen Buchungen aendern." },
+    });
+    const r = await aendereMitspieler("b-1", ["m-1"]);
+    expect(r.ok).toBe(false);
+    expect(r.meldung).toContain("eigenen Buchungen");
   });
 });
