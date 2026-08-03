@@ -1,0 +1,23 @@
+{
+  "name": "@tcm/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/tokens.ts",
+  "types": "./src/tokens.ts",
+  "exports": {
+    ".": "./src/tokens.ts",
+    "./tokens.css": "./src/tokens.css",
+    "./logo": "./assets/logo.png"
+  },
+  "scripts": {
+    "build:css": "tsx scripts/build-css.ts",
+    "test": "pnpm build:css && vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

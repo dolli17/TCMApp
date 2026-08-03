@@ -1,0 +1,118 @@
+/* ===========================================================================
+   Design-Tokens des TC Muckensturm
+
+   ERZEUGT AUS tokens.ts - NICHT VON HAND AENDERN.
+   Neu erzeugen mit: pnpm --filter @tcm/ui build:css
+
+   Das Theme haengt am data-theme-Attribut des html-Elements. Ohne Attribut
+   gilt die Systemeinstellung.
+   =========================================================================== */
+
+:root {
+  --blue: #1A82C6;
+  --blue-ink: #0E6BA8;
+  --blue-soft: #E7F2FB;
+  --gold: #F2A900;
+  --gold-soft: #FFF1CF;
+  --green: #1E9E6A;
+  --red: #D7544B;
+  --bg: #EBEFF3;
+  --surf: #FFFFFF;
+  --surf-2: #F4F7FA;
+  --ink: #0D1B27;
+  --ink-2: #485B6B;
+  --muted: #616E79;
+  --line: #E6EBF0;
+  --line-2: #D6DEE5;
+  --chip: #F1F5F8;
+  --shadow: 0 1px 2px rgba(13,27,39,.05), 0 8px 24px rgba(13,27,39,.07);
+  --shadow-sm: 0 1px 2px rgba(13,27,39,.06);
+
+  --font-text: 'Barlow', system-ui, sans-serif;
+  --font-display: 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  --line-height: 1.45;
+  --tracking: 0.1px;
+
+  --space-xs: 4px;
+  --space-s: 8px;
+  --space-m: 12px;
+  --space-l: 14px;
+  --space-rand: 20px;
+  --space-xl: 22px;
+  --space-xxl: 32px;
+
+  --radius-klein: 8px;
+  --radius-chip: 99px;
+  --radius-knopf: 14px;
+  --radius-feld: 13px;
+  --radius-karte: 15px;
+  --radius-kartegross: 20px;
+  --radius-hero: 24px;
+}
+
+/* Systemeinstellung, solange niemand von Hand umgeschaltet hat */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="hell"]) {
+    --blue: #2EA0E4;
+    --blue-ink: #56B6F0;
+    --blue-soft: rgba(46,160,228,.14);
+    --gold: #FFC400;
+    --gold-soft: rgba(255,196,0,.14);
+    --green: #34C98B;
+    --red: #FF6B61;
+    --bg: #091622;
+    --surf: #102232;
+    --surf-2: #16293B;
+    --ink: #EAF2F9;
+    --ink-2: #A8BCCC;
+    --muted: #7992A6;
+    --line: rgba(255,255,255,.07);
+    --line-2: rgba(255,255,255,.13);
+    --chip: rgba(255,255,255,.06);
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 30px rgba(0,0,0,.34);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
+  }
+}
+
+/* Ausdrueckliche Wahl des Mitglieds - schlaegt die Systemeinstellung */
+:root[data-theme="dunkel"] {
+  --blue: #2EA0E4;
+  --blue-ink: #56B6F0;
+  --blue-soft: rgba(46,160,228,.14);
+  --gold: #FFC400;
+  --gold-soft: rgba(255,196,0,.14);
+  --green: #34C98B;
+  --red: #FF6B61;
+  --bg: #091622;
+  --surf: #102232;
+  --surf-2: #16293B;
+  --ink: #EAF2F9;
+  --ink-2: #A8BCCC;
+  --muted: #7992A6;
+  --line: rgba(255,255,255,.07);
+  --line-2: rgba(255,255,255,.13);
+  --chip: rgba(255,255,255,.06);
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 30px rgba(0,0,0,.34);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
+}
+
+:root[data-theme="hell"] {
+  --blue: #1A82C6;
+  --blue-ink: #0E6BA8;
+  --blue-soft: #E7F2FB;
+  --gold: #F2A900;
+  --gold-soft: #FFF1CF;
+  --green: #1E9E6A;
+  --red: #D7544B;
+  --bg: #EBEFF3;
+  --surf: #FFFFFF;
+  --surf-2: #F4F7FA;
+  --ink: #0D1B27;
+  --ink-2: #485B6B;
+  --muted: #616E79;
+  --line: #E6EBF0;
+  --line-2: #D6DEE5;
+  --chip: #F1F5F8;
+  --shadow: 0 1px 2px rgba(13,27,39,.05), 0 8px 24px rgba(13,27,39,.07);
+  --shadow-sm: 0 1px 2px rgba(13,27,39,.06);
+}
