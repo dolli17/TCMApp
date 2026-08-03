@@ -6,8 +6,8 @@
  * Gebuehren. Deshalb wird lieber hier abgebrochen.
  */
 
-import { isValidIban, normalizeIban } from "../iban.js";
-import type { DirectDebitBatch, DebtorItem, ValidationIssue } from "./types.js";
+import { isValidIban, normalizeIban } from "../iban";
+import type { DirectDebitBatch, DebtorItem, ValidationIssue } from "./types";
 
 /** Mandate verfallen, wenn sie 36 Monate lang nicht benutzt wurden. */
 export const MANDATE_EXPIRY_MONTHS = 36;

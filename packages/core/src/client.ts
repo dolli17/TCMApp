@@ -10,7 +10,7 @@
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "./database.types.js";
+import type { Database } from "./database.types";
 
 export type TcmClient = SupabaseClient<Database>;
 

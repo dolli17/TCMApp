@@ -5,7 +5,7 @@ import {
   monthlyTotalCents,
   summarizeByItem,
   type DrinkPurchase,
-} from "./drinks.js";
+} from "./drinks";
 
 function kauf(over: Partial<DrinkPurchase> = {}): DrinkPurchase {
   return {

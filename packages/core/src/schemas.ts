@@ -8,7 +8,7 @@
  */
 
 import { z } from "zod";
-import { isValidIban } from "./iban.js";
+import { isValidIban } from "./iban";
 
 export const uuidSchema = z.string().uuid("Ungueltige Kennung.");
 

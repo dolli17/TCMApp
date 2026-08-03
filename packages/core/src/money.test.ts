@@ -4,7 +4,7 @@ import {
   formatCents,
   parseAmountToCents,
   sumCents,
-} from "./money.js";
+} from "./money";
 
 describe("formatCents", () => {
   it("formatiert deutsche Betraege", () => {

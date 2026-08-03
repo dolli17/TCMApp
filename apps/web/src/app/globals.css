@@ -1,0 +1,124 @@
+:root {
+  /* Sandplatz-Ton als Leitfarbe: der Verein hat acht davon. */
+  --sand: #c8663c;
+  --sand-hell: #e8d5cb;
+  --sand-dunkel: #9c4a29;
+  --linie: #d8d2cc;
+  --text: #24201d;
+  --text-leise: #6b625b;
+  --flaeche: #ffffff;
+  --hintergrund: #faf8f6;
+  --gruen: #3f7a4a;
+  --rot: #a63232;
+  --radius: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sand: #d9784f;
+    --sand-hell: #3a2a23;
+    --sand-dunkel: #e89873;
+    --linie: #3a3430;
+    --text: #ece7e3;
+    --text-leise: #a49a92;
+    --flaeche: #211d1a;
+    --hintergrund: #171412;
+    --gruen: #6aa876;
+    --rot: #d97070;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--hintergrund);
+  color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+a { color: var(--sand-dunkel); }
+
+.kopf {
+  background: var(--flaeche);
+  border-bottom: 1px solid var(--linie);
+  padding: 0 1rem;
+}
+.kopf-innen {
+  max-width: 1100px; margin: 0 auto;
+  display: flex; align-items: center; gap: 1.5rem;
+  min-height: 56px; flex-wrap: wrap;
+}
+.marke { font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; }
+.nav { display: flex; gap: 1rem; flex: 1; flex-wrap: wrap; }
+.nav a { color: var(--text-leise); text-decoration: none; padding: 0.25rem 0; }
+.nav a:hover, .nav a[aria-current="page"] { color: var(--text); border-bottom: 2px solid var(--sand); }
+
+main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+h1 { font-size: 1.5rem; margin: 0 0 0.25rem; letter-spacing: -0.02em; }
+h2 { font-size: 1.1rem; margin: 2rem 0 0.75rem; }
+.unterzeile { color: var(--text-leise); margin: 0 0 1.5rem; }
+
+.karte {
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.knopf {
+  font: inherit; cursor: pointer;
+  background: var(--sand); color: #fff;
+  border: none; border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+}
+.knopf:hover { background: var(--sand-dunkel); }
+.knopf:disabled { opacity: 0.5; cursor: not-allowed; }
+.knopf.leise { background: transparent; color: var(--text-leise); border: 1px solid var(--linie); }
+.knopf.leise:hover { color: var(--text); border-color: var(--text-leise); }
+
+input, select, textarea {
+  font: inherit; width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--linie); border-radius: var(--radius);
+  background: var(--flaeche); color: var(--text);
+}
+label { display: block; margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-leise); }
+label span { display: block; margin-bottom: 0.25rem; }
+
+.hinweis { padding: 0.6rem 0.8rem; border-radius: var(--radius); margin: 0.75rem 0; }
+.hinweis.fehler { background: color-mix(in srgb, var(--rot) 12%, transparent); color: var(--rot); }
+.hinweis.erfolg { background: color-mix(in srgb, var(--gruen) 12%, transparent); color: var(--gruen); }
+
+/* Belegungsplan: Zeilen sind Uhrzeiten, Spalten die acht Plaetze. */
+.plan-huelle { overflow-x: auto; border: 1px solid var(--linie); border-radius: var(--radius); }
+.plan { border-collapse: collapse; width: 100%; min-width: 760px; background: var(--flaeche); }
+.plan th, .plan td { border: 1px solid var(--linie); padding: 0; text-align: left; }
+.plan thead th { padding: 0.5rem; font-size: 0.85rem; background: var(--hintergrund); position: sticky; top: 0; }
+.plan .zeit { width: 62px; padding: 0.35rem 0.5rem; font-variant-numeric: tabular-nums;
+              font-size: 0.85rem; color: var(--text-leise); background: var(--hintergrund); }
+.zelle { width: 100%; min-height: 34px; display: block; padding: 0.3rem 0.45rem;
+         font: inherit; font-size: 0.82rem; text-align: left; border: none;
+         background: transparent; color: inherit; cursor: pointer; }
+.zelle.frei:hover { background: var(--sand-hell); }
+.zelle.belegt { cursor: default; background: color-mix(in srgb, var(--sand) 14%, transparent); }
+.zelle.blockung { cursor: default; background: color-mix(in srgb, var(--text-leise) 14%, transparent);
+                  color: var(--text-leise); }
+.zelle.eigen { background: color-mix(in srgb, var(--gruen) 18%, transparent); }
+.zelle.gesperrt { cursor: not-allowed; color: var(--linie); }
+
+table.liste { width: 100%; border-collapse: collapse; background: var(--flaeche); }
+table.liste th, table.liste td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--linie); }
+table.liste th { font-size: 0.85rem; color: var(--text-leise); font-weight: 600; }
+table.liste td.zahl, table.liste th.zahl { text-align: right; font-variant-numeric: tabular-nums; }
+
+.marke-klein { font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 99px;
+               background: var(--sand-hell); color: var(--sand-dunkel); }
+
+.kachel-reihe { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.75rem; }
+.kachel { background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--radius); padding: 0.9rem; }
+.kachel .wert { font-size: 1.6rem; font-weight: 650; letter-spacing: -0.02em; }
+.kachel .titel { font-size: 0.85rem; color: var(--text-leise); }
+
+.leer { color: var(--text-leise); padding: 2rem 0; text-align: center; }

@@ -7,7 +7,7 @@
  * Erhoehung genommen haben, weiterhin den alten Preis.
  */
 
-import { sumCents } from "./money.js";
+import { sumCents } from "./money";
 
 export interface DrinkPurchase {
   id: string;

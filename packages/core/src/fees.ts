@@ -8,7 +8,7 @@
  * (Ehrenmitglieder, anteiliger Beitrag bei Eintritt mitten im Jahr).
  */
 
-import { sumCents } from "./money.js";
+import { sumCents } from "./money";
 
 export interface FeePrice {
   feeTypeId: string;

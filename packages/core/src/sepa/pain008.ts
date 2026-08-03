@@ -12,10 +12,10 @@
  *   .08  heisst BICFI, sonst gleiche Struktur an den benutzten Stellen
  */
 
-import { centsToAmountString, sumCents } from "../money.js";
-import { normalizeIban } from "../iban.js";
-import type { DirectDebitBatch, PainVersion } from "./types.js";
-import { hasErrors, validateBatch } from "./validation.js";
+import { centsToAmountString, sumCents } from "../money";
+import { normalizeIban } from "../iban";
+import type { DirectDebitBatch, PainVersion } from "./types";
+import { hasErrors, validateBatch } from "./validation";
 
 /** XML-Sonderzeichen ersetzen. Umlaute bleiben, die Datei ist UTF-8. */
 export function escapeXml(value: string): string {

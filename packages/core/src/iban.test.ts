@@ -5,7 +5,7 @@ import {
   isValidIban,
   maskIban,
   normalizeIban,
-} from "./iban.js";
+} from "./iban";
 
 describe("isValidIban", () => {
   it("akzeptiert gueltige IBANs", () => {

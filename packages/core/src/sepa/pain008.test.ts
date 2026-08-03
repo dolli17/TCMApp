@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { buildPain008, escapeXml, painNamespace } from "./pain008.js";
+import { buildPain008, escapeXml, painNamespace } from "./pain008";
 import {
   hasErrors,
   isMandateExpired,
   mandateCoversKind,
   validateBatch,
-} from "./validation.js";
-import { ibanCheckDigits } from "../iban.js";
-import type { DirectDebitBatch, DebtorItem, Mandate } from "./types.js";
+} from "./validation";
+import { ibanCheckDigits } from "../iban";
+import type { DirectDebitBatch, DebtorItem, Mandate } from "./types";
 
 const HEUTE = new Date("2026-08-03T12:00:00Z");
 

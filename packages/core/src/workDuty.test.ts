@@ -5,7 +5,7 @@ import {
   settleWorkDuty,
   type WorkDutyEntry,
   type WorkDutyRule,
-} from "./workDuty.js";
+} from "./workDuty";
 
 const REGELN: WorkDutyRule[] = [
   { feeTypeId: "erwachsener", year: 2026, requiredHours: 8 },

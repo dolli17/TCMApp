@@ -6,7 +6,7 @@ import {
   slotsForDay,
   type BookingRules,
   type BookingTypeInfo,
-} from "./booking.js";
+} from "./booking";
 
 const REGELN: BookingRules = {
   maxOpenBookings: 2,

@@ -6,7 +6,7 @@ import {
   type FeePrice,
   type FeeType,
   type MemberFee,
-} from "./fees.js";
+} from "./fees";
 
 const TYPEN: FeeType[] = [
   { id: "t1", code: "erwachsener", name: "Erwachsener" },

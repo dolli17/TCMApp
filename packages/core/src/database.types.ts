@@ -1372,6 +1372,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      booking_settings: {
+        Args: never
+        Returns: {
+          closing_time: string
+          guest_fee_cents: number
+          lead_days: number
+          max_open_bookings: number
+          opening_time: string
+          slot_minutes: number
+        }[]
+      }
       cancel_booking: {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: undefined
@@ -1404,7 +1415,47 @@ export type Database = {
           series_id: string
         }[]
       }
+      day_schedule: {
+        Args: { p_date: string }
+        Returns: {
+          booking_id: string
+          court_id: string
+          ends_at: string
+          is_own: boolean
+          kind: Database["public"]["Enums"]["booking_kind"]
+          owner_name: string
+          players: string[]
+          starts_at: string
+          title: string
+          type_code: string
+          type_name: string
+        }[]
+      }
+      drink_menu: {
+        Args: never
+        Returns: {
+          category: Database["public"]["Enums"]["drink_category"]
+          description: string
+          id: string
+          name: string
+          price_cents: number
+          sort_order: number
+        }[]
+      }
       ensure_default_settings: { Args: never; Returns: number }
+      fee_run_preview: {
+        Args: { p_year: number }
+        Returns: {
+          already_charged: boolean
+          amount_cents: number
+          fee_types: string
+          has_mandate: boolean
+          mandate_scope: Database["public"]["Enums"]["mandate_scope"]
+          member_id: string
+          member_name: string
+          payer_name: string
+        }[]
+      }
       iban_check_digits: {
         Args: { p_bban: string; p_country?: string }
         Returns: string
@@ -1427,12 +1478,48 @@ export type Database = {
           used: number
         }[]
       }
+      my_charges: {
+        Args: never
+        Returns: {
+          amount_cents: number
+          description: string
+          due_date: string
+          id: string
+          is_for_other: boolean
+          kind: Database["public"]["Enums"]["charge_kind"]
+          member_name: string
+          period_label: string
+          status: Database["public"]["Enums"]["charge_status"]
+        }[]
+      }
+      my_drink_purchases: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          item_name: string
+          quantity: number
+          source: Database["public"]["Enums"]["purchase_source"]
+          total_cents: number
+          unit_price_cents: number
+          voided_at: string
+        }[]
+      }
       my_drink_summary: {
         Args: { p_month?: number; p_year?: number }
         Returns: {
           item_name: string
           quantity: number
           total_cents: number
+        }[]
+      }
+      my_work_duty: {
+        Args: { p_year?: number }
+        Returns: {
+          completed_hours: number
+          missing_hours: number
+          required_hours: number
+          year: number
         }[]
       }
       preview_series: {

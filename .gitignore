@@ -82,3 +82,6 @@ Thumbs.db
 scratch/
 tmp/
 *.log
+
+# Playwright-Artefakte
+apps/web/test-results/
