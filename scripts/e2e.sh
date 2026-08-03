@@ -1,21 +1,38 @@
 #!/usr/bin/env bash
-# Baut, startet und testet in einem Rutsch. Bricht ab, wenn der Build fehlschlaegt -
-# sonst laufen die Tests gegen einen veralteten Server und melden Fehler, die
-# es im aktuellen Stand gar nicht gibt.
+#
+# Baut die Web-App, startet sie neu und laesst die End-to-End-Tests laufen.
+#
+# Die Verkettung ist Absicht: einmal liefen die Tests gegen einen veralteten
+# Server, weil der Build fehlgeschlagen war und der alte Prozess auf Port 3000
+# weiterlief. Die gemeldeten Fehler existierten im aktuellen Stand gar nicht.
+# Bricht der Build ab, laufen hier auch keine Tests.
+
 set -euo pipefail
-cd "20 20 12 61 79 80 81 98 264 701 33 100 204 250 395 398 399 400dirname "-e")/../apps/web"
-set -a; source ../../.env; set +a
+
+WURZEL="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$WURZEL/apps/web"
+
+# shellcheck disable=SC1091
+set -a; source "$WURZEL/.env"; set +a
 
 echo "== Build =="
-pnpm build > /tmp/build.log 2>&1 || { tail -25 /tmp/build.log; exit 1; }
+if ! pnpm build > /tmp/tcm-build.log 2>&1; then
+  echo "Build fehlgeschlagen:"
+  tail -25 /tmp/tcm-build.log
+  exit 1
+fi
 echo "Build ok"
 
 echo "== Server neu starten =="
-lsof -ti:3000 | xargs -r kill -9 2>/dev/null || true
+lsof -ti:3000 | xargs kill -9 2>/dev/null || true
 sleep 1
-nohup pnpm start > /tmp/tcmweb.log 2>&1 &
+nohup pnpm start > /tmp/tcm-web.log 2>&1 &
+
 for i in $(seq 1 40); do
-  curl -s -o /dev/null http://localhost:3000/login && { echo "bereit nach ${i}s"; break; }
+  if curl -s -o /dev/null http://localhost:3000/login; then
+    echo "bereit nach ${i}s"
+    break
+  fi
   sleep 1
 done
 

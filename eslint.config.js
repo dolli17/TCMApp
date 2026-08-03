@@ -11,6 +11,8 @@ export default tseslint.config(
       "**/coverage/**",
       "**/playwright-report/**",
       "**/*.types.ts",
+      "**/next-env.d.ts",
+      "**/.next/**",
     ],
   },
   js.configs.recommended,
@@ -22,7 +24,9 @@ export default tseslint.config(
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       "@typescript-eslint/consistent-type-imports": "error",
-      eqeqeq: ["error", "always"],
+      // "x != null" prueft null und undefined zugleich und ist etabliert;
+      // ueberall sonst bleibt strikte Gleichheit Pflicht.
+      eqeqeq: ["error", "always", { null: "ignore" }],
       "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },

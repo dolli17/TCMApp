@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "TC Muckensturm",
+    "slug": "tcm-app",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "tcm",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": { "supportsTablet": true, "bundleIdentifier": "de.tcmuckensturm.app" },
+    "android": { "package": "de.tcmuckensturm.app" },
+    "plugins": ["expo-router"]
+  }
+}

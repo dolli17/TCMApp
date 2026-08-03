@@ -6,12 +6,21 @@ import {
   sumCents,
 } from "./money";
 
+/**
+ * Intl setzt vor das Eurozeichen ein schmales geschuetztes Leerzeichen
+ * (U+202F), je nach Laufzeitumgebung auch ein normales geschuetztes (U+00A0).
+ * Hier als Escape geschrieben, weil solche Zeichen im Quelltext unsichtbar
+ * sind - ein Test, den man nicht lesen kann, ist keiner.
+ */
+function mitNormalenLeerzeichen(text: string): string {
+  return text.replace(/[\u202f\u00a0]/g, " ");
+}
+
 describe("formatCents", () => {
   it("formatiert deutsche Betraege", () => {
-    // Intl setzt ein schmales geschuetztes Leerzeichen vor das Eurozeichen.
-    expect(formatCents(1900).replace(/ | /g, " ")).toBe("19,00 €");
-    expect(formatCents(0).replace(/ | /g, " ")).toBe("0,00 €");
-    expect(formatCents(5).replace(/ | /g, " ")).toBe("0,05 €");
+    expect(mitNormalenLeerzeichen(formatCents(1900))).toBe("19,00 \u20ac");
+    expect(mitNormalenLeerzeichen(formatCents(0))).toBe("0,00 \u20ac");
+    expect(mitNormalenLeerzeichen(formatCents(5))).toBe("0,05 \u20ac");
   });
 });
 
