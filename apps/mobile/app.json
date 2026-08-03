@@ -7,8 +7,16 @@
     "scheme": "tcm",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": { "supportsTablet": true, "bundleIdentifier": "de.tcmuckensturm.app" },
-    "android": { "package": "de.tcmuckensturm.app" },
-    "plugins": ["expo-router"]
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "de.tcmuckensturm.app"
+    },
+    "android": {
+      "package": "de.tcmuckensturm.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ]
   }
 }

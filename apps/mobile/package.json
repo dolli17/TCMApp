@@ -12,18 +12,26 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@react-native-async-storage/async-storage": "^2.1.0",
+    "@babel/runtime": "^8.0.0",
+    "@expo-google-fonts/barlow": "^0.4.1",
+    "@expo-google-fonts/barlow-semi-condensed": "^0.4.1",
+    "@expo/metro-runtime": "^4.0.1",
+    "@opentelemetry/api": "^1.9.1",
+    "@react-native-async-storage/async-storage": "^1.23.1",
     "@supabase/supabase-js": "^2.111.0",
     "@tcm/core": "workspace:*",
+    "@tcm/ui": "workspace:*",
     "expo": "~52.0.23",
+    "expo-font": "^13.0.4",
     "expo-router": "~4.0.15",
     "expo-status-bar": "~2.0.0",
     "react": "18.3.1",
-    "react-native": "0.76.5",
+    "react-dom": "^18.3.1",
+    "react-native": "0.76.9",
     "react-native-safe-area-context": "4.12.0",
     "react-native-screens": "~4.4.0",
     "react-native-url-polyfill": "^2.0.0",
-    "@tcm/ui": "workspace:*"
+    "react-native-web": "^0.19.13"
   },
   "devDependencies": {
     "@types/react": "~18.3.12",
