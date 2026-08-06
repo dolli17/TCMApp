@@ -1,6 +1,3 @@
-// Automatisch erzeugt aus dem Datenbankschema. Nicht von Hand aendern.
-// Neu erzeugen mit: pnpm db:types
-
 export type Json =
   | string
   | number
@@ -10,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.15"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -25,6 +42,7 @@ export type Database = {
           ebusy_id: number | null
           holder: string
           iban_encrypted: string
+          iban_fingerprint: string | null
           iban_last4: string
           id: string
           member_id: string
@@ -38,6 +56,7 @@ export type Database = {
           ebusy_id?: number | null
           holder: string
           iban_encrypted: string
+          iban_fingerprint?: string | null
           iban_last4: string
           id?: string
           member_id: string
@@ -51,6 +70,7 @@ export type Database = {
           ebusy_id?: number | null
           holder?: string
           iban_encrypted?: string
+          iban_fingerprint?: string | null
           iban_last4?: string
           id?: string
           member_id?: string
@@ -361,6 +381,50 @@ export type Database = {
             columns: ["series_id"]
             isOneToOne: false
             referencedRelation: "booking_series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      change_log: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          changed_by_auth: string | null
+          diff: Json
+          id: number
+          member_id: string | null
+          row_id: string | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_auth?: string | null
+          diff: Json
+          id?: never
+          member_id?: string | null
+          row_id?: string | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_auth?: string | null
+          diff?: Json
+          id?: never
+          member_id?: string | null
+          row_id?: string | null
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "change_log_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "members"
             referencedColumns: ["id"]
           },
         ]
@@ -833,6 +897,145 @@ export type Database = {
           },
         ]
       }
+      member_attribute_options: {
+        Row: {
+          active: boolean
+          attribute_type_id: string
+          id: string
+          label: string
+          sort_order: number
+          value: string
+        }
+        Insert: {
+          active?: boolean
+          attribute_type_id: string
+          id?: string
+          label: string
+          sort_order?: number
+          value: string
+        }
+        Update: {
+          active?: boolean
+          attribute_type_id?: string
+          id?: string
+          label?: string
+          sort_order?: number
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_attribute_options_attribute_type_id_fkey"
+            columns: ["attribute_type_id"]
+            isOneToOne: false
+            referencedRelation: "member_attribute_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_attribute_types: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          description: string
+          id: string
+          in_application: boolean
+          multiple: boolean
+          name: string
+          self_editable: boolean
+          sort_order: number
+          updated_at: string
+          value_kind: Database["public"]["Enums"]["attribute_kind"]
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          in_application?: boolean
+          multiple?: boolean
+          name: string
+          self_editable?: boolean
+          sort_order?: number
+          updated_at?: string
+          value_kind?: Database["public"]["Enums"]["attribute_kind"]
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          in_application?: boolean
+          multiple?: boolean
+          name?: string
+          self_editable?: boolean
+          sort_order?: number
+          updated_at?: string
+          value_kind?: Database["public"]["Enums"]["attribute_kind"]
+        }
+        Relationships: []
+      }
+      member_attribute_values: {
+        Row: {
+          attribute_type_id: string
+          id: string
+          member_id: string
+          option_id: string | null
+          set_at: string
+          set_by: string | null
+          text_value: string | null
+        }
+        Insert: {
+          attribute_type_id: string
+          id?: string
+          member_id: string
+          option_id?: string | null
+          set_at?: string
+          set_by?: string | null
+          text_value?: string | null
+        }
+        Update: {
+          attribute_type_id?: string
+          id?: string
+          member_id?: string
+          option_id?: string | null
+          set_at?: string
+          set_by?: string | null
+          text_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_attribute_values_attribute_type_id_fkey"
+            columns: ["attribute_type_id"]
+            isOneToOne: false
+            referencedRelation: "member_attribute_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_attribute_values_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_attribute_values_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "member_attribute_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_attribute_values_set_by_fkey"
+            columns: ["set_by"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_fees: {
         Row: {
           created_at: string
@@ -921,21 +1124,32 @@ export type Database = {
           created_at: string
           ebusy_person_id: number | null
           email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relation: string | null
           first_name: string
           gender: Database["public"]["Enums"]["gender"] | null
           id: string
           import_notes: string | null
           imported_at: string | null
+          invited_at: string | null
+          is_trainer: boolean
           last_name: string
           legacy_data: Json | null
+          login_disabled_at: string | null
           mobile: string | null
+          nationality_code: string | null
           notes: string | null
+          nuliga_id: string | null
           phone: string | null
+          playing_right: Database["public"]["Enums"]["playing_right"]
+          playing_right_since: string | null
           postcode: string | null
           salutation: Database["public"]["Enums"]["salutation"] | null
           source: Database["public"]["Enums"]["record_source"]
           status: Database["public"]["Enums"]["member_status"]
           street: string | null
+          tennis_lk: string | null
           title: string | null
           updated_at: string
         }
@@ -948,21 +1162,32 @@ export type Database = {
           created_at?: string
           ebusy_person_id?: number | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
           first_name: string
           gender?: Database["public"]["Enums"]["gender"] | null
           id?: string
           import_notes?: string | null
           imported_at?: string | null
+          invited_at?: string | null
+          is_trainer?: boolean
           last_name: string
           legacy_data?: Json | null
+          login_disabled_at?: string | null
           mobile?: string | null
+          nationality_code?: string | null
           notes?: string | null
+          nuliga_id?: string | null
           phone?: string | null
+          playing_right?: Database["public"]["Enums"]["playing_right"]
+          playing_right_since?: string | null
           postcode?: string | null
           salutation?: Database["public"]["Enums"]["salutation"] | null
           source?: Database["public"]["Enums"]["record_source"]
           status?: Database["public"]["Enums"]["member_status"]
           street?: string | null
+          tennis_lk?: string | null
           title?: string | null
           updated_at?: string
         }
@@ -975,21 +1200,32 @@ export type Database = {
           created_at?: string
           ebusy_person_id?: number | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
           first_name?: string
           gender?: Database["public"]["Enums"]["gender"] | null
           id?: string
           import_notes?: string | null
           imported_at?: string | null
+          invited_at?: string | null
+          is_trainer?: boolean
           last_name?: string
           legacy_data?: Json | null
+          login_disabled_at?: string | null
           mobile?: string | null
+          nationality_code?: string | null
           notes?: string | null
+          nuliga_id?: string | null
           phone?: string | null
+          playing_right?: Database["public"]["Enums"]["playing_right"]
+          playing_right_since?: string | null
           postcode?: string | null
           salutation?: Database["public"]["Enums"]["salutation"] | null
           source?: Database["public"]["Enums"]["record_source"]
           status?: Database["public"]["Enums"]["member_status"]
           street?: string | null
+          tennis_lk?: string | null
           title?: string | null
           updated_at?: string
         }
@@ -999,6 +1235,130 @@ export type Database = {
             columns: ["billing_payer_id"]
             isOneToOne: false
             referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      membership_applications: {
+        Row: {
+          attribute_choices: Json
+          birthday: string
+          city: string | null
+          country_code: string | null
+          created_member_id: string | null
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          desired_fee_type_id: string | null
+          email: string
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relation: string | null
+          first_name: string
+          gender: Database["public"]["Enums"]["gender"] | null
+          guardian_email: string | null
+          guardian_name: string | null
+          id: string
+          ip_hash: string | null
+          last_name: string
+          message: string | null
+          mobile: string | null
+          phone: string | null
+          possible_duplicate: boolean
+          postcode: string | null
+          salutation: Database["public"]["Enums"]["salutation"] | null
+          status: Database["public"]["Enums"]["application_status"]
+          street: string | null
+          submitted_at: string
+          title: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          attribute_choices?: Json
+          birthday: string
+          city?: string | null
+          country_code?: string | null
+          created_member_id?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          desired_fee_type_id?: string | null
+          email: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
+          first_name: string
+          gender?: Database["public"]["Enums"]["gender"] | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          id?: string
+          ip_hash?: string | null
+          last_name: string
+          message?: string | null
+          mobile?: string | null
+          phone?: string | null
+          possible_duplicate?: boolean
+          postcode?: string | null
+          salutation?: Database["public"]["Enums"]["salutation"] | null
+          status?: Database["public"]["Enums"]["application_status"]
+          street?: string | null
+          submitted_at?: string
+          title?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          attribute_choices?: Json
+          birthday?: string
+          city?: string | null
+          country_code?: string | null
+          created_member_id?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          desired_fee_type_id?: string | null
+          email?: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
+          first_name?: string
+          gender?: Database["public"]["Enums"]["gender"] | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          id?: string
+          ip_hash?: string | null
+          last_name?: string
+          message?: string | null
+          mobile?: string | null
+          phone?: string | null
+          possible_duplicate?: boolean
+          postcode?: string | null
+          salutation?: Database["public"]["Enums"]["salutation"] | null
+          status?: Database["public"]["Enums"]["application_status"]
+          street?: string | null
+          submitted_at?: string
+          title?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_applications_created_member_id_fkey"
+            columns: ["created_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_applications_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_applications_desired_fee_type_id_fkey"
+            columns: ["desired_fee_type_id"]
+            isOneToOne: false
+            referencedRelation: "fee_types"
             referencedColumns: ["id"]
           },
         ]
@@ -1013,6 +1373,7 @@ export type Database = {
           id: string
           import_notes: string | null
           imported_at: string | null
+          legacy_data: Json | null
           member_id: string
           notes: string | null
           number: string
@@ -1030,6 +1391,7 @@ export type Database = {
           id?: string
           import_notes?: string | null
           imported_at?: string | null
+          legacy_data?: Json | null
           member_id: string
           notes?: string | null
           number: string
@@ -1047,6 +1409,7 @@ export type Database = {
           id?: string
           import_notes?: string | null
           imported_at?: string | null
+          legacy_data?: Json | null
           member_id?: string
           notes?: string | null
           number?: string
@@ -1372,6 +1735,53 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_membership_application: {
+        Args: {
+          p_application_id: string
+          p_billing_payer_id?: string
+          p_fee_type_ids?: string[]
+          p_number?: string
+          p_started_on?: string
+        }
+        Returns: {
+          member_id: string
+          membership_number: string
+          needs_invite: boolean
+        }[]
+      }
+      add_bank_account: {
+        Args: {
+          p_bank_name?: string
+          p_holder?: string
+          p_iban: string
+          p_member_id: string
+        }
+        Returns: string
+      }
+      am_i_admin: { Args: never; Returns: boolean }
+      anonymize_member: {
+        Args: { p_member_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      application_form_options: {
+        Args: never
+        Returns: {
+          amount_cents: number
+          art: string
+          code: string
+          description: string
+          name: string
+        }[]
+      }
+      archive_member: {
+        Args: { p_force?: boolean; p_member_id: string; p_reason?: string }
+        Returns: {
+          cancelled_bookings: number
+          open_amount_cents: number
+          open_charges: number
+          released_payees: number
+        }[]
+      }
       booking_settings: {
         Args: never
         Returns: {
@@ -1395,6 +1805,39 @@ export type Database = {
           p_guest_names?: string[]
           p_player_member_ids?: string[]
           p_starts_at: string
+        }
+        Returns: string
+      }
+      create_member: {
+        Args: {
+          p_billing_payer_id?: string
+          p_birthday?: string
+          p_city?: string
+          p_country_code?: string
+          p_email?: string
+          p_fee_type_ids?: string[]
+          p_first_name: string
+          p_gender?: Database["public"]["Enums"]["gender"]
+          p_last_name: string
+          p_mobile?: string
+          p_notes?: string
+          p_number?: string
+          p_phone?: string
+          p_postcode?: string
+          p_salutation?: Database["public"]["Enums"]["salutation"]
+          p_started_on?: string
+          p_street?: string
+          p_title?: string
+        }
+        Returns: string
+      }
+      create_sepa_mandate: {
+        Args: {
+          p_bank_account_id: string
+          p_member_id: string
+          p_reference?: string
+          p_scope?: Database["public"]["Enums"]["mandate_scope"]
+          p_signed_on?: string
         }
         Returns: string
       }
@@ -1434,6 +1877,22 @@ export type Database = {
           type_name: string
         }[]
       }
+      deactivate_bank_account: {
+        Args: { p_bank_account_id: string }
+        Returns: undefined
+      }
+      decline_membership_application: {
+        Args: { p_application_id: string; p_note?: string }
+        Returns: undefined
+      }
+      delete_member: {
+        Args: { p_confirm_name: string; p_member_id: string }
+        Returns: undefined
+      }
+      delete_member_attribute_type: {
+        Args: { p_code: string }
+        Returns: undefined
+      }
       drink_menu: {
         Args: never
         Returns: {
@@ -1443,6 +1902,20 @@ export type Database = {
           name: string
           price_cents: number
           sort_order: number
+        }[]
+      }
+      end_membership: {
+        Args: {
+          p_cancellation_date?: string
+          p_ended_on?: string
+          p_member_id: string
+          p_reason?: string
+          p_set_inactive?: boolean
+        }
+        Returns: {
+          future_bookings: number
+          open_amount_cents: number
+          open_charges: number
         }[]
       }
       ensure_default_settings: { Args: never; Returns: number }
@@ -1465,12 +1938,126 @@ export type Database = {
       }
       iban_is_valid: { Args: { p_iban: string }; Returns: boolean }
       iban_to_numeric: { Args: { p_text: string }; Returns: string }
+      link_auth_user: {
+        Args: { p_auth_user_id: string; p_member_id: string }
+        Returns: undefined
+      }
+      mark_application_spam: {
+        Args: { p_application_id: string }
+        Returns: undefined
+      }
+      member_attributes: {
+        Args: { p_member_id: string }
+        Returns: {
+          code: string
+          darf_ich: boolean
+          description: string
+          multiple: boolean
+          name: string
+          option_label: string
+          option_value: string
+          optionen: Json
+          self_editable: boolean
+          set_at: string
+          text_value: string
+          value_kind: Database["public"]["Enums"]["attribute_kind"]
+        }[]
+      }
+      member_delete_impact: {
+        Args: { p_member_id: string }
+        Returns: {
+          bank_accounts: number
+          booking_players: number
+          bookings: number
+          can_delete: boolean
+          charges: number
+          drink_purchases: number
+          mandates: number
+          payees: number
+          reason: string
+          work_duty_entries: number
+        }[]
+      }
       member_directory: {
         Args: { p_query?: string }
         Returns: {
           first_name: string
           id: string
           last_name: string
+        }[]
+      }
+      member_fee_overview: {
+        Args: { p_member_id: string; p_year: number }
+        Returns: {
+          code: string
+          effektiv_cents: number
+          fee_type_id: string
+          name: string
+          note: string
+          override_amount_cents: number
+          preis_cents: number
+          zugeordnet: boolean
+        }[]
+      }
+      member_finances: {
+        Args: { p_member_id: string }
+        Returns: {
+          bank_account_id: string
+          bank_name: string
+          holder: string
+          iban_last4: string
+          im_einzug: boolean
+          konto_aktiv: boolean
+          last_used_on: string
+          mandat_status: Database["public"]["Enums"]["mandate_status"]
+          mandate_id: string
+          reference: string
+          reference_conflict: boolean
+          revoked_on: string
+          scope: Database["public"]["Enums"]["mandate_scope"]
+          sequence_type: Database["public"]["Enums"]["mandate_sequence"]
+          signed_on: string
+        }[]
+      }
+      member_for_login_admin: {
+        Args: { p_member_id: string }
+        Returns: {
+          auth_user_id: string
+          email: string
+          id: string
+          name: string
+          status: Database["public"]["Enums"]["member_status"]
+        }[]
+      }
+      member_login_state: {
+        Args: { p_member_id: string }
+        Returns: {
+          disabled_at: string
+          einladbar: boolean
+          email: string
+          grund: string
+          hat_zugang: boolean
+          invited_at: string
+          ist_admin: boolean
+          last_sign_in: string
+        }[]
+      }
+      member_overview: {
+        Args: { p_filter?: string; p_limit?: number; p_query?: string }
+        Returns: {
+          birthday: string
+          email: string
+          ended_on: string
+          first_name: string
+          has_login: boolean
+          id: string
+          is_admin: boolean
+          is_paid_by: boolean
+          is_trainer: boolean
+          last_name: string
+          number: string
+          started_on: string
+          status: Database["public"]["Enums"]["member_status"]
         }[]
       }
       mod97: { Args: { p_digits: string }; Returns: number }
@@ -1542,6 +2129,15 @@ export type Database = {
           starts_at: string
         }[]
       }
+      reactivate_membership: {
+        Args: {
+          p_fee_type_ids?: string[]
+          p_member_id: string
+          p_number?: string
+          p_started_on?: string
+        }
+        Returns: string
+      }
       record_drink_purchase: {
         Args: { p_item_id: string; p_quantity?: number }
         Returns: string
@@ -1550,6 +2146,63 @@ export type Database = {
         Args: { p_item_id: string; p_member_id: string; p_quantity?: number }
         Returns: string
       }
+      remove_member_attribute: {
+        Args: {
+          p_member_id: string
+          p_option_value?: string
+          p_type_code: string
+        }
+        Returns: undefined
+      }
+      remove_member_fee: {
+        Args: { p_fee_type_id: string; p_member_id: string; p_year: number }
+        Returns: undefined
+      }
+      revoke_sepa_mandate: {
+        Args: { p_mandate_id: string; p_revoked_on?: string }
+        Returns: undefined
+      }
+      set_billing_payer: {
+        Args: { p_member_id: string; p_payer_id?: string }
+        Returns: undefined
+      }
+      set_login_disabled: {
+        Args: { p_disabled: boolean; p_member_id: string }
+        Returns: undefined
+      }
+      set_member_attribute: {
+        Args: {
+          p_member_id: string
+          p_option_value?: string
+          p_text_value?: string
+          p_type_code: string
+        }
+        Returns: undefined
+      }
+      set_member_attribute_options: {
+        Args: { p_options: Json; p_type_id: string }
+        Returns: number
+      }
+      set_member_fee: {
+        Args: {
+          p_fee_type_id: string
+          p_member_id: string
+          p_note?: string
+          p_override_amount_cents?: number
+          p_year: number
+        }
+        Returns: {
+          already_charged: boolean
+        }[]
+      }
+      set_member_role: {
+        Args: {
+          p_granted: boolean
+          p_member_id: string
+          p_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: undefined
+      }
       set_setting: {
         Args: { p_key: string; p_value: string }
         Returns: undefined
@@ -1557,6 +2210,11 @@ export type Database = {
       setting_int: { Args: { p_key: string }; Returns: number }
       setting_text: { Args: { p_key: string }; Returns: string }
       setting_time: { Args: { p_key: string }; Returns: string }
+      submit_membership_application: {
+        Args: { p_data: Json; p_ip?: string; p_user_agent?: string }
+        Returns: undefined
+      }
+      unlink_auth_user: { Args: { p_member_id: string }; Returns: string }
       update_booking_players: {
         Args: {
           p_booking_id: string
@@ -1565,6 +2223,28 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_member: {
+        Args: { p_member_id: string; p_patch: Json }
+        Returns: undefined
+      }
+      update_membership: {
+        Args: { p_membership_id: string; p_patch: Json }
+        Returns: undefined
+      }
+      upsert_member_attribute_type: {
+        Args: {
+          p_active?: boolean
+          p_code: string
+          p_description: string
+          p_in_application?: boolean
+          p_multiple?: boolean
+          p_name: string
+          p_self_editable?: boolean
+          p_sort_order?: number
+          p_value_kind?: Database["public"]["Enums"]["attribute_kind"]
+        }
+        Returns: string
+      }
       void_drink_purchase: {
         Args: { p_purchase_id: string; p_reason?: string }
         Returns: undefined
@@ -1572,6 +2252,8 @@ export type Database = {
     }
     Enums: {
       app_role: "member" | "admin"
+      application_status: "new" | "accepted" | "declined" | "spam"
+      attribute_kind: "list" | "text" | "date" | "boolean" | "number"
       billing_period_status: "open" | "closed" | "charged"
       booking_kind: "booking" | "blocking"
       booking_status: "active" | "cancelled"
@@ -1592,6 +2274,7 @@ export type Database = {
       mandate_status: "active" | "revoked" | "expired"
       member_status: "active" | "inactive" | "archived"
       membership_status: "active" | "requested" | "declined" | "ended"
+      playing_right: "none" | "own_club" | "second_club"
       purchase_source: "app" | "kiosk" | "bar_duty"
       record_source: "app" | "ebusy_import"
       salutation: "female" | "male" | "none"
@@ -1720,9 +2403,14 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["member", "admin"],
+      application_status: ["new", "accepted", "declined", "spam"],
+      attribute_kind: ["list", "text", "date", "boolean", "number"],
       billing_period_status: ["open", "closed", "charged"],
       booking_kind: ["booking", "blocking"],
       booking_status: ["active", "cancelled"],
@@ -1744,9 +2432,11 @@ export const Constants = {
       mandate_status: ["active", "revoked", "expired"],
       member_status: ["active", "inactive", "archived"],
       membership_status: ["active", "requested", "declined", "ended"],
+      playing_right: ["none", "own_club", "second_club"],
       purchase_source: ["app", "kiosk", "bar_duty"],
       record_source: ["app", "ebusy_import"],
       salutation: ["female", "male", "none"],
     },
   },
 } as const
+

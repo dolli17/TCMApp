@@ -328,10 +328,15 @@ with kandidaten as (
     'DE' || public.iban_check_digits(blz || konto) || blz || konto as iban
   from kandidaten
 )
-insert into public.bank_accounts (member_id, iban_encrypted, iban_last4, holder, bank_name)
+insert into public.bank_accounts
+  (member_id, iban_encrypted, iban_fingerprint, iban_last4, holder, bank_name)
 select
   member_id,
   private.encrypt_iban(iban),
+  -- Der Fingerabdruck gehoert von Anfang an dazu: ohne ihn liefe die
+  -- Dublettenpruefung auf dem Testbestand ins Leere, weil der Chiffretext
+  -- bei jeder Verschluesselung ein anderer ist.
+  private.fingerprint_iban(iban),
   right(iban, 4),
   first_name || ' ' || last_name,
   (array['Volksbank Stuttgart','Kreissparkasse Waiblingen','LBBW',
@@ -505,3 +510,131 @@ from public.booking_series bs
 cross join generate_series(bs.valid_from, bs.valid_to, interval '1 day') d
 where extract(dow from d)::integer = bs.weekday
 on conflict on constraint bookings_no_overlap do nothing;
+
+-- ===========================================================================
+-- Merkmale: Einwilligungen und ein Beispiel aus der Praxis
+--
+-- Bewusst im Seed und nicht in der Migration: das sind Vereinsdaten, keine
+-- Struktur. Ein anderer Verein braucht andere - und der Vorstand kann sie im
+-- Admin-Dashboard jederzeit selbst anlegen.
+-- ===========================================================================
+
+insert into public.member_attribute_types
+  (code, name, description, value_kind, multiple, self_editable, in_application, sort_order)
+values
+  ('foto', 'Fotos und Veröffentlichung',
+   'Darf die Person auf Fotos der Website, in Aushängen und in der Presse erscheinen? '
+   'Bei Minderjährigen erteilen die Erziehungsberechtigten die Einwilligung.',
+   'boolean', false, true, true, 10),
+
+  ('newsletter', 'Vereinsnachrichten per E-Mail',
+   'Rundmails zu Veranstaltungen und Neuigkeiten. Pflichtinformationen zu Beitrag und '
+   'Lastschrift gehen unabhängig davon heraus.',
+   'boolean', false, true, true, 20),
+
+  ('whatsapp', 'Messenger-Gruppen',
+   'Aufnahme in die Gruppen des Vereins. Eigene Einwilligung, weil die Telefonnummer '
+   'dabei an einen Dritten gelangt.',
+   'boolean', false, true, true, 30),
+
+  ('ehrung', 'Ehrungen',
+   'Vom Verein verliehene Auszeichnungen, etwa für langjährige Mitgliedschaft.',
+   'list', true, false, false, 40)
+on conflict (code) do nothing;
+
+insert into public.member_attribute_options (attribute_type_id, value, label, sort_order)
+select t.id, v.value, v.label, v.sort_order
+from public.member_attribute_types t
+cross join (values
+  ('silberne_nadel', 'Silberne Ehrennadel', 1),
+  ('goldene_nadel',  'Goldene Ehrennadel',  2),
+  ('ehrenmitglied',  'Ehrenmitgliedschaft', 3)
+) as v(value, label, sort_order)
+where t.code = 'ehrung'
+on conflict (attribute_type_id, value) do nothing;
+
+-- ===========================================================================
+-- Anmeldbare Testkonten fuer die lokale Entwicklung
+--
+-- Der Seed legte bisher nur Mitglieder an, aber keine Logins - lokal konnte
+-- sich also niemand anmelden, und die E2E-Tests liefen zwangslaeufig gegen die
+-- Cloud. Diese drei Konten schliessen die Luecke.
+--
+-- Die Adressen enden auf .local und sind damit weder erreichbar noch mit
+-- echten Adressen zu verwechseln. Das Passwort steht bewusst im Klartext hier:
+-- es gilt ausschliesslich fuer diese synthetische Datenbank.
+-- ===========================================================================
+
+do $$
+declare
+  v_passwort constant text := 'tcm-lokal-2026';
+  v_konten constant text[][] := array[
+    array['admin@tcm.local',    'admin'],
+    array['mitglied@tcm.local', 'member'],
+    array['kiosk@tcm.local',    'kiosk']
+  ];
+  v_zeile  text[];
+  v_auth   uuid;
+  v_member uuid;
+begin
+  foreach v_zeile slice 1 in array v_konten loop
+    v_auth := extensions.gen_random_uuid();
+
+    -- Die Token-Spalten muessen leere Zeichenketten enthalten, nicht null:
+    -- GoTrue liest sie in Go-Strings ein und quittiert null mit
+    -- "converting NULL to string is unsupported" - einem Fehler 500 beim
+    -- Anmelden, der nichts ueber seine Ursache verraet.
+    insert into auth.users (
+      id, instance_id, aud, role, email, encrypted_password,
+      email_confirmed_at, created_at, updated_at,
+      raw_app_meta_data, raw_user_meta_data,
+      confirmation_token, recovery_token,
+      email_change, email_change_token_new, email_change_token_current,
+      phone_change, phone_change_token, reauthentication_token
+    ) values (
+      v_auth, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+      v_zeile[1], extensions.crypt(v_passwort, extensions.gen_salt('bf')),
+      now(), now(), now(),
+      '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb,
+      '', '', '', '', '', '', '', ''
+    );
+
+    -- Ohne Identitaet lehnt GoTrue die Anmeldung mit Passwort ab.
+    insert into auth.identities (
+      id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at
+    ) values (
+      extensions.gen_random_uuid(), v_auth, v_auth::text, 'email',
+      jsonb_build_object('sub', v_auth::text, 'email', v_zeile[1], 'email_verified', true),
+      now(), now(), now()
+    );
+
+    if v_zeile[2] = 'kiosk' then
+      -- Das Tablet an der Theke ist kein Mitglied, sondern ein Geraetekonto.
+      insert into public.kiosk_devices (auth_user_id, name, location)
+      values (v_auth, 'Kiosk Clubheim', 'Theke');
+    else
+      -- An ein bestehendes Mitglied haengen, damit die Konten echte Historie
+      -- haben: Buchungen, Getraenke, Forderungen.
+      select m.id into v_member
+      from public.members m
+      where m.auth_user_id is null and m.status = 'active'
+        and m.birthday is not null and m.birthday <= current_date - interval '18 years'
+      order by m.last_name
+      limit 1;
+
+      update public.members
+         set auth_user_id = v_auth, email = v_zeile[1]
+       where id = v_member;
+
+      insert into public.member_roles (member_id, role)
+      values (v_member, 'member')
+      on conflict do nothing;
+
+      if v_zeile[2] = 'admin' then
+        insert into public.member_roles (member_id, role)
+        values (v_member, 'admin')
+        on conflict do nothing;
+      end if;
+    end if;
+  end loop;
+end $$;

@@ -9,6 +9,23 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+/**
+ * Seiten, die ohne Anmeldung erreichbar sind.
+ *
+ * Bewusst eine kurze, ausdrückliche Liste statt einer Regel: wer hier etwas
+ * einträgt, öffnet die Seite für das offene Netz und soll das auch merken.
+ * Der Mitgliedsantrag steht darauf, weil ein künftiges Mitglied naturgemäß
+ * noch keinen Login hat; die beiden Passwortseiten, weil man sonst einen
+ * Login bräuchte, um an seinen Login zu kommen.
+ */
+const OEFFENTLICH = [
+  "/login",
+  "/_next",
+  "/antrag",
+  "/passwort-setzen",
+  "/passwort-vergessen",
+];
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -35,7 +52,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pfad = request.nextUrl.pathname;
-  const oeffentlich = pfad.startsWith("/login") || pfad.startsWith("/_next");
+  const oeffentlich = OEFFENTLICH.some((p) => pfad === p || pfad.startsWith(p + "/"));
 
   if (!user && !oeffentlich) {
     const ziel = request.nextUrl.clone();

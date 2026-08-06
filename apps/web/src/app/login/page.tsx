@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import logo from "@tcm/ui/logo.png";
@@ -76,6 +77,10 @@ function Formular() {
           <button className="knopf block" disabled={laeuft}>
             {laeuft ? "Anmelden…" : "Anmelden"}
           </button>
+
+          <p className="beschreibung" style={{ marginTop: 12, textAlign: "center" }}>
+            <Link href="/passwort-vergessen">Passwort vergessen?</Link>
+          </p>
         </form>
       </div>
     </div>

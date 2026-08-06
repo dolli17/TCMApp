@@ -16,14 +16,14 @@ export interface PostgresLikeError {
 
 const CONSTRAINT_TEXTE: Record<string, string> = {
   bookings_no_overlap: "Dieser Platz ist zu der Zeit bereits belegt.",
-  bookings_slot_half_open: "Der Zeitraum der Buchung ist ungueltig.",
+  bookings_slot_half_open: "Der Zeitraum der Buchung ist ungültig.",
   bookings_owner_present: "Der Buchung fehlt ein Mitglied oder ein Titel.",
   booking_players_member_xor_guest:
     "Ein Mitspieler ist entweder Mitglied oder Gast, nicht beides.",
   booking_players_unique_member:
     "Dieses Mitglied ist bereits als Mitspieler eingetragen.",
   charges_one_per_member_kind_period:
-    "Fuer diesen Zeitraum gibt es bereits eine Forderung.",
+    "Für diesen Zeitraum gibt es bereits eine Forderung.",
   debit_items_one_active_per_charge:
     "Diese Forderung ist bereits in einem Lastschriftlauf enthalten.",
   members_email_key: "Diese E-Mail-Adresse wird bereits verwendet.",
@@ -36,15 +36,20 @@ const CONSTRAINT_TEXTE: Record<string, string> = {
     "Ein Mandat kann nicht vor seiner Unterschrift benutzt worden sein.",
   sepa_mandates_reference_unique_for_app:
     "Diese Mandatsreferenz ist bereits vergeben.",
+  members_nuliga_id_key: "Diese nuLiga-Id ist bereits einem anderen Mitglied zugeordnet.",
+  members_nationality_code_format:
+    "Die Nationalität wird als zwei Großbuchstaben angegeben, zum Beispiel DE.",
+  members_emergency_contact_paarweise:
+    "Zur Notfallnummer gehört auch ein Name.",
 };
 
 const CODE_TEXTE: Record<string, string> = {
   "23P01": "Dieser Platz ist zu der Zeit bereits belegt.",
   "23505": "Dieser Eintrag existiert bereits.",
-  "23503": "Ein verknuepfter Datensatz fehlt oder wird noch verwendet.",
+  "23503": "Ein verknüpfter Datensatz fehlt oder wird noch verwendet.",
   "23514": "Die Eingabe verletzt eine Regel.",
-  "42501": "Dafuer fehlt dir die Berechtigung.",
-  "22023": "Die Eingabe ist ungueltig.",
+  "42501": "Dafür fehlt dir die Berechtigung.",
+  "22023": "Die Eingabe ist ungültig.",
   P0002: "Der gesuchte Datensatz wurde nicht gefunden.",
 };
 

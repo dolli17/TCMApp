@@ -534,6 +534,92 @@ dialog.fenster::backdrop { background: rgba(9,22,34,.5); backdrop-filter: blur(2
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+/* ---------------------------------------------------------------------------
+   Mitgliederverwaltung
+   --------------------------------------------------------------------------- */
+
+/* Mehrspaltiges Formularraster. Stand bisher als Inline-Style in
+   SerienFormular.tsx und wäre in jedem weiteren Formular erneut abgetippt
+   worden. Die Spalten brechen von selbst um, kein Media Query nötig. */
+.formraster {
+  display: grid; gap: 12px 14px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+.formraster.eng { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+.formraster > label { margin-bottom: 0; }
+/* Ein Feld, das über die volle Breite laufen soll (Notiz, Anschrift). */
+.formraster > label.breit { grid-column: 1 / -1; }
+
+/* Reiter innerhalb einer Seite. Am Telefon waagerecht scrollbar statt
+   umbrechend – umbrechende Reiter verschieben den Inhalt darunter bei jedem
+   Wechsel. */
+.reiter {
+  display: flex; gap: 4px; margin-bottom: 18px;
+  overflow-x: auto; scrollbar-width: none;
+  border-bottom: 1px solid var(--line);
+}
+.reiter::-webkit-scrollbar { display: none; }
+.reiter a {
+  flex: 0 0 auto; text-decoration: none; white-space: nowrap;
+  font-family: var(--font-display); font-weight: 700; font-size: 15px;
+  color: var(--muted); padding: 10px 13px;
+  border-bottom: 2.5px solid transparent; margin-bottom: -1px;
+}
+.reiter a:hover { color: var(--ink); }
+.reiter a[aria-current="page"] { color: var(--blue-ink); border-bottom-color: var(--blue); }
+
+/* Fehler am einzelnen Feld. Bisher gab es nur .hinweis.fehler über dem
+   gesamten Formular – bei zwanzig Feldern ist das keine Hilfe. */
+.feldfehler {
+  display: block; margin-top: 5px; font-size: 12.5px;
+  font-weight: 600; color: var(--red);
+}
+input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] {
+  border-color: var(--red);
+}
+input[aria-invalid="true"]:focus, select[aria-invalid="true"]:focus,
+textarea[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--red) 18%, transparent);
+}
+
+/* Kopf einer Detailseite: Name und Status links, Aktionen rechts. */
+.detailkopf {
+  display: flex; flex-wrap: wrap; align-items: flex-start;
+  justify-content: space-between; gap: 12px; margin-bottom: 6px;
+}
+.detailkopf .marken-reihe { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+.detailkopf .aktionen { display: flex; flex-wrap: wrap; gap: 8px; }
+.zurueck {
+  display: inline-block; margin-bottom: 10px; font-size: 13px;
+  color: var(--muted); text-decoration: none;
+}
+.zurueck:hover { color: var(--blue-ink); }
+
+/* Statusfarben für Marken. Kommen ohne neues Token aus. */
+.marke-klein.gruen {
+  background: color-mix(in srgb, var(--green) 16%, transparent);
+  color: color-mix(in srgb, var(--green) 72%, var(--ink));
+}
+.marke-klein.rot {
+  background: color-mix(in srgb, var(--red) 14%, transparent);
+  color: color-mix(in srgb, var(--red) 78%, var(--ink));
+}
+
+/* Breiteres Fenster für Formulare. Das Standardfenster ist auf eine Spalte
+   ausgelegt; ein Anlegeformular braucht zwei. */
+dialog.fenster.breit { width: min(760px, 100vw - 24px); }
+
+/* Änderungsprotokoll */
+.protokoll .alt { text-decoration: line-through; color: var(--muted); }
+.protokoll .neu { font-weight: 600; }
+.protokoll .feld {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+}
+
+/* Öffentliche Seiten ohne Anmeldung (Mitgliedsantrag, Passwort setzen).
+   Nutzt dieselbe Bühne wie die Anmeldung, nur mit breiterem Blatt. */
+.antragsseite .sheet { max-width: 640px; }
+
 /* Weniger Bewegung, wenn das System danach fragt */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }

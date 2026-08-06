@@ -59,7 +59,7 @@ export function SerienFormular({
 
   return (
     <div className="karte" style={{ marginBottom: "2rem" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: "0.75rem" }}>
+      <div className="formraster eng">
         <label>
           <span>Titel</span>
           <input

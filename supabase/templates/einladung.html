@@ -1,0 +1,41 @@
+<!-- Einladung zum Mitgliederbereich.
+     Verfügbare Platzhalter: .ConfirmationURL .SiteURL .Email .Token -->
+<div style="font-family: Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.5; color: #16222e; max-width: 520px;">
+  <h2 style="font-size: 20px; margin: 0 0 16px;">Willkommen beim TC Muckensturm</h2>
+
+  <p>Hallo,</p>
+
+  <p>
+    für dich wurde ein Zugang zur Vereins-App angelegt. Damit buchst du Plätze,
+    siehst deine Getränke und deinen Arbeitsdienst und pflegst deine eigenen
+    Daten.
+  </p>
+
+  <p>Über den folgenden Link vergibst du dein Passwort selbst:</p>
+
+  <p style="margin: 24px 0;">
+    <a href="{{ .ConfirmationURL }}"
+       style="background: #1f4e79; color: #ffffff; text-decoration: none;
+              padding: 12px 20px; border-radius: 14px; display: inline-block;">
+      Passwort festlegen
+    </a>
+  </p>
+
+  <p style="color: #5b6b7a; font-size: 14px;">
+    Falls der Knopf nicht funktioniert, kopiere diese Adresse in deinen Browser:<br>
+    <span style="word-break: break-all;">{{ .ConfirmationURL }}</span>
+  </p>
+
+  <p style="color: #5b6b7a; font-size: 14px;">
+    Der Link gilt nur eine begrenzte Zeit. Ist er abgelaufen, meldet sich der
+    Vorstand gerne noch einmal – oder du nutzt auf der Anmeldeseite
+    „Passwort vergessen“.
+  </p>
+
+  <p style="color: #5b6b7a; font-size: 14px;">
+    Du kannst dir diese Einladung nicht erklären? Dann ignoriere diese Nachricht
+    einfach; ohne den Link passiert nichts.
+  </p>
+
+  <p style="margin-top: 32px;">Sportliche Grüße<br>TC Muckensturm</p>
+</div>

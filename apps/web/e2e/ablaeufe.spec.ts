@@ -8,22 +8,7 @@ import { expect, test, type Page } from "@playwright/test";
  * werden mitgetestet - nichts davon wäre mit Mocks zu haben.
  */
 
-const PASSWORT = process.env.DEV_PASSWORD ?? "";
-
-// Es gibt nur noch drei Sorten von Konten: Admin, Mitglied und Kiosk-Geraet.
-const NUTZER = {
-  mitglied: process.env.DEV_USER_MEMBER ?? "",
-  admin: process.env.DEV_USER_ADMIN ?? "",
-  kiosk: process.env.DEV_USER_KIOSK ?? "",
-};
-
-async function anmelden(page: Page, email: string) {
-  await page.goto("/login");
-  await page.getByLabel("E-Mail").fill(email);
-  await page.getByLabel("Passwort").fill(PASSWORT);
-  await page.getByRole("button", { name: "Anmelden" }).click();
-  await page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 20_000 });
-}
+import { anmelden, NUTZER } from "./hilfen";
 
 test.describe("Anmeldung", () => {
   test("ohne Anmeldung wird auf die Loginseite umgeleitet", async ({ page }) => {
@@ -285,7 +270,13 @@ test.describe("Berechtigungen", () => {
     await expect(nav.getByRole("link", { name: "Einstellungen" })).toHaveCount(0);
   });
 
-  for (const pfad of ["/admin/mitglieder", "/admin/beitraege", "/admin/serien", "/admin/einstellungen"]) {
+  for (const pfad of [
+    "/admin/mitglieder",
+    "/admin/beitraege",
+    "/admin/serien",
+    "/admin/einstellungen",
+    "/admin/einstellungen/merkmale",
+  ]) {
     test(`normales Mitglied kommt nicht an ${pfad}`, async ({ page }) => {
       await anmelden(page, NUTZER.mitglied);
       await page.goto(pfad);

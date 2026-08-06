@@ -8,16 +8,14 @@ import { expect, test, type Page } from "@playwright/test";
  * wieder, ohne dass etwas kaputt wäre.
  */
 
-const PASSWORT = process.env.DEV_PASSWORD ?? "";
-const MITGLIED = process.env.DEV_USER_MEMBER ?? "";
-const ADMIN = process.env.DEV_USER_ADMIN ?? "";
+import { anmelden as anmeldenAls, NUTZER } from "./hilfen";
 
+const MITGLIED = NUTZER.mitglied;
+const ADMIN = NUTZER.admin;
+
+/** Ohne Angabe meldet sich hier das normale Mitglied an. */
 async function anmelden(page: Page, email: string = MITGLIED) {
-  await page.goto("/login");
-  await page.getByLabel("E-Mail").fill(email);
-  await page.getByLabel("Passwort").fill(PASSWORT);
-  await page.getByRole("button", { name: "Anmelden" }).click();
-  await page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 20_000 });
+  await anmeldenAls(page, email);
 }
 
 test.describe("Theme", () => {

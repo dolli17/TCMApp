@@ -5,23 +5,27 @@
  * ersetzen keine der serverseitigen Regeln - sie sorgen nur dafuer, dass
  * offensichtlich Falsches gar nicht erst abgeschickt wird und der Benutzer
  * eine Meldung an der richtigen Stelle im Formular sieht.
+ *
+ * Die Meldungstexte stehen mit Umlauten hier, weil sie unveraendert im
+ * Formular landen. Fuer Kommentare und SQL bleibt es bei der ASCII-Schreibung
+ * wie im uebrigen Repo.
  */
 
 import { z } from "zod";
 import { isValidIban } from "./iban";
 
-export const uuidSchema = z.string().uuid("Ungueltige Kennung.");
+export const uuidSchema = z.string().uuid("Ungültige Kennung.");
 
 export const emailSchema = z
   .string()
   .trim()
   .min(1, "E-Mail-Adresse fehlt.")
-  .email("Das ist keine gueltige E-Mail-Adresse.");
+  .email("Das ist keine gültige E-Mail-Adresse.");
 
 export const ibanSchema = z
   .string()
   .trim()
-  .refine(isValidIban, "Diese IBAN ist nicht gueltig - bitte Ziffern pruefen.");
+  .refine(isValidIban, "Diese IBAN ist nicht gültig – bitte Ziffern prüfen.");
 
 /** Betrag als Text, wie er aus einem Eingabefeld kommt. */
 export const amountSchema = z
@@ -39,7 +43,7 @@ export const memberProfileSchema = z.object({
   postcode: z
     .string()
     .trim()
-    .regex(/^\d{5}$/, "Postleitzahl muss fuenfstellig sein.")
+    .regex(/^\d{5}$/, "Postleitzahl muss fünfstellig sein.")
     .optional()
     .or(z.literal("")),
   city: z.string().trim().max(100).optional().or(z.literal("")),
@@ -49,7 +53,7 @@ export const createBookingSchema = z
   .object({
     courtId: uuidSchema,
     startsAt: z.date(),
-    bookingTypeCode: z.string().min(1, "Buchungsart waehlen."),
+    bookingTypeCode: z.string().min(1, "Buchungsart wählen."),
     playerMemberIds: z.array(uuidSchema).default([]),
     guestNames: z.array(z.string().trim().min(1, "Gastname fehlt.")).default([]),
   })
@@ -62,8 +66,8 @@ export const drinkPurchaseSchema = z.object({
   drinkItemId: uuidSchema,
   quantity: z
     .number()
-    .int("Nur ganze Stueck.")
-    .min(1, "Mindestens ein Stueck.")
+    .int("Nur ganze Stück.")
+    .min(1, "Mindestens ein Stück.")
     .max(50, "Mehr als 50 auf einmal ist vermutlich ein Vertipper."),
 });
 
@@ -92,7 +96,7 @@ export const workDutyEntrySchema = z.object({
   year: z.number().int().min(1970).max(2200),
   hours: z
     .number()
-    .positive("Stunden muessen groesser als null sein.")
+    .positive("Stunden müssen größer als null sein.")
     .max(200, "So viele Stunden auf einmal sind unplausibel."),
   workedOn: z.date(),
   description: z.string().trim().max(500).optional().or(z.literal("")),
