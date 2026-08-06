@@ -402,3 +402,11 @@ begin
     '42501', null, 'Ein normales Mitglied kann keine Serie anlegen');
   perform set_config('role', 'postgres', true);
 end; $f$;
+
+-- Diese Datei definiert nur Testfunktionen; ausgefuehrt werden sie in
+-- 99_runtests.sql. Der eine Test hier belegt, dass die Definitionen selbst
+-- fehlerfrei eingespielt wurden - ohne Plan haelt pg_prove die Datei sonst
+-- fuer kaputt.
+select extensions.plan(1);
+select extensions.pass('Buchungs-RPC-Tests sind eingespielt');
+select * from extensions.finish();

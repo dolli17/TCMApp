@@ -419,3 +419,11 @@ begin
   );
 end;
 $$;
+
+-- Diese Datei definiert nur Testfunktionen; ausgefuehrt werden sie in
+-- 99_runtests.sql. Der eine Test hier belegt, dass die Definitionen selbst
+-- fehlerfrei eingespielt wurden - ohne Plan haelt pg_prove die Datei sonst
+-- fuer kaputt.
+select extensions.plan(1);
+select extensions.pass('Constraint-Tests sind eingespielt');
+select * from extensions.finish();

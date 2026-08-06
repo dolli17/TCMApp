@@ -12,7 +12,10 @@ export default tseslint.config(
       "**/playwright-report/**",
       "**/*.types.ts",
       "**/next-env.d.ts",
-      "**/.next/**",
+      // Arbeitsverzeichnisse der Supabase-CLI. Enthalten fremden,
+      // minifizierten Code und sind bereits in .gitignore.
+      "supabase/.temp/**",
+      "supabase/.branches/**",
     ],
   },
   js.configs.recommended,

@@ -32,6 +32,26 @@ sie danach zurück. Die Tests hinterlassen also keinen Zustand – auch nicht di
 | `01_constraints.sql` | Doppelbuchungsschutz, Intervallform, Mitspieler-Regeln, gesperrte Abrechnungsperioden, Preisbildung, Idempotenz des Beitragslaufs |
 | `02_rls.sql` | Rollentrennung, Zahler-Beziehung, Bankdaten, Kiosk-Abgrenzung, `anon`, Vollständigkeitsprüfung |
 | `03_rpc_bookings.sql` | Das Regelwerk über `create_booking`: Kontingent, Vorlauf, Öffnungszeiten, Zeitraster, Storno |
+| `04_mitglieder.sql` | Selbstpflege-Erlaubnisliste, Änderungsprotokoll, Mitglieder-RPCs |
+| `99_runtests.sql` | Führt die Suite aus |
+
+Die Dateien `01` bis `04` **definieren nur Funktionen**. Ausgeführt wird alles in
+`99_runtests.sql` – die Nummer sorgt dafür, dass `pg_prove` erst definiert und dann
+ausführt. Jede Definitionsdatei schließt mit einem `plan(1)` plus `pass()`; ohne
+Plan hält `pg_prove` eine Datei für kaputt und meldet „No subtests run".
+
+## Zwei Fallen
+
+**Umbenannte Testfunktionen bleiben liegen.** `create or replace` legt die neue
+Funktion an, löscht die alte aber nicht – sie läuft in der Suite weiter mit und
+schlägt fehl, während dieselbe Datei einzeln grün ist. Nach jedem Umbenennen oder
+Löschen einer Testfunktion deshalb `pnpm db:reset`.
+
+**Ein Admin kommt an `public.members` nicht per direktem `UPDATE`.** Die Policy
+`members_admin_all` erlaubt ihm jede Zeile, aber `authenticated` hat auf der Tabelle
+nur einen *Spalten*-Grant. Alles außerhalb dieser Liste – `is_trainer`, `status`,
+`billing_payer_id`, `email` – geht ausschließlich über eine `security definer`-RPC.
+Ein Test, der einen Admin direkt schreiben lässt, prüft die falsche Sache.
 
 ## Zwei Tests, die besonders wichtig sind
 
