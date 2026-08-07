@@ -43,9 +43,10 @@ sie danach zurück. Die Tests hinterlassen also keinen Zustand – auch nicht di
 | `12_vorabankuendigung.sql` | Frist, Bündelung je Zahler, Idempotenz der Ankündigung |
 | `13_lastschrift.sql` | Auswahl, Mandatsdeckung, Bündelung, Datei und Einreichung |
 | `14_ruecklaeufer.sql` | Rücklastschrift, Wiedervorlage, Abschluss eines Laufs |
+| `15_arbeitsdienst.sql` | Soll-Regeln, Stunden erfassen, Jahresausgleich |
 | `99_runtests.sql` | Führt die Suite aus |
 
-Die Dateien `01` bis `14` **definieren nur Funktionen**. Ausgeführt wird alles in
+Die Dateien `01` bis `15` **definieren nur Funktionen**. Ausgeführt wird alles in
 `99_runtests.sql` – die Nummer sorgt dafür, dass `pg_prove` erst definiert und dann
 ausführt. Jede Definitionsdatei schließt mit einem `plan(1)` plus `pass()`; ohne
 Plan hält `pg_prove` eine Datei für kaputt und meldet „No subtests run".

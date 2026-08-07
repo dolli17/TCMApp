@@ -30,10 +30,12 @@ export default async function KontoSeite() {
   const angemeldet = await getCurrentMember();
   const meineId = angemeldet?.member?.id;
 
-  const [forderungenRes, arbeitsdienstRes, mandatRes, meineDatenRes, merkmaleRes] =
-    await Promise.all([
+  const [
+    forderungenRes, arbeitsdienstRes, einsaetzeRes, mandatRes, meineDatenRes, merkmaleRes,
+  ] = await Promise.all([
     supabase.rpc("my_charges"),
     supabase.rpc("my_work_duty", {}),
+    supabase.rpc("my_work_duty_entries", { p_year: new Date().getFullYear() }),
     supabase.from("sepa_mandates").select("reference, signed_on, scope, status"),
     // Die eigenen Stammdaten. Sichtbar sind sie ohnehin über members_select;
     // die Spalten hier sind genau die, die der Spalten-Grant änderbar macht.
@@ -59,6 +61,7 @@ export default async function KontoSeite() {
     .reduce((s, f) => s + f.amount_cents, 0);
   const zurueck = forderungen.filter((f) => f.status === "returned");
   const dienst = arbeitsdienstRes.data?.[0];
+  const einsaetze = einsaetzeRes.data ?? [];
   const mandat = mandatRes.data?.[0];
   const ich = meineDatenRes.data;
 
@@ -164,6 +167,36 @@ export default async function KontoSeite() {
 
       <h2 className="dpl">Erscheinungsbild</h2>
       <ThemeUmschalter />
+
+      {/* Die Einsätze stehen einzeln da, nicht nur als Zahl in der Kachel:
+          „5 von 8 Stunden" beantwortet nicht die Frage, welche Samstage
+          angerechnet wurden — und genau die stellt man, wenn die Zahl nicht
+          zur eigenen Erinnerung passt. */}
+      {einsaetze.length > 0 && (
+        <>
+          <h2 className="dpl">Meine Arbeitseinsätze</h2>
+          <div className="tabellenhuelle"><table className="liste">
+            <thead>
+              <tr>
+                <th>Wann</th>
+                <th className="zahl">Stunden</th>
+                <th>Was</th>
+                <th>Eingetragen von</th>
+              </tr>
+            </thead>
+            <tbody>
+              {einsaetze.map((e) => (
+                <tr key={e.id}>
+                  <td>{new Intl.DateTimeFormat("de-DE").format(new Date(e.worked_on))}</td>
+                  <td className="zahl tnum">{Number(e.hours)} h</td>
+                  <td>{e.description ?? "—"}</td>
+                  <td className="mit">{e.erfasst_von}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table></div>
+        </>
+      )}
 
       <h2 className="dpl">Forderungen</h2>
 

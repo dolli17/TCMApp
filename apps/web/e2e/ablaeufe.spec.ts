@@ -1052,6 +1052,25 @@ test.describe("Verwaltung", () => {
     await expect(page).toHaveURL(/stand=returned/);
   });
 
+  test("der Arbeitsdienst ist über die Mitglieder erreichbar", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/mitglieder");
+
+    await page.getByRole("link", { name: /Arbeitsdienst/ }).first().click();
+    await page.waitForURL(/\/admin\/mitglieder\/arbeitsdienst$/);
+
+    await expect(page.getByRole("heading", { name: "Arbeitsdienst" })).toBeVisible();
+    // Ohne diese Karte schuldet niemand etwas — sie ist die Grundlage.
+    await expect(
+      page.getByRole("heading", { name: "Soll-Stunden je Beitragsart" }),
+    ).toBeVisible();
+
+    // Das laufende Jahr lässt sich nicht abrechnen: es können noch Stunden kommen.
+    await expect(
+      page.locator("section.karte", { hasText: "Jahresausgleich" }),
+    ).toContainText("läuft noch");
+  });
+
   test("die Merkmale sind über die Mitglieder erreichbar", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/mitglieder");

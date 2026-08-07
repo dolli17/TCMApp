@@ -2137,6 +2137,7 @@ export type Database = {
         Args: { p_code: string }
         Returns: undefined
       }
+      delete_work_duty: { Args: { p_entry_id: string }; Returns: undefined }
       drink_item_overview: {
         Args: never
         Returns: {
@@ -2454,6 +2455,18 @@ export type Database = {
           year: number
         }[]
       }
+      my_work_duty_entries: {
+        Args: { p_year?: number }
+        Returns: {
+          bestaetigt: boolean
+          created_at: string
+          description: string
+          erfasst_von: string
+          hours: number
+          id: string
+          worked_on: string
+        }[]
+      }
       open_matches: {
         Args: { p_bis?: string; p_von?: string }
         Returns: {
@@ -2516,6 +2529,15 @@ export type Database = {
         Args: { p_item_id: string; p_member_id: string; p_quantity?: number }
         Returns: string
       }
+      record_work_duty: {
+        Args: {
+          p_description?: string
+          p_hours: number
+          p_member_id: string
+          p_worked_on: string
+        }
+        Returns: string
+      }
       release_notification_mails: { Args: { p_ids: string[] }; Returns: number }
       remove_charge_from_debit_batch: {
         Args: { p_item_id: string }
@@ -2535,6 +2557,10 @@ export type Database = {
       }
       remove_member_fee: {
         Args: { p_fee_type_id: string; p_member_id: string; p_year: number }
+        Returns: undefined
+      }
+      remove_work_duty_rule: {
+        Args: { p_fee_type_id: string; p_year: number }
         Returns: undefined
       }
       reorder_courts: { Args: { p_ids: string[] }; Returns: number }
@@ -2738,6 +2764,14 @@ export type Database = {
         }
         Returns: string
       }
+      upsert_work_duty_rule: {
+        Args: {
+          p_fee_type_id: string
+          p_required_hours: number
+          p_year: number
+        }
+        Returns: undefined
+      }
       void_drink_purchase: {
         Args: { p_purchase_id: string; p_reason?: string }
         Returns: undefined
@@ -2745,6 +2779,54 @@ export type Database = {
       waive_charge: {
         Args: { p_charge_id: string; p_reason: string }
         Returns: undefined
+      }
+      work_duty_entries_for: {
+        Args: { p_member_id: string; p_year?: number }
+        Returns: {
+          bestaetigt: boolean
+          created_at: string
+          description: string
+          erfasst_von: string
+          hours: number
+          id: string
+          worked_on: string
+        }[]
+      }
+      work_duty_overview: {
+        Args: { p_year?: number }
+        Returns: {
+          abgerechnet: boolean
+          arten: string
+          betrag_cents: number
+          completed_hours: number
+          eintraege: number
+          member_id: string
+          member_name: string
+          missing_hours: number
+          required_hours: number
+        }[]
+      }
+      work_duty_settle_year: {
+        Args: { p_due_date?: string; p_year: number }
+        Returns: {
+          abgerechnet: number
+          forderungen: number
+          summe_cents: number
+        }[]
+      }
+      work_duty_settlement_preview: {
+        Args: { p_year: number }
+        Returns: {
+          amount_cents: number
+          completed_hours: number
+          has_mandate: boolean
+          hourly_rate_cents: number
+          member_id: string
+          member_name: string
+          missing_hours: number
+          required_hours: number
+          schon_abgerechnet: boolean
+        }[]
       }
     }
     Enums: {

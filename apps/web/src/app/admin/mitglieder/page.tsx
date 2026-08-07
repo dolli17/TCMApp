@@ -31,7 +31,7 @@ export default async function MitgliederSeite({
   //
   // Der Suchbegriff geht als Parameter hinein und nicht in einen
   // Filterausdruck - ein Komma im Namen kann ihn deshalb nicht mehr zerlegen.
-  const [{ data, error }, antraegeRes, merkmaleRes] = await Promise.all([
+  const [{ data, error }, antraegeRes, merkmaleRes, dienstRes] = await Promise.all([
     supabase.rpc("member_overview", {
       p_filter: gewaehlt,
       p_query: suche || undefined,
@@ -45,10 +45,15 @@ export default async function MitgliederSeite({
       .from("member_attribute_types")
       .select("id", { count: "exact", head: true })
       .eq("active", true),
+    supabase.rpc("work_duty_overview", { p_year: undefined }),
   ]);
 
   const offeneAntraege = antraegeRes.count ?? 0;
   const merkmale = merkmaleRes.count ?? 0;
+  const offeneDienststunden = (dienstRes.data ?? []).reduce(
+    (s, z) => s + Number(z.missing_hours),
+    0,
+  );
 
   if (error) {
     return <div className="hinweis fehler">{error.message}</div>;
@@ -118,6 +123,18 @@ export default async function MitgliederSeite({
           <div className="titel">Merkmale</div>
           <div className="wert">{merkmale}</div>
           <div className="titel">Einwilligungen und Eigenschaften</div>
+        </Link>
+        {/* Der Arbeitsdienst gehört zur Person, nicht zur Kasse: die tägliche
+            Arbeit ist „wer war da, wie viele Stunden". Erst der
+            Jahresausgleich macht daraus Geld. */}
+        <Link
+          href="/admin/mitglieder/arbeitsdienst"
+          className="kachel"
+          style={{ textDecoration: "none", color: "inherit" }}
+        >
+          <div className="titel">Arbeitsdienst</div>
+          <div className="wert">{offeneDienststunden}</div>
+          <div className="titel">Stunden noch offen</div>
         </Link>
       </div>
 
