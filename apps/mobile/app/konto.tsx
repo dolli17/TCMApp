@@ -35,9 +35,12 @@ export default function Konto() {
     return <View style={[stil.seite, { justifyContent: "center" }]}><ActivityIndicator color={farben.blue} /></View>;
   }
 
+  // „returned" zählt mit: eine zurückgebuchte Lastschrift ist Geld, das der
+  // Verein nicht bekommen hat - die Forderung steht wieder offen.
   const offen = forderungen
-    .filter((f) => f.status === "open" || f.status === "notified")
+    .filter((f) => f.status === "open" || f.status === "notified" || f.status === "returned")
     .reduce((s, f) => s + f.amount_cents, 0);
+  const zurueck = forderungen.filter((f) => f.status === "returned");
 
   return (
     <ScrollView style={stil.seite} contentContainerStyle={stil.inhalt}>
@@ -66,6 +69,16 @@ export default function Konto() {
       <ThemeWahlKnoepfe />
 
       <Text style={[stil.titel, { fontSize: 18, marginTop: 8 }]}>Forderungen</Text>
+
+      {zurueck.length > 0 && (
+        <Text style={stil.hinweisFehler}>
+          {zurueck.length === 1
+            ? "Eine Lastschrift kam zurück"
+            : `${zurueck.length} Lastschriften kamen zurück`}
+          {" – die Beträge sind wieder offen. Bitte melde dich beim Verein."}
+        </Text>
+      )}
+
       {forderungen.length === 0 ? (
         <Text style={stil.leise}>Keine Forderungen vorhanden.</Text>
       ) : (
@@ -79,6 +92,13 @@ export default function Konto() {
               {f.description}
               {f.is_for_other ? ` · für ${f.member_name}` : ""}
             </Text>
+            {/* Zurückgebucht ist kein Zustand wie die anderen: das Geld ist
+                zurück, und das Mitglied muss etwas tun. */}
+            {f.status === "returned" && (
+              <Text style={{ color: farben.red, fontWeight: "600", marginTop: 4 }}>
+                zurückgebucht
+              </Text>
+            )}
           </View>
         ))
       )}

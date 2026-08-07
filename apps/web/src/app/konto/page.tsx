@@ -52,9 +52,12 @@ export default async function KontoSeite() {
   ]);
 
   const forderungen = forderungenRes.data ?? [];
+  // „returned" zählt mit: eine zurückgebuchte Lastschrift ist Geld, das der
+  // Verein nicht bekommen hat — die Forderung steht wieder offen.
   const offen = forderungen
-    .filter((f) => f.status === "open" || f.status === "notified")
+    .filter((f) => f.status === "open" || f.status === "notified" || f.status === "returned")
     .reduce((s, f) => s + f.amount_cents, 0);
+  const zurueck = forderungen.filter((f) => f.status === "returned");
   const dienst = arbeitsdienstRes.data?.[0];
   const mandat = mandatRes.data?.[0];
   const ich = meineDatenRes.data;
@@ -163,6 +166,17 @@ export default async function KontoSeite() {
       <ThemeUmschalter />
 
       <h2 className="dpl">Forderungen</h2>
+
+      {zurueck.length > 0 && (
+        <div className="hinweis fehler">
+          {zurueck.length === 1
+            ? "Eine Lastschrift kam zurück"
+            : `${zurueck.length} Lastschriften kamen zurück`}{" "}
+          – die Beträge sind wieder offen. Bitte melde dich beim Verein, damit wir das klären
+          können.
+        </div>
+      )}
+
       {forderungen.length === 0 ? (
         <p className="leer">Keine Forderungen vorhanden.</p>
       ) : (
@@ -174,6 +188,7 @@ export default async function KontoSeite() {
               <th>Beschreibung</th>
               <th>Für</th>
               <th className="zahl">Betrag</th>
+              <th>Fällig</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -185,8 +200,17 @@ export default async function KontoSeite() {
                 <td>{f.description}</td>
                 <td>{f.is_for_other ? f.member_name : "mich"}</td>
                 <td className="zahl">{formatCents(f.amount_cents)}</td>
+                <td className="mit">
+                  {f.due_date ? new Intl.DateTimeFormat("de-DE").format(new Date(f.due_date)) : "—"}
+                </td>
                 <td>
-                  <span className="marke-klein">{STATUS_TEXT[f.status] ?? f.status}</span>
+                  {/* Zurückgebucht ist kein Zustand wie die anderen: das Geld
+                      ist zurück, und das Mitglied muss etwas tun. */}
+                  {f.status === "returned" ? (
+                    <strong style={{ color: "var(--red)" }}>zurückgebucht</strong>
+                  ) : (
+                    <span className="marke-klein">{STATUS_TEXT[f.status] ?? f.status}</span>
+                  )}
                 </td>
               </tr>
             ))}

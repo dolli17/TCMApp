@@ -1916,6 +1916,14 @@ export type Database = {
           summe_cents: number
         }[]
       }
+      complete_debit_batch: {
+        Args: { p_batch_id: string }
+        Returns: {
+          eingezogen: number
+          summe_cents: number
+          zurueck: number
+        }[]
+      }
       court_overview: {
         Args: never
         Returns: {
@@ -2487,6 +2495,18 @@ export type Database = {
           p_started_on?: string
         }
         Returns: string
+      }
+      record_debit_return: {
+        Args: {
+          p_end_to_end_id: string
+          p_reason: string
+          p_returned_on?: string
+        }
+        Returns: {
+          forderungen: number
+          payer_name: string
+          summe_cents: number
+        }[]
       }
       record_drink_purchase: {
         Args: { p_item_id: string; p_quantity?: number }

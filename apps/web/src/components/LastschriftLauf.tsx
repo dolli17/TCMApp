@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { formatCents } from "@tcm/core";
 import {
-  dateiErzeugen, laufEingereicht, postenAufnehmen,
+  dateiErzeugen, laufAbschliessen, laufEingereicht, postenAufnehmen, ruecklaeuferErfassen,
 } from "@/app/admin/kasse/lastschriften/aktionen";
 
 export interface KandidatZeile {
@@ -67,6 +67,8 @@ export function LastschriftLauf({
   posten: PostenZeile[];
 }) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
+  const [zurueck, setZurueck] = useState<string | null>(null);
+  const [grund, setGrund] = useState("");
   const [laeuft, starte] = useTransition();
 
   const moeglich = kandidaten.filter((k) => k.einzugsfaehig);
@@ -172,6 +174,7 @@ export function LastschriftLauf({
                 <th className="zahl">Betrag</th>
                 <th>Mandat</th>
                 <th>Ergebnis</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -192,10 +195,73 @@ export function LastschriftLauf({
                       </span>
                     )}
                   </td>
+                  <td>
+                    {/* Erst nach dem Einreichen: vorher ist noch nichts
+                        unterwegs, das zurückkommen könnte. */}
+                    {p.result === "pending" &&
+                      (lauf.status === "submitted" || lauf.status === "completed") && (
+                        <button
+                          type="button"
+                          className="knopf leise klein"
+                          disabled={laeuft}
+                          onClick={() => {
+                            setZurueck(p.end_to_end_id);
+                            setGrund("");
+                          }}
+                        >
+                          Kam zurück
+                        </button>
+                      )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table></div>
+
+          {zurueck && (
+            <>
+              <h3 className="dpl">Rücklastschrift erfassen</h3>
+              <p className="unterzeile">
+                Der Grund geht unverändert an den Zahler – „Konto nicht gedeckt" und
+                „Widerspruch" führen zu ganz verschiedenen nächsten Schritten.
+              </p>
+              <div className="formraster">
+                <label className="breit">
+                  <span>Grund der Rückgabe</span>
+                  <input
+                    type="text"
+                    value={grund}
+                    placeholder="z. B. Konto nicht gedeckt"
+                    onChange={(e) => setGrund(e.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="fenster-fuss">
+                <button
+                  type="button"
+                  className="knopf gefahr"
+                  disabled={laeuft || grund.trim() === ""}
+                  onClick={() =>
+                    starte(async () => {
+                      const e = await ruecklaeuferErfassen({
+                        kennung: zurueck,
+                        grund,
+                        am: null,
+                        batchId: lauf.id,
+                      });
+                      melde(e);
+                      if (e.ok) setZurueck(null);
+                    })
+                  }
+                >
+                  Als zurückgebucht vermerken
+                </button>
+                <button type="button" className="knopf leise" onClick={() => setZurueck(null)}>
+                  Abbrechen
+                </button>
+              </div>
+            </>
+          )}
         </section>
       )}
 
@@ -235,7 +301,28 @@ export function LastschriftLauf({
               Im Onlinebanking eingereicht
             </button>
           )}
+
+          {/* Erst abschließen, wenn nichts mehr zurückkommt. Eine
+              Rücklastschrift kann acht Wochen nach dem Einzug eintreffen; wer
+              zu früh abhakt, hält Geld für da, das noch unterwegs ist. */}
+          {lauf.status === "submitted" && (
+            <button
+              type="button"
+              className="knopf leise"
+              disabled={laeuft}
+              onClick={() => starte(async () => melde(await laufAbschliessen(lauf.id)))}
+            >
+              Lauf abschließen
+            </button>
+          )}
         </div>
+
+        {lauf.status === "submitted" && (
+          <p className="mit">
+            Alles, was nicht als zurückgebucht vermerkt ist, gilt beim Abschließen als
+            eingezogen. Eine Rücklastschrift kann bis zu acht Wochen nach dem Einzug kommen.
+          </p>
+        )}
       </section>
     </>
   );

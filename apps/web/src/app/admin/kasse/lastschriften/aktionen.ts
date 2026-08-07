@@ -196,6 +196,61 @@ export async function dateiErzeugen(batchId: string): Promise<AktionsErgebnis> {
   };
 }
 
+/**
+ * Eine Lastschrift kam zurück.
+ *
+ * Trifft alle Forderungen der Kennung — für die Familienlastschrift über 270
+ * Euro kam kein Geld, also für keines der drei Kinder. Danach steht jede
+ * dieser Forderungen wieder offen und geht beim nächsten Lauf mit.
+ */
+export async function ruecklaeuferErfassen(daten: {
+  kennung: string;
+  grund: string;
+  am: string | null;
+  batchId: string;
+}): Promise<AktionsErgebnis> {
+  const supabase = await createServerSupabase();
+
+  const { data, error } = await supabase.rpc("record_debit_return", {
+    p_end_to_end_id: daten.kennung,
+    p_reason: daten.grund,
+    p_returned_on: daten.am ?? undefined,
+  });
+
+  if (error) return { ok: false, meldung: translateDbError(error) };
+
+  frisch(daten.batchId);
+
+  const z = data?.[0];
+  const anzahl = z?.forderungen ?? 0;
+  return {
+    ok: true,
+    meldung: `Zurückgebucht: ${anzahl} ${
+      anzahl === 1 ? "Forderung steht" : "Forderungen stehen"
+    } wieder offen. ${z?.payer_name ?? "Der Zahler"} wurde benachrichtigt.`,
+  };
+}
+
+export async function laufAbschliessen(batchId: string): Promise<AktionsErgebnis> {
+  const supabase = await createServerSupabase();
+
+  const { data, error } = await supabase.rpc("complete_debit_batch", {
+    p_batch_id: batchId,
+  });
+
+  if (error) return { ok: false, meldung: translateDbError(error) };
+
+  frisch(batchId);
+
+  const z = data?.[0];
+  return {
+    ok: true,
+    meldung: `Lauf abgeschlossen: ${z?.eingezogen ?? 0} eingezogen${
+      (z?.zurueck ?? 0) > 0 ? `, ${z!.zurueck} zurückgebucht` : ""
+    }.`,
+  };
+}
+
 export async function laufEingereicht(
   batchId: string,
   am: string | null,
