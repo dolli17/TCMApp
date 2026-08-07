@@ -248,3 +248,19 @@ export async function sucheMitspieler(bookingId: string, gesucht: boolean): Prom
       : "Die Buchung ist nicht mehr ausgeschrieben.",
   };
 }
+
+/**
+ * Wie viele Benachrichtigungen sind ungelesen?
+ *
+ * Eigene Abfrage statt "Liste laden und zaehlen": der Zaehler steht auf der
+ * Startseite, die Liste liegt einen Bildschirm weiter. Ueber den Teilindex
+ * notifications_unread_idx kostet das praktisch nichts.
+ */
+export async function zaehleUngelesen(): Promise<number> {
+  const { count, error } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .is("read_at", null);
+  if (error) return 0;
+  return count ?? 0;
+}

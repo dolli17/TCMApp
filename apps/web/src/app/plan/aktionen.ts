@@ -76,11 +76,23 @@ export async function mitspielerAendern(
   return { ok: true, meldung: "Mitspieler aktualisiert." };
 }
 
-export async function stornieren(bookingId: string): Promise<AktionsErgebnis> {
+/**
+ * Eine Buchung stornieren, wahlweise mit Grund.
+ *
+ * Der Grund landet in der Benachrichtigung an die Betroffenen. Storniert ein
+ * Admin eine fremde Buchung, ist er praktisch Pflicht: "Die Buchung wurde
+ * storniert." ohne jede Erklaerung ist genau die Nachricht, die einen Anruf
+ * beim Vorstand ausloest.
+ */
+export async function stornieren(
+  bookingId: string,
+  grund?: string,
+): Promise<AktionsErgebnis> {
   const supabase = await createServerSupabase();
 
   const { error } = await supabase.rpc("cancel_booking", {
     p_booking_id: bookingId,
+    p_reason: grund?.trim() || undefined,
   });
 
   if (error) {
@@ -89,7 +101,72 @@ export async function stornieren(bookingId: string): Promise<AktionsErgebnis> {
 
   revalidatePath("/plan");
   revalidatePath("/plan/meine");
+  revalidatePath("/plan/offen");
   return { ok: true, meldung: "Buchung storniert." };
+}
+
+/**
+ * Ein einzelner Serientermin faellt aus.
+ *
+ * Nicht ueber stornieren(): cancel_series_occurrence verlangt, dass der Termin
+ * wirklich zu einer Serie gehoert, und traegt einen sprechenden Grund ein. Wer
+ * "Faellt diese Woche aus" drueckt, soll nicht versehentlich eine fremde
+ * Platzbuchung abraeumen, weil er eine Zeile daneben getroffen hat.
+ */
+export async function serienterminAbsagen(
+  bookingId: string,
+  grund?: string,
+): Promise<AktionsErgebnis> {
+  const supabase = await createServerSupabase();
+
+  const { error } = await supabase.rpc("cancel_series_occurrence", {
+    p_booking_id: bookingId,
+    p_reason: grund?.trim() || undefined,
+  });
+
+  if (error) return { ok: false, meldung: translateDbError(error) };
+
+  revalidatePath("/plan");
+  revalidatePath("/admin/serien");
+  return { ok: true, meldung: "Der Termin ist abgesagt." };
+}
+
+/**
+ * Eine einzelne Stunde direkt aus dem Belegungsplan sperren.
+ *
+ * Dieselbe RPC wie in der Platzverwaltung, nur mit genau einem Platz und einer
+ * Stunde. Wer bei Regen am Platz steht, tippt auf die Stunde statt sich durch
+ * das Verwaltungsmenue zu suchen.
+ */
+export async function stundeSperren(daten: {
+  platzId: string;
+  von: string;
+  bis: string;
+  grund: string;
+  verdraengen: boolean;
+}): Promise<AktionsErgebnis & { kollisionen?: number }> {
+  const supabase = await createServerSupabase();
+
+  const { error } = await supabase.rpc("create_blocking", {
+    p_court_ids: [daten.platzId],
+    p_von: daten.von,
+    p_bis: daten.bis,
+    p_type_code: "platzpflege",
+    p_title: daten.grund,
+    p_force: daten.verdraengen,
+  });
+
+  if (error) {
+    const treffer = /^(\d+) Buchungen liegen/.exec(error.message);
+    if (treffer) {
+      return { ok: false, meldung: translateDbError(error), kollisionen: Number(treffer[1]) };
+    }
+    return { ok: false, meldung: translateDbError(error) };
+  }
+
+  revalidatePath("/plan");
+  revalidatePath("/admin/plaetze");
+  return { ok: true, meldung: "Die Stunde ist gesperrt." };
 }
 
 /**

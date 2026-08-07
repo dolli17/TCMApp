@@ -684,3 +684,46 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(page.locator(".hinweis.fehler")).toContainText(/Administrator/);
   });
 });
+
+/**
+ * Die Abmeldung von den Buchungsmails.
+ *
+ * Sie läuft über die vorhandene Einwilligungskarte — deshalb prüft dieser Test
+ * nicht neue Oberfläche, sondern dass das neue Merkmal dort ankommt und der
+ * gewählte Wert das Neuladen überlebt.
+ */
+test.describe("E-Mails zu Buchungen", () => {
+  test("Mitglied stellt die Buchungsmails ab, und es bleibt so", async ({ page }) => {
+    await anmelden(page, NUTZER.mitglied);
+    await page.goto("/konto");
+
+    const karte = page.locator(".karte", { hasText: "E-Mails zu Buchungen" }).first();
+    await expect(karte).toBeVisible();
+
+    // Ausgangszustand herstellen: hat ein früherer Lauf einen Wert
+    // hinterlassen, ist das Auswahlfeld gar nicht da – das Merkmal lässt nur
+    // einen Wert zu.
+    const marke = karte.locator("ul[aria-label='E-Mails zu Buchungen: gewählt'] li");
+    if ((await marke.count()) > 0) {
+      await marke.first().getByRole("button").click();
+      await expect(marke).toHaveCount(0, { timeout: 15_000 });
+    }
+
+    // Ein Listen-Merkmal erscheint als Auswahlfeld, nicht als Ja/Nein.
+    const wahl = karte.getByLabel("E-Mails zu Buchungen");
+    await wahl.selectOption({ label: "Keine E-Mails" });
+    await expect(page.locator(".hinweis.erfolg")).toBeVisible({ timeout: 15_000 });
+
+    // Nach dem Speichern steht der Wert als Marke da; das Auswahlfeld
+    // verschwindet, weil das Merkmal nur einen Wert zulässt.
+    await page.reload();
+    const nachher = page.locator(".karte", { hasText: "E-Mails zu Buchungen" });
+    await expect(
+      nachher.locator("ul[aria-label='E-Mails zu Buchungen: gewählt'] li"),
+    ).toContainText("Keine E-Mails");
+
+    // Zurücksetzen, damit der nächste Lauf denselben Ausgangszustand findet.
+    await nachher.getByRole("button", { name: "Keine E-Mails entfernen" }).click();
+    await expect(page.locator(".hinweis.erfolg")).toBeVisible({ timeout: 15_000 });
+  });
+});

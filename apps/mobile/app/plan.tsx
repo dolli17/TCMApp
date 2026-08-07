@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, AppState, Pressable, ScrollView, Text, View } from "react-native";
 import { berlinTime } from "@tcm/core";
+import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme";
 import {
   aendereMitspieler, bucheplatz, ladeBuchungsarten, ladeBuchungseinstellungen,
@@ -71,6 +72,59 @@ export default function Plan() {
       setMeldung({ ok: false, text: f.message });
       setLaedt(false);
     });
+  }, [datum, laden]);
+
+  /**
+   * Der Plan hält sich selbst aktuell.
+   *
+   * Zwei Dinge sind hier anders als im Web:
+   *
+   * Erstens geht die App in den Hintergrund. Ein Kanal, der das verschläft,
+   * bleibt danach stumm - die Verbindung ist tot, aber niemand merkt es. Beim
+   * Zurückkommen wird deshalb neu geladen und neu abonniert.
+   *
+   * Zweitens die Drosselung: eine Serienanlage mit sechzig Terminen löst
+   * sechzig Ereignisse in Sekunden aus. Höchstens ein Nachladen pro Sekunde.
+   */
+  useEffect(() => {
+    let letzte = 0;
+    let wartet: ReturnType<typeof setTimeout> | null = null;
+
+    function auffrischen() {
+      const jetzt = Date.now();
+      const rest = 1000 - (jetzt - letzte);
+      if (rest <= 0) {
+        letzte = jetzt;
+        laden(datum).catch(() => {});
+        return;
+      }
+      if (wartet) return;
+      wartet = setTimeout(() => {
+        wartet = null;
+        letzte = Date.now();
+        laden(datum).catch(() => {});
+      }, rest);
+    }
+
+    const kanal = supabase
+      .channel(`plan-${datum}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, auffrischen)
+      .subscribe();
+
+    const abo = AppState.addEventListener("change", (zustand) => {
+      if (zustand === "active") {
+        // Was während des Schlafs passiert ist, hat der Kanal nicht gesehen.
+        // Die Verbindung baut Supabase selbst wieder auf; die Lücke schließt
+        // dieses Nachladen.
+        laden(datum).catch(() => {});
+      }
+    });
+
+    return () => {
+      if (wartet) clearTimeout(wartet);
+      abo.remove();
+      void supabase.removeChannel(kanal);
+    };
   }, [datum, laden]);
 
   const oeffnung = zuMinuten(String(einstellungen?.opening_time ?? "08:00"));

@@ -3,7 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import { berlinTime, minutesOf, minutesToTime, timeToMinutes } from "@tcm/core";
 import {
-  buchen, mitspielen, mitspielerAendern, mitspielerSuchen, stornieren,
+  buchen, mitspielen, mitspielerAendern, mitspielerSuchen, serienterminAbsagen,
+  stornieren, stundeSperren,
 } from "@/app/plan/aktionen";
 import { BuchungsFenster } from "@/components/BuchungsFenster";
 
@@ -30,6 +31,8 @@ export interface Belegung {
   frei: number;
   /** Steht das angemeldete Mitglied als Mitspieler drin? */
   bin_dabei: boolean;
+  /** Gesetzt, wenn die Belegung ein Termin einer Serie ist. */
+  series_id: string | null;
 }
 
 export interface Buchungsart {
@@ -188,12 +191,41 @@ export function Belegungsplan(props: Props) {
     });
   }
 
-  function abbrechen(bookingId: string) {
+  function abbrechen(bookingId: string, grund?: string) {
     starte(async () => {
-      const e = await stornieren(bookingId);
+      const e = await stornieren(bookingId, grund);
       setMeldung({ ok: e.ok, text: e.meldung });
       if (e.ok) setFenster(null);
     });
+  }
+
+  function terminAbsagen(bookingId: string, grund?: string) {
+    starte(async () => {
+      const e = await serienterminAbsagen(bookingId, grund);
+      setMeldung({ ok: e.ok, text: e.meldung });
+      if (e.ok) setFenster(null);
+    });
+  }
+
+  /**
+   * Eine Stunde sperren, ohne den Plan zu verlassen.
+   *
+   * Gibt die Zahl der Kollisionen zurueck, damit das Fenster nachfragen kann,
+   * statt still zu verdraengen.
+   */
+  async function sperren(
+    courtId: string, minute: number, grund: string, verdraengen: boolean,
+  ): Promise<number | null> {
+    const e = await stundeSperren({
+      platzId: courtId,
+      von: zeitpunkt(minute).toISOString(),
+      bis: zeitpunkt(minute + props.anzeigeMinuten).toISOString(),
+      grund,
+      verdraengen,
+    });
+    setMeldung({ ok: e.ok, text: e.meldung });
+    if (e.ok) setFenster(null);
+    return e.kollisionen ?? null;
   }
 
   function ausschreiben(bookingId: string, gesucht: boolean) {
@@ -433,6 +465,8 @@ export function Belegungsplan(props: Props) {
           onBuchen={abschicken}
           onSpeichern={speichern}
           onStornieren={abbrechen}
+          onTerminAbsagen={terminAbsagen}
+          onSperren={sperren}
           onAusschreiben={ausschreiben}
           onBeitreten={beitreten}
           onSchliessen={() => setFenster(null)}

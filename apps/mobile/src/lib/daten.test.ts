@@ -30,7 +30,10 @@ const {
   bucheGetraenk,
   bucheplatz,
   ladeKontingent,
+  spieleMit,
   storniereBuchung,
+  sucheMitspieler,
+  verlasseBuchung,
 } = await import("./daten");
 
 beforeEach(() => {
@@ -191,5 +194,59 @@ describe("aendereMitspieler", () => {
     const r = await aendereMitspieler("b-1", ["m-1"]);
     expect(r.ok).toBe(false);
     expect(r.meldung).toContain("eigenen Buchungen");
+  });
+});
+
+describe("Mitspieler suchen und beitreten", () => {
+  it("reicht join_booking durch", async () => {
+    rpc.mockResolvedValue({ error: null });
+    const r = await spieleMit("buchung-1");
+    expect(r.ok).toBe(true);
+    expect(rpc).toHaveBeenCalledWith("join_booking", { p_booking_id: "buchung-1" });
+  });
+
+  it("übersetzt eine volle Buchung in einen ganzen Satz", async () => {
+    rpc.mockResolvedValue({
+      error: { code: "23514", message: "Diese Buchung ist bereits voll." },
+    });
+    const r = await spieleMit("buchung-1");
+    expect(r.ok).toBe(false);
+    expect(r.meldung).toBe("Diese Buchung ist bereits voll.");
+  });
+
+  it("schaltet die Ausschreibung an und wieder aus", async () => {
+    rpc.mockResolvedValue({ error: null });
+
+    const an = await sucheMitspieler("buchung-1", true);
+    expect(rpc).toHaveBeenCalledWith("set_partner_wanted", {
+      p_booking_id: "buchung-1",
+      p_wanted: true,
+    });
+    expect(an.meldung).toContain("offenen Spielen");
+
+    const aus = await sucheMitspieler("buchung-1", false);
+    expect(aus.meldung).toContain("nicht mehr ausgeschrieben");
+  });
+});
+
+describe("sich austragen", () => {
+  it("benutzt leave_booking, nicht den Mitspielertausch", async () => {
+    // update_booking_players gehört dem Bucher und würde einem Mitspieler
+    // erlauben, die ganze Besetzung umzuwerfen.
+    rpc.mockResolvedValue({ error: null });
+    await verlasseBuchung("buchung-1");
+    expect(rpc).toHaveBeenCalledWith("leave_booking", { p_booking_id: "buchung-1" });
+  });
+
+  it("reicht die Begründung der Datenbank durch", async () => {
+    rpc.mockResolvedValue({
+      error: {
+        code: "23514",
+        message: "Ohne dich waeren es zu wenige Spieler. Bitte sag dem Bucher Bescheid.",
+      },
+    });
+    const r = await verlasseBuchung("buchung-1");
+    expect(r.ok).toBe(false);
+    expect(r.meldung).toContain("zu wenige Spieler");
   });
 });

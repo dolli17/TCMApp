@@ -23,6 +23,9 @@ function Navigation() {
       >
         <Stack.Screen name="index" options={{ title: "TC Muckensturm" }} />
         <Stack.Screen name="plan" options={{ title: "Plätze" }} />
+        <Stack.Screen name="meine" options={{ title: "Meine Buchungen" }} />
+        <Stack.Screen name="offen" options={{ title: "Offene Spiele" }} />
+        <Stack.Screen name="nachrichten" options={{ title: "Benachrichtigungen" }} />
         <Stack.Screen name="getraenke" options={{ title: "Getränke" }} />
         <Stack.Screen name="konto" options={{ title: "Mein Konto" }} />
       </Stack>

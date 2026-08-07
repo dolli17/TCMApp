@@ -1919,6 +1919,7 @@ export type Database = {
           partner_wanted: boolean
           player_member_ids: string[]
           players: string[]
+          series_id: string
           starts_at: string
           title: string
           type_code: string
@@ -2352,6 +2353,21 @@ export type Database = {
       update_membership: {
         Args: { p_membership_id: string; p_patch: Json }
         Returns: undefined
+      }
+      update_series: {
+        Args: {
+          p_displace?: boolean
+          p_end_time: string
+          p_series_id: string
+          p_start_time: string
+          p_title: string
+          p_valid_to?: string
+        }
+        Returns: {
+          cancelled_count: number
+          created_count: number
+          displaced_count: number
+        }[]
       }
       upsert_booking_type: {
         Args: {

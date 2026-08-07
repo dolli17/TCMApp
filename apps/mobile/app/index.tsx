@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Link } from "expo-router";
 import { supabase } from "@/lib/supabase";
-import { abmelden, anmelden } from "@/lib/daten";
+import { abmelden, anmelden, zaehleUngelesen } from "@/lib/daten";
 import { useTheme } from "@/lib/theme";
 
 export default function Start() {
@@ -92,7 +92,15 @@ function Anmeldung() {
 }
 
 function Uebersicht({ onAbmelden }: { onAbmelden: () => void }) {
-  const { stil } = useTheme();
+  const { stil, farben } = useTheme();
+  const [ungelesen, setUngelesen] = useState(0);
+
+  // Nur die Zahl, nicht die Liste: die steht einen Bildschirm weiter, und ein
+  // Zaehler ueber den Teilindex kostet praktisch nichts.
+  useEffect(() => {
+    zaehleUngelesen().then(setUngelesen).catch(() => {});
+  }, []);
+
   return (
     <ScrollView style={stil.seite} contentContainerStyle={stil.inhalt}>
       <Text style={stil.titel}>Willkommen</Text>
@@ -101,6 +109,40 @@ function Uebersicht({ onAbmelden }: { onAbmelden: () => void }) {
         <Pressable style={stil.karte} accessibilityRole="button">
           <Text style={{ fontWeight: "600", fontSize: 17 }}>Plätze</Text>
           <Text style={stil.leise}>Belegungsplan und Buchung</Text>
+        </Pressable>
+      </Link>
+
+      <Link href="/meine" asChild>
+        <Pressable style={stil.karte} accessibilityRole="button">
+          <Text style={{ fontWeight: "600", fontSize: 17 }}>Meine Buchungen</Text>
+          <Text style={stil.leise}>Was für dich ansteht</Text>
+        </Pressable>
+      </Link>
+
+      <Link href="/offen" asChild>
+        <Pressable style={stil.karte} accessibilityRole="button">
+          <Text style={{ fontWeight: "600", fontSize: 17 }}>Offene Spiele</Text>
+          <Text style={stil.leise}>Wer noch Mitspieler sucht</Text>
+        </Pressable>
+      </Link>
+
+      <Link href="/nachrichten" asChild>
+        <Pressable style={stil.karte} accessibilityRole="button">
+          <View style={stil.zeile}>
+            <Text style={{ fontWeight: "600", fontSize: 17 }}>Benachrichtigungen</Text>
+            {ungelesen > 0 && (
+              <Text
+                style={{
+                  backgroundColor: farben.red, color: "#fff", fontWeight: "700",
+                  fontSize: 12, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99,
+                  overflow: "hidden",
+                }}
+              >
+                {ungelesen > 9 ? "9+" : ungelesen}
+              </Text>
+            )}
+          </View>
+          <Text style={stil.leise}>Änderungen an deinen Buchungen</Text>
         </Pressable>
       </Link>
 
@@ -114,7 +156,7 @@ function Uebersicht({ onAbmelden }: { onAbmelden: () => void }) {
       <Link href="/konto" asChild>
         <Pressable style={stil.karte} accessibilityRole="button">
           <Text style={{ fontWeight: "600", fontSize: 17 }}>Mein Konto</Text>
-          <Text style={stil.leise}>Forderungen und Arbeitsdienst</Text>
+          <Text style={stil.leise}>Forderungen, Arbeitsdienst, Erscheinungsbild</Text>
         </Pressable>
       </Link>
 

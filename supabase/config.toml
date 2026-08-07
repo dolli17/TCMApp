@@ -439,3 +439,20 @@ enabled = true
 # ---------------------------------------------------------------------------
 [functions.member-login]
 verify_jwt = true
+
+# ---------------------------------------------------------------------------
+# Benachrichtigungen als E-Mail
+#
+# verify_jwt = true passt fuer beide erlaubten Aufrufer: der Dienstschluessel
+# des Zeitgebers ist selbst ein gueltiges Token und kommt am Tor durch, und ein
+# Administrator sowieso. Wer davon der Aufrufer ist, entscheidet die Funktion
+# danach selbst - ein gueltiges Token hat schliesslich jedes Mitglied.
+# ---------------------------------------------------------------------------
+[functions.notification-mails]
+verify_jwt = true
+
+# Kein [edge_runtime.secrets]-Block: steht dort ein env(...) auf eine Variable,
+# die es nicht gibt, startet die gesamte Edge-Runtime nicht mehr - und damit
+# auch member-login nicht, das mit dem Mailversand gar nichts zu tun hat.
+# Produktiv kommen die Werte ueber "supabase secrets set", lokal bleiben sie
+# leer und der Versand laeuft im Trockenlauf. Genau so ist es gedacht.

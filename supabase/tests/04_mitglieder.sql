@@ -229,7 +229,8 @@ begin
   from unnest(array[
     'booking.max_open_bookings', 'booking.lead_days', 'booking.opening_time',
     'booking.closing_time', 'booking.slot_minutes', 'booking.display_minutes',
-    'booking.guest_fee_cents', 'drinks.min_debit_cents', 'drinks.void_window_minutes',
+    'booking.guest_fee_cents', 'notifications.mail_kinds',
+    'drinks.min_debit_cents', 'drinks.void_window_minutes',
     'sepa.creditor_id', 'sepa.pain_version', 'sepa.prenotification_days',
     'sepa.creditor_name', 'fees.annual_run_month', 'fees.annual_run_day',
     'work_duty.hourly_rate_cents', 'privacy.change_log_days'

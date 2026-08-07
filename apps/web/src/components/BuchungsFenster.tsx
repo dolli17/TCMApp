@@ -26,7 +26,12 @@ interface Props {
   laeuft: boolean;
   onBuchen: (fd: FormData) => void;
   onSpeichern: (bookingId: string, mitgliedIds: string[], gaeste: string[]) => void;
-  onStornieren: (bookingId: string) => void;
+  onStornieren: (bookingId: string, grund?: string) => void;
+  onTerminAbsagen: (bookingId: string, grund?: string) => void;
+  /** Gibt die Zahl der Kollisionen zurueck, wenn ohne Verdraengen abgebrochen wurde. */
+  onSperren: (
+    courtId: string, minute: number, grund: string, verdraengen: boolean,
+  ) => Promise<number | null>;
   onAusschreiben: (bookingId: string, gesucht: boolean) => void;
   onBeitreten: (bookingId: string) => void;
   onSchliessen: () => void;
@@ -97,6 +102,8 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
   const [mitglieder, setMitglieder] = useState<string[]>([]);
   const [gaeste, setGaeste] = useState<string[]>([]);
   const [sucheMitspieler, setSucheMitspieler] = useState(false);
+  const [sperrgrund, setSperrgrund] = useState<string | null>(null);
+  const [sperrKollisionen, setSperrKollisionen] = useState<number | null>(null);
 
   const gewaehlt = props.arten.find((a) => a.code === art);
   const maxWeitere = Math.max((gewaehlt?.max_players ?? 2) - 1, 0);
@@ -197,6 +204,70 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
           </button>
         </div>
       </form>
+
+      {/* Sperren steht ausserhalb des Formulars: es ist keine Buchung, und ein
+          Knopf darin wuerde beim Enter im Suchfeld mitfeuern. */}
+      {props.istAdmin && (
+        <div className="fenster-inhalt sperrbereich">
+          {sperrgrund === null ? (
+            <button
+              type="button"
+              className="knopf leise klein"
+              onClick={() => setSperrgrund("")}
+            >
+              Stattdessen sperren
+            </button>
+          ) : (
+            <>
+              <label>
+                <span>Grund der Sperrung</span>
+                <input
+                  type="text"
+                  value={sperrgrund}
+                  placeholder="z. B. Platzpflege nach Regen"
+                  onChange={(e) => setSperrgrund(e.target.value)}
+                />
+              </label>
+              <p className="mit">
+                Gesperrt wird {alsUhrzeit(stunde)}–{alsUhrzeit(stunde + props.anzeigeMinuten)} Uhr
+                auf {platz?.name ?? "diesem Platz"}.
+              </p>
+              <div className="fenster-fuss">
+                <button
+                  type="button"
+                  className={sperrKollisionen === null ? "knopf" : "knopf gefahr"}
+                  disabled={props.laeuft || sperrgrund.trim() === ""}
+                  onClick={async () => {
+                    const offen = await props.onSperren(
+                      props.fenster.courtId,
+                      stunde,
+                      sperrgrund,
+                      sperrKollisionen !== null,
+                    );
+                    setSperrKollisionen(offen);
+                  }}
+                >
+                  {sperrKollisionen === null
+                    ? "Sperren"
+                    : `${sperrKollisionen} ${
+                        sperrKollisionen === 1 ? "Buchung" : "Buchungen"
+                      } verdrängen`}
+                </button>
+                <button
+                  type="button"
+                  className="knopf leise"
+                  onClick={() => {
+                    setSperrgrund(null);
+                    setSperrKollisionen(null);
+                  }}
+                >
+                  Doch nicht
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </>
   );
 }
@@ -208,6 +279,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
   const [mitglieder, setMitglieder] = useState<string[]>(b.player_member_ids ?? []);
   const [gaeste, setGaeste] = useState<string[]>(b.guest_names ?? []);
   const [stornoOffen, setStornoOffen] = useState(false);
+  const [grund, setGrund] = useState("");
 
   const art = props.arten.find((a) => a.code === b.type_code);
   const maxWeitere = Math.max((art?.max_players ?? 4) - 1, 0);
@@ -222,6 +294,13 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
   // Mitspielersuche die Besetzung des Buchers umwerfen.
   const darfVerwalten = b.is_own || props.istAdmin;
   const kannMitspielen = !b.is_own && !b.bin_dabei && b.partner_wanted && b.frei > 0;
+
+  // Ein Serientermin faellt aus, eine Blockung wird aufgehoben, eine fremde
+  // Buchung wird storniert - drei Vorgaenge mit drei verschiedenen Folgen. Nur
+  // beim Storno einer fremden Buchung ist ein Grund Pflicht: dort sitzt jemand,
+  // der eine Erklaerung verdient. Hinter einer Blockung sitzt niemand.
+  const istSerientermin = b.series_id !== null;
+  const grundNoetig = props.istAdmin && !b.is_own && b.kind === "booking";
   const geaendert =
     JSON.stringify([...mitglieder].sort()) !== JSON.stringify([...(b.player_member_ids ?? [])].sort()) ||
     JSON.stringify([...gaeste].sort()) !== JSON.stringify([...(b.guest_names ?? [])].sort());
@@ -271,6 +350,20 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           <p className="unterzeile">Dabei sind: {b.players.join(", ")}</p>
         )}
 
+        {darfVerwalten && stornoOffen && (
+          <label>
+            <span>Grund{grundNoetig ? "" : " (freiwillig)"}</span>
+            <input
+              type="text"
+              value={grund}
+              placeholder={
+                istSerientermin ? "z. B. Ferien" : "Steht in der Nachricht an die Betroffenen"
+              }
+              onChange={(e) => setGrund(e.target.value)}
+            />
+          </label>
+        )}
+
         <div className="fenster-fuss">
           {kannMitspielen && (
             <button
@@ -309,10 +402,14 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
             <button
               type="button"
               className="knopf gefahr"
-              disabled={props.laeuft}
-              onClick={() => props.onStornieren(b.booking_id)}
+              disabled={props.laeuft || (grundNoetig && grund.trim() === "")}
+              onClick={() =>
+                istSerientermin
+                  ? props.onTerminAbsagen(b.booking_id, grund)
+                  : props.onStornieren(b.booking_id, grund)
+              }
             >
-              Wirklich stornieren
+              {istSerientermin ? "Termin wirklich absagen" : "Wirklich stornieren"}
             </button>
           ) : (
             <button
@@ -321,7 +418,11 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
               disabled={props.laeuft}
               onClick={() => setStornoOffen(true)}
             >
-              Buchung stornieren
+              {istSerientermin
+                ? "Fällt diese Woche aus"
+                : nurStorno
+                  ? "Sperrung aufheben"
+                  : "Buchung stornieren"}
             </button>
           )}
 

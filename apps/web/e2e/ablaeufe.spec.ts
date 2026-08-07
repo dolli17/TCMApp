@@ -740,7 +740,9 @@ test.describe("Plätze und Sperrungen", () => {
       if (vorher === 0) break;
       await blockungen.first().click();
       const fenster = page.locator("dialog.fenster");
-      await fenster.getByRole("button", { name: "Buchung stornieren" }).click();
+      // Bei einer Blockung heißt der Knopf „Sperrung aufheben“ – dort sitzt
+      // niemand, dessen Buchung storniert würde.
+      await fenster.getByRole("button", { name: "Sperrung aufheben" }).click();
       await fenster.getByRole("button", { name: "Wirklich stornieren" }).click();
       // Auf den neu gerenderten Plan warten statt auf die Erfolgsmeldung: die
       // steht schon da, während die Tabelle noch die alte ist, und der nächste
@@ -813,5 +815,120 @@ test.describe("Der Plan aktualisiert sich von selbst", () => {
       await zuschauer.close();
       await bucher.close();
     }
+  });
+});
+
+/**
+ * Was in Stufe D liegen geblieben war.
+ *
+ * Drei Dinge, die der Vorstand im Alltag braucht: einen Grund beim Stornieren
+ * einer fremden Buchung, das Sperren einer einzelnen Stunde ohne Umweg über
+ * das Verwaltungsmenü, und das Ändern einer Serie statt Beenden-und-neu.
+ */
+test.describe("Serien ändern, sperren, Gründe nennen", () => {
+  test("Admin storniert fremd mit Grund, das Mitglied liest ihn in der Glocke", async ({
+    page,
+  }) => {
+    // Das Mitglied bucht.
+    await anmelden(page, NUTZER.mitglied);
+    await page.goto("/plan");
+    for (let i = 0; i < 2; i++) {
+      const vorher = page.url();
+      await page.getByRole("link", { name: /Folgetag/ }).click();
+      await page.waitForURL((u) => u.toString() !== vorher);
+    }
+    const tag = new URL(page.url()).searchParams.get("tag") ?? "";
+
+    const freieZelle = page.locator("button.zelle.frei:not(.rest):not([disabled])").first();
+    test.skip((await freieZelle.count()) === 0, "Kein freier Slot an diesem Tag");
+    await freieZelle.click();
+
+    const fenster = page.locator("dialog.fenster");
+    await fenster.getByLabel("Mitspieler suchen").fill("a");
+    await fenster.locator(".trefferliste li button").first().click();
+    await fenster.getByRole("button", { name: /buchen/i }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("gebucht", { timeout: 15_000 });
+
+    // Der Admin storniert sie mit Grund.
+    await anmelden(page, NUTZER.admin);
+    await page.goto(`/plan?tag=${tag}`);
+    const fremde = page.locator("button.zelle.belegt").first();
+    await fremde.click();
+
+    const verwalten = page.locator("dialog.fenster");
+    await verwalten.getByRole("button", { name: "Buchung stornieren" }).click();
+    // Ohne Grund bleibt der Knopf gesperrt – bei einer fremden Buchung ist er Pflicht.
+    await expect(verwalten.getByRole("button", { name: "Wirklich stornieren" })).toBeDisabled();
+    await verwalten.getByLabel("Grund").fill("ZZTest Platz unbespielbar");
+    await verwalten.getByRole("button", { name: "Wirklich stornieren" }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("storniert", { timeout: 15_000 });
+
+    // Das Mitglied findet den Grund in der Nachricht.
+    await anmelden(page, NUTZER.mitglied);
+    await page.goto("/plan");
+    await page.locator(".seitenleiste button.glocke").click();
+    await expect(page.locator("dialog.fenster .nachrichtenliste li").first()).toContainText(
+      "ZZTest Platz unbespielbar",
+      { timeout: 15_000 },
+    );
+  });
+
+  test("eine einzelne Stunde direkt aus dem Plan sperren", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/plan");
+    for (let i = 0; i < 5; i++) {
+      const vorher = page.url();
+      await page.getByRole("link", { name: /Folgetag/ }).click();
+      await page.waitForURL((u) => u.toString() !== vorher);
+    }
+    const tag = new URL(page.url()).searchParams.get("tag") ?? "";
+
+    const freieZelle = page.locator("button.zelle.frei:not(.rest):not([disabled])").first();
+    test.skip((await freieZelle.count()) === 0, "Kein freier Slot an diesem Tag");
+    await freieZelle.click();
+
+    const fenster = page.locator("dialog.fenster");
+    await fenster.getByRole("button", { name: "Stattdessen sperren" }).click();
+    await fenster.getByLabel("Grund der Sperrung").fill("ZZTest Regen");
+    await fenster.getByRole("button", { name: "Sperren", exact: true }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("gesperrt", { timeout: 15_000 });
+
+    const blockung = page.locator(".zelle.blockung", { hasText: "ZZTest Regen" }).first();
+    await expect(blockung).toBeVisible();
+
+    // Aufräumen – eine Sperrung ohne Serie heißt „Sperrung aufheben“.
+    await page.goto(`/plan?tag=${tag}`);
+    await page.locator("button.zelle.blockung", { hasText: "ZZTest Regen" }).first().click();
+    const auf = page.locator("dialog.fenster");
+    await auf.getByRole("button", { name: "Sperrung aufheben" }).click();
+    await auf.getByRole("button", { name: "Wirklich stornieren" }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("storniert", { timeout: 15_000 });
+  });
+
+  test("Serie bearbeiten statt beenden und neu anlegen", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/serien");
+
+    const zeile = page.locator("table.liste tbody tr").first();
+    test.skip((await zeile.count()) === 0, "Keine Serie im Bestand");
+    const vorher = ((await zeile.locator("td").first().textContent()) ?? "").trim();
+
+    await zeile.getByRole("button", { name: "Bearbeiten" }).click();
+
+    const fenster = page.locator("dialog.fenster");
+    await expect(fenster).toBeVisible();
+    const neu = `${vorher} ZZ`;
+    await fenster.getByLabel("Titel").fill(neu);
+    await fenster.getByRole("button", { name: "Änderung speichern" }).click();
+
+    await expect(page.locator(".hinweis.erfolg")).toContainText("geändert", { timeout: 20_000 });
+    await expect(page.locator("table.liste tbody tr").first()).toContainText(neu);
+
+    // Zurückbenennen, damit der nächste Lauf denselben Bestand vorfindet.
+    await page.locator("table.liste tbody tr").first().getByRole("button", { name: "Bearbeiten" }).click();
+    const nochmal = page.locator("dialog.fenster");
+    await nochmal.getByLabel("Titel").fill(vorher);
+    await nochmal.getByRole("button", { name: "Änderung speichern" }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("geändert", { timeout: 20_000 });
   });
 });

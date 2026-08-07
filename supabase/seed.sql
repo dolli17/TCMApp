@@ -539,8 +539,39 @@ values
 
   ('ehrung', 'Ehrungen',
    'Vom Verein verliehene Auszeichnungen, etwa für langjährige Mitgliedschaft.',
-   'list', true, false, false, 40)
+   'list', true, false, false, 40),
+
+  -- Bewusst eine Liste und kein Ja/Nein: bei den Booleans hier bedeutet allein
+  -- die Existenz der Zeile „eingewilligt“, und keines davon ist im Bestand bei
+  -- irgendwem gesetzt. Ein Ja/Nein-Merkmal erreichte am ersten Tag also exakt
+  -- niemanden. Mit einer Liste gilt: kein Wert = „Nur Wichtiges“ – und das ist
+  -- auch sachlich richtig, denn es geht um Mitteilungen zur eigenen Buchung,
+  -- nicht um Werbung.
+  ('booking_mail', 'E-Mails zu Buchungen',
+   'Ob Änderungen an deinen Platzbuchungen zusätzlich per E-Mail kommen. '
+   'In der App siehst du sie in jedem Fall.',
+   'list', false, true, false, 25)
 on conflict (code) do nothing;
+
+insert into public.member_attribute_options (attribute_type_id, value, label, sort_order)
+select t.id, v.value, v.label, v.sort_order
+from public.member_attribute_types t
+cross join (values
+  ('alle',     'Alle Benachrichtigungen', 1),
+  ('wichtige', 'Nur Wichtiges',           2),
+  ('keine',    'Keine E-Mails',           3)
+) as v(value, label, sort_order)
+where t.code = 'booking_mail'
+on conflict (attribute_type_id, value) do nothing;
+
+-- Die Migration 20260808100100 legt dasselbe Merkmal an, damit es produktiv
+-- ueberhaupt existiert - dort aber in ASCII wie jede SQL-Datei des Projekts.
+-- Hier steht der Text, den die Mitglieder lesen sollen.
+update public.member_attribute_types
+   set name = 'E-Mails zu Buchungen',
+       description = 'Ob Änderungen an deinen Platzbuchungen zusätzlich per E-Mail kommen. '
+                     'In der App siehst du sie in jedem Fall.'
+ where code = 'booking_mail';
 
 insert into public.member_attribute_options (attribute_type_id, value, label, sort_order)
 select t.id, v.value, v.label, v.sort_order

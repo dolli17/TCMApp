@@ -191,3 +191,52 @@ export async function serieBeenden(seriesId: string): Promise<AktionsErgebnis> {
         : "Serie beendet. Es standen keine Termine mehr aus.",
   };
 }
+
+/**
+ * Uhrzeit, Titel oder Enddatum einer Serie aendern.
+ *
+ * Zweistufig wie das Anlegen: der erste Aufruf ohne `verdraengen` bricht ab,
+ * sobald fremde Buchungen in der neuen Lage liegen, und nennt ihre Zahl.
+ */
+export async function serieAendern(daten: {
+  seriesId: string;
+  startTime: string;
+  endTime: string;
+  titel: string;
+  validTo: string | null;
+  verdraengen: boolean;
+}): Promise<AktionsErgebnis & { kollisionen?: number }> {
+  const supabase = await createServerSupabase();
+
+  const { data, error } = await supabase.rpc("update_series", {
+    p_series_id: daten.seriesId,
+    p_start_time: daten.startTime,
+    p_end_time: daten.endTime,
+    p_title: daten.titel,
+    p_valid_to: daten.validTo ?? undefined,
+    p_displace: daten.verdraengen,
+  });
+
+  if (error) {
+    const treffer = /^(\d+) Termine kollidieren/.exec(error.message);
+    if (treffer) {
+      return { ok: false, meldung: translateDbError(error), kollisionen: Number(treffer[1]) };
+    }
+    return { ok: false, meldung: translateDbError(error) };
+  }
+
+  revalidatePath("/admin/serien");
+  revalidatePath("/plan");
+
+  const zeile = (data ?? [])[0];
+  const neu = zeile?.created_count ?? 0;
+  const verdraengt = zeile?.displaced_count ?? 0;
+
+  return {
+    ok: true,
+    meldung:
+      verdraengt > 0
+        ? `Serie geändert: ${neu} Termine neu angelegt, ${verdraengt} Buchungen verdrängt. Die Betroffenen wurden benachrichtigt.`
+        : `Serie geändert: ${neu} künftige ${neu === 1 ? "Termin steht" : "Termine stehen"} in der neuen Lage.`,
+  };
+}
