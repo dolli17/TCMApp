@@ -343,7 +343,7 @@ test.describe("Berechtigungen", () => {
   for (const pfad of [
     "/admin",
     "/admin/mitglieder",
-    "/admin/beitraege",
+    "/admin/kasse",
     "/admin/plaetze",
     "/admin/getraenke",
     "/admin/system",
@@ -365,7 +365,7 @@ test.describe("Berechtigungen", () => {
 
   test("Admin sieht den Beitragslauf mit Mandatslage", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/admin/beitraege");
+    await page.goto("/admin/kasse");
     await expect(page.getByRole("heading", { name: /Beitragslauf/ })).toBeVisible();
     // Die fehlende Glaeubiger-ID muss deutlich sichtbar sein
     await expect(page.locator(".hinweis.fehler").first()).toContainText(/Gläubiger|Mandat/);
@@ -956,7 +956,7 @@ test.describe("Verwaltung", () => {
     await page.waitForURL(/\/admin$/);
 
     const reiter = page.getByRole("navigation", { name: "Verwaltung" });
-    for (const name of ["Übersicht", "Mitglieder", "Plätze", "Getränke", "Beiträge", "System"]) {
+    for (const name of ["Übersicht", "Mitglieder", "Plätze", "Getränke", "Kasse", "System"]) {
       await expect(reiter.getByRole("link", { name })).toBeVisible();
     }
   });
@@ -973,16 +973,60 @@ test.describe("Verwaltung", () => {
     await expect(page.getByText("booking.opening_time")).toBeVisible();
   });
 
-  test("die Lastschrift steht bei den Beiträgen, mit Jahresschalter", async ({ page }) => {
+  test("die Lastschrift steht in der Kasse, mit Jahresschalter", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/admin/beitraege");
+    await page.goto("/admin/kasse?abschnitt=regeln");
 
     await expect(page.getByRole("heading", { name: "Lastschrift" })).toBeVisible();
     await expect(page.getByText("sepa.creditor_id")).toBeVisible();
 
     const jahr = new Date().getFullYear();
+    await page.goto("/admin/kasse?abschnitt=lauf");
     await page.getByRole("link", { name: `‹ ${jahr - 1}` }).click();
     await expect(page.getByRole("heading", { name: `Beitragslauf ${jahr - 1}` })).toBeVisible();
+  });
+
+  test("die Kasse führt durch alle fünf Abschnitte", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/kasse");
+
+    const reiter = page.getByRole("navigation", { name: "Abschnitte" });
+    for (const name of [
+      "Beitragslauf", "Getränkemonate", "Forderungen", "Beitragsarten", "Regeln",
+    ]) {
+      await expect(reiter.getByRole("link", { name })).toBeVisible();
+    }
+
+    await reiter.getByRole("link", { name: "Getränkemonate" }).click();
+    await expect(page.getByRole("heading", { name: "Getränkemonate" })).toBeVisible();
+
+    await reiter.getByRole("link", { name: "Beitragsarten" }).click();
+    await expect(page.getByRole("heading", { name: "Beitragsarten" })).toBeVisible();
+    // Ohne diese Tabelle waere der Beitragslauf nicht startbar - sie war der
+    // fehlende Unterbau.
+    await expect(page.locator("table.liste tbody tr").first()).toBeVisible();
+  });
+
+  test("der Beitragslauf erzeugt Forderungen, ein zweites Mal nicht", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    // Ein Jahr, das der Seed nicht kennt: der Lauf soll hier nichts zu tun
+    // finden und das auch sagen, statt schweigend Erfolg zu melden.
+    await page.goto("/admin/kasse?abschnitt=lauf&jahr=2029");
+
+    await expect(page.getByRole("heading", { name: "Forderungen erzeugen" })).toBeVisible();
+    await expect(
+      page.locator("section.karte", { hasText: "Forderungen erzeugen" }),
+    ).toContainText("Für 2029 ist alles berechnet");
+  });
+
+  test("Forderungen lassen sich nach Stand filtern", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/kasse?abschnitt=forderungen");
+
+    const stand = page.getByRole("navigation", { name: "Stand" });
+    await expect(stand.getByRole("link", { name: "Offen" })).toBeVisible();
+    await stand.getByRole("link", { name: "Zurückgebucht" }).click();
+    await expect(page).toHaveURL(/stand=returned/);
   });
 
   test("die Merkmale sind über die Mitglieder erreichbar", async ({ page }) => {
@@ -1046,6 +1090,7 @@ test.describe("Verwaltung", () => {
       ["/admin/serien", "/admin/plaetze"],
       ["/admin/einstellungen", "/admin/system"],
       ["/admin/einstellungen/merkmale", "/admin/mitglieder/merkmale"],
+      ["/admin/beitraege", "/admin/kasse"],
     ]) {
       await page.goto(alt!);
       await expect(page).toHaveURL(new RegExp(`${neu}$`));

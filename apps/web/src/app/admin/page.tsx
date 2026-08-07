@@ -92,8 +92,8 @@ export default async function VerwaltungSeite() {
             Mindestbetrag
           </li>
           <li>
-            <Link href="/admin/beitraege">Beiträge</Link> – Beitragslauf, Fälligkeit und alles zur
-            Lastschrift
+            <Link href="/admin/kasse">Kasse</Link> – Beitragslauf, Getränkemonate, Forderungen,
+            Beitragsarten und alles zur Lastschrift
           </li>
           <li>
             <Link href="/admin/system">System</Link> – Benachrichtigungen, Arbeitsdienst,

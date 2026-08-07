@@ -21,6 +21,7 @@ const config: NextConfig = {
         permanent: true,
       },
       { source: "/admin/serien", destination: "/admin/plaetze", permanent: true },
+      { source: "/admin/beitraege", destination: "/admin/kasse", permanent: true },
     ];
   },
 };

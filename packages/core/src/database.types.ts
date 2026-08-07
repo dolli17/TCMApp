@@ -1795,6 +1795,21 @@ export type Database = {
           released_payees: number
         }[]
       }
+      billing_period_overview: {
+        Args: { p_limit?: number }
+        Returns: {
+          buchungen: number
+          charged_at: string
+          closed_at: string
+          forderungen: number
+          id: string
+          mitglieder: number
+          month: number
+          status: Database["public"]["Enums"]["billing_period_status"]
+          summe_cents: number
+          year: number
+        }[]
+      }
       booking_settings: {
         Args: never
         Returns: {
@@ -1815,6 +1830,36 @@ export type Database = {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: undefined
       }
+      charge_billing_period: {
+        Args: { p_due_date?: string; p_month: number; p_year: number }
+        Returns: {
+          erzeugt: number
+          summe_cents: number
+        }[]
+      }
+      charge_overview: {
+        Args: {
+          p_kind?: Database["public"]["Enums"]["charge_kind"]
+          p_limit?: number
+          p_status?: Database["public"]["Enums"]["charge_status"]
+        }
+        Returns: {
+          amount_cents: number
+          created_at: string
+          description: string
+          due_date: string
+          hat_mandat: boolean
+          id: string
+          kind: Database["public"]["Enums"]["charge_kind"]
+          member_id: string
+          member_name: string
+          notified_at: string
+          payer_id: string
+          payer_name: string
+          period_label: string
+          status: Database["public"]["Enums"]["charge_status"]
+        }[]
+      }
       claim_notification_mails: {
         Args: { p_limit?: number }
         Returns: {
@@ -1823,6 +1868,14 @@ export type Database = {
           items: Json
           member_id: string
           notification_ids: string[]
+        }[]
+      }
+      close_billing_period: {
+        Args: { p_month: number; p_year: number }
+        Returns: {
+          buchungen: number
+          mitglieder: number
+          summe_cents: number
         }[]
       }
       court_overview: {
@@ -1859,6 +1912,17 @@ export type Database = {
           p_partner_wanted?: boolean
           p_player_member_ids?: string[]
           p_starts_at: string
+        }
+        Returns: string
+      }
+      create_manual_charge: {
+        Args: {
+          p_amount_cents: number
+          p_description: string
+          p_due_date?: string
+          p_kind: Database["public"]["Enums"]["charge_kind"]
+          p_member_id: string
+          p_period_label?: string
         }
         Returns: string
       }
@@ -2008,6 +2072,14 @@ export type Database = {
         Returns: number
       }
       ensure_default_settings: { Args: never; Returns: number }
+      fee_run_execute: {
+        Args: { p_due_date?: string; p_year: number }
+        Returns: {
+          erzeugt: number
+          summe_cents: number
+          uebersprungen: number
+        }[]
+      }
       fee_run_preview: {
         Args: { p_year: number }
         Returns: {
@@ -2019,6 +2091,23 @@ export type Database = {
           member_id: string
           member_name: string
           payer_name: string
+        }[]
+      }
+      fee_type_overview: {
+        Args: { p_year?: number }
+        Returns: {
+          active: boolean
+          code: string
+          description: string
+          id: string
+          mitglieder: number
+          naechster_preis_ab_jahr: number
+          naechster_preis_cents: number
+          name: string
+          preis_ab_jahr: number
+          preis_cents: number
+          soll_stunden: number
+          sort_order: number
         }[]
       }
       iban_check_digits: {
@@ -2339,6 +2428,18 @@ export type Database = {
         }
         Returns: number
       }
+      set_fee_price: {
+        Args: {
+          p_amount_cents: number
+          p_fee_type_id: string
+          p_valid_from_year: number
+        }
+        Returns: undefined
+      }
+      set_fee_type_active: {
+        Args: { p_active: boolean; p_id: string }
+        Returns: number
+      }
       set_login_disabled: {
         Args: { p_disabled: boolean; p_member_id: string }
         Returns: undefined
@@ -2387,6 +2488,10 @@ export type Database = {
       setting_int: { Args: { p_key: string }; Returns: number }
       setting_text: { Args: { p_key: string }; Returns: string }
       setting_time: { Args: { p_key: string }; Returns: string }
+      settle_charge_manually: {
+        Args: { p_charge_id: string; p_note?: string }
+        Returns: undefined
+      }
       submit_membership_application: {
         Args: { p_data: Json; p_ip?: string; p_user_agent?: string }
         Returns: undefined
@@ -2459,6 +2564,16 @@ export type Database = {
         }
         Returns: string
       }
+      upsert_fee_type: {
+        Args: {
+          p_code: string
+          p_description?: string
+          p_id: string
+          p_name: string
+          p_sort_order?: number
+        }
+        Returns: string
+      }
       upsert_member_attribute_type: {
         Args: {
           p_active?: boolean
@@ -2475,6 +2590,10 @@ export type Database = {
       }
       void_drink_purchase: {
         Args: { p_purchase_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      waive_charge: {
+        Args: { p_charge_id: string; p_reason: string }
         Returns: undefined
       }
     }

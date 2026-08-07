@@ -15,7 +15,7 @@ import type { AktionsErgebnis } from "./aktionen";
 
 function neuLaden(id: string) {
   revalidatePath(`/admin/mitglieder/${id}`);
-  revalidatePath("/admin/beitraege");
+  revalidatePath("/admin/kasse");
 }
 
 export async function bankverbindungAnlegen(formData: FormData): Promise<AktionsErgebnis> {

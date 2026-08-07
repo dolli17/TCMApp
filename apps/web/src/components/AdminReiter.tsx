@@ -21,7 +21,10 @@ const BEREICHE = [
   { href: "/admin/mitglieder", label: "Mitglieder" },
   { href: "/admin/plaetze", label: "Plätze" },
   { href: "/admin/getraenke", label: "Getränke" },
-  { href: "/admin/beitraege", label: "Beiträge" },
+  // „Kasse" statt „Beiträge": dort steht jetzt alles, was Geld betrifft — der
+  // Beitragslauf, der Getränkemonat und die Forderungen. Wer einzieht, will
+  // nicht zwischen zwei Reitern springen.
+  { href: "/admin/kasse", label: "Kasse" },
   { href: "/admin/system", label: "System" },
 ] as const;
 

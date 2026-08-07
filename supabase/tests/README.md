@@ -39,6 +39,7 @@ sie danach zurück. Die Tests hinterlassen also keinen Zustand – auch nicht di
 | `08_serien_aendern.sql` | `update_series`, `cancel_series_occurrence`, `series_id` im Tagesplan |
 | `09_benachrichtigungs_mails.sql` | Auswahl, Bündelung und Abhaken der Mailbenachrichtigungen |
 | `10_getraenkekarte.sql` | Preise, Preishistorie, Karte pflegen |
+| `11_forderungen.sql` | Beitragslauf, Getränkemonat, Beitragsarten, Forderungen |
 | `99_runtests.sql` | Führt die Suite aus |
 
 Die Dateien `01` bis `10` **definieren nur Funktionen**. Ausgeführt wird alles in
