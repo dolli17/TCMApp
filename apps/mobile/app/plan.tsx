@@ -5,8 +5,8 @@ import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme";
 import {
   aendereMitspieler, bucheplatz, ladeBuchungsarten, ladeBuchungseinstellungen,
-  ladeIchSelbst, ladeKontingent, ladePlaetze, ladeTagesplan, ladeVerzeichnis,
-  spieleMit, storniereBuchung, sucheMitspieler,
+  ladeIchSelbst, ladeKontingent, ladeMeineBuchungen, ladePlaetze, ladeTagesplan,
+  ladeVerzeichnis, spieleMit, storniereBuchung, sucheMitspieler,
 } from "@/lib/daten";
 import {
   alsUhrzeit, lokaleMinuten, zuMinuten,
@@ -47,6 +47,7 @@ export default function Plan() {
   const [arten, setArten] = useState<Buchungsart[]>([]);
   const [verzeichnis, setVerzeichnis] = useState<Mitglied[]>([]);
   const [kontingent, setKontingent] = useState({ used: 0, allowed: 0 });
+  const [aktiv, setAktiv] = useState(0);
   const [einstellungen, setEinstellungen] =
     useState<Awaited<ReturnType<typeof ladeBuchungseinstellungen>>>(null);
   const [admin, setAdmin] = useState(false);
@@ -58,12 +59,20 @@ export default function Plan() {
 
   const laden = useCallback(async (tag: string) => {
     setLaedt(true);
-    const [p, b, k, e, a, v, ich] = await Promise.all([
+    const [p, b, k, e, a, v, ich, meine] = await Promise.all([
       ladePlaetze(), ladeTagesplan(tag), ladeKontingent(), ladeBuchungseinstellungen(),
-      ladeBuchungsarten(), ladeVerzeichnis(""), ladeIchSelbst(),
+      ladeBuchungsarten(), ladeVerzeichnis(""), ladeIchSelbst(), ladeMeineBuchungen(),
     ]);
     setPlaetze(p); setBelegung(b); setKontingent(k); setEinstellungen(e);
     setArten(a); setVerzeichnis(v); setAdmin(ich.admin); setMeineId(ich.id);
+
+    // Bewusst nicht kontingent.used: das zaehlt nur Buchungsarten mit
+    // counts_towards_quota, und solange das Kontingent auf 0 steht, sagt die
+    // verbrauchte Menge ohnehin nichts. Fuer die Frage "was habe ich noch
+    // vor?" ist eine Buchung eine Buchung.
+    const jetzt = Date.now();
+    setAktiv(meine.filter((m) => new Date(m.ends_at).getTime() > jetzt).length);
+
     setLaedt(false);
   }, []);
 
@@ -242,10 +251,14 @@ export default function Plan() {
           <View style={stil.heroPillen}>
             <View style={stil.heroPille}>
               <Text style={stil.heroPilleWert}>
-                {unbegrenzt ? kontingent.used : `${kontingent.used} / ${kontingent.allowed}`}
+                {unbegrenzt ? aktiv : `${kontingent.used} / ${kontingent.allowed}`}
               </Text>
               <Text style={stil.heroPilleLabel}>
-                {unbegrenzt ? "Buchungen offen" : "von deinem Kontingent"}
+                {unbegrenzt
+                  ? aktiv === 1
+                    ? "Buchung steht an"
+                    : "Buchungen stehen an"
+                  : "von deinem Kontingent"}
               </Text>
             </View>
             <View style={stil.heroPille}>

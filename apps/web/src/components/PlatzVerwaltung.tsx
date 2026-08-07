@@ -33,6 +33,9 @@ interface Props {
   arten: ArtZeile[];
   /** Blockungsarten fuer die Sperrung, nach sort_order. */
   blockungsarten: { code: string; name: string }[];
+  /** Oeffnungs- und Schliesszeit aus den Einstellungen, als "HH:MM". */
+  oeffnung: string;
+  schluss: string;
 }
 
 const LEERER_PLATZ = { id: null as string | null, name: "", kurzname: "", zusatz: "" };
@@ -56,6 +59,8 @@ export function PlatzVerwaltung(props: Props) {
       <Sperrformular
         plaetze={props.plaetze.filter((p) => p.active)}
         arten={props.blockungsarten}
+        oeffnung={props.oeffnung}
+        schluss={props.schluss}
         laeuft={laeuft}
         starte={starte}
         melde={melde}
@@ -79,18 +84,23 @@ type Melder = (e: { ok: boolean; meldung: string }) => void;
  * zaehlen, dann fragen, dann verdraengen.
  */
 function Sperrformular({
-  plaetze, arten, laeuft, starte, melde,
+  plaetze, arten, oeffnung, schluss, laeuft, starte, melde,
 }: {
   plaetze: PlatzZeile[];
   arten: { code: string; name: string }[];
+  oeffnung: string;
+  schluss: string;
   laeuft: boolean;
   starte: Starter;
   melde: Melder;
 }) {
   const [gewaehlt, setGewaehlt] = useState<string[]>([]);
   const [tag, setTag] = useState("");
-  const [von, setVon] = useState("08:00");
-  const [bis, setBis] = useState("21:00");
+  // Vorgabe aus den Einstellungen, nicht aus zwei fest eingetippten Zeiten:
+  // sonst schlaegt das Formular weiter 08:00 bis 21:00 vor, nachdem der
+  // Vorstand die Oeffnungszeiten geaendert hat.
+  const [von, setVon] = useState(oeffnung);
+  const [bis, setBis] = useState(schluss);
   const [artCode, setArtCode] = useState(arten[0]?.code ?? "platzpflege");
   const [grund, setGrund] = useState("");
   const [kollisionen, setKollisionen] = useState<number | null>(null);

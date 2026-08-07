@@ -41,7 +41,11 @@ export async function einstellungenSpeichern(formData: FormData): Promise<Aktion
     }
   }
 
-  revalidatePath("/admin/einstellungen");
+  // Die Werte stehen seit dem Umbau bei ihrem Gegenstand, also auf fuenf
+  // Seiten statt auf einer. /admin frischt den ganzen Zweig auf; /plan und
+  // /getraenke, weil dort die Zeiten und Preise unmittelbar wirken.
+  revalidatePath("/admin", "layout");
   revalidatePath("/plan");
+  revalidatePath("/getraenke");
   return { ok: true, meldung: "Einstellungen gespeichert." };
 }

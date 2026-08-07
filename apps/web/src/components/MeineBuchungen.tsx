@@ -52,20 +52,24 @@ export function MeineBuchungen({ buchungen }: { buchungen: MeineBuchung[] }) {
     });
   }
 
-  if (buchungen.length === 0) {
-    return (
-      <p className="unterzeile">
-        Für dich steht gerade nichts an. Im Belegungsplan findest du die freien Plätze.
-      </p>
-    );
-  }
-
   return (
     <>
       {meldung && (
         <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">
           {meldung.text}
         </div>
+      )}
+
+      {/*
+        Die Meldung steht vor der Leeransicht, nicht dahinter: wer seinen
+        letzten Termin storniert, sah sonst nur eine leere Liste und erfuhr
+        nie, ob die Stornierung durchging - die Liste war ja auch vorher schon
+        fast leer.
+      */}
+      {buchungen.length === 0 && (
+        <p className="unterzeile">
+          Für dich steht gerade nichts an. Im Belegungsplan findest du die freien Plätze.
+        </p>
       )}
 
       <ul className="terminliste">

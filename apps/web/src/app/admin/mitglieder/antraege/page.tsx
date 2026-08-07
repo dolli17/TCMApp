@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { AntragsListe } from "@/components/AntragsListe";
 import type { Antrag, Beitragsart } from "@/components/AntragsFenster";
 
@@ -17,11 +17,7 @@ export default async function AntraegeSeite({
   searchParams: Promise<{ filter?: string }>;
 }) {
   const { filter } = await searchParams;
-  const angemeldet = await getCurrentMember();
-
-  if (!angemeldet || !isAdmin(angemeldet.roles)) {
-    return <div className="hinweis fehler">Diese Seite ist Administratoren vorbehalten.</div>;
-  }
+  // Das Rollenschloss steht im Layout - siehe app/admin/layout.tsx.
 
   const gewaehlt = FILTER.some((f) => f.wert === filter) ? filter! : "offen";
   const supabase = await createServerSupabase();

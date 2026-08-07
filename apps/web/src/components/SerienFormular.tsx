@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { serieAnlegen, serieVorschau, type Kollision } from "@/app/admin/serien/aktionen";
+import { serieAnlegen, serieVorschau, type Kollision } from "@/app/admin/plaetze/aktionen";
 
 const WOCHENTAGE = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 

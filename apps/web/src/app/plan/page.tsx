@@ -35,7 +35,10 @@ export default async function PlanSeite({
   const datum = tag && /^\d{4}-\d{2}-\d{2}$/.test(tag) ? tag : heuteInBerlin();
   const supabase = await createServerSupabase();
 
-  const [angemeldet, [plaetzeRes, planRes, artenRes, einstellungRes, quotaRes, verzeichnisRes]] =
+  const [
+    angemeldet,
+    [plaetzeRes, planRes, artenRes, einstellungRes, quotaRes, verzeichnisRes, meineRes],
+  ] =
     await Promise.all([
       getCurrentMember(),
       Promise.all([
@@ -50,6 +53,7 @@ export default async function PlanSeite({
       supabase.rpc("booking_settings"),
       supabase.rpc("my_booking_quota"),
       supabase.rpc("member_directory", { p_query: "" }),
+      supabase.rpc("my_bookings", {}),
       ]),
     ]);
 
@@ -72,6 +76,18 @@ export default async function PlanSeite({
   const unbegrenzt = erlaubt <= 0;
   const heute = heuteInBerlin();
 
+  // Solange das Kontingent unbegrenzt ist, sagt die Kachel nichts, wenn dort
+  // die verbrauchte Menge steht - sie zeigt dann dauerhaft eine Zahl ohne
+  // Bezugsgroesse. Stattdessen die eigenen Termine, die noch bevorstehen.
+  //
+  // Bewusst nicht quota.used: das zaehlt nur Buchungsarten mit
+  // counts_towards_quota. Fuer die Frage "was habe ich noch vor?" ist eine
+  // Buchung eine Buchung.
+  const jetzt = Date.now();
+  const aktiv = (meineRes.data ?? []).filter(
+    (b) => new Date(b.ends_at).getTime() > jetzt,
+  ).length;
+
   return (
     <>
       <section className="hero">
@@ -79,8 +95,14 @@ export default async function PlanSeite({
         <h1>{lesbaresDatum(datum)}</h1>
         <div className="meta">
           <div className="pill">
-            <b className="tnum">{unbegrenzt ? belegt : `${belegt} / ${erlaubt}`}</b>
-            <span>{unbegrenzt ? "Buchungen offen" : "von deinem Kontingent"}</span>
+            <b className="tnum">{unbegrenzt ? aktiv : `${belegt} / ${erlaubt}`}</b>
+            <span>
+              {unbegrenzt
+                ? aktiv === 1
+                  ? "Buchung steht an"
+                  : "Buchungen stehen an"
+                : "von deinem Kontingent"}
+            </span>
           </div>
           <div className="pill">
             <b className="tnum">{plaetzeRes.data?.length ?? 0}</b>

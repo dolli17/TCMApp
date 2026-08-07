@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { einstellungenSpeichern } from "@/app/admin/einstellungen/aktionen";
+import { einstellungenSpeichern } from "@/app/admin/einstellungs-aktionen";
 
 export interface Einstellung {
   key: string;

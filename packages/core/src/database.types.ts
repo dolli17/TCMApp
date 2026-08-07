@@ -1815,6 +1815,16 @@ export type Database = {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: undefined
       }
+      claim_notification_mails: {
+        Args: { p_limit?: number }
+        Returns: {
+          email: string
+          first_name: string
+          items: Json
+          member_id: string
+          notification_ids: string[]
+        }[]
+      }
       court_overview: {
         Args: never
         Returns: {
@@ -1942,6 +1952,23 @@ export type Database = {
         Args: { p_code: string }
         Returns: undefined
       }
+      drink_item_overview: {
+        Args: never
+        Returns: {
+          active: boolean
+          buchungen: number
+          buchungen_offen: number
+          category: Database["public"]["Enums"]["drink_category"]
+          description: string
+          id: string
+          naechster_preis_ab: string
+          naechster_preis_cents: number
+          name: string
+          price_cents: number
+          price_valid_from: string
+          sort_order: number
+        }[]
+      }
       drink_menu: {
         Args: never
         Returns: {
@@ -1951,6 +1978,15 @@ export type Database = {
           name: string
           price_cents: number
           sort_order: number
+        }[]
+      }
+      drink_price_history: {
+        Args: { p_item_id: string }
+        Returns: {
+          geplant: boolean
+          ist_aktuell: boolean
+          price_cents: number
+          valid_from: string
         }[]
       }
       end_membership: {
@@ -2245,6 +2281,11 @@ export type Database = {
         Args: { p_item_id: string; p_member_id: string; p_quantity?: number }
         Returns: string
       }
+      release_notification_mails: { Args: { p_ids: string[] }; Returns: number }
+      remove_drink_price: {
+        Args: { p_item_id: string; p_valid_from: string }
+        Returns: undefined
+      }
       remove_member_attribute: {
         Args: {
           p_member_id: string
@@ -2258,6 +2299,7 @@ export type Database = {
         Returns: undefined
       }
       reorder_courts: { Args: { p_ids: string[] }; Returns: number }
+      reorder_drink_items: { Args: { p_ids: string[] }; Returns: number }
       revoke_sepa_mandate: {
         Args: { p_mandate_id: string; p_revoked_on?: string }
         Returns: undefined
@@ -2283,6 +2325,18 @@ export type Database = {
       }
       set_court_active: {
         Args: { p_active: boolean; p_id: string }
+        Returns: number
+      }
+      set_drink_item_active: {
+        Args: { p_active: boolean; p_id: string }
+        Returns: number
+      }
+      set_drink_price: {
+        Args: {
+          p_item_id: string
+          p_price_cents: number
+          p_valid_from?: string
+        }
         Returns: number
       }
       set_login_disabled: {
@@ -2391,6 +2445,17 @@ export type Database = {
           p_position?: number
           p_short_name: string
           p_subline?: string
+        }
+        Returns: string
+      }
+      upsert_drink_item: {
+        Args: {
+          p_category?: Database["public"]["Enums"]["drink_category"]
+          p_description?: string
+          p_id: string
+          p_name: string
+          p_price_cents?: number
+          p_sort_order?: number
         }
         Returns: string
       }

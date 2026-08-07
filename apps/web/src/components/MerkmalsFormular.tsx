@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { merkmalLoeschen, merkmalSpeichern } from "@/app/admin/einstellungen/merkmale/aktionen";
+import { merkmalLoeschen, merkmalSpeichern } from "@/app/admin/mitglieder/merkmale/aktionen";
 
 export interface MerkmalsDefinition {
   id: string;

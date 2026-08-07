@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
+import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { BankUndMandatKarte, type FinanzZeile } from "@/components/BankUndMandatKarte";
 import { BeitragsartenKarte, type BeitragsZeile } from "@/components/BeitragsartenKarte";
 import { GefahrenzoneKarte, type Loeschfolgen } from "@/components/GefahrenzoneKarte";
@@ -119,11 +119,10 @@ export default async function MitgliedSeite({
   const { abschnitt: gewaehlt, jahr: jahrParam } = await searchParams;
   const abschnitt = ABSCHNITTE.some((a) => a.wert === gewaehlt) ? gewaehlt! : "stammdaten";
 
+  // Das Rollenschloss steht im Layout - siehe app/admin/layout.tsx. Wer
+  // angemeldet ist, wird hier trotzdem gebraucht: ein Admin darf sich selbst
+  // nicht die Rechte entziehen, und dafuer muss die Seite ihn erkennen.
   const angemeldet = await getCurrentMember();
-  if (!angemeldet || !isAdmin(angemeldet.roles)) {
-    return <div className="hinweis fehler">Diese Seite ist Administratoren vorbehalten.</div>;
-  }
-
   const supabase = await createServerSupabase();
 
   // Sechs unabhängige Abfragen statt einer gebündelten RPC: sie sind über
@@ -155,7 +154,7 @@ export default async function MitgliedSeite({
   const laufend = mitgliedschaften.find((s) => !s.ended_on) ?? null;
   const rollen = (rollenRes.data ?? []).map((r) => r.role as string);
   const admins = (adminZahlRes.data ?? []).map((r) => r.member_id);
-  const istSelbst = angemeldet.member?.id === id;
+  const istSelbst = angemeldet?.member?.id === id;
 
   const stammfelder: Feld[] = [
     { name: "first_name", label: "Vorname", art: "text", wert: m.first_name },
@@ -395,7 +394,7 @@ async function Merkmale({ id }: { id: string }) {
         text="Frei definierbare Angaben. Neue Merkmale legt der Vorstand unter Einstellungen an."
       />
       <p className="beschreibung">
-        <Link href="/admin/einstellungen/merkmale">Merkmale verwalten →</Link>
+        <Link href="/admin/mitglieder/merkmale">Merkmale verwalten →</Link>
       </p>
     </>
   );

@@ -336,17 +336,18 @@ test.describe("Berechtigungen", () => {
   test("normales Mitglied sieht keine Verwaltungspunkte", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
     const nav = page.getByRole("navigation", { name: "Hauptmenü" }).first();
-    await expect(nav.getByRole("link", { name: "Mitglieder" })).toHaveCount(0);
-    await expect(nav.getByRole("link", { name: "Beiträge" })).toHaveCount(0);
-    await expect(nav.getByRole("link", { name: "Einstellungen" })).toHaveCount(0);
+    // Seit dem Umbau steht dort ein Eintrag statt fünf.
+    await expect(nav.getByRole("link", { name: "Verwaltung" })).toHaveCount(0);
   });
 
   for (const pfad of [
+    "/admin",
     "/admin/mitglieder",
     "/admin/beitraege",
-    "/admin/serien",
-    "/admin/einstellungen",
-    "/admin/einstellungen/merkmale",
+    "/admin/plaetze",
+    "/admin/getraenke",
+    "/admin/system",
+    "/admin/mitglieder/merkmale",
   ]) {
     test(`normales Mitglied kommt nicht an ${pfad}`, async ({ page }) => {
       await anmelden(page, NUTZER.mitglied);
@@ -372,8 +373,8 @@ test.describe("Berechtigungen", () => {
 
   test("Admin kann Serien anlegen", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/admin/serien");
-    await expect(page.getByRole("heading", { name: "Serien-Blockungen", level: 1 })).toBeVisible();
+    await page.goto("/admin/plaetze");
+    await expect(page.getByRole("heading", { name: "Serien", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Vorschau" })).toBeVisible();
   });
 
@@ -402,7 +403,8 @@ test.describe("Berechtigungen", () => {
 test.describe("Admin-Dashboard", () => {
   test("Einstellung ändern, neu laden, Wert steht", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/admin/einstellungen");
+    // Die Buchungsregeln stehen seit dem Umbau bei den Plätzen.
+    await page.goto("/admin/plaetze");
 
     const feld = page.getByLabel("Buchungsvorlauf in Tagen");
     await expect(feld).toBeVisible();
@@ -434,8 +436,8 @@ test.describe("Admin-Dashboard", () => {
 
   test("das Kontingent erklärt, dass 0 unbegrenzt bedeutet", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/admin/einstellungen");
-    await expect(page.locator("section.einstellungen").first()).toContainText(
+    await page.goto("/admin/plaetze");
+    await expect(page.locator("section.einstellungen", { hasText: "Buchungsregeln" })).toContainText(
       "0 bedeutet unbegrenzt",
     );
   });
@@ -907,9 +909,12 @@ test.describe("Serien ändern, sperren, Gründe nennen", () => {
 
   test("Serie bearbeiten statt beenden und neu anlegen", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/admin/serien");
+    await page.goto("/admin/plaetze");
 
-    const zeile = page.locator("table.liste tbody tr").first();
+    // Auf der Platzseite stehen drei Tabellen (Plätze, Buchungsarten, Serien) -
+    // ein .first() träfe die falsche.
+    const serien = page.locator("section.karte", { hasText: "Angelegte Serien" });
+    const zeile = serien.locator("table.liste tbody tr").first();
     test.skip((await zeile.count()) === 0, "Keine Serie im Bestand");
     const vorher = ((await zeile.locator("td").first().textContent()) ?? "").trim();
 
@@ -922,13 +927,128 @@ test.describe("Serien ändern, sperren, Gründe nennen", () => {
     await fenster.getByRole("button", { name: "Änderung speichern" }).click();
 
     await expect(page.locator(".hinweis.erfolg")).toContainText("geändert", { timeout: 20_000 });
-    await expect(page.locator("table.liste tbody tr").first()).toContainText(neu);
+    await expect(serien.locator("table.liste tbody tr").first()).toContainText(neu);
 
     // Zurückbenennen, damit der nächste Lauf denselben Bestand vorfindet.
-    await page.locator("table.liste tbody tr").first().getByRole("button", { name: "Bearbeiten" }).click();
+    await serien.locator("table.liste tbody tr").first().getByRole("button", { name: "Bearbeiten" }).click();
     const nochmal = page.locator("dialog.fenster");
     await nochmal.getByLabel("Titel").fill(vorher);
     await nochmal.getByRole("button", { name: "Änderung speichern" }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("geändert", { timeout: 20_000 });
+  });
+});
+
+/**
+ * Der Vorstandsbereich.
+ *
+ * Vorher standen fünf Verwaltungspunkte nebeneinander im Menü und
+ * Zusammengehörendes lag an verschiedenen Orten — die Buchungsregeln in einer
+ * allgemeinen Einstellungsliste, die Buchungsarten bei den Plätzen. Dieser Test
+ * prüft, dass jetzt ein Punkt ins Reiterband führt und die Regeln bei ihrer
+ * Sache stehen.
+ */
+test.describe("Verwaltung", () => {
+  test("ein Menüpunkt führt in sechs Bereiche", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+
+    const nav = page.getByRole("navigation", { name: "Hauptmenü" }).first();
+    await nav.getByRole("link", { name: "Verwaltung" }).click();
+    await page.waitForURL(/\/admin$/);
+
+    const reiter = page.getByRole("navigation", { name: "Verwaltung" });
+    for (const name of ["Übersicht", "Mitglieder", "Plätze", "Getränke", "Beiträge", "System"]) {
+      await expect(reiter.getByRole("link", { name })).toBeVisible();
+    }
+  });
+
+  test("die Buchungsregeln stehen bei den Plätzen", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/plaetze");
+
+    // Alles zum Platz auf einer Seite: sperren, Serien, Plätze, Arten, Regeln.
+    await expect(page.getByRole("heading", { name: "Plätze sperren" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Serien", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Buchungsarten" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Buchungsregeln" })).toBeVisible();
+    await expect(page.getByText("booking.opening_time")).toBeVisible();
+  });
+
+  test("die Lastschrift steht bei den Beiträgen, mit Jahresschalter", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/beitraege");
+
+    await expect(page.getByRole("heading", { name: "Lastschrift" })).toBeVisible();
+    await expect(page.getByText("sepa.creditor_id")).toBeVisible();
+
+    const jahr = new Date().getFullYear();
+    await page.getByRole("link", { name: `‹ ${jahr - 1}` }).click();
+    await expect(page.getByRole("heading", { name: `Beitragslauf ${jahr - 1}` })).toBeVisible();
+  });
+
+  test("die Merkmale sind über die Mitglieder erreichbar", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/mitglieder");
+
+    await page.getByRole("link", { name: /Merkmale/ }).first().click();
+    await page.waitForURL(/\/admin\/mitglieder\/merkmale$/);
+    await expect(page.getByRole("heading", { name: "Merkmale" }).first()).toBeVisible();
+  });
+
+  test("die Getränkekarte steht bei den Getränken", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/getraenke");
+
+    await expect(page.getByRole("heading", { name: "Getränkekarte" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Preis ändern" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Abrechnung" })).toBeVisible();
+
+    // Ein neues Getränk ohne Preis waere unsichtbar und unbuchbar - der Knopf
+    // bleibt deshalb gesperrt, bis ein Preis dasteht.
+    await page.getByLabel("Name").fill("ZZTest Limonade");
+    await expect(page.getByRole("button", { name: "Getränk anlegen" })).toBeDisabled();
+  });
+
+  test("ein geplanter Preis ist sichtbar und lässt sich zurücknehmen", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/getraenke");
+
+    const karte = page.locator("section.karte", { hasText: "Preis ändern" });
+    const getraenk = await karte.locator("select").first().inputValue();
+
+    // Zehn Tage voraus: die Erhoehung darf heute noch nichts kosten.
+    const stichtag = new Date(Date.now() + 10 * 86_400_000).toISOString().slice(0, 10);
+    await karte.getByLabel("Neuer Preis").fill("9,99");
+    await karte.getByLabel("Gültig ab").fill(stichtag);
+    await karte.getByRole("button", { name: "Preis setzen" }).click();
+
+    await expect(page.locator(".hinweis.erfolg")).toContainText("gilt ab", { timeout: 20_000 });
+
+    // Ohne diese Zeile bliebe eine terminierte Erhoehung bis zum Stichtag
+    // unsichtbar - und wuerde ein zweites Mal eingetragen.
+    const geplant = page.locator("li.termin", { hasText: "9,99" });
+    await expect(geplant).toBeVisible();
+
+    await geplant.getByRole("button", { name: "Zurücknehmen" }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("zurückgenommen", {
+      timeout: 20_000,
+    });
+    await expect(page.locator("li.termin", { hasText: "9,99" })).toHaveCount(0);
+
+    // Der heutige Preis war zu keinem Zeitpunkt betroffen.
+    await expect(karte.locator("select").first()).toHaveValue(getraenk);
+    await expect(page.locator("table.liste")).not.toContainText("9,99");
+  });
+
+  test("alte Adressen leiten auf die neuen um", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+
+    for (const [alt, neu] of [
+      ["/admin/serien", "/admin/plaetze"],
+      ["/admin/einstellungen", "/admin/system"],
+      ["/admin/einstellungen/merkmale", "/admin/mitglieder/merkmale"],
+    ]) {
+      await page.goto(alt!);
+      await expect(page).toHaveURL(new RegExp(`${neu}$`));
+    }
   });
 });

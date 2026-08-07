@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { MitgliederKopf } from "@/components/MitgliederKopf";
 
 export const dynamic = "force-dynamic";
@@ -19,12 +19,7 @@ export default async function MitgliederSeite({
   searchParams: Promise<{ q?: string; filter?: string }>;
 }) {
   const { q, filter } = await searchParams;
-  const angemeldet = await getCurrentMember();
-
-  if (!angemeldet || !isAdmin(angemeldet.roles)) {
-    return <div className="hinweis fehler">Diese Seite ist Administratoren vorbehalten.</div>;
-  }
-
+  // Das Rollenschloss steht im Layout - siehe app/admin/layout.tsx.
   const gewaehlt = FILTER.some((f) => f.wert === filter) ? filter! : "aktiv";
   const suche = (q ?? "").trim().slice(0, 60);
   const supabase = await createServerSupabase();
@@ -36,7 +31,7 @@ export default async function MitgliederSeite({
   //
   // Der Suchbegriff geht als Parameter hinein und nicht in einen
   // Filterausdruck - ein Komma im Namen kann ihn deshalb nicht mehr zerlegen.
-  const [{ data, error }, antraegeRes] = await Promise.all([
+  const [{ data, error }, antraegeRes, merkmaleRes] = await Promise.all([
     supabase.rpc("member_overview", {
       p_filter: gewaehlt,
       p_query: suche || undefined,
@@ -46,9 +41,14 @@ export default async function MitgliederSeite({
       .from("membership_applications")
       .select("id", { count: "exact", head: true })
       .eq("status", "new"),
+    supabase
+      .from("member_attribute_types")
+      .select("id", { count: "exact", head: true })
+      .eq("active", true),
   ]);
 
   const offeneAntraege = antraegeRes.count ?? 0;
+  const merkmale = merkmaleRes.count ?? 0;
 
   if (error) {
     return <div className="hinweis fehler">{error.message}</div>;
@@ -106,6 +106,18 @@ export default async function MitgliederSeite({
           <div className="titel">Offene Anträge</div>
           <div className="wert">{offeneAntraege}</div>
           <div className="titel">{offeneAntraege === 0 ? "nichts zu tun" : "warten auf Antwort"}</div>
+        </Link>
+        {/* Die Merkmale waren vorher nur über eine Detailseite zu finden und
+            lagen als Unterseite unter den Einstellungen - obwohl sie
+            ausschließlich Mitglieder betreffen. */}
+        <Link
+          href="/admin/mitglieder/merkmale"
+          className="kachel"
+          style={{ textDecoration: "none", color: "inherit" }}
+        >
+          <div className="titel">Merkmale</div>
+          <div className="wert">{merkmale}</div>
+          <div className="titel">Einwilligungen und Eigenschaften</div>
         </Link>
       </div>
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { MerkmalsFormular, type MerkmalsDefinition } from "@/components/MerkmalsFormular";
 
 export const dynamic = "force-dynamic";
@@ -18,11 +18,7 @@ export default async function MerkmaleSeite({
   searchParams: Promise<{ bearbeiten?: string }>;
 }) {
   const { bearbeiten } = await searchParams;
-  const angemeldet = await getCurrentMember();
-
-  if (!angemeldet || !isAdmin(angemeldet.roles)) {
-    return <div className="hinweis fehler">Diese Seite ist Administratoren vorbehalten.</div>;
-  }
+  // Das Rollenschloss steht im Layout - siehe app/admin/layout.tsx.
 
   const supabase = await createServerSupabase();
 
@@ -63,8 +59,8 @@ export default async function MerkmaleSeite({
 
   return (
     <>
-      <Link href="/admin/einstellungen" className="zurueck">
-        ← Einstellungen
+      <Link href="/admin/mitglieder" className="zurueck">
+        ← Mitglieder
       </Link>
 
       <h1 className="pagetitle">Merkmale</h1>
@@ -129,7 +125,7 @@ export default async function MerkmaleSeite({
       <MerkmalsFormular key={inBearbeitung?.code ?? "neu"} vorhanden={inBearbeitung} />
 
       {inBearbeitung && (
-        <Link href="/admin/einstellungen/merkmale" className="knopf leise">
+        <Link href="/admin/mitglieder/merkmale" className="knopf leise">
           Neues Merkmal anlegen
         </Link>
       )}

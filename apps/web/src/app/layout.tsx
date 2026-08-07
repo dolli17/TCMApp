@@ -44,16 +44,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     { href: "/getraenke", label: "Getränke", kurz: "Getränke", symbol: "getraenk" },
     { href: "/konto", label: "Mein Konto", kurz: "Konto", symbol: "konto" },
   ];
-  // Ein Admin sieht alles. Zwischenrollen gibt es nicht mehr, deshalb genuegt
-  // ein Block statt vier gestaffelter Pruefungen.
+  // Ein Eintrag statt fuenf. Vorher standen Plaetze, Serien, Mitglieder,
+  // Beitraege und Einstellungen nebeneinander im Menue - acht Punkte insgesamt,
+  // die am Telefon nur noch seitwaerts scrollend hineinpassten. Und "Plaetze"
+  // gab es zweimal: einmal der Belegungsplan, einmal die Verwaltung.
+  //
+  // Die Bereiche stehen jetzt als Reiter innerhalb von /admin.
   if (isAdmin(rollen)) {
-    eintraege.push(
-      { href: "/admin/plaetze", label: "Plätze", kurz: "Plätze", symbol: "platzpflege" },
-      { href: "/admin/serien", label: "Serien", kurz: "Serien", symbol: "serie" },
-      { href: "/admin/mitglieder", label: "Mitglieder", kurz: "Mitglieder", symbol: "mitglieder" },
-      { href: "/admin/beitraege", label: "Beiträge", kurz: "Beiträge", symbol: "beitrag" },
-      { href: "/admin/einstellungen", label: "Einstellungen", kurz: "Setup", symbol: "einstellung" },
-    );
+    eintraege.push({
+      href: "/admin",
+      label: "Verwaltung",
+      kurz: "Verwaltung",
+      symbol: "einstellung",
+    });
   }
 
   return (

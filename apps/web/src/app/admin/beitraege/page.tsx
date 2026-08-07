@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { formatCents } from "@tcm/core";
-import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
 
 export const dynamic = "force-dynamic";
 
@@ -9,16 +11,8 @@ export default async function BeitraegeSeite({
   searchParams: Promise<{ jahr?: string }>;
 }) {
   const { jahr: jahrParam } = await searchParams;
-  const angemeldet = await getCurrentMember();
 
-  if (!angemeldet || !isAdmin(angemeldet.roles)) {
-    return (
-      <div className="hinweis fehler">
-        Diese Seite ist Administratoren vorbehalten.
-      </div>
-    );
-  }
-
+  // Das Rollenschloss steht im Layout - siehe app/admin/layout.tsx.
   const jahr = Number(jahrParam) || new Date().getFullYear();
   const supabase = await createServerSupabase();
 
@@ -26,13 +20,15 @@ export default async function BeitraegeSeite({
     supabase.rpc("fee_run_preview", { p_year: jahr }),
     supabase
       .from("settings")
-      .select("key, value")
-      .in("key", ["sepa.creditor_id", "sepa.pain_version", "sepa.prenotification_days"]),
+      .select("key, value, value_type, label, description, updated_at")
+      .or("key.like.sepa.%,key.like.fees.%")
+      .order("key"),
   ]);
 
+  const einstellungen = einstellungRes.data ?? [];
   const zeilen = vorschauRes.data ?? [];
   const glaeubigerId = String(
-    einstellungRes.data?.find((s) => s.key === "sepa.creditor_id")?.value ?? "",
+    einstellungen.find((s) => s.key === "sepa.creditor_id")?.value ?? "",
   ).replace(/"/g, "");
 
   const summe = zeilen.reduce((s, z) => s + (z.amount_cents ?? 0), 0);
@@ -46,6 +42,25 @@ export default async function BeitraegeSeite({
       <p className="unterzeile">
         Vorschau. Es wird nichts erzeugt, solange nichts bestätigt ist.
       </p>
+
+      {/* Das Jahr stand bisher nur in der Adresse - wer ein anderes sehen
+          wollte, musste sie von Hand ändern. */}
+      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "1rem" }}>
+        <Link className="knopf leise klein" href={`/admin/beitraege?jahr=${jahr - 1}`}>
+          ‹ {jahr - 1}
+        </Link>
+        <strong className="dpl tnum" style={{ minWidth: 70, textAlign: "center" }}>
+          {jahr}
+        </strong>
+        <Link className="knopf leise klein" href={`/admin/beitraege?jahr=${jahr + 1}`}>
+          {jahr + 1} ›
+        </Link>
+        {jahr !== new Date().getFullYear() && (
+          <Link className="knopf leise klein" href="/admin/beitraege">
+            Dieses Jahr
+          </Link>
+        )}
+      </div>
 
       {!glaeubigerId && (
         <div className="hinweis fehler">
@@ -139,6 +154,21 @@ export default async function BeitraegeSeite({
         Forderungen geht zuerst die Vorabankündigung mit Betrag und Fälligkeit an
         die Mitglieder; erst nach Ablauf der Frist darf eingezogen werden.
       </p>
+
+      {/* Die Regeln stehen jetzt bei der Sache, die sie regeln: wer oben liest,
+          dass die Vorabankündigung Pflicht ist, findet die Frist direkt hier
+          darunter statt in einer allgemeinen Einstellungsliste. */}
+      <EinstellungsGruppe
+        titel="Fälligkeit"
+        text="Wann der Jahresbeitrag eingezogen wird."
+        eintraege={einstellungen.filter((e) => e.key.startsWith("fees."))}
+      />
+
+      <EinstellungsGruppe
+        titel="Lastschrift"
+        text="Gläubiger-ID, Format und Vorabankündigung."
+        eintraege={einstellungen.filter((e) => e.key.startsWith("sepa."))}
+      />
     </>
   );
 }

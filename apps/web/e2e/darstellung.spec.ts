@@ -98,13 +98,14 @@ test.describe("Layout", () => {
     }
 
     test("die Bottom-Navigation eines Admins sprengt die Breite nicht", async ({ page }) => {
-      // Ein Admin hat acht Einträge statt drei, dazu die Glocke. Die Leiste
-      // scrollt dann in sich selbst - das Dokument darf sich nicht
-      // mitverschieben.
+      // Ein Admin hat vier Einträge statt drei, dazu die Glocke. Vorher waren
+      // es acht, und die Leiste musste seitwärts scrollen; seit die Verwaltung
+      // ein einziger Punkt ist, passt alles nebeneinander. Das Dokument darf
+      // sich in keinem Fall mitverschieben.
       await anmelden(page, ADMIN);
       await page.goto("/plan");
 
-      await expect(page.locator(".bottomnav a")).toHaveCount(8);
+      await expect(page.locator(".bottomnav a")).toHaveCount(4);
       await expect(page.locator(".bottomnav .glocke")).toHaveCount(1);
       const ueberbreite = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

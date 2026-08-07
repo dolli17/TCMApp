@@ -316,7 +316,7 @@ test.describe("Mitgliederverwaltung", () => {
     // zwei Merkmale gleichen Namens, und der Test greift ins Leere.
     const name = `E2E-Kennzeichnung ${code}`;
 
-    await page.goto("/admin/einstellungen/merkmale");
+    await page.goto("/admin/mitglieder/merkmale");
     await page.getByLabel("Schlüssel").fill(code);
     await page.getByLabel("Name").fill(name);
     await page.getByLabel("Wofür wird das gebraucht?").fill("Nur für den automatischen Test.");
@@ -346,16 +346,16 @@ test.describe("Mitgliederverwaltung", () => {
     // nicht - ein Merkmal mit zugeordneten Werten lässt sich nicht löschen.
     await aufraeumen(page, adresse, nachname);
 
-    await page.goto(`/admin/einstellungen/merkmale?bearbeiten=${code}`);
+    await page.goto(`/admin/mitglieder/merkmale?bearbeiten=${code}`);
     await page.getByRole("button", { name: "Merkmal löschen" }).click();
     await page.getByRole("button", { name: "Wirklich löschen" }).click();
-    await page.waitForURL(/\/admin\/einstellungen\/merkmale$/, { timeout: 20_000 });
+    await page.waitForURL(/\/admin\/mitglieder\/merkmale$/, { timeout: 20_000 });
     await expect(page.locator("table.liste tbody")).not.toContainText(code);
   });
 
   test("ein benutztes Merkmal lässt sich nicht löschen", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/admin/einstellungen/merkmale?bearbeiten=foto");
+    await page.goto("/admin/mitglieder/merkmale?bearbeiten=foto");
 
     // "foto" ist eine Einwilligung aus dem Bestand. Sobald jemand sie erteilt
     // hat, steht statt des Knopfes die Begründung.
@@ -656,6 +656,10 @@ test.describe("Mitgliederverwaltung", () => {
     await fenster.getByRole("button", { name: "Ablehnen" }).click();
     await fenster.getByLabel("Grund (nur für die Akte)").fill("Testlauf");
     await fenster.getByRole("button", { name: "Wirklich ablehnen" }).click();
+    // Auf das Schliessen warten: das Fenster geht erst zu, wenn die Server-Aktion
+    // zurueck ist. Ohne diese Zeile laedt der naechste Aufruf unter Last die
+    // Liste, bevor der Status ueberhaupt gesetzt wurde.
+    await expect(fenster).toBeHidden({ timeout: 20_000 });
 
     await page.goto("/admin/mitglieder/antraege?filter=erledigt");
     await expect(
