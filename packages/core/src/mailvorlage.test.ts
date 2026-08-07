@@ -121,6 +121,44 @@ describe("Mitgliedsanträge sind keine Platzbuchungen", () => {
   });
 });
 
+describe("Eine angekündigte Lastschrift führt ins Konto", () => {
+  // Sie ist weder eine Platzbuchung noch beiläufige Vereinsnachricht: sie
+  // verlangt eine Handlung, nämlich Deckung auf dem Konto. Wer den Knopf
+  // drückt, muss dort landen, wo Betrag und Fälligkeit stehen.
+  const ankuendigung: Posten[] = [
+    {
+      kind: "charge_announced",
+      title: "Lastschrift am 15.01.2027",
+      body: "Am 15.01.2027 ziehen wir 270,00 Euro von deinem Konto ein.",
+      created_at: "2026-12-20T09:00:00.000Z",
+    },
+  ];
+
+  it("wählt eine Überschrift, die ans Geld erinnert", () => {
+    const ausgabe = html("Thomas", ankuendigung, "https://tcm.example");
+    expect(ausgabe).toContain("Zu deinem Beitragskonto");
+    expect(ausgabe).not.toContain("Neues aus dem Verein");
+  });
+
+  it("verlinkt aufs Konto, nicht auf die Startseite", () => {
+    const ausgabe = html("Thomas", ankuendigung, "https://tcm.example");
+    expect(ausgabe).toContain("https://tcm.example/konto");
+    expect(ausgabe).toContain("Mein Konto ansehen");
+  });
+
+  it("gilt auch im Textteil", () => {
+    const ausgabe = text("Thomas", ankuendigung, "https://tcm.example");
+    expect(ausgabe).toContain("das betrifft dein Konto beim Verein:");
+    expect(ausgabe).toContain("Mein Konto: https://tcm.example/konto");
+  });
+
+  it("fällt auf den neutralen Text zurück, sobald anderes dabei ist", () => {
+    const gemischt = [...ankuendigung, ...posten(1)];
+    const ausgabe = html("Thomas", gemischt, "https://tcm.example");
+    expect(ausgabe).toContain("Neues aus dem Verein");
+  });
+});
+
 describe("text", () => {
   it("liefert eine Textfassung mit allen Posten", () => {
     // Eine Mail ohne Textteil landet bei manchen Filtern schneller im Spam.

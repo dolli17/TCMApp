@@ -40,6 +40,7 @@ sie danach zurück. Die Tests hinterlassen also keinen Zustand – auch nicht di
 | `09_benachrichtigungs_mails.sql` | Auswahl, Bündelung und Abhaken der Mailbenachrichtigungen |
 | `10_getraenkekarte.sql` | Preise, Preishistorie, Karte pflegen |
 | `11_forderungen.sql` | Beitragslauf, Getränkemonat, Beitragsarten, Forderungen |
+| `12_vorabankuendigung.sql` | Frist, Bündelung je Zahler, Idempotenz der Ankündigung |
 | `99_runtests.sql` | Führt die Suite aus |
 
 Die Dateien `01` bis `10` **definieren nur Funktionen**. Ausgeführt wird alles in

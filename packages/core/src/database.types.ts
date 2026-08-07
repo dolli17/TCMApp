@@ -1772,6 +1772,31 @@ export type Database = {
         Returns: string
       }
       am_i_admin: { Args: never; Returns: boolean }
+      announce_charges: {
+        Args: {
+          p_charge_ids?: string[]
+          p_due_date: string
+          p_kind?: Database["public"]["Enums"]["charge_kind"]
+          p_period_label?: string
+        }
+        Returns: {
+          angekuendigt: number
+          empfaenger: number
+          faellig_am: string
+          summe_cents: number
+        }[]
+      }
+      announceable_charges: {
+        Args: {
+          p_kind?: Database["public"]["Enums"]["charge_kind"]
+          p_period_label?: string
+        }
+        Returns: {
+          anzahl: number
+          summe_cents: number
+          zahler: number
+        }[]
+      }
       anonymize_member: {
         Args: { p_member_id: string; p_reason?: string }
         Returns: undefined
@@ -1805,6 +1830,8 @@ export type Database = {
           id: string
           mitglieder: number
           month: number
+          offen: number
+          offen_cents: number
           status: Database["public"]["Enums"]["billing_period_status"]
           summe_cents: number
           year: number

@@ -1019,6 +1019,29 @@ test.describe("Verwaltung", () => {
     ).toContainText("Für 2029 ist alles berechnet");
   });
 
+  test("die Vorabankündigung lässt kein zu frühes Datum zu", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/kasse?abschnitt=lauf");
+
+    // Über die Überschrift filtern: „Vorabankündigung" steht auch im Fließtext
+    // der Karte darüber, und hasText würde beide treffen.
+    const karte = page
+      .locator("section.karte")
+      .filter({ has: page.getByRole("heading", { name: "Vorabankündigung" }) });
+    await expect(karte).toContainText("eine je Zahler");
+
+    // Steht etwas an, nimmt das Feld gar kein zu frühes Datum an — die Frist
+    // wird nicht erst beim Absenden geprüft. Ob gerade etwas ansteht, hängt
+    // vom Bestand ab; die Frist selbst prüft 12_vorabankuendigung.sql.
+    const feld = karte.getByLabel("Fällig am");
+    if ((await feld.count()) > 0) {
+      const min = await feld.getAttribute("min");
+      const heute = new Date().toISOString().slice(0, 10);
+      expect(min).not.toBeNull();
+      expect(min! > heute).toBe(true);
+    }
+  });
+
   test("Forderungen lassen sich nach Stand filtern", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/kasse?abschnitt=forderungen");

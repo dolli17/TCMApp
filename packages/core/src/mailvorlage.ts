@@ -47,6 +47,17 @@ function nurBuchungen(posten: Posten[]): boolean {
   return posten.every((p) => p.kind.startsWith("booking_") || p.kind.startsWith("player_"));
 }
 
+/**
+ * Geht es ums Geld?
+ *
+ * Eine angekündigte Lastschrift ist kein „Neues aus dem Verein": sie verlangt
+ * eine Handlung, nämlich Deckung auf dem Konto. Und der Knopf muss ins Konto
+ * führen, wo Betrag und Fälligkeit stehen — nicht auf die Startseite.
+ */
+function nurForderungen(posten: Posten[]): boolean {
+  return posten.every((p) => p.kind.startsWith("charge_"));
+}
+
 function escape(text: string): string {
   return text
     .replaceAll("&", "&amp;")
@@ -70,7 +81,8 @@ export function html(vorname: string | null, posten: Posten[], siteUrl: string):
   const gezeigt = posten.slice(0, HOECHSTENS);
   const rest = posten.length - gezeigt.length;
   const buchungen = nurBuchungen(posten);
-  const ziel = buchungen ? `${siteUrl}/plan/meine` : siteUrl;
+  const geld = nurForderungen(posten);
+  const ziel = buchungen ? `${siteUrl}/plan/meine` : geld ? `${siteUrl}/konto` : siteUrl;
 
   const zeilen = gezeigt
     .map(
@@ -87,17 +99,23 @@ export function html(vorname: string | null, posten: Posten[], siteUrl: string):
 
   return `<div style="font-family: Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.5; color: #16222e; max-width: 520px;">
   <h2 style="font-size: 20px; margin: 0 0 16px;">${
-    buchungen ? "Neues zu deinen Platzbuchungen" : "Neues aus dem Verein"
+    buchungen
+      ? "Neues zu deinen Platzbuchungen"
+      : geld
+        ? "Zu deinem Beitragskonto"
+        : "Neues aus dem Verein"
   }</h2>
 
   <p>Hallo${vorname ? ` ${escape(vorname)}` : ""},</p>
 
   <p>${
-    !buchungen
-      ? "es gibt Neues aus dem Verein:"
-      : posten.length === 1
-        ? "an deiner Platzbuchung hat sich etwas geändert:"
-        : "an deinen Platzbuchungen hat sich etwas geändert:"
+    geld
+      ? "das betrifft dein Konto beim Verein:"
+      : !buchungen
+        ? "es gibt Neues aus dem Verein:"
+        : posten.length === 1
+          ? "an deiner Platzbuchung hat sich etwas geändert:"
+          : "an deinen Platzbuchungen hat sich etwas geändert:"
   }</p>
 
   <ul style="padding-left: 20px; margin: 20px 0;">${zeilen}
@@ -111,7 +129,7 @@ ${
     <a href="${ziel}"
        style="background: #1f4e79; color: #ffffff; text-decoration: none;
               padding: 12px 20px; border-radius: 14px; display: inline-block;">
-      ${buchungen ? "Meine Buchungen ansehen" : "In der App ansehen"}
+      ${buchungen ? "Meine Buchungen ansehen" : geld ? "Mein Konto ansehen" : "In der App ansehen"}
     </a>
   </p>
 
@@ -134,6 +152,7 @@ export function text(vorname: string | null, posten: Posten[], siteUrl: string):
   const gezeigt = posten.slice(0, HOECHSTENS);
   const rest = posten.length - gezeigt.length;
   const buchungen = nurBuchungen(posten);
+  const geld = nurForderungen(posten);
 
   const zeilen = gezeigt
     .map((p) => `- ${p.title}\n  ${p.body}\n  ${ZEIT.format(new Date(p.created_at))} Uhr`)
@@ -144,12 +163,18 @@ export function text(vorname: string | null, posten: Posten[], siteUrl: string):
     "",
     buchungen
       ? "an deinen Platzbuchungen hat sich etwas geändert:"
-      : "es gibt Neues aus dem Verein:",
+      : geld
+        ? "das betrifft dein Konto beim Verein:"
+        : "es gibt Neues aus dem Verein:",
     "",
     zeilen,
     rest > 0 ? `\n… und ${rest} weitere. Alle stehen in der App.` : "",
     "",
-    buchungen ? `Meine Buchungen: ${siteUrl}/plan/meine` : `Zur App: ${siteUrl}`,
+    buchungen
+      ? `Meine Buchungen: ${siteUrl}/plan/meine`
+      : geld
+        ? `Mein Konto: ${siteUrl}/konto`
+        : `Zur App: ${siteUrl}`,
     "",
     "Diese Hinweise kannst du unter Mein Konto → Einwilligungen → E-Mails zu",
     "Buchungen abstellen. In der App siehst du sie dann weiterhin.",

@@ -3,6 +3,7 @@ import { formatCents } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
 import { Reiter } from "@/components/Reiter";
+import { AnkuendigungsKarte } from "@/components/AnkuendigungsKarte";
 import { BeitragslaufKarte } from "@/components/BeitragslaufKarte";
 import { BeitragsartenPflege, type BeitragsartZeile } from "@/components/BeitragsartenPflege";
 import { ForderungsListe, type ForderungZeile } from "@/components/ForderungsListe";
@@ -40,7 +41,8 @@ export default async function KasseSeite({
 
   const supabase = await createServerSupabase();
 
-  const [vorschauRes, einstellungRes, monateRes, forderungenRes, artenRes] = await Promise.all([
+  const [vorschauRes, einstellungRes, monateRes, forderungenRes, artenRes, offenRes] =
+    await Promise.all([
     gewaehlt === "lauf"
       ? supabase.rpc("fee_run_preview", { p_year: jahr })
       : Promise.resolve({ data: null, error: null }),
@@ -62,12 +64,18 @@ export default async function KasseSeite({
     gewaehlt === "arten"
       ? supabase.rpc("fee_type_overview", { p_year: jahr })
       : Promise.resolve({ data: null, error: null }),
+    gewaehlt === "lauf"
+      ? supabase.rpc("announceable_charges", { p_kind: "fee", p_period_label: String(jahr) })
+      : Promise.resolve({ data: null, error: null }),
   ]);
 
   const einstellungen = einstellungRes.data ?? [];
   const glaeubigerId = String(
     einstellungen.find((s) => s.key === "sepa.creditor_id")?.value ?? "",
   ).replace(/"/g, "");
+  const frist = Number(
+    einstellungen.find((s) => s.key === "sepa.prenotification_days")?.value ?? 14,
+  );
 
   return (
     <>
@@ -84,11 +92,18 @@ export default async function KasseSeite({
           zeilen={(vorschauRes.data ?? []) as VorschauZeile[]}
           glaeubigerId={glaeubigerId}
           einstellungen={einstellungen}
+          frist={frist}
+          anzukuendigen={
+            (offenRes.data ?? [])[0] ?? { anzahl: 0, summe_cents: 0, zahler: 0 }
+          }
         />
       )}
 
       {gewaehlt === "getraenke" && (
-        <GetraenkemonatKarte monate={(monateRes.data ?? []) as unknown as MonatZeile[]} />
+        <GetraenkemonatKarte
+          monate={(monateRes.data ?? []) as unknown as MonatZeile[]}
+          fristTage={frist}
+        />
       )}
 
       {gewaehlt === "forderungen" && (
@@ -137,12 +152,14 @@ interface VorschauZeile {
 }
 
 function Beitragslauf({
-  jahr, zeilen, glaeubigerId, einstellungen,
+  jahr, zeilen, glaeubigerId, einstellungen, frist, anzukuendigen,
 }: {
   jahr: number;
   zeilen: VorschauZeile[];
   glaeubigerId: string;
   einstellungen: { key: string; value: unknown }[];
+  frist: number;
+  anzukuendigen: { anzahl: number; summe_cents: number; zahler: number };
 }) {
   const summe = zeilen.reduce((s, z) => s + (z.amount_cents ?? 0), 0);
   const ohneMandat = zeilen.filter((z) => !z.has_mandate);
@@ -224,12 +241,27 @@ function Beitragslauf({
         </div>
       )}
 
+      {/* Gezählt wird nur, was eine Forderung ergibt: beitragsbefreite
+          Mitglieder stehen mit 0,00 € in der Vorschau, bekommen nie eine
+          Forderung und würden den Knopf sonst für immer stehen lassen. */}
       <BeitragslaufKarte
         jahr={jahr}
-        mitglieder={zeilen.length}
+        mitglieder={zeilen.filter((z) => z.amount_cents > 0).length}
         summeCents={zeilen.filter((z) => !z.already_charged).reduce((s, z) => s + z.amount_cents, 0)}
         schonBerechnet={schonBerechnet.length}
         faelligAm={faellig}
+      />
+
+      {/* Der zweite Schritt steht direkt darunter, nicht auf einer eigenen
+          Seite: wer gerade Forderungen erzeugt hat, muss als Nächstes
+          ankündigen — sonst darf gar nicht eingezogen werden. */}
+      <AnkuendigungsKarte
+        art="fee"
+        zeitraum={String(jahr)}
+        offen={anzukuendigen.anzahl}
+        summeCents={anzukuendigen.summe_cents}
+        fristTage={frist}
+        faelligVorschlag={faellig}
       />
 
       <h2 className="dpl">Positionen</h2>

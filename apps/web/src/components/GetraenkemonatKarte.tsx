@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { formatCents } from "@tcm/core";
-import { monatAbrechnen, monatSchliessen } from "@/app/admin/kasse/aktionen";
+import {
+  forderungenAnkuendigen, monatAbrechnen, monatSchliessen,
+} from "@/app/admin/kasse/aktionen";
 
 export interface MonatZeile {
   id: string;
@@ -13,6 +15,8 @@ export interface MonatZeile {
   mitglieder: number;
   summe_cents: number;
   forderungen: number;
+  offen: number;
+  offen_cents: number;
   closed_at: string | null;
   charged_at: string | null;
 }
@@ -33,9 +37,21 @@ const STAND: Record<MonatZeile["status"], string> = {
  * Abrechnen macht Forderungen daraus. Dazwischen kann der Vorstand die Zahlen
  * ansehen — was nach dem Abrechnen niemandem mehr hilft.
  */
-export function GetraenkemonatKarte({ monate }: { monate: MonatZeile[] }) {
+export function GetraenkemonatKarte({
+  monate, fristTage,
+}: {
+  monate: MonatZeile[];
+  fristTage: number;
+}) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
+
+  /** Der früheste Tag, an dem eingezogen werden darf. */
+  function fruehesteFaelligkeit(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + fristTage + 1);
+    return d.toISOString().slice(0, 10);
+  }
 
   // Numerisch vergleichen statt über Date: `new Date("2026-08-01")` ist
   // UTC-Mitternacht, `new Date(2026, 7, 1)` Ortszeit-Mitternacht — der laufende
@@ -118,7 +134,31 @@ export function GetraenkemonatKarte({ monate }: { monate: MonatZeile[] }) {
                         Forderungen erzeugen
                       </button>
                     )}
-                    {m.status === "charged" && <span className="mit">nichts mehr zu tun</span>}
+                    {/* Der dritte Schritt: erst schließen, dann abrechnen,
+                        dann ankündigen. Ohne Ankündigung darf nicht eingezogen
+                        werden. */}
+                    {m.status === "charged" &&
+                      (m.offen > 0 ? (
+                        <button
+                          type="button"
+                          className="knopf klein"
+                          disabled={laeuft}
+                          onClick={() =>
+                            starte(async () => {
+                              const e = await forderungenAnkuendigen({
+                                faelligAm: fruehesteFaelligkeit(),
+                                art: "drinks",
+                                zeitraum: `${m.year}-${String(m.month).padStart(2, "0")}`,
+                              });
+                              setMeldung({ ok: e.ok, text: e.meldung });
+                            })
+                          }
+                        >
+                          {m.offen} ankündigen
+                        </button>
+                      ) : (
+                        <span className="mit">angekündigt</span>
+                      ))}
                   </td>
                 </tr>
               );
