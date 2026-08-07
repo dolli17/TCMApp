@@ -21,6 +21,7 @@ const ART_TEXT: Record<string, string> = {
   drinks: "Getränke",
   deposit: "Pfand",
   work_duty: "Arbeitsdienst",
+  guest: "Gastgebühr",
   misc: "Sonstiges",
 };
 

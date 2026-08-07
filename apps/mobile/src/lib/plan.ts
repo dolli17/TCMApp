@@ -6,6 +6,8 @@
  * gegenseitig voneinander importieren.
  */
 
+import { minutesOf, minutesToTime, timeToMinutes } from "@tcm/core";
+
 import type { ladeBuchungsarten, ladeTagesplan, ladeVerzeichnis } from "./daten";
 
 export type Belegung = Awaited<ReturnType<typeof ladeTagesplan>>[number];
@@ -17,20 +19,14 @@ export type Fenster =
   | { modus: "buchen"; courtId: string; platzName: string; stunde: number; startzeiten: number[] }
   | { modus: "verwalten"; belegung: Belegung; platzName: string };
 
+// Die drei Zeitrechnungen standen hier und in der Web-App je einmal nachgebaut.
+// Dieselbe Regel an zwei Stellen heisst frueher oder spaeter: zwei Regeln - und
+// genau so ist es passiert, als die Web-App die Zeitzone beruecksichtigte und
+// diese hier nicht. Jetzt kommen sie aus @tcm/core, wo sie unter Test stehen.
+
 /** Minuten seit Mitternacht in deutscher Ortszeit. */
-export function lokaleMinuten(iso: string): number {
-  const teile = new Intl.DateTimeFormat("de-DE", {
-    timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit", hour12: false,
-  }).formatToParts(new Date(iso));
-  const h = Number(teile.find((p) => p.type === "hour")?.value ?? 0);
-  const m = Number(teile.find((p) => p.type === "minute")?.value ?? 0);
-  return h * 60 + m;
-}
+export const lokaleMinuten = minutesOf;
 
-export const alsUhrzeit = (min: number) =>
-  `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+export const alsUhrzeit = minutesToTime;
 
-export const zuMinuten = (hhmm: string) => {
-  const [h, m] = String(hhmm).split(":").map(Number);
-  return (h ?? 0) * 60 + (m ?? 0);
-};
+export const zuMinuten = (hhmm: string) => timeToMinutes(String(hhmm));

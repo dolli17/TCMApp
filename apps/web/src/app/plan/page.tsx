@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
 import { Belegungsplan } from "@/components/Belegungsplan";
+import { PlanAbo } from "@/components/PlanAbo";
+import { PlanReiter } from "@/components/PlanReiter";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +93,10 @@ export default async function PlanSeite({
         </div>
       </section>
 
+      <PlanAbo datum={datum} />
+
+      <PlanReiter aktiv="plan" />
+
       <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "1rem" }}>
         <Link className="knopf leise klein" href={`/plan?tag=${verschiebe(datum, -1)}`}>
           ‹ Vortag
@@ -119,12 +125,14 @@ export default async function PlanSeite({
         belegungen={(planRes.data ?? []) as never}
         arten={artenRes.data ?? []}
         verzeichnis={verzeichnisRes.data ?? []}
+        meineId={angemeldet?.member?.id ?? null}
         oeffnung={String(einstellungen.opening_time).slice(0, 5)}
         schluss={String(einstellungen.closing_time).slice(0, 5)}
         rasterMinuten={einstellungen.slot_minutes}
         anzeigeMinuten={einstellungen.display_minutes}
         dauerMinuten={artenRes.data?.[0]?.duration_minutes ?? 60}
         kontingentFrei={unbegrenzt ? null : Math.max(erlaubt - belegt, 0)}
+        gastgebuehrCents={einstellungen.guest_fee_cents ?? 0}
         istAdmin={isAdmin(angemeldet?.roles ?? [])}
       />
     </>

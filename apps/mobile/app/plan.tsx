@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { berlinTime } from "@tcm/core";
 import { useTheme } from "@/lib/theme";
 import {
-  aendereMitspieler, bucheplatz, istAdmin as ladeAdminFlag, ladeBuchungsarten,
-  ladeBuchungseinstellungen, ladeKontingent, ladePlaetze, ladeTagesplan, ladeVerzeichnis,
-  storniereBuchung,
+  aendereMitspieler, bucheplatz, ladeBuchungsarten, ladeBuchungseinstellungen,
+  ladeIchSelbst, ladeKontingent, ladePlaetze, ladeTagesplan, ladeVerzeichnis,
+  spieleMit, storniereBuchung, sucheMitspieler,
 } from "@/lib/daten";
 import {
   alsUhrzeit, lokaleMinuten, zuMinuten,
@@ -48,6 +49,7 @@ export default function Plan() {
   const [einstellungen, setEinstellungen] =
     useState<Awaited<ReturnType<typeof ladeBuchungseinstellungen>>>(null);
   const [admin, setAdmin] = useState(false);
+  const [meineId, setMeineId] = useState<string | null>(null);
   const [fenster, setFenster] = useState<Fenster | null>(null);
   const [laedt, setLaedt] = useState(true);
   const [laeuft, setLaeuft] = useState(false);
@@ -55,12 +57,13 @@ export default function Plan() {
 
   const laden = useCallback(async (tag: string) => {
     setLaedt(true);
-    const [p, b, k, e, a, v, ad] = await Promise.all([
+    const [p, b, k, e, a, v, ich] = await Promise.all([
       ladePlaetze(), ladeTagesplan(tag), ladeKontingent(), ladeBuchungseinstellungen(),
-      ladeBuchungsarten(), ladeVerzeichnis(""), ladeAdminFlag(),
+      ladeBuchungsarten(), ladeVerzeichnis(""), ladeIchSelbst(),
     ]);
     setPlaetze(p); setBelegung(b); setKontingent(k); setEinstellungen(e);
-    setArten(a); setVerzeichnis(v); setAdmin(ad); setLaedt(false);
+    setArten(a); setVerzeichnis(v); setAdmin(ich.admin); setMeineId(ich.id);
+    setLaedt(false);
   }, []);
 
   useEffect(() => {
@@ -85,15 +88,20 @@ export default function Plan() {
     return out;
   }, [oeffnung, schluss, anzeige]);
 
-  const tagesBeginn = useMemo(() => {
-    const [j, m, t] = datum.split("-").map(Number);
-    return new Date(j!, (m ?? 1) - 1, t).getTime();
-  }, [datum]);
+  // Der Zeitpunkt wird in Europe/Berlin gebildet, nicht in der Zeitzone des
+  // Telefons. Steht das Geraet auf einer anderen Zone - Urlaub, Dienstreise,
+  // falsch gestellte Uhr -, war die abgeschickte Startzeit vorher um Stunden
+  // verschoben, und die Datenbank hat sie entweder abgewiesen oder still auf
+  // dem falschen Platz eingetragen.
+  const zeitpunkt = useCallback(
+    (minute: number) => berlinTime(datum, minute),
+    [datum],
+  );
 
   /** Kann auf diesem Platz um genau diese Minute eine Buchung beginnen? */
   const startMoeglich = useCallback(
     (courtId: string, minute: number) => {
-      if (tagesBeginn + minute * 60_000 < Date.now()) return false;
+      if (zeitpunkt(minute).getTime() < Date.now()) return false;
       if (minute + dauer > schluss) return false;
       return !belegung.some(
         (b) =>
@@ -102,7 +110,7 @@ export default function Plan() {
           lokaleMinuten(b.ends_at) > minute,
       );
     },
-    [belegung, dauer, schluss, tagesBeginn],
+    [belegung, dauer, schluss, zeitpunkt],
   );
 
   const startzeitenIn = useCallback(
@@ -116,22 +124,40 @@ export default function Plan() {
     [anzeige, raster, startMoeglich],
   );
 
-  /** Wer darf eine bestehende Buchung anfassen? */
+  /**
+   * Wer darf eine bestehende Buchung anfassen?
+   *
+   * Neben Bucher und Admin auch jeder, dem sie offensteht: eine ausgeschriebene
+   * Buchung ist eine Einladung, und die muss antippbar sein.
+   */
   function verwaltbar(b: Belegung): boolean {
     if (admin) return true;
-    return (
-      b.is_own === true &&
-      b.kind === "booking" &&
-      new Date(b.starts_at).getTime() > Date.now()
-    );
+    if (b.kind !== "booking" || new Date(b.starts_at).getTime() <= Date.now()) return false;
+    return b.is_own === true || (b.partner_wanted === true && b.frei > 0 && b.bin_dabei !== true);
   }
 
   async function buchen(
     courtId: string, start: number, typ: string, mitglieder: string[], gaeste: string[],
+    sucht: boolean,
   ) {
     setLaeuft(true);
-    const zeitpunkt = new Date(tagesBeginn + start * 60_000);
-    const r = await bucheplatz(courtId, zeitpunkt, typ, mitglieder, gaeste);
+    const r = await bucheplatz(courtId, zeitpunkt(start), typ, mitglieder, gaeste, sucht);
+    setLaeuft(false);
+    setMeldung({ ok: r.ok, text: r.meldung });
+    if (r.ok) { setFenster(null); await laden(datum); }
+  }
+
+  async function ausschreiben(bookingId: string, gesucht: boolean) {
+    setLaeuft(true);
+    const r = await sucheMitspieler(bookingId, gesucht);
+    setLaeuft(false);
+    setMeldung({ ok: r.ok, text: r.meldung });
+    if (r.ok) { setFenster(null); await laden(datum); }
+  }
+
+  async function beitreten(bookingId: string) {
+    setLaeuft(true);
+    const r = await spieleMit(bookingId);
     setLaeuft(false);
     setMeldung({ ok: r.ok, text: r.meldung });
     if (r.ok) { setFenster(null); await laden(datum); }
@@ -203,16 +229,14 @@ export default function Plan() {
             const eintraege = belegung
               .filter((b) => b.court_id === platz.id)
               .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
-            const belegteStunden = new Set(
-              stunden.filter((s) =>
-                eintraege.some(
-                  (b) => lokaleMinuten(b.starts_at) < s + anzeige && lokaleMinuten(b.ends_at) > s,
-                ),
-              ),
-            );
-            const frei = stunden.filter(
-              (s) => !belegteStunden.has(s) && startzeitenIn(platz.id, s).length > 0,
-            );
+            // Eine Stunde taugt, sobald darin ueberhaupt eine Startzeit frei
+            // ist. Vorher wurden angebrochene Stunden ganz ausgeblendet - war
+            // :00 belegt, liess sich :30 am Telefon nicht buchen, obwohl der
+            // Platz frei stand. Die Marke traegt deshalb die erste freie
+            // Startzeit, nicht den Stundenbeginn.
+            const frei = stunden
+              .map((stunde) => ({ stunde, zeiten: startzeitenIn(platz.id, stunde) }))
+              .filter((s) => s.zeiten.length > 0);
 
             return (
               <View key={platz.id} style={stil.karte}>
@@ -236,6 +260,11 @@ export default function Plan() {
                         {b.players.length > 0 && (
                           <Text style={stil.leise}>mit {b.players.join(", ")}</Text>
                         )}
+                        {b.partner_wanted === true && b.frei > 0 && (
+                          <Text style={[stil.leise, { color: farben.gold, fontWeight: "700" }]}>
+                            sucht {b.frei === 1 ? "einen Mitspieler" : `${b.frei} Mitspieler`}
+                          </Text>
+                        )}
                       </>
                     );
                     const rahmen = [
@@ -256,7 +285,7 @@ export default function Plan() {
                       >
                         {inhalt}
                         <Text style={[stil.leise, { color: farben.blue, fontWeight: "600" }]}>
-                          Verwalten
+                          {b.is_own === true || admin ? "Verwalten" : "Mitspielen"}
                         </Text>
                       </Pressable>
                     ) : (
@@ -267,21 +296,21 @@ export default function Plan() {
 
                 {frei.length > 0 && (
                   <View style={stil.slotreihe}>
-                    {frei.map((s) => (
+                    {frei.map(({ stunde, zeiten }) => (
                       <Pressable
-                        key={s}
+                        key={stunde}
                         style={stil.slot}
                         disabled={kontingentAus}
                         accessibilityRole="button"
-                        accessibilityLabel={`${platz.name} um ${alsUhrzeit(s)} buchen`}
+                        accessibilityLabel={`${platz.name} um ${alsUhrzeit(zeiten[0]!)} buchen`}
                         onPress={() =>
                           setFenster({
                             modus: "buchen", courtId: platz.id, platzName: platz.name,
-                            stunde: s, startzeiten: startzeitenIn(platz.id, s),
+                            stunde, startzeiten: zeiten,
                           })
                         }
                       >
-                        <Text style={stil.slotText}>{alsUhrzeit(s)}</Text>
+                        <Text style={stil.slotText}>{alsUhrzeit(zeiten[0]!)}</Text>
                       </Pressable>
                     ))}
                   </View>
@@ -297,13 +326,17 @@ export default function Plan() {
           fenster={fenster}
           arten={arten}
           verzeichnis={verzeichnis}
+          meineId={meineId}
           rasterMinuten={raster}
           anzeigeMinuten={anzeige}
+          gastgebuehrCents={einstellungen?.guest_fee_cents ?? 0}
           istAdmin={admin}
           laeuft={laeuft}
           onBuchen={buchen}
           onSpeichern={speichern}
           onStornieren={stornieren}
+          onAusschreiben={ausschreiben}
+          onBeitreten={beitreten}
           onSchliessen={() => setFenster(null)}
         />
       )}

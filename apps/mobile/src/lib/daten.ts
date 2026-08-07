@@ -80,6 +80,7 @@ export async function bucheplatz(
   typ: string,
   mitspieler: string[],
   gaeste: string[] = [],
+  sucheMitspieler = false,
 ): Promise<Ergebnis<string>> {
   const { data, error } = await supabase.rpc("create_booking", {
     p_court_id: courtId,
@@ -87,6 +88,7 @@ export async function bucheplatz(
     p_booking_type_code: typ,
     p_player_member_ids: mitspieler,
     p_guest_names: gaeste,
+    p_partner_wanted: sucheMitspieler,
   });
 
   if (error) return { ok: false, meldung: translateDbError(error) };
@@ -128,25 +130,33 @@ export async function ladeBuchungsarten() {
   return data ?? [];
 }
 
-/** Rollen des angemeldeten Mitglieds. Es gibt nur noch Admin und Mitglied. */
-export async function istAdmin(): Promise<boolean> {
+/**
+ * Wer ist angemeldet, und ist er Admin?
+ *
+ * Beides in einem Zug, weil der Plan beides braucht: die Rolle fuers Verwalten
+ * fremder Buchungen, die Id, um den Bucher aus der Mitspielerauswahl zu
+ * streichen. Es gibt nur noch Admin und Mitglied.
+ */
+export async function ladeIchSelbst(): Promise<{ id: string | null; admin: boolean }> {
+  const leer = { id: null, admin: false };
+
   const { data: sitzung } = await supabase.auth.getUser();
   const authId = sitzung.user?.id;
-  if (!authId) return false;
+  if (!authId) return leer;
 
   const { data: mitglied } = await supabase
     .from("members")
     .select("id")
     .eq("auth_user_id", authId)
     .maybeSingle();
-  if (!mitglied) return false;
+  if (!mitglied) return leer;
 
   const { data: rollen } = await supabase
     .from("member_roles")
     .select("role")
     .eq("member_id", mitglied.id);
 
-  return (rollen ?? []).some((r) => r.role === "admin");
+  return { id: mitglied.id, admin: (rollen ?? []).some((r) => r.role === "admin") };
 }
 
 export async function storniereBuchung(bookingId: string): Promise<Ergebnis> {
@@ -161,6 +171,38 @@ export async function ladeVerzeichnis(suche = "") {
   return data ?? [];
 }
 
+/** Kuenftige Termine: eigene Buchungen und die, in denen man Mitspieler ist. */
+export async function ladeMeineBuchungen() {
+  const { data, error } = await supabase.rpc("my_bookings", {});
+  if (error) throw new Error(translateDbError(error));
+  return data ?? [];
+}
+
+/**
+ * Sich selbst aus einer fremden Buchung austragen.
+ *
+ * Nicht ueber update_booking_players - die gehoert dem Bucher. leave_booking
+ * prueft zusaetzlich, ob danach noch genug Spieler uebrig sind.
+ */
+export async function verlasseBuchung(bookingId: string): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("leave_booking", { p_booking_id: bookingId });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Du bist ausgetragen." };
+}
+
+export async function ladeBenachrichtigungen(limit = 30) {
+  const { data, error } = await supabase.rpc("my_notifications", { p_limit: limit });
+  if (error) throw new Error(translateDbError(error));
+  return data ?? [];
+}
+
+/** Ohne Liste alles - die Ansicht markiert beim Oeffnen den ganzen Stapel. */
+export async function markiereBenachrichtigungenGelesen(): Promise<number> {
+  const { data, error } = await supabase.rpc("mark_notifications_read", {});
+  if (error) throw new Error(translateDbError(error));
+  return data ?? 0;
+}
+
 export async function ladeMeineForderungen() {
   const { data, error } = await supabase.rpc("my_charges");
   if (error) throw new Error(translateDbError(error));
@@ -171,4 +213,38 @@ export async function ladeArbeitsdienst() {
   const { data, error } = await supabase.rpc("my_work_duty", {});
   if (error) throw new Error(translateDbError(error));
   return data?.[0] ?? null;
+}
+
+/** Alle Buchungen der naechsten Tage, die noch Mitspieler suchen. */
+export async function ladeOffeneSpiele() {
+  const { data, error } = await supabase.rpc("open_matches", {});
+  if (error) throw new Error(translateDbError(error));
+  return data ?? [];
+}
+
+/**
+ * Einer offenen Buchung beitreten.
+ *
+ * Nicht ueber aendereMitspieler: die gehoert dem Bucher. join_booking traegt
+ * nur den Aufrufer ein - und nur, wenn die Buchung ausgeschrieben ist.
+ */
+export async function spieleMit(bookingId: string): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("join_booking", { p_booking_id: bookingId });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Du bist eingetragen. Viel Spaß!" };
+}
+
+/** Die eigene Buchung fuer andere oeffnen oder wieder schliessen. */
+export async function sucheMitspieler(bookingId: string, gesucht: boolean): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("set_partner_wanted", {
+    p_booking_id: bookingId,
+    p_wanted: gesucht,
+  });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return {
+    ok: true,
+    meldung: gesucht
+      ? "Die Buchung steht jetzt bei den offenen Spielen."
+      : "Die Buchung ist nicht mehr ausgeschrieben.",
+  };
 }

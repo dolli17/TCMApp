@@ -296,6 +296,7 @@ export type Database = {
           id: string
           kind: Database["public"]["Enums"]["booking_kind"]
           member_id: string | null
+          partner_wanted: boolean
           series_id: string | null
           slot: unknown
           source: Database["public"]["Enums"]["record_source"]
@@ -315,6 +316,7 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["booking_kind"]
           member_id?: string | null
+          partner_wanted?: boolean
           series_id?: string | null
           slot: unknown
           source?: Database["public"]["Enums"]["record_source"]
@@ -334,6 +336,7 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["booking_kind"]
           member_id?: string | null
+          partner_wanted?: boolean
           series_id?: string | null
           slot?: unknown
           source?: Database["public"]["Enums"]["record_source"]
@@ -432,6 +435,7 @@ export type Database = {
       charges: {
         Row: {
           amount_cents: number
+          booking_id: string | null
           created_at: string
           description: string
           due_date: string | null
@@ -446,6 +450,7 @@ export type Database = {
         }
         Insert: {
           amount_cents: number
+          booking_id?: string | null
           created_at?: string
           description: string
           due_date?: string | null
@@ -460,6 +465,7 @@ export type Database = {
         }
         Update: {
           amount_cents?: number
+          booking_id?: string | null
           created_at?: string
           description?: string
           due_date?: string | null
@@ -473,6 +479,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "charges_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "charges_member_id_fkey"
             columns: ["member_id"]
@@ -1798,11 +1811,42 @@ export type Database = {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: undefined
       }
+      cancel_series_occurrence: {
+        Args: { p_booking_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      court_overview: {
+        Args: never
+        Returns: {
+          active: boolean
+          id: string
+          name: string
+          offene_buchungen: number
+          short_name: string
+          sort_position: number
+          subline: string
+        }[]
+      }
+      create_blocking: {
+        Args: {
+          p_bis: string
+          p_court_ids: string[]
+          p_force?: boolean
+          p_title: string
+          p_type_code: string
+          p_von: string
+        }
+        Returns: {
+          created_count: number
+          displaced_count: number
+        }[]
+      }
       create_booking: {
         Args: {
           p_booking_type_code: string
           p_court_id: string
           p_guest_names?: string[]
+          p_partner_wanted?: boolean
           p_player_member_ids?: string[]
           p_starts_at: string
         }
@@ -1862,13 +1906,17 @@ export type Database = {
       day_schedule: {
         Args: { p_date: string }
         Returns: {
+          bin_dabei: boolean
           booking_id: string
           court_id: string
           ends_at: string
+          frei: number
           guest_names: string[]
           is_own: boolean
           kind: Database["public"]["Enums"]["booking_kind"]
+          owner_member_id: string
           owner_name: string
+          partner_wanted: boolean
           player_member_ids: string[]
           players: string[]
           starts_at: string
@@ -1918,6 +1966,10 @@ export type Database = {
           open_charges: number
         }[]
       }
+      end_series: {
+        Args: { p_ab?: string; p_series_id: string }
+        Returns: number
+      }
       ensure_default_settings: { Args: never; Returns: number }
       fee_run_preview: {
         Args: { p_year: number }
@@ -1938,6 +1990,8 @@ export type Database = {
       }
       iban_is_valid: { Args: { p_iban: string }; Returns: boolean }
       iban_to_numeric: { Args: { p_text: string }; Returns: string }
+      join_booking: { Args: { p_booking_id: string }; Returns: undefined }
+      leave_booking: { Args: { p_booking_id: string }; Returns: undefined }
       link_auth_user: {
         Args: { p_auth_user_id: string; p_member_id: string }
         Returns: undefined
@@ -1946,6 +2000,7 @@ export type Database = {
         Args: { p_application_id: string }
         Returns: undefined
       }
+      mark_notifications_read: { Args: { p_ids?: string[] }; Returns: number }
       member_attributes: {
         Args: { p_member_id: string }
         Returns: {
@@ -2068,6 +2123,22 @@ export type Database = {
           used: number
         }[]
       }
+      my_bookings: {
+        Args: { p_ab?: string }
+        Returns: {
+          bin_bucher: boolean
+          booking_id: string
+          court_name: string
+          ends_at: string
+          kind: Database["public"]["Enums"]["booking_kind"]
+          owner_name: string
+          players: string[]
+          starts_at: string
+          title: string
+          type_code: string
+          type_name: string
+        }[]
+      }
       my_charges: {
         Args: never
         Returns: {
@@ -2103,6 +2174,17 @@ export type Database = {
           total_cents: number
         }[]
       }
+      my_notifications: {
+        Args: { p_limit?: number }
+        Returns: {
+          body: string
+          created_at: string
+          id: string
+          kind: string
+          read_at: string
+          title: string
+        }[]
+      }
       my_work_duty: {
         Args: { p_year?: number }
         Returns: {
@@ -2110,6 +2192,22 @@ export type Database = {
           missing_hours: number
           required_hours: number
           year: number
+        }[]
+      }
+      open_matches: {
+        Args: { p_bis?: string; p_von?: string }
+        Returns: {
+          bin_dabei: boolean
+          booking_id: string
+          court_name: string
+          ends_at: string
+          frei: number
+          owner_member_id: string
+          owner_name: string
+          players: string[]
+          starts_at: string
+          type_code: string
+          type_name: string
         }[]
       }
       preview_series: {
@@ -2158,13 +2256,33 @@ export type Database = {
         Args: { p_fee_type_id: string; p_member_id: string; p_year: number }
         Returns: undefined
       }
+      reorder_courts: { Args: { p_ids: string[] }; Returns: number }
       revoke_sepa_mandate: {
         Args: { p_mandate_id: string; p_revoked_on?: string }
         Returns: undefined
       }
+      series_overview: {
+        Args: never
+        Returns: {
+          court_name: string
+          end_time: string
+          id: string
+          kuenftige: number
+          start_time: string
+          title: string
+          type_name: string
+          valid_from: string
+          valid_to: string
+          weekday: number
+        }[]
+      }
       set_billing_payer: {
         Args: { p_member_id: string; p_payer_id?: string }
         Returns: undefined
+      }
+      set_court_active: {
+        Args: { p_active: boolean; p_id: string }
+        Returns: number
       }
       set_login_disabled: {
         Args: { p_disabled: boolean; p_member_id: string }
@@ -2203,6 +2321,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_partner_wanted: {
+        Args: { p_booking_id: string; p_wanted: boolean }
+        Returns: undefined
+      }
       set_setting: {
         Args: { p_key: string; p_value: string }
         Returns: undefined
@@ -2231,6 +2353,31 @@ export type Database = {
         Args: { p_membership_id: string; p_patch: Json }
         Returns: undefined
       }
+      upsert_booking_type: {
+        Args: {
+          p_active?: boolean
+          p_applies_to: Database["public"]["Enums"]["booking_kind"]
+          p_code: string
+          p_counts_towards_quota: boolean
+          p_duration_minutes: number
+          p_max_players: number
+          p_min_players: number
+          p_name: string
+          p_requires_partner: boolean
+          p_sort_order?: number
+        }
+        Returns: string
+      }
+      upsert_court: {
+        Args: {
+          p_id: string
+          p_name: string
+          p_position?: number
+          p_short_name: string
+          p_subline?: string
+        }
+        Returns: string
+      }
       upsert_member_attribute_type: {
         Args: {
           p_active?: boolean
@@ -2257,7 +2404,7 @@ export type Database = {
       billing_period_status: "open" | "closed" | "charged"
       booking_kind: "booking" | "blocking"
       booking_status: "active" | "cancelled"
-      charge_kind: "fee" | "drinks" | "deposit" | "work_duty" | "misc"
+      charge_kind: "fee" | "drinks" | "deposit" | "work_duty" | "misc" | "guest"
       charge_status:
         | "open"
         | "notified"
@@ -2414,7 +2561,7 @@ export const Constants = {
       billing_period_status: ["open", "closed", "charged"],
       booking_kind: ["booking", "blocking"],
       booking_status: ["active", "cancelled"],
-      charge_kind: ["fee", "drinks", "deposit", "work_duty", "misc"],
+      charge_kind: ["fee", "drinks", "deposit", "work_duty", "misc", "guest"],
       charge_status: [
         "open",
         "notified",

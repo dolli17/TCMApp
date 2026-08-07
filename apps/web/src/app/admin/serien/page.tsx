@@ -1,9 +1,8 @@
 import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
 import { SerienFormular } from "@/components/SerienFormular";
+import { SerienListe, type SerienZeile } from "@/components/SerienListe";
 
 export const dynamic = "force-dynamic";
-
-const WOCHENTAGE = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 
 export default async function SerienSeite() {
   const angemeldet = await getCurrentMember();
@@ -24,11 +23,9 @@ export default async function SerienSeite() {
       .eq("applies_to", "blocking")
       .eq("active", true)
       .order("sort_order"),
-    supabase
-      .from("booking_series")
-      .select("id, title, weekday, start_time, end_time, valid_from, valid_to, courts(name)")
-      .order("created_at", { ascending: false })
-      .limit(50),
+    // Ueber die RPC statt direkt: sie bringt die Zahl der noch anstehenden
+    // Termine mit, und genau die entscheidet, ob sich das Beenden lohnt.
+    supabase.rpc("series_overview"),
   ]);
 
   return (
@@ -45,36 +42,8 @@ export default async function SerienSeite() {
       />
 
       <h2 className="dpl">Angelegte Serien</h2>
-      {(serienRes.data ?? []).length === 0 ? (
-        <p className="leer">Noch keine Serien angelegt.</p>
-      ) : (
-        <div className="tabellenhuelle"><table className="liste">
-          <thead>
-            <tr>
-              <th>Titel</th>
-              <th>Platz</th>
-              <th>Wann</th>
-              <th>Zeitraum</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(serienRes.data ?? []).map((s) => (
-              <tr key={s.id}>
-                <td>{s.title}</td>
-                <td>{(s.courts as { name: string } | null)?.name ?? "—"}</td>
-                <td>
-                  {WOCHENTAGE[s.weekday]}, {String(s.start_time).slice(0, 5)}–
-                  {String(s.end_time).slice(0, 5)}
-                </td>
-                <td>
-                  {new Intl.DateTimeFormat("de-DE").format(new Date(s.valid_from))} bis{" "}
-                  {new Intl.DateTimeFormat("de-DE").format(new Date(s.valid_to))}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table></div>
-      )}
+      <SerienListe serien={(serienRes.data ?? []) as SerienZeile[]} />
+
     </>
   );
 }

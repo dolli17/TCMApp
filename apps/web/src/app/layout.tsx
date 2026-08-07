@@ -3,8 +3,9 @@ import type { Metadata, Viewport } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import logo from "@tcm/ui/logo.png";
-import { getCurrentMember, isAdmin } from "@/lib/supabase/server";
+import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
 import { AbmeldeKnopf } from "@/components/AbmeldeKnopf";
+import { Benachrichtigungen } from "@/components/Benachrichtigungen";
 import { Fussmenue, Seitenmenue, type NavEintrag } from "@/components/Navigation";
 import { THEME_SKRIPT } from "@/components/ThemeUmschalter";
 
@@ -25,6 +26,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const rollen = angemeldet?.roles ?? [];
   const istMitglied = Boolean(angemeldet?.member);
 
+  // Nur der Zaehler, nicht die Liste: die Glocke steht auf jeder Seite, und
+  // eine Zeilenzahl aus dem Teilindex notifications_unread_idx kostet
+  // praktisch nichts. Den Inhalt holt die Glocke selbst, wenn jemand aufmacht.
+  let ungelesen = 0;
+  if (istMitglied) {
+    const supabase = await createServerSupabase();
+    const { count } = await supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .is("read_at", null);
+    ungelesen = count ?? 0;
+  }
+
   const eintraege: NavEintrag[] = [
     { href: "/plan", label: "Plätze", kurz: "Plätze", symbol: "platz" },
     { href: "/getraenke", label: "Getränke", kurz: "Getränke", symbol: "getraenk" },
@@ -34,6 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // ein Block statt vier gestaffelter Pruefungen.
   if (isAdmin(rollen)) {
     eintraege.push(
+      { href: "/admin/plaetze", label: "Plätze", kurz: "Plätze", symbol: "platzpflege" },
       { href: "/admin/serien", label: "Serien", kurz: "Serien", symbol: "serie" },
       { href: "/admin/mitglieder", label: "Mitglieder", kurz: "Mitglieder", symbol: "mitglieder" },
       { href: "/admin/beitraege", label: "Beiträge", kurz: "Beiträge", symbol: "beitrag" },
@@ -55,7 +70,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <Image src={logo} alt="TC Muckensturm" height={30} priority />
               </Link>
 
-              <Seitenmenue eintraege={eintraege} />
+              <Seitenmenue eintraege={eintraege}>
+                <Benachrichtigungen ungelesen={ungelesen} label="Benachrichtigungen" />
+              </Seitenmenue>
 
               <div className="fuss">
                 <span>
@@ -66,7 +83,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </aside>
 
             <div className="inhalt">{children}</div>
-            <Fussmenue eintraege={eintraege} />
+            <Fussmenue eintraege={eintraege}>
+              <Benachrichtigungen ungelesen={ungelesen} label="Nachrichten" />
+            </Fussmenue>
           </div>
         ) : (
           children

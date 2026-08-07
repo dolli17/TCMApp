@@ -10,17 +10,33 @@ interface Props {
   fenster: Fenster;
   arten: Buchungsart[];
   verzeichnis: Mitglied[];
+  /** Eigene Mitglieds-Id, damit man sich nicht selbst als Mitspieler waehlt. */
+  meineId: string | null;
   rasterMinuten: number;
   anzeigeMinuten: number;
   istAdmin: boolean;
   laeuft: boolean;
+  /** Gastgebuehr je Gast in Cent. 0 schaltet den Gast-Knopf ab. */
+  gastgebuehrCents: number;
   onBuchen: (
     courtId: string, start: number, typ: string, mitglieder: string[], gaeste: string[],
+    sucheMitspieler: boolean,
   ) => void;
   onSpeichern: (bookingId: string, mitglieder: string[], gaeste: string[]) => void;
   onStornieren: (bookingId: string) => void;
+  onAusschreiben: (bookingId: string, gesucht: boolean) => void;
+  onBeitreten: (bookingId: string) => void;
   onSchliessen: () => void;
 }
+
+/**
+ * Gaeste haben keinen Namen - es geht um die Gebuehr und um den belegten Platz,
+ * nicht um eine Gaesteliste. Die Datenbank verlangt einen nicht leeren
+ * guest_name, also traegt jeder Gastplatz genau dieses Wort.
+ */
+const GAST = "Gast";
+
+const EURO = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
 
 /**
  * Modales Fenster fuer Buchen und Verwalten.
@@ -65,11 +81,15 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
   const [art, setArt] = useState(props.arten[0]?.code ?? "einzel");
   const [mitglieder, setMitglieder] = useState<string[]>([]);
   const [gaeste, setGaeste] = useState<string[]>([]);
+  const [sucht, setSucht] = useState(false);
 
   const gewaehlt = props.arten.find((a) => a.code === art);
   const maxWeitere = Math.max((gewaehlt?.max_players ?? 2) - 1, 0);
-  const pflichtVerletzt =
-    Boolean(gewaehlt?.requires_partner) && mitglieder.length + gaeste.length === 0;
+  const anzahl = mitglieder.length + gaeste.length;
+  const nochPlatz = anzahl < maxWeitere;
+  // Wer Mitspieler sucht, darf unterbesetzt buchen - genau dafuer ist der
+  // Schalter da. Die Datenbank sieht das ebenso.
+  const pflichtVerletzt = Boolean(gewaehlt?.requires_partner) && anzahl === 0 && !sucht;
 
   return (
     <>
@@ -117,21 +137,43 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
         })}
       </View>
 
+      {/* Sich selbst mitzunehmen weist die Datenbank ab - der Bucher zaehlt
+          ohnehin mit. Frueher stand er in der Liste und der Griff danach
+          endete in einer Fehlermeldung statt in einer Buchung. */}
       <Mitspielersuche
-        verzeichnis={props.verzeichnis}
+        verzeichnis={props.verzeichnis.filter((m) => m.id !== props.meineId)}
         mitglieder={mitglieder}
         gaeste={gaeste}
         maxWeitere={maxWeitere}
-        pflicht={Boolean(gewaehlt?.requires_partner)}
+        pflicht={Boolean(gewaehlt?.requires_partner) && !sucht}
+        gastgebuehrCents={props.gastgebuehrCents}
         onMitglieder={setMitglieder}
         onGaeste={setGaeste}
       />
+
+      {nochPlatz && (
+        <Pressable
+          style={[stil.slot, sucht && stil.slotAktiv, { marginTop: 14 }]}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: sucht }}
+          onPress={() => setSucht(!sucht)}
+        >
+          <Text style={[stil.slotText, sucht && stil.slotTextAktiv]}>
+            {sucht ? "✓ " : ""}Mitspieler gesucht
+          </Text>
+        </Pressable>
+      )}
+      {nochPlatz && (
+        <Text style={stil.leise}>
+          Die Buchung erscheint unter „Offene Spiele“. Wer will, trägt sich selbst ein.
+        </Text>
+      )}
 
       <Pressable
         style={[stil.knopf, { marginTop: 18 }, (props.laeuft || pflichtVerletzt) && { opacity: 0.5 }]}
         disabled={props.laeuft || pflichtVerletzt}
         accessibilityRole="button"
-        onPress={() => props.onBuchen(f.courtId, start, art, mitglieder, gaeste)}
+        onPress={() => props.onBuchen(f.courtId, start, art, mitglieder, gaeste, sucht)}
       >
         <Text style={stil.knopfText}>
           {props.laeuft ? "Wird gebucht…" : `Verbindlich für ${alsUhrzeit(start)} buchen`}
@@ -160,6 +202,14 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
   const art = props.arten.find((a) => a.code === b.type_code);
   const maxWeitere = Math.max((art?.max_players ?? 4) - 1, 0);
   const nurStorno = b.kind === "blocking";
+
+  // Drei Rollen an demselben Fenster: der Bucher verwaltet, ein Admin
+  // verwaltet fremd, und wer nur eingeladen ist, kann ausschliesslich
+  // mitspielen. Ohne diese Trennung koennte ein Fremder ueber die
+  // Mitspielersuche die Besetzung des Buchers umwerfen.
+  const darfVerwalten = b.is_own === true || props.istAdmin;
+  const kannMitspielen =
+    b.is_own !== true && b.bin_dabei !== true && b.partner_wanted === true && b.frei > 0;
   const geaendert =
     JSON.stringify([...mitglieder].sort()) !== JSON.stringify([...(b.player_member_ids ?? [])].sort()) ||
     JSON.stringify([...gaeste].sort()) !== JSON.stringify([...(b.guest_names ?? [])].sort());
@@ -182,19 +232,44 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
         </Text>
       )}
 
-      {!nurStorno && (
+      {b.partner_wanted === true && b.frei > 0 && (
+        <Text style={[stil.leise, { marginTop: 8 }]}>
+          Hier {b.frei === 1 ? "wird noch ein Mitspieler" : `werden noch ${b.frei} Mitspieler`}{" "}
+          gesucht.
+        </Text>
+      )}
+
+      {!nurStorno && darfVerwalten && (
         <Mitspielersuche
-          verzeichnis={props.verzeichnis}
+          verzeichnis={props.verzeichnis.filter((m) => m.id !== b.owner_member_id)}
           mitglieder={mitglieder}
           gaeste={gaeste}
           maxWeitere={maxWeitere}
-          pflicht={Boolean(art?.requires_partner)}
+          pflicht={Boolean(art?.requires_partner) && b.partner_wanted !== true}
+          gastgebuehrCents={props.gastgebuehrCents}
           onMitglieder={setMitglieder}
           onGaeste={setGaeste}
         />
       )}
 
-      {!nurStorno && (
+      {!darfVerwalten && b.players.length > 0 && (
+        <Text style={[stil.leise, { marginTop: 8 }]}>Dabei sind: {b.players.join(", ")}</Text>
+      )}
+
+      {kannMitspielen && (
+        <Pressable
+          style={[stil.knopf, { marginTop: 18 }, props.laeuft && { opacity: 0.5 }]}
+          disabled={props.laeuft}
+          accessibilityRole="button"
+          onPress={() => props.onBeitreten(b.booking_id)}
+        >
+          <Text style={stil.knopfText}>
+            {props.laeuft ? "Wird eingetragen…" : "Mitspielen"}
+          </Text>
+        </Pressable>
+      )}
+
+      {!nurStorno && darfVerwalten && (
         <Pressable
           style={[stil.knopf, { marginTop: 18 }, (props.laeuft || !geaendert) && { opacity: 0.5 }]}
           disabled={props.laeuft || !geaendert}
@@ -207,20 +282,35 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
         </Pressable>
       )}
 
-      <Pressable
-        style={[
-          stil.knopfLeise,
-          { marginTop: 8 },
-          stornoOffen && { backgroundColor: farben.red, borderColor: farben.red },
-        ]}
-        disabled={props.laeuft}
-        accessibilityRole="button"
-        onPress={() => (stornoOffen ? props.onStornieren(b.booking_id) : setStornoOffen(true))}
-      >
-        <Text style={[stil.knopfLeiseText, { color: stornoOffen ? "#fff" : farben.red }]}>
-          {stornoOffen ? "Wirklich stornieren" : "Buchung stornieren"}
-        </Text>
-      </Pressable>
+      {!nurStorno && darfVerwalten && (b.frei > 0 || b.partner_wanted === true) && (
+        <Pressable
+          style={[stil.knopfLeise, { marginTop: 8 }]}
+          disabled={props.laeuft}
+          accessibilityRole="button"
+          onPress={() => props.onAusschreiben(b.booking_id, b.partner_wanted !== true)}
+        >
+          <Text style={stil.knopfLeiseText}>
+            {b.partner_wanted === true ? "Nicht mehr ausschreiben" : "Mitspieler suchen"}
+          </Text>
+        </Pressable>
+      )}
+
+      {darfVerwalten && (
+        <Pressable
+          style={[
+            stil.knopfLeise,
+            { marginTop: 8 },
+            stornoOffen && { backgroundColor: farben.red, borderColor: farben.red },
+          ]}
+          disabled={props.laeuft}
+          accessibilityRole="button"
+          onPress={() => (stornoOffen ? props.onStornieren(b.booking_id) : setStornoOffen(true))}
+        >
+          <Text style={[stil.knopfLeiseText, { color: stornoOffen ? "#fff" : farben.red }]}>
+            {stornoOffen ? "Wirklich stornieren" : "Buchung stornieren"}
+          </Text>
+        </Pressable>
+      )}
 
       <Pressable
         style={[stil.knopfLeise, { marginTop: 8 }]}
@@ -237,17 +327,22 @@ const TREFFER_MAX = 6;
 
 /**
  * Mitspieler durch Tippen finden - rund 300 Mitglieder sind als Auswahlliste
- * am Telefon unbenutzbar. Passt kein Mitglied, wird der eingetippte Name als
- * Gast uebernommen.
+ * am Telefon unbenutzbar.
+ *
+ * Im Feld stehen ausschliesslich Mitglieder. Gaeste kommen ueber einen eigenen
+ * Knopf daneben: sie kosten Geld, und das soll eine bewusste Handlung sein und
+ * kein Nebeneffekt davon, dass die Suche nichts gefunden hat.
  */
 function Mitspielersuche({
-  verzeichnis, mitglieder, gaeste, maxWeitere, pflicht, onMitglieder, onGaeste,
+  verzeichnis, mitglieder, gaeste, maxWeitere, pflicht, gastgebuehrCents,
+  onMitglieder, onGaeste,
 }: {
   verzeichnis: Mitglied[];
   mitglieder: string[];
   gaeste: string[];
   maxWeitere: number;
   pflicht: boolean;
+  gastgebuehrCents: number;
   onMitglieder: (ids: string[]) => void;
   onGaeste: (namen: string[]) => void;
 }) {
@@ -297,10 +392,10 @@ function Mitspielersuche({
           ))}
           {gaeste.map((g, i) => (
             <View key={`g${i}`} style={[stil.marke, stil.markeGast]}>
-              <Text style={stil.markeText}>{g} (Gast)</Text>
+              <Text style={stil.markeText}>{g}</Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Gast ${g} entfernen`}
+                accessibilityLabel={`Gast ${i + 1} entfernen`}
                 onPress={() => onGaeste(gaeste.filter((_, k) => k !== i))}
               >
                 <Text style={stil.markeWeg}>×</Text>
@@ -327,32 +422,45 @@ function Mitspielersuche({
 
           {suche.trim().length > 0 && (
             <View style={{ gap: 4 }}>
-              {treffer.map((m) => (
-                <Pressable
-                  key={m.id}
-                  style={stil.trefferzeile}
-                  accessibilityRole="button"
-                  onPress={() => {
-                    onMitglieder([...mitglieder, m.id]);
-                    setSuche("");
-                  }}
-                >
-                  <Text style={stil.text}>{m.last_name}, {m.first_name}</Text>
-                </Pressable>
-              ))}
-              <Pressable
-                style={stil.trefferzeile}
-                accessibilityRole="button"
-                onPress={() => {
-                  onGaeste([...gaeste, suche.trim()]);
-                  setSuche("");
-                }}
-              >
-                <Text style={stil.leise}>„{suche.trim()}“ als Gast eintragen</Text>
-              </Pressable>
+              {treffer.length === 0 ? (
+                <Text style={stil.leise}>Niemand gefunden.</Text>
+              ) : (
+                treffer.map((m) => (
+                  <Pressable
+                    key={m.id}
+                    style={stil.trefferzeile}
+                    accessibilityRole="button"
+                    onPress={() => {
+                      onMitglieder([...mitglieder, m.id]);
+                      setSuche("");
+                    }}
+                  >
+                    <Text style={stil.text}>{m.last_name}, {m.first_name}</Text>
+                  </Pressable>
+                ))
+              )}
             </View>
           )}
+
+          <Pressable
+            style={stil.knopfLeise}
+            accessibilityRole="button"
+            accessibilityLabel="Gast hinzufügen"
+            onPress={() => {
+              onGaeste([...gaeste, GAST]);
+              setSuche("");
+            }}
+          >
+            <Text style={stil.knopfLeiseText}>+ Gast</Text>
+          </Pressable>
         </>
+      )}
+
+      {gaeste.length > 0 && gastgebuehrCents > 0 && (
+        <Text style={stil.leise}>
+          Für jeden Gast werden {EURO.format(gastgebuehrCents / 100)} berechnet und mit der
+          nächsten Lastschrift eingezogen.
+        </Text>
       )}
     </View>
   );

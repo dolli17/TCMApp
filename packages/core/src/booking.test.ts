@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  berlinTime,
   checkPlayers,
   checkQuota,
   checkSlot,
+  minutesOf,
+  minutesToTime,
   slotsForDay,
+  timeToMinutes,
   type BookingRules,
   type BookingTypeInfo,
 } from "./booking";
@@ -148,5 +152,47 @@ describe("slotsForDay", () => {
     // Doppel dauert 90 Minuten, letzter Start also 19:30
     expect(slots.at(-1)!.getHours()).toBe(19);
     expect(slots.at(-1)!.getMinutes()).toBe(30);
+  });
+});
+
+describe("Zeitrechnung in Europe/Berlin", () => {
+  it("liest die Uhrzeit unabhaengig von der Geraetezeitzone", () => {
+    // 2026-07-15 18:30 Berlin = 16:30 UTC (Sommerzeit)
+    expect(minutesOf("2026-07-15T16:30:00Z")).toBe(18 * 60 + 30);
+    // 2026-01-15 18:30 Berlin = 17:30 UTC (Winterzeit)
+    expect(minutesOf("2026-01-15T17:30:00Z")).toBe(18 * 60 + 30);
+  });
+
+  it("baut den Zeitpunkt im Sommer richtig", () => {
+    const d = berlinTime("2026-07-15", 18 * 60 + 30);
+    expect(d.toISOString()).toBe("2026-07-15T16:30:00.000Z");
+  });
+
+  it("baut den Zeitpunkt im Winter richtig", () => {
+    const d = berlinTime("2026-01-15", 18 * 60 + 30);
+    expect(d.toISOString()).toBe("2026-01-15T17:30:00.000Z");
+  });
+
+  it("stimmt auch am Tag der Zeitumstellung", () => {
+    // 29.03.2026 ist der Umstellungstag; um 10 Uhr gilt bereits Sommerzeit.
+    const d = berlinTime("2026-03-29", 10 * 60);
+    expect(d.toISOString()).toBe("2026-03-29T08:00:00.000Z");
+    // 25.10.2026 zurueck auf Winterzeit.
+    const w = berlinTime("2026-10-25", 10 * 60);
+    expect(w.toISOString()).toBe("2026-10-25T09:00:00.000Z");
+  });
+
+  it("ist die Umkehrung von minutesOf", () => {
+    for (const tag of ["2026-01-15", "2026-07-15", "2026-03-29", "2026-10-25"]) {
+      for (const min of [8 * 60, 12 * 60 + 30, 20 * 60]) {
+        expect(minutesOf(berlinTime(tag, min).toISOString())).toBe(min);
+      }
+    }
+  });
+
+  it("formatiert Minuten als Uhrzeit", () => {
+    expect(minutesToTime(510)).toBe("08:30");
+    expect(minutesToTime(0)).toBe("00:00");
+    expect(timeToMinutes("21:00")).toBe(1260);
   });
 });

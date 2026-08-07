@@ -36,3 +36,19 @@ export async function anmelden(page: Page, email: string) {
 export function testName(zweck: string): string {
   return `ZZTest${zweck}${Date.now().toString().slice(-8)}`;
 }
+
+/**
+ * Ein Tag ("2026-08-14") so, wie ihn die Terminlisten anzeigen.
+ *
+ * Platz und Uhrzeit allein reichen zum Wiederfinden nicht: das Testmitglied hat
+ * im Bestand weitere Buchungen auf demselben Platz zur selben Uhrzeit, nur an
+ * anderen Tagen - und ein `.first()` darauf trifft die falsche.
+ */
+export function alsListendatum(tag: string): string {
+  return new Intl.DateTimeFormat("de-DE", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    timeZone: "Europe/Berlin",
+  }).format(new Date(`${tag}T12:00:00Z`));
+}

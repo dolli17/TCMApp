@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { buchen, mitspielerAendern, stornieren } from "@/app/plan/aktionen";
+import { berlinTime, minutesOf, minutesToTime, timeToMinutes } from "@tcm/core";
+import {
+  buchen, mitspielen, mitspielerAendern, mitspielerSuchen, stornieren,
+} from "@/app/plan/aktionen";
 import { BuchungsFenster } from "@/components/BuchungsFenster";
 
 export interface Platz { id: string; name: string; short_name: string }
@@ -16,10 +19,17 @@ export interface Belegung {
   type_name: string;
   title: string | null;
   owner_name: string | null;
+  owner_member_id: string | null;
   is_own: boolean;
   players: string[];
   player_member_ids: string[];
   guest_names: string[];
+  /** Der Bucher sucht Mitspieler - die Buchung steht bei den offenen Spielen. */
+  partner_wanted: boolean;
+  /** Wie viele Plaetze diese Buchung noch frei hat. */
+  frei: number;
+  /** Steht das angemeldete Mitglied als Mitspieler drin? */
+  bin_dabei: boolean;
 }
 
 export interface Buchungsart {
@@ -39,6 +49,8 @@ interface Props {
   belegungen: Belegung[];
   arten: Buchungsart[];
   verzeichnis: Mitglied[];
+  /** Eigene Mitglieds-Id - wer bucht, kann sich nicht selbst als Mitspieler waehlen. */
+  meineId: string | null;
   oeffnung: string;
   schluss: string;
   /** Buchungsraster in Minuten - 30, also :00 und :30. */
@@ -49,26 +61,19 @@ interface Props {
   dauerMinuten: number;
   /** null bedeutet unbegrenzt (Kontingent auf 0 gestellt). */
   kontingentFrei: number | null;
+  /** Gastgebuehr je Gast in Cent. 0 schaltet den Gast-Knopf ab. */
+  gastgebuehrCents: number;
   istAdmin: boolean;
 }
 
-/** Minuten seit Mitternacht in deutscher Ortszeit. */
-export function lokaleMinuten(iso: string): number {
-  const teile = new Intl.DateTimeFormat("de-DE", {
-    timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit", hour12: false,
-  }).formatToParts(new Date(iso));
-  const h = Number(teile.find((t) => t.type === "hour")?.value ?? 0);
-  const m = Number(teile.find((t) => t.type === "minute")?.value ?? 0);
-  return h * 60 + m;
-}
+// Die Zeitrechnung kommt aus @tcm/core: dieselben Funktionen benutzt die
+// mobile App, und sie rechnen in Europe/Berlin statt in der Zeitzone des
+// Geraets. Vorher stand das hier und dort je einmal - mit dem Ergebnis, dass
+// ein Telefon auf Reisen die falsche Startzeit an die Datenbank schickte.
+export const lokaleMinuten = minutesOf;
+const zuMinuten = timeToMinutes;
 
-const zuMinuten = (hhmm: string) => {
-  const [h, m] = hhmm.split(":").map(Number);
-  return (h ?? 0) * 60 + (m ?? 0);
-};
-
-export const alsUhrzeit = (min: number) =>
-  `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+export const alsUhrzeit = minutesToTime;
 
 /** Was im Fenster gerade bearbeitet wird. */
 export type Fenster =
@@ -122,13 +127,19 @@ export function Belegungsplan(props: Props) {
     return karte;
   }, [props.belegungen, props.anzeigeMinuten, stunden]);
 
-  const belegungFuer = (courtId: string, stunde: number) =>
-    belegungenIn.get(`${courtId}|${stunde}`)?.[0];
+  /**
+   * Alle Belegungen dieser Zelle, nach Startzeit sortiert.
+   *
+   * Vorher wurde nur die erste zurueckgegeben - zwei Buchungen, die dieselbe
+   * Anzeigestunde beruehren (17:30-18:30 und 18:30-19:30), erschienen als eine,
+   * und die zweite fehlte im Plan vollstaendig.
+   */
+  const belegungenFuer = (courtId: string, stunde: number): Belegung[] =>
+    (belegungenIn.get(`${courtId}|${stunde}`) ?? [])
+      .slice()
+      .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
 
-  function zeitpunkt(minute: number): Date {
-    const [j, mo, t] = props.datum.split("-").map(Number);
-    return new Date(j!, (mo ?? 1) - 1, t, Math.floor(minute / 60), minute % 60, 0, 0);
-  }
+  const zeitpunkt = (minute: number) => berlinTime(props.datum, minute);
 
   const vergangen = (minute: number) => zeitpunkt(minute).getTime() < Date.now();
 
@@ -185,10 +196,32 @@ export function Belegungsplan(props: Props) {
     });
   }
 
-  /** Wer darf eine bestehende Buchung anfassen? */
+  function ausschreiben(bookingId: string, gesucht: boolean) {
+    starte(async () => {
+      const e = await mitspielerSuchen(bookingId, gesucht);
+      setMeldung({ ok: e.ok, text: e.meldung });
+      if (e.ok) setFenster(null);
+    });
+  }
+
+  function beitreten(bookingId: string) {
+    starte(async () => {
+      const e = await mitspielen(bookingId);
+      setMeldung({ ok: e.ok, text: e.meldung });
+      if (e.ok) setFenster(null);
+    });
+  }
+
+  /**
+   * Wer darf eine bestehende Buchung anfassen?
+   *
+   * Neben Bucher und Admin jetzt auch jeder, dem sie offensteht: eine
+   * ausgeschriebene Buchung ist eine Einladung, und die muss anklickbar sein.
+   */
   function verwaltbar(b: Belegung): boolean {
     if (props.istAdmin) return true;
-    return b.is_own && b.kind === "booking" && !vergangen(lokaleMinuten(b.starts_at));
+    if (vergangen(lokaleMinuten(b.starts_at)) || b.kind !== "booking") return false;
+    return b.is_own || (b.partner_wanted && b.frei > 0 && !b.bin_dabei);
   }
 
   function beschriftung(b: Belegung, stunde: number): string {
@@ -200,6 +233,9 @@ export function Belegungsplan(props: Props) {
     const teilweise = von > stunde || bis < stunde + props.anzeigeMinuten;
     return teilweise ? `${alsUhrzeit(von)}–${alsUhrzeit(bis)} ${wer}` : wer;
   }
+
+  /** Eine Buchung, die noch Mitspieler sucht und Platz hat. */
+  const offen = (b: Belegung) => b.partner_wanted && b.frei > 0;
 
   return (
     <>
@@ -215,8 +251,12 @@ export function Belegungsplan(props: Props) {
           const eigene = props.belegungen
             .filter((b) => b.court_id === platz.id)
             .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+          // Eine Stunde taugt, sobald darin ueberhaupt eine Startzeit frei ist.
+          // Vorher wurde zusaetzlich verlangt, dass die Stunde vollstaendig
+          // leer ist - dadurch liess sich :30 am Telefon nicht buchen, wenn :00
+          // belegt war, obwohl der Platz frei stand.
           const freieStunden = stunden.filter(
-            (s) => !belegungFuer(platz.id, s) && startzeitenIn(platz.id, s).length > 0,
+            (s) => startzeitenIn(platz.id, s).length > 0,
           );
 
           return (
@@ -244,12 +284,14 @@ export function Belegungsplan(props: Props) {
                     <button
                       key={b.booking_id}
                       type="button"
-                      className={`${klasse} anklickbar`}
+                      className={`${klasse} anklickbar${offen(b) ? " sucht-mitspieler" : ""}`}
                       onClick={() => setFenster({ modus: "verwalten", belegung: b })}
                       aria-label={`Buchung ${alsUhrzeit(lokaleMinuten(b.starts_at))} auf ${platz.name} verwalten`}
                     >
                       {inhalt}
-                      <span className="mit verwalten-hinweis">Verwalten</span>
+                      <span className="mit verwalten-hinweis">
+                        {b.is_own || props.istAdmin ? "Verwalten" : "Mitspielen"}
+                      </span>
                     </button>
                   ) : (
                     <div key={b.booking_id} className={klasse}>{inhalt}</div>
@@ -292,40 +334,64 @@ export function Belegungsplan(props: Props) {
                 <tr key={stunde}>
                   <td className="zeit">{alsUhrzeit(stunde)}</td>
                   {props.plaetze.map((platz) => {
-                    const b = belegungFuer(platz.id, stunde);
+                    const belegt = belegungenFuer(platz.id, stunde);
+                    const startzeiten = startzeitenIn(platz.id, stunde);
 
-                    if (b) {
-                      const klasse =
-                        b.kind === "blocking" ? "blockung" : b.is_own ? "belegt eigen" : "belegt";
-                      const text = beschriftung(b, stunde);
-
-                      if (verwaltbar(b)) {
-                        return (
-                          <td key={platz.id}>
-                            <button
-                              type="button"
-                              className={`zelle ${klasse} anklickbar`}
-                              onClick={() => setFenster({ modus: "verwalten", belegung: b })}
-                              aria-label={`Buchung ${alsUhrzeit(stunde)} auf ${platz.name} verwalten`}
-                            >
-                              <strong>{text}</strong>
-                              {b.players.length > 0 && <><br />{b.players.join(", ")}</>}
-                            </button>
-                          </td>
-                        );
-                      }
-
+                    // Jede Belegung dieser Stunde wird gezeigt, nicht nur die
+                    // erste. Und ist danach noch eine Startzeit frei, laesst
+                    // sich die Stunde trotzdem anklicken.
+                    if (belegt.length > 0) {
                       return (
                         <td key={platz.id}>
-                          <span className={`zelle ${klasse}`}>
-                            <strong>{text}</strong>
-                            {b.players.length > 0 && <><br />{b.players.join(", ")}</>}
-                          </span>
+                          {belegt.map((b) => {
+                            const klasse =
+                              b.kind === "blocking"
+                                ? "blockung"
+                                : b.is_own
+                                  ? "belegt eigen"
+                                  : "belegt";
+                            const text = beschriftung(b, stunde);
+                            const inhalt = (
+                              <>
+                                <strong>{text}</strong>
+                                {offen(b) && <span className="sucht">sucht {b.frei}</span>}
+                                {b.players.length > 0 && <><br />{b.players.join(", ")}</>}
+                              </>
+                            );
+
+                            return verwaltbar(b) ? (
+                              <button
+                                key={b.booking_id}
+                                type="button"
+                                className={`zelle ${klasse} anklickbar${offen(b) ? " sucht-mitspieler" : ""}`}
+                                onClick={() => setFenster({ modus: "verwalten", belegung: b })}
+                                aria-label={`Buchung ${alsUhrzeit(lokaleMinuten(b.starts_at))} auf ${platz.name} verwalten`}
+                              >
+                                {inhalt}
+                              </button>
+                            ) : (
+                              <span key={b.booking_id} className={`zelle ${klasse}`}>
+                                {inhalt}
+                              </span>
+                            );
+                          })}
+
+                          {startzeiten.length > 0 && (
+                            <button
+                              className="zelle frei rest"
+                              disabled={kontingentAus}
+                              onClick={() =>
+                                setFenster({ modus: "buchen", courtId: platz.id, stunde })
+                              }
+                              aria-label={`${platz.name} um ${alsUhrzeit(startzeiten[0]!)} buchen`}
+                            >
+                              ab {alsUhrzeit(startzeiten[0]!)} frei
+                            </button>
+                          )}
                         </td>
                       );
                     }
 
-                    const startzeiten = startzeitenIn(platz.id, stunde);
                     const zu = startzeiten.length === 0;
 
                     return (
@@ -353,6 +419,7 @@ export function Belegungsplan(props: Props) {
           plaetze={props.plaetze}
           arten={props.arten}
           verzeichnis={props.verzeichnis}
+          meineId={props.meineId}
           startzeiten={
             fenster.modus === "buchen"
               ? startzeitenIn(fenster.courtId, fenster.stunde)
@@ -360,11 +427,14 @@ export function Belegungsplan(props: Props) {
           }
           rasterMinuten={props.rasterMinuten}
           anzeigeMinuten={props.anzeigeMinuten}
+          gastgebuehrCents={props.gastgebuehrCents}
           istAdmin={props.istAdmin}
           laeuft={laeuft}
           onBuchen={abschicken}
           onSpeichern={speichern}
           onStornieren={abbrechen}
+          onAusschreiben={ausschreiben}
+          onBeitreten={beitreten}
           onSchliessen={() => setFenster(null)}
         />
       )}

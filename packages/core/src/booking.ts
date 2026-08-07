@@ -31,13 +31,21 @@ export type BookingCheck =
   | { ok: true }
   | { ok: false; reason: string };
 
-function timeToMinutes(value: string): number {
+/** "08:30" → 510. */
+export function timeToMinutes(value: string): number {
   const [h, m] = value.split(":").map(Number);
   return (h ?? 0) * 60 + (m ?? 0);
 }
 
-/** Lokale Uhrzeit in Minuten seit Mitternacht, in Europe/Berlin. */
-function localMinutes(date: Date): number {
+/** 510 → "08:30". */
+export function minutesToTime(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+/** Uhrzeit in Minuten seit Mitternacht, gerechnet in Europe/Berlin. */
+export function localMinutes(date: Date): number {
   const parts = new Intl.DateTimeFormat("de-DE", {
     timeZone: "Europe/Berlin",
     hour: "2-digit",
@@ -48,6 +56,71 @@ function localMinutes(date: Date): number {
   const h = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
   const m = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
   return h * 60 + m;
+}
+
+/** Dasselbe für einen ISO-Zeitstempel aus der Datenbank. */
+export function minutesOf(iso: string): number {
+  return localMinutes(new Date(iso));
+}
+
+/**
+ * Wie weit liegt die Berliner Wanduhr zu diesem Zeitpunkt vor UTC?
+ *
+ * Im Winter 60 Minuten, im Sommer 120. Ermittelt wird das, indem dieselbe
+ * Sekunde einmal in Berliner Zeit ausgelesen und wieder als UTC gelesen wird –
+ * die Differenz ist der Versatz.
+ */
+function berlinOffsetMinutes(at: Date): number {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Berlin",
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(at);
+
+  const teil = (name: string) => Number(parts.find((p) => p.type === name)?.value ?? "0");
+  // 24 statt 0 kommt bei Mitternacht vor, je nach Laufzeitumgebung.
+  const stunde = teil("hour") % 24;
+
+  const alsWaereBerlinUtc = Date.UTC(
+    teil("year"),
+    teil("month") - 1,
+    teil("day"),
+    stunde,
+    teil("minute"),
+    teil("second"),
+  );
+
+  return Math.round((alsWaereBerlinUtc - at.getTime()) / 60_000);
+}
+
+/**
+ * Aus Tag und Uhrzeit den echten Zeitpunkt machen – in Europe/Berlin, nicht in
+ * der Zeitzone des Geräts.
+ *
+ * Das ist der Weg zurück zu `minutesOf`. Ohne ihn schickt ein Telefon, das auf
+ * einer anderen Zeitzone steht, eine um Stunden verschobene Startzeit an die
+ * Datenbank – die Regeln dort rechnen in Berliner Zeit, und die Buchung landet
+ * an der falschen Stelle oder wird grundlos abgewiesen.
+ *
+ * Der Versatz wird zweimal bestimmt: einmal grob aus der als UTC gelesenen
+ * Zeit, dann noch einmal mit dem so gewonnenen Zeitpunkt. Nur dadurch stimmt
+ * auch die Stunde nach einer Zeitumstellung. In der Stunde, die es zweimal
+ * gibt, entscheidet sich das Ergebnis für die erste – Buchungen laufen von 8
+ * bis 21 Uhr, der Sprung liegt um 3 Uhr nachts.
+ */
+export function berlinTime(dayIso: string, minutes: number): Date {
+  const [jahr, monat, tag] = dayIso.split("-").map(Number);
+  const stunde = Math.floor(minutes / 60);
+  const minute = minutes % 60;
+
+  const naiv = Date.UTC(jahr ?? 1970, (monat ?? 1) - 1, tag ?? 1, stunde, minute);
+  const ersterVersuch = new Date(naiv - berlinOffsetMinutes(new Date(naiv)) * 60_000);
+  return new Date(naiv - berlinOffsetMinutes(ersterVersuch) * 60_000);
 }
 
 export function checkSlot(

@@ -403,6 +403,66 @@ begin
   perform set_config('role', 'postgres', true);
 end; $f$;
 
+-- ---------------------------------------------------------------------------
+-- Die Untergrenze gilt auch beim Tauschen
+-- ---------------------------------------------------------------------------
+
+/**
+ * Ein Doppel braucht mindestens drei Spieler. Bis 20260807100000 prueften das
+ * nur create_booking und nicht update_booking_players - ein Doppel liess sich
+ * also anlegen und danach auf zwei Leute zusammenstreichen, was den Platz eine
+ * Stunde fuer zwei Spieler blockierte, obwohl dafuer ein Einzel gedacht ist.
+ */
+create or replace function tests.test_rpc_tausch_haelt_min_players() returns setof text language plpgsql as $f$
+declare a record; b record; c record; v_court uuid := tests.fixture_court(); v_id uuid;
+        s1 timestamptz := tests.naechster_slot(2, 15);
+begin
+  select * into a from tests.fixture_user() limit 1;
+  select * into b from tests.fixture_user() limit 1;
+  select * into c from tests.fixture_user() limit 1;
+  perform tests.act_as(a.auth_id);
+  select public.create_booking(v_court, s1, 'doppel', array[b.member_id, c.member_id]) into v_id;
+
+  return next throws_ok(
+    format('select public.update_booking_players(%L, array[%L]::uuid[])', v_id, b.member_id),
+    '22023', null, 'Ein Doppel laesst sich nicht auf zwei Spieler zusammenstreichen');
+  return next lives_ok(
+    format('select public.update_booking_players(%L, array[%L, %L]::uuid[])',
+           v_id, b.member_id, c.member_id),
+    'Mit drei Spielern bleibt der Tausch erlaubt');
+  perform set_config('role', 'postgres', true);
+
+  return next is((select count(*)::integer from public.booking_players where booking_id = v_id), 2,
+    'Nach dem abgewiesenen Tausch stehen die beiden Mitspieler unveraendert da');
+end; $f$;
+
+-- ---------------------------------------------------------------------------
+
+/**
+ * day_schedule liefert die Id des Buchers.
+ *
+ * Die Oberflaeche streicht ihn damit aus der Mitspielerauswahl. Vorher lief das
+ * ueber den angezeigten Namen - bei zwei Mitgliedern gleichen Namens traf es
+ * den Falschen.
+ */
+create or replace function tests.test_rpc_day_schedule_kennt_den_bucher() returns setof text language plpgsql as $f$
+declare a record; b record; v_court uuid := tests.fixture_court(); v_id uuid;
+        s1 timestamptz := tests.naechster_slot(2, 16); v_tag date; v_owner uuid;
+begin
+  select * into a from tests.fixture_user() limit 1;
+  select * into b from tests.fixture_user() limit 1;
+  v_tag := (s1 at time zone 'Europe/Berlin')::date;
+  perform tests.act_as(a.auth_id);
+  select public.create_booking(v_court, s1, 'einzel', array[b.member_id]) into v_id;
+
+  select d.owner_member_id into v_owner
+  from public.day_schedule(v_tag) d where d.booking_id = v_id;
+  return next is(v_owner, a.member_id, 'day_schedule nennt den Bucher mit seiner Id');
+  perform set_config('role', 'postgres', true);
+end; $f$;
+
+-- ---------------------------------------------------------------------------
+
 -- Diese Datei definiert nur Testfunktionen; ausgefuehrt werden sie in
 -- 99_runtests.sql. Der eine Test hier belegt, dass die Definitionen selbst
 -- fehlerfrei eingespielt wurden - ohne Plan haelt pg_prove die Datei sonst

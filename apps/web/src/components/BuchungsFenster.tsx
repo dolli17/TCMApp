@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { berlinTime } from "@tcm/core";
 import {
   alsUhrzeit, lokaleMinuten,
   type Buchungsart, type Fenster, type Mitglied, type Platz,
@@ -13,15 +14,21 @@ interface Props {
   plaetze: Platz[];
   arten: Buchungsart[];
   verzeichnis: Mitglied[];
+  /** Eigene Mitglieds-Id, damit man sich nicht selbst als Mitspieler waehlt. */
+  meineId: string | null;
   /** Nur im Buchen-Modus: die in dieser Stunde noch freien Startzeiten. */
   startzeiten: number[];
   rasterMinuten: number;
   anzeigeMinuten: number;
+  /** Gastgebuehr je Gast in Cent. 0 schaltet den Gast-Knopf ab. */
+  gastgebuehrCents: number;
   istAdmin: boolean;
   laeuft: boolean;
   onBuchen: (fd: FormData) => void;
   onSpeichern: (bookingId: string, mitgliedIds: string[], gaeste: string[]) => void;
   onStornieren: (bookingId: string) => void;
+  onAusschreiben: (bookingId: string, gesucht: boolean) => void;
+  onBeitreten: (bookingId: string) => void;
   onSchliessen: () => void;
 }
 
@@ -89,15 +96,22 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
   const [art, setArt] = useState(props.arten[0]?.code ?? "einzel");
   const [mitglieder, setMitglieder] = useState<string[]>([]);
   const [gaeste, setGaeste] = useState<string[]>([]);
+  const [sucheMitspieler, setSucheMitspieler] = useState(false);
 
   const gewaehlt = props.arten.find((a) => a.code === art);
   const maxWeitere = Math.max((gewaehlt?.max_players ?? 2) - 1, 0);
   const anzahl = mitglieder.length + gaeste.length;
+  const nochPlatz = anzahl < maxWeitere;
 
-  const [j, mo, t] = props.datum.split("-").map(Number);
-  const startZeitpunkt = new Date(j!, (mo ?? 1) - 1, t, Math.floor(start / 60), start % 60, 0, 0);
+  // Ueber berlinTime, nicht ueber new Date(...): der Konstruktor rechnet in
+  // der Zeitzone des Geraets. Ein Rechner, der auf London steht, haette hier
+  // eine um eine Stunde verschobene Startzeit an die Datenbank geschickt.
+  const startZeitpunkt = berlinTime(props.datum, start);
 
-  const pflichtVerletzt = Boolean(gewaehlt?.requires_partner) && anzahl === 0;
+  // Wer Mitspieler sucht, darf unterbesetzt buchen - genau dafuer ist der
+  // Schalter da. Die Datenbank sieht das ebenso.
+  const pflichtVerletzt =
+    Boolean(gewaehlt?.requires_partner) && anzahl === 0 && !sucheMitspieler;
 
   return (
     <>
@@ -114,6 +128,9 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
         <input type="hidden" name="startsAt" value={startZeitpunkt.toISOString()} />
         {mitglieder.map((id) => <input key={id} type="hidden" name="mitspieler" value={id} />)}
         {gaeste.map((g, i) => <input key={`g${i}`} type="hidden" name="gast" value={g} />)}
+        {sucheMitspieler && nochPlatz && (
+          <input type="hidden" name="partnerWanted" value="1" />
+        )}
 
         <fieldset className="startwahl">
           <legend>Beginn</legend>
@@ -145,14 +162,31 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
         </label>
 
         <Mitspielersuche
-          verzeichnis={props.verzeichnis}
+          verzeichnis={props.verzeichnis.filter((m) => m.id !== props.meineId)}
           mitglieder={mitglieder}
           gaeste={gaeste}
           maxWeitere={maxWeitere}
-          pflicht={Boolean(gewaehlt?.requires_partner)}
+          pflicht={Boolean(gewaehlt?.requires_partner) && !sucheMitspieler}
+          gastgebuehrCents={props.gastgebuehrCents}
           onMitglieder={setMitglieder}
           onGaeste={setGaeste}
         />
+
+        {nochPlatz && (
+          <label className="schalter">
+            <input
+              type="checkbox"
+              checked={sucheMitspieler}
+              onChange={(e) => setSucheMitspieler(e.target.checked)}
+            />
+            <span>
+              Mitspieler gesucht
+              <small>
+                Die Buchung erscheint unter „Offene Spiele“. Wer will, trägt sich selbst ein.
+              </small>
+            </span>
+          </label>
+        )}
 
         <div className="fenster-fuss">
           <button className="knopf" disabled={props.laeuft || pflichtVerletzt}>
@@ -181,6 +215,13 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
 
   // Eine Blockung hat keine Mitspieler - dort bleibt nur das Aufheben.
   const nurStorno = b.kind === "blocking";
+
+  // Drei Rollen an demselben Fenster: der Bucher verwaltet, ein Admin
+  // verwaltet fremd, und wer nur eingeladen ist, kann ausschliesslich
+  // mitspielen. Ohne diese Trennung koennte ein Fremder ueber die
+  // Mitspielersuche die Besetzung des Buchers umwerfen.
+  const darfVerwalten = b.is_own || props.istAdmin;
+  const kannMitspielen = !b.is_own && !b.bin_dabei && b.partner_wanted && b.frei > 0;
   const geaendert =
     JSON.stringify([...mitglieder].sort()) !== JSON.stringify([...(b.player_member_ids ?? [])].sort()) ||
     JSON.stringify([...gaeste].sort()) !== JSON.stringify([...(b.guest_names ?? [])].sort());
@@ -207,20 +248,42 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           <p className="hinweis">Die Spielzeit läuft bereits – Änderungen sind Admin-Sache.</p>
         )}
 
-        {!nurStorno && (
+        {b.partner_wanted && b.frei > 0 && (
+          <p className="hinweis">
+            Hier werden noch {b.frei === 1 ? "ein Mitspieler" : `${b.frei} Mitspieler`} gesucht.
+          </p>
+        )}
+
+        {!nurStorno && darfVerwalten && (
           <Mitspielersuche
-            verzeichnis={props.verzeichnis.filter((m) => m.id !== eigentuemerId(b, props.verzeichnis))}
+            verzeichnis={props.verzeichnis.filter((m) => m.id !== b.owner_member_id)}
             mitglieder={mitglieder}
             gaeste={gaeste}
             maxWeitere={maxWeitere}
-            pflicht={Boolean(art?.requires_partner)}
+            pflicht={Boolean(art?.requires_partner) && !b.partner_wanted}
+            gastgebuehrCents={props.gastgebuehrCents}
             onMitglieder={setMitglieder}
             onGaeste={setGaeste}
           />
         )}
 
+        {!darfVerwalten && b.players.length > 0 && (
+          <p className="unterzeile">Dabei sind: {b.players.join(", ")}</p>
+        )}
+
         <div className="fenster-fuss">
-          {!nurStorno && (
+          {kannMitspielen && (
+            <button
+              type="button"
+              className="knopf"
+              disabled={props.laeuft}
+              onClick={() => props.onBeitreten(b.booking_id)}
+            >
+              {props.laeuft ? "Wird eingetragen…" : "Mitspielen"}
+            </button>
+          )}
+
+          {!nurStorno && darfVerwalten && (
             <button
               type="button"
               className="knopf"
@@ -231,7 +294,18 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
             </button>
           )}
 
-          {stornoOffen ? (
+          {!nurStorno && darfVerwalten && (b.frei > 0 || b.partner_wanted) && (
+            <button
+              type="button"
+              className="knopf leise"
+              disabled={props.laeuft}
+              onClick={() => props.onAusschreiben(b.booking_id, !b.partner_wanted)}
+            >
+              {b.partner_wanted ? "Nicht mehr ausschreiben" : "Mitspieler suchen"}
+            </button>
+          )}
+
+          {!darfVerwalten ? null : stornoOffen ? (
             <button
               type="button"
               className="knopf gefahr"
@@ -260,12 +334,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
   );
 }
 
-/**
- * Der Bucher darf nicht zusaetzlich als Mitspieler auftauchen - die Datenbank
- * weist das ab. Sein Name steht im Kopf, die Id kennen wir nur ueber das
- * Verzeichnis.
- */
-function eigentuemerId(b: { owner_name: string | null }, verzeichnis: Mitglied[]): string | undefined {
-  if (!b.owner_name) return undefined;
-  return verzeichnis.find((m) => `${m.first_name} ${m.last_name}` === b.owner_name)?.id;
-}
+// Der Bucher darf nicht zusaetzlich als Mitspieler auftauchen - die Datenbank
+// weist das ab. Frueher wurde er ueber den Namen im Verzeichnis gesucht; bei
+// zwei Mitgliedern gleichen Namens traf das den Falschen. day_schedule liefert
+// seit 20260807100000 die Id mit.

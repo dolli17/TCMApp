@@ -91,8 +91,8 @@ a:hover { text-decoration: underline; }
   background: color-mix(in srgb, var(--surf) 88%, transparent);
   border-top: 1px solid var(--line);
   backdrop-filter: blur(12px);
-  /* Admins haben sieben Einträge. Statt sie zu quetschen, scrollt die Leiste
-     selbst - das Dokument bleibt dabei unverschiebbar. */
+  /* Admins haben acht Einträge plus Glocke. Statt sie zu quetschen, scrollt
+     die Leiste selbst - das Dokument bleibt dabei unverschiebbar. */
   overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
 }
 .bottomnav::-webkit-scrollbar { display: none; }
@@ -348,6 +348,92 @@ table.liste .zahl {
 }
 .auth .sheet form { max-width: 380px; margin: 0 auto; }
 
+/* Plätze einer Sperrung auswählen: dieselben Marken wie die Startzeitwahl im
+   Buchungsfenster, damit sich das Muster nicht doppelt. */
+.platzwahl {
+  border: 0; padding: 0; margin: 0 0 12px;
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+}
+.platzwahl legend {
+  padding: 0; margin-bottom: 6px;
+  font-size: 12.5px; font-weight: 600; color: var(--ink-2);
+}
+
+/* ---------------------------------------------------------------------------
+   Mitspieler gesucht
+   --------------------------------------------------------------------------- */
+
+/* Eine ausgeschriebene Buchung ist eine Einladung - sie muss sich im Plan von
+   einer belegten Zelle unterscheiden, ohne wie ein freier Platz auszusehen. */
+.zelle.sucht-mitspieler, .belegzeile.sucht-mitspieler {
+  border: 1.5px dashed var(--gold);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+}
+.sucht {
+  display: inline-block; margin-left: 6px; padding: 0 6px;
+  border-radius: 99px; background: var(--gold); color: var(--ink);
+  font-size: 10.5px; font-weight: 700; vertical-align: middle;
+}
+
+/* Ein Schalter mit Erklaerung darunter. Ohne die Erklaerung raet man, was
+   "Mitspieler gesucht" fuer die eigene Buchung bedeutet. */
+.schalter {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin-top: 4px; cursor: pointer;
+}
+.schalter input { width: 18px; height: 18px; margin-top: 2px; flex: 0 0 auto; }
+.schalter span { display: grid; gap: 2px; font-weight: 600; }
+.schalter small { font-weight: 500; font-size: 12.5px; color: var(--muted); }
+
+/* ---------------------------------------------------------------------------
+   Benachrichtigungen: Glocke im Menue, Liste im Fenster
+   --------------------------------------------------------------------------- */
+
+/* Am Telefon sitzt die Glocke in der Bottom-Navigation und sieht aus wie ein
+   Eintrag darin; ab Tablet steht sie unten in der Seitenleiste. Sie ist in
+   beiden Menues vorhanden - sichtbar ist immer nur eines. */
+.glocke {
+  appearance: none; background: none; border: 0; cursor: pointer;
+  position: relative; font: inherit; color: var(--muted);
+}
+.glocke svg { display: block; }
+.glocke-zahl {
+  position: absolute; top: -3px; right: -6px; min-width: 17px; height: 17px;
+  padding: 0 4px; border-radius: 99px;
+  background: var(--red); color: #fff;
+  font-size: 10.5px; font-weight: 700; line-height: 17px; text-align: center;
+}
+
+.bottomnav .glocke {
+  flex: 1 0 auto; min-width: 62px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 600; padding: 2px 4px; white-space: nowrap;
+}
+.bottomnav .glocke svg { width: 24px; height: 24px; }
+.bottomnav .glocke .glocke-zahl { top: -2px; right: 12px; }
+
+.nachrichtenliste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.nachrichtenliste li {
+  display: grid; gap: 2px;
+  border: 1px solid var(--line); border-radius: var(--radius-karte);
+  padding: 10px 12px; background: var(--surf);
+}
+.nachrichtenliste li.neu { border-color: var(--blue); background: var(--blue-soft); }
+
+/* ---------------------------------------------------------------------------
+   Meine Buchungen
+   --------------------------------------------------------------------------- */
+.terminliste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.termin { align-items: center; gap: 14px; flex-wrap: wrap; }
+.termin-zeit {
+  display: flex; flex-direction: column; min-width: 74px;
+  font-variant-numeric: tabular-nums;
+}
+.termin-zeit b { font-size: 19px; line-height: 1.1; }
+.termin-zeit span { font-size: 11.5px; color: var(--muted); }
+.termin-text { flex: 1 1 200px; min-width: 0; }
+.termin-tat { display: flex; gap: 6px; flex-wrap: wrap; }
+
 /* ---------------------------------------------------------------------------
    Ab Tablet: Seitenleiste statt Bottom-Navigation
    --------------------------------------------------------------------------- */
@@ -376,6 +462,15 @@ table.liste .zahl {
     border-top: 1px solid var(--line); font-size: 13px; color: var(--muted);
     display: flex; flex-direction: column; gap: 10px;
   }
+
+  /* In der Seitenleiste traegt die Glocke dieselbe Form wie die Menuepunkte. */
+  .seitenleiste nav .glocke {
+    display: flex; align-items: center; gap: 11px;
+    padding: 10px 12px; border-radius: 11px;
+    font-weight: 600; font-size: 14.5px; text-align: left;
+  }
+  .seitenleiste nav .glocke:hover { background: var(--chip); color: var(--ink); }
+  .seitenleiste nav .glocke .glocke-zahl { position: static; margin-left: auto; }
 
   .bottomnav { display: none; }
   .inhalt { padding: 24px 32px 48px; }
@@ -512,8 +607,12 @@ dialog.fenster::backdrop { background: rgba(9,22,34,.5); backdrop-filter: blur(2
 .trefferliste li button:hover, .trefferliste li button:focus-visible {
   background: var(--blue-soft); color: var(--blue-ink);
 }
-.trefferliste .gast-anlegen { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 4px; }
-.trefferliste .gast-anlegen button { color: var(--muted); font-size: 13px; }
+.trefferliste li.leer { padding: 8px 10px; color: var(--muted); font-size: 13.5px; }
+
+/* Gaeste kommen ueber einen eigenen Knopf, nicht mehr ueber das Suchfeld: sie
+   kosten Geld, und das soll eine bewusste Handlung sein. */
+.gastknopf { margin-top: 8px; align-self: flex-start; }
+.gasthinweis { margin: 8px 0 0; color: var(--ink-2); }
 
 .knopf.gefahr { background: var(--red); border-color: var(--red); color: #fff; }
 
@@ -619,6 +718,14 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 /* Öffentliche Seiten ohne Anmeldung (Mitgliedsantrag, Passwort setzen).
    Nutzt dieselbe Bühne wie die Anmeldung, nur mit breiterem Blatt. */
 .antragsseite .sheet { max-width: 640px; }
+
+/* Mehrere Belegungen in einer Stunde stehen untereinander; darunter die
+   Reststunde, falls sie noch buchbar ist. */
+.zelle + .zelle { margin-top: 2px; }
+.zelle.rest {
+  min-height: 22px; font-size: 11.5px; font-weight: 600;
+  color: var(--blue-ink); background: var(--blue-soft);
+}
 
 /* Weniger Bewegung, wenn das System danach fragt */
 @media (prefers-reduced-motion: reduce) {

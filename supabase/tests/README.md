@@ -33,9 +33,12 @@ sie danach zurück. Die Tests hinterlassen also keinen Zustand – auch nicht di
 | `02_rls.sql` | Rollentrennung, Zahler-Beziehung, Bankdaten, Kiosk-Abgrenzung, `anon`, Vollständigkeitsprüfung |
 | `03_rpc_bookings.sql` | Das Regelwerk über `create_booking`: Kontingent, Vorlauf, Öffnungszeiten, Zeitraster, Storno |
 | `04_mitglieder.sql` | Selbstpflege-Erlaubnisliste, Änderungsprotokoll, Mitglieder-RPCs |
+| `05_meine_buchungen.sql` | `my_bookings`, `leave_booking`, Benachrichtigungen |
+| `06_mitspieler_gesucht.sql` | `join_booking`, `set_partner_wanted`, `open_matches`, Gastgebühr |
+| `07_platzverwaltung.sql` | Sperrungen, Serien beenden, Plätze und Buchungsarten |
 | `99_runtests.sql` | Führt die Suite aus |
 
-Die Dateien `01` bis `04` **definieren nur Funktionen**. Ausgeführt wird alles in
+Die Dateien `01` bis `07` **definieren nur Funktionen**. Ausgeführt wird alles in
 `99_runtests.sql` – die Nummer sorgt dafür, dass `pg_prove` erst definiert und dann
 ausführt. Jede Definitionsdatei schließt mit einem `plan(1)` plus `pass()`; ohne
 Plan hält `pg_prove` eine Datei für kaputt und meldet „No subtests run".

@@ -26,6 +26,9 @@ const SYMBOLE = {
   konto: (
     <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0" strokeWidth="1.7" fill="none" strokeLinecap="round" />
   ),
+  platzpflege: (
+    <path d="M4 4h16v16H4zM4 12h16M9 8h6M9 16h6" strokeWidth="1.7" fill="none" strokeLinecap="round" />
+  ),
   serie: (
     <path d="M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" strokeWidth="1.7" fill="none" strokeLinecap="round" />
   ),
@@ -53,7 +56,17 @@ function istAktiv(pfad: string, href: string): boolean {
   return pfad === href || pfad.startsWith(href + "/");
 }
 
-export function Seitenmenue({ eintraege }: { eintraege: NavEintrag[] }) {
+/**
+ * children ist die Glocke.
+ *
+ * Sie sitzt in beiden Menues, weil immer nur eines davon sichtbar ist - welches,
+ * entscheidet die CSS. Ein einzelnes Exemplar muesste entweder aus dem Menue
+ * heraus positioniert werden und wuerde am Telefon auf dem Hero kleben, oder es
+ * fehlte auf einer der beiden Breiten.
+ */
+export function Seitenmenue({
+  eintraege, children,
+}: { eintraege: NavEintrag[]; children?: React.ReactNode }) {
   const pfad = usePathname();
   return (
     <nav aria-label="Hauptmenü">
@@ -63,11 +76,14 @@ export function Seitenmenue({ eintraege }: { eintraege: NavEintrag[] }) {
           {e.label}
         </Link>
       ))}
+      {children}
     </nav>
   );
 }
 
-export function Fussmenue({ eintraege }: { eintraege: NavEintrag[] }) {
+export function Fussmenue({
+  eintraege, children,
+}: { eintraege: NavEintrag[]; children?: React.ReactNode }) {
   const pfad = usePathname();
   return (
     <nav className="bottomnav" aria-label="Hauptmenü">
@@ -77,6 +93,7 @@ export function Fussmenue({ eintraege }: { eintraege: NavEintrag[] }) {
           {e.kurz}
         </Link>
       ))}
+      {children}
     </nav>
   );
 }

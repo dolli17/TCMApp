@@ -10,9 +10,22 @@ interface Props {
   /** Wie viele Mitspieler die Buchungsart neben dem Bucher noch zulaesst. */
   maxWeitere: number;
   pflicht: boolean;
+  /** 0 schaltet den Gast-Knopf ab. Sonst der Betrag je Gast in Cent. */
+  gastgebuehrCents: number;
   onMitglieder: (ids: string[]) => void;
   onGaeste: (namen: string[]) => void;
 }
+
+/**
+ * Gaeste haben keinen Namen.
+ *
+ * Der Verein braucht ihn nicht - es geht um die Gebuehr und um den belegten
+ * Platz, nicht um eine Gaesteliste. Ein Freitextfeld hat frueher dazu gefuehrt,
+ * dass Mitglieder als "Gast" mit falsch geschriebenem Namen eingetragen wurden
+ * statt aus dem Verzeichnis gewaehlt. Die Datenbank verlangt einen nicht leeren
+ * guest_name, also traegt jeder Gastplatz genau dieses Wort.
+ */
+const GAST = "Gast";
 
 const TREFFER_MAX = 8;
 
@@ -21,8 +34,11 @@ const TREFFER_MAX = 8;
  *
  * Der Verein hat rund 300 Mitglieder; eine Auswahlliste mit 300 Eintraegen ist
  * am Telefon unbenutzbar. Deshalb ein Textfeld, das das Verzeichnis filtert,
- * und die Auswahl als entfernbare Marke darunter. Gaeste kommen ueber dasselbe
- * Feld herein, wenn kein Mitglied passt.
+ * und die Auswahl als entfernbare Marke darunter.
+ *
+ * Im Feld stehen ausschliesslich Mitglieder. Gaeste kommen ueber einen eigenen
+ * Knopf daneben - sie kosten Geld, und das soll eine bewusste Handlung sein
+ * und kein Nebeneffekt davon, dass die Suche nichts gefunden hat.
  */
 export function Mitspielersuche(props: Props) {
   const [suche, setSuche] = useState("");
@@ -55,9 +71,8 @@ export function Mitspielersuche(props: Props) {
   }
 
   function gastHinzu() {
-    const name = suche.trim();
-    if (!name || voll) return;
-    props.onGaeste([...props.gaeste, name]);
+    if (voll) return;
+    props.onGaeste([...props.gaeste, GAST]);
     setSuche("");
   }
 
@@ -85,10 +100,10 @@ export function Mitspielersuche(props: Props) {
           ))}
           {props.gaeste.map((g, i) => (
             <li key={`g${i}`} className="gast">
-              <span>{g} (Gast)</span>
+              <span>{g}</span>
               <button
                 type="button"
-                aria-label={`Gast ${g} entfernen`}
+                aria-label={`Gast ${i + 1} entfernen`}
                 onClick={() => props.onGaeste(props.gaeste.filter((_, k) => k !== i))}
               >
                 ×
@@ -120,29 +135,41 @@ export function Mitspielersuche(props: Props) {
                 e.preventDefault();
                 const erster = treffer[0];
                 if (erster) mitgliedHinzu(erster.id);
-                else gastHinzu();
               }
             }}
           />
 
           {suche.trim().length > 0 && (
             <ul className="trefferliste" role="listbox" aria-label="Gefundene Mitglieder">
-              {treffer.map((m) => (
-                <li key={m.id}>
-                  <button type="button" onClick={() => mitgliedHinzu(m.id)}>
-                    {m.last_name}, {m.first_name}
-                  </button>
-                </li>
-              ))}
-              <li className="gast-anlegen">
-                <button type="button" onClick={gastHinzu}>
-                  „{suche.trim()}“ als Gast eintragen
-                </button>
-              </li>
+              {treffer.length === 0 ? (
+                <li className="leer">Niemand gefunden.</li>
+              ) : (
+                treffer.map((m) => (
+                  <li key={m.id}>
+                    <button type="button" onClick={() => mitgliedHinzu(m.id)}>
+                      {m.last_name}, {m.first_name}
+                    </button>
+                  </li>
+                ))
+              )}
             </ul>
           )}
+
+          <button type="button" className="knopf leise klein gastknopf" onClick={gastHinzu}>
+            + Gast
+          </button>
         </>
+      )}
+
+      {props.gaeste.length > 0 && props.gastgebuehrCents > 0 && (
+        <p className="mit gasthinweis">
+          Für jeden Gast werden {euro(props.gastgebuehrCents)} berechnet und mit der nächsten
+          Lastschrift eingezogen.
+        </p>
       )}
     </div>
   );
 }
+
+const EURO = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
+const euro = (cents: number) => EURO.format(cents / 100);

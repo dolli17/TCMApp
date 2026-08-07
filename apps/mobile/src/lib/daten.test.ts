@@ -75,7 +75,19 @@ describe("bucheplatz", () => {
       p_booking_type_code: "einzel",
       p_player_member_ids: ["m1"],
       p_guest_names: ["Gast"],
+      p_partner_wanted: false,
     });
+  });
+
+  it("gibt weiter, dass Mitspieler gesucht werden", async () => {
+    rpc.mockResolvedValue({ data: "neue-id", error: null });
+
+    await bucheplatz("platz-1", new Date(), "doppel", [], [], true);
+
+    expect(rpc).toHaveBeenCalledWith(
+      "create_booking",
+      expect.objectContaining({ p_partner_wanted: true }),
+    );
   });
 
   it("uebersetzt einen belegten Platz in einen verstaendlichen Satz", async () => {
