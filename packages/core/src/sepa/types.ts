@@ -20,7 +20,12 @@ export type SequenceType = "FRST" | "RCUR" | "OOFF" | "FNAL";
 
 export type MandateScope = "fees_only" | "all_payments";
 
-export type ChargeKind = "fee" | "drinks" | "deposit" | "work_duty" | "misc";
+/**
+ * Muss zu public.charge_kind passen. `guest` kam mit der Gastgebuehr dazu und
+ * fehlte hier - der Dateierzeuger haette nicht uebersetzt, sobald eine solche
+ * Forderung in einen Lauf kommt.
+ */
+export type ChargeKind = "fee" | "drinks" | "deposit" | "work_duty" | "guest" | "misc";
 
 export interface Creditor {
   /** Name, wie er auf dem Kontoauszug des Mitglieds erscheint. */

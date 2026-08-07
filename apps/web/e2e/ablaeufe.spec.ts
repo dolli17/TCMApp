@@ -1106,6 +1106,29 @@ test.describe("Verwaltung", () => {
     await expect(page.locator("table.liste")).not.toContainText("9,99");
   });
 
+  test("die Lastschriftläufe sagen, was zum Einziehen noch fehlt", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/kasse/lastschriften");
+
+    await expect(page.getByRole("heading", { name: "Lastschriftläufe" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Neuer Lastschriftlauf" })).toBeVisible();
+
+    // Ohne Gläubiger-ID und Vereins-IBAN lässt sich keine Datei bauen. Das muss
+    // hier stehen und nicht erst beim Klick auf „erzeugen".
+    await expect(page.locator(".hinweis.fehler")).toContainText(/Gläubiger|IBAN/);
+  });
+
+  test("die Lastschriftdatei ist keinem normalen Mitglied zugänglich", async ({ page }) => {
+    // Der Route Handler läuft nicht durch app/admin/layout.tsx — er muss sich
+    // selbst schützen. Vergisst man das, liegt eine Datei mit dreihundert
+    // IBANs offen im Netz.
+    await anmelden(page, NUTZER.mitglied);
+    const antwort = await page.request.get(
+      "/admin/kasse/lastschriften/00000000-0000-0000-0000-000000000000/datei",
+    );
+    expect(antwort.status()).toBe(403);
+  });
+
   test("alte Adressen leiten auf die neuen um", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
 

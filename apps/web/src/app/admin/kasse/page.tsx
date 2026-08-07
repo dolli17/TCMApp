@@ -15,6 +15,7 @@ const ABSCHNITTE = [
   { wert: "lauf", label: "Beitragslauf" },
   { wert: "getraenke", label: "Getränkemonate" },
   { wert: "forderungen", label: "Forderungen" },
+  { wert: "lastschrift", label: "Lastschrift" },
   { wert: "arten", label: "Beitragsarten" },
   { wert: "regeln", label: "Regeln" },
 ] as const;
@@ -41,8 +42,9 @@ export default async function KasseSeite({
 
   const supabase = await createServerSupabase();
 
-  const [vorschauRes, einstellungRes, monateRes, forderungenRes, artenRes, offenRes] =
-    await Promise.all([
+  const [
+    vorschauRes, einstellungRes, monateRes, forderungenRes, artenRes, offenRes, laeufeRes,
+  ] = await Promise.all([
     gewaehlt === "lauf"
       ? supabase.rpc("fee_run_preview", { p_year: jahr })
       : Promise.resolve({ data: null, error: null }),
@@ -66,6 +68,9 @@ export default async function KasseSeite({
       : Promise.resolve({ data: null, error: null }),
     gewaehlt === "lauf"
       ? supabase.rpc("announceable_charges", { p_kind: "fee", p_period_label: String(jahr) })
+      : Promise.resolve({ data: null, error: null }),
+    gewaehlt === "lastschrift"
+      ? supabase.rpc("debit_batch_overview", { p_limit: 6 })
       : Promise.resolve({ data: null, error: null }),
   ]);
 
@@ -114,6 +119,8 @@ export default async function KasseSeite({
           />
         </>
       )}
+
+      {gewaehlt === "lastschrift" && <Lastschriftband laeufe={laeufeRes.data ?? []} />}
 
       {gewaehlt === "arten" && (
         <BeitragsartenPflege
@@ -303,6 +310,56 @@ function Beitragslauf({
         Fälligkeit an die Mitglieder; erst nach Ablauf der Frist darf eingezogen werden.
       </p>
     </>
+  );
+}
+
+const LAUF_STAND: Record<string, string> = {
+  draft: "Entwurf",
+  generated: "Datei erzeugt",
+  submitted: "eingereicht",
+  completed: "abgeschlossen",
+};
+
+/**
+ * Der Einstieg in die Lastschriftläufe.
+ *
+ * Bewusst nur ein Ausschnitt mit Weg dorthin: ein Lauf ist ein Vorgang über
+ * mehrere Tage und braucht eine eigene Adresse, die man verlinken kann.
+ */
+function Lastschriftband({
+  laeufe,
+}: {
+  laeufe: { id: string; title: string; collection_date: string; status: string;
+            total_cents: number; item_count: number }[];
+}) {
+  return (
+    <section className="karte">
+      <h2 className="dpl">Lastschriftläufe</h2>
+      <p className="unterzeile">
+        Aus angekündigten Forderungen wird eine Datei fürs Onlinebanking.
+      </p>
+
+      {laeufe.length === 0 ? (
+        <p className="leer">Es gibt noch keinen Lastschriftlauf.</p>
+      ) : (
+        <ul className="wegweiser">
+          {laeufe.map((l) => (
+            <li key={l.id}>
+              <Link href={`/admin/kasse/lastschriften/${l.id}`}>{l.title}</Link> –{" "}
+              {new Intl.DateTimeFormat("de-DE").format(new Date(l.collection_date))},{" "}
+              {l.item_count} {l.item_count === 1 ? "Lastschrift" : "Lastschriften"} über{" "}
+              {formatCents(l.total_cents)} · {LAUF_STAND[l.status] ?? l.status}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="fenster-fuss">
+        <Link className="knopf" href="/admin/kasse/lastschriften">
+          Zu den Lastschriftläufen
+        </Link>
+      </div>
+    </section>
   );
 }
 

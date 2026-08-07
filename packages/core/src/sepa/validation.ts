@@ -53,6 +53,10 @@ export function isMandateExpired(
  * Ein Mandat, dessen Text nur Mitgliedsbeitraege nennt, traegt den monatlichen
  * Getraenkeeinzug nicht. Zieht der Verein trotzdem ein, kann das Mitglied noch
  * 13 Monate lang widersprechen statt der ueblichen 8 Wochen.
+ *
+ * Arbeitsdienst und Pfand gehen mit: beides sind Pflichten aus der
+ * Mitgliedschaft selbst. Gastgebuehr und Sonstiges nicht - sie entstehen aus
+ * einer einzelnen Handlung und sind vom Beitragstext nicht gedeckt.
  */
 export function mandateCoversKind(
   scope: "fees_only" | "all_payments",
@@ -162,6 +166,22 @@ export function validateBatch(
       add("error", `Die Mandatsreferenz "${item.mandate.reference}" kommt mehrfach vor.`, item);
     }
     gesehen.add(key);
+
+    // Eine zu lange Kennung wird beim Schreiben gekuerzt - und zwar am Ende,
+    // wo das Unterscheidende steht. Aus 300 Lastschriften wuerden 300 mit
+    // derselben Kennung, ohne dass es jemandem auffiele. Deshalb ein Fehler
+    // und keine Warnung.
+    if (item.endToEndId.length > 35) {
+      add(
+        "error",
+        `Die Kennung "${item.endToEndId}" ist ${item.endToEndId.length} Zeichen lang. ` +
+          "Erlaubt sind 35; laengere wuerden gekuerzt und damit mehrdeutig.",
+        item,
+      );
+    }
+    if (!item.endToEndId.trim()) {
+      add("error", "Die Kennung fehlt.", item);
+    }
 
     if (item.remittanceInfo.length > 140) {
       add("warning", "Der Verwendungszweck wird auf 140 Zeichen gekuerzt.", item);

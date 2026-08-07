@@ -235,6 +235,16 @@ describe("Abbruchbedingungen", () => {
     expect(() => buildPain008(lauf({ items: [] }), HEUTE)).toThrow(/keine Posten/);
   });
 
+  it("bricht bei zu langer Kennung ab, statt sie zu kuerzen", () => {
+    // Gefunden im ersten echten Durchstich: die Kennung war 45 Zeichen lang,
+    // wurde beim Schreiben auf 35 gekuerzt - und zwar am Ende, wo der Zahler
+    // steht. Aus 300 unterscheidbaren Lastschriften wurden 300 mit derselben
+    // Kennung, ohne dass irgendetwas fehlgeschlagen waere.
+    expect(() =>
+      buildPain008(lauf({ items: [posten({ endToEndId: "X".repeat(45) })] }), HEUTE),
+    ).toThrow(/35/);
+  });
+
   it("bricht bei Betrag null ab", () => {
     expect(() =>
       buildPain008(lauf({ items: [posten({ amountCents: 0 })] }), HEUTE),
@@ -269,7 +279,7 @@ describe("isMandateExpired", () => {
 
 describe("mandateCoversKind", () => {
   it("all_payments deckt alles", () => {
-    for (const kind of ["fee", "drinks", "deposit", "work_duty", "misc"] as const) {
+    for (const kind of ["fee", "drinks", "deposit", "work_duty", "guest", "misc"] as const) {
       expect(mandateCoversKind("all_payments", kind)).toBe(true);
     }
   });
@@ -280,6 +290,13 @@ describe("mandateCoversKind", () => {
     expect(mandateCoversKind("fees_only", "deposit")).toBe(true);
     expect(mandateCoversKind("fees_only", "drinks")).toBe(false);
     expect(mandateCoversKind("fees_only", "misc")).toBe(false);
+  });
+
+  it("fees_only deckt auch keine Gastgebuehr", () => {
+    // Sie entsteht aus einer einzelnen Buchung, nicht aus der Mitgliedschaft.
+    // Der Wert kam mit der Gastgebuehr in charge_kind dazu und fehlte in
+    // ChargeKind - eine solche Forderung haette den Erzeuger nicht passiert.
+    expect(mandateCoversKind("fees_only", "guest")).toBe(false);
   });
 });
 

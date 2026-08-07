@@ -41,9 +41,10 @@ sie danach zurück. Die Tests hinterlassen also keinen Zustand – auch nicht di
 | `10_getraenkekarte.sql` | Preise, Preishistorie, Karte pflegen |
 | `11_forderungen.sql` | Beitragslauf, Getränkemonat, Beitragsarten, Forderungen |
 | `12_vorabankuendigung.sql` | Frist, Bündelung je Zahler, Idempotenz der Ankündigung |
+| `13_lastschrift.sql` | Auswahl, Mandatsdeckung, Bündelung, Datei und Einreichung |
 | `99_runtests.sql` | Führt die Suite aus |
 
-Die Dateien `01` bis `10` **definieren nur Funktionen**. Ausgeführt wird alles in
+Die Dateien `01` bis `13` **definieren nur Funktionen**. Ausgeführt wird alles in
 `99_runtests.sql` – die Nummer sorgt dafür, dass `pg_prove` erst definiert und dann
 ausführt. Jede Definitionsdatei schließt mit einem `plan(1)` plus `pass()`; ohne
 Plan hält `pg_prove` eine Datei für kaputt und meldet „No subtests run".
@@ -86,3 +87,13 @@ perform set_config('role', 'postgres', true);   -- zurück zum Eigentümer
 Nach einem Wechsel auf `authenticated` besteht **kein** Zugriff mehr auf das
 Schema `tests`. Alle Helferaufrufe und Zeitberechnungen müssen deshalb vorher
 passieren – sonst stirbt der Test mit `permission denied for schema tests`.
+
+## Vor `pnpm db:test` zurücksetzen
+
+`runtests()` rollt jede Testfunktion zurück, aber es sieht den **Bestand** der
+Datenbank. Wer vorher von Hand einen Beitragslauf ausgeführt und angekündigt
+hat, hinterlässt dreihundert unversandte Benachrichtigungen – und die Tests um
+`claim_notification_mails`, die „genau eine" erwarten, schlagen fehl, ohne dass
+am Code etwas falsch wäre.
+
+Deshalb: nach jedem manuellen Durchspielen erst `pnpm db:reset`, dann testen.

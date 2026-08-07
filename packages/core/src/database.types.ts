@@ -600,6 +600,7 @@ export type Database = {
           batch_id: string
           charge_id: string
           created_at: string
+          end_to_end_id: string | null
           id: string
           mandate_id: string
           mandate_reference: string
@@ -614,6 +615,7 @@ export type Database = {
           batch_id: string
           charge_id: string
           created_at?: string
+          end_to_end_id?: string | null
           id?: string
           mandate_id: string
           mandate_reference: string
@@ -628,6 +630,7 @@ export type Database = {
           batch_id?: string
           charge_id?: string
           created_at?: string
+          end_to_end_id?: string | null
           id?: string
           mandate_id?: string
           mandate_reference?: string
@@ -1771,6 +1774,14 @@ export type Database = {
         }
         Returns: string
       }
+      add_charges_to_debit_batch: {
+        Args: { p_batch_id: string; p_payer_ids?: string[] }
+        Returns: {
+          aufgenommen: number
+          summe_cents: number
+          uebersprungen: number
+        }[]
+      }
       am_i_admin: { Args: never; Returns: boolean }
       announce_charges: {
         Args: {
@@ -1942,6 +1953,10 @@ export type Database = {
         }
         Returns: string
       }
+      create_debit_batch: {
+        Args: { p_collection_date: string; p_title: string }
+        Returns: string
+      }
       create_manual_charge: {
         Args: {
           p_amount_cents: number
@@ -2030,6 +2045,77 @@ export type Database = {
       deactivate_bank_account: {
         Args: { p_bank_account_id: string }
         Returns: undefined
+      }
+      debit_batch_candidates: {
+        Args: {
+          p_collection_date: string
+          p_kinds?: Database["public"]["Enums"]["charge_kind"][]
+        }
+        Returns: {
+          amount_cents: number
+          arten: string
+          charge_ids: string[]
+          einzugsfaehig: boolean
+          grund: string
+          mandate_id: string
+          mandate_reference: string
+          mandate_scope: Database["public"]["Enums"]["mandate_scope"]
+          payer_id: string
+          payer_name: string
+          positionen: number
+        }[]
+      }
+      debit_batch_items: {
+        Args: { p_batch_id: string }
+        Returns: {
+          amount_cents: number
+          end_to_end_id: string
+          mandate_reference: string
+          mitglieder: string
+          payer_name: string
+          positionen: number
+          result: Database["public"]["Enums"]["debit_item_result"]
+          return_reason: string
+          returned_on: string
+        }[]
+      }
+      debit_batch_overview: {
+        Args: { p_limit?: number }
+        Returns: {
+          collection_date: string
+          created_at: string
+          hat_datei: boolean
+          id: string
+          item_count: number
+          positionen: number
+          status: Database["public"]["Enums"]["debit_batch_status"]
+          title: string
+          total_cents: number
+          zurueck: number
+        }[]
+      }
+      debit_batch_payload: {
+        Args: { p_batch_id: string }
+        Returns: {
+          amount_cents: number
+          collection_date: string
+          creditor_bic: string
+          creditor_iban: string
+          creditor_id: string
+          creditor_name: string
+          debtor_iban: string
+          debtor_name: string
+          end_to_end_id: string
+          kind: Database["public"]["Enums"]["charge_kind"]
+          mandate_last_used_on: string
+          mandate_reference: string
+          mandate_scope: Database["public"]["Enums"]["mandate_scope"]
+          mandate_signed_on: string
+          pain_version: string
+          remittance_info: string
+          sequence_type: Database["public"]["Enums"]["mandate_sequence"]
+          title: string
+        }[]
       }
       decline_membership_application: {
         Args: { p_application_id: string; p_note?: string }
@@ -2151,6 +2237,19 @@ export type Database = {
       }
       mark_application_spam: {
         Args: { p_application_id: string }
+        Returns: undefined
+      }
+      mark_debit_batch_generated: {
+        Args: {
+          p_batch_id: string
+          p_item_count: number
+          p_storage_path: string
+          p_total_cents: number
+        }
+        Returns: undefined
+      }
+      mark_debit_batch_submitted: {
+        Args: { p_batch_id: string; p_submitted_on?: string }
         Returns: undefined
       }
       mark_notifications_read: { Args: { p_ids?: string[] }; Returns: number }
@@ -2398,6 +2497,10 @@ export type Database = {
         Returns: string
       }
       release_notification_mails: { Args: { p_ids: string[] }; Returns: number }
+      remove_charge_from_debit_batch: {
+        Args: { p_item_id: string }
+        Returns: undefined
+      }
       remove_drink_price: {
         Args: { p_item_id: string; p_valid_from: string }
         Returns: undefined
