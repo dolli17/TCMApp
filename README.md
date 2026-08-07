@@ -14,6 +14,28 @@ Rund 300 aktive Mitglieder, 8 Sandplätze.
 | Beiträge & SEPA | Jahresbeitragslauf, Mandatsverwaltung, `pain.008`-Export |
 | Arbeitsdienst | Soll-/Ist-Stunden, Ausgleich in Geld zum Jahresende |
 
+## Der Weg des Geldes
+
+Fünf Zustände, jeder mit eigenem Riegel. Er gilt für jede Forderungsart gleich –
+Beitrag, Getränke, Arbeitsdienst, Gastgebühr:
+
+```
+Forderung entsteht → Vorabankündigung → Lastschriftlauf → Datei → Rückläufer
+   charges.open        .notified          debit_items      pain.008   .returned
+```
+
+**Zwei Regeln tragen den Ablauf.** Angekündigt und eingezogen wird **je Zahler**,
+nicht je Forderung: ein Elternteil mit zwei Kindern liest eine Nachricht über den
+Gesamtbetrag und sieht eine Buchung auf dem Kontoauszug. Und die
+**Vorabankündigungsfrist ist nicht umgehbar** – sie hängt an der Forderung
+(`notified_at`), wird bei der Auswahl geprüft und noch einmal im Trigger auf
+`debit_items`; die direkten Schreibrechte auf beide Tabellen sind entzogen.
+
+**Wo die App endet:** bei der fertigen `.xml`. Der Vorstand lädt sie im
+Onlinebanking hoch; von der Bank kommt keine Rückmeldung. Rückläufer trägt
+deshalb ein Mensch ein – über die `EndToEndId`, also genau das Feld, das ein
+späterer `camt`-Import liefern würde.
+
 ## Technik
 
 - **Backend**: Supabase (Postgres, Auth, RLS, Edge Functions, Storage)
