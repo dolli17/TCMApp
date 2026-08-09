@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { useCallback, useRef } from "react";
+import { Text, View } from "react-native";
+import { Bildschirm } from "@/components/Bildschirm";
 import { ladeBenachrichtigungen, markiereBenachrichtigungenGelesen } from "@/lib/daten";
+import { useLaden } from "@/lib/laden";
 import { useTheme } from "@/lib/theme";
 
 const ZEIT = new Intl.DateTimeFormat("de-DE", {
@@ -11,58 +13,44 @@ const ZEIT = new Intl.DateTimeFormat("de-DE", {
 /**
  * Was sich an den eigenen Buchungen geändert hat.
  *
- * Zwei Dinge sind hier anders als vorher in der Kontoseite:
+ * Zwei Dinge sind hier anders als in einer gewöhnlichen Liste:
  *
  * Erstens werden die Nachrichten erst beim Öffnen *dieses* Bildschirms als
  * gelesen markiert, nicht beim Öffnen des Kontos. Vorher verlor jemand seinen
  * Ungelesen-Stand, weil er seine Forderungen nachsehen wollte.
  *
- * Zweitens bleibt der ungelesene Zustand beim ersten Anzeigen sichtbar: der
- * Stand wird beim Laden festgehalten und erst beim nächsten Aufruf verworfen.
- * Ohne das markiert die Seite still als gelesen, was sie nie hervorgehoben hat.
+ * Zweitens bleibt der ungelesene Zustand beim ersten Anzeigen sichtbar: erst
+ * wird gerendert, dann abgehakt. Beim Herunterziehen unterbleibt das Abhaken
+ * ganz - wer die Liste bewusst neu lädt, will sehen, was inzwischen kam, und
+ * nicht dabei zusehen, wie die Hervorhebung ein zweites Mal verschwindet.
  */
 export default function Nachrichten() {
   const { stil, farben } = useTheme();
-  const [nachrichten, setNachrichten] =
-    useState<Awaited<ReturnType<typeof ladeBenachrichtigungen>>>([]);
-  const [laedt, setLaedt] = useState(true);
-  const [fehler, setFehler] = useState<string | null>(null);
+  const schonAbgehakt = useRef(false);
 
-  useEffect(() => {
-    let abgebrochen = false;
+  const laden = useCallback(async () => {
+    const liste = await ladeBenachrichtigungen();
 
-    ladeBenachrichtigungen()
-      .then(async (liste) => {
-        if (abgebrochen) return;
-        // Erst anzeigen, dann abhaken - in dieser Reihenfolge, damit die
-        // Hervorhebung überhaupt einmal zu sehen war.
-        setNachrichten(liste);
-        if (liste.some((n) => n.read_at === null)) {
-          await markiereBenachrichtigungenGelesen().catch(() => {});
-        }
-      })
-      .catch((f: Error) => setFehler(f.message))
-      .finally(() => {
-        if (!abgebrochen) setLaedt(false);
-      });
+    if (!schonAbgehakt.current && liste.some((n) => n.read_at === null)) {
+      schonAbgehakt.current = true;
+      // Ohne await: die Liste soll sofort stehen, das Abhaken darf nachlaufen.
+      void markiereBenachrichtigungenGelesen().catch(() => {});
+    }
 
-    return () => {
-      abgebrochen = true;
-    };
+    return liste;
   }, []);
 
-  if (laedt) {
-    return (
-      <View style={[stil.seite, { justifyContent: "center" }]}>
-        <ActivityIndicator color={farben.blue} />
-      </View>
-    );
-  }
+  const zustand = useLaden(laden);
+  const nachrichten = zustand.daten ?? [];
 
   return (
-    <ScrollView style={stil.seite} contentContainerStyle={stil.inhalt}>
-      {fehler && <Text style={stil.hinweisFehler}>{fehler}</Text>}
-
+    <Bildschirm
+      ohneFussleiste
+      laedt={zustand.laedt}
+      aktualisiert={zustand.aktualisiert}
+      onAktualisieren={zustand.neuLaden}
+      fehler={zustand.fehler}
+    >
       {nachrichten.length === 0 ? (
         <Text style={stil.leise}>Es liegt nichts vor.</Text>
       ) : (
@@ -74,12 +62,12 @@ export default function Nachrichten() {
               n.read_at === null && { borderColor: farben.blue, borderWidth: 1.5 },
             ]}
           >
-            <Text style={{ fontWeight: "600" }}>{n.title}</Text>
+            <Text style={[stil.text, { fontFamily: "Barlow_600SemiBold" }]}>{n.title}</Text>
             <Text style={stil.leise}>{n.body}</Text>
             <Text style={stil.leise}>{ZEIT.format(new Date(n.created_at))} Uhr</Text>
           </View>
         ))
       )}
-    </ScrollView>
+    </Bildschirm>
   );
 }

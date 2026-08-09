@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { useCallback, useState } from "react";
+import { Pressable, Text, View } from "react-native";
+import { Bildschirm } from "@/components/Bildschirm";
 import { ladeMeineBuchungen, storniereBuchung, verlasseBuchung } from "@/lib/daten";
+import { useLaden } from "@/lib/laden";
 import { useTheme } from "@/lib/theme";
 
 const TAG = new Intl.DateTimeFormat("de-DE", {
@@ -23,22 +25,13 @@ const UHR = new Intl.DateTimeFormat("de-DE", {
  */
 export default function MeineBuchungen() {
   const { stil, farben } = useTheme();
-  const [buchungen, setBuchungen] = useState<Awaited<ReturnType<typeof ladeMeineBuchungen>>>([]);
-  const [laedt, setLaedt] = useState(true);
   const [laeuft, setLaeuft] = useState(false);
-  const [fehler, setFehler] = useState<string | null>(null);
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [nachfrage, setNachfrage] = useState<string | null>(null);
 
-  const laden = useCallback(async () => {
-    setBuchungen(await ladeMeineBuchungen());
-  }, []);
-
-  useEffect(() => {
-    laden()
-      .catch((f: Error) => setFehler(f.message))
-      .finally(() => setLaedt(false));
-  }, [laden]);
+  const laden = useCallback(() => ladeMeineBuchungen(), []);
+  const zustand = useLaden(laden);
+  const buchungen = zustand.daten ?? [];
 
   async function beenden(id: string, binBucher: boolean) {
     setLaeuft(true);
@@ -46,20 +39,16 @@ export default function MeineBuchungen() {
     setLaeuft(false);
     setNachfrage(null);
     setMeldung({ ok: r.ok, text: r.meldung });
-    if (r.ok) await laden().catch(() => {});
-  }
-
-  if (laedt) {
-    return (
-      <View style={[stil.seite, { justifyContent: "center" }]}>
-        <ActivityIndicator color={farben.blue} />
-      </View>
-    );
+    if (r.ok) await zustand.erneutHolen();
   }
 
   return (
-    <ScrollView style={stil.seite} contentContainerStyle={stil.inhalt}>
-      {fehler && <Text style={stil.hinweisFehler}>{fehler}</Text>}
+    <Bildschirm
+      laedt={zustand.laedt}
+      aktualisiert={zustand.aktualisiert}
+      onAktualisieren={zustand.neuLaden}
+      fehler={zustand.fehler}
+    >
       {meldung && (
         <Text style={meldung.ok ? stil.hinweisErfolg : stil.hinweisFehler}>{meldung.text}</Text>
       )}
@@ -77,8 +66,10 @@ export default function MeineBuchungen() {
           return (
             <View key={b.booking_id} style={stil.karte}>
               <View style={stil.zeile}>
-                <Text style={{ fontWeight: "600" }}>{b.court_name ?? "Platz"}</Text>
-                <Text style={stil.zahl}>
+                <Text style={[stil.text, { fontFamily: "Barlow_600SemiBold" }]}>
+                  {b.court_name ?? "Platz"}
+                </Text>
+                <Text style={[stil.text, stil.zahl]}>
                   {UHR.format(von)}–{UHR.format(bis)}
                 </Text>
               </View>
@@ -107,6 +98,6 @@ export default function MeineBuchungen() {
           );
         })
       )}
-    </ScrollView>
+    </Bildschirm>
   );
 }

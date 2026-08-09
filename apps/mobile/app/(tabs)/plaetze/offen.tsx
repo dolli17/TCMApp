@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { useCallback, useState } from "react";
+import { Pressable, Text, View } from "react-native";
+import { Bildschirm } from "@/components/Bildschirm";
 import { ladeOffeneSpiele, spieleMit } from "@/lib/daten";
+import { useLaden } from "@/lib/laden";
 import { useTheme } from "@/lib/theme";
 
 const TAG = new Intl.DateTimeFormat("de-DE", {
@@ -19,41 +21,28 @@ const UHR = new Intl.DateTimeFormat("de-DE", {
  */
 export default function OffeneSpiele() {
   const { stil, farben } = useTheme();
-  const [spiele, setSpiele] = useState<Awaited<ReturnType<typeof ladeOffeneSpiele>>>([]);
-  const [laedt, setLaedt] = useState(true);
   const [laeuft, setLaeuft] = useState(false);
-  const [fehler, setFehler] = useState<string | null>(null);
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const laden = useCallback(async () => {
-    setSpiele(await ladeOffeneSpiele());
-  }, []);
-
-  useEffect(() => {
-    laden()
-      .catch((f: Error) => setFehler(f.message))
-      .finally(() => setLaedt(false));
-  }, [laden]);
+  const laden = useCallback(() => ladeOffeneSpiele(), []);
+  const zustand = useLaden(laden);
+  const spiele = zustand.daten ?? [];
 
   async function mitspielen(id: string) {
     setLaeuft(true);
     const r = await spieleMit(id);
     setLaeuft(false);
     setMeldung({ ok: r.ok, text: r.meldung });
-    if (r.ok) await laden().catch(() => {});
-  }
-
-  if (laedt) {
-    return (
-      <View style={[stil.seite, { justifyContent: "center" }]}>
-        <ActivityIndicator color={farben.blue} />
-      </View>
-    );
+    if (r.ok) await zustand.erneutHolen();
   }
 
   return (
-    <ScrollView style={stil.seite} contentContainerStyle={stil.inhalt}>
-      {fehler && <Text style={stil.hinweisFehler}>{fehler}</Text>}
+    <Bildschirm
+      laedt={zustand.laedt}
+      aktualisiert={zustand.aktualisiert}
+      onAktualisieren={zustand.neuLaden}
+      fehler={zustand.fehler}
+    >
       {meldung && (
         <Text style={meldung.ok ? stil.hinweisErfolg : stil.hinweisFehler}>{meldung.text}</Text>
       )}
@@ -71,8 +60,10 @@ export default function OffeneSpiele() {
           return (
             <View key={o.booking_id} style={stil.karte}>
               <View style={stil.zeile}>
-                <Text style={{ fontWeight: "600" }}>{o.court_name ?? "Platz"}</Text>
-                <Text style={stil.zahl}>
+                <Text style={[stil.text, { fontFamily: "Barlow_600SemiBold" }]}>
+                  {o.court_name ?? "Platz"}
+                </Text>
+                <Text style={[stil.text, stil.zahl]}>
                   {UHR.format(von)}–{UHR.format(bis)}
                 </Text>
               </View>
@@ -81,7 +72,9 @@ export default function OffeneSpiele() {
                 {o.type_name} · {o.owner_name ?? "unbekannt"}
                 {o.players.length > 0 ? ` · mit ${o.players.join(", ")}` : ""}
               </Text>
-              <Text style={[stil.leise, { color: farben.gold, fontWeight: "700" }]}>
+              <Text
+                style={[stil.leise, { color: farben.gold, fontFamily: "Barlow_700Bold" }]}
+              >
                 {o.frei === 1 ? "noch ein Platz frei" : `noch ${o.frei} Plätze frei`}
               </Text>
 
@@ -101,6 +94,6 @@ export default function OffeneSpiele() {
           );
         })
       )}
-    </ScrollView>
+    </Bildschirm>
   );
 }

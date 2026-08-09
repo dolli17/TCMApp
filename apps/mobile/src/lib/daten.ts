@@ -6,7 +6,7 @@
  * uebersetzt Fehler in verstaendliche Saetze.
  */
 
-import { translateDbError } from "@tcm/core";
+import { memberProfileSchema, translateDbError } from "@tcm/core";
 import { supabase } from "./supabase";
 
 export interface Ergebnis<T = void> {
@@ -29,6 +29,28 @@ export async function anmelden(email: string, passwort: string): Promise<Ergebni
 
 export async function abmelden(): Promise<void> {
   await supabase.auth.signOut();
+}
+
+/**
+ * Die Antwort ist immer dieselbe - auch im Fehlerfall. Wer hier erfaehrt, dass
+ * es zu einer Adresse kein Konto gibt, kann die Mitgliederliste abfragen.
+ * Dieselbe Entscheidung wie in apps/web/src/app/passwort-vergessen/page.tsx.
+ */
+export async function passwortLinkAnfordern(
+  email: string,
+  rueckleitung: string,
+): Promise<Ergebnis> {
+  await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: rueckleitung });
+  return {
+    ok: true,
+    meldung: "Wenn es zu dieser Adresse ein Konto gibt, ist die E-Mail unterwegs.",
+  };
+}
+
+export async function passwortSetzen(passwort: string): Promise<Ergebnis> {
+  const { error } = await supabase.auth.updateUser({ password: passwort });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Passwort gespeichert." };
 }
 
 export async function ladeTagesplan(datum: string) {
@@ -163,6 +185,211 @@ export async function storniereBuchung(bookingId: string): Promise<Ergebnis> {
   const { error } = await supabase.rpc("cancel_booking", { p_booking_id: bookingId });
   if (error) return { ok: false, meldung: translateDbError(error) };
   return { ok: true, meldung: "Buchung storniert." };
+}
+
+/** Genau die Felder, die der Spalten-Grant auf members hergibt. */
+export const STAMMDATENFELDER = [
+  "first_name", "last_name", "title", "phone", "mobile", "street", "postcode", "city",
+] as const;
+
+export type Stammdaten = Record<(typeof STAMMDATENFELDER)[number], string>;
+
+// Bewusst ein type und kein interface: nur Typaliase bekommen von TypeScript
+// eine stillschweigende Index-Signatur, und das Formular nimmt seine Werte als
+// Record<string, string> entgegen.
+export type Notfallkontakt = {
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  emergency_contact_relation: string;
+};
+
+export async function ladeMeineStammdaten(): Promise<
+  (Stammdaten & Notfallkontakt) | null
+> {
+  const { id } = await ladeIchSelbst();
+  if (!id) return null;
+
+  const { data, error } = await supabase
+    .from("members")
+    // Als ein Stueck: aus einer zusammengesetzten Zeichenkette kann der
+    // Supabase-Client den Rueckgabetyp nicht mehr ableiten.
+    .select("first_name, last_name, title, phone, mobile, street, postcode, city, emergency_contact_name, emergency_contact_phone, emergency_contact_relation")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw new Error(translateDbError(error));
+  if (!data) return null;
+
+  // Aus null wird der leere Text: das Formular arbeitet mit Zeichenketten,
+  // und ein null im TextInput waere ein Absturz.
+  const alsText = (w: unknown) => (w == null ? "" : String(w));
+  return {
+    first_name: alsText(data.first_name),
+    last_name: alsText(data.last_name),
+    title: alsText(data.title),
+    phone: alsText(data.phone),
+    mobile: alsText(data.mobile),
+    street: alsText(data.street),
+    postcode: alsText(data.postcode),
+    city: alsText(data.city),
+    emergency_contact_name: alsText(data.emergency_contact_name),
+    emergency_contact_phone: alsText(data.emergency_contact_phone),
+    emergency_contact_relation: alsText(data.emergency_contact_relation),
+  };
+}
+
+/**
+ * Eigene Stammdaten speichern.
+ *
+ * Ohne RPC, genau wie in apps/web/src/app/konto/aktionen.ts: die Policy
+ * members_update_own, der Spalten-Grant und der Trigger guard_member_self_update
+ * lassen genau diese Felder zu. Die Regel steht also weiter in der Datenbank,
+ * nur als Rechteentscheid statt als Funktion.
+ *
+ * Es gehen ausschliesslich geaenderte Spalten hinaus. Der Trigger weist den
+ * ganzen Vorgang ab, sobald eine Spalte dabei ist, die nicht auf seiner Liste
+ * steht - ein vollstaendiger Datensatz wuerde also nie durchkommen.
+ */
+export async function speichereStammdaten(neu: Stammdaten, alt: Stammdaten): Promise<Ergebnis> {
+  const { id } = await ladeIchSelbst();
+  if (!id) return { ok: false, meldung: "Nicht angemeldet." };
+
+  const geaendert = STAMMDATENFELDER.filter((f) => neu[f].trim() !== alt[f].trim());
+  if (geaendert.length === 0) return { ok: false, meldung: "Nichts geändert." };
+
+  // Erst pruefen, dann schicken: eine vierstellige Postleitzahl soll nicht als
+  // Datenbankfehler zurueckkommen, sondern als Satz, der das Feld nennt.
+  const geprueft = memberProfileSchema.safeParse({
+    firstName: neu.first_name,
+    lastName: neu.last_name,
+    title: neu.title,
+    phone: neu.phone,
+    mobile: neu.mobile,
+    street: neu.street,
+    postcode: neu.postcode,
+    city: neu.city,
+  });
+
+  if (!geprueft.success) {
+    return { ok: false, meldung: geprueft.error.issues[0]?.message ?? "Bitte die Eingaben prüfen." };
+  }
+
+  const d = geprueft.data;
+
+  // Vor- und Nachname sind NOT NULL und duerfen nie als null im Patch landen.
+  const patch: {
+    first_name?: string; last_name?: string;
+    title?: string | null; phone?: string | null; mobile?: string | null;
+    street?: string | null; postcode?: string | null; city?: string | null;
+  } = {};
+
+  const dabei = (f: (typeof STAMMDATENFELDER)[number]) => geaendert.includes(f);
+
+  if (dabei("first_name")) patch.first_name = d.firstName;
+  if (dabei("last_name")) patch.last_name = d.lastName;
+  if (dabei("title")) patch.title = d.title || null;
+  if (dabei("phone")) patch.phone = d.phone || null;
+  if (dabei("mobile")) patch.mobile = d.mobile || null;
+  if (dabei("street")) patch.street = d.street || null;
+  if (dabei("postcode")) patch.postcode = d.postcode || null;
+  if (dabei("city")) patch.city = d.city || null;
+
+  const { error } = await supabase.from("members").update(patch).eq("id", id);
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Gespeichert." };
+}
+
+/**
+ * Eigener Vorgang, weil die Felder nicht zu memberProfileSchema gehoeren - und
+ * weil es ein eigener Gedanke ist: wen rufen wir an, wenn etwas passiert.
+ */
+export async function speichereNotfallkontakt(k: Notfallkontakt): Promise<Ergebnis> {
+  const { id } = await ladeIchSelbst();
+  if (!id) return { ok: false, meldung: "Nicht angemeldet." };
+
+  const name = k.emergency_contact_name.trim();
+  const telefon = k.emergency_contact_phone.trim();
+
+  // Der Constraint in der Datenbank verlangt dasselbe; hier steht es nur
+  // frueher und in einem Satz, der erklaert warum.
+  if (telefon && !name) {
+    return { ok: false, meldung: "Zur Notfallnummer gehört auch ein Name." };
+  }
+
+  const { error } = await supabase
+    .from("members")
+    .update({
+      emergency_contact_name: name || null,
+      emergency_contact_phone: telefon || null,
+      emergency_contact_relation: k.emergency_contact_relation.trim() || null,
+    })
+    .eq("id", id);
+
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Notfallkontakt gespeichert." };
+}
+
+export async function ladeMeineMerkmale() {
+  const { id } = await ladeIchSelbst();
+  if (!id) return [];
+
+  const { data, error } = await supabase.rpc("member_attributes", { p_member_id: id });
+  if (error) throw new Error(translateDbError(error));
+  return data ?? [];
+}
+
+export async function setzeMerkmal(
+  code: string,
+  optionWert?: string,
+  textWert?: string,
+): Promise<Ergebnis> {
+  const { id } = await ladeIchSelbst();
+  if (!id) return { ok: false, meldung: "Nicht angemeldet." };
+
+  const { error } = await supabase.rpc("set_member_attribute", {
+    p_member_id: id,
+    p_type_code: code,
+    p_option_value: optionWert ?? undefined,
+    p_text_value: textWert ?? undefined,
+  });
+
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Gespeichert." };
+}
+
+export async function entferneMerkmal(code: string, optionWert?: string): Promise<Ergebnis> {
+  const { id } = await ladeIchSelbst();
+  if (!id) return { ok: false, meldung: "Nicht angemeldet." };
+
+  const { error } = await supabase.rpc("remove_member_attribute", {
+    p_member_id: id,
+    p_type_code: code,
+    p_option_value: optionWert ?? undefined,
+  });
+
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Entfernt." };
+}
+
+export async function storniereGetraenk(purchaseId: string): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("void_drink_purchase", {
+    p_purchase_id: purchaseId,
+    p_reason: "Fehlbuchung",
+  });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Zurückgenommen." };
+}
+
+/** Wie lange man eine Entnahme selbst zuruecknehmen darf, in Minuten. */
+export async function ladeStornoFenster(): Promise<number> {
+  const { data, error } = await supabase
+    .from("settings")
+    .select("key, value")
+    .eq("key", "drinks.void_window_minutes")
+    .maybeSingle();
+
+  if (error || !data) return 15;
+  return Number(data.value) || 15;
 }
 
 export async function ladeVerzeichnis(suche = "") {

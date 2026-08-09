@@ -12,14 +12,47 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const rpc = vi.fn();
 const signIn = vi.fn();
+const getUser = vi.fn();
+/** Schreibt mit, was an .update() ging - je Tabelle. */
+const update = vi.fn();
+
+/** Was eine Abfrage je Tabelle zurueckgibt; die Tests setzen das nach Bedarf. */
+let listen: Record<string, unknown> = {};
+let einzelne: Record<string, unknown> = {};
+
+/**
+ * Eine Kette, die auf alles reagiert, was die Datenschicht aufruft.
+ *
+ * Der echte Abfragebauer von Supabase ist selbst wartbar - er laesst sich
+ * awaiten, ohne dass eine Endmethode aufgerufen wurde. Das bildet `then` nach;
+ * ohne das haengt jedes `await supabase.from(...).update(...).eq(...)`.
+ */
+function kette(tabelle: string) {
+  const k: Record<string, unknown> = {
+    select: () => k,
+    eq: () => k,
+    is: () => k,
+    order: () => k,
+    limit: () => k,
+    maybeSingle: () => Promise.resolve(einzelne[tabelle] ?? { data: null, error: null }),
+    update: (patch: unknown) => {
+      update(tabelle, patch);
+      return k;
+    },
+    then: (aufloesen: (w: unknown) => unknown) =>
+      Promise.resolve(listen[tabelle] ?? { data: [], error: null }).then(aufloesen),
+  };
+  return k;
+}
 
 vi.mock("./supabase", () => ({
   supabase: {
     rpc: (...args: unknown[]) => rpc(...args),
-    auth: { signInWithPassword: (...args: unknown[]) => signIn(...args) },
-    from: () => ({
-      select: () => ({ eq: () => ({ order: () => ({ data: [], error: null }) }) }),
-    }),
+    auth: {
+      signInWithPassword: (...args: unknown[]) => signIn(...args),
+      getUser: () => getUser(),
+    },
+    from: (tabelle: string) => kette(tabelle),
   },
   istKonfiguriert: () => true,
 }));
@@ -29,16 +62,37 @@ const {
   anmelden,
   bucheGetraenk,
   bucheplatz,
+  entferneMerkmal,
   ladeKontingent,
+  setzeMerkmal,
   spieleMit,
+  speichereNotfallkontakt,
+  speichereStammdaten,
   storniereBuchung,
+  storniereGetraenk,
   sucheMitspieler,
   verlasseBuchung,
 } = await import("./daten");
 
+/** Stammdaten, wie sie aus der Datenbank kaemen. */
+const STAMM = {
+  first_name: "Anna", last_name: "Meier", title: "", phone: "", mobile: "",
+  street: "Hauptstr. 1", postcode: "76456", city: "Kuppenheim",
+};
+
 beforeEach(() => {
   rpc.mockReset();
   signIn.mockReset();
+  getUser.mockReset();
+  update.mockReset();
+
+  listen = {};
+  einzelne = {};
+
+  // Angemeldet als Mitglied m-1, ohne Adminrolle.
+  getUser.mockResolvedValue({ data: { user: { id: "auth-1" } } });
+  einzelne.members = { data: { id: "m-1" }, error: null };
+  listen.member_roles = { data: [], error: null };
 });
 
 describe("anmelden", () => {
@@ -248,5 +302,124 @@ describe("sich austragen", () => {
     const r = await verlasseBuchung("buchung-1");
     expect(r.ok).toBe(false);
     expect(r.meldung).toContain("zu wenige Spieler");
+  });
+});
+
+describe("speichereStammdaten", () => {
+  it("schickt nur geänderte Spalten", async () => {
+    // Die zentrale Regel: der Trigger guard_member_self_update weist den
+    // ganzen Vorgang ab, sobald eine Spalte dabei ist, die er nicht kennt.
+    // Ein vollständiger Datensatz käme also nie durch.
+    listen.members = { data: null, error: null };
+    await speichereStammdaten({ ...STAMM, city: "Rastatt" }, STAMM);
+    expect(update).toHaveBeenCalledWith("members", { city: "Rastatt" });
+  });
+
+  it("meldet, wenn sich nichts geändert hat", async () => {
+    const r = await speichereStammdaten(STAMM, STAMM);
+    expect(r.ok).toBe(false);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("weist eine vierstellige Postleitzahl ab, bevor sie die Datenbank sieht", async () => {
+    const r = await speichereStammdaten({ ...STAMM, postcode: "7645" }, STAMM);
+    expect(r.ok).toBe(false);
+    expect(r.meldung).toContain("fünfstellig");
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("macht aus einem geleerten Feld null, nicht den leeren Text", async () => {
+    // Die Spalten sind nullable; ein leerer Text wäre ein Wert und würde
+    // etwa in der Adressliste als gesetzte, aber leere Straße erscheinen.
+    listen.members = { data: null, error: null };
+    await speichereStammdaten({ ...STAMM, street: "" }, STAMM);
+    expect(update).toHaveBeenCalledWith("members", { street: null });
+  });
+
+  it("lässt Vor- und Nachname nie leer werden", async () => {
+    const r = await speichereStammdaten({ ...STAMM, first_name: "" }, STAMM);
+    expect(r.ok).toBe(false);
+    expect(update).not.toHaveBeenCalled();
+  });
+});
+
+describe("speichereNotfallkontakt", () => {
+  it("verlangt einen Namen zur Nummer", async () => {
+    // Denselben Constraint hat die Datenbank; hier kommt der Satz früher und
+    // erklärt sich selbst.
+    const r = await speichereNotfallkontakt({
+      emergency_contact_name: "",
+      emergency_contact_phone: "0170 1234567",
+      emergency_contact_relation: "",
+    });
+    expect(r.ok).toBe(false);
+    expect(r.meldung).toContain("Name");
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("speichert Name und Nummer zusammen", async () => {
+    listen.members = { data: null, error: null };
+    await speichereNotfallkontakt({
+      emergency_contact_name: "Bernd Meier",
+      emergency_contact_phone: "0170 1234567",
+      emergency_contact_relation: "Ehemann",
+    });
+    expect(update).toHaveBeenCalledWith("members", {
+      emergency_contact_name: "Bernd Meier",
+      emergency_contact_phone: "0170 1234567",
+      emergency_contact_relation: "Ehemann",
+    });
+  });
+});
+
+describe("Merkmale", () => {
+  it("setzt ein Merkmal für das eigene Mitglied", async () => {
+    rpc.mockResolvedValue({ error: null });
+    await setzeMerkmal("newsletter", "true");
+    expect(rpc).toHaveBeenCalledWith("set_member_attribute", {
+      p_member_id: "m-1",
+      p_type_code: "newsletter",
+      p_option_value: "true",
+      p_text_value: undefined,
+    });
+  });
+
+  it("entfernt ein Merkmal", async () => {
+    rpc.mockResolvedValue({ error: null });
+    await entferneMerkmal("newsletter");
+    expect(rpc).toHaveBeenCalledWith("remove_member_attribute", {
+      p_member_id: "m-1",
+      p_type_code: "newsletter",
+      p_option_value: undefined,
+    });
+  });
+});
+
+describe("Getränke", () => {
+  it("reicht die Menge durch", async () => {
+    rpc.mockResolvedValue({ error: null });
+    await bucheGetraenk("artikel-1", 3);
+    expect(rpc).toHaveBeenCalledWith("record_drink_purchase", {
+      p_item_id: "artikel-1",
+      p_quantity: 3,
+    });
+  });
+
+  it("nimmt eine Entnahme mit Grund zurück", async () => {
+    rpc.mockResolvedValue({ error: null });
+    await storniereGetraenk("kauf-1");
+    expect(rpc).toHaveBeenCalledWith("void_drink_purchase", {
+      p_purchase_id: "kauf-1",
+      p_reason: "Fehlbuchung",
+    });
+  });
+
+  it("übersetzt das abgelaufene Stornofenster", async () => {
+    rpc.mockResolvedValue({
+      error: { code: "P0001", message: "Das Stornofenster ist abgelaufen." },
+    });
+    const r = await storniereGetraenk("kauf-1");
+    expect(r.ok).toBe(false);
+    expect(r.meldung).toContain("Stornofenster");
   });
 });

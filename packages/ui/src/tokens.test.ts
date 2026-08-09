@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { alsCssName, farben, paletteFuer, schatten } from "./tokens";
+import { alsCssName, farben, paletteFuer, schatten, schattenRn } from "./tokens";
 
 const hier = dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(join(hier, "tokens.css"), "utf-8");
@@ -65,6 +65,43 @@ describe("tokens.css stimmt mit tokens.ts überein", () => {
     expect(css).toContain("@media (prefers-color-scheme: dark)");
     // Wer von Hand hell gewaehlt hat, soll nicht vom System ueberstimmt werden
     expect(css).toContain(':root:not([data-theme="hell"])');
+  });
+});
+
+describe("schattenRn", () => {
+  // schattenRn erscheint nie in der CSS - der Abgleich oben kann hier also
+  // nicht greifen. Was bleibt, ist die Vollstaendigkeit: fehlt im dunklen
+  // Theme eine Stufe, faellt der Schatten dort stumm weg, und die Karten
+  // liegen flach auf dem Hintergrund, ohne dass eine Fehlermeldung kommt.
+
+  it("kennt dieselben Stufen wie die CSS-Schatten", () => {
+    for (const theme of ["hell", "dunkel"] as const) {
+      expect(Object.keys(schattenRn[theme]).sort(), `Theme ${theme}`).toEqual(
+        Object.keys(schatten[theme]).sort(),
+      );
+    }
+  });
+
+  it("beide Themes haben dieselben Stufen", () => {
+    expect(Object.keys(schattenRn.dunkel).sort()).toEqual(Object.keys(schattenRn.hell).sort());
+  });
+
+  it("jede Stufe bringt alle Felder mit, die React Native braucht", () => {
+    // shadowRadius allein reicht unter Android nicht, elevation allein nicht
+    // unter iOS - fehlt eines von beiden, sieht man den Schatten auf genau
+    // einer Plattform.
+    const erwartet = [
+      "elevation",
+      "shadowColor",
+      "shadowOffset",
+      "shadowOpacity",
+      "shadowRadius",
+    ];
+    for (const theme of ["hell", "dunkel"] as const) {
+      for (const [stufe, werte] of Object.entries(schattenRn[theme])) {
+        expect(Object.keys(werte).sort(), `${theme}.${stufe}`).toEqual(erwartet);
+      }
+    }
   });
 });
 

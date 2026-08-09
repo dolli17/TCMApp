@@ -1452,6 +1452,7 @@ export type Database = {
           kind: string
           mailed_at: string | null
           member_id: string
+          pushed_at: string | null
           read_at: string | null
           title: string
         }
@@ -1462,6 +1463,7 @@ export type Database = {
           kind: string
           mailed_at?: string | null
           member_id: string
+          pushed_at?: string | null
           read_at?: string | null
           title: string
         }
@@ -1472,12 +1474,54 @@ export type Database = {
           kind?: string
           mailed_at?: string | null
           member_id?: string
+          pushed_at?: string | null
           read_at?: string | null
           title?: string
         }
         Relationships: [
           {
             foreignKeyName: "notifications_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_tokens: {
+        Row: {
+          created_at: string
+          device_name: string | null
+          disabled_at: string | null
+          id: string
+          last_seen_at: string
+          member_id: string
+          platform: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          device_name?: string | null
+          disabled_at?: string | null
+          id?: string
+          last_seen_at?: string
+          member_id: string
+          platform: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          device_name?: string | null
+          disabled_at?: string | null
+          id?: string
+          last_seen_at?: string
+          member_id?: string
+          platform?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "members"
@@ -1908,6 +1952,15 @@ export type Database = {
           notification_ids: string[]
         }[]
       }
+      claim_notification_pushes: {
+        Args: { p_limit?: number }
+        Returns: {
+          items: Json
+          member_id: string
+          notification_ids: string[]
+          tokens: string[]
+        }[]
+      }
       close_billing_period: {
         Args: { p_month: number; p_year: number }
         Returns: {
@@ -2138,6 +2191,7 @@ export type Database = {
         Returns: undefined
       }
       delete_work_duty: { Args: { p_entry_id: string }; Returns: undefined }
+      disable_push_token: { Args: { p_token: string }; Returns: undefined }
       drink_item_overview: {
         Args: never
         Returns: {
@@ -2538,7 +2592,15 @@ export type Database = {
         }
         Returns: string
       }
+      register_push_token: {
+        Args: { p_device_name?: string; p_platform: string; p_token: string }
+        Returns: undefined
+      }
       release_notification_mails: { Args: { p_ids: string[] }; Returns: number }
+      release_notification_pushes: {
+        Args: { p_ids: string[] }
+        Returns: number
+      }
       remove_charge_from_debit_batch: {
         Args: { p_item_id: string }
         Returns: undefined
@@ -2559,6 +2621,7 @@ export type Database = {
         Args: { p_fee_type_id: string; p_member_id: string; p_year: number }
         Returns: undefined
       }
+      remove_push_token: { Args: { p_token: string }; Returns: undefined }
       remove_work_duty_rule: {
         Args: { p_fee_type_id: string; p_year: number }
         Returns: undefined

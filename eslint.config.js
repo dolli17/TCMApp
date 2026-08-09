@@ -33,4 +33,16 @@ export default tseslint.config(
       "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },
+  {
+    // Werkzeug-Konfigurationen laufen in Node und muessen CommonJS sein:
+    // Metro laedt seine Konfiguration mit require, bevor irgendein
+    // Modulsystem der App im Spiel ist.
+    files: ["**/metro.config.js", "**/*.cjs"],
+    languageOptions: {
+      globals: { __dirname: "readonly", module: "writable", require: "readonly" },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 );

@@ -171,6 +171,11 @@ additional_redirect_urls = [
   "http://127.0.0.1:3000/passwort-setzen",
   "http://localhost:3000/login",
   "http://127.0.0.1:3000/login",
+  # Die App. Das erste Ziel gilt im fertigen Build, das zweite in Expo Go -
+  # dort laeuft der Link ueber den Entwicklungsserver. Beide muessen fuer die
+  # Cloud zusaetzlich im Dashboard unter "Redirect URLs" stehen.
+  "tcm://passwort-setzen",
+  "exp://127.0.0.1:8081/--/passwort-setzen",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600

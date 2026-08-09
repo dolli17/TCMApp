@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, AppState, Pressable, ScrollView, Text, View } from "react-native";
+import { AppState, Pressable, ScrollView, Text, View } from "react-native";
 import { berlinTime } from "@tcm/core";
+import { abstand, radius } from "@tcm/ui";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme";
 import {
@@ -12,7 +13,9 @@ import {
   alsUhrzeit, lokaleMinuten, zuMinuten,
   type Belegung, type Buchungsart, type Fenster, type Mitglied,
 } from "@/lib/plan";
+import { Bildschirm } from "@/components/Bildschirm";
 import { BuchungsFenster } from "@/components/BuchungsFenster";
+import { Verlaufsflaeche } from "@/components/Verlaufsflaeche";
 
 const heuteInBerlin = () =>
   new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
@@ -28,6 +31,14 @@ function lesbar(datum: string): string {
   const [j, m, t] = datum.split("-").map(Number);
   return new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "2-digit", month: "long" })
     .format(new Date(j!, (m ?? 1) - 1, t));
+}
+
+/** Kurzform fuer die Datumsleiste: "Sa 9." */
+function kurzerTag(datum: string): string {
+  const [j, m, t] = datum.split("-").map(Number);
+  const d = new Date(j!, (m ?? 1) - 1, t);
+  const wochentag = new Intl.DateTimeFormat("de-DE", { weekday: "short" }).format(d);
+  return `${wochentag} ${d.getDate()}.`;
 }
 
 /**
@@ -54,11 +65,19 @@ export default function Plan() {
   const [meineId, setMeineId] = useState<string | null>(null);
   const [fenster, setFenster] = useState<Fenster | null>(null);
   const [laedt, setLaedt] = useState(true);
+  const [aktualisiert, setAktualisiert] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const laden = useCallback(async (tag: string) => {
-    setLaedt(true);
+  /**
+   * still: ohne Ladekreis nachladen.
+   *
+   * Das Nachladen durch Realtime oder durch Herunterziehen darf den Inhalt
+   * nicht gegen einen Ladekreis tauschen - bei einer Serienanlage flackerte
+   * sonst der ganze Bildschirm, obwohl sich nur eine Zeile geaendert hat.
+   */
+  const laden = useCallback(async (tag: string, still = false) => {
+    if (!still) setLaedt(true);
     const [p, b, k, e, a, v, ich, meine] = await Promise.all([
       ladePlaetze(), ladeTagesplan(tag), ladeKontingent(), ladeBuchungseinstellungen(),
       ladeBuchungsarten(), ladeVerzeichnis(""), ladeIchSelbst(), ladeMeineBuchungen(),
@@ -83,6 +102,14 @@ export default function Plan() {
     });
   }, [datum, laden]);
 
+  /** Herunterziehen laedt nach, ohne den Plan gegen einen Ladekreis zu tauschen. */
+  const vonHand = useCallback(() => {
+    setAktualisiert(true);
+    laden(datum, true)
+      .catch((f: Error) => setMeldung({ ok: false, text: f.message }))
+      .finally(() => setAktualisiert(false));
+  }, [datum, laden]);
+
   /**
    * Der Plan hält sich selbst aktuell.
    *
@@ -104,14 +131,14 @@ export default function Plan() {
       const rest = 1000 - (jetzt - letzte);
       if (rest <= 0) {
         letzte = jetzt;
-        laden(datum).catch(() => {});
+        laden(datum, true).catch(() => {});
         return;
       }
       if (wartet) return;
       wartet = setTimeout(() => {
         wartet = null;
         letzte = Date.now();
-        laden(datum).catch(() => {});
+        laden(datum, true).catch(() => {});
       }, rest);
     }
 
@@ -125,7 +152,7 @@ export default function Plan() {
         // Was während des Schlafs passiert ist, hat der Kanal nicht gesehen.
         // Die Verbindung baut Supabase selbst wieder auf; die Lücke schließt
         // dieses Nachladen.
-        laden(datum).catch(() => {});
+        laden(datum, true).catch(() => {});
       }
     });
 
@@ -144,6 +171,22 @@ export default function Plan() {
   // 0 heisst unbegrenzt - die Regel bleibt in der Datenbank, nur abgeschaltet.
   const unbegrenzt = (kontingent.allowed ?? 0) <= 0;
   const kontingentAus = !unbegrenzt && kontingent.used >= kontingent.allowed;
+
+  /**
+   * Die buchbaren Tage.
+   *
+   * lead_days kommt aus booking_settings - dieselbe Zahl, gegen die
+   * create_booking prueft. Der gewaehlte Tag kommt dazu, falls jemand ueber
+   * die Pfeile in die Vergangenheit gegangen ist; sonst faellt die
+   * Hervorhebung aus der Leiste heraus.
+   */
+  const tage = useMemo(() => {
+    const heute = heuteInBerlin();
+    const vorlauf = einstellungen?.lead_days ?? 7;
+    const liste = Array.from({ length: vorlauf + 1 }, (_, i) => verschiebe(heute, i));
+    if (!liste.includes(datum)) liste.unshift(datum);
+    return liste;
+  }, [datum, einstellungen?.lead_days]);
 
   const stunden = useMemo(() => {
     const out: number[] = [];
@@ -244,8 +287,8 @@ export default function Plan() {
 
   return (
     <>
-      <ScrollView style={stil.seite} contentContainerStyle={stil.inhalt}>
-        <View style={stil.hero}>
+      <Bildschirm laedt={laedt} aktualisiert={aktualisiert} onAktualisieren={vonHand}>
+        <Verlaufsflaeche rundung={radius.hero} stil={{ padding: abstand.rand }}>
           <Text style={stil.heroKicker}>Freiplätze</Text>
           <Text style={stil.heroTitel}>{lesbar(datum)}</Text>
           <View style={stil.heroPillen}>
@@ -266,18 +309,68 @@ export default function Plan() {
               <Text style={stil.heroPilleLabel}>Plätze</Text>
             </View>
           </View>
+        </Verlaufsflaeche>
+
+        {/*
+          Die Leiste reicht von heute bis zum letzten buchbaren Tag. Ein
+          Kalender waere der uebliche Griff, wuerde aber Tage anbieten, die die
+          Datenbank ohnehin abweist. Die Pfeile bleiben daneben, damit auch
+          Vergangenes erreichbar ist.
+        */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: abstand.s }}>
+          <Pressable
+            style={[stil.knopfLeise, stil.knopfKlein]}
+            onPress={() => setDatum(verschiebe(datum, -1))}
+            accessibilityRole="button"
+            accessibilityLabel="Vortag"
+          >
+            <Text style={[stil.knopfLeiseText, stil.knopfKleinText]}>‹</Text>
+          </Pressable>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}
+            style={{ flex: 1 }}
+          >
+            {tage.map((t) => {
+              const gewaehlt = t === datum;
+              return (
+                <Pressable
+                  key={t}
+                  style={[stil.slot, gewaehlt && stil.slotAktiv, { alignItems: "center" }]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: gewaehlt }}
+                  accessibilityLabel={lesbar(t)}
+                  onPress={() => setDatum(t)}
+                >
+                  <Text style={[stil.slotText, gewaehlt && stil.slotTextAktiv]}>
+                    {kurzerTag(t)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          <Pressable
+            style={[stil.knopfLeise, stil.knopfKlein]}
+            onPress={() => setDatum(verschiebe(datum, 1))}
+            accessibilityRole="button"
+            accessibilityLabel="Folgetag"
+          >
+            <Text style={[stil.knopfLeiseText, stil.knopfKleinText]}>›</Text>
+          </Pressable>
         </View>
 
-        <View style={stil.zeile}>
-          <Pressable style={stil.knopfLeise} onPress={() => setDatum(verschiebe(datum, -1))}
-            accessibilityRole="button" accessibilityLabel="Vortag">
-            <Text style={stil.knopfLeiseText}>‹ Vortag</Text>
+        {datum !== heuteInBerlin() && (
+          <Pressable
+            style={[stil.knopfLeise, stil.knopfKlein, { alignSelf: "flex-start" }]}
+            onPress={() => setDatum(heuteInBerlin())}
+            accessibilityRole="button"
+          >
+            <Text style={[stil.knopfLeiseText, stil.knopfKleinText]}>Heute</Text>
           </Pressable>
-          <Pressable style={stil.knopfLeise} onPress={() => setDatum(verschiebe(datum, 1))}
-            accessibilityRole="button" accessibilityLabel="Folgetag">
-            <Text style={stil.knopfLeiseText}>Folgetag ›</Text>
-          </Pressable>
-        </View>
+        )}
 
         {!unbegrenzt && (
           <Text style={stil.leise}>
@@ -289,10 +382,7 @@ export default function Plan() {
           <Text style={meldung.ok ? stil.hinweisErfolg : stil.hinweisFehler}>{meldung.text}</Text>
         )}
 
-        {laedt ? (
-          <ActivityIndicator style={{ marginTop: 24 }} color={farben.blue} />
-        ) : (
-          plaetze.map((platz) => {
+        {plaetze.map((platz) => {
             const eintraege = belegung
               .filter((b) => b.court_id === platz.id)
               .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
@@ -384,9 +474,8 @@ export default function Plan() {
                 )}
               </View>
             );
-          })
-        )}
-      </ScrollView>
+        })}
+      </Bildschirm>
 
       {fenster && (
         <BuchungsFenster

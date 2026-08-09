@@ -74,6 +74,53 @@ export const schatten = {
 } as const;
 
 /**
+ * Dieselben Schatten für React Native.
+ *
+ * Bewusst ein zweites Objekt und keine Umrechnung aus `schatten`: die CSS legt
+ * zwei Schatten übereinander, React Native kennt pro View genau einen und
+ * Android nur eine einzige elevation-Stufe. Eine Konvertierungsfunktion würde
+ * eine Genauigkeit vortäuschen, die es nicht gibt. Die Werte hier bilden die
+ * kräftigere zweite Lage der CSS nach - das ist die, die man sieht.
+ *
+ * Android zeichnet ausschliesslich nach `elevation`, und nur auf Flächen mit
+ * deckendem Hintergrund; shadowOpacity allein bewirkt dort nichts.
+ */
+export const schattenRn = {
+  hell: {
+    normal: {
+      shadowColor: "#0D1B27",
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.08,
+      shadowRadius: 14,
+      elevation: 3,
+    },
+    klein: {
+      shadowColor: "#0D1B27",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.06,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+  },
+  dunkel: {
+    normal: {
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.34,
+      shadowRadius: 18,
+      elevation: 6,
+    },
+    klein: {
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.3,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+  },
+} as const;
+
+/**
  * Barlow für Fließtext, Barlow Semi Condensed für Überschriften, Buttons und
  * Zahlen. Die schmale Schnittform prägt den Charakter - ohne sie sieht das
  * Design deutlich beliebiger aus.
