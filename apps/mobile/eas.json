@@ -8,8 +8,7 @@
     "base": {
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://xvjqqjiweogtfpfgeoqz.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_Vrd1oT_d9KTwr9jfiT64Eg_LDW6IX1V",
-        "EXPO_PUBLIC_SITE_URL": ""
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_Vrd1oT_d9KTwr9jfiT64Eg_LDW6IX1V"
       }
     },
     "simulator": {

@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "TC Muckensturm",
-    "slug": "tcm-app",
+    "slug": "tcmapp",
     "version": "0.1.0",
     "orientation": "portrait",
     "scheme": "tcm",
@@ -45,8 +45,12 @@
     ],
     "extra": {
       "eas": {
-        "projectId": ""
+        "projectId": "85428fd7-79a4-4e15-936c-5b8642db71d0"
+      },
+      "router": {
+        "origin": false
       }
-    }
+    },
+    "owner": "dollis-team"
   }
 }
