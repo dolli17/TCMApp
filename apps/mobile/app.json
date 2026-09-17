@@ -7,12 +7,31 @@
     "scheme": "tcm",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A82C6"
+    },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "de.tcmuckensturm.app"
+      "supportsTablet": false,
+      "bundleIdentifier": "de.tcmuckensturm.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDevelopmentRegion": "de",
+        "CFBundleLocalizations": [
+          "de"
+        ]
+      }
     },
     "android": {
-      "package": "de.tcmuckensturm.app"
+      "package": "de.tcmuckensturm.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1A82C6"
+      }
     },
     "plugins": [
       "expo-router",

@@ -99,6 +99,11 @@ pnpm test                 # Unit- und Datenbanktests
 pnpm dev                  # Web-App
 ```
 
+Die App unter `apps/mobile` liest ihre Supabase-Werte aus `apps/mobile/.env`
+(`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`) und startet mit
+`pnpm --filter @tcm/mobile ios`. Wie sie in TestFlight kommt, steht in
+[`apps/mobile/RELEASE.md`](apps/mobile/RELEASE.md).
+
 Während der gesamten Entwicklung enthält die Datenbank **ausschließlich synthetische Daten**.
 Echte Mitgliederdaten kommen erst beim Cutover ins Spiel.
 

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#1A82C6"/>
+  <circle cx="790" cy="250" r="110" fill="#F2A900"/>
+  <path d="M700 300 Q790 250 880 300" stroke="#FFFFFF" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <path d="M700 200 Q790 250 880 200" stroke="#FFFFFF" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <text x="512" y="690" text-anchor="middle" font-family="Helvetica-Bold, Helvetica, Arial, sans-serif" font-weight="700" font-size="360" fill="#FFFFFF" letter-spacing="-8">TCM</text>
+</svg>

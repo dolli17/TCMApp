@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Linking, Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import { formatCents } from "@tcm/core";
 import { abstand } from "@tcm/ui";
@@ -183,7 +183,35 @@ export default function Konto() {
       >
         <Text style={stil.knopfLeiseText}>Abmelden</Text>
       </Pressable>
+
+      <Rechtliches />
     </Bildschirm>
+  );
+}
+
+/**
+ * Datenschutz und Impressum liegen im Web, nicht in der App: ein Text, den
+ * der Vorstand pflegt, ohne dass ein neuer Build in den Store muss. Die
+ * Basisadresse kommt aus EXPO_PUBLIC_SITE_URL (eas.json); solange sie fehlt -
+ * lokal, ohne Domain - bleiben die Zeilen weg, statt ins Leere zu zeigen.
+ */
+const SITE_URL = (process.env.EXPO_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+
+function Rechtliches() {
+  const { stil, farben } = useTheme();
+  if (!SITE_URL) return null;
+
+  const link = (pfad: string, text: string) => (
+    <Pressable onPress={() => Linking.openURL(`${SITE_URL}${pfad}`)} accessibilityRole="link">
+      <Text style={[stil.leise, { color: farben.blue }]}>{text}</Text>
+    </Pressable>
+  );
+
+  return (
+    <View style={[stil.zeile, { justifyContent: "center", gap: abstand.m, marginTop: abstand.m }]}>
+      {link("/datenschutz", "Datenschutz")}
+      {link("/impressum", "Impressum")}
+    </View>
   );
 }
 

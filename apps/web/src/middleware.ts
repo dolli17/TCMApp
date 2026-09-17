@@ -24,6 +24,10 @@ const OEFFENTLICH = [
   "/antrag",
   "/passwort-setzen",
   "/passwort-vergessen",
+  // Datenschutz und Impressum stehen in App Store Connect und im Konto-Tab der
+  // App - sie muessen fuer jeden lesbar sein, auch fuer Apples Pruefer.
+  "/datenschutz",
+  "/impressum",
 ];
 
 export async function middleware(request: NextRequest) {

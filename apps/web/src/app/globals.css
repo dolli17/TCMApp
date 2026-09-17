@@ -741,6 +741,19 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
    Nutzt dieselbe Bühne wie die Anmeldung, nur mit breiterem Blatt. */
 .antragsseite .sheet { max-width: 640px; }
 
+/* Datenschutz und Impressum: Fließtext auf dem Blatt. Die Blatt-Breite kommt
+   von .antragsseite, hier nur Absätze, Überschriften und Listen. */
+.rechtstext { max-width: 640px; }
+.rechtstext h2 {
+  font-family: var(--font-display); font-weight: 700; font-size: 18px;
+  margin: 26px 0 8px; color: var(--ink);
+}
+.rechtstext p, .rechtstext li { font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+.rechtstext p { margin: 0 0 10px; }
+.rechtstext ul { margin: 0 0 10px; padding-left: 20px; }
+.rechtstext li { margin-bottom: 8px; }
+.rechtstext strong { color: var(--ink); font-weight: 600; }
+
 /* Mehrere Belegungen in einer Stunde stehen untereinander; darunter die
    Reststunde, falls sie noch buchbar ist. */
 .zelle + .zelle { margin-top: 2px; }

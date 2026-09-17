@@ -1,0 +1,32 @@
+{
+  "cli": {
+    "version": ">= 13.0.0",
+    "appVersionSource": "remote",
+    "promptToConfigurePushNotifications": true
+  },
+  "build": {
+    "base": {
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://xvjqqjiweogtfpfgeoqz.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_Vrd1oT_d9KTwr9jfiT64Eg_LDW6IX1V",
+        "EXPO_PUBLIC_SITE_URL": ""
+      }
+    },
+    "simulator": {
+      "extends": "base",
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal"
+    },
+    "production": {
+      "extends": "base",
+      "distribution": "store",
+      "autoIncrement": true
+    }
+  }
+}

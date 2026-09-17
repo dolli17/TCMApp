@@ -81,6 +81,9 @@ function Formular() {
           <p className="beschreibung" style={{ marginTop: 12, textAlign: "center" }}>
             <Link href="/passwort-vergessen">Passwort vergessen?</Link>
           </p>
+          <p className="beschreibung" style={{ marginTop: 28, textAlign: "center" }}>
+            <Link href="/datenschutz">Datenschutz</Link> · <Link href="/impressum">Impressum</Link>
+          </p>
         </form>
       </div>
     </div>
