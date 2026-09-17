@@ -10,6 +10,7 @@ import { MitgliedschaftsKarte } from "@/components/MitgliedschaftsKarte";
 import { Reiter } from "@/components/Reiter";
 import { Stammdatenkarte, type Feld } from "@/components/Stammdatenkarte";
 import { ZugehoerigkeitKarte } from "@/components/ZugehoerigkeitKarte";
+import { MannschaftKarte } from "@/components/MannschaftKarte";
 import { stammdatenSpeichern } from "./aktionen";
 
 export const dynamic = "force-dynamic";
@@ -79,6 +80,8 @@ const FELD_LABEL: Record<string, string> = {
   emergency_contact_phone: "Notfallnummer",
   emergency_contact_relation: "Verhältnis",
   billing_payer_id: "Zahler",
+  team_id: "Mannschaft",
+  is_team_captain: "Mannschaftsführer",
   auth_user_id: "Login",
   role: "Rolle",
   number: "Mitgliedsnummer",
@@ -127,12 +130,20 @@ export default async function MitgliedSeite({
 
   // Sechs unabhängige Abfragen statt einer gebündelten RPC: sie sind über
   // database.types.ts typisiert, und RLS gilt für jede einzeln.
-  const [mitgliedRes, mitgliedschaftenRes, rollenRes, zahltFuerRes, verzeichnisRes, adminZahlRes] =
+  const [
+    mitgliedRes,
+    mitgliedschaftenRes,
+    rollenRes,
+    zahltFuerRes,
+    verzeichnisRes,
+    adminZahlRes,
+    mannschaftenRes,
+  ] =
     await Promise.all([
       supabase
         .from("members")
         .select(
-          "id, first_name, last_name, title, gender, salutation, birthday, email, phone, mobile, street, postcode, city, country_code, notes, status, is_trainer, nationality_code, tennis_lk, nuliga_id, playing_right, playing_right_since, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, billing_payer_id, auth_user_id, invited_at, login_disabled_at, source",
+          "id, first_name, last_name, title, gender, salutation, birthday, email, phone, mobile, street, postcode, city, country_code, notes, status, is_trainer, nationality_code, tennis_lk, nuliga_id, playing_right, playing_right_since, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, billing_payer_id, auth_user_id, invited_at, login_disabled_at, source, team_id, is_team_captain, teams(name)",
         )
         .eq("id", id)
         .maybeSingle(),
@@ -145,6 +156,7 @@ export default async function MitgliedSeite({
       supabase.from("members").select("id, first_name, last_name").eq("billing_payer_id", id),
       supabase.rpc("member_directory", { p_query: "" }),
       supabase.from("member_roles").select("member_id").eq("role", "admin"),
+      supabase.from("teams").select("id, name, active").order("sort_order").order("name"),
     ]);
 
   const m = mitgliedRes.data;
@@ -227,6 +239,12 @@ export default async function MitgliedSeite({
             {laufend && <span className="marke-klein">Nr. {laufend.number}</span>}
             {rollen.includes("admin") && <span className="marke-klein gold">Administrator</span>}
             {m.is_trainer && <span className="marke-klein gold">Trainer</span>}
+            {m.teams && (
+              <span className={`marke-klein${m.is_team_captain ? " gold" : ""}`}>
+                {m.teams.name}
+                {m.is_team_captain ? " · Mannschaftsführer" : ""}
+              </span>
+            )}
             {m.auth_user_id ? (
               <span className="marke-klein grau">Login vorhanden</span>
             ) : (
@@ -292,6 +310,14 @@ export default async function MitgliedSeite({
             verzeichnis={verzeichnisRes.data ?? []}
             einzigerAdmin={admins.length <= 1}
             selbst={istSelbst}
+          />
+
+          <MannschaftKarte
+            mitgliedId={id}
+            mannschaften={mannschaftenRes.data ?? []}
+            mannschaftId={m.team_id}
+            mannschaftsfuehrer={m.is_team_captain}
+            archiviert={m.status === "archived"}
           />
 
           {mitgliedschaften.length > 1 && (
@@ -459,6 +485,16 @@ async function Protokoll({ id }: { id: string }) {
     : { data: [] };
   const namen = new Map((personen ?? []).map((p) => [p.id, `${p.first_name} ${p.last_name}`]));
 
+  // Mannschaften stehen im Protokoll als Kennung; der Name sagt mehr. Auch
+  // geloeschte Mannschaften sollen lesbar bleiben, deshalb nur, was es noch
+  // gibt - der Rest zeigt die Kennung.
+  const { data: mannschaften } = await supabase.from("teams").select("id, name");
+  const mannschaftsnamen = new Map((mannschaften ?? []).map((t) => [t.id, t.name]));
+  const zeige = (feld: string, wert: unknown) =>
+    feld === "team_id" && typeof wert === "string"
+      ? (mannschaftsnamen.get(wert) ?? zeigeWert(wert))
+      : zeigeWert(wert);
+
   return (
     <section className="karte protokoll" aria-label="Änderungsprotokoll">
       <h2 className="dpl">Änderungen</h2>
@@ -502,8 +538,8 @@ async function Protokoll({ id }: { id: string }) {
                       Object.entries(diff).map(([feld, wechsel]) => (
                         <div key={feld}>
                           <span className="feld">{FELD_LABEL[feld] ?? feld}</span>:{" "}
-                          <span className="alt">{zeigeWert(wechsel?.alt)}</span>{" "}
-                          <span className="neu">{zeigeWert(wechsel?.neu)}</span>
+                          <span className="alt">{zeige(feld, wechsel?.alt)}</span>{" "}
+                          <span className="neu">{zeige(feld, wechsel?.neu)}</span>
                         </div>
                       ))
                     )}

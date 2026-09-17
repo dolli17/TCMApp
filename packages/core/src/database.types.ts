@@ -1149,6 +1149,7 @@ export type Database = {
           import_notes: string | null
           imported_at: string | null
           invited_at: string | null
+          is_team_captain: boolean
           is_trainer: boolean
           last_name: string
           legacy_data: Json | null
@@ -1165,6 +1166,7 @@ export type Database = {
           source: Database["public"]["Enums"]["record_source"]
           status: Database["public"]["Enums"]["member_status"]
           street: string | null
+          team_id: string | null
           tennis_lk: string | null
           title: string | null
           updated_at: string
@@ -1187,6 +1189,7 @@ export type Database = {
           import_notes?: string | null
           imported_at?: string | null
           invited_at?: string | null
+          is_team_captain?: boolean
           is_trainer?: boolean
           last_name: string
           legacy_data?: Json | null
@@ -1203,6 +1206,7 @@ export type Database = {
           source?: Database["public"]["Enums"]["record_source"]
           status?: Database["public"]["Enums"]["member_status"]
           street?: string | null
+          team_id?: string | null
           tennis_lk?: string | null
           title?: string | null
           updated_at?: string
@@ -1225,6 +1229,7 @@ export type Database = {
           import_notes?: string | null
           imported_at?: string | null
           invited_at?: string | null
+          is_team_captain?: boolean
           is_trainer?: boolean
           last_name?: string
           legacy_data?: Json | null
@@ -1241,6 +1246,7 @@ export type Database = {
           source?: Database["public"]["Enums"]["record_source"]
           status?: Database["public"]["Enums"]["member_status"]
           street?: string | null
+          team_id?: string | null
           tennis_lk?: string | null
           title?: string | null
           updated_at?: string
@@ -1251,6 +1257,13 @@ export type Database = {
             columns: ["billing_payer_id"]
             isOneToOne: false
             referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -1635,6 +1648,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      teams: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       work_duty_entries: {
         Row: {
@@ -2190,6 +2230,7 @@ export type Database = {
         Args: { p_code: string }
         Returns: undefined
       }
+      delete_team: { Args: { p_id: string }; Returns: undefined }
       delete_work_duty: { Args: { p_entry_id: string }; Returns: undefined }
       disable_push_token: { Args: { p_token: string }; Returns: undefined }
       drink_item_overview: {
@@ -2716,6 +2757,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_member_team: {
+        Args: {
+          p_is_captain?: boolean
+          p_member_id: string
+          p_team_id?: string
+        }
+        Returns: undefined
+      }
       set_partner_wanted: {
         Args: { p_booking_id: string; p_wanted: boolean }
         Returns: undefined
@@ -2734,6 +2783,26 @@ export type Database = {
       submit_membership_application: {
         Args: { p_data: Json; p_ip?: string; p_user_agent?: string }
         Returns: undefined
+      }
+      team_overview: {
+        Args: never
+        Returns: {
+          active: boolean
+          captain_name: string
+          id: string
+          member_count: number
+          name: string
+          sort_order: number
+        }[]
+      }
+      team_roster: {
+        Args: { p_team_id: string }
+        Returns: {
+          first_name: string
+          is_team_captain: boolean
+          last_name: string
+          member_id: string
+        }[]
       }
       unlink_auth_user: { Args: { p_member_id: string }; Returns: string }
       update_booking_players: {
@@ -2824,6 +2893,15 @@ export type Database = {
           p_self_editable?: boolean
           p_sort_order?: number
           p_value_kind?: Database["public"]["Enums"]["attribute_kind"]
+        }
+        Returns: string
+      }
+      upsert_team: {
+        Args: {
+          p_active?: boolean
+          p_id?: string
+          p_name: string
+          p_sort_order?: number
         }
         Returns: string
       }

@@ -353,6 +353,61 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(page.locator("table.liste tbody")).not.toContainText(code);
   });
 
+  test("Mannschaft anlegen, Mitglied als Mannschaftsführer eintragen, wieder löschen", async ({
+    page,
+  }) => {
+    const mannschaft = testName("Mannschaft");
+    const nachname = testName("Spieler");
+
+    await anmelden(page, NUTZER.admin);
+
+    // Anlegen - danach springt die Seite in die Bearbeitung der neuen Mannschaft
+    await page.goto("/admin/mitglieder/mannschaften");
+    const formular = page.locator('form[aria-label="Mannschaft"]');
+    await formular.getByLabel("Name").fill(mannschaft);
+    await formular.getByRole("button", { name: "Speichern" }).click();
+    await page.waitForURL(/\/admin\/mitglieder\/mannschaften\?bearbeiten=/, { timeout: 20_000 });
+    await expect(page.locator("table.liste tbody")).toContainText(mannschaft);
+    const mannschaftsAdresse = page.url();
+
+    // Am Mitglied setzen
+    const adresse = await mitgliedAnlegen(page, nachname);
+    await page.goto(`${adresse.split("?")[0]}?abschnitt=mitgliedschaft`);
+
+    const karte = page.locator('section[aria-label="Mannschaft"]');
+    await karte.getByLabel("Mannschaft", { exact: true }).selectOption({ label: mannschaft });
+    await karte.getByLabel("Mannschaftsführer").check();
+    await karte.getByRole("button", { name: "Speichern" }).click();
+    await expect(karte.locator(".hinweis.erfolg")).toContainText("Mannschaftsführer");
+
+    // Die Marke im Kopf und die Aufstellung zeigen es
+    await page.reload();
+    await expect(page.locator(".marken-reihe")).toContainText(`${mannschaft} · Mannschaftsführer`);
+
+    await page.goto(mannschaftsAdresse);
+    const aufstellung = page.locator('section[aria-label="Aufstellung"]');
+    await expect(aufstellung).toContainText(nachname);
+    await expect(aufstellung.locator(".marke-klein.gold")).toContainText("Mannschaftsführer");
+
+    // Und im Protokoll steht der Name der Mannschaft, nicht ihre Kennung
+    await page.goto(`${adresse.split("?")[0]}?abschnitt=protokoll`);
+    await expect(page.locator("table.liste tbody")).toContainText(mannschaft);
+
+    // Löschen mit Spieler: die Rückfrage nennt ihn
+    await page.goto(mannschaftsAdresse);
+    await formular.getByRole("button", { name: "Mannschaft löschen" }).click();
+    await expect(formular).toContainText("Ein Spieler wird aus der Mannschaft genommen");
+    await formular.getByRole("button", { name: "Wirklich löschen" }).click();
+    await page.waitForURL(/\/admin\/mitglieder\/mannschaften$/, { timeout: 20_000 });
+    await expect(page.locator("table.liste tbody")).not.toContainText(mannschaft);
+
+    // Das Mitglied spielt jetzt in keiner Mannschaft mehr
+    await page.goto(`${adresse.split("?")[0]}?abschnitt=mitgliedschaft`);
+    await expect(karte.getByLabel("Mannschaft", { exact: true })).toHaveValue("");
+
+    await aufraeumen(page, adresse, nachname);
+  });
+
   test("ein benutztes Merkmal lässt sich nicht löschen", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/mitglieder/merkmale?bearbeiten=foto");

@@ -43,7 +43,7 @@ export default async function KontoSeite() {
       ? supabase
           .from("members")
           .select(
-            "first_name, last_name, title, phone, mobile, street, postcode, city, email, birthday, emergency_contact_name, emergency_contact_phone, emergency_contact_relation",
+            "first_name, last_name, title, phone, mobile, street, postcode, city, email, birthday, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, is_team_captain, teams(name)",
           )
           .eq("id", meineId)
           .maybeSingle()
@@ -134,6 +134,24 @@ export default async function KontoSeite() {
           </div>
         </div>
       </div>
+
+      {/* Nur wer in einer Mannschaft spielt, sieht die Karte - fuer die
+          meisten Mitglieder waere "keine" nur eine Zeile ohne Nutzen. */}
+      {ich?.teams && (
+        <section className="karte" aria-label="Mannschaft">
+          <h2 className="dpl">Mannschaft</h2>
+          <ul className="marken">
+            <li>
+              <span>{ich.teams.name}</span>
+            </li>
+            {ich.is_team_captain && (
+              <li className="gast">
+                <span>Mannschaftsführer</span>
+              </li>
+            )}
+          </ul>
+        </section>
+      )}
 
       {ich && (
         <>

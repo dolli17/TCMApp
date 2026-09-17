@@ -41,6 +41,10 @@ const CONSTRAINT_TEXTE: Record<string, string> = {
     "Die Nationalität wird als zwei Großbuchstaben angegeben, zum Beispiel DE.",
   members_emergency_contact_paarweise:
     "Zur Notfallnummer gehört auch ein Name.",
+  teams_name_lower_key: "Eine Mannschaft mit diesem Namen gibt es schon.",
+  members_one_captain_per_team:
+    "Diese Mannschaft hat schon einen Mannschaftsführer.",
+  members_captain_needs_team: "Mannschaftsführer geht nur mit Mannschaft.",
 };
 
 const CODE_TEXTE: Record<string, string> = {

@@ -58,6 +58,7 @@ truncate table
   public.member_roles,
   public.memberships,
   public.members,
+  public.teams,
   public.booking_types,
   public.courts
 cascade;
@@ -585,6 +586,48 @@ where t.code = 'ehrung'
 on conflict (attribute_type_id, value) do nothing;
 
 -- ===========================================================================
+-- Mannschaften: vier Teams, je sechs Spieler, einer davon Mannschaftsfuehrer
+--
+-- Wie die Merkmale Vereinsdaten, keine Struktur. Die Spieler sind zufaellig
+-- gewaehlte aktive Erwachsene mit eigener Spielberechtigung; die grosse
+-- Mehrheit der 400 bleibt ohne Mannschaft - so ist es auch im echten Verein.
+-- ===========================================================================
+
+insert into public.teams (name, sort_order) values
+  ('Herren',    10),
+  ('Herren 30', 20),
+  ('Herren 50', 30),
+  ('Damen',     40);
+
+do $$
+declare
+  v_team   record;
+  v_member uuid;
+  v_i      integer;
+begin
+  for v_team in select id, name from public.teams order by sort_order loop
+    for v_i in 1..6 loop
+      select m.id into v_member
+      from public.members m
+      where m.status = 'active'
+        and m.team_id is null
+        and m.birthday is not null
+        and m.birthday <= current_date - interval '18 years'
+        and m.gender = case when v_team.name = 'Damen' then 'female'::public.gender
+                            else 'male'::public.gender end
+      order by random()
+      limit 1;
+
+      exit when v_member is null;
+
+      update public.members
+         set team_id = v_team.id, is_team_captain = (v_i = 1)
+       where id = v_member;
+    end loop;
+  end loop;
+end $$;
+
+-- ===========================================================================
 -- Anmeldbare Testkonten fuer die lokale Entwicklung
 --
 -- Der Seed legte bisher nur Mitglieder an, aber keine Logins - lokal konnte
@@ -665,6 +708,17 @@ begin
         insert into public.member_roles (member_id, role)
         values (v_member, 'admin')
         on conflict do nothing;
+      end if;
+
+      -- Das Mitgliedskonto fuehrt "Herren 30": so zeigen Konto-Seite und
+      -- Konto-Tab beim Durchklicken etwas, statt des leeren Normalfalls.
+      if v_zeile[2] = 'member' then
+        update public.members set is_team_captain = false
+         where team_id = (select id from public.teams where name = 'Herren 30');
+        update public.members
+           set team_id = (select id from public.teams where name = 'Herren 30'),
+               is_team_captain = true
+         where id = v_member;
       end if;
     end if;
   end loop;

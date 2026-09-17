@@ -7,7 +7,8 @@ import { Bildschirm } from "@/components/Bildschirm";
 import { MerkmaleKarte, type MerkmalZeile } from "@/components/MerkmaleKarte";
 import { Stammdatenformular } from "@/components/Stammdatenformular";
 import {
-  abmelden, ladeArbeitsdienst, ladeMeineForderungen, ladeMeineMerkmale, ladeMeineStammdaten,
+  abmelden, ladeArbeitsdienst, ladeMeineForderungen, ladeMeineMannschaft, ladeMeineMerkmale,
+  ladeMeineStammdaten,
   speichereNotfallkontakt, speichereStammdaten,
   type Notfallkontakt, type Stammdaten,
 } from "@/lib/daten";
@@ -32,13 +33,14 @@ export default function Konto() {
   const { stil } = useTheme();
 
   const laden = useCallback(async () => {
-    const [forderungen, dienst, stammdaten, merkmale] = await Promise.all([
+    const [forderungen, dienst, stammdaten, merkmale, mannschaft] = await Promise.all([
       ladeMeineForderungen(),
       ladeArbeitsdienst(),
       ladeMeineStammdaten(),
       ladeMeineMerkmale(),
+      ladeMeineMannschaft(),
     ]);
-    return { forderungen, dienst, stammdaten, merkmale };
+    return { forderungen, dienst, stammdaten, merkmale, mannschaft };
   }, []);
 
   const zustand = useLaden(laden);
@@ -46,6 +48,7 @@ export default function Konto() {
   const dienst = zustand.daten?.dienst ?? null;
   const stammdaten = zustand.daten?.stammdaten ?? null;
   const merkmale = (zustand.daten?.merkmale ?? []) as unknown as MerkmalZeile[];
+  const mannschaft = zustand.daten?.mannschaft ?? null;
 
   // „returned" zählt mit: eine zurückgebuchte Lastschrift ist Geld, das der
   // Verein nicht bekommen hat - die Forderung steht wieder offen.
@@ -121,6 +124,24 @@ export default function Konto() {
       )}
 
       <MerkmaleKarte zeilen={merkmale} onGeaendert={zustand.erneutHolen} />
+
+      {/* Nur wer in einer Mannschaft spielt, sieht den Abschnitt - fuer die
+          meisten Mitglieder waere "keine" nur eine Zeile ohne Nutzen. */}
+      {mannschaft && (
+        <>
+          <Text style={stil.abschnitt}>Mannschaft</Text>
+          <View style={stil.karte}>
+            <View style={stil.zeile}>
+              <Text style={[stil.text, { fontFamily: "Barlow_600SemiBold" }]}>{mannschaft.name}</Text>
+              {mannschaft.mannschaftsfuehrer && (
+                <View style={[stil.markeKlein, stil.markeKleinGold]}>
+                  <Text style={[stil.markeKleinText, stil.markeKleinGoldText]}>Mannschaftsführer</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </>
+      )}
 
       <Text style={stil.abschnitt}>Benachrichtigungen</Text>
       <PushSchalter />

@@ -238,6 +238,28 @@ export async function ladeMeineStammdaten(): Promise<
   };
 }
 
+export type Mannschaft = { name: string; mannschaftsfuehrer: boolean };
+
+/**
+ * In welcher Mannschaft spiele ich? Null fuer die meisten - das ist der
+ * Normalfall, und der Konto-Tab zeigt dann nichts. Gelesen ueber RLS wie die
+ * Stammdaten; der Mannschaftsname kommt ueber den Fremdschluessel mit.
+ */
+export async function ladeMeineMannschaft(): Promise<Mannschaft | null> {
+  const { id } = await ladeIchSelbst();
+  if (!id) return null;
+
+  const { data, error } = await supabase
+    .from("members")
+    .select("is_team_captain, teams(name)")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw new Error(translateDbError(error));
+  if (!data?.teams) return null;
+  return { name: data.teams.name, mannschaftsfuehrer: data.is_team_captain };
+}
+
 /**
  * Eigene Stammdaten speichern.
  *

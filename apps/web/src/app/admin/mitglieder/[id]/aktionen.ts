@@ -275,3 +275,34 @@ export async function beitragsartEntfernen(
   neuLaden(id);
   return { ok: true, meldung: "Beitragsart entfernt." };
 }
+
+/**
+ * Mannschaft und Mannschaftsführer-Kennzeichen in einem Zug. Keine Mannschaft
+ * heißt: den Parameter weglassen, die Datenbank trägt dann aus.
+ */
+export async function mannschaftSetzen(
+  id: string,
+  mannschaftId: string | null,
+  mannschaftsfuehrer: boolean,
+): Promise<AktionsErgebnis> {
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.rpc("set_member_team", {
+    p_member_id: id,
+    p_team_id: mannschaftId ?? undefined,
+    p_is_captain: mannschaftId ? mannschaftsfuehrer : false,
+  });
+
+  if (error) return { ok: false, meldung: translateDbError(error) };
+
+  neuLaden(id);
+  revalidatePath("/admin/mitglieder/mannschaften");
+  revalidatePath("/konto");
+  return {
+    ok: true,
+    meldung: !mannschaftId
+      ? "Spielt in keiner Mannschaft."
+      : mannschaftsfuehrer
+        ? "Als Mannschaftsführer eingetragen."
+        : "Mannschaft gespeichert.",
+  };
+}
