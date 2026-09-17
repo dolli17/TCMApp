@@ -99,6 +99,10 @@ pnpm test                 # Unit- und Datenbanktests
 pnpm dev                  # Web-App
 ```
 
+Das Web läuft auf Vercel (Projektwurzel `apps/web`, Region Frankfurt, siehe
+`apps/web/vercel.json`) unter https://app.tennisclub-muckensturm.de – jeder
+Push auf `main` geht live.
+
 Die App unter `apps/mobile` liest ihre Supabase-Werte aus `apps/mobile/.env`
 (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`) und startet mit
 `pnpm --filter @tcm/mobile ios`. Wie sie in TestFlight kommt, steht in

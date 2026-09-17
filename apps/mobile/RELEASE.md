@@ -57,7 +57,7 @@ Unter <https://appstoreconnect.apple.com> → *Meine Apps* → *+* → *Neue App
 | Zugriff | Vollzugriff |
 
 Danach unter *App-Informationen* die **Datenschutz-URL** eintragen:
-`https://<web-domain>/datenschutz` (Domain kommt von Lucas).
+`https://app.tennisclub-muckensturm.de/datenschutz`.
 
 ### 3. Hochladen
 
@@ -106,11 +106,6 @@ im Projekt des Vereins; Apple-Zugangsdaten bleiben bei dir. Melde nur:
 
 - Das App-Icon ist ein Platzhalter (`assets/icon.svg`); das echte Logo liegt
   nur in kleiner Auflösung vor.
-- Die Links „Datenschutz“ und „Impressum“ im Konto-Tab erscheinen erst, wenn
-  in `eas.json` unter `build.base.env` die Web-Adresse steht:
-  `"EXPO_PUBLIC_SITE_URL": "https://<web-domain>"` (EAS lässt keinen leeren
-  Wert zu, deshalb fehlt der Eintrag noch). Trägt Lucas ein, sobald die Domain
-  feststeht.
 - Push-Nachrichten kommen erst an, wenn die Supabase-Seite dafür scharf
   geschaltet ist (`supabase/snippets/benachrichtigungs_pushes_zeitplan.sql`).
   Das macht Lucas, sobald der erste TestFlight-Build auf einem Gerät läuft.
