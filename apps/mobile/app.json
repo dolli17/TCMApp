@@ -16,7 +16,6 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "de.tcmuckensturm.app",
-      "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleDevelopmentRegion": "de",
