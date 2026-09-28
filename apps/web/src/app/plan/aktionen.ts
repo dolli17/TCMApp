@@ -43,7 +43,7 @@ export async function buchen(formData: FormData): Promise<AktionsErgebnis> {
   }
 
   revalidatePath("/plan");
-  revalidatePath("/plan/meine");
+  revalidatePath("/plan/spiele");
   return { ok: true, meldung: "Platz gebucht." };
 }
 
@@ -72,7 +72,7 @@ export async function mitspielerAendern(
   }
 
   revalidatePath("/plan");
-  revalidatePath("/plan/meine");
+  revalidatePath("/plan/spiele");
   return { ok: true, meldung: "Mitspieler aktualisiert." };
 }
 
@@ -100,8 +100,7 @@ export async function stornieren(
   }
 
   revalidatePath("/plan");
-  revalidatePath("/plan/meine");
-  revalidatePath("/plan/offen");
+  revalidatePath("/plan/spiele");
   return { ok: true, meldung: "Buchung storniert." };
 }
 
@@ -186,7 +185,7 @@ export async function austragen(bookingId: string): Promise<AktionsErgebnis> {
   }
 
   revalidatePath("/plan");
-  revalidatePath("/plan/meine");
+  revalidatePath("/plan/spiele");
   return { ok: true, meldung: "Du bist ausgetragen." };
 }
 
@@ -205,8 +204,7 @@ export async function mitspielerSuchen(
   if (error) return { ok: false, meldung: translateDbError(error) };
 
   revalidatePath("/plan");
-  revalidatePath("/plan/meine");
-  revalidatePath("/plan/offen");
+  revalidatePath("/plan/spiele");
   return {
     ok: true,
     meldung: gesucht
@@ -230,7 +228,6 @@ export async function mitspielen(bookingId: string): Promise<AktionsErgebnis> {
   if (error) return { ok: false, meldung: translateDbError(error) };
 
   revalidatePath("/plan");
-  revalidatePath("/plan/meine");
-  revalidatePath("/plan/offen");
+  revalidatePath("/plan/spiele");
   return { ok: true, meldung: "Du bist eingetragen. Viel Spaß!" };
 }

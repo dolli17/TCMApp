@@ -104,7 +104,7 @@ export default async function Start() {
           <section aria-labelledby="h-naechstes">
             <div className="sectionlabel">
               <h2 id="h-naechstes">Als Nächstes</h2>
-              {termine.length > 0 && <Link href="/plan/meine">Alle</Link>}
+              {termine.length > 0 && <Link href="/plan/spiele">Alle</Link>}
             </div>
             {meineRes.error ? (
               <div className="hinweis fehler">Deine Termine konnten nicht geladen werden.</div>
@@ -116,7 +116,7 @@ export default async function Start() {
               </div>
             ) : (
               <div className="naechstes">
-                <Link href="/plan/meine" className="termin-karte gross">
+                <Link href="/plan/spiele" className="termin-karte gross">
                   <svg className="platzlinien" viewBox="0 0 318 216" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
                     <path d="M150 216 L210 0 M318 60 L190 216 M180 100 H318 M200 40 H318" />
                   </svg>
@@ -144,7 +144,7 @@ export default async function Start() {
                 </Link>
                 {/* Am Telefon: waagerecht wischbare Karten */}
                 {weitere.map((t) => (
-                  <Link key={t.booking_id} href="/plan/meine" className="termin-karte klein">
+                  <Link key={t.booking_id} href="/plan/spiele" className="termin-karte klein">
                     <span className="kicker">{bookingKicker(t.starts_at, t.ends_at, jetzt)}</span>
                     <span className="zeit tnum">{uhr(t.starts_at)} – {uhr(t.ends_at)}</span>
                     <span className="ort">{t.court_name} · {t.type_name}</span>
@@ -164,7 +164,7 @@ export default async function Start() {
               <Pfad d="M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8" />
               Getränk eintragen
             </Link>
-            <Link href="/plan/offen">
+            <Link href="/plan/spiele">
               <Pfad d="M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6" />
               Mitspielen
             </Link>
@@ -203,7 +203,7 @@ export default async function Start() {
           <section aria-labelledby="h-offen">
             <div className="sectionlabel">
               <h2 id="h-offen">Offene Spiele</h2>
-              <Link href="/plan/offen">Alle</Link>
+              <Link href="/plan/spiele">Alle</Link>
             </div>
             {offenRes.error ? (
               <div className="hinweis fehler">Die offenen Spiele konnten nicht geladen werden.</div>
@@ -224,7 +224,7 @@ export default async function Start() {
                     {o.bin_dabei ? (
                       <span className="dabei">Dabei</span>
                     ) : (
-                      <Link href="/plan/offen" className="mitspielen">Mitspielen</Link>
+                      <Link href="/plan/spiele" className="mitspielen">Mitspielen</Link>
                     )}
                   </li>
                 ))}

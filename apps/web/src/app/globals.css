@@ -149,45 +149,6 @@ a:hover { text-decoration: underline; }
 a.avatar:hover { text-decoration: none; }
 
 /* ---------------------------------------------------------------------------
-   Hero — Blickfang oben, Verlauf blau nach gold wie im Design
-   --------------------------------------------------------------------------- */
-/* brand statt blue: blue ist im dunklen Theme so hell, dass die weisse
-   Schrift darauf nicht mehr lesbar waere. */
-.hero {
-  position: relative; border-radius: var(--radius-kartegross); overflow: hidden;
-  background:
-    radial-gradient(120% 120% at 88% -10%, color-mix(in srgb, var(--gold) 42%, transparent), transparent 46%),
-    linear-gradient(155deg, var(--brand) 0%, color-mix(in srgb, var(--brand) 72%, #000) 96%);
-  color: #fff; padding: 20px 20px 22px;
-  box-shadow: 0 14px 30px color-mix(in srgb, var(--brand) 34%, transparent);
-  margin-bottom: 4px;
-}
-.hero .kicker { color: #fff; opacity: .85; }
-.hero h1 {
-  font-weight: 800; font-size: var(--font-size-seitentitel);
-  line-height: 1.02; letter-spacing: var(--tracking-title); margin: 9px 0 0; text-wrap: balance;
-}
-.hero .meta { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-.hero .pill {
-  flex: 1; min-width: 120px;
-  background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.16);
-  border-radius: 13px; padding: 9px 11px;
-}
-.hero .pill b {
-  display: block; font-family: var(--font-display); font-weight: 700;
-  font-size: 19px; line-height: 1.1;
-}
-.hero .pill span { font-size: 11px; opacity: .82; font-weight: 500; }
-.hero .bar {
-  margin-top: 12px; height: 8px; border-radius: 99px;
-  background: rgba(255,255,255,.24); overflow: hidden;
-}
-.hero .bar > i {
-  display: block; height: 100%; border-radius: 99px;
-  background: linear-gradient(90deg, #fff, var(--gold));
-}
-
-/* ---------------------------------------------------------------------------
    Karten und Listen
    --------------------------------------------------------------------------- */
 .karte {
@@ -326,38 +287,6 @@ table.liste .zahl {
 
 .leer { color: var(--muted); padding: 32px 0; text-align: center; }
 
-/* ---------------------------------------------------------------------------
-   Belegungsplan
-
-   Zwei Darstellungen derselben Daten. Am Telefon ist ein Raster mit acht
-   Spalten unbedienbar, deshalb dort eine Liste je Platz - wie in der
-   Expo-App. Umgeschaltet wird über die Breite, nicht über zwei Komponenten.
-   --------------------------------------------------------------------------- */
-.plan-raster { display: none; }
-
-.plan-listen { display: flex; flex-direction: column; gap: 10px; }
-.platzkarte {
-  background: var(--surf); border: 1px solid var(--line);
-  border-radius: var(--radius-kartegross); box-shadow: var(--shadow-sm);
-  padding: 14px;
-}
-.platzkarte > h3 {
-  font-family: var(--font-display); font-weight: 700; font-size: 18px;
-  margin: 0 0 4px;
-}
-.belegzeile {
-  border-left: 3px solid var(--blue); padding: 6px 0 6px 11px; margin-top: 8px;
-}
-.belegzeile.eigen { border-left-color: var(--green); }
-.belegzeile.blockung { border-left-color: var(--muted); }
-.belegzeile .zeit {
-  font-family: var(--font-display); font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.belegzeile .wer { font-weight: 600; }
-.belegzeile .mit { font-size: 12.5px; color: var(--muted); }
-
-.freie-slots { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .slotknopf {
   font: inherit; font-size: 13px; font-variant-numeric: tabular-nums;
   cursor: pointer; padding: 7px 11px; border-radius: 99px;
@@ -415,18 +344,6 @@ table.liste .zahl {
 /* ---------------------------------------------------------------------------
    Mitspieler gesucht
    --------------------------------------------------------------------------- */
-
-/* Eine ausgeschriebene Buchung ist eine Einladung - sie muss sich im Plan von
-   einer belegten Zelle unterscheiden, ohne wie ein freier Platz auszusehen. */
-.zelle.sucht-mitspieler, .belegzeile.sucht-mitspieler {
-  border: 1.5px dashed var(--gold-line);
-  background: var(--gold-soft);
-}
-.sucht {
-  display: inline-block; margin-left: 6px; padding: 0 6px;
-  border-radius: 99px; background: var(--gold); color: var(--on-gold);
-  font-size: 10.5px; font-weight: 700; vertical-align: middle;
-}
 
 /* Ein Schalter mit Erklaerung darunter. Ohne die Erklaerung raet man, was
    "Mitspieler gesucht" fuer die eigene Buchung bedeutet. */
@@ -550,50 +467,6 @@ table.liste .zahl {
   .plan-raster { display: block; }
 }
 
-.plan-huelle {
-  overflow-x: auto; border: 1px solid var(--line);
-  border-radius: var(--radius-kartegross); background: var(--surf);
-  box-shadow: var(--shadow);
-}
-table.plan { border-collapse: collapse; width: 100%; min-width: 720px; }
-table.plan th, table.plan td { border: 1px solid var(--line); padding: 0; }
-table.plan thead th {
-  padding: 9px 6px; font-size: 12.5px; font-weight: 700;
-  font-family: var(--font-display); background: var(--surf-2);
-  position: sticky; top: 0; z-index: 1;
-}
-table.plan .zeit {
-  width: 64px; padding: 6px 8px; font-size: 12.5px; color: var(--muted);
-  font-variant-numeric: tabular-nums; background: var(--surf-2); text-align: right;
-}
-.zelle {
-  width: 100%; min-height: 38px; display: block; padding: 5px 8px;
-  font: inherit; font-size: 12.5px; text-align: left; border: 0;
-  background: transparent; color: inherit; cursor: pointer;
-}
-.zelle.frei:hover:not(:disabled) { background: var(--blue-soft); }
-.zelle.belegt { cursor: default; background: color-mix(in srgb, var(--blue) 12%, transparent); }
-.zelle.eigen { background: color-mix(in srgb, var(--green) 16%, transparent); }
-.zelle.blockung {
-  cursor: default; background: color-mix(in srgb, var(--muted) 16%, transparent);
-  color: var(--ink-2);
-}
-.zelle.gesperrt { cursor: not-allowed; color: var(--line-2); }
-.zelle:disabled { cursor: not-allowed; }
-
-/* Eine Belegung, die man anfassen darf, muss auch danach aussehen. */
-.zelle.anklickbar { cursor: pointer; }
-.zelle.anklickbar:hover, .zelle.anklickbar:focus-visible {
-  outline: 2px solid var(--blue); outline-offset: -2px;
-}
-.belegzeile.anklickbar {
-  display: block; width: 100%; text-align: left; font: inherit; color: inherit;
-  background: transparent; border-top: 0; border-right: 0; border-bottom: 0;
-  cursor: pointer;
-}
-.belegzeile.anklickbar:hover { background: var(--chip); }
-.verwalten-hinweis { color: var(--blue); font-weight: 600; }
-
 /* ---------------------------------------------------------------------------
    Modales Fenster — natives <dialog>, damit Fokusfalle und Escape
    nicht von Hand nachgebaut werden müssen
@@ -636,34 +509,11 @@ dialog.fenster::backdrop { background: rgba(3,8,14,.62); backdrop-filter: blur(2
   padding-top: 14px; border-top: 1px solid var(--line);
 }
 
-.startwahl {
-  border: 0; padding: 0; margin: 0 0 16px; display: flex; gap: 8px; flex-wrap: wrap;
-}
-.startwahl legend {
-  font-size: 12.5px; font-weight: 600; color: var(--muted); padding: 0; margin-bottom: 7px;
-}
 .slotknopf.aktiv {
   background: var(--blue); border-color: var(--blue); color: #fff;
 }
 
 /* --- Mitspielersuche ------------------------------------------------------ */
-.mitspieler > label span {
-  display: block; font-size: 12.5px; font-weight: 600; color: var(--muted); margin-bottom: 6px;
-}
-.marken { list-style: none; margin: 0 0 9px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-.marken li {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: var(--blue-soft); color: var(--blue-ink);
-  border: 1px solid color-mix(in srgb, var(--blue) 35%, transparent);
-  border-radius: 99px; padding: 4px 5px 4px 11px; font-size: 13px; font-weight: 600;
-}
-.marken li.gast { background: var(--gold-soft); color: var(--ink); border-color: var(--gold-line); }
-.marken li button {
-  border: 0; background: transparent; color: inherit; cursor: pointer;
-  font-size: 16px; line-height: 1; padding: 0 4px; border-radius: 99px;
-}
-.marken li button:hover { background: rgba(0,0,0,.08); }
-
 /* Wegweiser auf der Verwaltungsübersicht: eine Liste, die sagt, was wo steht.
    Bewusst schlicht - sie wird gelesen, nicht bedient. */
 .wegweiser { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
@@ -806,14 +656,6 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 .rechtstext ul { margin: 0 0 10px; padding-left: 20px; }
 .rechtstext li { margin-bottom: 8px; }
 .rechtstext strong { color: var(--ink); font-weight: 600; }
-
-/* Mehrere Belegungen in einer Stunde stehen untereinander; darunter die
-   Reststunde, falls sie noch buchbar ist. */
-.zelle + .zelle { margin-top: 2px; }
-.zelle.rest {
-  min-height: 22px; font-size: 11.5px; font-weight: 600;
-  color: var(--blue-ink); background: var(--blue-soft);
-}
 
 /* Einstieg in die Verwaltung auf der Konto-Seite - nur am Telefon, ab 768 px
    steht die Verwaltung in der Seitenleiste. */
@@ -1035,6 +877,340 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
   .frei-karte { padding: 16px; }
   .frei-karte .kopf b { font-size: 22px; }
   .offen-liste { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+}
+
+/* ---------------------------------------------------------------------------
+   Plätze: Belegungsplan und Spiele (docs/design/clubhaus, WebPlan)
+
+   Zwei Darstellungen derselben Daten, umgeschaltet über die Breite:
+     < 768px  Zeit zuerst - Zeit-Chips und eine Liste aller Plätze, wie in der App
+     >= 768px Raster mit Blöcken über die ganze Dauer einer Belegung
+   --------------------------------------------------------------------------- */
+.plan-kopf {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 16px 24px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.plan-kopf .pagetitle { margin-top: 4px; }
+
+.datums-kacheln {
+  display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+  scroll-snap-type: x proximity; scroll-padding-inline: var(--space-rand);
+}
+.datums-kacheln::-webkit-scrollbar { display: none; }
+.datums-kacheln a {
+  flex: 0 0 auto; width: 58px; height: 70px; border-radius: 18px; scroll-snap-align: start;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background: var(--surf-2); color: var(--ink-2); text-decoration: none;
+}
+.datums-kacheln a:hover { text-decoration: none; background: var(--surf-3); }
+.datums-kacheln a[aria-current="date"] { background: var(--gold); color: var(--on-gold); }
+.datums-kacheln small { font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+.datums-kacheln b { font-size: 26px; line-height: 1; }
+
+/* Segment-Schalter aus Links: Belegung | Meine & offene Spiele */
+.segtoggle a {
+  flex: 1; display: flex; align-items: center; justify-content: center; min-height: 40px;
+  border-radius: calc(var(--radius-knopf) - 4px); padding: 0 10px; text-align: center;
+  font-size: 15px; font-weight: 600; color: var(--muted); text-decoration: none;
+}
+.segtoggle a:hover { text-decoration: none; color: var(--ink); }
+.segtoggle a[aria-current="page"] {
+  background: var(--seg-aktiv); color: var(--ink); font-weight: 700; box-shadow: var(--shadow-sm);
+}
+
+.plan-raster { display: none; }
+.plan-listen { display: flex; flex-direction: column; gap: 12px; }
+
+/* --- Zeit-Chips und Liste (Telefon) --------------------------------------- */
+.plan-listen > .kicker { margin: 4px 0 -2px; }
+.zeit-chips {
+  display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+  margin: 0 calc(-1 * var(--space-rand)); padding: 2px var(--space-rand);
+}
+.zeit-chips::-webkit-scrollbar { display: none; }
+.zeit-chip {
+  flex: 0 0 auto; height: 38px; padding: 0 15px; border: 0; border-radius: 19px;
+  font: inherit; font-size: 14.5px; cursor: pointer;
+  background: var(--surf-2); color: var(--ink-2);
+}
+.zeit-chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); font-weight: 700; }
+
+.platzliste {
+  background: var(--surf); border: 1px solid var(--line); border-radius: 24px;
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.platzliste-skala { position: relative; height: 30px; margin: 0 16px; border-bottom: 1px solid var(--line); }
+.platzliste-skala span {
+  position: absolute; top: 9px; font-size: 11px; font-weight: 600;
+  color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.platzzeile {
+  display: block; width: 100%; text-align: left; font: inherit; color: inherit;
+  padding: 13px 16px 14px; border: 0; border-bottom: 1px solid var(--line); background: transparent;
+}
+.platzzeile:last-child { border-bottom: 0; }
+button.platzzeile { cursor: pointer; }
+button.platzzeile:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
+button.platzzeile:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.zeilen-kopf { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 40px; }
+.zeilen-text { display: grid; min-width: 0; }
+.zeilen-text b { font-size: 19px; line-height: 1.1; }
+.zeilen-text small {
+  font-size: 13px; font-weight: 600; margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.status-frei { color: var(--green-ink); }
+.status-eigen, .status-sucht { color: var(--gold-ink); }
+.status-belegt, .status-serie, .status-gesperrt, .status-knapp, .status-vorbei, .status-schluss { color: var(--muted); }
+.zeilen-aktion {
+  flex: 0 0 auto; height: 38px; padding: 0 16px; border-radius: 19px;
+  display: inline-flex; align-items: center; font-size: 14px; font-weight: 700;
+}
+.zeilen-aktion.gelb { background: var(--gold); color: var(--on-gold); }
+.zeilen-aktion.umrandet { padding: 0 14px; border: 1.5px solid var(--gold-line); color: var(--gold-ink); }
+.zeilen-symbol { width: 18px; height: 18px; flex: 0 0 auto; color: var(--muted); }
+.platzzeile .mini-zeitleiste { margin-top: 10px; }
+
+.mini-zeitleiste.gross { height: 10px; border-radius: 5px; overflow: visible; }
+.mini-zeitleiste.gross i { border-radius: 5px; }
+.mini-zeitleiste.gross b { top: -4px; bottom: -4px; border-radius: 1px; }
+
+.legende {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 12.5px; color: var(--ink-2);
+}
+.legende li { display: inline-flex; align-items: center; gap: 6px; }
+.legende i { width: 18px; height: 10px; border-radius: 4px; }
+.legende i.eigen { background: var(--gold); }
+.legende i.belegt { background: var(--blue); }
+.legende i.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); }
+.legende i.serie, .beleg.serie {
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 12%, transparent) 0 3px, transparent 3px 6px), var(--surf-3);
+}
+.legende i.gesperrt { background: var(--surf-3); }
+
+/* --- Raster (ab 768 px) ---------------------------------------------------- */
+.raster-oben {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px 24px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.raster-oben .legende { font-size: 13px; font-weight: 600; gap: 8px 18px; }
+.raster-oben .legende i { width: 20px; height: 12px; }
+.raster-oben .legende i.belegt { background: var(--blue-soft); }
+.raster-hinweis { font-size: 13px; color: var(--muted); }
+
+.raster {
+  background: var(--surf); border: 1px solid var(--line); border-radius: 24px;
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.raster-kopf { display: grid; border-bottom: 1px solid var(--line); background: var(--surf-2); }
+.spalten-kopf { padding: 12px 10px; border-left: 1px solid var(--line); min-width: 0; }
+.spalten-kopf b { display: block; font-size: 17px; }
+.spalten-kopf small {
+  display: block; font-size: 12px; font-weight: 600; margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.raster-koerper { display: grid; position: relative; }
+.raster-zeiten { position: relative; }
+.raster-zeiten .stunde {
+  position: absolute; right: 10px; margin-top: 4px;
+  font-size: 12px; font-weight: 600; color: var(--muted);
+}
+.spalte {
+  position: relative; border-left: 1px solid var(--line); min-width: 0;
+  background: repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px 44px);
+}
+
+/* Belegungen als Blöcke über ihre ganze Dauer, Farben nach der Statustabelle.
+   Klasse .beleg, nicht .block - .block ist die Breite-Hilfsklasse der Knöpfe. */
+.beleg {
+  position: absolute; left: 5px; right: 5px; z-index: 2;
+  display: flex; flex-direction: column; overflow: hidden;
+  border: 0; border-radius: 11px; padding: 5px 9px; text-align: left;
+  font: inherit; font-size: 12.5px; line-height: 1.25;
+}
+/* Zeilen nicht zusammenquetschen - was nicht passt, schneidet der Block ab. */
+.beleg > * { flex-shrink: 0; }
+.beleg .zeit { font-weight: 700; font-variant-numeric: tabular-nums; }
+.beleg .wer { font-weight: 600; opacity: .9; }
+.beleg .mit { font-size: 11.5px; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.beleg .wer, .beleg .zeit { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.beleg.belegt { background: var(--blue-soft); color: var(--blue-ink); }
+.beleg.eigen { background: var(--gold); color: var(--on-gold); }
+.beleg.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); color: var(--gold-ink); }
+.beleg.serie { color: var(--ink-2); }
+.beleg.gesperrt { background: var(--surf-3); color: var(--muted); }
+button.beleg { cursor: pointer; }
+button.beleg:hover, button.beleg:focus-visible {
+  outline: 2px solid var(--blue); outline-offset: 1px; z-index: 3;
+}
+.sucht-marke {
+  display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 99px;
+  background: var(--gold); color: var(--on-gold); font-size: 10.5px; font-weight: 700;
+}
+
+/* Freie Zeit: unsichtbare Schaltfläche je Startzeit; beim Überfahren und beim
+   Tastatur-Fokus erscheint der gestrichelte Block "+ HH:MM buchen" über die
+   volle Spieldauer. */
+.frei-slot {
+  position: absolute; left: 0; right: 0; z-index: 1;
+  padding: 0; border: 0; background: transparent; cursor: pointer;
+}
+.frei-slot:focus-visible { outline: none; }
+.frei-slot .vorschau {
+  position: absolute; left: 5px; right: 5px; top: 2px;
+  display: none; align-items: flex-start; padding: 6px 9px;
+  border: 1.5px dashed var(--blue); border-radius: 11px;
+  background: var(--blue-soft); color: var(--blue); font-size: 12.5px; font-weight: 700;
+  pointer-events: none;
+}
+.frei-slot:hover, .frei-slot:focus-visible { z-index: 4; }
+.frei-slot:hover .vorschau, .frei-slot:focus-visible .vorschau { display: flex; }
+.frei-slot:focus-visible .vorschau { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+.jetzt-linie {
+  position: absolute; left: 58px; right: 0; height: 2px; z-index: 5;
+  background: var(--red); pointer-events: none;
+}
+.jetzt-linie span {
+  position: absolute; left: -50px; top: -9px; height: 20px; padding: 0 6px;
+  border-radius: 10px; background: var(--red); color: #fff;
+  font-size: 11px; font-weight: 700; display: inline-flex; align-items: center;
+}
+
+/* --- Spiele --------------------------------------------------------------- */
+.spiele-abschnitt .sectionlabel { margin-top: var(--space-l); }
+.spiele-abschnitt + .spiele-abschnitt .sectionlabel { margin-top: var(--space-abschnitt); }
+
+/* --- Das Buchungsblatt ---------------------------------------------------- */
+dialog.fenster.blatt {
+  width: min(520px, calc(100vw - 24px)); max-height: min(90dvh, 820px);
+  overflow-y: auto; padding: 10px 20px 22px;
+}
+.blatt .griff { display: none; }
+.blatt .fenster-kopf { background: transparent; border: 0; padding: 8px 0 14px; align-items: flex-start; }
+.blatt .fenster-kopf .kicker { margin: 0; }
+.blatt .fenster-kopf h2 {
+  font-family: var(--font-display); font-size: var(--font-size-seitentitel);
+  font-weight: 700; line-height: 1; margin: 4px 0 0;
+}
+.blatt .fenster-zu {
+  width: 44px; height: 44px; border-radius: 22px; border: 0;
+  background: var(--surf-2); color: var(--ink-2);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.blatt .fenster-zu svg { width: 18px; height: 18px; }
+.blatt .fenster-inhalt { padding: 0; max-height: none; overflow: visible; display: grid; gap: 18px; }
+.blatt .fenster-inhalt > label { margin-bottom: 0; }
+.blatt .sperrbereich { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 18px; gap: 10px; }
+.blatt .sperrbereich .fenster-fuss { border-top: 0; padding-top: 0; margin-top: 0; }
+.blatt-unterzeile { margin: -6px 0 0; font-weight: 600; }
+.gesucht-text { margin: 0; font-size: 13px; font-weight: 700; color: var(--gold-ink); }
+
+.segment-paar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.segment-stapel { display: grid; gap: 12px; }
+fieldset.segmente { border: 0; padding: 0; margin: 0; min-width: 0; }
+fieldset.segmente legend { padding: 0; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.segment-leiste { display: flex; gap: 4px; padding: 4px; border-radius: var(--radius-knopf); background: var(--surf-2); }
+.segment {
+  position: relative; flex: 1 1 0; min-width: 0; height: 40px; border-radius: calc(var(--radius-knopf) - 4px);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 600; color: var(--muted); cursor: pointer; margin: 0;
+}
+.segment input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.segment span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
+.segment:has(input:checked) { background: var(--seg-aktiv); color: var(--ink); font-weight: 700; box-shadow: var(--shadow-sm); }
+.segment:has(input:disabled) { opacity: .4; cursor: not-allowed; }
+.segment:has(input:disabled) input { cursor: not-allowed; }
+.segment:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+.mitspieler .feldname { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.chips, .marken { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.marken { list-style: none; margin: 0; padding: 0; }
+.chip {
+  display: inline-flex; align-items: center; gap: 8px; height: 40px;
+  padding: 0 14px 0 4px; border-radius: 20px; background: var(--surf-2);
+  font-size: 14.5px; font-weight: 600; color: var(--ink);
+}
+.chip .avatar { width: 32px; height: 32px; border-radius: 16px; font-size: 12px; }
+.chip.ich .avatar { background: var(--gold); color: var(--on-gold); }
+.chip.gast .avatar { background: var(--gold-soft); color: var(--gold-ink); }
+.chip.leer { background: transparent; border: 1.5px dashed var(--line-2); color: var(--muted); }
+.chip.leer .avatar { background: transparent; }
+li.chip { padding-right: 4px; }
+.chip button {
+  width: 32px; height: 32px; border: 0; border-radius: 16px; background: transparent;
+  color: var(--ink-2); font-size: 18px; line-height: 1; cursor: pointer;
+}
+.chip button:hover { background: var(--surf-3); }
+.hinzu { display: flex; gap: 8px; margin-top: 10px; }
+.gestrichelt {
+  flex: 1 1 0; min-height: 46px; border-radius: 14px; border: 1.5px dashed var(--line-2);
+  background: transparent; color: var(--ink); font: inherit; font-size: 15px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+}
+.gestrichelt:hover { border-color: var(--blue); }
+.gestrichelt svg { width: 16px; height: 16px; }
+.mitspieler .suche { margin-top: 10px; }
+.mitspieler .gasthinweis { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+
+/* label.gesucht-karte: die aeltere Regel .fenster-inhalt > label waere sonst staerker */
+.fenster-inhalt > label.gesucht-karte, .gesucht-karte {
+  display: flex; align-items: center; gap: 14px; margin: 0;
+  padding: 14px 16px; border-radius: 18px; background: var(--surf-2); cursor: pointer;
+}
+.gesucht-karte > span { display: grid; gap: 2px; flex: 1; }
+.gesucht-karte b { font-size: 16px; }
+.gesucht-karte small { font-size: 13px; line-height: 1.4; color: var(--muted); }
+.schalter-feld {
+  appearance: none; -webkit-appearance: none; position: relative; flex: 0 0 auto;
+  width: 52px; height: 32px; margin: 0; border-radius: 16px; cursor: pointer;
+  background: var(--surf-3); box-shadow: inset 0 0 0 1.5px var(--line-2);
+}
+.schalter-feld::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px;
+  border-radius: 13px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.3);
+  transition: left .15s ease;
+}
+.schalter-feld:checked { background: var(--green); box-shadow: none; }
+.schalter-feld:checked::after { left: 23px; }
+.schalter-feld:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.schalter-feld:disabled { opacity: .5; cursor: not-allowed; }
+
+.blatt-fuss { display: grid; gap: 10px; }
+.blatt-fuss .hinweis { margin: 0; }
+.knopf.gross { min-height: 58px; border-radius: 18px; font-family: var(--font-text); font-size: 17px; font-weight: 800; }
+.knopf.gefahr-leise {
+  min-height: 52px; background: transparent; color: var(--red); box-shadow: none;
+  border: 1.5px solid color-mix(in srgb, var(--red) 40%, transparent);
+}
+.knopf.gefahr-leise:hover { background: color-mix(in srgb, var(--red) 8%, transparent); }
+.knopf.gefahr.block { min-height: 52px; }
+.fussnote { margin: 0; text-align: center; font-size: 12.5px; color: var(--muted); }
+
+/* Am Telefon fährt das Blatt von unten herein */
+@media (max-width: 767px) {
+  dialog.fenster.blatt {
+    width: 100%; max-width: 100%; margin: auto 0 0; max-height: 92dvh;
+    border-radius: var(--radius-blatt) var(--radius-blatt) 0 0; border-bottom: 0;
+    padding-bottom: calc(22px + env(safe-area-inset-bottom));
+    animation: blatt-rein .26s cubic-bezier(.2, .8, .3, 1);
+  }
+  .blatt .griff { display: block; width: 38px; height: 5px; border-radius: 3px; background: var(--line-2); margin: 0 auto 6px; }
+  .datums-kacheln { margin: 0 calc(-1 * var(--space-rand)); padding: 0 var(--space-rand); width: calc(100% + 2 * var(--space-rand)); }
+  .plan-kopf { flex-direction: column; align-items: stretch; }
+}
+@keyframes blatt-rein { from { transform: translateY(100%); } to { transform: none; } }
+
+@media (min-width: 768px) {
+  /* Ab Tablet das Raster statt der Liste */
+  .plan-listen { display: none; }
+  .plan-raster { display: block; }
+
+  .datums-kacheln a { width: 54px; height: 62px; border-radius: 16px; background: var(--surf); border: 1px solid var(--line); }
+  .datums-kacheln a[aria-current="date"] { border-color: transparent; }
+  .datums-kacheln b { font-size: 23px; }
+  .plan-segmente { max-width: 420px; }
 }
 
 /* Weniger Bewegung, wenn das System danach fragt */

@@ -56,7 +56,7 @@ export function Segmente<T extends string | number>({
                 flex: 1, height: hoehe, borderRadius: radius.knopf - 4,
                 alignItems: "center", justifyContent: "center", paddingHorizontal: 6,
               },
-              aktiv && { backgroundColor: theme === "hell" ? farben.surf : farben.surf3 },
+              aktiv && { backgroundColor: farben.segAktiv },
               aktiv && theme === "hell" && schattenRn.hell.klein,
               o.deaktiviert && { opacity: 0.4 },
             ]}

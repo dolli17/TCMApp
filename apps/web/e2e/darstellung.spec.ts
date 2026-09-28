@@ -63,7 +63,7 @@ test.describe("Theme", () => {
 
 test.describe("Layout", () => {
   // "/" ist Home - mit wischbaren Reihen bis an den Rand besonders anfaellig.
-  const SEITEN = ["/", "/plan", "/getraenke", "/konto"];
+  const SEITEN = ["/", "/plan", "/plan/spiele", "/getraenke", "/konto"];
 
   test.describe("Telefon (390px)", () => {
     test.use({ viewport: { width: 390, height: 844 } });
@@ -76,14 +76,14 @@ test.describe("Layout", () => {
       await expect(page.locator(".seitenleiste")).toBeHidden();
     });
 
-    test("der Belegungsplan zeigt Karten statt Raster", async ({ page }) => {
+    test("der Belegungsplan zeigt die Liste statt des Rasters", async ({ page }) => {
       // Ein Raster mit acht Spalten waere auf 390 Pixel unbedienbar.
       await anmelden(page);
       await page.goto("/plan");
 
       await expect(page.locator(".plan-listen")).toBeVisible();
       await expect(page.locator(".plan-raster")).toBeHidden();
-      await expect(page.locator(".platzkarte")).toHaveCount(8);
+      await expect(page.locator(".plan-listen .platzzeile")).toHaveCount(8);
     });
 
     for (const pfad of SEITEN) {
@@ -125,7 +125,8 @@ test.describe("Layout", () => {
       await anmelden(page);
       await page.goto("/plan");
 
-      const slot = page.locator(".plan-listen .slotknopf").first();
+      // Eine freie Zeile der Liste - sie traegt den Knopf "Buchen".
+      const slot = page.locator(".plan-listen button.platzzeile", { hasText: "Buchen" }).first();
       test.skip((await slot.count()) === 0, "Heute ist keine Stunde mehr frei");
       await slot.click();
 
@@ -157,8 +158,30 @@ test.describe("Layout", () => {
       await anmelden(page);
       await page.goto("/plan");
 
-      await expect(page.locator("table.plan")).toBeVisible();
+      await expect(page.locator(".plan-raster .raster")).toBeVisible();
       await expect(page.locator(".plan-listen")).toBeHidden();
+    });
+
+    test("freie Zeit zeigt sich auch beim Tastatur-Fokus und öffnet mit Enter", async ({ page }) => {
+      await anmelden(page);
+      await page.goto("/plan");
+
+      const frei = page.locator(".plan-raster button.frei-slot").first();
+      test.skip((await frei.count()) === 0, "Heute ist keine Stunde mehr frei");
+      const beschriftung = (await frei.getAttribute("aria-label")) ?? "";
+      const uhr = /um (\d{2}:\d{2}) buchen/.exec(beschriftung)?.[1] ?? "";
+
+      // Wer mit der Tastatur kommt, sieht denselben gestrichelten Block wie mit der Maus.
+      await frei.focus();
+      await expect(frei.locator(".vorschau")).toBeVisible();
+      await expect(frei.locator(".vorschau")).toHaveText(`+ ${uhr} buchen`);
+
+      await page.keyboard.press("Enter");
+      const fenster = page.locator("dialog.fenster");
+      await expect(fenster).toBeVisible();
+      await expect(fenster.locator(".fenster-kopf h2")).toContainText(uhr);
+      await page.keyboard.press("Escape");
+      await expect(fenster).toHaveCount(0);
     });
 
     for (const pfad of SEITEN) {

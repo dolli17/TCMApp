@@ -256,7 +256,11 @@ export function nextSlotMinute(opts: {
   slotMinutes: number;
   now?: Date;
 }): number {
-  const jetzt = localMinutes(opts.now ?? new Date());
+  const zeit = opts.now ?? new Date();
+  // Angebrochene Minuten zaehlen als vorbei: um 13:30:20 ist 13:30 schon
+  // Vergangenheit, und canStartAt wuerde die Zeit zu Recht ablehnen.
+  const angebrochen = zeit.getUTCSeconds() > 0 || zeit.getUTCMilliseconds() > 0 ? 1 : 0;
+  const jetzt = localMinutes(zeit) + angebrochen;
   if (jetzt <= opts.openingMinutes) return opts.openingMinutes;
   return opts.openingMinutes + Math.ceil((jetzt - opts.openingMinutes) / opts.slotMinutes) * opts.slotMinutes;
 }

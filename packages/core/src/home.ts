@@ -122,12 +122,15 @@ export interface OccupancyFlags {
 
 /**
  * Die Art einer Belegung nach der Statustabelle im Handoff. Die Reihenfolge
- * zaehlt: eine Sperrung ist nie "eigen", und eine eigene Buchung, die
- * Mitspieler sucht, bleibt fuer den Bucher "eigen".
+ * zaehlt: Serientermine (Training) legt die Datenbank als kind = "blocking"
+ * mit series_id an - die Serie muss deshalb vor der Sperrung stehen, sonst
+ * sieht jedes Training aus wie eine Sperrung. Eine Sperrung ist nie "eigen",
+ * und eine eigene Buchung, die Mitspieler sucht, bleibt fuer den Bucher
+ * "eigen".
  */
 export function occupancyKind(b: OccupancyFlags): TimelineKind {
-  if (b.kind === "blocking") return "gesperrt";
   if (b.series_id) return "serie";
+  if (b.kind === "blocking") return "gesperrt";
   if (b.is_own) return "eigen";
   if (b.partner_wanted && (b.frei ?? 0) > 0) return "sucht";
   return "belegt";

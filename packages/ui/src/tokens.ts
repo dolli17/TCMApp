@@ -56,6 +56,8 @@ export const farben = {
     // Aktiver Eintrag der Seitenleiste (Web ab 768 px)
     navAktiv: "#0A1624",
     navAktivInk: "#FFFFFF",
+    // Aktives Segment eines Segment-Schalters: hell surf (mit Schatten), dunkel surf3
+    segAktiv: "#FFFFFF",
   },
   dunkel: {
     blue: "#3A9BE0",
@@ -90,6 +92,7 @@ export const farben = {
     tabAktivInk: "#FFD21F",
     navAktiv: "rgba(255,210,31,.12)",
     navAktivInk: "#FFD21F",
+    segAktiv: "#1E3249",
   },
 } as const;
 

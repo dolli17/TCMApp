@@ -52,8 +52,8 @@ export function OffeneSpiele({ spiele }: { spiele: OffenesSpiel[] }) {
   if (spiele.length === 0) {
     return (
       <p className="unterzeile">
-        Gerade sucht niemand Mitspieler. Wenn du selbst buchst, kannst du im Buchungsfenster
-        „Mitspieler gesucht“ anhaken – dann steht deine Buchung hier.
+        Gerade sucht niemand Mitspieler. Wenn du selbst buchst, schalte im Buchungsblatt
+        „Mitspieler gesucht“ ein – dann steht deine Buchung hier.
       </p>
     );
   }
