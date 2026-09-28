@@ -2,9 +2,12 @@
  * Der blau-goldene Verlauf aus dem Web
  *
  * Im Web steht dahinter eine Regel aus zwei Lagen (globals.css, .hero und
- * .auth .crown): ein linearer Verlauf von Azurblau nach Dunkelblau, darueber
- * ein radialer Goldschimmer aus der oberen rechten Ecke. Beides zusammen macht
- * den Blickfang aus - nur das Blau wirkt flach.
+ * .auth .crown): ein linearer Verlauf vom Vereinsblau (brand) in ein
+ * dunkleres Blau, darueber ein radialer Goldschimmer aus der oberen rechten
+ * Ecke. Beides zusammen macht den Blickfang aus - nur das Blau wirkt flach.
+ *
+ * brand statt blue, weil blue im dunklen Theme so hell ist, dass die weisse
+ * Schrift darauf nicht mehr lesbar waere.
  *
  * Der Schimmer laeuft ueber react-native-svg und nicht ueber einen zweiten
  * LinearGradient: Gold auf Blau ergibt Gruen, und eine lineare Naeherung
@@ -20,6 +23,7 @@ import { useId, type ReactNode } from "react";
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
+import { abgedunkelt } from "@/lib/stil";
 import { useTheme } from "@/lib/theme";
 
 type Eigenschaften = {
@@ -47,7 +51,7 @@ export function Verlaufsflaeche({
       style={[
         { borderRadius: rundung },
         !ohneSchatten && {
-          shadowColor: farben.blue,
+          shadowColor: farben.brand,
           shadowOffset: { width: 0, height: 10 },
           shadowOpacity: 0.34,
           shadowRadius: 15,
@@ -58,7 +62,7 @@ export function Verlaufsflaeche({
       <View style={{ borderRadius: rundung, overflow: "hidden" }}>
         {/* 155 Grad im Einheitsquadrat: von oben links nach unten rechts */}
         <LinearGradient
-          colors={[farben.blue, farben.blueInk]}
+          colors={[farben.brand, abgedunkelt(farben.brand, 0.28)]}
           start={{ x: 0.29, y: 0.05 }}
           end={{ x: 0.71, y: 0.95 }}
         >

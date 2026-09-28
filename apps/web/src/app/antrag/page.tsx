@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import logo from "@tcm/ui/logo.png";
+import logo from "@tcm/ui/logo-weiss.png";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Antragsformular, type FormularOption } from "@/components/Antragsformular";
 

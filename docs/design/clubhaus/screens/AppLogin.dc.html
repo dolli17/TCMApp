@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>App – Anmelden</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&amp;family=Barlow+Semi+Condensed:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #07111D; color: #F3F7FB; font-family: 'Barlow', system-ui, sans-serif; display: flex; flex-direction: column">
+<div style="height: 400px; position: relative; background: #1466A8; overflow: hidden; flex-shrink: 0">
+<svg width="390" height="400" viewBox="0 0 390 400" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="2.5" style="position: absolute; left: 0; top: 0"><path d="M40 400 L130 150 H260 L350 400"></path><path d="M78 295 H312"></path><path d="M100 235 H290 M60 345 H330 M195 235 V345"></path><path d="M0 150 H390" stroke="rgba(255,255,255,.4)" stroke-dasharray="3 5"></path></svg>
+<div style="position: absolute; right: 54px; top: 96px; width: 38px; height: 38px; border-radius: 19px; background: #FFD21F; box-shadow: 0 10px 24px rgba(0,0,0,.25)"></div>
+<div style="position: absolute; left: 0; right: 0; bottom: 0; height: 160px; background: linear-gradient(180deg, rgba(7,17,29,0), #07111D)"></div>
+<img src="/_blob/49d8207af8a37600cd37ff4a72865df3" alt="TC Muckensturm" style="position: absolute; left: 24px; top: 64px; height: 36px; width: auto">
+<h1 style="position: absolute; left: 24px; right: 24px; bottom: 26px; margin: 0; font-size: 36px; font-weight: 800; letter-spacing: -.7px; line-height: 1.02">Willkommen zurück auf dem Platz.</h1>
+</div>
+<form style="flex-grow: 1; padding: 8px 24px 36px; display: flex; flex-direction: column; gap: 14px">
+<label style="display: block">
+<span style="display: block; font-size: 13px; font-weight: 600; color: #B3C2D2; margin-bottom: 8px">E-Mail</span>
+<input type="email" autocomplete="username" style="font: inherit; font-size: 16px; width: 100%; box-sizing: border-box; height: 54px; background: #0E1A29; color: #F3F7FB; border: 1.5px solid rgba(255,255,255,.12); border-radius: 16px; padding: 0 16px">
+</label>
+<label style="display: block">
+<span style="display: block; font-size: 13px; font-weight: 600; color: #B3C2D2; margin-bottom: 8px">Passwort</span>
+<input type="password" autocomplete="current-password" style="font: inherit; font-size: 16px; width: 100%; box-sizing: border-box; height: 54px; background: #0E1A29; color: #F3F7FB; border: 1.5px solid rgba(255,255,255,.12); border-radius: 16px; padding: 0 16px">
+</label>
+<a href="#" style="align-self: flex-end; font-size: 14px; font-weight: 600; color: #B3C2D2; text-decoration: none; padding: 4px 0">Passwort vergessen?</a>
+<a href="AppHome.dc.html" style="margin-top: auto; height: 58px; border-radius: 18px; background: #FFD21F; color: #0A1624; font-size: 17px; font-weight: 800; display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 10px 28px rgba(255,210,31,.3)">Anmelden</a>
+<div style="text-align: center; font-size: 14px; color: #8497AC">Noch kein Mitglied? <a href="#" style="color: #FFD21F; font-weight: 700; text-decoration: none">Antrag stellen</a></div>
+</form>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

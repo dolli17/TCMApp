@@ -7,3 +7,9 @@ declare module "@tcm/ui/logo.png" {
   const wert: StaticImageData;
   export default wert;
 }
+
+declare module "@tcm/ui/logo-weiss.png" {
+  import type { StaticImageData } from "next/image";
+  const wert: StaticImageData;
+  export default wert;
+}

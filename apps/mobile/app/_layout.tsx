@@ -1,6 +1,7 @@
 import { useFonts } from "expo-font";
 import {
   Barlow_400Regular, Barlow_500Medium, Barlow_600SemiBold, Barlow_700Bold,
+  Barlow_800ExtraBold,
 } from "@expo-google-fonts/barlow";
 import {
   BarlowSemiCondensed_600SemiBold,
@@ -46,12 +47,13 @@ export default function Layout() {
   // Die Schriftdateien liegen im Projekt, nicht bei Google - dieselbe
   // Entscheidung wie im Web. Bis sie geladen sind, zeigt die App einen
   // Ladekreis statt der Systemschrift; sonst springt das Layout.
-  // Dieselben sieben Schnitte, die globals.css per @fontsource laedt.
+  // Dieselben acht Schnitte, die globals.css per @fontsource laedt.
   const [bereit] = useFonts({
     Barlow_400Regular,
     Barlow_500Medium,
     Barlow_600SemiBold,
     Barlow_700Bold,
+    Barlow_800ExtraBold,
     BarlowSemiCondensed_600SemiBold,
     BarlowSemiCondensed_700Bold,
     BarlowSemiCondensed_800ExtraBold,

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Kiosk – Getränke an der Theke</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&amp;family=Barlow+Semi+Condensed:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1180px; height: 820px; box-sizing: border-box; background: #07111D; color: #F3F7FB; font-family: 'Barlow', system-ui, sans-serif; padding: 28px 32px 32px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<div style="display: flex; align-items: center; gap: 20px">
+<img src="/_blob/49d8207af8a37600cd37ff4a72865df3" alt="TC Muckensturm" style="height: 36px; width: auto">
+<span style="width: 1px; height: 28px; background: rgba(255,255,255,.14)"></span>
+<span style="font-size: 22px; font-weight: 700">Getränke an der Theke</span>
+</div>
+<button type="button" style="height: 52px; padding: 0 22px; border-radius: 16px; border: 1px solid rgba(255,255,255,.14); background: #0E1A29; color: #F3F7FB; font-family: 'Barlow', sans-serif; font-size: 16px; font-weight: 600">Von vorn</button>
+</div>
+
+<div style="flex-grow: 1; min-height: 0; display: flex; gap: 20px">
+<section aria-labelledby="k1" style="width: 330px; flex-shrink: 0; border-radius: 28px; background: #0E1A29; border: 1px solid rgba(255,255,255,.08); padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<h2 id="k1" style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 700"><span style="width: 30px; height: 30px; border-radius: 15px; background: #FFD21F; color: #0A1624; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center">1</span>Wer nimmt etwas?</h2>
+<label style="height: 60px; box-sizing: border-box; border-radius: 18px; background: #152538; border: 2px solid #3A9BE0; display: flex; align-items: center; gap: 12px; padding: 0 16px; color: #8497AC">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4"></path></svg>
+<input type="search" aria-label="Name eingeben" value="Doll" style="border: 0; outline: 0; background: transparent; flex-grow: 1; font: inherit; font-size: 20px; font-weight: 600; color: #F3F7FB">
+</label>
+<button type="button" aria-pressed="true" style="height: 72px; border-radius: 18px; border: 2px solid #FFD21F; background: rgba(255,210,31,.12); color: #F3F7FB; display: flex; align-items: center; gap: 14px; padding: 0 14px; font-family: 'Barlow', sans-serif; text-align: left">
+<span style="width: 46px; height: 46px; border-radius: 23px; background: #FFD21F; color: #0A1624; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0">LD</span>
+<span style="flex-grow: 1; font-size: 19px; font-weight: 700">Lucas Dollmann</span>
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFD21F" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
+</button>
+<button type="button" aria-pressed="false" style="height: 72px; border-radius: 18px; border: 1px solid rgba(255,255,255,.08); background: #152538; color: #F3F7FB; display: flex; align-items: center; gap: 14px; padding: 0 14px; font-family: 'Barlow', sans-serif; text-align: left">
+<span style="width: 46px; height: 46px; border-radius: 23px; background: #1466A8; color: #FFFFFF; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0">[M]</span>
+<span style="flex-grow: 1; font-size: 19px; font-weight: 700">[Mitglied]</span>
+</button>
+<div style="margin-top: auto; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: #8497AC">Zuletzt an der Theke</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="height: 48px; padding: 0 16px; border-radius: 24px; border: 1px solid rgba(255,255,255,.1); background: #152538; color: #B3C2D2; font-family: 'Barlow', sans-serif; font-size: 16px; font-weight: 600">[Mitglied]</button>
+<button type="button" style="height: 48px; padding: 0 16px; border-radius: 24px; border: 1px solid rgba(255,255,255,.1); background: #152538; color: #B3C2D2; font-family: 'Barlow', sans-serif; font-size: 16px; font-weight: 600">[Mitglied]</button>
+<button type="button" style="height: 48px; padding: 0 16px; border-radius: 24px; border: 1px solid rgba(255,255,255,.1); background: #152538; color: #B3C2D2; font-family: 'Barlow', sans-serif; font-size: 16px; font-weight: 600">[Mitglied]</button>
+</div>
+</section>
+
+<section aria-labelledby="k2" style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+<h2 id="k2" style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 700; padding: 22px 0 0"><span style="width: 30px; height: 30px; border-radius: 15px; background: #FFD21F; color: #0A1624; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center">2</span>Was?</h2>
+<div style="flex-grow: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 14px">
+<sc-for list="{{karte}}" as="g" hint-placeholder-count="6">
+<button type="button" aria-label="{{g.aria}}" style="position: relative; border-radius: 24px; padding: 18px 20px; display: flex; flex-direction: column; justify-content: space-between; text-align: left; font-family: 'Barlow', sans-serif; color: #F3F7FB; {{g.stil}}">
+<span style="font-size: 22px; font-weight: 700">{{g.name}}</span>
+<span style="font-size: 16px; color: #B3C2D2">[Preis]</span>
+<sc-if value="{{g.gewaehlt}}" hint-placeholder-val="{{ false }}">
+<span style="position: absolute; right: 16px; top: 50%; margin-top: -28px; width: 56px; height: 56px; border-radius: 28px; background: #FFD21F; color: #0A1624; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 30px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{g.anzahl}}</span>
+</sc-if>
+</button>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="k3" style="width: 320px; flex-shrink: 0; border-radius: 28px; background: #F3F7FB; color: #0A1624; padding: 22px; display: flex; flex-direction: column; gap: 6px">
+<h2 id="k3" style="margin: 0 0 8px; display: flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 700"><span style="width: 30px; height: 30px; border-radius: 15px; background: #0A1624; color: #FFD21F; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center">3</span>Eintragen</h2>
+<div style="font-size: 15px; color: #44566B">für</div>
+<div style="font-size: 26px; font-weight: 800; letter-spacing: -.3px; margin-bottom: 10px">Lucas Dollmann</div>
+<div style="display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid #DCE3EA; font-size: 17px"><span style="font-weight: 600">[Getränk 2] × 2</span><span style="font-weight: 700">[Betrag]</span></div>
+<div style="display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid #DCE3EA; font-size: 17px"><span style="font-weight: 600">[Getränk 4] × 1</span><span style="font-weight: 700">[Betrag]</span></div>
+<div style="display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0; border-top: 2px solid #0A1624"><span style="font-size: 17px; font-weight: 700">Zusammen</span><span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 30px; font-weight: 700">[Summe]</span></div>
+<button type="button" style="margin-top: auto; height: 76px; border: 0; border-radius: 22px; background: #FFD21F; color: #0A1624; font-family: 'Barlow', sans-serif; font-size: 21px; font-weight: 800; box-shadow: 0 10px 28px rgba(255,210,31,.35)">Für Lucas eintragen</button>
+<div style="text-align: center; font-size: 13px; color: #5F7185; margin-top: 8px">Wird mit der Monatsabrechnung eingezogen</div>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1180,"height":820}}'>
+class Component extends DCLogic {
+renderVals() {
+var an = 'border: 2px solid #FFD21F; background: #152538';
+var aus = 'border: 1px solid rgba(255,255,255,.08); background: #0E1A29';
+return {
+karte: [['[Getränk 1]', 0], ['[Getränk 2]', 2], ['[Getränk 3]', 0], ['[Getränk 4]', 1], ['[Getränk 5]', 0], ['[Getränk 6]', 0]].map(function (g) {
+return { name: g[0], anzahl: g[1], gewaehlt: g[1] > 0, aria: g[0] + ' hinzufügen', stil: g[1] > 0 ? an : aus };
+})
+};
+}
+}
+</script>
+</body>
+</html>

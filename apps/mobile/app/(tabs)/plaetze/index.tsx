@@ -288,7 +288,7 @@ export default function Plan() {
   return (
     <>
       <Bildschirm laedt={laedt} aktualisiert={aktualisiert} onAktualisieren={vonHand}>
-        <Verlaufsflaeche rundung={radius.hero} stil={{ padding: abstand.rand }}>
+        <Verlaufsflaeche rundung={radius.karteGross} stil={{ padding: abstand.rand }}>
           <Text style={stil.heroKicker}>Freiplätze</Text>
           <Text style={stil.heroTitel}>{lesbar(datum)}</Text>
           <View style={stil.heroPillen}>
@@ -418,7 +418,7 @@ export default function Plan() {
                           <Text style={stil.leise}>mit {b.players.join(", ")}</Text>
                         )}
                         {b.partner_wanted === true && b.frei > 0 && (
-                          <Text style={[stil.leise, { color: farben.gold, fontWeight: "700" }]}>
+                          <Text style={[stil.leise, { color: farben.goldInk, fontWeight: "700" }]}>
                             sucht {b.frei === 1 ? "einen Mitspieler" : `${b.frei} Mitspieler`}
                           </Text>
                         )}

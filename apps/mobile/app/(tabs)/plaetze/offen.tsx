@@ -73,7 +73,7 @@ export default function OffeneSpiele() {
                 {o.players.length > 0 ? ` · mit ${o.players.join(", ")}` : ""}
               </Text>
               <Text
-                style={[stil.leise, { color: farben.gold, fontFamily: "Barlow_700Bold" }]}
+                style={[stil.leise, { color: farben.goldInk, fontFamily: "Barlow_700Bold" }]}
               >
                 {o.frei === 1 ? "noch ein Platz frei" : `noch ${o.frei} Plätze frei`}
               </Text>

@@ -56,8 +56,8 @@ test.describe("Theme", () => {
     const dunkel = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
     expect(hell).not.toBe(dunkel);
-    // #091622 - der Hintergrund des dunklen Themes
-    expect(dunkel).toBe("rgb(9, 22, 34)");
+    // #07111D - der Hintergrund des dunklen Themes
+    expect(dunkel).toBe("rgb(7, 17, 29)");
   });
 });
 

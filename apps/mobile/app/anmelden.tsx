@@ -15,7 +15,7 @@ import { Link, router } from "expo-router";
 import { Verlaufsflaeche } from "@/components/Verlaufsflaeche";
 import { anmelden } from "@/lib/daten";
 import { useTheme } from "@/lib/theme";
-import logo from "@tcm/ui/logo.png";
+import logo from "@tcm/ui/logo-weiss.png";
 
 export default function Anmeldung() {
   const { stil, farben } = useTheme();
@@ -49,14 +49,10 @@ export default function Anmeldung() {
           ohneSchatten
           stil={{ paddingTop: 64, paddingHorizontal: 26, paddingBottom: 44 }}
         >
-          {/*
-            tintColor faerbt jedes nicht durchsichtige Pixel weiss - dasselbe,
-            was im Web filter: brightness(0) invert(1) tut. So braucht es keine
-            zweite Logodatei fuer den dunklen Grund.
-          */}
+          {/* Weisse Logovariante mit gelbem Ball - wie im Web auf der Anmeldebuehne */}
           <Image
             source={logo}
-            style={{ width: 132, height: 38, tintColor: "#fff" }}
+            style={{ width: 132, height: 38 }}
             resizeMode="contain"
             accessibilityIgnoresInvertColors
           />

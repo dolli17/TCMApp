@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import logo from "@tcm/ui/logo.png";
+import logo from "@tcm/ui/logo-weiss.png";
 import { createClient } from "@/lib/supabase/client";
 
 function Formular() {

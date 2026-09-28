@@ -52,7 +52,11 @@ describe("tokens.css stimmt mit tokens.ts überein", () => {
   it("Schatten decken sich", () => {
     expect(werteAus(":root")["--shadow"]).toBe(schatten.hell.normal);
     expect(werteAus(":root")["--shadow-sm"]).toBe(schatten.hell.klein);
+    expect(werteAus(":root")["--shadow-float"]).toBe(schatten.hell.schwebend);
     expect(werteAus(':root[data-theme="dunkel"]')["--shadow"]).toBe(schatten.dunkel.normal);
+    expect(werteAus(':root[data-theme="dunkel"]')["--shadow-float"]).toBe(
+      schatten.dunkel.schwebend,
+    );
   });
 
   it("beide Themes haben dieselben Token-Namen", () => {
@@ -107,8 +111,8 @@ describe("schattenRn", () => {
 
 describe("paletteFuer", () => {
   it("liefert die passende Palette", () => {
-    expect(paletteFuer("hell").bg).toBe("#EBEFF3");
-    expect(paletteFuer("dunkel").bg).toBe("#091622");
+    expect(paletteFuer("hell").bg).toBe("#F3F5F8");
+    expect(paletteFuer("dunkel").bg).toBe("#07111D");
   });
 });
 
@@ -135,17 +139,17 @@ describe("Kontrast", () => {
   });
 
   it("gedämpfter Text erfüllt WCAG AA (4.5:1) auf allen Flächen", () => {
-    // Im Design lag --muted bei 2,71:1 auf dem Seitenhintergrund und riss
-    // damit jede Schwelle. Da der Ton für Untertitel in 11-12px benutzt wird,
-    // gilt die Textschwelle, nicht die für große Schrift. Die Werte wurden
-    // entsprechend angehoben - dieser Test hält sie fest.
-    for (const flaeche of ["bg", "surf", "surf2"] as const) {
+    // Im Entwurf lag --muted auf surf-2 und surf-3 knapp unter 4,5:1. Da der
+    // Ton für Hilfstexte in 12-13px benutzt wird, gilt die Textschwelle, nicht
+    // die für große Schrift. surf-3 gehört dazu, weil "gesperrt" dort in muted
+    // steht. Die Werte wurden entsprechend angepasst - dieser Test hält sie fest.
+    for (const flaeche of ["bg", "surf", "surf2", "surf3"] as const) {
       expect(
         verhaeltnis(farben.hell.muted, farben.hell[flaeche]),
         `hell: muted auf ${flaeche}`,
       ).toBeGreaterThanOrEqual(4.5);
     }
-    for (const flaeche of ["bg", "surf", "surf2"] as const) {
+    for (const flaeche of ["bg", "surf", "surf2", "surf3"] as const) {
       expect(
         verhaeltnis(farben.dunkel.muted, farben.dunkel[flaeche]),
         `dunkel: muted auf ${flaeche}`,
@@ -155,5 +159,32 @@ describe("Kontrast", () => {
 
   it("Weiß auf Primärblau erfüllt AA", () => {
     expect(verhaeltnis("#FFFFFF", farben.hell.blue)).toBeGreaterThanOrEqual(3);
+  });
+
+  it("Text auf den Markenflächen erfüllt AA (4.5:1)", () => {
+    for (const theme of ["hell", "dunkel"] as const) {
+      const f = farben[theme];
+      expect(verhaeltnis(f.onGold, f.gold), `${theme}: onGold auf gold`).toBeGreaterThanOrEqual(4.5);
+      expect(verhaeltnis("#FFFFFF", f.brand), `${theme}: Weiß auf brand`).toBeGreaterThanOrEqual(4.5);
+    }
+    // Im Dunkeln ist tabAktiv ein durchscheinender Schimmer; dort traegt die
+    // Leiste selbst den Kontrast, und gold auf dunklem Grund liegt weit ueber 4,5.
+    expect(verhaeltnis(farben.hell.tabAktivInk, farben.hell.tabAktiv)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("die farbigen Texttöne erfüllen AA (4.5:1) auf Seite und Karte", () => {
+    // gold als Text auf hellem Grund kaeme auf nur rund 1,4:1 - deshalb goldInk.
+    // Dasselbe fuer green: als Flaeche gut, als Text zu hell.
+    for (const theme of ["hell", "dunkel"] as const) {
+      const f = farben[theme];
+      for (const ton of ["goldInk", "greenInk", "blueInk"] as const) {
+        for (const flaeche of ["bg", "surf", "surf2"] as const) {
+          expect(
+            verhaeltnis(f[ton], f[flaeche]),
+            `${theme}: ${ton} auf ${flaeche}`,
+          ).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    }
   });
 });

@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Verwaltung – Übersicht</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&amp;family=Barlow+Semi+Condensed:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 960px; display: flex; overflow: hidden; background: {{t.bg}}; color: {{t.ink}}; font-family: 'Barlow', system-ui, sans-serif">
+
+<aside style="width: 264px; flex-shrink: 0; box-sizing: border-box; background: {{t.side}}; border-right: 1px solid {{t.line}}; padding: 28px 16px 20px; display: flex; flex-direction: column">
+<img src="{{t.logo}}" alt="TC Muckensturm" style="height: 34px; width: auto; align-self: flex-start; margin: 0 10px 24px">
+<a href="WebPlan.dc.html" style="height: 46px; border-radius: 14px; background: {{t.yellow}}; color: {{t.onYellow}}; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; margin-bottom: 18px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Platz buchen</a>
+<nav aria-label="Hauptmenü" style="display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="4">
+<a href="{{n.href}}" style="height: 44px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; text-decoration: none; font-size: 15px; font-weight: 600; {{n.stil}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.d}}"></path></svg>{{n.label}}</a>
+</sc-for>
+</nav>
+<div style="margin: 22px 12px 8px; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: {{t.muted}}">Verwaltung</div>
+<nav aria-label="Verwaltung" style="display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{admin}}" as="n" hint-placeholder-count="6">
+<a href="{{n.href}}" style="height: 40px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; text-decoration: none; font-size: 14.5px; font-weight: 600; {{n.stil}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.d}}"></path></svg>{{n.label}}<span style="margin-left: auto; font-size: 12px; font-weight: 700; {{n.zahlStil}}">{{n.zahl}}</span></a>
+</sc-for>
+</nav>
+<div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 16px; background: {{t.surf2}}">
+<span style="width: 38px; height: 38px; border-radius: 19px; background: #1466A8; color: #FFFFFF; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">LD</span>
+<div style="flex-grow: 1; min-width: 0"><div style="font-size: 14px; font-weight: 700">Lucas Dollmann</div><div style="font-size: 12px; color: {{t.muted}}">Admin</div></div>
+</div>
+</aside>
+
+<main style="flex-grow: 1; min-width: 0; box-sizing: border-box; padding: 36px 40px; display: flex; flex-direction: column; gap: 24px">
+<div>
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: {{t.muted}}">Verwaltung · Montag, 28. September</div>
+<h1 style="margin: 4px 0 0; font-size: 40px; font-weight: 800; letter-spacing: -.9px; line-height: 1.05">Übersicht</h1>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+<sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+<a href="{{k.href}}" style="border-radius: 22px; background: {{t.surf}}; border: 1px solid {{t.line}}; padding: 18px 20px; box-shadow: {{t.cardShadow}}; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: {{t.ink}}">
+<span style="font-size: 13.5px; font-weight: 600; color: {{t.ink2}}">{{k.label}}</span>
+<span style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 36px; line-height: 1.1">{{k.wert}}</span>
+<span style="font-size: 13px; color: {{t.muted}}">{{k.info}}</span>
+</a>
+</sc-for>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 24px">
+<div style="grid-column: span 8; display: flex; flex-direction: column; gap: 24px; min-width: 0">
+<div style="border-radius: 24px; background: {{t.surf}}; border: 1px solid {{t.line}}; padding: 22px 24px; box-shadow: {{t.cardShadow}}">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 20px; font-weight: 700">Beitragslauf 2026 · der Weg des Geldes</h2><a href="AdminKasse.dc.html" style="font-size: 14px; font-weight: 600; color: {{t.blue}}; text-decoration: none">Lauf öffnen</a></div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 20px">
+<sc-for list="{{weg}}" as="w" hint-placeholder-count="5">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="height: 6px; border-radius: 3px; {{w.balken}}"></div>
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="width: 26px; height: 26px; border-radius: 13px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; {{w.punkt}}">{{w.nr}}</span>
+<span style="font-size: 14.5px; font-weight: 700">{{w.name}}</span>
+</div>
+<span style="font-size: 12.5px; color: {{t.muted}}; line-height: 1.4">{{w.info}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="border-radius: 24px; background: {{t.surf}}; border: 1px solid {{t.line}}; padding: 22px 24px; box-shadow: {{t.cardShadow}}">
+<div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px"><h2 style="margin: 0; font-size: 20px; font-weight: 700">Heute auf der Anlage</h2><a href="WebPlan.dc.html" style="font-size: 14px; font-weight: 600; color: {{t.blue}}; text-decoration: none">Belegungsplan</a></div>
+<div style="display: grid; grid-template-columns: 70px minmax(0, 1fr); row-gap: 10px; align-items: center">
+<sc-for list="{{anlage}}" as="a" hint-placeholder-count="8">
+<span style="font-size: 13.5px; font-weight: 700">{{a.name}}</span>
+<div style="position: relative; height: 14px; border-radius: 7px; background: {{t.surf2}}">
+<sc-for list="{{a.segs}}" as="s" hint-placeholder-count="2"><div style="position: absolute; top: 0; bottom: 0; border-radius: 7px; box-sizing: border-box; {{s.stil}}"></div></sc-for>
+<div style="position: absolute; top: -4px; bottom: -4px; left: 47.7%; width: 2px; background: {{t.red}}"></div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+
+<div style="grid-column: span 4; min-width: 0">
+<div style="border-radius: 24px; background: {{t.surf}}; border: 1px solid {{t.line}}; box-shadow: {{t.cardShadow}}; overflow: hidden">
+<div style="padding: 22px 22px 12px"><h2 style="margin: 0; font-size: 20px; font-weight: 700">Heute zu tun</h2><p style="margin: 4px 0 0; font-size: 13.5px; color: {{t.muted}}">Was liegen bleibt, kostet Geld oder Nerven.</p></div>
+<sc-for list="{{todo}}" as="d" hint-placeholder-count="3">
+<div style="padding: 16px 22px; border-top: 1px solid {{t.line}}; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; gap: 12px">
+<span style="width: 10px; height: 10px; border-radius: 5px; margin-top: 6px; flex-shrink: 0; {{d.punkt}}"></span>
+<div><div style="font-size: 15px; font-weight: 700">{{d.titel}}</div><div style="font-size: 13px; color: {{t.muted}}; margin-top: 2px; line-height: 1.4">{{d.text}}</div></div>
+</div>
+<a href="{{d.href}}" style="align-self: flex-start; margin-left: 22px; height: 38px; padding: 0 16px; border-radius: 12px; font-size: 14px; font-weight: 700; display: flex; align-items: center; text-decoration: none; {{d.knopf}}">{{d.aktion}}</a>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"modus":{"editor":"enum","options":["hell","dunkel"],"default":"hell"},"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+renderVals() {
+var T = {
+dunkel: { bg: '#07111D', side: '#0A1522', surf: '#0E1A29', surf2: '#152538', line: 'rgba(255,255,255,.08)', ink: '#F3F7FB', ink2: '#B3C2D2', muted: '#8497AC', blue: '#3A9BE0', red: '#FF6B61', green: '#3DD68C', yellow: '#FFD21F', yellowSoft: 'rgba(255,210,31,.14)', yellowLine: '#FFD21F', onYellow: '#0A1624', navOn: 'background: rgba(255,210,31,.12); color: #FFD21F', navOff: 'color: #B3C2D2', cardShadow: 'none', logo: '/_blob/49d8207af8a37600cd37ff4a72865df3', hatch: 'repeating-linear-gradient(135deg, rgba(255,255,255,.18) 0 3px, transparent 3px 6px), #1E3249', gesperrt: '#1E3249', ghost: 'background: #152538; color: #F3F7FB', ink0: '#F3F7FB' },
+hell: { bg: '#F3F5F8', side: '#FFFFFF', surf: '#FFFFFF', surf2: '#EEF2F6', line: '#E3E8EE', ink: '#0A1624', ink2: '#44566B', muted: '#5F7185', blue: '#1A6FB0', red: '#D7544B', green: '#1E9E6A', yellow: '#FFD21F', yellowSoft: '#FFF6D1', yellowLine: '#E0B400', onYellow: '#0A1624', navOn: 'background: #0A1624; color: #FFFFFF', navOff: 'color: #44566B', cardShadow: '0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06)', logo: '/_blob/d494a1dd6862562fd26acdf91cca58bc', hatch: 'repeating-linear-gradient(135deg, rgba(10,22,36,.14) 0 3px, transparent 3px 6px), #E2E8EF', gesperrt: '#DCE3EA', ghost: 'background: #EEF2F6; color: #0A1624', ink0: '#0A1624' }
+};
+var t = T[this.props.modus] || T.hell;
+var I = {
+home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+platz: 'M4 4h16v16H4zM4 12h16M8 8h8v8H8zM12 8v8',
+getraenk: 'M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8',
+konto: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
+uebersicht: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+mitglieder: 'M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 20v-1a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
+kasse: 'M2 7h20v12H2zM2 11h20M6 15h4',
+serie: 'M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z',
+system: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'
+};
+var badge = 'background: ' + t.yellow + '; color: ' + t.onYellow + '; padding: 1px 7px; border-radius: 10px';
+var baue = function (liste, aktiv) {
+return liste.map(function (x) { return { label: x[0], d: I[x[1]], href: x[2], stil: x[0] === aktiv ? t.navOn : t.navOff, zahl: x[3] || '', zahlStil: x[3] ? badge : '' }; });
+};
+var pos = function (von, bis) { return 'left: ' + ((von - 8) / 13 * 100).toFixed(2) + '%; width: ' + ((bis - von) / 13 * 100).toFixed(2) + '%; '; };
+var F = { belegt: 'background: ' + t.blue, eigen: 'background: ' + t.yellow, sucht: 'background: ' + t.yellowSoft + '; border: 1.5px dashed ' + t.yellowLine, serie: 'background: ' + t.hatch, gesperrt: 'background: ' + t.gesperrt };
+var seg = function (von, bis, art) { return { stil: pos(von, bis) + F[art] }; };
+var fertig = { balken: 'background: ' + t.green, punkt: 'background: ' + t.green + '; color: #FFFFFF' };
+var jetzt = { balken: 'background: linear-gradient(90deg, ' + t.yellow + ' 60%, ' + t.surf2 + ' 60%)', punkt: 'background: ' + t.yellow + '; color: ' + t.onYellow };
+var offen = { balken: 'background: ' + t.surf2, punkt: 'background: ' + t.surf2 + '; color: ' + t.muted };
+var schritt = function (nr, name, info, s) { return { nr: nr, name: name, info: info, balken: s.balken, punkt: s.punkt }; };
+return {
+t: t,
+nav: baue([['Home', 'home', 'WebHome.dc.html'], ['Belegungsplan', 'platz', 'WebPlan.dc.html'], ['Getränke', 'getraenk', '#'], ['Mein Konto', 'konto', '#']], ''),
+admin: baue([['Übersicht', 'uebersicht', 'AdminUebersicht.dc.html'], ['Mitglieder', 'mitglieder', 'AdminMitglieder.dc.html', '[n]'], ['Kasse', 'kasse', 'AdminKasse.dc.html'], ['Plätze & Serien', 'serie', '#'], ['Getränke', 'getraenk', '#'], ['System', 'system', '#']], 'Übersicht'),
+kpis: [
+{ label: 'Aktive Mitglieder', wert: '[n]', info: 'zur Mitgliederliste', href: 'AdminMitglieder.dc.html' },
+{ label: 'Heute gebucht', wert: '10', info: 'auf 6 von 8 Plätzen', href: 'WebPlan.dc.html' },
+{ label: 'Offene Anträge', wert: '[n]', info: 'warten auf Prüfung', href: 'AdminMitglieder.dc.html' },
+{ label: 'Offene Forderungen', wert: '[Summe]', info: 'alle Arten zusammen', href: 'AdminKasse.dc.html' }
+],
+weg: [
+schritt('1', 'Forderung', '[n] Zahler, [Summe]', fertig),
+schritt('2', 'Ankündigung', 'Frist läuft bis [Datum]', jetzt),
+schritt('3', 'Lastschriftlauf', 'ab [Datum] möglich', offen),
+schritt('4', 'Datei', 'pain.008 fürs Onlinebanking', offen),
+schritt('5', 'Rückläufer', 'per EndToEndId eintragen', offen)
+],
+anlage: [
+{ name: 'Platz 1', segs: [seg(10, 11, 'belegt'), seg(17, 18, 'belegt')] },
+{ name: 'Platz 2', segs: [seg(16, 19, 'serie')] },
+{ name: 'Platz 3', segs: [seg(9, 10, 'belegt'), seg(18, 19, 'sucht')] },
+{ name: 'Platz 4', segs: [seg(17, 18, 'sucht'), seg(20, 21, 'belegt')] },
+{ name: 'Platz 5', segs: [seg(11, 12, 'belegt'), seg(17, 19, 'belegt')] },
+{ name: 'Platz 6', segs: [] },
+{ name: 'Platz 7', segs: [seg(8, 10, 'belegt'), seg(19, 21, 'belegt')] },
+{ name: 'Platz 8', segs: [seg(8, 21, 'gesperrt')] }
+],
+todo: [
+{ titel: 'Vorabankündigung läuft', text: 'Beitragslauf 2026: Einzug frühestens am [Datum]. Bis dahin ist nichts zu tun.', aktion: 'Lauf ansehen', href: 'AdminKasse.dc.html', punkt: 'background: ' + t.yellow, knopf: t.ghost },
+{ titel: '[n] Mitgliedsanträge', text: 'Neu seit letzter Woche. Prüfen, Mitgliedschaft zuordnen, Zugang anlegen.', aktion: 'Anträge prüfen', href: 'AdminMitglieder.dc.html', punkt: 'background: ' + t.yellow, knopf: 'background: ' + t.yellow + '; color: ' + t.onYellow },
+{ titel: 'Getränkemonat September', text: 'Endet am 30.09. Danach wird die Abrechnung erzeugt.', aktion: 'Zur Getränkeabrechnung', href: '#', punkt: 'background: ' + t.surf2 + '; border: 1.5px solid ' + t.muted, knopf: t.ghost }
+]
+};
+}
+}
+</script>
+</body>
+</html>
