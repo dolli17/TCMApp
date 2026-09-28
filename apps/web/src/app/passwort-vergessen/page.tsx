@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import logo from "@tcm/ui/logo-weiss.png";
+import { AnmeldeBuehne } from "@/components/AnmeldeBuehne";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -36,14 +35,7 @@ export default function PasswortVergessenSeite() {
   }
 
   return (
-    <div className="auth antragsseite">
-      <div className="crown">
-        <Image src={logo} alt="TC Muckensturm" height={34} priority />
-        <h1>Passwort vergessen</h1>
-        <p>Wir schicken dir einen Link, mit dem du ein neues festlegen kannst.</p>
-      </div>
-
-      <div className="sheet">
+    <AnmeldeBuehne titel="Passwort vergessen" unterzeile="Wir schicken dir einen Link, mit dem du ein neues festlegen kannst.">
         {abgeschickt ? (
           <>
             <div className="hinweis erfolg" role="status">
@@ -76,7 +68,6 @@ export default function PasswortVergessenSeite() {
             </p>
           </form>
         )}
-      </div>
-    </div>
+    </AnmeldeBuehne>
   );
 }

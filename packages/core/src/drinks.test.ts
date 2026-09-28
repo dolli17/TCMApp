@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canVoidSelf,
+  drinkBatchReport,
   isDebitable,
   monthlyTotalCents,
   summarizeByItem,
@@ -115,5 +116,35 @@ describe("isDebitable", () => {
 
   it("null Euro wird nicht eingezogen", () => {
     expect(isDebitable(0, 500)).toBe(false);
+  });
+});
+
+describe("drinkBatchReport", () => {
+  it("nennt alles, wenn alles klappt", () => {
+    expect(
+      drinkBatchReport([
+        { name: "Bier", quantity: 2, ok: true },
+        { name: "Wasser still", quantity: 1, ok: true },
+      ]),
+    ).toEqual({ ok: true, text: "Eingetragen: 2× Bier, 1× Wasser still." });
+  });
+
+  it("sagt, welcher fehlschlug und warum - und was trotzdem steht", () => {
+    expect(
+      drinkBatchReport([
+        { name: "Bier", quantity: 2, ok: true },
+        { name: "Cola", quantity: 1, ok: false, message: "Der Artikel ist nicht mehr auf der Karte." },
+      ]),
+    ).toEqual({
+      ok: false,
+      text: "Nicht eingetragen: 1× Cola (Der Artikel ist nicht mehr auf der Karte). Eingetragen: 2× Bier.",
+    });
+  });
+
+  it("wenn nichts klappt, steht nur der Fehler da", () => {
+    expect(drinkBatchReport([{ name: "Cola", quantity: 3, ok: false }])).toEqual({
+      ok: false,
+      text: "Nicht eingetragen: 3× Cola.",
+    });
   });
 });

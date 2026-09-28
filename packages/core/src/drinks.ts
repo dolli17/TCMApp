@@ -88,3 +88,39 @@ export function canVoidSelf(
 export function isDebitable(totalCents: number, minDebitCents: number): boolean {
   return totalCents >= minDebitCents;
 }
+
+/** Hoechstmenge je Artikel und Eintragung - dieselbe Grenze in App und Web. */
+export const MAX_DRINK_QUANTITY = 50;
+
+export interface DrinkBatchResult {
+  name: string;
+  quantity: number;
+  ok: boolean;
+  /** Grund aus der Datenbank, wenn es nicht geklappt hat */
+  message?: string;
+}
+
+/**
+ * Rueckmeldung nach dem gesammelten Eintragen.
+ *
+ * Gebucht wird je Artikel einzeln (record_drink_purchase), es gibt keinen
+ * Sammelauftrag. Schlaegt einer fehl, muss klar sein, welcher - und dass die
+ * anderen trotzdem stehen.
+ */
+export function drinkBatchReport(results: readonly DrinkBatchResult[]): { ok: boolean; text: string } {
+  const teil = (r: DrinkBatchResult) => `${r.quantity}× ${r.name}`;
+  const gut = results.filter((r) => r.ok);
+  const schlecht = results.filter((r) => !r.ok);
+
+  if (schlecht.length === 0) {
+    return { ok: true, text: `Eingetragen: ${gut.map(teil).join(", ")}.` };
+  }
+  const fehler = schlecht
+    .map((r) => (r.message ? `${teil(r)} (${r.message.replace(/\.$/, "")})` : teil(r)))
+    .join(", ");
+  const text =
+    gut.length === 0
+      ? `Nicht eingetragen: ${fehler}.`
+      : `Nicht eingetragen: ${fehler}. Eingetragen: ${gut.map(teil).join(", ")}.`;
+  return { ok: false, text };
+}

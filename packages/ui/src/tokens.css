@@ -182,3 +182,41 @@
   --shadow-sm: 0 1px 2px rgba(10,22,36,.05);
   --shadow-float: 0 16px 40px rgba(10,22,36,.16);
 }
+
+/* Immer dunkel, egal welches Theme gewaehlt ist - die Anmeldeseiten. Die
+   Variablen gelten nur innerhalb des Elements mit dieser Klasse. */
+.immer-dunkel {
+  --blue: #3A9BE0;
+  --blue-ink: #8CC6F0;
+  --blue-soft: rgba(58,155,224,.18);
+  --gold: #FFD21F;
+  --gold-soft: rgba(255,210,31,.14);
+  --gold-ink: #FFD21F;
+  --gold-line: #FFD21F;
+  --on-gold: #0A1624;
+  --green: #3DD68C;
+  --green-ink: #3DD68C;
+  --red: #FF6B61;
+  --brand: #1466A8;
+  --bg: #07111D;
+  --surf: #0E1A29;
+  --surf-2: #152538;
+  --surf-3: #1E3249;
+  --ink: #F3F7FB;
+  --ink-2: #B3C2D2;
+  --muted: #879AAE;
+  --line: rgba(255,255,255,.08);
+  --line-2: rgba(255,255,255,.16);
+  --chip: #152538;
+  --glass: rgba(22,36,54,.78);
+  --glass-line: rgba(255,255,255,.12);
+  --tab-aktiv: rgba(255,210,31,.14);
+  --tab-aktiv-ink: #FFD21F;
+  --nav-aktiv: rgba(255,210,31,.12);
+  --nav-aktiv-ink: #FFD21F;
+  --seg-aktiv: #1E3249;
+  --shadow: none;
+  --shadow-sm: none;
+  --shadow-float: 0 16px 40px rgba(0,0,0,.5);
+  color-scheme: dark;
+}

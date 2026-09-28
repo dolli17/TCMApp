@@ -14,15 +14,14 @@
  */
 
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View,
-} from "react-native";
+import { View } from "react-native";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
-import { Verlaufsflaeche } from "@/components/Verlaufsflaeche";
+import {
+  AnmeldeFeld, AnmeldeHinweis, AnmeldeLaden, AnmeldeSeite, GelberKnopf,
+} from "@/components/AnmeldeSeite";
 import { passwortSetzen } from "@/lib/daten";
 import { supabase } from "@/lib/supabase";
-import { useTheme } from "@/lib/theme";
 
 /** Supabase haengt die Marken hinter das Rautezeichen, nicht als Abfrage an. */
 function marktenAus(adresse: string): Record<string, string> {
@@ -42,7 +41,6 @@ function marktenAus(adresse: string): Record<string, string> {
 }
 
 export default function PasswortSetzen() {
-  const { stil, farben } = useTheme();
   const adresse = Linking.useURL();
 
   const [bereit, setBereit] = useState(false);
@@ -103,92 +101,41 @@ export default function PasswortSetzen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: farben.bg }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        <Verlaufsflaeche
-          ohneSchatten
-          stil={{ paddingTop: 64, paddingHorizontal: 26, paddingBottom: 44 }}
-        >
-          <Text
-            style={{
-              color: "#fff", fontSize: 30,
-              fontFamily: "BarlowSemiCondensed_700Bold", letterSpacing: -0.3,
-            }}
-          >
-            Passwort festlegen
-          </Text>
-          <Text style={{ color: "#fff", opacity: 0.88, fontSize: 14, marginTop: 6 }}>
-            Mindestens acht Zeichen.
-          </Text>
-        </Verlaufsflaeche>
+    <AnmeldeSeite titel="Passwort festlegen" unterzeile="Mindestens acht Zeichen.">
+      {linkFehler ? (
+        <>
+          <AnmeldeHinweis text={linkFehler} />
+          <GelberKnopf text="Neuen Link anfordern" onPress={() => router.replace("/passwort-vergessen")} />
+        </>
+      ) : !bereit ? (
+        <AnmeldeLaden />
+      ) : (
+        <>
+          <AnmeldeFeld
+            beschriftung="Neues Passwort"
+            value={passwort}
+            onChangeText={setPasswort}
+            secureTextEntry
+            autoComplete="new-password"
+          />
+          <AnmeldeFeld
+            beschriftung="Noch einmal"
+            accessibilityLabel="Passwort wiederholen"
+            value={wiederholung}
+            onChangeText={setWiederholung}
+            secureTextEntry
+            autoComplete="new-password"
+            onSubmitEditing={absenden}
+            returnKeyType="go"
+          />
 
-        <View
-          style={{
-            flex: 1, marginTop: -22, backgroundColor: farben.bg,
-            borderTopLeftRadius: 24, borderTopRightRadius: 24,
-            paddingHorizontal: 22, paddingTop: 26, paddingBottom: 40,
-          }}
-        >
-          <View style={{ width: "100%", maxWidth: 380, alignSelf: "center", gap: 12 }}>
-            {linkFehler ? (
-              <>
-                <Text style={stil.hinweisFehler}>{linkFehler}</Text>
-                <Pressable
-                  style={stil.knopf}
-                  onPress={() => router.replace("/passwort-vergessen")}
-                  accessibilityRole="button"
-                >
-                  <Text style={stil.knopfText}>Neuen Link anfordern</Text>
-                </Pressable>
-              </>
-            ) : !bereit ? (
-              <ActivityIndicator color={farben.blue} style={{ marginTop: 24 }} />
-            ) : (
-              <>
-                <View>
-                  <Text style={stil.feldLabel}>Neues Passwort</Text>
-                  <TextInput
-                    style={stil.feld}
-                    value={passwort}
-                    onChangeText={setPasswort}
-                    secureTextEntry
-                    autoComplete="new-password"
-                    accessibilityLabel="Neues Passwort"
-                  />
-                </View>
+          {fehler && <AnmeldeHinweis text={fehler} />}
 
-                <View>
-                  <Text style={stil.feldLabel}>Noch einmal</Text>
-                  <TextInput
-                    style={stil.feld}
-                    value={wiederholung}
-                    onChangeText={setWiederholung}
-                    secureTextEntry
-                    autoComplete="new-password"
-                    accessibilityLabel="Passwort wiederholen"
-                    onSubmitEditing={absenden}
-                    returnKeyType="go"
-                  />
-                </View>
-
-                {fehler && <Text style={stil.hinweisFehler}>{fehler}</Text>}
-
-                <Pressable
-                  style={[stil.knopf, laeuft && { opacity: 0.5 }]}
-                  onPress={absenden}
-                  disabled={laeuft}
-                  accessibilityRole="button"
-                >
-                  <Text style={stil.knopfText}>{laeuft ? "Wird gespeichert…" : "Speichern"}</Text>
-                </Pressable>
-              </>
-            )}
+          <View style={{ marginTop: "auto" }}>
+            <GelberKnopf text={laeuft ? "Wird gespeichert…" : "Speichern"} onPress={absenden} gesperrt={laeuft} />
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </>
+      )}
+    </AnmeldeSeite>
   );
 }

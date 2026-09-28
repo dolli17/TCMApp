@@ -79,6 +79,14 @@ ${schattenBlock(schatten.dunkel)}
 ${block(farben.hell)}
 ${schattenBlock(schatten.hell)}
 }
+
+/* Immer dunkel, egal welches Theme gewaehlt ist - die Anmeldeseiten. Die
+   Variablen gelten nur innerhalb des Elements mit dieser Klasse. */
+.immer-dunkel {
+${block(farben.dunkel)}
+${schattenBlock(schatten.dunkel)}
+  color-scheme: dark;
+}
 `;
 
 const ziel = join(hier, "..", "src", "tokens.css");

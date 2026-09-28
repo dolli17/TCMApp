@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import logo from "@tcm/ui/logo-weiss.png";
+import { AnmeldeBuehne } from "@/components/AnmeldeBuehne";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -77,14 +76,7 @@ export default function PasswortSetzenSeite() {
   }
 
   return (
-    <div className="auth antragsseite">
-      <div className="crown">
-        <Image src={logo} alt="TC Muckensturm" height={34} priority />
-        <h1>Passwort festlegen</h1>
-        <p>Danach kannst du Plätze buchen und deine Daten selbst pflegen.</p>
-      </div>
-
-      <div className="sheet">
+    <AnmeldeBuehne titel="Passwort festlegen" unterzeile="Danach kannst du Plätze buchen und deine Daten selbst pflegen.">
         {!bereit ? (
           <p className="leer">Einen Moment…</p>
         ) : !gueltig ? (
@@ -133,7 +125,6 @@ export default function PasswortSetzenSeite() {
             </button>
           </form>
         )}
-      </div>
-    </div>
+    </AnmeldeBuehne>
   );
 }

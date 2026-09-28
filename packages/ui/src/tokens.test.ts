@@ -49,6 +49,13 @@ describe("tokens.css stimmt mit tokens.ts überein", () => {
     }
   });
 
+  it("die Klasse .immer-dunkel traegt das dunkle Theme", () => {
+    const ausCss = werteAus(".immer-dunkel");
+    for (const [name, wert] of Object.entries(farben.dunkel)) {
+      expect(ausCss[alsCssName(name)], `Token ${name}`).toBe(wert);
+    }
+  });
+
   it("Schatten decken sich", () => {
     expect(werteAus(":root")["--shadow"]).toBe(schatten.hell.normal);
     expect(werteAus(":root")["--shadow-sm"]).toBe(schatten.hell.klein);

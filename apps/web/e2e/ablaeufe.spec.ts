@@ -338,18 +338,16 @@ test.describe("Getränke", () => {
 
     await expect(page.getByRole("heading", { name: "Getränke" })).toBeVisible();
 
-    const vorher = await page.locator("table.liste tbody tr").count();
-    await page.locator(".kachel-reihe button.kachel").first().click();
+    const vorher = await page.locator(".zuletzt li").count();
+    // Sammeln und auf einmal eintragen
+    await page.getByRole("button", { name: /eins mehr/ }).first().click();
+    await page.getByRole("button", { name: "Eintragen" }).click();
 
-    await expect(page.locator(".hinweis.erfolg")).toContainText("Gebucht", { timeout: 15_000 });
-    await expect(page.locator("table.liste tbody tr")).toHaveCount(vorher + 1);
+    await expect(page.locator(".hinweis.erfolg")).toContainText("Eingetragen", { timeout: 15_000 });
+    await expect(page.locator(".zuletzt li")).toHaveCount(vorher + 1);
 
     // Innerhalb des Zeitfensters muss die Ruecknahme moeglich sein
-    await page
-      .locator("table.liste tbody tr")
-      .first()
-      .getByRole("button", { name: "Zurücknehmen" })
-      .click();
+    await page.locator(".zuletzt li").first().getByRole("button", { name: "Zurücknehmen" }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("Zurückgenommen", {
       timeout: 15_000,
     });
@@ -678,7 +676,7 @@ test.describe("Offene Spiele und Gäste", () => {
     // Erlassen, nicht geloescht: dass eine Gebuehr entstanden und wieder
     // weggefallen ist, gehört zur Kontohistorie.
     await page.goto("/konto");
-    await expect(page.locator("tr", { hasText: /Gastgebuehr/ }).first()).toContainText("erlassen");
+    await expect(page.locator(".frueher .forderung", { hasText: /Gastgebuehr/ }).first()).toContainText("erlassen");
   });
 });
 

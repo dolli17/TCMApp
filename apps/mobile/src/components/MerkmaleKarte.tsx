@@ -82,9 +82,12 @@ function alsDatum(wert: string | null): string {
 export function MerkmaleKarte({
   zeilen,
   onGeaendert,
+  imBlatt = false,
 }: {
   zeilen: MerkmalZeile[];
   onGeaendert: () => void | Promise<void>;
+  /** Im Blatt des Kontos: ohne eigenen Rahmen und Titel. */
+  imBlatt?: boolean;
 }) {
   const { stil } = useTheme();
   const [laeuft, setLaeuft] = useState(false);
@@ -107,10 +110,12 @@ export function MerkmaleKarte({
   }
 
   return (
-    <View style={stil.karte}>
-      <Text style={[stil.text, { fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 18 }]}>
-        Einwilligungen
-      </Text>
+    <View style={imBlatt ? { gap: 8 } : stil.karte}>
+      {!imBlatt && (
+        <Text style={[stil.text, { fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 18 }]}>
+          Einwilligungen
+        </Text>
+      )}
       <Text style={stil.leise}>
         Was du hier setzt, kannst du jederzeit wieder zurücknehmen.
       </Text>

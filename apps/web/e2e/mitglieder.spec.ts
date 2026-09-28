@@ -248,7 +248,7 @@ test.describe("Mitgliederverwaltung", () => {
     const ort = `Musterstadt${Date.now().toString().slice(-6)}`;
 
     await anmelden(page, NUTZER.mitglied);
-    await page.goto("/konto");
+    await page.goto("/konto/daten");
 
     const karte = page.locator('section[aria-label="Meine Daten"]');
     await expect(karte).toBeVisible();
@@ -286,7 +286,7 @@ test.describe("Mitgliederverwaltung", () => {
 
   test("Mitglied kann seinen Notfallkontakt hinterlegen", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
-    await page.goto("/konto");
+    await page.goto("/konto/notfall");
 
     const karte = page.locator('section[aria-label="Notfallkontakt"]');
 
@@ -424,7 +424,7 @@ test.describe("Mitgliederverwaltung", () => {
 
   test("Mitglied erteilt und widerruft eine Einwilligung", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
-    await page.goto("/konto");
+    await page.goto("/konto/einwilligungen");
 
     const karte = page.locator('section[aria-label="Einwilligungen"]');
     await expect(karte).toBeVisible();
@@ -454,7 +454,7 @@ test.describe("Mitgliederverwaltung", () => {
 
   test("ein Mitglied kann interne Merkmale nicht selbst setzen", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
-    await page.goto("/konto");
+    await page.goto("/konto/einwilligungen");
 
     // Im Konto stehen ausschließlich Merkmale mit Selbstpflege. "Ehrungen" ist
     // Sache des Vorstands und darf hier gar nicht auftauchen.
@@ -754,7 +754,7 @@ test.describe("Mitgliederverwaltung", () => {
 test.describe("E-Mails zu Buchungen", () => {
   test("Mitglied stellt die Buchungsmails ab, und es bleibt so", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
-    await page.goto("/konto");
+    await page.goto("/konto/einwilligungen");
 
     const karte = page.locator(".karte", { hasText: "E-Mails zu Buchungen" }).first();
     await expect(karte).toBeVisible();

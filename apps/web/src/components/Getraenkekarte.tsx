@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { canVoidSelf, formatCents } from "@tcm/core";
+import {
+  canVoidSelf, drinkBatchReport, formatCents, MAX_DRINK_QUANTITY, type DrinkBatchResult,
+} from "@tcm/core";
 import { getraenkBuchen, getraenkStornieren } from "@/app/getraenke/aktionen";
 
 interface Artikel {
@@ -22,6 +24,20 @@ interface Buchung {
   voided_at: string | null;
 }
 
+const ZEITPUNKT = new Intl.DateTimeFormat("de-DE", {
+  weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+  timeZone: "Europe/Berlin",
+});
+const QUELLE: Record<string, string> = { kiosk: "Theke", bar_duty: "Thekendienst", app: "App" };
+
+/**
+ * Die Getraenkekarte (Entwurf AppGetraenke, docs/design/clubhaus)
+ *
+ * Kacheln mit Zaehler: man sammelt, was man genommen hat, und traegt es
+ * ueber die Leiste auf einmal ein. Gebucht wird weiter je Artikel ueber
+ * getraenkBuchen - es gibt keinen Sammelauftrag. Schlaegt einer fehl, sagt
+ * die Meldung welcher, und er bleibt zum erneuten Versuch gewaehlt.
+ */
 export function Getraenkekarte({
   artikel,
   buchungen,
@@ -32,12 +48,37 @@ export function Getraenkekarte({
   stornoFensterMinuten: number;
 }) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
+  /** Gesammelt, noch nicht eingetragen: Artikel-Id -> Menge */
+  const [korb, setKorb] = useState<Record<string, number>>({});
   const [laeuft, starte] = useTransition();
 
-  function buchen(id: string) {
+  const gewaehlt = artikel.filter((a) => (korb[a.id] ?? 0) > 0);
+  const stueck = gewaehlt.reduce((s, a) => s + (korb[a.id] ?? 0), 0);
+  const betrag = gewaehlt.reduce((s, a) => s + (korb[a.id] ?? 0) * a.price_cents, 0);
+
+  function aendern(id: string, um: number) {
+    setMeldung(null);
+    setKorb((k) => {
+      const neu = Math.max(0, Math.min(MAX_DRINK_QUANTITY, (k[id] ?? 0) + um));
+      const rest = { ...k };
+      if (neu === 0) delete rest[id];
+      else rest[id] = neu;
+      return rest;
+    });
+  }
+
+  function eintragen() {
     starte(async () => {
-      const r = await getraenkBuchen(id, 1);
-      setMeldung({ ok: r.ok, text: r.meldung });
+      const ergebnisse: (DrinkBatchResult & { id: string })[] = [];
+      // Nacheinander, in der Reihenfolge der Karte - so liest sich auch die Meldung.
+      for (const a of gewaehlt) {
+        const menge = korb[a.id] ?? 0;
+        const r = await getraenkBuchen(a.id, menge);
+        ergebnisse.push({ id: a.id, name: a.name, quantity: menge, ok: r.ok, message: r.meldung });
+      }
+      setMeldung(drinkBatchReport(ergebnisse));
+      // Was geklappt hat, verlaesst den Korb; was nicht, bleibt fuer einen neuen Versuch.
+      setKorb(Object.fromEntries(ergebnisse.filter((e) => !e.ok).map((e) => [e.id, e.quantity])));
     });
   }
 
@@ -51,45 +92,63 @@ export function Getraenkekarte({
   return (
     <>
       {meldung && (
-        <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`}>{meldung.text}</div>
+        <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">{meldung.text}</div>
       )}
 
-      <h2>Karte</h2>
-      <div className="kachel-reihe">
-        {artikel.map((a) => (
-          <button
-            key={a.id}
-            className="kachel"
-            style={{ textAlign: "left", cursor: "pointer", font: "inherit" }}
-            onClick={() => buchen(a.id)}
-            disabled={laeuft}
-          >
-            <div style={{ fontWeight: 600 }}>{a.name}</div>
-            {a.description && <div className="titel">{a.description}</div>}
-            <div style={{ marginTop: "0.4rem", color: "var(--blue-ink)", fontWeight: 600 }}>
-              {formatCents(a.price_cents)}
-            </div>
-          </button>
-        ))}
-      </div>
+      <section aria-labelledby="h-karte">
+        <div className="sectionlabel">
+          <h2 id="h-karte">Was nimmst du?</h2>
+          <span className="mit">Karte aus der Verwaltung</span>
+        </div>
+        <ul className="getraenke-kacheln">
+          {artikel.map((a) => {
+            const menge = korb[a.id] ?? 0;
+            return (
+              <li key={a.id} className={menge > 0 ? "gewaehlt" : undefined}>
+                <div>
+                  <b>{a.name}</b>
+                  <small>
+                    {formatCents(a.price_cents)}
+                    {a.description ? ` · ${a.description}` : ""}
+                  </small>
+                </div>
+                <div className="zaehler">
+                  {menge > 0 && (
+                    <>
+                      <button type="button" aria-label={`${a.name}: eins weniger`} onClick={() => aendern(a.id, -1)}>
+                        <Zeichen d="M5 12h14" />
+                      </button>
+                      <output className="dpl" aria-label={`${menge} gewählt`}>{menge}</output>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    className="gelb"
+                    aria-label={`${a.name}: eins mehr`}
+                    disabled={menge >= MAX_DRINK_QUANTITY}
+                    onClick={() => aendern(a.id, 1)}
+                  >
+                    <Zeichen d="M12 5v14M5 12h14" />
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
 
-      <h2>Dieser Monat</h2>
-      {buchungen.length === 0 ? (
-        <p className="leer">Noch nichts entnommen.</p>
-      ) : (
-        <div className="tabellenhuelle">
-        <table className="liste">
-          <thead>
-            <tr>
-              <th>Zeitpunkt</th>
-              <th>Artikel</th>
-              <th className="zahl">Menge</th>
-              <th className="zahl">Betrag</th>
-              <th>Erfasst</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
+      <section aria-labelledby="h-zuletzt">
+        <div className="sectionlabel">
+          <h2 id="h-zuletzt">Zuletzt</h2>
+        </div>
+        <p className="mit" style={{ margin: "-4px 0 12px" }}>
+          Eine Entnahme lässt sich {stornoFensterMinuten} Minuten lang selbst zurücknehmen. Danach
+          hilft der Vorstand weiter.
+        </p>
+        {buchungen.length === 0 ? (
+          <p className="leer-klein">Noch nichts entnommen.</p>
+        ) : (
+          <ul className="gruppe zuletzt">
             {buchungen.map((b) => {
               const storniert = Boolean(b.voided_at);
               const stornierbar =
@@ -108,49 +167,55 @@ export function Getraenkekarte({
                 );
 
               return (
-                <tr key={b.id} style={storniert ? { opacity: 0.45 } : undefined}>
-                  <td>
-                    {new Intl.DateTimeFormat("de-DE", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      timeZone: "Europe/Berlin",
-                    }).format(new Date(b.created_at))}
-                  </td>
-                  <td>
-                    {b.item_name}
-                    {storniert && <span className="marke-klein"> storniert</span>}
-                  </td>
-                  <td className="zahl">{b.quantity}</td>
-                  <td className="zahl">{formatCents(b.total_cents ?? 0)}</td>
-                  <td>
-                    <span className="marke-klein">
-                      {b.source === "kiosk" ? "Theke" : b.source === "bar_duty" ? "Thekendienst" : "App"}
-                    </span>
-                  </td>
-                  <td>
-                    {stornierbar && (
-                      <button
-                        className="knopf leise"
-                        onClick={() => zuruecknehmen(b.id)}
-                        disabled={laeuft}
-                      >
-                        Zurücknehmen
-                      </button>
-                    )}
-                  </td>
-                </tr>
+                <li key={b.id} className={storniert ? "zurueck" : undefined}>
+                  <span className="was">
+                    <b>
+                      {b.quantity > 1 ? `${b.quantity}× ` : ""}
+                      {b.item_name}
+                    </b>
+                    <small>
+                      {ZEITPUNKT.format(new Date(b.created_at))} · {QUELLE[b.source] ?? "App"}
+                      {storniert ? " · zurückgenommen" : ""}
+                    </small>
+                  </span>
+                  {stornierbar && (
+                    <button
+                      type="button"
+                      className="leise-rot"
+                      onClick={() => zuruecknehmen(b.id)}
+                      disabled={laeuft}
+                    >
+                      Zurücknehmen
+                    </button>
+                  )}
+                  <span className="betrag dpl tnum">{formatCents(b.total_cents ?? 0)}</span>
+                </li>
               );
             })}
-          </tbody>
-        </table>
+          </ul>
+        )}
+      </section>
+
+      {/* Die Leiste zum Eintragen - am Telefon ueber der schwebenden Leiste */}
+      {stueck > 0 && (
+        <div className="eintragen-leiste" role="region" aria-label="Gewählte Getränke">
+          <div aria-live="polite">
+            <b>{stueck} {stueck === 1 ? "Getränk" : "Getränke"}</b>
+            <small>{formatCents(betrag)} · aufs Monatskonto</small>
+          </div>
+          <button type="button" className="knopf gold" onClick={eintragen} disabled={laeuft}>
+            {laeuft ? "Wird eingetragen…" : "Eintragen"}
+          </button>
         </div>
       )}
-      <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
-        Eigene Fehlbuchungen können {stornoFensterMinuten} Minuten lang zurückgenommen werden.
-        Danach hilft der Vorstand weiter.
-      </p>
     </>
+  );
+}
+
+function Zeichen({ d }: { d: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d={d} fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+    </svg>
   );
 }
