@@ -4,6 +4,9 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { MitgliederSegmente } from "@/components/MitgliederSegmente";
 import { Listenzeile, type HinweisTon } from "@/components/Listenzeile";
 import { MitgliederKopf } from "@/components/MitgliederKopf";
+import { MitgliederWahl } from "@/components/MitgliederWahl";
+import { MitgliedUebersicht } from "@/components/MitgliedUebersicht";
+import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 
 export const dynamic = "force-dynamic";
 
@@ -41,9 +44,11 @@ const JE_SEITE = 50;
 export default async function MitgliederSeite({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; filter?: string; art?: string; seite?: string }>;
+  searchParams: Promise<{ q?: string; filter?: string; art?: string; seite?: string; id?: string }>;
 }) {
-  const { q, filter, art, seite } = await searchParams;
+  const { q, filter, art, seite, id: gewaehlteId } = await searchParams;
+  // Nur eine gültige Kennung wählt aus - sie landet in einer Abfrage.
+  const auswahl = gewaehlteId && /^[0-9a-f-]{36}$/.test(gewaehlteId) ? gewaehlteId : null;
   // Das Rollenschloss steht im Layout - siehe app/admin/layout.tsx.
   const gewaehlt = BESTAND.some((f) => f.wert === filter) ? filter! : "aktiv";
   const artWahl = ARTEN.find((a) => a.wert === art)?.wert ?? "";
@@ -126,18 +131,16 @@ export default async function MitgliederSeite({
 
   return (
     <div className="verwaltung mitglieder">
-      <header className="verwaltung-kopf">
-        <div>
-          <div className="kicker">Verwaltung</div>
-          <h1 className="pagetitle">Mitglieder</h1>
-        </div>
-        <div className="aktionen">
-          <MitgliederKopf />
-        </div>
-      </header>
+      <VerwaltungsKopf titel="Mitglieder">
+        <MitgliederKopf />
+      </VerwaltungsKopf>
 
       <MitgliederSegmente aktiv="/admin/mitglieder" />
 
+      {/* Liste links, Mitglied rechts - am Desktop ohne Seitenwechsel (?id=).
+          Unter 1100 px steht nur eins von beiden. */}
+      <div className={`mitglieder-desk${auswahl ? " mit-auswahl" : ""}`}>
+      <section className="mitglieder-listenseite" aria-label="Mitgliederliste">
       <div className="suchleiste">
         <form className="suchfeld" role="search">
           {gewaehlt !== "aktiv" && <input type="hidden" name="filter" value={gewaehlt} />}
@@ -176,6 +179,7 @@ export default async function MitgliederSeite({
           <div className="gruppenkopf klein">
             <span className="kicker">{gefiltert.length} Mitglieder · A–Z</span>
           </div>
+          <MitgliederWahl>
           <ul className="liste-gruppe" aria-label="Mitglieder">
             {sichtbar.map((m) => {
               const h = hinweis(m);
@@ -201,11 +205,13 @@ export default async function MitgliederSeite({
                     }
                     hinweis={h?.text}
                     hinweisTon={h?.ton}
+                    aktuell={m.id === auswahl}
                   />
                 </li>
               );
             })}
           </ul>
+          </MitgliederWahl>
           <div className="tabellenfuss">
             <span>
               {gefiltert.length} Mitglieder · {sichtbar.length} angezeigt
@@ -227,6 +233,22 @@ export default async function MitgliederSeite({
           </div>
         </div>
       )}
+      </section>
+
+      <section className="mitglieder-detailseite" aria-label="Ausgewähltes Mitglied">
+        {auswahl ? (
+          <>
+            <Link href={link({})} className="zurueck nur-schmal">‹ Alle Mitglieder</Link>
+            <MitgliedUebersicht id={auswahl} kompakt />
+          </>
+        ) : (
+          <div className="karte leer-auswahl">
+            <b>Ein Mitglied auswählen</b>
+            <p>Links antippen – das Mitglied erscheint hier, die Liste bleibt stehen.</p>
+          </div>
+        )}
+      </section>
+      </div>
     </div>
   );
 

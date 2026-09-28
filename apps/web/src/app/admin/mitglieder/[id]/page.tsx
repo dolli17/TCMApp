@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { formatCents, isoDateLabel } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { BankUndMandatKarte, type FinanzZeile } from "@/components/BankUndMandatKarte";
@@ -9,26 +9,38 @@ import { LoginKarte, type LoginZustand } from "@/components/LoginKarte";
 import { MerkmaleKarte, type MerkmalZeile } from "@/components/MerkmaleKarte";
 import { MitgliedschaftsKarte } from "@/components/MitgliedschaftsKarte";
 import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
-import { Reiter } from "@/components/Reiter";
 import { Stammdatenkarte, type Feld } from "@/components/Stammdatenkarte";
 import { ZugehoerigkeitKarte } from "@/components/ZugehoerigkeitKarte";
 import { MannschaftKarte } from "@/components/MannschaftKarte";
+import { MitgliedUebersicht, type MitgliedTeil } from "@/components/MitgliedUebersicht";
 import { stammdatenSpeichern } from "./aktionen";
 
 export const dynamic = "force-dynamic";
 
-const ABSCHNITTE = [
-  { wert: "stammdaten", label: "Stammdaten" },
-  { wert: "mitgliedschaft", label: "Mitgliedschaft" },
-  { wert: "bank", label: "Bank & Mandat" },
-  { wert: "forderungen", label: "Forderungen" },
-  { wert: "merkmale", label: "Merkmale" },
-  { wert: "zugang", label: "Zugang" },
-  { wert: "protokoll", label: "Protokoll" },
-];
+/** Die Unterseiten eines Mitglieds (docs/design/clubhaus/verwaltung, Regel 6) */
+const TEILE: Record<MitgliedTeil, string> = {
+  stammdaten: "Stammdaten",
+  mitgliedschaft: "Mitgliedschaft",
+  beitraege: "Beitragsarten",
+  forderungen: "Forderungen",
+  bank: "Bank & Mandat",
+  merkmale: "Merkmale & Einwilligungen",
+  zugang: "Zugang",
+  protokoll: "Änderungsprotokoll",
+  austritt: "Austritt & Datensatz",
+};
 
-/** Aeltere Verweise zeigen noch auf den frueheren Sammelabschnitt. */
-const ALIAS: Record<string, string> = { finanzen: "bank" };
+/** Die Reiter von früher (?abschnitt=…) führen auf die neuen Unterseiten. */
+const ALT: Record<string, MitgliedTeil> = {
+  stammdaten: "stammdaten",
+  mitgliedschaft: "mitgliedschaft",
+  finanzen: "bank",
+  bank: "bank",
+  forderungen: "forderungen",
+  merkmale: "merkmale",
+  zugang: "zugang",
+  protokoll: "protokoll",
+};
 
 const FORDERUNG_STAND: Record<string, { text: string; ton: string }> = {
   open: { text: "offen", ton: "gelb" },
@@ -132,12 +144,27 @@ export default async function MitgliedSeite({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ abschnitt?: string; jahr?: string }>;
+  searchParams: Promise<{ abschnitt?: string; teil?: string; jahr?: string }>;
 }) {
   const { id } = await params;
-  const { abschnitt: gewaehlt, jahr: jahrParam } = await searchParams;
-  const gesucht = ALIAS[gewaehlt ?? ""] ?? gewaehlt;
-  const abschnitt = ABSCHNITTE.some((a) => a.wert === gesucht) ? gesucht! : "stammdaten";
+  const { abschnitt: alt, teil: gewaehlt, jahr: jahrParam } = await searchParams;
+  if (alt && ALT[alt]) {
+    redirect(`/admin/mitglieder/${id}?teil=${ALT[alt]}${jahrParam ? `&jahr=${jahrParam}` : ""}`);
+  }
+  const teil = gewaehlt && gewaehlt in TEILE ? (gewaehlt as MitgliedTeil) : null;
+
+  // Ohne Unterseite: das Mitglied als Übersicht, aufgebaut wie das eigene Konto.
+  if (!teil) {
+    return (
+      <div className="verwaltung mitglied-detail">
+        <div className="kopfleiste">
+          <Link href="/admin/mitglieder" className="zurueck">‹ Mitglieder</Link>
+          <Link href={`/admin/mitglieder/${id}?teil=stammdaten`} className="zurueck">Bearbeiten</Link>
+        </div>
+        <MitgliedUebersicht id={id} />
+      </div>
+    );
+  }
 
   // Das Rollenschloss steht im Layout - siehe app/admin/layout.tsx. Wer
   // angemeldet ist, wird hier trotzdem gebraucht: ein Admin darf sich selbst
@@ -240,47 +267,29 @@ export default async function MitgliedSeite({
 
   return (
     <div className="verwaltung mitglied-detail">
-      <Link href="/admin/mitglieder" className="zurueck">
-        ‹ Alle Mitglieder
-      </Link>
-
-      <header className="mitglied-kopf">
-        <span className="avatar gross" aria-hidden="true">
-          {(m.first_name[0] ?? "") + (m.last_name[0] ?? "")}
-        </span>
-        <div className="mitglied-kopf-text">
-          <h1 className="pagetitle">
-            {m.last_name}, {m.first_name}
-          </h1>
-          <div className="marken-reihe">
-            <span className={`statusmarke ${m.status === "active" ? "gruen" : m.status === "archived" ? "rot" : ""}`}>
-              {STATUS_TEXT[m.status] ?? m.status}
+      <header className="unterseite-kopf">
+        <Link href={`/admin/mitglieder/${id}`} className="zurueck">
+          ‹ {m.first_name} {m.last_name}
+        </Link>
+        <h1 className="pagetitle">{TEILE[teil]}</h1>
+        {/* Die Marken bleiben sichtbar: wer hier etwas ändert, sieht, an wem */}
+        <div className="marken-reihe">
+          <span className={`statusmarke ${m.status === "active" ? "gruen" : m.status === "archived" ? "rot" : ""}`}>
+            {STATUS_TEXT[m.status] ?? m.status}
+          </span>
+          {laufend && <span className="statusmarke">Nr. {laufend.number}</span>}
+          {rollen.includes("admin") && <span className="statusmarke gelb">Administrator</span>}
+          {m.is_trainer && <span className="statusmarke gelb">Trainer</span>}
+          {m.teams && (
+            <span className={`statusmarke${m.is_team_captain ? " gelb" : ""}`}>
+              {m.teams.name}
+              {m.is_team_captain ? " · Mannschaftsführer" : ""}
             </span>
-            {laufend && <span className="statusmarke">Nr. {laufend.number}</span>}
-            {rollen.includes("admin") && <span className="statusmarke gelb">Administrator</span>}
-            {m.is_trainer && <span className="statusmarke gelb">Trainer</span>}
-            {m.teams && (
-              <span className={`statusmarke${m.is_team_captain ? " gelb" : ""}`}>
-                {m.teams.name}
-                {m.is_team_captain ? " · Mannschaftsführer" : ""}
-              </span>
-            )}
-            <span className="statusmarke">{m.auth_user_id ? "Login vorhanden" : "kein Login"}</span>
-            {m.source === "ebusy_import" && <span className="statusmarke">aus eBuSy</span>}
-          </div>
-        </div>
-        <div className="aktionen">
-          {m.email && (
-            <a className="knopf leise" href={`mailto:${m.email}`}>
-              E-Mail schreiben
-            </a>
           )}
         </div>
       </header>
 
-      <Reiter eintraege={ABSCHNITTE} aktiv={abschnitt} />
-
-      {abschnitt === "stammdaten" && (
+      {teil === "stammdaten" && (
         <>
           <Stammdatenkarte
             titel="Person und Kontakt"
@@ -312,14 +321,9 @@ export default async function MitgliedSeite({
         </>
       )}
 
-      {abschnitt === "mitgliedschaft" && (
+      {teil === "mitgliedschaft" && (
         <>
-          <MitgliedschaftsKarte
-            mitgliedId={id}
-            laufend={laufend}
-            letzte={mitgliedschaften[0] ?? null}
-            archiviert={m.status === "archived"}
-          />
+          
 
           <ZugehoerigkeitKarte
             mitgliedId={id}
@@ -363,21 +367,34 @@ export default async function MitgliedSeite({
             </section>
           )}
 
+        </>
+      )}
+
+      {teil === "austritt" && (
+        <>
+          <MitgliedschaftsKarte
+            mitgliedId={id}
+            laufend={laufend}
+            letzte={mitgliedschaften[0] ?? null}
+            archiviert={m.status === "archived"}
+          />
           <Gefahrenzone id={id} nachname={m.last_name} archiviert={m.status === "archived"} selbst={istSelbst} />
         </>
       )}
 
-      {abschnitt === "bank" && <BankUndMandat id={id} />}
+      {teil === "bank" && <BankUndMandat id={id} />}
 
-      {abschnitt === "forderungen" && (
-        <Forderungen id={id} jahr={Number(jahrParam) || new Date().getFullYear()} />
+      {teil === "beitraege" && (
+        <Beitraege id={id} jahr={Number(jahrParam) || new Date().getFullYear()} />
       )}
 
-      {abschnitt === "merkmale" && <Merkmale id={id} />}
+      {teil === "forderungen" && <Forderungen id={id} />}
 
-      {abschnitt === "zugang" && <Zugang id={id} selbst={istSelbst} />}
+      {teil === "merkmale" && <Merkmale id={id} />}
 
-      {abschnitt === "protokoll" && <Protokoll id={id} />}
+      {teil === "zugang" && <Zugang id={id} selbst={istSelbst} />}
+
+      {teil === "protokoll" && <Protokoll id={id} />}
     </div>
   );
 }
@@ -408,31 +425,26 @@ async function BankUndMandat({ id }: { id: string }) {
  * Die Beitragsarten des Jahres und darunter, was daraus an Forderungen
  * entstanden ist - fuer dieses Mitglied oder als Zahler fuer andere.
  */
-async function Forderungen({ id, jahr }: { id: string; jahr: number }) {
+/** Die Beitragsarten des Jahres */
+async function Beitraege({ id, jahr }: { id: string; jahr: number }) {
   const supabase = await createServerSupabase();
+  const { data, error } = await supabase.rpc("member_fee_overview", { p_member_id: id, p_year: jahr });
+  if (error) return <div className="hinweis fehler">{error.message}</div>;
+  return <BeitragsartenKarte mitgliedId={id} jahr={jahr} zeilen={(data ?? []) as BeitragsZeile[]} />;
+}
 
-  const [beitraegeRes, forderungenRes] = await Promise.all([
-    supabase.rpc("member_fee_overview", { p_member_id: id, p_year: jahr }),
-    supabase
-      .from("charges")
-      .select("id, description, amount_cents, status, due_date, created_at, member_id, members!charges_member_id_fkey(first_name, last_name)")
-      .or(`member_id.eq.${id},payer_id.eq.${id}`)
-      .order("created_at", { ascending: false })
-      .limit(100),
-  ]);
+/** Was an Forderungen entstanden ist - für dieses Mitglied oder als Zahler für andere. */
+async function Forderungen({ id }: { id: string }) {
+  const supabase = await createServerSupabase();
+  const forderungenRes = await supabase
+    .from("charges")
+    .select("id, description, amount_cents, status, due_date, created_at, member_id, members!charges_member_id_fkey(first_name, last_name)")
+    .or(`member_id.eq.${id},payer_id.eq.${id}`)
+    .order("created_at", { ascending: false })
+    .limit(100);
 
   return (
     <>
-      {beitraegeRes.error ? (
-        <div className="hinweis fehler">{beitraegeRes.error.message}</div>
-      ) : (
-        <BeitragsartenKarte
-          mitgliedId={id}
-          jahr={jahr}
-          zeilen={(beitraegeRes.data ?? []) as BeitragsZeile[]}
-        />
-      )}
-
       <section className="liste-abschnitt" aria-labelledby="h-forderungen">
         <Gruppenkopf titel="Forderungen" id="h-forderungen" />
         {forderungenRes.error ? (

@@ -79,7 +79,7 @@ export function BeitragsartenKarte({
           <select
             aria-label="Jahr"
             value={jahr}
-            onChange={(e) => router.push(`?abschnitt=finanzen&jahr=${e.target.value}`)}
+            onChange={(e) => router.push(`?teil=beitraege&jahr=${e.target.value}`)}
           >
             {[jahr + 1, jahr, jahr - 1, jahr - 2].map((j) => (
               <option key={j} value={j}>

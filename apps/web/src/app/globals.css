@@ -2103,6 +2103,104 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .kennzahlen.zwei { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .kennzahlen.zwei .wert { font-size: 30px; }
 
+/* Kopf einer Verwaltungsseite am Telefon: Titel und gelber Knopf in einer Zeile */
+.nur-telefon { display: none !important; }
+.text-kurz { display: none; }
+@media (max-width: 767px) {
+  .nur-telefon { display: inline-block !important; }
+  .nur-ab-tablet { display: none; }
+  .text-lang { display: none; }
+  .text-kurz { display: inline; }
+  .verwaltung-kopf { flex-wrap: nowrap; align-items: flex-end; }
+  .verwaltung-kopf .zurueck { color: var(--blue-ink); font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .verwaltung-kopf .pagetitle { font-size: 34px; }
+  .verwaltung-kopf .aktionen .knopf.gold {
+    min-height: 40px; padding: 0 14px 0 10px; border-radius: 20px; font-family: var(--font-text);
+    font-size: 14.5px; font-weight: 800; white-space: nowrap;
+  }
+  .verwaltung-kopf .aktionen .knopf.gold svg { width: 16px; height: 16px; }
+  .verwaltung-kopf .unterzeile { display: none; }
+}
+
+/* Mitglieder: Liste links (420), Mitglied rechts (Regel 6) */
+.mitglieder-desk { display: grid; gap: 24px; align-items: start; }
+.mitglieder-listenseite, .mitglieder-detailseite { display: grid; gap: 14px; min-width: 0; align-content: start; }
+.mitglieder-detailseite { display: none; }
+.mitglieder-desk.mit-auswahl .mitglieder-listenseite { display: none; }
+.mitglieder-desk.mit-auswahl .mitglieder-detailseite { display: grid; }
+@media (min-width: 1100px) {
+  .mitglieder-desk { grid-template-columns: 420px minmax(0, 1fr); }
+  .mitglieder-desk .mitglieder-listenseite, .mitglieder-desk .mitglieder-detailseite,
+  .mitglieder-desk.mit-auswahl .mitglieder-listenseite { display: grid; }
+  .mitglieder-desk .mitglieder-detailseite { position: sticky; top: 24px; }
+  .mitglieder-listenseite .suchleiste { flex-direction: column; align-items: stretch; }
+  .mitglieder-listenseite .suchfeld { max-width: none; flex: 0 0 auto; }
+}
+.leer-auswahl { padding: 28px; display: grid; gap: 6px; color: var(--muted); }
+.leer-auswahl b { color: var(--ink); font-size: 18px; }
+.leer-auswahl p { margin: 0; }
+
+/* Ein Mitglied wie das eigene Konto */
+.mitglied-detail > .kopfleiste { display: flex; justify-content: space-between; align-items: center; }
+.mitglied-detail > .kopfleiste .zurueck { margin: 0; min-height: 44px; display: inline-flex; align-items: center; color: var(--blue-ink); font-size: 15px; font-weight: 600; }
+.mitglied-uebersicht { display: grid; gap: 28px; }
+.mitglied-profil { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
+.mitglied-profil .avatar.gross { width: 88px; height: 88px; border-radius: 44px; font-size: 30px; font-weight: 800; background: var(--brand); }
+.mitglied-profil h1, .mitglied-profil h2 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -.4px; line-height: 1.1; }
+.mitglied-profil .meta { font-size: 14px; color: var(--muted); margin-top: 4px; }
+.mitglied-profil .marken-reihe { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 10px; }
+.mitglied-profil .statusmarke { height: 26px; border-radius: 13px; padding: 0 10px; font-size: 12.5px; }
+.mitglied-profil .schnell { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.schnellaktion {
+  min-height: 64px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  background: var(--surf); border: 1px solid var(--line); box-shadow: var(--shadow);
+  color: var(--blue-ink); font-size: 13px; font-weight: 700; text-decoration: none;
+}
+.schnellaktion:hover { text-decoration: none; border-color: var(--line-2); }
+.schnellaktion svg { width: 20px; height: 20px; }
+.schnellaktion.aus { color: var(--muted); opacity: .6; }
+.mitglied-gruppen { display: grid; gap: 28px; }
+.dienst-karte { display: grid; gap: 12px; padding: 16px; color: var(--ink); text-decoration: none; }
+.dienst-karte:hover { text-decoration: none; border-color: var(--line-2); }
+.dienst-karte .zeile { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 15.5px; font-weight: 600; }
+.dienst-karte .zeile b { font-size: 20px; }
+.dienst-karte .zeile.klein { font-size: 13.5px; font-weight: 400; color: var(--muted); }
+.dienst-karte .link { font-size: 14px; font-weight: 700; color: var(--blue-ink); }
+.dienst-karte .balken { height: 8px; border-radius: 4px; background: var(--surf-2); overflow: hidden; }
+.dienst-karte .balken i { display: block; height: 100%; border-radius: 4px; background: var(--green); }
+.gold-ink { color: var(--gold-ink); font-weight: 700; }
+.mitglied-ende .listenzeile { min-height: 52px; }
+.unterseite-kopf .zurueck { color: var(--blue-ink); font-size: 15px; font-weight: 600; }
+.unterseite-kopf .pagetitle { margin: 4px 0 0; }
+.unterseite-kopf .marken-reihe { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+/* Am Desktop rechts neben der Liste: kompakter Kopf, Abschnitte zweispaltig */
+.mitglied-uebersicht.kompakt {
+  padding: 28px; border-radius: 28px; background: var(--surf); border: 1px solid var(--line); box-shadow: var(--shadow);
+  gap: 22px;
+}
+.kompakt .mitglied-profil { flex-direction: row; flex-wrap: wrap; align-items: center; text-align: left; gap: 16px 20px; }
+.kompakt .mitglied-profil .avatar.gross { width: 76px; height: 76px; border-radius: 38px; font-size: 26px; }
+.kompakt .mitglied-profil .text { flex: 1 1 260px; min-width: 0; }
+.kompakt .mitglied-profil h2 { font-size: 30px; }
+.kompakt .mitglied-profil .marken-reihe { justify-content: flex-start; }
+.kompakt .mitglied-profil .schnell { width: auto; display: flex; gap: 8px; }
+.kompakt .schnellaktion { width: 48px; min-height: 48px; border-radius: 16px; background: var(--surf-2); border: 0; box-shadow: none; }
+.kompakt .schnellaktion span { display: none; }
+.kompakt .mitglied-profil .knopf.leise { min-height: 48px; border-radius: 16px; background: var(--surf-2); border: 0; }
+.kompakt .mitglied-gruppen { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.kompakt .gruppenkopf h2 { font-size: 18px; }
+.kompakt .liste-gruppe { background: var(--surf-2); box-shadow: none; border: 0; border-radius: 18px; }
+.kompakt .listenzeile { min-height: 50px; }
+.kompakt .listenzeile .titel { font-size: 15px; font-weight: 600; }
+.kompakt .mitglied-ende { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 18px; background: transparent; border-top: 1px solid var(--line); border-radius: 0; padding-top: 12px; }
+.kompakt .mitglied-ende .listenzeile { width: auto; min-height: 40px; padding: 6px 0; border: 0; background: transparent; }
+.kompakt .mitglied-ende .listenzeile:first-child { margin-right: auto; }
+.kompakt .mitglied-ende .listenzeile:first-child .titel { color: var(--blue-ink); }
+@media (max-width: 1099px) {
+  .mitglied-uebersicht.kompakt { padding: 0; border: 0; background: transparent; box-shadow: none; }
+}
+
 /* Weniger Bewegung, wenn das System danach fragt */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
