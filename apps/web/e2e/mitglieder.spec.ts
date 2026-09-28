@@ -316,7 +316,7 @@ test.describe("Mitgliederverwaltung", () => {
     // zwei Merkmale gleichen Namens, und der Test greift ins Leere.
     const name = `E2E-Kennzeichnung ${code}`;
 
-    await page.goto("/admin/mitglieder/merkmale");
+    await page.goto("/admin/system/merkmale");
     await page.getByRole("button", { name: "Merkmal anlegen" }).click();
     await page.getByLabel("Schlüssel").fill(code);
     await page.getByLabel("Name").fill(name);
@@ -347,10 +347,10 @@ test.describe("Mitgliederverwaltung", () => {
     // nicht - ein Merkmal mit zugeordneten Werten lässt sich nicht löschen.
     await aufraeumen(page, adresse, nachname);
 
-    await page.goto(`/admin/mitglieder/merkmale?bearbeiten=${code}`);
+    await page.goto(`/admin/system/merkmale?bearbeiten=${code}`);
     await page.getByRole("button", { name: "Merkmal löschen" }).click();
     await page.getByRole("button", { name: "Wirklich löschen" }).click();
-    await page.waitForURL(/\/admin\/mitglieder\/merkmale$/, { timeout: 20_000 });
+    await page.waitForURL(/\/admin\/system\/merkmale$/, { timeout: 20_000 });
     await expect(page.locator("table.liste tbody")).not.toContainText(code);
   });
 
@@ -412,7 +412,7 @@ test.describe("Mitgliederverwaltung", () => {
 
   test("ein benutztes Merkmal lässt sich nicht löschen", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/admin/mitglieder/merkmale?bearbeiten=foto");
+    await page.goto("/admin/system/merkmale?bearbeiten=foto");
 
     // "foto" ist eine Einwilligung aus dem Bestand. Sobald jemand sie erteilt
     // hat, steht statt des Knopfes die Begründung.
@@ -729,7 +729,7 @@ test.describe("Mitgliederverwaltung", () => {
     await page.goto("/admin/mitglieder");
 
     await page
-      .getByRole("navigation", { name: "Bereiche Mitglieder" })
+      .getByRole("navigation", { name: "Mitglieder", exact: true })
       .getByRole("link", { name: /Anträge/ })
       .click();
     await expect(page).toHaveURL(/\/admin\/mitglieder\/antraege/);

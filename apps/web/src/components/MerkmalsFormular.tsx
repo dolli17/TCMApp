@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { merkmalLoeschen, merkmalSpeichern } from "@/app/admin/mitglieder/merkmale/aktionen";
+import { merkmalLoeschen, merkmalSpeichern } from "@/app/admin/system/merkmale/aktionen";
 
 export interface MerkmalsDefinition {
   id: string;
@@ -60,7 +60,7 @@ export function MerkmalsFormular({
     starte(async () => {
       const e = await merkmalLoeschen(vorhanden.code);
       if (e.ok) {
-        router.push("/admin/einstellungen/merkmale");
+        router.push("/admin/system/merkmale");
         return;
       }
       setMeldung({ ok: false, text: e.meldung });

@@ -9,8 +9,8 @@ import { usePathname } from "next/navigation";
  * Menüzustände geben, die auseinanderlaufen.
  *
  * Die Seitenleiste (ab 768 px) zeigt die Bereiche der Verwaltung einzeln in
- * einem eigenen Abschnitt; die schwebende Leiste hat dafür keinen Platz - dort
- * führt die Konto-Seite in die Verwaltung.
+ * einem eigenen Abschnitt; die schwebende Leiste hat für Admins einen fünften
+ * Tab „Admin“, der auf die Übersicht führt (docs/design/clubhaus/verwaltung).
  */
 
 export interface NavEintrag {
@@ -18,6 +18,10 @@ export interface NavEintrag {
   label: string;
   kurz: string;
   symbol: keyof typeof SYMBOLE;
+  /** Kleine Zahl daneben, etwa offene Anträge */
+  zahl?: number;
+  /** Aktiv für alles unter href, auch für href selbst (der Admin-Tab) */
+  bereich?: boolean;
 }
 
 const SYMBOLE = {
@@ -32,6 +36,12 @@ const SYMBOLE = {
   ),
   konto: (
     <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+  ),
+  admin: (
+    <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" strokeWidth="1.8" fill="none" strokeLinejoin="round" />
+  ),
+  dienst: (
+    <path d="M9 4h6v3H9zM7 5H5v16h14V5h-2M9 14l2 2 4-4" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
   ),
   uebersicht: (
     <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" strokeWidth="1.8" fill="none" strokeLinejoin="round" />
@@ -67,17 +77,20 @@ export function Symbol({ name }: { name: keyof typeof SYMBOLE }) {
  * Verwaltung ist der Sonderfall: sie ist Präfix aller Bereiche und darf nur
  * bei genauer Übereinstimmung gewinnen - sonst leuchteten zwei Einträge.
  */
-function istAktiv(pfad: string, href: string): boolean {
-  if (href === "/admin") return pfad === "/admin";
-  return pfad === href || pfad.startsWith(href + "/");
+function istAktiv(pfad: string, e: NavEintrag): boolean {
+  if (e.href === "/admin" && !e.bereich) return pfad === "/admin";
+  return pfad === e.href || pfad.startsWith(e.href + "/");
 }
 
 function Eintraege({ eintraege, kurz }: { eintraege: NavEintrag[]; kurz?: boolean }) {
   const pfad = usePathname();
   return eintraege.map((e) => (
-    <Link key={e.href} href={e.href} aria-current={istAktiv(pfad, e.href) ? "page" : undefined}>
+    <Link key={e.href} href={e.href} aria-current={istAktiv(pfad, e) ? "page" : undefined}>
       <Symbol name={e.symbol} />
       {kurz ? e.kurz : e.label}
+      {!kurz && e.zahl ? (
+        <span className="menue-zahl" aria-label={`${e.zahl} offen`}>{e.zahl}</span>
+      ) : null}
     </Link>
   ));
 }
@@ -104,8 +117,7 @@ export function Seitenmenue({
 
 /**
  * Schwebende Leiste unter 768 px, rechts daneben der runde Buchen-Knopf.
- * Nur die Haupteintraege - wie in der App. Admins erreichen die Verwaltung
- * am Telefon ueber eine Karte auf der Konto-Seite.
+ * Die Haupteintraege wie in der App, fuer Admins dazu der Tab "Admin".
  */
 export function Fussmenue({ eintraege }: { eintraege: NavEintrag[] }) {
   return (

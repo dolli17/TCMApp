@@ -47,20 +47,37 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     { href: "/konto", label: "Mein Konto", kurz: "Konto", symbol: "konto" },
   ];
 
-  // Die Bereiche der Vorstandsverwaltung - in der Seitenleiste einzeln. Am
-  // Telefon fuehrt eine Karte auf der Konto-Seite hinein. Reihenfolge wie im Entwurf; die
-  // Reiter innerhalb von /admin (AdminReiter) bleiben daneben bestehen.
+  // Die Bereiche der Vorstandsverwaltung (docs/design/clubhaus/verwaltung,
+  // Regel 1): in der Seitenleiste einzeln, am Telefon ein fuenfter Tab
+  // "Admin", der auf die Uebersicht fuehrt. Bei den Mitgliedern steht die
+  // Zahl der offenen Antraege.
   const admin = isAdmin(rollen);
+  let offeneAntraege = 0;
+  if (admin) {
+    const supabase = await createServerSupabase();
+    const { count } = await supabase
+      .from("membership_applications")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "new");
+    offeneAntraege = count ?? 0;
+  }
   const verwaltung: NavEintrag[] = admin
     ? [
         { href: "/admin", label: "Übersicht", kurz: "Übersicht", symbol: "uebersicht" },
-        { href: "/admin/mitglieder", label: "Mitglieder", kurz: "Mitglieder", symbol: "mitglieder" },
+        {
+          href: "/admin/mitglieder", label: "Mitglieder", kurz: "Mitglieder", symbol: "mitglieder",
+          zahl: offeneAntraege || undefined,
+        },
+        { href: "/admin/arbeitsdienst", label: "Arbeitsdienst", kurz: "Dienst", symbol: "dienst" },
         { href: "/admin/kasse", label: "Kasse", kurz: "Kasse", symbol: "kasse" },
         { href: "/admin/plaetze", label: "Plätze & Serien", kurz: "Plätze", symbol: "serie" },
         { href: "/admin/getraenke", label: "Getränke", kurz: "Getränke", symbol: "getraenk" },
         { href: "/admin/system", label: "System", kurz: "System", symbol: "system" },
       ]
     : [];
+  const telefon: NavEintrag[] = admin
+    ? [...eintraege, { href: "/admin", label: "Admin", kurz: "Admin", symbol: "admin", bereich: true }]
+    : eintraege;
 
   const vorname = angemeldet?.member?.first_name ?? "";
   const nachname = angemeldet?.member?.last_name ?? "";
@@ -113,7 +130,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
               {children}
             </div>
-            <Fussmenue eintraege={eintraege} />
+            <Fussmenue eintraege={telefon} />
           </div>
         ) : (
           children

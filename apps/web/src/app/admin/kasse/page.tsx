@@ -4,7 +4,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
 import { KassenKennzahlen } from "@/components/KassenKennzahlen";
 import { LaufListe, type LaufZeile } from "@/components/LaufListe";
-import { Reiter } from "@/components/Reiter";
+import { BereichSegmente } from "@/components/BereichSegmente";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { AnkuendigungsKarte } from "@/components/AnkuendigungsKarte";
 import { BeitragslaufKarte } from "@/components/BeitragslaufKarte";
@@ -15,13 +15,16 @@ import { GetraenkemonatKarte, type MonatZeile } from "@/components/Getraenkemona
 export const dynamic = "force-dynamic";
 
 const ABSCHNITTE = [
-  { wert: "lauf", label: "Beitragslauf" },
-  { wert: "getraenke", label: "Getränkemonate" },
   { wert: "forderungen", label: "Forderungen" },
-  { wert: "lastschrift", label: "Lastschrift" },
+  { wert: "lastschrift", label: "Lastschriften" },
+  { wert: "getraenke", label: "Getränkemonate" },
+  { wert: "lauf", label: "Beitragslauf" },
   { wert: "arten", label: "Beitragsarten" },
   { wert: "regeln", label: "Regeln" },
 ] as const;
+
+/** Die drei Teile des Segment-Schalters (Regel 1); der Rest sind Unterseiten. */
+const SEGMENTE = ["forderungen", "lastschrift", "getraenke"];
 
 /**
  * Alles, was Geld betrifft, an einem Ort.
@@ -40,7 +43,8 @@ export default async function KasseSeite({
   searchParams: Promise<{ abschnitt?: string; jahr?: string; stand?: string }>;
 }) {
   const { abschnitt, jahr: jahrParam, stand } = await searchParams;
-  const gewaehlt = ABSCHNITTE.some((a) => a.wert === abschnitt) ? abschnitt! : "lauf";
+  const gewaehlt = ABSCHNITTE.some((a) => a.wert === abschnitt) ? abschnitt! : "forderungen";
+  const unterseite = SEGMENTE.includes(gewaehlt) ? null : ABSCHNITTE.find((a) => a.wert === gewaehlt)!;
   const jahr = Number(jahrParam) || new Date().getFullYear();
 
   const supabase = await createServerSupabase();
@@ -87,14 +91,31 @@ export default async function KasseSeite({
 
   return (
     <div className="verwaltung">
-      <VerwaltungsKopf
-        titel="Kasse"
-        unterzeile="Beiträge, Getränkeabrechnung und alles, was daraus an Forderungen entsteht."
-      />
+      {unterseite ? (
+        <VerwaltungsKopf
+          kicker="Verwaltung · Kasse"
+          titel={unterseite.label}
+          zurueck={{ href: "/admin/kasse", text: "Kasse" }}
+        />
+      ) : (
+        <>
+          <VerwaltungsKopf
+            titel="Kasse"
+            unterzeile="Beiträge, Getränkeabrechnung und alles, was daraus an Forderungen entsteht."
+          />
 
-      <KassenKennzahlen />
+          <KassenKennzahlen />
 
-      <Reiter eintraege={[...ABSCHNITTE]} aktiv={gewaehlt} />
+          <BereichSegmente
+            label="Kasse"
+            aktiv={`/admin/kasse?abschnitt=${gewaehlt}`}
+            eintraege={SEGMENTE.map((wert) => ({
+              href: `/admin/kasse?abschnitt=${wert}`,
+              label: ABSCHNITTE.find((a) => a.wert === wert)!.label,
+            }))}
+          />
+        </>
+      )}
 
       {gewaehlt === "lauf" && (
         <Beitragslauf
@@ -118,6 +139,15 @@ export default async function KasseSeite({
 
       {gewaehlt === "forderungen" && (
         <>
+          {/* Was man seltener braucht, steht als Unterseite darunter */}
+          <nav className="gruppe" aria-label="Einrichtung der Kasse">
+            {(["lauf", "arten", "regeln"] as const).map((wert) => (
+              <Link key={wert} href={`/admin/kasse?abschnitt=${wert}`} className="gruppen-zeile">
+                <span className="titel">{ABSCHNITTE.find((a) => a.wert === wert)!.label}</span>
+                <span className="pfeil" aria-hidden="true">›</span>
+              </Link>
+            ))}
+          </nav>
           <StandFilter aktiv={stand ?? ""} />
           <ForderungsListe
             forderungen={(forderungenRes.data ?? []) as unknown as ForderungZeile[]}

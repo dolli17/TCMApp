@@ -642,18 +642,6 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 .rechtstext li { margin-bottom: 8px; }
 .rechtstext strong { color: var(--ink); font-weight: 600; }
 
-/* Einstieg in die Verwaltung auf der Konto-Seite - nur am Telefon, ab 768 px
-   steht die Verwaltung in der Seitenleiste. */
-.verwaltung-einstieg {
-  display: flex; align-items: center; gap: 12px; min-height: 56px;
-  margin: 4px 0 16px; padding: 12px 16px;
-  color: var(--ink); font-weight: 700; text-decoration: none;
-}
-.verwaltung-einstieg:hover { text-decoration: none; border-color: var(--line-2); }
-.verwaltung-einstieg svg { width: 22px; height: 22px; flex: 0 0 auto; }
-.verwaltung-einstieg span:first-of-type { flex: 1; }
-.verwaltung-einstieg span:last-child { color: var(--muted); font-size: 22px; line-height: 1; }
-@media (min-width: 768px) { .verwaltung-einstieg { display: none; } }
 
 /* ---------------------------------------------------------------------------
    Home (docs/design/clubhaus, Abschnitt 5)
@@ -1722,6 +1710,24 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .serien-muster {
   display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 8px; vertical-align: -1px;
   background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 16%, transparent) 0 3px, transparent 3px 6px), var(--surf-3);
+}
+
+/* Segment-Schalter eines Verwaltungsbereichs (Verwaltung v2, Regel 1) */
+.segtoggle.bereich-segmente { margin: 0; }
+.segtoggle.bereich-segmente a {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 40px; padding: 0 10px; border-radius: calc(var(--radius-knopf) - 4px);
+  font-family: var(--font-text); font-weight: 600; font-size: 14.5px; color: var(--muted); text-decoration: none;
+}
+.segtoggle.bereich-segmente a[aria-current="page"] { background: var(--seg-aktiv); color: var(--ink); font-weight: 700; box-shadow: var(--shadow-sm); }
+.segment-zahl, .menue-zahl {
+  min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--gold); color: var(--on-gold); font-size: 12px; font-weight: 800;
+}
+.menue-zahl { margin-left: auto; }
+@media (min-width: 768px) {
+  .segtoggle.bereich-segmente { align-self: start; min-width: 380px; }
 }
 
 /* Der Lastschriftlauf */

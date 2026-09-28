@@ -66,7 +66,7 @@ export async function merkmalSpeichern(formData: FormData): Promise<AktionsErgeb
     if (fehler) return { ok: false, meldung: translateDbError(fehler) };
   }
 
-  revalidatePath("/admin/einstellungen/merkmale");
+  revalidatePath("/admin/system/merkmale");
   return { ok: true, meldung: `„${text("name")}" gespeichert.` };
 }
 
@@ -83,6 +83,6 @@ export async function merkmalLoeschen(code: string): Promise<AktionsErgebnis> {
 
   if (error) return { ok: false, meldung: translateDbError(error) };
 
-  revalidatePath("/admin/einstellungen/merkmale");
+  revalidatePath("/admin/system/merkmale");
   return { ok: true, meldung: "Merkmal gelöscht." };
 }

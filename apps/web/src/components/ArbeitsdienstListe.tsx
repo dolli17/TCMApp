@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { formatCents } from "@tcm/core";
 import {
   jahrAbrechnen, sollStundenSetzen, stundenEintragen,
-} from "@/app/admin/mitglieder/arbeitsdienst/aktionen";
+} from "@/app/admin/arbeitsdienst/aktionen";
 import { FensterKnopf } from "@/components/FensterKnopf";
 
 export interface DienstZeile {

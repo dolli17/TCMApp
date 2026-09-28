@@ -5,6 +5,7 @@ import { FensterKnopf } from "@/components/FensterKnopf";
 import {
   PlatzSperren, PlatzVerwaltung, type ArtZeile, type PlatzZeile,
 } from "@/components/PlatzVerwaltung";
+import { BereichSegmente } from "@/components/BereichSegmente";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { SerienFormular } from "@/components/SerienFormular";
 import { SerienListe, type SerienZeile } from "@/components/SerienListe";
@@ -22,7 +23,12 @@ export const dynamic = "force-dynamic";
  * Die Reihenfolge folgt der Häufigkeit: sperren tut der Vorstand oft, Plätze
  * anlegen einmal im Jahrzehnt.
  */
-export default async function PlaetzeSeite() {
+export default async function PlaetzeSeite({
+  searchParams,
+}: {
+  searchParams: Promise<{ ansicht?: string }>;
+}) {
+  const serienAnsicht = (await searchParams).ansicht === "serien";
   const supabase = await createServerSupabase();
 
   const heute = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
@@ -82,13 +88,26 @@ export default async function PlaetzeSeite() {
         titel="Plätze & Serien"
         unterzeile="Sperrungen, Serien, die Plätze selbst und die Regeln, nach denen gebucht wird."
       >
-        <FensterKnopf titel="Serie anlegen" knopf="Serie anlegen" breit>
-          <SerienFormular plaetze={aktivePlaetzeRes.data ?? []} arten={blockungsarten} />
-        </FensterKnopf>
-        <FensterKnopf titel="Plätze sperren" knopf="Plätze sperren" breit>
-          <PlatzSperren plaetze={plaetze} arten={blockungsarten} oeffnung={oeffnung} schluss={schluss} />
-        </FensterKnopf>
+        {/* Ein gelber Knopf je Seite (Regel 4): passend zum Segment */}
+        {serienAnsicht ? (
+          <FensterKnopf titel="Serie anlegen" knopf="Serie anlegen" breit>
+            <SerienFormular plaetze={aktivePlaetzeRes.data ?? []} arten={blockungsarten} />
+          </FensterKnopf>
+        ) : (
+          <FensterKnopf titel="Plätze sperren" knopf="Plätze sperren" breit>
+            <PlatzSperren plaetze={plaetze} arten={blockungsarten} oeffnung={oeffnung} schluss={schluss} />
+          </FensterKnopf>
+        )}
       </VerwaltungsKopf>
+
+      <BereichSegmente
+        label="Plätze und Serien"
+        aktiv={serienAnsicht ? "/admin/plaetze?ansicht=serien" : "/admin/plaetze"}
+        eintraege={[
+          { href: "/admin/plaetze", label: "Plätze" },
+          { href: "/admin/plaetze?ansicht=serien", label: "Serien" },
+        ]}
+      />
 
       {plaetzeRes.error && (
         <div className="hinweis fehler">
@@ -96,6 +115,7 @@ export default async function PlaetzeSeite() {
         </div>
       )}
 
+      {serienAnsicht ? (
       <section className="karte tabellenkarte" aria-labelledby="h-serien">
         <div className="kartenkopf">
           <h2 id="h-serien">Serien</h2>
@@ -106,14 +126,17 @@ export default async function PlaetzeSeite() {
         </p>
         <SerienListe serien={(serienRes.data ?? []) as SerienZeile[]} />
       </section>
+      ) : (
+        <>
+          <PlatzVerwaltung plaetze={plaetze} arten={arten} zustand={zustand} />
 
-      <PlatzVerwaltung plaetze={plaetze} arten={arten} zustand={zustand} />
-
-      <EinstellungsGruppe
-        titel="Buchungsregeln"
-        text="Zeiten, Raster, Kontingent und Gastgebühr."
-        eintraege={einstellungen}
-      />
+          <EinstellungsGruppe
+            titel="Buchungsregeln"
+            text="Zeiten, Raster, Kontingent und Gastgebühr."
+            eintraege={einstellungen}
+          />
+        </>
+      )}
     </div>
   );
 }

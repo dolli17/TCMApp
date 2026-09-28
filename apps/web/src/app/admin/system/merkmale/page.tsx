@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { FensterKnopf } from "@/components/FensterKnopf";
-import { MitgliederBereiche } from "@/components/MitgliederBereiche";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { MerkmalsFormular, type MerkmalsDefinition } from "@/components/MerkmalsFormular";
 
@@ -63,15 +62,15 @@ export default async function MerkmaleSeite({
   return (
     <div className="verwaltung">
       <VerwaltungsKopf
-        kicker="Verwaltung · Mitglieder"
+        kicker="Verwaltung · System"
         titel="Merkmale"
+        zurueck={{ href: "/admin/system", text: "System" }}
         unterzeile="Alles, was der Verein am Mitglied festhalten will, ohne dass jemand Code ändern muss – Einwilligungen, Ehrungen, eigene Kennzeichnungen. Fachlich Wichtiges wie Trainer oder Leistungsklasse steht dagegen fest in den Stammdaten."
       >
         <FensterKnopf titel="Merkmal anlegen" knopf="Merkmal anlegen" breit>
           <MerkmalsFormular key="neu" />
         </FensterKnopf>
       </VerwaltungsKopf>
-      <MitgliederBereiche aktiv="/admin/mitglieder/merkmale" />
 
       <div className="karte tabellenkarte">
         {merkmale.length === 0 ? (
@@ -108,7 +107,7 @@ export default async function MerkmaleSeite({
                   <td data-label="Wer setzt es" className="leiser">{m.self_editable ? "Mitglied selbst" : "Vorstand"}</td>
                   <td data-label="Vergeben" className="zahl dpl tnum">{m.anzahl_werte}</td>
                   <td className="aktion">
-                    <Link className="knopf leise klein" href={`/admin/mitglieder/merkmale?bearbeiten=${m.code}`}>
+                    <Link className="knopf leise klein" href={`/admin/system/merkmale?bearbeiten=${m.code}`}>
                       bearbeiten
                     </Link>
                   </td>
@@ -125,7 +124,7 @@ export default async function MerkmaleSeite({
           key={inBearbeitung.code}
           titel="Merkmal bearbeiten"
           offen
-          zurueck="/admin/mitglieder/merkmale"
+          zurueck="/admin/system/merkmale"
           breit
         >
           <MerkmalsFormular vorhanden={inBearbeitung} />

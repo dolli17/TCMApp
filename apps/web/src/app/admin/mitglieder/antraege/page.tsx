@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { MitgliederBereiche } from "@/components/MitgliederBereiche";
+import { MitgliederSegmente } from "@/components/MitgliederSegmente";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { AntragsListe } from "@/components/AntragsListe";
 import type { Antrag, Beitragsart } from "@/components/AntragsFenster";
@@ -69,7 +69,7 @@ export default async function AntraegeSeite({
             : `${antraege.length} Anträge in dieser Ansicht.`
         }
       />
-      <MitgliederBereiche aktiv="/admin/mitglieder/antraege" />
+      <MitgliederSegmente aktiv="/admin/mitglieder/antraege" />
 
       <nav className="filterchips" aria-label="Filter">
         {FILTER.map((f) => (

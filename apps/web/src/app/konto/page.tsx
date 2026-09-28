@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { formatCents, sumOpenDrinks } from "@tcm/core";
-import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
+import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { AbmeldeKnopf } from "@/components/AbmeldeKnopf";
-import { Symbol } from "@/components/Navigation";
 import { ThemeUmschalter } from "@/components/ThemeUmschalter";
 
 export const dynamic = "force-dynamic";
@@ -97,16 +96,6 @@ export default async function KontoSeite() {
           {ich?.teams && ich.is_team_captain && <span className="gelb">Mannschaftsführer</span>}
         </p>
       </header>
-
-      {/* Am Telefon hat die schwebende Leiste nur vier Plaetze; Admins kommen
-          von hier in die Verwaltung. Ab 768 px steht sie in der Seitenleiste. */}
-      {isAdmin(angemeldet?.roles ?? []) && (
-        <Link href="/admin" className="karte verwaltung-einstieg">
-          <Symbol name="einstellung" />
-          <span>Verwaltung</span>
-          <span aria-hidden="true">›</span>
-        </Link>
-      )}
 
       <div className="konto-raster">
         <div>

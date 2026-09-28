@@ -498,7 +498,7 @@ async function Merkmale({ id }: { id: string }) {
         text="Frei definierbare Angaben. Neue Merkmale legt der Vorstand unter Einstellungen an."
       />
       <p className="beschreibung">
-        <Link href="/admin/mitglieder/merkmale">Merkmale verwalten →</Link>
+        <Link href="/admin/system/merkmale">Merkmale verwalten →</Link>
       </p>
     </>
   );

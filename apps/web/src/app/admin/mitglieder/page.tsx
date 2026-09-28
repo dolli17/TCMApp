@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { formatCents, memberCategory, type MemberCategory } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { MitgliederBereiche } from "@/components/MitgliederBereiche";
+import { MitgliederSegmente } from "@/components/MitgliederSegmente";
 import { MitgliederKopf } from "@/components/MitgliederKopf";
 
 export const dynamic = "force-dynamic";
@@ -135,7 +135,7 @@ export default async function MitgliederSeite({
         </div>
       </header>
 
-      <MitgliederBereiche aktiv="/admin/mitglieder" />
+      <MitgliederSegmente aktiv="/admin/mitglieder" />
 
       <div className="suchleiste">
         <form className="suchfeld" role="search">

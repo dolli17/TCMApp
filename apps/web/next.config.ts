@@ -17,9 +17,13 @@ const config: NextConfig = {
       { source: "/admin/einstellungen", destination: "/admin/system", permanent: true },
       {
         source: "/admin/einstellungen/merkmale",
-        destination: "/admin/mitglieder/merkmale",
+        destination: "/admin/system/merkmale",
         permanent: true,
       },
+      // Verwaltung v2 (docs/design/clubhaus/verwaltung): Merkmale gehören zu
+      // System, der Arbeitsdienst ist ein eigener Bereich.
+      { source: "/admin/mitglieder/merkmale", destination: "/admin/system/merkmale", permanent: true },
+      { source: "/admin/mitglieder/arbeitsdienst", destination: "/admin/arbeitsdienst", permanent: true },
       { source: "/admin/serien", destination: "/admin/plaetze", permanent: true },
       { source: "/admin/beitraege", destination: "/admin/kasse", permanent: true },
     ];

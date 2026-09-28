@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { FensterKnopf } from "@/components/FensterKnopf";
-import { MitgliederBereiche } from "@/components/MitgliederBereiche";
+import { MitgliederSegmente } from "@/components/MitgliederSegmente";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { AufstellungKarte, type Aufstellungszeile } from "@/components/AufstellungKarte";
 import { MannschaftsFormular, type Mannschaft } from "@/components/MannschaftsFormular";
@@ -50,7 +50,7 @@ export default async function MannschaftenSeite({
           <MannschaftsFormular key="neu" />
         </FensterKnopf>
       </VerwaltungsKopf>
-      <MitgliederBereiche aktiv="/admin/mitglieder/mannschaften" />
+      <MitgliederSegmente aktiv="/admin/mitglieder/mannschaften" />
 
       <div className="karte tabellenkarte">
         {mannschaften.length === 0 ? (
