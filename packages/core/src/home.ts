@@ -66,6 +66,15 @@ export function bookingKicker(startsAt: string, endsAt: string, now: Date = new 
   return `${wochentagLang.format(beginn)} · ${tagMonat.format(beginn)}`;
 }
 
+/** Der Tag eines Termins in Worten: "Heute", "Morgen", "Donnerstag, 01.10." */
+export function dayLabel(startsAt: string, now: Date = new Date()): string {
+  const beginn = new Date(startsAt);
+  const tage = tageZwischen(now, beginn);
+  if (tage === 0) return "Heute";
+  if (tage === 1) return "Morgen";
+  return `${wochentagLang.format(beginn)}, ${tagMonat.format(beginn)}`;
+}
+
 /** Kurzer Tag fuer die Datumsmarke eines offenen Spiels: "HEUTE", "MORGEN", "MI". */
 export function dayTag(startsAt: string, now: Date = new Date()): string {
   const tage = tageZwischen(now, new Date(startsAt));
@@ -100,7 +109,29 @@ export function sumOpenDrinks(
   return kaeufe.reduce((s, k) => s + (k.voided_at ? 0 : (k.total_cents ?? 0)), 0);
 }
 
-export type TimelineKind = "belegt" | "eigen" | "sucht" | "gesperrt";
+export type TimelineKind = "belegt" | "eigen" | "sucht" | "serie" | "gesperrt";
+
+/** Was eine Belegung ausmacht, soweit es fuer ihre Einordnung zaehlt. */
+export interface OccupancyFlags {
+  kind?: string | null;
+  is_own?: boolean | null;
+  partner_wanted?: boolean | null;
+  frei?: number | null;
+  series_id?: string | null;
+}
+
+/**
+ * Die Art einer Belegung nach der Statustabelle im Handoff. Die Reihenfolge
+ * zaehlt: eine Sperrung ist nie "eigen", und eine eigene Buchung, die
+ * Mitspieler sucht, bleibt fuer den Bucher "eigen".
+ */
+export function occupancyKind(b: OccupancyFlags): TimelineKind {
+  if (b.kind === "blocking") return "gesperrt";
+  if (b.series_id) return "serie";
+  if (b.is_own) return "eigen";
+  if (b.partner_wanted && (b.frei ?? 0) > 0) return "sucht";
+  return "belegt";
+}
 
 export interface TimelineSegment {
   /** Anteil vom linken Rand, 0 bis 100 */
@@ -112,20 +143,13 @@ export interface TimelineSegment {
 
 /**
  * Wo eine Belegung auf der Zeitleiste von Oeffnung bis Schluss liegt, in
- * Prozent - fuer die Mini-Zeitleiste der Plaetze. Die Art folgt der
- * Statustabelle im Handoff: eigene Buchung, Mitspieler gesucht, Sperrung
- * oder Serie, sonst belegt.
+ * Prozent - fuer die Zeitleisten der Plaetze. Die Art folgt der Statustabelle
+ * im Handoff: Sperrung, Serie (Training), eigene Buchung, Mitspieler gesucht,
+ * sonst belegt. Serie und Sperrung sehen verschieden aus - die Serie
+ * schraffiert, die Sperrung flach.
  */
 export function timelineSegments(
-  belegungen: readonly {
-    starts_at: string;
-    ends_at: string;
-    kind?: string | null;
-    is_own?: boolean | null;
-    partner_wanted?: boolean | null;
-    frei?: number | null;
-    series_id?: string | null;
-  }[],
+  belegungen: readonly ({ starts_at: string; ends_at: string } & OccupancyFlags)[],
   openingMinutes: number,
   closingMinutes: number,
 ): TimelineSegment[] {
@@ -137,19 +161,10 @@ export function timelineSegments(
     const bis = Math.min(closingMinutes, minutesOf(b.ends_at));
     if (bis <= von) return [];
 
-    const art: TimelineKind =
-      b.kind === "blocking" || b.series_id
-        ? "gesperrt"
-        : b.is_own
-          ? "eigen"
-          : b.partner_wanted && (b.frei ?? 0) > 0
-            ? "sucht"
-            : "belegt";
-
     return [{
       left: ((von - openingMinutes) / spanne) * 100,
       width: ((bis - von) / spanne) * 100,
-      art,
+      art: occupancyKind(b),
     }];
   });
 }

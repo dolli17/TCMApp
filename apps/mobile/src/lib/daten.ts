@@ -181,6 +181,39 @@ export async function ladeIchSelbst(): Promise<{ id: string | null; admin: boole
   return { id: mitglied.id, admin: (rollen ?? []).some((r) => r.role === "admin") };
 }
 
+/**
+ * Eine Stunde auf einem Platz sperren (nur Admins).
+ *
+ * Dieselbe RPC und dieselben Werte wie stundeSperren im Web. Liegen dort
+ * Buchungen, weist die Datenbank ab und nennt die Zahl; mit verdraengen=true
+ * werden sie abgesagt.
+ */
+export async function sperreStunde(daten: {
+  platzId: string;
+  von: Date;
+  bis: Date;
+  grund: string;
+  verdraengen: boolean;
+}): Promise<Ergebnis & { kollisionen?: number }> {
+  const { error } = await supabase.rpc("create_blocking", {
+    p_court_ids: [daten.platzId],
+    p_von: daten.von.toISOString(),
+    p_bis: daten.bis.toISOString(),
+    p_type_code: "platzpflege",
+    p_title: daten.grund,
+    p_force: daten.verdraengen,
+  });
+
+  if (error) {
+    const treffer = /^(\d+) Buchungen liegen/.exec(error.message);
+    if (treffer) {
+      return { ok: false, meldung: translateDbError(error), kollisionen: Number(treffer[1]) };
+    }
+    return { ok: false, meldung: translateDbError(error) };
+  }
+  return { ok: true, meldung: "Die Stunde ist gesperrt." };
+}
+
 export async function storniereBuchung(bookingId: string): Promise<Ergebnis> {
   const { error } = await supabase.rpc("cancel_booking", { p_booking_id: bookingId });
   if (error) return { ok: false, meldung: translateDbError(error) };

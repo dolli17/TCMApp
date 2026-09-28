@@ -247,6 +247,20 @@ export function canStartAt(opts: {
   );
 }
 
+/**
+ * Die naechste Startzeit im Raster ab jetzt - vor der Oeffnung die Oeffnung.
+ * Bei 30 Minuten um 15:10 also 15:30, um 15:30 genau 15:30.
+ */
+export function nextSlotMinute(opts: {
+  openingMinutes: number;
+  slotMinutes: number;
+  now?: Date;
+}): number {
+  const jetzt = localMinutes(opts.now ?? new Date());
+  if (jetzt <= opts.openingMinutes) return opts.openingMinutes;
+  return opts.openingMinutes + Math.ceil((jetzt - opts.openingMinutes) / opts.slotMinutes) * opts.slotMinutes;
+}
+
 export interface FreeWindow {
   courtId: string;
   /** Erste Startzeit im Raster ab jetzt, in Minuten seit Mitternacht */
@@ -277,12 +291,7 @@ export function freeCourtsNow(opts: {
   now?: Date;
 }): FreeWindow[] {
   const jetzt = opts.now ?? new Date();
-  const jetztMinuten = localMinutes(jetzt);
-  const ab =
-    jetztMinuten <= opts.openingMinutes
-      ? opts.openingMinutes
-      : opts.openingMinutes +
-        Math.ceil((jetztMinuten - opts.openingMinutes) / opts.slotMinutes) * opts.slotMinutes;
+  const ab = nextSlotMinute({ ...opts, now: jetzt });
 
   const out: FreeWindow[] = [];
   for (const courtId of opts.courtIds) {

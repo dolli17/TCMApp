@@ -224,14 +224,14 @@ function AlsNaechstes({ termine }: { termine: Abschnitt<Termine> }) {
 
   return (
     <>
-      <Kopfzeile titel="Als Nächstes" link={kommende.length > 0 ? { text: "Alle", ziel: "/plaetze/meine" } : undefined} />
+      <Kopfzeile titel="Als Nächstes" link={kommende.length > 0 ? { text: "Alle", ziel: "/plaetze/spiele" } : undefined} />
       {termine.fehler && <Fehlerzeile text={termine.fehler} />}
       {termine.wert && kommende.length === 0 && (
         <View style={[stil.karte, { borderRadius: radius.karteGross, padding: 20, gap: 6 }]}>
           <Text style={[stil.text, { fontFamily: "Barlow_700Bold", fontSize: 18 }]}>Noch nichts geplant</Text>
           <Text style={stil.leise}>Such dir einen Platz – heute ist noch einiges frei.</Text>
           <Pressable
-            onPress={() => router.navigate("/plaetze")}
+            onPress={() => router.navigate({ pathname: "/plaetze", params: { buchen: "jetzt" } })}
             accessibilityRole="button"
             style={[stil.knopf, stil.knopfGold, { alignSelf: "flex-start", marginTop: 10, minHeight: 44 }]}
           >
@@ -249,7 +249,7 @@ function AlsNaechstes({ termine }: { termine: Abschnitt<Termine> }) {
             return (
               <Pressable
                 key={t.booking_id}
-                onPress={() => router.navigate("/plaetze/meine")}
+                onPress={() => router.navigate("/plaetze/spiele")}
                 accessibilityRole="button"
                 accessibilityLabel={`${bookingKicker(t.starts_at, t.ends_at)}, ${zeit}, ${t.court_name}, Details`}
                 style={{
@@ -328,9 +328,9 @@ function AlsNaechstes({ termine }: { termine: Abschnitt<Termine> }) {
 function Schnellaktionen() {
   const { farben } = useTheme();
   const kacheln: { text: string; pfad: string; ziel: Href; gelb?: boolean }[] = [
-    { text: "Platz buchen", pfad: PFAD.buchen, ziel: "/plaetze", gelb: true },
+    { text: "Platz buchen", pfad: PFAD.buchen, ziel: { pathname: "/plaetze", params: { buchen: "jetzt" } }, gelb: true },
     { text: "Getränk eintragen", pfad: PFAD.getraenk, ziel: "/getraenke" },
-    { text: "Mitspielen", pfad: PFAD.mitspielen, ziel: "/plaetze/offen" },
+    { text: "Mitspielen", pfad: PFAD.mitspielen, ziel: "/plaetze/spiele" },
   ];
 
   return (
@@ -432,7 +432,7 @@ function OffeneSpiele({ offen }: { offen: Abschnitt<Offen> }) {
 
   return (
     <>
-      <Kopfzeile titel="Offene Spiele" link={{ text: "Alle", ziel: "/plaetze/offen" }} />
+      <Kopfzeile titel="Offene Spiele" link={{ text: "Alle", ziel: "/plaetze/spiele" }} />
       {offen.fehler && <Fehlerzeile text={offen.fehler} />}
       {offen.wert && liste.length === 0 && (
         <Text style={stil.leise}>Gerade sucht niemand Mitspieler.</Text>
@@ -464,7 +464,7 @@ function OffeneSpiele({ offen }: { offen: Abschnitt<Offen> }) {
             <Text style={[stil.leise, { fontFamily: "Barlow_700Bold" }]}>Dabei</Text>
           ) : (
             <Pressable
-              onPress={() => router.navigate("/plaetze/offen")}
+              onPress={() => router.navigate("/plaetze/spiele")}
               accessibilityRole="button"
               accessibilityLabel={`Mitspielen: ${o.type_name} um ${alsUhrzeit(lokaleMinuten(o.starts_at))}`}
               style={{ height: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: "center", backgroundColor: farben.gold }}
