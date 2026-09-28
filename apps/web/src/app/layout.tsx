@@ -41,13 +41,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   const eintraege: NavEintrag[] = [
+    { href: "/", label: "Home", kurz: "Home", symbol: "home" },
     { href: "/plan", label: "Belegungsplan", kurz: "Plätze", symbol: "platz" },
     { href: "/getraenke", label: "Getränke", kurz: "Getränke", symbol: "getraenk" },
     { href: "/konto", label: "Mein Konto", kurz: "Konto", symbol: "konto" },
   ];
 
-  // Die Bereiche der Vorstandsverwaltung - in der Seitenleiste einzeln, in
-  // der schwebenden Leiste als ein Eintrag. Reihenfolge wie im Entwurf; die
+  // Die Bereiche der Vorstandsverwaltung - in der Seitenleiste einzeln. Am
+  // Telefon fuehrt eine Karte auf der Konto-Seite hinein. Reihenfolge wie im Entwurf; die
   // Reiter innerhalb von /admin (AdminReiter) bleiben daneben bestehen.
   const admin = isAdmin(rollen);
   const verwaltung: NavEintrag[] = admin
@@ -77,7 +78,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <aside className="seitenleiste">
               {/* Zwei Logos, die CSS zeigt das passende: auf dunklem Grund die
                   weisse Variante mit gelbem Ball. */}
-              <Link href="/plan" className="marke">
+              <Link href="/" className="marke">
                 <Image src={logo} alt="TC Muckensturm" height={34} priority className="logo-hell" />
                 <Image src={logoWeiss} alt="TC Muckensturm" height={34} priority className="logo-dunkel" />
               </Link>
@@ -112,7 +113,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
               {children}
             </div>
-            <Fussmenue eintraege={eintraege} verwaltung={verwaltung} />
+            <Fussmenue eintraege={eintraege} />
           </div>
         ) : (
           children

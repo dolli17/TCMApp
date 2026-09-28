@@ -30,9 +30,23 @@ test.describe("Anmeldung", () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
+  test("nach dem Anmelden erscheint Home", async ({ page }) => {
+    await anmelden(page, NUTZER.mitglied);
+    await expect(page).toHaveURL((u) => u.pathname === "/");
+    await expect(page.getByRole("heading", { level: 1, name: /^Hallo, / })).toBeVisible();
+    for (const abschnitt of ["Als Nächstes", "Jetzt frei", "Offene Spiele", "Neuigkeiten"]) {
+      await expect(page.getByRole("heading", { level: 2, name: abschnitt })).toBeVisible();
+    }
+    await expect(page.getByRole("heading", { level: 2, name: /^Dein / })).toBeVisible();
+    // Home steht als erster Eintrag im Menue und ist hier aktiv.
+    const nav = page.getByRole("navigation", { name: "Hauptmenü" }).first();
+    await expect(nav.getByRole("link").first()).toHaveAttribute("aria-current", "page");
+    await expect(nav.getByRole("link").first()).toHaveText("Home");
+  });
+
   test("Mitglied kann sich anmelden und sieht den Belegungsplan", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
-    await expect(page).toHaveURL(/\/plan/);
+    await page.goto("/plan");
     // Der Hero traegt das Datum als Ueberschrift; "Freiplaetze" steht darueber.
     await expect(page.locator(".hero")).toContainText("Freiplätze");
     await expect(page.locator("table.plan")).toBeVisible();

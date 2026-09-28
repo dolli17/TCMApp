@@ -11,6 +11,7 @@
 import Svg, { Path } from "react-native-svg";
 
 const PFADE = {
+  home: "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z",
   platz: "M4 4h16v16H4zM4 12h16M8 8h8v8H8zM12 8v8",
   getraenk: "M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8",
   konto: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",

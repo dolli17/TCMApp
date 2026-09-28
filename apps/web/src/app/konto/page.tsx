@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { formatCents } from "@tcm/core";
-import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
+import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
+import { Symbol } from "@/components/Navigation";
 import { MerkmaleKarte, type MerkmalZeile } from "@/components/MerkmaleKarte";
 import { Stammdatenkarte, type Feld } from "@/components/Stammdatenkarte";
 import { ThemeUmschalter } from "@/components/ThemeUmschalter";
@@ -103,6 +105,16 @@ export default async function KontoSeite() {
       <p className="unterzeile">
         {angemeldet?.member?.first_name} {angemeldet?.member?.last_name}
       </p>
+
+      {/* Am Telefon hat die schwebende Leiste nur vier Plaetze; Admins kommen
+          von hier in die Verwaltung. Ab 768 px steht sie in der Seitenleiste. */}
+      {isAdmin(angemeldet?.roles ?? []) && (
+        <Link href="/admin" className="karte verwaltung-einstieg">
+          <Symbol name="einstellung" />
+          <span>Verwaltung</span>
+          <span aria-hidden="true">›</span>
+        </Link>
+      )}
 
       <div className="kachel-reihe">
         <div className="kachel">

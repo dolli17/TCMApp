@@ -10,7 +10,7 @@ import {
   ladeVerzeichnis, spieleMit, storniereBuchung, sucheMitspieler,
 } from "@/lib/daten";
 import {
-  alsUhrzeit, lokaleMinuten, zuMinuten,
+  alsUhrzeit, lokaleMinuten, startMoeglich as pruefeStart, zuMinuten,
   type Belegung, type Buchungsart, type Fenster, type Mitglied,
 } from "@/lib/plan";
 import { Bildschirm } from "@/components/Bildschirm";
@@ -206,17 +206,12 @@ export default function Plan() {
 
   /** Kann auf diesem Platz um genau diese Minute eine Buchung beginnen? */
   const startMoeglich = useCallback(
-    (courtId: string, minute: number) => {
-      if (zeitpunkt(minute).getTime() < Date.now()) return false;
-      if (minute + dauer > schluss) return false;
-      return !belegung.some(
-        (b) =>
-          b.court_id === courtId &&
-          lokaleMinuten(b.starts_at) < minute + dauer &&
-          lokaleMinuten(b.ends_at) > minute,
-      );
-    },
-    [belegung, dauer, schluss, zeitpunkt],
+    (courtId: string, minute: number) =>
+      pruefeStart({
+        day: datum, courtId, minute, durationMinutes: dauer, closingMinutes: schluss,
+        occupied: belegung,
+      }),
+    [belegung, datum, dauer, schluss],
   );
 
   const startzeitenIn = useCallback(

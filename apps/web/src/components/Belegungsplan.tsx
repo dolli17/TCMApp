@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { berlinTime, minutesOf, minutesToTime, timeToMinutes } from "@tcm/core";
+import { berlinTime, canStartAt, minutesOf, minutesToTime, timeToMinutes } from "@tcm/core";
 import {
   buchen, mitspielen, mitspielerAendern, mitspielerSuchen, serienterminAbsagen,
   stornieren, stundeSperren,
@@ -147,19 +147,18 @@ export function Belegungsplan(props: Props) {
   const vergangen = (minute: number) => zeitpunkt(minute).getTime() < Date.now();
 
   /**
-   * Kann auf diesem Platz um genau diese Minute eine Buchung beginnen?
-   * Geprueft wird gegen die volle Dauer, nicht nur gegen die Startminute -
-   * sonst laesst sich 18:00 anklicken, obwohl 18:30 schon belegt ist.
+   * Kann auf diesem Platz um genau diese Minute eine Buchung beginnen? Die
+   * Regel steht in @tcm/core und gilt in der App und auf der Startseite gleich.
    */
   function startMoeglich(courtId: string, minute: number): boolean {
-    if (vergangen(minute)) return false;
-    if (minute + props.dauerMinuten > schlussMin) return false;
-    return !props.belegungen.some(
-      (b) =>
-        b.court_id === courtId &&
-        lokaleMinuten(b.starts_at) < minute + props.dauerMinuten &&
-        lokaleMinuten(b.ends_at) > minute,
-    );
+    return canStartAt({
+      day: props.datum,
+      courtId,
+      minute,
+      durationMinutes: props.dauerMinuten,
+      closingMinutes: schlussMin,
+      occupied: props.belegungen,
+    });
   }
 
   /** Die :00- und :30-Startzeiten, die in dieser Stunde noch frei sind. */

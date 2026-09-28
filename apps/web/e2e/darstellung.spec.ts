@@ -62,7 +62,8 @@ test.describe("Theme", () => {
 });
 
 test.describe("Layout", () => {
-  const SEITEN = ["/plan", "/getraenke", "/konto"];
+  // "/" ist Home - mit wischbaren Reihen bis an den Rand besonders anfaellig.
+  const SEITEN = ["/", "/plan", "/getraenke", "/konto"];
 
   test.describe("Telefon (390px)", () => {
     test.use({ viewport: { width: 390, height: 844 } });
@@ -98,20 +99,26 @@ test.describe("Layout", () => {
     }
 
     test("die schwebende Leiste eines Admins sprengt die Breite nicht", async ({ page }) => {
-      // Ein Admin hat vier Einträge statt drei; die Glocke sitzt seit der
-      // schwebenden Leiste im Seitenkopf. Vorher waren es acht Einträge, und
-      // die Leiste musste seitwärts scrollen; seit die Verwaltung ein einziger
-      // Punkt ist, passt alles nebeneinander. Das Dokument darf sich in keinem
-      // Fall mitverschieben.
+      // Auch ein Admin hat nur die vier Haupteinträge; die Glocke sitzt im
+      // Seitenkopf. Vorher waren es acht Einträge, und die Leiste musste
+      // seitwärts scrollen. Das Dokument darf sich in keinem Fall mitverschieben.
       await anmelden(page, ADMIN);
       await page.goto("/plan");
 
+      // Home, Plätze, Getränke, Konto
       await expect(page.locator(".schwebeleiste a")).toHaveCount(4);
       await expect(page.locator(".seitenkopf .glocke")).toHaveCount(1);
       const ueberbreite = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       );
       expect(ueberbreite, `Die Seite ist ${ueberbreite}px zu breit`).toBeLessThanOrEqual(0);
+    });
+
+    test("ein Admin erreicht die Verwaltung über die Konto-Seite", async ({ page }) => {
+      await anmelden(page, ADMIN);
+      await page.goto("/konto");
+      await page.locator("a.verwaltung-einstieg").click();
+      await page.waitForURL(/\/admin$/);
     });
 
     test("das Buchungsfenster passt auf 390 Pixel", async ({ page }) => {
