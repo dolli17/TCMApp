@@ -1,0 +1,20 @@
+{
+  "//": [
+    "Nur fuer pnpm typecheck. Im Workspace liegen @types/react 18.3 (App) und",
+    "19 (Web) nebeneinander. RN-Pakete, die @types/react nicht selbst angeben,",
+    "finden die Typen ueber den gehoisteten Ordner node_modules/.pnpm/node_modules -",
+    "und welche Version pnpm dort ablegt, ist Zufall der Installation. Mit 19 bricht",
+    "der Typecheck (u. a. 'Tabs cannot be used as a JSX component').",
+    "Die Zuordnung steht bewusst NICHT in tsconfig.json: Expo liest dort die paths",
+    "auch beim Buendeln, und Metro wuerde import 'react' auf das reine Typpaket",
+    "umleiten - das Bundle bricht dann ab."
+  ],
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "react": ["./node_modules/@types/react"],
+      "react/*": ["./node_modules/@types/react/*"]
+    }
+  }
+}
