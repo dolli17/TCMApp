@@ -262,6 +262,13 @@ describe("canStartAt und freeCourtsNow", () => {
       expect(frei).toEqual([{ courtId: "p1", fromMinute: 930, untilMinute: 1260 }]);
     });
 
+    it("findet auch Sekunden nach einer Startzeit freie Plaetze", () => {
+      const frei = freeCourtsNow({
+        ...basis, courtIds: ["p1"], occupied: [], now: new Date(um("15:30").getTime() + 20_000),
+      });
+      expect(frei).toEqual([{ courtId: "p1", fromMinute: 960, untilMinute: 1260 }]);
+    });
+
     it("beginnt genau jetzt, wenn jetzt eine Startzeit ist", () => {
       const frei = freeCourtsNow({ ...basis, courtIds: ["p1"], occupied: [], now: um("15:30") });
       expect(frei[0]?.fromMinute).toBe(930);

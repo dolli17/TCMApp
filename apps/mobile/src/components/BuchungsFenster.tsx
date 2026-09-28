@@ -475,6 +475,9 @@ function VerwaltenInhalt(
   const art = props.arten.find((a) => a.code === b.type_code);
   const maxWeitere = Math.max((art?.max_players ?? 4) - 1, 0);
   const nurStorno = b.kind === "blocking";
+  // Serientermine (Training) legt die Datenbank als Blockung an. Abgesagt
+  // werden sie im Web ueber cancel_series_occurrence - nicht per Storno.
+  const serientermin = Boolean(b.series_id);
 
   // Drei Rollen an demselben Blatt: der Bucher verwaltet, ein Admin
   // verwaltet fremd, und wer nur eingeladen ist, kann ausschliesslich
@@ -504,9 +507,11 @@ function VerwaltenInhalt(
 
       <View style={{ gap: 4, marginTop: -8 }}>
         <Text style={[stil.text, { fontFamily: "Barlow_600SemiBold" }]}>
-          {nurStorno
-            ? `Gesperrt · ${b.title?.trim() || "ohne Grund"}`
-            : `${b.series_id ? (b.title ?? b.type_name) : b.type_name} · gebucht von ${b.is_own ? "dir" : (b.owner_name ?? "unbekannt")}`}
+          {serientermin
+            ? `${b.title?.trim() || b.type_name} · Serientermin`
+            : nurStorno
+              ? `Gesperrt · ${b.title?.trim() || "ohne Grund"}`
+              : `${b.type_name} · gebucht von ${b.is_own ? "dir" : (b.owner_name ?? "unbekannt")}`}
         </Text>
         {props.istAdmin && !b.is_own && !nurStorno && (
           <Text style={stil.leise}>Du bearbeitest eine fremde Buchung als Administrator.</Text>
@@ -575,7 +580,14 @@ function VerwaltenInhalt(
           />
         )}
 
-        {darfVerwalten && (
+        {serientermin && props.istAdmin && (
+          <Text style={stil.leise}>
+            Einen einzelnen Trainingstermin sagst du im Web ab: Belegungsplan, Termin anklicken,
+            „Fällt diese Woche aus“.
+          </Text>
+        )}
+
+        {darfVerwalten && !serientermin && (
           <Nebenknopf
             gefahr
             gesperrt={props.laeuft}

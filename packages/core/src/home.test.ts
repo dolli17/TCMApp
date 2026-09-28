@@ -135,7 +135,8 @@ describe("timelineSegments", () => {
         b("11:00", "12:00", { partner_wanted: true, frei: 1 }),
         b("12:00", "13:00", { partner_wanted: true, frei: 0 }),
         b("13:00", "14:00", { kind: "blocking" }),
-        b("14:00", "15:00", { series_id: "s1" }),
+        // So legt die Datenbank Serientermine an: kind blocking plus series_id
+        b("14:00", "15:00", { kind: "blocking", series_id: "s1" }),
       ],
       AUF,
       ZU,

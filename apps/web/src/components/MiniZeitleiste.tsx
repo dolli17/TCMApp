@@ -11,12 +11,15 @@ import type { TimelineSegment } from "@tcm/core";
 export function MiniZeitleiste({
   segmente,
   markierung,
+  gross,
 }: {
   segmente: TimelineSegment[];
   markierung?: number;
+  /** Die hoehere Leiste der Platzliste, mit ueberstehender Marke */
+  gross?: boolean;
 }) {
   return (
-    <div className="mini-zeitleiste" aria-hidden="true">
+    <div className={`mini-zeitleiste${gross ? " gross" : ""}`} aria-hidden="true">
       {segmente.map((s, i) => (
         <i key={i} className={s.art} style={{ left: `${s.left}%`, width: `${s.width}%` }} />
       ))}

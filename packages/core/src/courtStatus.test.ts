@@ -74,7 +74,8 @@ describe("courtStatusAt", () => {
 
   it("Training einer Serie", () => {
     expect(
-      status("17:00", [belegt("16:00", "19:00", { series_id: "s1", title: "Training" })]),
+      // Serientermine stehen in der Datenbank als kind blocking mit series_id
+      status("17:00", [belegt("16:00", "19:00", { kind: "blocking", series_id: "s1", title: "Training" })]),
     ).toMatchObject({ art: "serie", text: "Training bis 19:00" });
   });
 
@@ -99,7 +100,13 @@ describe("nextSlotMinute", () => {
     expect(nextSlotMinute({ ...basis, now: um("14:10") })).toBe(timeToMinutes("14:30"));
     expect(nextSlotMinute({ ...basis, now: um("14:30") })).toBe(timeToMinutes("14:30"));
   });
-  it("vor der Oeffnung die Oeffnung", () => {
+  it("eine angebrochene Minute zaehlt als vorbei", () => {
+    // Um 14:30:20 ist 14:30 schon Vergangenheit - frueher stand dann auf allen
+    // Plaetzen "vorbei", bis die Uhr 14:31 zeigte.
+    const knappDanach = new Date(um("14:30").getTime() + 20_000);
+    expect(nextSlotMinute({ ...basis, now: knappDanach })).toBe(timeToMinutes("15:00"));
+  });
+    it("vor der Oeffnung die Oeffnung", () => {
     expect(nextSlotMinute({ ...basis, now: um("06:00") })).toBe(timeToMinutes("08:00"));
   });
 });

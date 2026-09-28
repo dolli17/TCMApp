@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { berlinTime } from "@tcm/core";
 import {
   alsUhrzeit, lokaleMinuten,
   type Buchungsart, type Fenster, type Mitglied, type Platz,
 } from "@/components/Belegungsplan";
-import { Mitspielersuche } from "@/components/Mitspielersuche";
+import { initialen, Mitspielersuche } from "@/components/Mitspielersuche";
 
 interface Props {
   fenster: Fenster;
@@ -16,14 +16,16 @@ interface Props {
   verzeichnis: Mitglied[];
   /** Eigene Mitglieds-Id, damit man sich nicht selbst als Mitspieler waehlt. */
   meineId: string | null;
-  /** Nur im Buchen-Modus: die in dieser Stunde noch freien Startzeiten. */
+  /** Nur im Buchen-Modus: die in diesem Anzeigeblock noch freien Startzeiten. */
   startzeiten: number[];
   rasterMinuten: number;
   anzeigeMinuten: number;
-  /** Gastgebuehr je Gast in Cent. 0 schaltet den Gast-Knopf ab. */
+  /** Gastgebuehr je Gast in Cent. */
   gastgebuehrCents: number;
   istAdmin: boolean;
   laeuft: boolean;
+  /** Rueckmeldung der Datenbank, steht ueber dem Hauptknopf. */
+  fehler: string | null;
   onBuchen: (fd: FormData) => void;
   onSpeichern: (bookingId: string, mitgliedIds: string[], gaeste: string[]) => void;
   onStornieren: (bookingId: string, grund?: string) => void;
@@ -37,7 +39,18 @@ interface Props {
   onSchliessen: () => void;
 }
 
+const TAG = new Intl.DateTimeFormat("de-DE", {
+  weekday: "long", day: "2-digit", month: "2-digit", timeZone: "UTC",
+});
+/** "Montag, 28.09." - der Tag kommt als JJJJ-MM-TT und wird mittags gelesen. */
+const tagText = (tag: string) => TAG.format(new Date(`${tag}T12:00:00Z`));
+
 /**
+ * Das Buchungsblatt (docs/design/clubhaus, Abschnitt 4 - im Web weiter als
+ * <dialog class="fenster">): dieselben Felder in derselben Reihenfolge wie
+ * das Blatt der App. Am Telefon faehrt es von unten herein, ab 768 px steht
+ * es in der Mitte.
+ *
  * Das native <dialog>-Element statt einer nachgebauten Overlay-Loesung: es
  * bringt Fokusfalle, Escape zum Schliessen und Inertheit des Hintergrunds
  * mit - drei Dinge, die von Hand regelmaessig schieflaufen.
@@ -53,7 +66,7 @@ export function BuchungsFenster(props: Props) {
   return (
     <dialog
       ref={dialog}
-      className="fenster"
+      className="fenster blatt"
       onClose={props.onSchliessen}
       onCancel={props.onSchliessen}
       onClick={(e) => {
@@ -63,6 +76,7 @@ export function BuchungsFenster(props: Props) {
       }}
       aria-label={props.fenster.modus === "buchen" ? "Platz buchen" : "Buchung verwalten"}
     >
+      <div className="griff" aria-hidden="true" />
       {props.fenster.modus === "buchen" ? (
         <BuchenInhalt {...props} fenster={props.fenster} />
       ) : (
@@ -72,32 +86,65 @@ export function BuchungsFenster(props: Props) {
   );
 }
 
-function Kopf({ titel, unterzeile, onSchliessen }: {
-  titel: string; unterzeile: string; onSchliessen: () => void;
+function Kopf({ kicker, titel, onSchliessen }: {
+  kicker: string; titel: string; onSchliessen: () => void;
 }) {
   return (
     <div className="fenster-kopf">
       <div>
-        <h2>{titel}</h2>
-        <p>{unterzeile}</p>
+        <p className="kicker">{kicker}</p>
+        <h2 className="tnum">{titel}</h2>
       </div>
       <button type="button" className="fenster-zu" onClick={onSchliessen} aria-label="Schließen">
-        ×
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+        </svg>
       </button>
     </div>
+  );
+}
+
+/** Fehler der Datenbank - ueber dem Hauptknopf, damit man ihn beim Klicken sieht. */
+function Fehler({ text }: { text: string | null }) {
+  if (!text) return null;
+  return <div className="hinweis fehler" role="alert">{text}</div>;
+}
+
+/** "Mitspieler gesucht" als Schalter mit Erklaerung - ohne sie raet man, was das bewirkt. */
+function GesuchtKarte({ an, onWechsel, deaktiviert }: {
+  an: boolean; onWechsel: (an: boolean) => void; deaktiviert?: boolean;
+}) {
+  return (
+    <label className="gesucht-karte">
+      <span>
+        <b>Mitspieler gesucht</b>
+        <small>Dein Spiel erscheint unter „Offene Spiele“. Wer mag, trägt sich selbst ein.</small>
+      </span>
+      <input
+        type="checkbox"
+        role="switch"
+        className="schalter-feld"
+        checked={an}
+        disabled={deaktiviert}
+        onChange={(e) => onWechsel(e.target.checked)}
+      />
+    </label>
   );
 }
 
 function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buchen" }> }) {
   const platz = props.plaetze.find((p) => p.id === props.fenster.courtId);
   const stunde = props.fenster.stunde;
+  const kennung = useId();
 
-  // Halbe Stunden derselben Stunde, damit belegte Haelften sichtbar bleiben
+  // Halbe Stunden desselben Blocks, damit belegte Haelften sichtbar bleiben
   // statt einfach zu fehlen.
   const haelften: number[] = [];
   for (let m = stunde; m < stunde + props.anzeigeMinuten; m += props.rasterMinuten) haelften.push(m);
 
-  const [start, setStart] = useState(props.startzeiten[0] ?? stunde);
+  const [start, setStart] = useState(
+    props.startzeiten.includes(props.fenster.start) ? props.fenster.start : (props.startzeiten[0] ?? stunde),
+  );
   const [art, setArt] = useState(props.arten[0]?.code ?? "einzel");
   const [mitglieder, setMitglieder] = useState<string[]>([]);
   const [gaeste, setGaeste] = useState<string[]>([]);
@@ -106,9 +153,11 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
   const [sperrKollisionen, setSperrKollisionen] = useState<number | null>(null);
 
   const gewaehlt = props.arten.find((a) => a.code === art);
+  const dauer = gewaehlt?.duration_minutes ?? 60;
   const maxWeitere = Math.max((gewaehlt?.max_players ?? 2) - 1, 0);
   const anzahl = mitglieder.length + gaeste.length;
   const nochPlatz = anzahl < maxWeitere;
+  const ich = props.verzeichnis.find((m) => m.id === props.meineId);
 
   // Ueber berlinTime, nicht ueber new Date(...): der Konstruktor rechnet in
   // der Zeitzone des Geraets. Ein Rechner, der auf London steht, haette hier
@@ -120,13 +169,21 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
   const pflichtVerletzt =
     Boolean(gewaehlt?.requires_partner) && anzahl === 0 && !sucheMitspieler;
 
+  function spielformWechseln(neu: string) {
+    setArt(neu);
+    // Wer von Doppel auf Einzel wechselt, hat womoeglich zu viele Leute
+    // eingetragen; die ueberzaehligen fallen hinten weg.
+    const max = Math.max((props.arten.find((a) => a.code === neu)?.max_players ?? 2) - 1, 0);
+    const m = mitglieder.slice(0, max);
+    setMitglieder(m);
+    setGaeste(gaeste.slice(0, Math.max(0, max - m.length)));
+  }
+
   return (
     <>
       <Kopf
-        titel={platz?.name ?? "Platz"}
-        unterzeile={`${alsUhrzeit(stunde)}–${alsUhrzeit(stunde + props.anzeigeMinuten)} Uhr · ${
-          gewaehlt?.duration_minutes ?? 60
-        } Minuten Spielzeit`}
+        kicker={`${platz?.name ?? "Platz"} · ${tagText(props.datum)}`}
+        titel={`${alsUhrzeit(start)} – ${alsUhrzeit(start + dauer)}`}
         onSchliessen={props.onSchliessen}
       />
 
@@ -139,36 +196,52 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
           <input type="hidden" name="partnerWanted" value="1" />
         )}
 
-        <fieldset className="startwahl">
-          <legend>Beginn</legend>
-          {haelften.map((m) => {
-            const frei = props.startzeiten.includes(m);
-            return (
-              <button
-                key={m}
-                type="button"
-                className={`slotknopf ${start === m ? "aktiv" : ""}`}
-                disabled={!frei}
-                aria-pressed={start === m}
-                title={frei ? undefined : "Zu dieser Zeit ist der Platz nicht mehr frei"}
-                onClick={() => setStart(m)}
-              >
-                {alsUhrzeit(m)}
-              </button>
-            );
-          })}
-        </fieldset>
+        <div className={haelften.length <= 2 && props.arten.length <= 2 ? "segment-paar" : "segment-stapel"}>
+          <fieldset className="segmente startwahl">
+            <legend>Beginn</legend>
+            <div className="segment-leiste">
+              {haelften.map((m) => {
+                const frei = props.startzeiten.includes(m);
+                return (
+                  <label key={m} className="segment" title={frei ? undefined : "Zu dieser Zeit ist der Platz nicht mehr frei"}>
+                    <input
+                      type="radio"
+                      name={`${kennung}-beginn`}
+                      value={m}
+                      checked={start === m}
+                      disabled={!frei}
+                      onChange={() => setStart(m)}
+                    />
+                    <span className="tnum">{alsUhrzeit(m)}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
 
-        <label>
-          <span>Buchungsart</span>
-          <select name="bookingType" value={art} onChange={(e) => setArt(e.target.value)}>
-            {props.arten.map((a) => (
-              <option key={a.code} value={a.code}>{a.name}</option>
-            ))}
-          </select>
-        </label>
+          <fieldset className="segmente">
+            <legend>Spielform</legend>
+            <div className="segment-leiste">
+              {props.arten.map((a) => (
+                <label key={a.code} className="segment">
+                  <input
+                    type="radio"
+                    name="bookingType"
+                    value={a.code}
+                    checked={art === a.code}
+                    onChange={() => spielformWechseln(a.code)}
+                  />
+                  <span>{a.name}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
 
+        {/* Sich selbst mitzunehmen weist die Datenbank ab - der Bucher zaehlt
+            ohnehin mit. */}
         <Mitspielersuche
+          kopf={{ initialen: initialen(ich?.first_name, ich?.last_name), name: "Du", gelb: true }}
           verzeichnis={props.verzeichnis.filter((m) => m.id !== props.meineId)}
           mitglieder={mitglieder}
           gaeste={gaeste}
@@ -179,29 +252,18 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
           onGaeste={setGaeste}
         />
 
-        {nochPlatz && (
-          <label className="schalter">
-            <input
-              type="checkbox"
-              checked={sucheMitspieler}
-              onChange={(e) => setSucheMitspieler(e.target.checked)}
-            />
-            <span>
-              Mitspieler gesucht
-              <small>
-                Die Buchung erscheint unter „Offene Spiele“. Wer will, trägt sich selbst ein.
-              </small>
-            </span>
-          </label>
-        )}
+        {nochPlatz && <GesuchtKarte an={sucheMitspieler} onWechsel={setSucheMitspieler} />}
 
-        <div className="fenster-fuss">
-          <button className="knopf" disabled={props.laeuft || pflichtVerletzt}>
-            {props.laeuft ? "Wird gebucht…" : `Verbindlich für ${alsUhrzeit(start)} buchen`}
+        <div className="blatt-fuss">
+          <Fehler text={props.fehler} />
+          <button className="knopf gold gross block" disabled={props.laeuft || pflichtVerletzt}>
+            {props.laeuft ? "Wird gebucht…" : `${platz?.name ?? "Platz"} buchen`}
           </button>
-          <button type="button" className="knopf leise" onClick={props.onSchliessen}>
-            Abbrechen
-          </button>
+          <p className="fussnote">
+            {pflichtVerletzt
+              ? `${gewaehlt?.name ?? "Diese Spielform"} braucht einen Mitspieler – oder schalte „Mitspieler gesucht“ ein.`
+              : "Stornieren geht bis Spielbeginn"}
+          </p>
         </div>
       </form>
 
@@ -235,7 +297,7 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
               <div className="fenster-fuss">
                 <button
                   type="button"
-                  className={sperrKollisionen === null ? "knopf" : "knopf gefahr"}
+                  className={sperrKollisionen === null ? "knopf leise" : "knopf gefahr"}
                   disabled={props.laeuft || sperrgrund.trim() === ""}
                   onClick={async () => {
                     const offen = await props.onSperren(
@@ -305,21 +367,30 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
     JSON.stringify([...mitglieder].sort()) !== JSON.stringify([...(b.player_member_ids ?? [])].sort()) ||
     JSON.stringify([...gaeste].sort()) !== JSON.stringify([...(b.guest_names ?? [])].sort());
 
+  const [vorname, ...rest] = (b.owner_name ?? "").split(" ");
+  const bucher = {
+    initialen: initialen(vorname, rest.at(-1)),
+    name: b.is_own ? "Du" : (b.owner_name ?? "Bucher"),
+    gelb: b.is_own,
+  };
+
   return (
     <>
       <Kopf
-        titel={`${platz?.name ?? "Platz"}, ${alsUhrzeit(lokaleMinuten(b.starts_at))}–${alsUhrzeit(
-          lokaleMinuten(b.ends_at),
-        )}`}
-        unterzeile={
-          nurStorno
-            ? `${b.title ?? b.type_name} · Blockung`
-            : `${b.type_name} · gebucht von ${b.owner_name ?? "unbekannt"}`
-        }
+        kicker={`${platz?.name ?? "Platz"} · ${tagText(props.datum)}`}
+        titel={`${alsUhrzeit(lokaleMinuten(b.starts_at))} – ${alsUhrzeit(lokaleMinuten(b.ends_at))}`}
         onSchliessen={props.onSchliessen}
       />
 
       <div className="fenster-inhalt">
+        <p className="blatt-unterzeile">
+          {istSerientermin
+            ? `${b.title ?? b.type_name} · Serientermin`
+            : nurStorno
+              ? `Gesperrt · ${b.title?.trim() || "ohne Grund"}`
+              : `${b.type_name} · gebucht von ${b.is_own ? "dir" : (b.owner_name ?? "unbekannt")}`}
+        </p>
+
         {props.istAdmin && !b.is_own && (
           <p className="hinweis">Du bearbeitest eine fremde Buchung als Administrator.</p>
         )}
@@ -328,13 +399,14 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
         )}
 
         {b.partner_wanted && b.frei > 0 && (
-          <p className="hinweis">
-            Hier werden noch {b.frei === 1 ? "ein Mitspieler" : `${b.frei} Mitspieler`} gesucht.
+          <p className="gesucht-text">
+            Hier {b.frei === 1 ? "wird noch ein Mitspieler" : `werden noch ${b.frei} Mitspieler`} gesucht.
           </p>
         )}
 
         {!nurStorno && darfVerwalten && (
           <Mitspielersuche
+            kopf={bucher}
             verzeichnis={props.verzeichnis.filter((m) => m.id !== b.owner_member_id)}
             mitglieder={mitglieder}
             gaeste={gaeste}
@@ -346,8 +418,39 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           />
         )}
 
-        {!darfVerwalten && b.players.length > 0 && (
-          <p className="unterzeile">Dabei sind: {b.players.join(", ")}</p>
+        {!nurStorno && !darfVerwalten && (
+          <div className="mitspieler">
+            <p className="feldname">Wer spielt mit?</p>
+            <div className="chips">
+              <span className="chip">
+                <span className="avatar" aria-hidden="true">{bucher.initialen}</span>
+                <span className="name">{bucher.name}</span>
+              </span>
+              {b.players.map((p, i) => {
+                const [v, ...n] = p.split(" ");
+                return (
+                  <span key={`${p}${i}`} className="chip">
+                    <span className="avatar" aria-hidden="true">{initialen(v, n.at(-1))}</span>
+                    <span className="name">{p}</span>
+                  </span>
+                );
+              })}
+              {Array.from({ length: b.frei }, (_, i) => (
+                <span key={`frei${i}`} className="chip leer">
+                  <span className="avatar" aria-hidden="true" />
+                  <span className="name">frei</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!nurStorno && darfVerwalten && (b.frei > 0 || b.partner_wanted) && (
+          <GesuchtKarte
+            an={b.partner_wanted}
+            deaktiviert={props.laeuft}
+            onWechsel={(an) => props.onAusschreiben(b.booking_id, an)}
+          />
         )}
 
         {darfVerwalten && stornoOffen && (
@@ -364,11 +467,13 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           </label>
         )}
 
-        <div className="fenster-fuss">
+        <div className="blatt-fuss">
+          <Fehler text={props.fehler} />
+
           {kannMitspielen && (
             <button
               type="button"
-              className="knopf"
+              className="knopf gold gross block"
               disabled={props.laeuft}
               onClick={() => props.onBeitreten(b.booking_id)}
             >
@@ -379,7 +484,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           {!nurStorno && darfVerwalten && (
             <button
               type="button"
-              className="knopf"
+              className="knopf gold gross block"
               disabled={props.laeuft || !geaendert}
               onClick={() => props.onSpeichern(b.booking_id, mitglieder, gaeste)}
             >
@@ -387,21 +492,10 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
             </button>
           )}
 
-          {!nurStorno && darfVerwalten && (b.frei > 0 || b.partner_wanted) && (
-            <button
-              type="button"
-              className="knopf leise"
-              disabled={props.laeuft}
-              onClick={() => props.onAusschreiben(b.booking_id, !b.partner_wanted)}
-            >
-              {b.partner_wanted ? "Nicht mehr ausschreiben" : "Mitspieler suchen"}
-            </button>
-          )}
-
           {!darfVerwalten ? null : stornoOffen ? (
             <button
               type="button"
-              className="knopf gefahr"
+              className="knopf gefahr block"
               disabled={props.laeuft || (grundNoetig && grund.trim() === "")}
               onClick={() =>
                 istSerientermin
@@ -414,7 +508,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           ) : (
             <button
               type="button"
-              className="knopf leise"
+              className="knopf gefahr-leise block"
               disabled={props.laeuft}
               onClick={() => setStornoOffen(true)}
             >
@@ -426,9 +520,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
             </button>
           )}
 
-          <button type="button" className="knopf leise" onClick={props.onSchliessen}>
-            Schließen
-          </button>
+          {b.is_own && !nurStorno && <p className="fussnote">Stornieren geht bis Spielbeginn</p>}
         </div>
       </div>
     </>
