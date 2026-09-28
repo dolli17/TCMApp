@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import logo from "@tcm/ui/logo.png";
+import logo from "@tcm/ui/logo-weiss.png";
 import { createClient } from "@/lib/supabase/client";
 
 /**

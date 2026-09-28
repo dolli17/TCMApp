@@ -19,6 +19,14 @@ function block(werte: Record<string, string>, einzug = "  "): string {
     .join("\n");
 }
 
+function schattenBlock(werte: (typeof schatten)["hell" | "dunkel"], einzug = "  "): string {
+  return [
+    `${einzug}--shadow: ${werte.normal};`,
+    `${einzug}--shadow-sm: ${werte.klein};`,
+    `${einzug}--shadow-float: ${werte.schwebend};`,
+  ].join("\n");
+}
+
 const css = `/* ===========================================================================
    Design-Tokens des TC Muckensturm
 
@@ -31,13 +39,18 @@ const css = `/* ================================================================
 
 :root {
 ${block(farben.hell)}
-  --shadow: ${schatten.hell.normal};
-  --shadow-sm: ${schatten.hell.klein};
+${schattenBlock(schatten.hell)}
 
   --font-text: ${schrift.text};
   --font-display: ${schrift.display};
   --line-height: ${schrift.zeilenhoehe};
   --tracking: ${schrift.laufweite}px;
+  --tracking-kicker: ${schrift.laufweiteKicker}em;
+  --tracking-title: ${schrift.laufweiteTitel}px;
+
+${Object.entries(schrift.groesse)
+  .map(([k, v]) => `  --font-size-${k}: ${v}px;`)
+  .join("\n")}
 
 ${Object.entries(abstand)
   .map(([k, v]) => `  --space-${k}: ${v}px;`)
@@ -52,22 +65,19 @@ ${Object.entries(radius)
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="hell"]) {
 ${block(farben.dunkel, "    ")}
-    --shadow: ${schatten.dunkel.normal};
-    --shadow-sm: ${schatten.dunkel.klein};
+${schattenBlock(schatten.dunkel, "    ")}
   }
 }
 
 /* Ausdrueckliche Wahl des Mitglieds - schlaegt die Systemeinstellung */
 :root[data-theme="dunkel"] {
 ${block(farben.dunkel)}
-  --shadow: ${schatten.dunkel.normal};
-  --shadow-sm: ${schatten.dunkel.klein};
+${schattenBlock(schatten.dunkel)}
 }
 
 :root[data-theme="hell"] {
 ${block(farben.hell)}
-  --shadow: ${schatten.hell.normal};
-  --shadow-sm: ${schatten.hell.klein};
+${schattenBlock(schatten.hell)}
 }
 `;
 

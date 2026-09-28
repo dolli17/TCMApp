@@ -14,6 +14,7 @@
 @import "@fontsource/barlow/latin-500.css";
 @import "@fontsource/barlow/latin-600.css";
 @import "@fontsource/barlow/latin-700.css";
+@import "@fontsource/barlow/latin-800.css";
 @import "@fontsource/barlow-semi-condensed/latin-600.css";
 @import "@fontsource/barlow-semi-condensed/latin-700.css";
 @import "@fontsource/barlow-semi-condensed/latin-800.css";
@@ -27,7 +28,7 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-text);
-  font-size: 15px;
+  font-size: var(--font-size-normal);
   line-height: var(--line-height);
   letter-spacing: var(--tracking);
   -webkit-font-smoothing: antialiased;
@@ -68,19 +69,26 @@ a:hover { text-decoration: underline; }
 }
 
 .pagetitle {
-  font-family: var(--font-display);
-  font-weight: 700; font-size: 26px; letter-spacing: -.2px; line-height: 1;
+  font-weight: 800; font-size: var(--font-size-seitentitel);
+  letter-spacing: var(--tracking-title); line-height: 1.05;
   margin: 0 0 2px;
+}
+
+/* Kleine Zeile ueber einem Titel, etwa das Datum */
+.kicker {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--font-size-kicker); letter-spacing: var(--tracking-kicker);
+  text-transform: uppercase; color: var(--muted);
 }
 .unterzeile { color: var(--ink-2); margin: 0 0 18px; font-size: 14px; }
 
 .sectionlabel {
   display: flex; align-items: center; justify-content: space-between;
-  margin: 22px 0 11px;
+  margin: var(--space-abschnitt) 0 var(--space-m);
 }
 .sectionlabel h2 {
-  font-family: var(--font-display); font-weight: 700; font-size: 16px;
-  letter-spacing: .02em; text-transform: uppercase; color: var(--ink-2); margin: 0;
+  font-weight: 700; font-size: var(--font-size-titel);
+  letter-spacing: -.2px; color: var(--ink); margin: 0;
 }
 
 /* --- Bottom-Navigation: nur am Telefon ------------------------------------ */
@@ -111,22 +119,21 @@ a:hover { text-decoration: underline; }
 /* ---------------------------------------------------------------------------
    Hero — Blickfang oben, Verlauf blau nach gold wie im Design
    --------------------------------------------------------------------------- */
+/* brand statt blue: blue ist im dunklen Theme so hell, dass die weisse
+   Schrift darauf nicht mehr lesbar waere. */
 .hero {
-  position: relative; border-radius: var(--radius-hero); overflow: hidden;
+  position: relative; border-radius: var(--radius-kartegross); overflow: hidden;
   background:
     radial-gradient(120% 120% at 88% -10%, color-mix(in srgb, var(--gold) 42%, transparent), transparent 46%),
-    linear-gradient(155deg, var(--blue) 0%, var(--blue-ink) 96%);
+    linear-gradient(155deg, var(--brand) 0%, color-mix(in srgb, var(--brand) 72%, #000) 96%);
   color: #fff; padding: 20px 20px 22px;
-  box-shadow: 0 14px 30px color-mix(in srgb, var(--blue) 34%, transparent);
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--brand) 34%, transparent);
   margin-bottom: 4px;
 }
-.hero .kicker {
-  font-size: 11.5px; font-weight: 700; letter-spacing: .16em;
-  text-transform: uppercase; opacity: .85;
-}
+.hero .kicker { color: #fff; opacity: .85; }
 .hero h1 {
-  font-family: var(--font-display); font-weight: 700; font-size: 33px;
-  line-height: .98; letter-spacing: -.4px; margin: 9px 0 0; text-wrap: balance;
+  font-weight: 800; font-size: var(--font-size-seitentitel);
+  line-height: 1.02; letter-spacing: var(--tracking-title); margin: 9px 0 0; text-wrap: balance;
 }
 .hero .meta { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
 .hero .pill {
@@ -153,7 +160,7 @@ a:hover { text-decoration: underline; }
    --------------------------------------------------------------------------- */
 .karte {
   background: var(--surf); border: 1px solid var(--line);
-  border-radius: var(--radius-kartegross); box-shadow: var(--shadow);
+  border-radius: var(--radius-karte); box-shadow: var(--shadow);
   padding: 16px;
 }
 
@@ -179,7 +186,7 @@ button.kachel:hover { border-color: var(--blue); }
   font-family: var(--font-display); font-size: 26px; font-weight: 700;
   line-height: 1.1; letter-spacing: -.02em;
 }
-.kachel .titel { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+.kachel .titel { font-size: var(--font-size-klein); color: var(--muted); font-weight: 500; }
 .kachel .preis { color: var(--blue-ink); font-weight: 700; margin-top: 6px; }
 
 /* ---------------------------------------------------------------------------
@@ -200,8 +207,10 @@ button.kachel:hover { border-color: var(--blue); }
   border: 1.5px solid var(--line-2); box-shadow: none;
 }
 .knopf.leise:hover { border-color: var(--blue); color: var(--blue-ink); background: transparent; }
-.knopf.gold { background: var(--gold); color: #3a2600; box-shadow: none; }
-.knopf.klein { font-size: 13px; padding: 7px 11px; border-radius: 10px; }
+.knopf.gold { background: var(--gold); color: var(--on-gold); box-shadow: none; }
+.knopf.klein {
+  font-size: var(--font-size-klein); padding: 7px 11px; border-radius: var(--radius-klein);
+}
 .knopf.block { width: 100%; }
 
 /* ---------------------------------------------------------------------------
@@ -226,11 +235,11 @@ input:focus, select:focus, textarea:focus {
 /* Chips und Segment-Umschalter */
 .segtoggle {
   display: flex; gap: 4px; padding: 4px;
-  background: var(--chip); border-radius: 13px; margin-bottom: 16px;
+  background: var(--surf-2); border-radius: var(--radius-knopf); margin-bottom: 16px;
 }
 .segtoggle button {
   flex: 1; border: 0; cursor: pointer; font-family: var(--font-display);
-  font-weight: 700; font-size: 15px; padding: 11px; border-radius: 9px;
+  font-weight: 700; font-size: 15px; padding: 11px; border-radius: calc(var(--radius-knopf) - 4px);
   background: transparent; color: var(--muted);
 }
 .segtoggle button[aria-pressed="true"] {
@@ -242,7 +251,7 @@ input:focus, select:focus, textarea:focus {
   padding: 3px 8px; border-radius: 99px;
   background: var(--blue-soft); color: var(--blue-ink);
 }
-.marke-klein.gold { background: var(--gold-soft); color: #7a5600; }
+.marke-klein.gold { background: var(--gold-soft); color: var(--gold-ink); }
 .marke-klein.grau { background: var(--chip); color: var(--ink-2); }
 
 /* ---------------------------------------------------------------------------
@@ -257,7 +266,7 @@ input:focus, select:focus, textarea:focus {
   background: color-mix(in srgb, var(--red) 12%, transparent); color: var(--red);
 }
 .hinweis.erfolg {
-  background: color-mix(in srgb, var(--green) 12%, transparent); color: var(--green);
+  background: color-mix(in srgb, var(--green) 12%, transparent); color: var(--green-ink);
 }
 
 /* ---------------------------------------------------------------------------
@@ -335,17 +344,12 @@ table.liste .zahl {
   position: relative; padding: 40px 26px 44px; color: #fff; overflow: hidden;
   background:
     radial-gradient(130% 120% at 85% 0%, color-mix(in srgb, var(--gold) 40%, transparent), transparent 50%),
-    linear-gradient(160deg, var(--blue), var(--blue-ink));
+    linear-gradient(160deg, var(--brand), color-mix(in srgb, var(--brand) 72%, #000));
 }
-/* Das Logo ist dunkelblau - auf der blauen Buehne war es praktisch unsichtbar.
-   brightness(0) macht jedes Pixel schwarz, invert(1) dreht es auf weiss: ein
-   Negativ-Logo aus derselben Datei. Der gelbe Ball wird dabei mit weiss; eine
-   eigene helle Bilddatei waere die Alternative, aber dann gaebe es zwei Logos
-   zu pflegen. */
-.auth .crown img {
-  height: 34px; margin-bottom: 18px; display: block;
-  filter: brightness(0) invert(1);
-}
+/* Auf der blauen Buehne steht die weisse Logovariante mit gelbem Ball
+   (logo-weiss.png). Frueher kam das Negativ per filter: brightness(0)
+   invert(1) aus dem dunkelblauen Logo - das faerbte den Ball mit weiss. */
+.auth .crown img { height: 34px; width: auto; margin-bottom: 18px; display: block; }
 .auth .crown h1 {
   font-family: var(--font-display); font-weight: 700; font-size: 30px;
   line-height: 1.02; letter-spacing: -.3px; margin: 0; text-wrap: balance;
@@ -353,7 +357,7 @@ table.liste .zahl {
 .auth .crown p { margin: 9px 0 0; font-size: 14px; opacity: .88; max-width: 280px; }
 .auth .sheet {
   flex: 1; margin-top: -22px; background: var(--bg);
-  border-radius: 24px 24px 0 0; padding: 26px 22px 40px;
+  border-radius: var(--radius-blatt) var(--radius-blatt) 0 0; padding: 26px 22px 40px;
   position: relative; z-index: 2;
 }
 .auth .sheet form { max-width: 380px; margin: 0 auto; }
@@ -383,12 +387,12 @@ table.liste .zahl {
 /* Eine ausgeschriebene Buchung ist eine Einladung - sie muss sich im Plan von
    einer belegten Zelle unterscheiden, ohne wie ein freier Platz auszusehen. */
 .zelle.sucht-mitspieler, .belegzeile.sucht-mitspieler {
-  border: 1.5px dashed var(--gold);
-  background: color-mix(in srgb, var(--gold) 14%, transparent);
+  border: 1.5px dashed var(--gold-line);
+  background: var(--gold-soft);
 }
 .sucht {
   display: inline-block; margin-left: 6px; padding: 0 6px;
-  border-radius: 99px; background: var(--gold); color: var(--ink);
+  border-radius: 99px; background: var(--gold); color: var(--on-gold);
   font-size: 10.5px; font-weight: 700; vertical-align: middle;
 }
 
@@ -492,6 +496,8 @@ table.liste .zahl {
   .bottomnav { display: none; }
   .inhalt { padding: 24px 32px 48px; }
 
+  .pagetitle { font-size: 42px; }
+
   /* Der Belegungsplan hat hier Platz für das volle Raster. */
   .plan-listen { display: none; }
   .plan-raster { display: block; }
@@ -554,7 +560,7 @@ dialog.fenster {
   box-shadow: 0 24px 60px rgba(13,27,39,.28);
   overflow: hidden;
 }
-dialog.fenster::backdrop { background: rgba(9,22,34,.5); backdrop-filter: blur(2px); }
+dialog.fenster::backdrop { background: rgba(3,8,14,.62); backdrop-filter: blur(2px); }
 
 .fenster-kopf {
   display: flex; align-items: flex-start; gap: 12px;
@@ -604,7 +610,7 @@ dialog.fenster::backdrop { background: rgba(9,22,34,.5); backdrop-filter: blur(2
   border: 1px solid color-mix(in srgb, var(--blue) 35%, transparent);
   border-radius: 99px; padding: 4px 5px 4px 11px; font-size: 13px; font-weight: 600;
 }
-.marken li.gast { background: var(--gold-soft); color: var(--ink); border-color: var(--gold); }
+.marken li.gast { background: var(--gold-soft); color: var(--ink); border-color: var(--gold-line); }
 .marken li button {
   border: 0; background: transparent; color: inherit; cursor: pointer;
   font-size: 16px; line-height: 1; padding: 0 4px; border-radius: 99px;
@@ -719,7 +725,7 @@ textarea[aria-invalid="true"]:focus {
 /* Statusfarben für Marken. Kommen ohne neues Token aus. */
 .marke-klein.gruen {
   background: color-mix(in srgb, var(--green) 16%, transparent);
-  color: color-mix(in srgb, var(--green) 72%, var(--ink));
+  color: var(--green-ink);
 }
 .marke-klein.rot {
   background: color-mix(in srgb, var(--red) 14%, transparent);

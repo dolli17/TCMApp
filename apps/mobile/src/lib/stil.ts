@@ -35,6 +35,19 @@ export function mitDeckkraft(farbe: string, anteil: number): string {
   return `rgba(${r}, ${g}, ${b}, ${anteil})`;
 }
 
+/**
+ * Ersatz fuer color-mix(in srgb, <farbe> <100 - anteil>%, #000) aus der CSS:
+ * dieselbe Farbe, um `anteil` zu Schwarz hin abgedunkelt. Nur fuer Hexwerte -
+ * die Markenflaechen, auf die es angewandt wird, sind deckend.
+ */
+export function abgedunkelt(farbe: string, anteil: number): string {
+  const hex = farbe.replace("#", "");
+  const [r, g, b] = [0, 2, 4].map((i) =>
+    Math.round(parseInt(hex.slice(i, i + 2), 16) * (1 - anteil)),
+  );
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 export function stilFuer(theme: ThemeName) {
   const f = paletteFuer(theme);
   const tiefe = schattenRn[theme];
@@ -44,21 +57,28 @@ export function stilFuer(theme: ThemeName) {
     inhalt: { padding: abstand.rand, gap: abstand.m, paddingBottom: 40 },
 
     titel: {
-      fontFamily: "BarlowSemiCondensed_700Bold",
+      fontFamily: "Barlow_800ExtraBold",
       fontSize: schrift.groesse.seitentitel,
       color: f.ink,
-      letterSpacing: -0.5,
+      letterSpacing: schrift.laufweiteTitel,
     },
     abschnitt: {
-      fontFamily: "BarlowSemiCondensed_700Bold",
-      fontSize: schrift.groesse.gross,
-      color: f.ink2,
-      textTransform: "uppercase",
-      letterSpacing: 0.5,
+      fontFamily: "Barlow_700Bold",
+      fontSize: schrift.groesse.titel,
+      color: f.ink,
+      letterSpacing: -0.2,
       marginTop: abstand.s,
     },
+    /** Kleine Zeile ueber einem Titel, etwa das Datum */
+    kicker: {
+      fontFamily: "BarlowSemiCondensed_700Bold",
+      fontSize: schrift.groesse.kicker,
+      color: f.muted,
+      textTransform: "uppercase",
+      letterSpacing: schrift.groesse.kicker * schrift.laufweiteKicker,
+    },
     unterzeile: { fontSize: 14, color: f.ink2, fontFamily: "Barlow_400Regular" },
-    leise: { fontSize: 13, color: f.muted, fontFamily: "Barlow_400Regular" },
+    leise: { fontSize: schrift.groesse.klein, color: f.muted, fontFamily: "Barlow_400Regular" },
     text: { fontSize: schrift.groesse.normal, color: f.ink, fontFamily: "Barlow_400Regular" },
 
     /**
@@ -67,26 +87,28 @@ export function stilFuer(theme: ThemeName) {
      * innen der beschnittene Verlauf. Siehe Verlaufsflaeche.tsx.
      */
     heroHuelle: {
-      borderRadius: radius.hero,
-      shadowColor: f.blue,
+      borderRadius: radius.karteGross,
+      shadowColor: f.brand,
       shadowOffset: { width: 0, height: 10 },
       shadowOpacity: 0.34,
       shadowRadius: 15,
       elevation: 8,
     },
     hero: {
-      borderRadius: radius.hero,
+      borderRadius: radius.karteGross,
       padding: abstand.rand,
-      backgroundColor: f.blue,
+      backgroundColor: f.brand,
       overflow: "hidden",
     },
     heroKicker: {
-      color: "#fff", opacity: 0.85, fontSize: 11.5,
-      fontFamily: "Barlow_700Bold", letterSpacing: 1.8, textTransform: "uppercase",
+      color: "#fff", opacity: 0.85, fontSize: schrift.groesse.kicker,
+      fontFamily: "BarlowSemiCondensed_700Bold",
+      letterSpacing: schrift.groesse.kicker * schrift.laufweiteKicker,
+      textTransform: "uppercase",
     },
     heroTitel: {
-      color: "#fff", fontSize: schrift.groesse.hero, marginTop: 9,
-      fontFamily: "BarlowSemiCondensed_700Bold", letterSpacing: -0.4,
+      color: "#fff", fontSize: schrift.groesse.seitentitel, marginTop: 9,
+      fontFamily: "Barlow_800ExtraBold", letterSpacing: schrift.laufweiteTitel,
     },
     heroPillen: { flexDirection: "row", gap: abstand.s, marginTop: abstand.l },
     heroPille: {
@@ -123,12 +145,12 @@ export function stilFuer(theme: ThemeName) {
       ...tiefe.klein,
     },
     kachelTitel: {
-      fontSize: schrift.groesse.label, color: f.muted,
+      fontSize: schrift.groesse.klein, color: f.muted,
       fontFamily: "Barlow_500Medium",
     },
     kachelWert: {
       fontFamily: "BarlowSemiCondensed_700Bold",
-      fontSize: schrift.groesse.seitentitel,
+      fontSize: 26,
       color: f.ink,
       fontVariant: ["tabular-nums"],
     },
@@ -138,7 +160,7 @@ export function stilFuer(theme: ThemeName) {
       paddingVertical: 13, paddingHorizontal: 18, alignItems: "center",
     },
     knopfText: {
-      color: "#fff", fontSize: schrift.groesse.gross,
+      color: "#fff", fontSize: schrift.groesse.normal,
       fontFamily: "BarlowSemiCondensed_700Bold",
     },
     knopfLeise: {
@@ -146,20 +168,22 @@ export function stilFuer(theme: ThemeName) {
       borderRadius: radius.knopf, paddingVertical: 12, paddingHorizontal: 16,
       alignItems: "center",
     },
-    knopfLeiseText: { color: f.ink, fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 15 },
+    knopfLeiseText: {
+      color: f.ink, fontFamily: "BarlowSemiCondensed_700Bold", fontSize: schrift.groesse.normal,
+    },
 
     /** Varianten aus der CSS: .knopf.gold / .gefahr / .klein / .block */
     knopfGold: { backgroundColor: f.gold },
-    knopfGoldText: { color: "#3A2600" },
+    knopfGoldText: { color: f.onGold },
     knopfGefahr: { backgroundColor: f.red, borderColor: f.red },
     knopfGefahrText: { color: "#fff" },
-    knopfKlein: { paddingVertical: 7, paddingHorizontal: 11, borderRadius: 10 },
-    knopfKleinText: { fontSize: 13 },
+    knopfKlein: { paddingVertical: 7, paddingHorizontal: 11, borderRadius: radius.klein },
+    knopfKleinText: { fontSize: schrift.groesse.klein },
     knopfBlock: { alignSelf: "stretch" },
 
     feld: {
       borderWidth: 1.5, borderColor: f.line2, borderRadius: radius.feld,
-      padding: 13, fontSize: schrift.groesse.gross,
+      padding: 13, fontSize: schrift.groesse.normal,
       backgroundColor: f.surf, color: f.ink, fontFamily: "Barlow_400Regular",
     },
     // fontWeight bleibt wirkungslos, sobald eine benannte Familie gesetzt ist -
@@ -176,10 +200,10 @@ export function stilFuer(theme: ThemeName) {
 
     segment: {
       flexDirection: "row", gap: 4, padding: 4,
-      backgroundColor: f.chip, borderRadius: 13,
+      backgroundColor: f.surf2, borderRadius: radius.knopf,
     },
     segmentKnopf: {
-      flex: 1, paddingVertical: 11, borderRadius: 9, alignItems: "center",
+      flex: 1, paddingVertical: 11, borderRadius: radius.knopf - 4, alignItems: "center",
     },
     segmentAktiv: { backgroundColor: f.surf },
     segmentText: { color: f.muted, fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 15 },
@@ -210,7 +234,7 @@ export function stilFuer(theme: ThemeName) {
     },
     hinweisErfolg: {
       backgroundColor: mitDeckkraft(f.green, theme === "hell" ? 0.12 : 0.16),
-      color: f.green, padding: 12, borderRadius: radius.feld, overflow: "hidden",
+      color: f.greenInk, padding: 12, borderRadius: radius.feld, overflow: "hidden",
     },
 
     zeile: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
@@ -234,10 +258,10 @@ export function stilFuer(theme: ThemeName) {
     /** Modales Fenster - dieselbe Rolle wie <dialog> im Web */
     fensterHuelle: {
       flex: 1, justifyContent: "flex-end",
-      backgroundColor: theme === "hell" ? "rgba(9,22,34,.45)" : "rgba(0,0,0,.6)",
+      backgroundColor: "rgba(3,8,14,.62)",
     },
     fenster: {
-      backgroundColor: f.surf, borderTopLeftRadius: radius.hero, borderTopRightRadius: radius.hero,
+      backgroundColor: f.surf, borderTopLeftRadius: radius.blatt, borderTopRightRadius: radius.blatt,
       padding: abstand.rand, gap: abstand.m, maxHeight: "88%",
     },
     fensterTitel: {
@@ -250,7 +274,7 @@ export function stilFuer(theme: ThemeName) {
       backgroundColor: f.blueSoft, borderWidth: 1, borderColor: f.blue,
       borderRadius: radius.chip, paddingVertical: 5, paddingLeft: 11, paddingRight: 7,
     },
-    markeGast: { backgroundColor: f.goldSoft, borderColor: f.gold },
+    markeGast: { backgroundColor: f.goldSoft, borderColor: f.goldLine },
     markeText: { fontSize: 13, color: f.ink, fontFamily: "Barlow_600SemiBold" },
     markeWeg: { fontSize: 17, color: f.ink2, paddingHorizontal: 3 },
 
@@ -262,11 +286,11 @@ export function stilFuer(theme: ThemeName) {
     },
     markeKleinText: { fontSize: 11, fontFamily: "Barlow_600SemiBold", color: f.blueInk },
     markeKleinGold: { backgroundColor: f.goldSoft },
-    markeKleinGoldText: { color: theme === "hell" ? "#7A5600" : f.gold },
+    markeKleinGoldText: { color: f.goldInk },
     markeKleinGrau: { backgroundColor: f.chip },
     markeKleinGrauText: { color: f.ink2 },
     markeKleinGruen: { backgroundColor: mitDeckkraft(f.green, 0.16) },
-    markeKleinGruenText: { color: f.green },
+    markeKleinGruenText: { color: f.greenInk },
     markeKleinRot: { backgroundColor: mitDeckkraft(f.red, 0.14) },
     markeKleinRotText: { color: f.red },
 

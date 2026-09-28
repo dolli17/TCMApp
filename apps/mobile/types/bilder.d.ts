@@ -19,3 +19,10 @@ declare module "@tcm/ui/logo.png" {
   const quelle: ImageSourcePropType;
   export default quelle;
 }
+
+declare module "@tcm/ui/logo-weiss.png" {
+  import type { ImageSourcePropType } from "react-native";
+
+  const quelle: ImageSourcePropType;
+  export default quelle;
+}
