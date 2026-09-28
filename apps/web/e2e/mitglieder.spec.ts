@@ -63,13 +63,13 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(page.getByRole("heading", { name: "Mitglieder" })).toBeVisible();
     await expect(page.locator("table.liste tbody tr").first()).toBeVisible();
 
-    // Der Filter "Ohne Login" darf niemanden mit Login zeigen.
-    await page.getByRole("link", { name: "Ohne Login", exact: true }).click();
+    // Der Filter "Ohne Zugang" darf niemanden mit Login zeigen.
+    await page.getByRole("link", { name: "Ohne Zugang", exact: true }).click();
     await expect(page).toHaveURL(/filter=ohne-login/);
     const loginSpalten = page.locator("table.liste tbody tr td:nth-child(6)");
     const anzahl = Math.min(await loginSpalten.count(), 10);
     for (let i = 0; i < anzahl; i++) {
-      await expect(loginSpalten.nth(i)).toHaveText("—");
+      await expect(loginSpalten.nth(i)).toHaveText("kein Zugang");
     }
   });
 
@@ -722,11 +722,14 @@ test.describe("Mitgliederverwaltung", () => {
     ).toContainText("abgelehnt");
   });
 
-  test("die Kachel führt zu den Anträgen", async ({ page }) => {
+  test("der Reiter führt zu den Anträgen", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/mitglieder");
 
-    await page.getByRole("link", { name: /Offene Anträge/ }).click();
+    await page
+      .getByRole("navigation", { name: "Bereiche Mitglieder" })
+      .getByRole("link", { name: /Anträge/ })
+      .click();
     await expect(page).toHaveURL(/\/admin\/mitglieder\/antraege/);
     await expect(page.getByRole("heading", { name: "Aufnahmeanträge" })).toBeVisible();
   });

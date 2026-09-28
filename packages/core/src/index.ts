@@ -7,6 +7,7 @@ export * from "./errors";
 export * from "./booking";
 export * from "./home";
 export * from "./courtStatus";
+export * from "./admin";
 export * from "./client";
 export * from "./schemas";
 export type { Database, Json } from "./database.types";

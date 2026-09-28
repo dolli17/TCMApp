@@ -1456,6 +1456,254 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Verwaltung (Entwuerfe AdminUebersicht, AdminMitglieder, AdminKasse)
+   --------------------------------------------------------------------------- */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.verwaltung { display: grid; gap: 24px; }
+.verwaltung > header .pagetitle { margin-top: 4px; }
+
+.kennzahlen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.kennzahl {
+  display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  padding: 18px 20px; border-radius: var(--radius-karte);
+  background: var(--surf); border: 1px solid var(--line); box-shadow: var(--shadow);
+  color: var(--ink); text-decoration: none;
+}
+.kennzahl:hover { text-decoration: none; border-color: var(--blue); }
+.kennzahl .label { font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+.kennzahl .wert { font-size: 36px; font-weight: 700; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kennzahl .info { font-size: 13px; color: var(--muted); }
+
+.verwaltung-raster { display: grid; gap: 24px; align-items: start; }
+.verwaltung-raster > .haupt { display: grid; gap: 24px; min-width: 0; }
+.karte.gross { border-radius: 24px; padding: 22px 24px; }
+.kartenkopf {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 18px;
+}
+.kartenkopf h2 { margin: 0; font-size: 20px; font-weight: 700; }
+.kartenkopf a { font-size: 14px; font-weight: 600; color: var(--blue-ink); text-decoration: none; white-space: nowrap; }
+
+/* Der Weg des Geldes: fuenf Schritte, je Balken, Nummer, Name, Angabe */
+.geldweg {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px;
+}
+.geldweg li { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.geldweg li > i { height: 6px; border-radius: 3px; background: var(--surf-2); }
+.geldweg li.erledigt > i { background: var(--green); }
+.geldweg li.aktuell > i { background: linear-gradient(90deg, var(--gold) 60%, var(--surf-2) 60%); }
+.geldweg .kopf { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.geldweg .nr {
+  width: 26px; height: 26px; border-radius: 13px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; background: var(--surf-2); color: var(--muted);
+}
+.geldweg li.erledigt .nr { background: var(--green); color: #fff; }
+.geldweg li.aktuell .nr { background: var(--gold); color: var(--on-gold); }
+.geldweg b { font-size: 14.5px; font-weight: 700; min-width: 0; hyphens: auto; overflow-wrap: anywhere; line-height: 1.2; }
+.geldweg small { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+@media (max-width: 767px) {
+  /* Am Telefon untereinander: die fuenf Spalten waeren zu schmal */
+  .geldweg { grid-template-columns: 1fr; gap: 14px; }
+  .geldweg li { display: grid; grid-template-columns: 26px minmax(0, 1fr); column-gap: 10px; row-gap: 2px; }
+  .geldweg li > i { display: none; }
+  .geldweg .kopf { display: contents; }
+  .geldweg small { grid-column: 2; }
+}
+
+/* Heute auf der Anlage: je Platz eine Zeitleiste mit roter Jetzt-Linie */
+.anlage-heute {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: 70px minmax(0, 1fr); row-gap: 10px; align-items: center;
+}
+.anlage-heute li { display: contents; }
+.anlage-heute li > span { font-size: 13.5px; font-weight: 700; }
+.anlage-heute .mini-zeitleiste.gross { height: 14px; border-radius: 7px; }
+.anlage-heute .mini-zeitleiste.gross i { border-radius: 7px; }
+.anlage-heute .mini-zeitleiste b { background: var(--red); }
+
+/* Heute zu tun */
+.karte.gross.zu-tun { padding: 0; overflow: hidden; }
+.zu-tun-kopf { padding: 22px 22px 12px; }
+.zu-tun-kopf h2 { margin: 0; font-size: 20px; font-weight: 700; }
+.zu-tun-kopf p { margin: 4px 0 0; font-size: 13.5px; color: var(--muted); }
+.zu-tun ul { list-style: none; margin: 0; padding: 0; }
+.zu-tun li { padding: 16px 22px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.zu-tun .aufgabe { display: flex; gap: 12px; }
+.zu-tun .aufgabe > i {
+  width: 10px; height: 10px; border-radius: 5px; margin-top: 6px; flex: 0 0 auto;
+  background: var(--surf-2); border: 1.5px solid var(--muted);
+}
+.zu-tun .aufgabe > i.dringend { background: var(--gold); border-color: var(--gold); }
+.zu-tun .aufgabe b { font-size: 15px; }
+.zu-tun .aufgabe p { margin: 2px 0 0; font-size: 13px; color: var(--muted); line-height: 1.4; }
+.zu-tun li > .knopf { justify-self: start; margin-left: 22px; text-decoration: none; }
+.zu-tun .alles-erledigt, .zu-tun .hinweis { margin: 0 22px 22px; }
+.zu-tun .alles-erledigt { padding-top: 14px; border-top: 1px solid var(--line); color: var(--green-ink); font-weight: 600; }
+
+/* Kopf einer Verwaltungsseite: Titel links, Aktionen rechts */
+.verwaltung-kopf { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.verwaltung-kopf .pagetitle { margin-top: 4px; }
+.verwaltung-kopf .aktionen { display: flex; flex-wrap: wrap; gap: 10px; }
+.verwaltung .reiter { margin-bottom: 0; }
+.reiter.unterreiter a { display: inline-flex; align-items: center; gap: 8px; }
+.reiter.unterreiter a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--ink); }
+.reiter .zaehler {
+  height: 20px; min-width: 20px; padding: 0 7px; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--gold); color: var(--on-gold); font-size: 12px;
+}
+
+/* Suche und Filter-Chips */
+.suchleiste { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.suchfeld {
+  flex: 1 1 260px; max-width: 420px; height: 46px; margin: 0;
+  display: flex; align-items: center; gap: 10px; padding: 0 14px;
+  border-radius: 14px; background: var(--surf); border: 1px solid var(--line-2); color: var(--muted);
+}
+.suchfeld:focus-within { border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-soft); }
+.suchfeld svg { width: 18px; height: 18px; flex: 0 0 auto; }
+.suchfeld input { border: 0; padding: 0; height: 100%; background: transparent; box-shadow: none !important; font-size: 15px; }
+.filterchips { display: flex; flex-wrap: wrap; gap: 8px; }
+.filterchips a {
+  height: 38px; padding: 0 14px; border-radius: 19px;
+  display: inline-flex; align-items: center; white-space: nowrap;
+  font-size: 14px; font-weight: 600; text-decoration: none;
+  border: 1px solid var(--line-2); background: var(--surf); color: var(--ink-2);
+}
+.filterchips a:hover { border-color: var(--ink-2); text-decoration: none; }
+.filterchips a[aria-current="true"] { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+.filterchips.leise { margin-top: -12px; gap: 4px; }
+.filterchips.leise a { height: 30px; padding: 0 10px; font-size: 13px; border-color: transparent; background: transparent; color: var(--muted); }
+.filterchips.leise a[aria-current="true"] { background: var(--surf-2); color: var(--ink); border-color: transparent; }
+
+/* Marken im Entwurf: gruen liegt vor, rot fehlt */
+.statusmarke { height: 24px; padding: 0 9px; border-radius: 12px; font-size: 12px; }
+.statusmarke.gruen { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green-ink); }
+
+/* Die Mitgliedertabelle */
+.karte.mitgliederliste { padding: 0; overflow: hidden; }
+.mitgliederliste table.liste { font-size: 14.5px; }
+.mitgliederliste table.liste th { background: var(--surf-2); padding: 12px 18px; font-size: 11.5px; letter-spacing: .08em; }
+.mitgliederliste table.liste td { padding: 12px 18px; }
+.mitgliederliste table.liste tr:last-child td { border-bottom: 1px solid var(--line); }
+.mitgliederliste td.leiser { color: var(--ink-2); }
+.mitgliederliste td.betrag { font-weight: 700; font-size: 16px; white-space: nowrap; }
+.mitgliederliste td .nichts, .mitgliederliste td.leiser { color: var(--muted); font-weight: 400; }
+.mitgliederliste .person { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.mitgliederliste .person > div { min-width: 0; display: grid; }
+.mitgliederliste .person a { font-weight: 700; color: var(--ink); }
+.mitgliederliste .person small { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mitgliederliste .marken-zeile { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.mitgliederliste .avatar { width: 36px; height: 36px; border-radius: 18px; font-size: 12.5px; }
+.avatar.ton-1 { background: color-mix(in srgb, var(--brand) 78%, #000); }
+.avatar.ton-2 { background: color-mix(in srgb, var(--brand) 82%, #6A9CC0); }
+.avatar.ton-3 { background: color-mix(in srgb, var(--brand) 55%, #4A5A70); }
+.zugang { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+.zugang::before { content: ""; width: 8px; height: 8px; border-radius: 4px; background: var(--muted); }
+.zugang.aktiv::before { background: var(--green); }
+.tabellenfuss {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
+  padding: 12px 18px; font-size: 13.5px; color: var(--muted);
+}
+.tabellenfuss .blaettern { display: flex; gap: 6px; }
+.tabellenfuss .knopf { text-decoration: none; }
+.tabellenfuss span.knopf[aria-disabled="true"] { opacity: .45; cursor: default; }
+
+@media (max-width: 767px) {
+  /* Unter 768 px wird jede Zeile zur Karte */
+  .karte.mitgliederliste { background: transparent; border: 0; box-shadow: none; overflow: visible; }
+  .mitgliederliste table.liste, .mitgliederliste tbody { display: block; }
+  .mitgliederliste thead { display: none; }
+  .mitgliederliste tbody { display: grid; gap: 10px; }
+  .mitgliederliste tbody tr {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px;
+    padding: 14px 16px; border-radius: var(--radius-karte);
+    background: var(--surf); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+  }
+  .mitgliederliste table.liste td, .mitgliederliste table.liste tr:last-child td { padding: 0; border: 0; }
+  .mitgliederliste td:first-child { grid-column: 1 / -1; }
+  .mitgliederliste td[data-label]::before {
+    content: attr(data-label); display: block; margin-bottom: 3px;
+    font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+  }
+  .tabellenfuss { padding: 14px 2px 0; }
+}
+
+/* Der Lastschriftlauf */
+.lastschriftlauf .zurueck { margin: 0; }
+.lauf-titel { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: -16px; }
+.lauf-titel .pagetitle { margin: 0; }
+.statusmarke.gross { height: 30px; padding: 0 12px; border-radius: 15px; font-size: 13.5px; }
+.lastschriftlauf > .hinweis { margin: 0; }
+.karte.gross.je-zahler { padding: 0; overflow: hidden; min-width: 0; }
+.je-zahler .kartenkopf { padding: 16px 20px 0; flex-wrap: wrap; margin-bottom: 14px; }
+.je-zahler .kartenkopf h2 { font-size: 19px; }
+.je-zahler .kartenkopf span { font-size: 13px; color: var(--muted); }
+.je-zahler .tabellenhuelle { border: 0; border-radius: 0; box-shadow: none; }
+.je-zahler table.liste { font-size: 14.5px; }
+.je-zahler table.liste th { background: var(--surf-2); padding: 11px 14px; font-size: 11.5px; letter-spacing: .08em; border-top: 1px solid var(--line); }
+.je-zahler table.liste td { padding: 12px 14px; }
+.je-zahler table.liste th:first-child, .je-zahler table.liste td:first-child { padding-left: 20px; }
+.je-zahler td.leiser { min-width: 180px; }
+.je-zahler td.name { font-weight: 700; }
+.je-zahler td.leiser { color: var(--ink-2); }
+.je-zahler td.leiser small { display: block; color: var(--muted); font-size: 12.5px; }
+.je-zahler td.name { white-space: nowrap; }
+.zweizeilig { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.je-zahler td.zahl { font-size: 16px; white-space: nowrap; }
+.je-zahler td.kennung { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--muted); }
+.je-zahler .grund { min-width: 190px; max-width: 230px; margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--muted); }
+.je-zahler .kam-zurueck { margin-left: 8px; }
+.je-zahler .leer-klein { padding: 0 20px 20px; }
+.je-zahler .ruecklaeufer { padding: 16px 20px 20px; border-top: 1px solid var(--line); }
+
+.lauf-seite { display: grid; gap: 16px; min-width: 0; }
+.naechster-schritt {
+  display: flex; flex-direction: column; gap: 12px; padding: 22px;
+  border-radius: var(--radius-karte); background: var(--brand); color: #fff;
+}
+.naechster-schritt .kicker { color: #fff; opacity: .7; }
+.naechster-schritt .titel { font-size: 24px; font-weight: 800; letter-spacing: -.3px; line-height: 1.15; }
+.naechster-schritt p { margin: 0; font-size: 14px; line-height: 1.5; opacity: .85; }
+.naechster-schritt .knopf { height: 50px; padding: 0 16px; border-radius: 14px; font-size: 15px; text-decoration: none; }
+.naechster-schritt .knopf.gold { box-shadow: none; }
+.knopf.auf-blau { background: rgba(255,255,255,.16); color: #fff; box-shadow: none; }
+.knopf.auf-blau:hover { background: rgba(255,255,255,.24); }
+.knopf.gesperrt, .knopf.gesperrt:disabled {
+  background: rgba(255,255,255,.14); color: rgba(255,255,255,.8); opacity: 1; box-shadow: none;
+}
+.sperrgrund { margin: -2px 0 0; padding: 0 0 0 18px; font-size: 13px; line-height: 1.45; }
+.sperrgrund li + li { margin-top: 4px; }
+
+.zusammenfassung { margin: 0; padding: 8px 20px; }
+.zusammenfassung > div {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--line);
+}
+.zusammenfassung > div:last-child { border-bottom: 0; }
+.zusammenfassung dt { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.zusammenfassung dd { margin: 0; font-size: 22px; font-weight: 700; }
+.zusammenfassung dd.rot { color: var(--red); }
+
+@media (max-width: 1099px) {
+  /* Schmaler: der naechste Schritt vor die lange Zahlerliste */
+  .lastschriftlauf .lauf-seite { order: -1; }
+}
+@media (max-width: 767px) {
+  .kennzahl { padding: 16px; }
+  .kennzahl .wert { font-size: 26px; }
+}
+
+@media (min-width: 1100px) {
+  .kennzahlen { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .verwaltung-raster { grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); }
+}
+
 /* Weniger Bewegung, wenn das System danach fragt */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }

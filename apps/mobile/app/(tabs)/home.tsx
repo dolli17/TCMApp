@@ -33,7 +33,7 @@ import {
   ladeEigeneGetraenke, ladeMeineBuchungen, ladeMeinenNamen, ladeOffeneSpiele, ladePlaetze,
   ladeTagesplan,
 } from "@/lib/daten";
-import { useLaden } from "@/lib/laden";
+import { abschnitt, ersterFehler, useLaden, type Abschnitt } from "@/lib/laden";
 import { alsUhrzeit, jetztFrei, lokaleMinuten, zuMinuten } from "@/lib/plan";
 import { useTheme } from "@/lib/theme";
 
@@ -44,21 +44,6 @@ const HEUTE_LANG = new Intl.DateTimeFormat("de-DE", {
 const MONAT = new Intl.DateTimeFormat("de-DE", { month: "long", timeZone: BERLIN });
 const heuteInBerlin = () =>
   new Intl.DateTimeFormat("sv-SE", { timeZone: BERLIN }).format(new Date());
-
-/** Ergebnis eines Abschnitts: entweder ein Wert oder ein Fehlertext. */
-type Abschnitt<T> = { wert: T; fehler: null } | { wert: null; fehler: string };
-
-function abschnitt<T>(r: PromiseSettledResult<T>): Abschnitt<T> {
-  if (r.status === "fulfilled") return { wert: r.value, fehler: null };
-  const grund: unknown = r.reason;
-  return { wert: null, fehler: grund instanceof Error ? grund.message : "Konnte nicht geladen werden." };
-}
-
-function ersterFehler(ergebnisse: PromiseSettledResult<unknown>[]): { wert: null; fehler: string } {
-  const kaputt = ergebnisse.find((r) => r.status === "rejected");
-  const r = abschnitt(kaputt ?? { status: "rejected", reason: null });
-  return { wert: null, fehler: r.fehler ?? "Konnte nicht geladen werden." };
-}
 
 async function ladeHome() {
   const heute = heuteInBerlin();

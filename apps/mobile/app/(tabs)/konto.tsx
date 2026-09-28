@@ -17,7 +17,7 @@ import {
   speichereNotfallkontakt, speichereStammdaten,
   type Notfallkontakt, type Stammdaten,
 } from "@/lib/daten";
-import { useLaden } from "@/lib/laden";
+import { abschnitt, useLaden } from "@/lib/laden";
 import { istAngemeldet, meldeGeraetAb, registriereGeraet } from "@/lib/push";
 import { mitDeckkraft } from "@/lib/stil";
 import { useTheme, type ThemeWahl } from "@/lib/theme";
@@ -48,8 +48,10 @@ export default function Konto() {
   const [meldung, setMeldung] = useState<string | null>(null);
 
   const laden = useCallback(async () => {
+    // Jede Quelle fuer sich: schlaegt eine fehl (etwa das Mandat), zeigt nur
+    // ihr Abschnitt den Fehler, und der Rest der Seite bleibt gefuellt.
     const [forderungen, dienst, stammdaten, merkmale, mannschaft, mitgliedschaft, mandat, getraenke] =
-      await Promise.all([
+      await Promise.allSettled([
         ladeMeineForderungen(),
         ladeArbeitsdienst(),
         ladeMeineStammdaten(),
@@ -59,31 +61,44 @@ export default function Konto() {
         ladeMeinMandat(),
         ladeEigeneGetraenke(),
       ]);
-    return { forderungen, dienst, stammdaten, merkmale, mannschaft, mitgliedschaft, mandat, getraenke };
+    return {
+      forderungen: abschnitt(forderungen),
+      dienst: abschnitt(dienst),
+      stammdaten: abschnitt(stammdaten),
+      merkmale: abschnitt(merkmale),
+      mannschaft: abschnitt(mannschaft),
+      mitgliedschaft: abschnitt(mitgliedschaft),
+      mandat: abschnitt(mandat),
+      getraenke: abschnitt(getraenke),
+    };
   }, []);
 
   const zustand = useLaden(laden);
   const d = zustand.daten;
-  const stammdaten = d?.stammdaten ?? null;
-  const merkmale = (d?.merkmale ?? []) as unknown as MerkmalZeile[];
+  const stammdaten = d?.stammdaten.wert ?? null;
+  const merkmale = (d?.merkmale.wert ?? []) as unknown as MerkmalZeile[];
+  const mannschaft = d?.mannschaft.wert ?? null;
+  const mitgliedschaft = d?.mitgliedschaft.wert ?? null;
+  // Forderungen und Getraenke bilden zusammen einen Abschnitt.
+  const forderungsFehler = d?.forderungen.fehler ?? d?.getraenke.fehler ?? null;
 
   // Offen ist, was noch eingezogen oder bezahlt werden muss. "returned" zaehlt
   // mit: eine zurueckgebuchte Lastschrift ist Geld, das der Verein nicht
   // bekommen hat - die Forderung steht wieder offen.
-  const offen = (d?.forderungen ?? []).filter(
+  const offen = (d?.forderungen.wert ?? []).filter(
     (f) => f.status === "open" || f.status === "notified" || f.status === "returned",
   );
   const zurueck = offen.filter((f) => f.status === "returned");
   // Die Getraenke des laufenden Monats sind noch keine Forderung - sie stehen
   // trotzdem da, damit "Zusammen" die ehrliche Zahl ist.
-  const getraenkeLaufend = sumOpenDrinks(d?.getraenke ?? []);
+  const getraenkeLaufend = sumOpenDrinks(d?.getraenke.wert ?? []);
   const summe = offen.reduce((s, f) => s + f.amount_cents, 0) + getraenkeLaufend;
 
   const vorname = stammdaten?.first_name ?? "";
   const nachname = stammdaten?.last_name ?? "";
   const initialen = `${vorname.charAt(0)}${nachname.charAt(0)}`.toUpperCase();
 
-  const dienst = d?.dienst ?? null;
+  const dienst = d?.dienst.wert ?? null;
   const ist = Number(dienst?.completed_hours ?? 0);
   const soll = Number(dienst?.required_hours ?? 0);
 
@@ -124,16 +139,20 @@ export default function Konto() {
             {vorname} {nachname}
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 6, marginTop: 10 }}>
-            {d?.mitgliedschaft && <Marke>Mitglied seit {d.mitgliedschaft.seit.slice(0, 4)}</Marke>}
-            {d?.mannschaft && <Marke>{d.mannschaft.name}</Marke>}
-            {d?.mannschaft?.mannschaftsfuehrer && <Marke gelb>Mannschaftsführer</Marke>}
+            {mitgliedschaft && <Marke>Mitglied seit {mitgliedschaft.seit.slice(0, 4)}</Marke>}
+            {mannschaft && <Marke>{mannschaft.name}</Marke>}
+            {mannschaft?.mannschaftsfuehrer && <Marke gelb>Mannschaftsführer</Marke>}
           </View>
+          {d?.stammdaten.fehler && (
+            <Text style={[stil.hinweisFehler, { marginTop: 10 }]}>{d.stammdaten.fehler}</Text>
+          )}
         </View>
 
         {meldung && <Text style={stil.hinweisErfolg} accessibilityLiveRegion="polite">{meldung}</Text>}
 
         {/* --- Offene Forderungen ----------------------------------------- */}
         <Abschnitt titel="Offene Forderungen" />
+        {forderungsFehler && <Text style={stil.hinweisFehler}>{forderungsFehler}</Text>}
         {zurueck.length > 0 && (
           <Text style={stil.hinweisFehler}>
             {zurueck.length === 1 ? "Eine Lastschrift kam zurück" : `${zurueck.length} Lastschriften kamen zurück`}
@@ -188,6 +207,7 @@ export default function Konto() {
         </Gruppe>
 
         {/* --- Arbeitsdienst ----------------------------------------------- */}
+        {d?.dienst.fehler && <Text style={stil.hinweisFehler}>Arbeitsdienst: {d.dienst.fehler}</Text>}
         {dienst && (
           <View style={[stil.listenkarte, { borderRadius: radius.karte, padding: 16, gap: 0 }]}>
             <View style={[stil.zeile, { alignItems: "baseline" }]}>
@@ -258,6 +278,14 @@ export default function Konto() {
         <Blatt onSchliessen={() => setBlatt(null)}>
           {(zu) => (
             <>
+              {(blatt === "daten" || blatt === "notfall") && !stammdaten && (
+                <>
+                  <BlattKopf titel={blatt === "daten" ? "Meine Daten" : "Notfallkontakt"} onZu={zu} />
+                  <Text style={stil.hinweisFehler}>
+                    {d?.stammdaten.fehler ?? "Deine Daten konnten nicht geladen werden."}
+                  </Text>
+                </>
+              )}
               {blatt === "daten" && stammdaten && (
                 <>
                   <BlattKopf titel="Meine Daten" onZu={zu} />
@@ -310,13 +338,21 @@ export default function Konto() {
               {blatt === "einwilligungen" && (
                 <>
                   <BlattKopf titel="Einwilligungen" onZu={zu} />
-                  <MerkmaleKarte imBlatt zeilen={merkmale} onGeaendert={zustand.erneutHolen} />
+                  {d?.merkmale.fehler ? (
+                    <Text style={stil.hinweisFehler}>{d.merkmale.fehler}</Text>
+                  ) : (
+                    <MerkmaleKarte imBlatt zeilen={merkmale} onGeaendert={zustand.erneutHolen} />
+                  )}
                 </>
               )}
               {blatt === "bank" && (
                 <>
                   <BlattKopf titel="Bankverbindung & Mandat" onZu={zu} />
-                  <MandatAnsicht mandat={d?.mandat ?? null} />
+                  {d?.mandat.fehler ? (
+                    <Text style={stil.hinweisFehler}>{d.mandat.fehler}</Text>
+                  ) : (
+                    <MandatAnsicht mandat={d?.mandat.wert ?? null} />
+                  )}
                 </>
               )}
             </>
