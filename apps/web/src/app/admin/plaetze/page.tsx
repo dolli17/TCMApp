@@ -91,11 +91,11 @@ export default async function PlaetzeSeite({
       >
         {/* Ein gelber Knopf je Seite (Regel 4): passend zum Segment */}
         {serienAnsicht ? (
-          <FensterKnopf titel="Serie anlegen" knopf="Serie anlegen" breit>
+          <FensterKnopf titel="Serie anlegen" knopf="Serie anlegen" knopfKurz="Serie" breit>
             <SerienFormular plaetze={aktivePlaetzeRes.data ?? []} arten={blockungsarten} />
           </FensterKnopf>
         ) : (
-          <FensterKnopf titel="Plätze sperren" knopf="Plätze sperren" breit>
+          <FensterKnopf titel="Plätze sperren" knopf="Plätze sperren" knopfKurz="Sperren" breit>
             <PlatzSperren plaetze={plaetze} arten={blockungsarten} oeffnung={oeffnung} schluss={schluss} />
           </FensterKnopf>
         )}
@@ -118,11 +118,11 @@ export default async function PlaetzeSeite({
 
       {serienAnsicht ? (
       <section className="liste-abschnitt" aria-labelledby="h-serien">
-        <Gruppenkopf titel="Serien" id="h-serien" />
-        <p className="unterzeile">
-          Training und Verbandsspiele, die sich wöchentlich wiederholen. Bestehende Buchungen
-          werden verdrängt – die Vorschau zeigt vorher, wen es trifft.
-        </p>
+        <Gruppenkopf
+          titel="Laufend"
+          id="h-serien"
+          neben={`${(serienRes.data ?? []).length} Serien`}
+        />
         <SerienListe serien={(serienRes.data ?? []) as SerienZeile[]} />
       </section>
       ) : (

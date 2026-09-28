@@ -2,7 +2,9 @@ import Link from "next/link";
 import { formatCents } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
+import { FensterKnopf } from "@/components/FensterKnopf";
 import { KassenKennzahlen } from "@/components/KassenKennzahlen";
+import { LaufAnlegen } from "@/components/LaufAnlegen";
 import { LaufListe, type LaufZeile } from "@/components/LaufListe";
 import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 import { BereichSegmente } from "@/components/BereichSegmente";
@@ -78,7 +80,7 @@ export default async function KasseSeite({
       ? supabase.rpc("announceable_charges", { p_kind: "fee", p_period_label: String(jahr) })
       : Promise.resolve({ data: null, error: null }),
     gewaehlt === "lastschrift"
-      ? supabase.rpc("debit_batch_overview", { p_limit: 6 })
+      ? supabase.rpc("debit_batch_overview", { p_limit: 24 })
       : Promise.resolve({ data: null, error: null }),
   ]);
 
@@ -89,6 +91,11 @@ export default async function KasseSeite({
   const frist = Number(
     einstellungen.find((s) => s.key === "sepa.prenotification_days")?.value ?? 14,
   );
+  const wert = (k: string) => String(einstellungen.find((e) => e.key === k)?.value ?? "").replace(/"/g, "");
+  const fehlend = [
+    wert("sepa.creditor_id") === "" ? "die Gläubiger-Identifikationsnummer" : null,
+    wert("sepa.creditor_iban") === "" ? "die IBAN des Vereinskontos" : null,
+  ].filter(Boolean);
 
   return (
     <div className="verwaltung">
@@ -103,7 +110,19 @@ export default async function KasseSeite({
           <VerwaltungsKopf
             titel="Kasse"
             unterzeile="Beiträge, Getränkeabrechnung und alles, was daraus an Forderungen entsteht."
-          />
+          >
+            {/* Ein gelber Knopf je Seite (Regel 4), passend zum Segment */}
+            {gewaehlt === "forderungen" && (
+              <Link href="/admin/kasse?abschnitt=lauf" className="knopf gold">
+                Beitragslauf
+              </Link>
+            )}
+            {gewaehlt === "lastschrift" && (
+              <FensterKnopf titel="Neuer Lastschriftlauf" knopf="Lauf anlegen" knopfKurz="Lauf">
+                <LaufAnlegen fristTage={frist} />
+              </FensterKnopf>
+            )}
+          </VerwaltungsKopf>
 
           <KassenKennzahlen />
 
@@ -156,7 +175,20 @@ export default async function KasseSeite({
         </>
       )}
 
-      {gewaehlt === "lastschrift" && <Lastschriftband laeufe={laeufeRes.data ?? []} />}
+      {gewaehlt === "lastschrift" && (
+        <>
+          {/* Ohne Gläubiger-ID und Vereins-IBAN lässt sich keine Datei bauen.
+              Das steht hier, nicht erst beim Klick auf "erzeugen". */}
+          {fehlend.length > 0 && (
+            <div className="hinweis fehler">
+              Es fehlt noch {fehlend.join(" und ")}. Ohne diese Angaben lässt sich keine
+              Lastschriftdatei erzeugen – sie stehen unter{" "}
+              <Link href="/admin/kasse?abschnitt=regeln">Kasse → Regeln</Link>.
+            </div>
+          )}
+          <Lastschriftband laeufe={laeufeRes.data ?? []} />
+        </>
+      )}
 
       {gewaehlt === "arten" && (
         <BeitragsartenPflege

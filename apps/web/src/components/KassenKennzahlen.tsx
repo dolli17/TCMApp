@@ -25,7 +25,7 @@ export async function KassenKennzahlen() {
         <span className="wert dpl tnum">{forderungenRes.error ? "–" : formatCents(offen)}</span>
         <span className="info">{forderungen.length} Posten, alle Arten</span>
       </Link>
-      <Link href="/admin/kasse/lastschriften" className="kennzahl">
+      <Link href="/admin/kasse?abschnitt=lastschrift" className="kennzahl">
         <span className="label">Laufende Läufe</span>
         <span className="wert dpl tnum">{laeufeRes.error ? "–" : laufend}</span>
         <span className="info">noch nicht abgeschlossen</span>

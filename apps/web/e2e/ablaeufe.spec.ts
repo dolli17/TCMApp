@@ -397,7 +397,7 @@ test.describe("Berechtigungen", () => {
   test("Admin kann Serien anlegen", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/plaetze?ansicht=serien");
-    await expect(page.getByRole("heading", { name: "Serien", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Laufend", exact: true })).toBeVisible();
     // Das Formular steht im Fenster hinter dem Kopfknopf.
     await page.getByRole("button", { name: "Serie anlegen" }).click();
     await expect(page.getByRole("button", { name: "Vorschau" })).toBeVisible();
@@ -1181,8 +1181,11 @@ test.describe("Verwaltung", () => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/kasse/lastschriften");
 
+    // Die Läufe sind ein Segment der Kasse; die alte Adresse leitet dorthin.
+    await expect(page).toHaveURL(/\/admin\/kasse\?abschnitt=lastschrift/);
     await expect(page.getByRole("heading", { name: "Lastschriftläufe" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Neuer Lastschriftlauf" })).toBeVisible();
+    await page.getByRole("button", { name: "Lauf anlegen" }).click();
+    await expect(page.getByRole("heading", { name: "Neuer Lastschriftlauf" }).first()).toBeVisible();
 
     // Ohne Gläubiger-ID und Vereins-IBAN lässt sich keine Datei bauen. Das muss
     // hier stehen und nicht erst beim Klick auf „erzeugen".

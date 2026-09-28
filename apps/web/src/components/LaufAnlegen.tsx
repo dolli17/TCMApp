@@ -26,7 +26,7 @@ export function LaufAnlegen({ fristTage }: { fristTage: number }) {
   const [laeuft, starte] = useTransition();
 
   return (
-    <section className="karte" style={{ marginBottom: 18 }}>
+    <section className="karte">
       <h2 className="dpl">Neuer Lastschriftlauf</h2>
       <p className="unterzeile">
         Der Fälligkeitstag entscheidet, welche Forderungen mitgehen: nur die, deren
@@ -63,7 +63,7 @@ export function LaufAnlegen({ fristTage }: { fristTage: number }) {
       <div className="fenster-fuss">
         <button
           type="button"
-          className="knopf"
+          className="knopf gold block gross"
           disabled={laeuft || titel.trim() === "" || faellig === ""}
           onClick={() =>
             starte(async () => {

@@ -24,6 +24,12 @@ const config: NextConfig = {
       // System, der Arbeitsdienst ist ein eigener Bereich.
       { source: "/admin/mitglieder/merkmale", destination: "/admin/system/merkmale", permanent: true },
       { source: "/admin/mitglieder/arbeitsdienst", destination: "/admin/arbeitsdienst", permanent: true },
+      // Die Läufe sind ein Segment der Kasse; die Seite eines Laufs bleibt.
+      {
+        source: "/admin/kasse/lastschriften",
+        destination: "/admin/kasse?abschnitt=lastschrift",
+        permanent: true,
+      },
       { source: "/admin/serien", destination: "/admin/plaetze", permanent: true },
       { source: "/admin/beitraege", destination: "/admin/kasse", permanent: true },
     ];

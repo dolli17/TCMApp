@@ -1737,7 +1737,9 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 
 /* Der Lastschriftlauf */
 .lastschriftlauf .zurueck { margin: 0; }
-.lauf-titel { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: -16px; }
+.lauf-titel { display: grid; gap: 4px; margin-top: -16px; }
+.lauf-titel .titelzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.karte.gross > h2.dpl:first-child { margin: 0 0 16px; }
 .lauf-titel .pagetitle { margin: 0; }
 .statusmarke.gross { height: 30px; padding: 0 12px; border-radius: 15px; font-size: 13.5px; }
 .lastschriftlauf > .hinweis { margin: 0; }
@@ -2039,7 +2041,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--ink);
 }
 .tippfeld.klein input { font-family: var(--font-text); font-size: 16px; }
-.serienformular { display: grid; gap: 16px; }
+.serienformular, .blatt .sperrformular { display: grid; gap: 16px; }
+.blatt .sperrformular > .fenster-fuss { margin-top: 0; padding-top: 0; border-top: 0; }
 .folgen-liste { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; }
 .knopf.gross { min-height: 58px; border-radius: 18px; font-family: var(--font-text); font-size: 17px; font-weight: 800; }
 /* Chips statt Auswahlliste bei bis zu acht Optionen */

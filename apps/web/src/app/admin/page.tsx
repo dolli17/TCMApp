@@ -112,7 +112,7 @@ export default async function VerwaltungSeite() {
       : null,
     today: heute,
   });
-  const laufHref = lauf ? `/admin/kasse/lastschriften/${lauf.id}` : "/admin/kasse/lastschriften";
+  const laufHref = lauf ? `/admin/kasse/lastschriften/${lauf.id}` : "/admin/kasse?abschnitt=lastschrift";
 
   // --- Heute zu tun --------------------------------------------------------
   const aufgaben = adminTodos({

@@ -160,54 +160,63 @@ function Sperrformular({
   }
 
   return (
-    <section className="karte">
+    <section className="karte sperrformular">
       <h2 className="dpl">Plätze sperren</h2>
       <p className="unterzeile">
         Regen, Turnier, Platzpflege. Bestehende Buchungen werden erst nach Rückfrage verdrängt.
       </p>
 
-      <fieldset className="platzwahl">
+      {/* Aufbau wie "Serie anlegen" (VwBlatt): Chips, grosse Tippfelder, Folgen vor dem Absenden */}
+      <fieldset className="chipwahl" style={{ ["--spalten" as string]: Math.min(plaetze.length + 1, 9) }}>
         <legend>Plätze</legend>
-        {plaetze.map((p) => {
-          const an = gewaehlt.includes(p.id);
-          return (
-            <button
-              key={p.id}
-              type="button"
-              className={`slotknopf ${an ? "aktiv" : ""}`}
-              aria-pressed={an}
-              onClick={() =>
-                setGewaehlt(an ? gewaehlt.filter((x) => x !== p.id) : [...gewaehlt, p.id])
-              }
-            >
-              {p.short_name}
-            </button>
-          );
-        })}
-        <button
-          type="button"
-          className="knopf leise klein"
-          onClick={() =>
-            setGewaehlt(gewaehlt.length === plaetze.length ? [] : plaetze.map((p) => p.id))
-          }
-        >
-          {gewaehlt.length === plaetze.length ? "Keinen" : "Alle"}
-        </button>
+        <div>
+          {plaetze.map((p) => {
+            const an = gewaehlt.includes(p.id);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className="dpl"
+                aria-pressed={an}
+                aria-label={p.name}
+                onClick={() => {
+                  setGewaehlt(an ? gewaehlt.filter((x) => x !== p.id) : [...gewaehlt, p.id]);
+                  setKollisionen(null);
+                }}
+              >
+                {p.short_name.replace(/^P/, "")}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            aria-pressed={gewaehlt.length === plaetze.length}
+            onClick={() => {
+              setGewaehlt(gewaehlt.length === plaetze.length ? [] : plaetze.map((p) => p.id));
+              setKollisionen(null);
+            }}
+          >
+            {gewaehlt.length === plaetze.length ? "Keinen" : "Alle"}
+          </button>
+        </div>
       </fieldset>
 
-      <div className="formraster">
-        <label>
-          <span>Tag</span>
-          <input type="date" value={tag} onChange={(e) => setTag(e.target.value)} />
-        </label>
-        <label>
+      <label className="tippfeld klein">
+        <span>Tag</span>
+        <input type="date" value={tag} onChange={(e) => { setTag(e.target.value); setKollisionen(null); }} />
+      </label>
+      <div className="tippfelder">
+        <label className="tippfeld">
           <span>Von</span>
-          <input type="time" step={1800} value={von} onChange={(e) => setVon(e.target.value)} />
+          <input type="time" step={1800} value={von} onChange={(e) => { setVon(e.target.value); setKollisionen(null); }} />
         </label>
-        <label>
+        <label className="tippfeld">
           <span>Bis</span>
-          <input type="time" step={1800} value={bis} onChange={(e) => setBis(e.target.value)} />
+          <input type="time" step={1800} value={bis} onChange={(e) => { setBis(e.target.value); setKollisionen(null); }} />
         </label>
+      </div>
+
+      <div className="formraster">
         <label>
           <span>Art</span>
           <select value={artCode} onChange={(e) => setArtCode(e.target.value)}>
@@ -216,7 +225,7 @@ function Sperrformular({
             ))}
           </select>
         </label>
-        <label className="breit">
+        <label>
           <span>Grund</span>
           <input
             type="text"
@@ -227,32 +236,37 @@ function Sperrformular({
         </label>
       </div>
 
-      <div className="fenster-fuss">
-        {kollisionen === null ? (
-          <button
-            type="button"
-            className="knopf"
-            disabled={laeuft || !vollstaendig}
-            onClick={() => absenden(false)}
-          >
-            {laeuft ? "Wird gesperrt…" : "Sperren"}
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="knopf gefahr"
-            disabled={laeuft}
-            onClick={() => absenden(true)}
-          >
+      {kollisionen !== null && (
+        <div className="folgen" role="status">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+            <path d="M12 3 2 20h20zM12 10v4M12 17.5v.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <div>
+            <b>{kollisionen} {kollisionen === 1 ? "Buchung liegt" : "Buchungen liegen"} im Weg.</b>{" "}
+            Sie werden abgesagt, die Mitglieder bekommen Bescheid.
+          </div>
+        </div>
+      )}
+
+      {kollisionen === null ? (
+        <button
+          type="button"
+          className="knopf gold block gross"
+          disabled={laeuft || !vollstaendig}
+          onClick={() => absenden(false)}
+        >
+          {laeuft ? "Wird gesperrt…" : "Sperren"}
+        </button>
+      ) : (
+        <div className="fenster-fuss">
+          <button type="button" className="knopf gefahr" disabled={laeuft} onClick={() => absenden(true)}>
             {kollisionen} {kollisionen === 1 ? "Buchung" : "Buchungen"} verdrängen
           </button>
-        )}
-        {kollisionen !== null && (
           <button type="button" className="knopf leise" onClick={() => setKollisionen(null)}>
             Doch nicht
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
