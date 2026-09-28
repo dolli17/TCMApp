@@ -94,6 +94,7 @@ export async function eigeneDatenSpeichern(formData: FormData): Promise<AktionsE
   if (error) return { ok: false, meldung: translateDbError(error) };
 
   revalidatePath("/konto");
+  revalidatePath("/konto/daten");
   return { ok: true, meldung: "Gespeichert." };
 }
 
@@ -132,5 +133,6 @@ export async function notfallkontaktSpeichern(formData: FormData): Promise<Aktio
   if (error) return { ok: false, meldung: translateDbError(error) };
 
   revalidatePath("/konto");
+  revalidatePath("/konto/notfall");
   return { ok: true, meldung: "Notfallkontakt gespeichert." };
 }

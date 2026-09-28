@@ -9,19 +9,13 @@
  * Nur Darstellung. Ob gebucht werden darf, entscheidet create_booking; die
  * Startzeiten, die hier waehlbar sind, kommen aus canStartAt.
  *
- * Modal plus Animated, keine weitere Bibliothek: das Blatt faehrt von unten
- * herein, die Abdunklung blendet auf. Mit "Bewegung reduzieren" erscheint es
- * ohne Fahrt. onRequestClose faengt die Zurueck-Taste auf Android ab.
+ * Das Blatt selbst (Fahrt, Abdunklung, Griff) steht in Blatt.tsx.
  */
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import {
-  AccessibilityInfo, Animated, Easing, KeyboardAvoidingView, Modal, Platform, Pressable,
-  ScrollView, Text, TextInput, View,
-} from "react-native";
+import { useMemo, useState, type ReactNode } from "react";
+import { Pressable, Text, TextInput, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { radius, schrift } from "@tcm/ui";
+import { Blatt, BlattKopf } from "@/components/Blatt";
 import { Schalter, Segmente } from "@/components/Segmente";
 import { mitDeckkraft } from "@/lib/stil";
 import { useTheme } from "@/lib/theme";
@@ -76,121 +70,19 @@ const initialen = (vor?: string | null, nach?: string | null) =>
   `${(vor ?? "").charAt(0)}${(nach ?? "").charAt(0)}`.toUpperCase() || "?";
 
 export function BuchungsFenster(props: Props) {
-  const { farben } = useTheme();
-  const rand = useSafeAreaInsets();
-  const fahrt = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    let ab = true;
-    void AccessibilityInfo.isReduceMotionEnabled().then((ruhig) => {
-      if (!ab) return;
-      if (ruhig) fahrt.setValue(0);
-      else {
-        Animated.timing(fahrt, {
-          toValue: 0, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true,
-        }).start();
-      }
-    });
-    return () => {
-      ab = false;
-    };
-  }, [fahrt]);
-
-  function schliessen() {
-    Animated.timing(fahrt, {
-      toValue: 1, duration: 200, easing: Easing.in(Easing.cubic), useNativeDriver: true,
-    }).start(() => props.onSchliessen());
-  }
-
   const f = props.fenster;
   const kicker = `${f.platzName} · ${tagText(f.tag)}`;
 
   return (
-    <Modal visible transparent animationType="none" onRequestClose={schliessen} statusBarTranslucent>
-      <Animated.View
-        style={{
-          position: "absolute", left: 0, right: 0, top: 0, bottom: 0,
-          backgroundColor: "rgba(3,8,14,.62)",
-          opacity: fahrt.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
-        }}
-      >
-        <Pressable
-          style={{ flex: 1 }}
-          onPress={schliessen}
-          accessibilityRole="button"
-          accessibilityLabel="Blatt schließen"
-        />
-      </Animated.View>
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1, justifyContent: "flex-end" }}
-        pointerEvents="box-none"
-      >
-        <Animated.View
-          accessibilityViewIsModal
-          style={{
-            maxHeight: "92%",
-            backgroundColor: farben.surf,
-            borderTopLeftRadius: radius.blatt, borderTopRightRadius: radius.blatt,
-            borderTopWidth: 1, borderColor: farben.line,
-            paddingTop: 10, paddingHorizontal: 20, paddingBottom: 20 + rand.bottom,
-            transform: [{ translateY: fahrt.interpolate({ inputRange: [0, 1], outputRange: [0, 800] }) }],
-          }}
-        >
-          <View
-            style={{ width: 38, height: 5, borderRadius: 3, backgroundColor: farben.line2, alignSelf: "center" }}
-          />
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ gap: 18, paddingTop: 12 }}
-            showsVerticalScrollIndicator={false}
-          >
-            {f.modus === "buchen" ? (
-              <BuchenInhalt {...props} fenster={f} kicker={kicker} onZu={schliessen} />
-            ) : (
-              <VerwaltenInhalt {...props} fenster={f} kicker={kicker} onZu={schliessen} />
-            )}
-          </ScrollView>
-        </Animated.View>
-      </KeyboardAvoidingView>
-    </Modal>
-  );
-}
-
-/* --- Kopf ----------------------------------------------------------------- */
-
-function Kopf({ kicker, titel, onZu }: { kicker: string; titel: string; onZu: () => void }) {
-  const { stil, farben } = useTheme();
-  return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-      <View style={{ flex: 1 }}>
-        <Text style={stil.kicker}>{kicker}</Text>
-        <Text
-          accessibilityRole="header"
-          style={{
-            marginTop: 4, fontFamily: "BarlowSemiCondensed_700Bold", fontSize: schrift.groesse.seitentitel,
-            lineHeight: schrift.groesse.seitentitel, color: farben.ink, fontVariant: ["tabular-nums"],
-          }}
-        >
-          {titel}
-        </Text>
-      </View>
-      <Pressable
-        onPress={onZu}
-        accessibilityRole="button"
-        accessibilityLabel="Schließen"
-        hitSlop={4}
-        style={{
-          width: 44, height: 44, borderRadius: 22, backgroundColor: farben.surf2,
-          alignItems: "center", justifyContent: "center",
-        }}
-      >
-        <Svg width={18} height={18} viewBox="0 0 24 24">
-          <Path d="M6 6l12 12M18 6 6 18" stroke={farben.ink2} strokeWidth={2.2} strokeLinecap="round" />
-        </Svg>
-      </Pressable>
-    </View>
+    <Blatt onSchliessen={props.onSchliessen}>
+      {(schliessen) =>
+        f.modus === "buchen" ? (
+          <BuchenInhalt {...props} fenster={f} kicker={kicker} onZu={schliessen} />
+        ) : (
+          <VerwaltenInhalt {...props} fenster={f} kicker={kicker} onZu={schliessen} />
+        )
+      }
+    </Blatt>
   );
 }
 
@@ -354,7 +246,7 @@ function BuchenInhalt(
 
   return (
     <>
-      <Kopf kicker={props.kicker} titel={`${alsUhrzeit(start)} – ${alsUhrzeit(start + dauer)}`} onZu={props.onZu} />
+      <BlattKopf zahlen kicker={props.kicker} titel={`${alsUhrzeit(start)} – ${alsUhrzeit(start + dauer)}`} onZu={props.onZu} />
 
       {/* Zwei Segmente nebeneinander, solange es je zwei Werte sind */}
       {haelften.length <= 2 && props.arten.length <= 2 ? (
@@ -499,7 +391,8 @@ function VerwaltenInhalt(
 
   return (
     <>
-      <Kopf
+      <BlattKopf
+        zahlen
         kicker={props.kicker}
         titel={`${alsUhrzeit(lokaleMinuten(b.starts_at))} – ${alsUhrzeit(lokaleMinuten(b.ends_at))}`}
         onZu={props.onZu}

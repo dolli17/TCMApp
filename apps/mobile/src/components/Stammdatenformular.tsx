@@ -29,6 +29,11 @@ type Eigenschaften = {
   werte: Record<string, string>;
   onSpeichern: (neu: Record<string, string>) => Promise<Ergebnis>;
   onGespeichert: () => void | Promise<void>;
+  /**
+   * Im Blatt des Kontos: kein eigener Rahmen und Titel (die bringt das Blatt
+   * mit), die Felder stehen gleich offen, gespeichert wird mit dem gelben Knopf.
+   */
+  imBlatt?: boolean;
 };
 
 export function Stammdatenformular({
@@ -38,9 +43,10 @@ export function Stammdatenformular({
   werte,
   onSpeichern,
   onGespeichert,
+  imBlatt = false,
 }: Eigenschaften) {
   const { stil } = useTheme();
-  const [offen, setOffen] = useState(false);
+  const [offen, setOffen] = useState(imBlatt);
   const [entwurf, setEntwurf] = useState(werte);
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
@@ -65,8 +71,8 @@ export function Stammdatenformular({
   }
 
   return (
-    <View style={stil.karte}>
-      <View style={stil.zeile}>
+    <View style={imBlatt ? { gap: abstand.s } : stil.karte}>
+      {!imBlatt && <View style={stil.zeile}>
         <Text style={[stil.text, { fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 18 }]}>
           {titel}
         </Text>
@@ -79,7 +85,7 @@ export function Stammdatenformular({
             <Text style={[stil.knopfLeiseText, stil.knopfKleinText]}>Bearbeiten</Text>
           </Pressable>
         )}
-      </View>
+      </View>}
 
       {erklaerung && <Text style={stil.leise}>{erklaerung}</Text>}
 
@@ -107,21 +113,21 @@ export function Stammdatenformular({
 
           <View style={{ flexDirection: "row", gap: abstand.s, marginTop: abstand.s }}>
             <Pressable
-              style={[stil.knopf, { flex: 1 }, laeuft && { opacity: 0.5 }]}
+              style={[stil.knopf, imBlatt && stil.knopfGold, { flex: 1 }, imBlatt && { minHeight: 52, justifyContent: "center" }, laeuft && { opacity: 0.5 }]}
               onPress={speichern}
               disabled={laeuft}
               accessibilityRole="button"
             >
-              <Text style={stil.knopfText}>{laeuft ? "Speichert…" : "Speichern"}</Text>
+              <Text style={[stil.knopfText, imBlatt && stil.knopfGoldText]}>{laeuft ? "Speichert…" : "Speichern"}</Text>
             </Pressable>
-            <Pressable
+            {!imBlatt && <Pressable
               style={[stil.knopfLeise, { flex: 1 }]}
               onPress={() => setOffen(false)}
               disabled={laeuft}
               accessibilityRole="button"
             >
               <Text style={stil.knopfLeiseText}>Abbrechen</Text>
-            </Pressable>
+            </Pressable>}
           </View>
         </>
       ) : (

@@ -514,6 +514,22 @@ dialog.fenster::backdrop { background: rgba(3,8,14,.62); backdrop-filter: blur(2
 }
 
 /* --- Mitspielersuche ------------------------------------------------------ */
+/* Marken als entfernbare Pillen - Merkmale, Personensuche. Die Chips im
+   Buchungsblatt (li.chip) haben ihren eigenen Stil weiter unten. */
+.marken li:not(.chip) {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--blue-soft); color: var(--blue-ink);
+  border: 1px solid color-mix(in srgb, var(--blue) 35%, transparent);
+  border-radius: 99px; padding: 4px 5px 4px 11px; font-size: 13px; font-weight: 600;
+}
+.marken li.gast:not(.chip) { background: var(--gold-soft); color: var(--ink); border-color: var(--gold-line); }
+.marken li:not(.chip) button {
+  border: 0; background: transparent; color: inherit; cursor: pointer;
+  font-size: 16px; line-height: 1; padding: 0 4px; border-radius: 99px;
+}
+.marken li:not(.chip) button:hover { background: rgba(0,0,0,.08); }
+ul.marken:not(:has(.chip)) { margin-bottom: 9px; gap: 6px; }
+
 /* Wegweiser auf der Verwaltungsübersicht: eine Liste, die sagt, was wo steht.
    Bewusst schlicht - sie wird gelesen, nicht bedient. */
 .wegweiser { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
@@ -1211,6 +1227,233 @@ li.chip { padding-right: 4px; }
   .datums-kacheln a[aria-current="date"] { border-color: transparent; }
   .datums-kacheln b { font-size: 23px; }
   .plan-segmente { max-width: 420px; }
+}
+
+/* ---------------------------------------------------------------------------
+   Anmeldeseiten (docs/design/clubhaus, AppLogin) - immer dunkel
+   --------------------------------------------------------------------------- */
+.auth.immer-dunkel { background: var(--bg); color: var(--ink); }
+.auth .buehne {
+  position: relative; height: 360px; flex: 0 0 auto; overflow: hidden;
+  background: var(--brand); color: #fff;
+}
+.auth .buehne .platz {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  fill: none; stroke: rgba(255,255,255,.22); stroke-width: 2.5;
+}
+.auth .buehne .platz .netz { stroke: rgba(255,255,255,.4); stroke-dasharray: 3 5; }
+.auth .buehne .ball {
+  position: absolute; right: max(54px, calc(50% - 141px)); top: 96px; width: 38px; height: 38px;
+  border-radius: 19px; background: var(--gold); box-shadow: 0 10px 24px rgba(0,0,0,.25);
+}
+/* Unten laeuft die Buehne in den Grund aus */
+.auth .buehne::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 160px;
+  background: linear-gradient(180deg, transparent, var(--bg));
+}
+.auth .buehne-inhalt {
+  position: relative; z-index: 1; height: 100%; max-width: 480px; margin: 0 auto;
+  padding: 60px 24px 22px; display: flex; flex-direction: column; justify-content: space-between;
+}
+.auth .buehne-inhalt img { height: 36px; width: auto; display: block; align-self: flex-start; }
+.auth .buehne h1 {
+  margin: 0; font-size: 36px; font-weight: 800; letter-spacing: -.7px; line-height: 1.02; text-wrap: balance;
+}
+.auth .buehne p { margin: 8px 0 0; font-size: 15px; color: var(--ink-2); }
+.auth.immer-dunkel .sheet {
+  margin-top: 0; border-radius: 0; background: var(--bg); padding: 8px 24px 36px;
+  width: 100%; max-width: 480px; margin-inline: auto;
+}
+.auth.immer-dunkel.antragsseite .sheet { max-width: 680px; }
+.auth.immer-dunkel .sheet form { max-width: none; display: flex; flex-direction: column; gap: 14px; }
+.auth.immer-dunkel .sheet label { margin-bottom: 0; }
+.auth.immer-dunkel .sheet label > span { font-size: 13px; color: var(--ink-2); margin-bottom: 8px; }
+.auth.immer-dunkel .sheet input:not([type="checkbox"]):not([type="radio"]),
+.auth.immer-dunkel .sheet select {
+  min-height: 54px; border-radius: 16px; font-size: 16px;
+  border-color: rgba(255,255,255,.12); background: var(--surf);
+}
+.auth.immer-dunkel .sheet a { color: var(--ink-2); font-weight: 600; }
+.auth.immer-dunkel .sheet .knopf.block:not(.leise) {
+  background: var(--gold); color: var(--on-gold); box-shadow: 0 10px 28px color-mix(in srgb, var(--gold) 30%, transparent);
+  min-height: 58px; border-radius: 18px; font-family: var(--font-text); font-size: 17px; font-weight: 800;
+}
+.auth.immer-dunkel .sheet .knopf.block.leise { min-height: 52px; border-radius: 16px; }
+.auth .vergessen { margin: -4px 0 0; text-align: right; font-size: 14px; }
+.auth .antrag-hinweis { margin: 4px 0 0; text-align: center; font-size: 14px; color: var(--muted); }
+.auth.immer-dunkel .antrag-hinweis a { color: var(--gold); font-weight: 700; }
+.auth .rechtliches { margin: 16px 0 0; text-align: center; font-size: 13px; color: var(--muted); }
+.auth.immer-dunkel .rechtliches a { color: var(--muted); font-weight: 500; }
+@media (min-width: 768px) {
+  .auth .buehne { height: 400px; }
+  .auth .buehne .platz { left: 50%; width: 780px; transform: translateX(-50%); }
+}
+
+/* ---------------------------------------------------------------------------
+   Gruppierte Listen (iOS-Stil): eine Karte, Zeilen mit Trennlinie
+   --------------------------------------------------------------------------- */
+.gruppe {
+  list-style: none; margin: 0 0 12px; padding: 0;
+  background: var(--surf); border: 1px solid var(--line); border-radius: var(--radius-karte);
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.gruppe > li, .gruppe > .gruppen-zeile, .gruppe > div {
+  border-top: 1px solid var(--line);
+}
+.gruppe > :first-child { border-top: 0; }
+.gruppen-zeile {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px;
+  padding: 0 16px; border: 0; background: transparent; text-align: left;
+  font: inherit; font-size: 15.5px; font-weight: 600; color: var(--ink); text-decoration: none; cursor: pointer;
+}
+.gruppe > .gruppen-zeile + .gruppen-zeile { border-top: 1px solid var(--line); }
+.gruppen-zeile:hover { text-decoration: none; background: color-mix(in srgb, var(--ink) 4%, transparent); }
+.gruppen-zeile:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.gruppen-zeile.rot { color: var(--red); font-weight: 700; }
+.gruppen-zeile.eintrag { min-height: 56px; }
+.gruppen-zeile .titel { flex: 1; }
+.gruppen-zeile .pfeil { color: var(--muted); font-size: 20px; line-height: 1; }
+.symbolkachel {
+  width: 32px; height: 32px; border-radius: 10px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surf-2); color: var(--ink-2);
+}
+.symbolkachel svg { width: 18px; height: 18px; }
+
+/* ---------------------------------------------------------------------------
+   Getränke (docs/design/clubhaus, AppGetraenke)
+   --------------------------------------------------------------------------- */
+.monatskarte {
+  position: relative; overflow: hidden; margin: 8px 0 4px; padding: 20px;
+  border-radius: var(--radius-kartegross); background: var(--brand); color: #fff;
+}
+.monatskarte .platzlinien {
+  position: absolute; right: 0; top: 0; width: 350px; height: 150px;
+  fill: none; stroke: rgba(255,255,255,.12); stroke-width: 2;
+}
+.monatskarte .kicker { position: relative; color: #fff; opacity: .85; }
+.monatskarte .summe { position: relative; font-size: 44px; font-weight: 700; line-height: 1; margin-top: 8px; }
+.monatskarte p { position: relative; margin: 8px 0 0; font-size: 14px; opacity: .9; }
+
+.getraenke-kacheln {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
+}
+.getraenke-kacheln li {
+  min-height: 124px; padding: 14px; border-radius: var(--radius-karte);
+  display: flex; flex-direction: column; justify-content: space-between; gap: 10px;
+  background: var(--surf); border: 1px solid var(--line); box-shadow: var(--shadow);
+}
+.getraenke-kacheln li.gewaehlt { border: 2px solid var(--gold-line); padding: 13px; }
+.getraenke-kacheln b { display: block; font-size: 17px; }
+.getraenke-kacheln small { display: block; font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+.zaehler { display: flex; justify-content: flex-end; align-items: center; gap: 4px; }
+.zaehler button {
+  width: 44px; height: 44px; border: 0; border-radius: 22px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surf-2); color: var(--ink);
+}
+.zaehler button.gelb { background: var(--gold); color: var(--on-gold); }
+.zaehler button:disabled { opacity: .4; cursor: not-allowed; }
+.zaehler button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.zaehler svg { width: 16px; height: 16px; }
+.zaehler output { min-width: 28px; text-align: center; font-size: 22px; font-weight: 700; }
+
+.zuletzt li {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+}
+.zuletzt .was { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.zuletzt .was b { font-size: 15px; font-weight: 600; }
+.zuletzt .was small { font-size: 12.5px; color: var(--muted); }
+.zuletzt .betrag { font-size: 17px; font-weight: 700; }
+.zuletzt li.zurueck { opacity: .55; }
+.zuletzt li.zurueck b, .zuletzt li.zurueck .betrag { text-decoration: line-through; }
+.leise-rot {
+  border: 0; background: transparent; color: var(--red); cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 700; min-height: 44px; padding: 0 4px;
+}
+.leise-rot:disabled { opacity: .5; }
+
+/* Die Leiste zum Eintragen: am Telefon über der schwebenden Leiste,
+   ab 768 px am unteren Rand des Inhalts */
+.eintragen-leiste {
+  position: fixed; z-index: 19; left: 16px; right: 16px;
+  bottom: calc(26px + 64px + 14px + env(safe-area-inset-bottom));
+  min-height: 68px; padding: 8px 8px 8px 20px; border-radius: 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--ink); color: var(--bg); box-shadow: var(--shadow-float);
+}
+.eintragen-leiste b { display: block; font-size: 15px; }
+.eintragen-leiste small { display: block; font-size: 13px; opacity: .7; }
+.eintragen-leiste .knopf { min-height: 52px; border-radius: 18px; padding: 0 24px; font-family: var(--font-text); font-size: 16px; font-weight: 800; }
+
+/* ---------------------------------------------------------------------------
+   Konto (docs/design/clubhaus, AppKonto)
+   --------------------------------------------------------------------------- */
+.profilkopf { display: flex; flex-direction: column; align-items: center; text-align: center; margin: 4px 0 20px; }
+.avatar.gross { width: 88px; height: 88px; border-radius: 44px; font-size: 30px; font-weight: 800; }
+.profilkopf h1 { margin: 14px 0 0; font-size: 28px; font-weight: 800; letter-spacing: -.4px; line-height: 1.1; }
+.profil-marken { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 10px 0 0; }
+.profil-marken span {
+  height: 26px; padding: 0 10px; border-radius: 13px; display: inline-flex; align-items: center;
+  background: var(--surf-2); color: var(--ink-2); font-size: 12.5px; font-weight: 600;
+}
+.profil-marken span.gelb { background: var(--gold-soft); color: var(--gold-ink); }
+
+.forderung { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; }
+.forderung .was { min-width: 0; display: grid; justify-items: start; gap: 4px; }
+.forderung .was b { font-size: 15.5px; font-weight: 600; }
+.forderung .was small { font-size: 12.5px; color: var(--muted); }
+.forderung .betrag { font-size: 19px; font-weight: 700; flex: 0 0 auto; }
+.forderungen .summe {
+  display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--surf-2);
+}
+.forderungen .summe span:first-child { font-size: 14px; font-weight: 700; color: var(--ink-2); }
+.forderungen .summe .betrag { font-size: 21px; font-weight: 700; }
+.forderungen .leer-zeile { padding: 14px 16px; color: var(--muted); }
+.statusmarke {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 11px;
+  font-size: 11.5px; font-weight: 700; background: var(--surf-2); color: var(--ink-2);
+}
+.statusmarke.gelb { background: var(--gold-soft); color: var(--gold-ink); }
+.statusmarke.rot { background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red); }
+details.frueher { margin: 0 0 12px; }
+details.frueher summary, .arbeitsdienst-karte summary {
+  cursor: pointer; font-size: 14px; font-weight: 600; color: var(--blue-ink); padding: 6px 0; min-height: 32px;
+}
+details.frueher .gruppe { margin-top: 8px; }
+
+.arbeitsdienst-karte { margin-bottom: 12px; }
+.arbeitsdienst-karte .kopfzeile { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.arbeitsdienst-karte .kopfzeile b { font-size: 15.5px; }
+.arbeitsdienst-karte .kopfzeile span { font-size: 19px; font-weight: 700; }
+.arbeitsdienst-karte .balken { height: 8px; border-radius: 4px; background: var(--surf-2); margin-top: 12px; overflow: hidden; }
+.arbeitsdienst-karte .balken i { display: block; height: 100%; border-radius: 4px; background: var(--green); }
+.arbeitsdienst-karte p { margin: 10px 0 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
+.arbeitsdienst-karte details { margin-top: 10px; }
+.einsaetze { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; font-size: 13.5px; }
+.einsaetze li { display: flex; justify-content: space-between; gap: 12px; }
+.einsaetze small { color: var(--muted); }
+
+.erscheinungsbild { padding: 14px 16px 16px; }
+.erscheinungsbild p { margin: 0 0 10px; font-size: 15.5px; font-weight: 600; }
+.erscheinungsbild .segtoggle { margin: 0; }
+
+dl.angaben { margin: 0 0 12px; }
+dl.angaben > div { display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px; }
+dl.angaben dt { color: var(--muted); font-size: 14px; }
+dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
+
+.konto-unterseite { max-width: 720px; }
+@media (min-width: 900px) {
+  .konto-raster { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px; align-items: start; }
+  .getraenke-kacheln { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 768px) {
+  .getraenke-kacheln { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .eintragen-leiste {
+    position: sticky; left: auto; right: auto; bottom: 24px; margin-top: 20px;
+  }
 }
 
 /* Weniger Bewegung, wenn das System danach fragt */

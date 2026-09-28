@@ -61,9 +61,25 @@ test.describe("Theme", () => {
   });
 });
 
+test.describe("Anmeldeseiten", () => {
+  test("sind immer dunkel, auch wenn hell gewählt ist", async ({ page }) => {
+    // Die Wahl liegt im Browser; sie gilt ueberall - nur nicht auf der Buehne.
+    await page.goto("/login");
+    await page.evaluate(() => {
+      localStorage.setItem("tcm-theme", "hell");
+      document.documentElement.setAttribute("data-theme", "hell");
+    });
+    const grund = await page.locator(".auth").evaluate((el) => getComputedStyle(el).backgroundColor);
+    // #07111D - der Grund des dunklen Themes
+    expect(grund).toBe("rgb(7, 17, 29)");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Willkommen zurück auf dem Platz.");
+    await expect(page.getByRole("link", { name: "Antrag stellen" })).toBeVisible();
+  });
+});
+
 test.describe("Layout", () => {
   // "/" ist Home - mit wischbaren Reihen bis an den Rand besonders anfaellig.
-  const SEITEN = ["/", "/plan", "/plan/spiele", "/getraenke", "/konto"];
+  const SEITEN = ["/", "/plan", "/plan/spiele", "/getraenke", "/konto", "/konto/daten"];
 
   test.describe("Telefon (390px)", () => {
     test.use({ viewport: { width: 390, height: 844 } });

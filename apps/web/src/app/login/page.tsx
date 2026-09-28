@@ -1,10 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import logo from "@tcm/ui/logo-weiss.png";
+import { AnmeldeBuehne } from "@/components/AnmeldeBuehne";
 import { createClient } from "@/lib/supabase/client";
 
 function Formular() {
@@ -42,14 +41,7 @@ function Formular() {
   }
 
   return (
-    <div className="auth">
-      <div className="crown">
-        <Image src={logo} alt="TC Muckensturm" height={34} priority />
-        <h1>Willkommen zurück auf dem Platz.</h1>
-        <p>Plätze buchen, Getränke erfassen, Beiträge im Blick behalten.</p>
-      </div>
-
-      <div className="sheet">
+    <AnmeldeBuehne titel="Willkommen zurück auf dem Platz.">
         <form onSubmit={anmelden}>
           <label>
             <span>E-Mail</span>
@@ -72,21 +64,24 @@ function Formular() {
             />
           </label>
 
-          {fehler && <div className="hinweis fehler">{fehler}</div>}
+          <p className="vergessen">
+            <Link href="/passwort-vergessen">Passwort vergessen?</Link>
+          </p>
 
-          <button className="knopf block" disabled={laeuft}>
+          {fehler && <div className="hinweis fehler" role="alert">{fehler}</div>}
+
+          <button className="knopf gold gross block" disabled={laeuft}>
             {laeuft ? "Anmelden…" : "Anmelden"}
           </button>
 
-          <p className="beschreibung" style={{ marginTop: 12, textAlign: "center" }}>
-            <Link href="/passwort-vergessen">Passwort vergessen?</Link>
+          <p className="antrag-hinweis">
+            Noch kein Mitglied? <Link href="/antrag">Antrag stellen</Link>
           </p>
-          <p className="beschreibung" style={{ marginTop: 28, textAlign: "center" }}>
+          <p className="rechtliches">
             <Link href="/datenschutz">Datenschutz</Link> · <Link href="/impressum">Impressum</Link>
           </p>
         </form>
-      </div>
-    </div>
+    </AnmeldeBuehne>
   );
 }
 

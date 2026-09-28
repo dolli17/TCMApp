@@ -4,7 +4,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-export function AbmeldeKnopf() {
+/**
+ * Abmelden. Als Symbol in der Nutzerkarte der Seitenleiste; mit alsZeile als
+ * rote Zeile in der letzten Gruppe der Konto-Seite (Entwurf AppKonto).
+ */
+export function AbmeldeKnopf({ alsZeile = false }: { alsZeile?: boolean } = {}) {
   const router = useRouter();
   const [laeuft, setLaeuft] = useState(false);
 
@@ -13,6 +17,14 @@ export function AbmeldeKnopf() {
     await createClient().auth.signOut();
     router.push("/login");
     router.refresh();
+  }
+
+  if (alsZeile) {
+    return (
+      <button type="button" className="gruppen-zeile rot" onClick={abmelden} disabled={laeuft}>
+        {laeuft ? "Wird abgemeldet…" : "Abmelden"}
+      </button>
+    );
   }
 
   // Nur ein Symbol in der Nutzerkarte der Seitenleiste; der Name fuer

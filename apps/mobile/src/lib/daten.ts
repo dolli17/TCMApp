@@ -505,6 +505,42 @@ export async function ladeMeineForderungen() {
   return data ?? [];
 }
 
+/** Die laufende eigene Mitgliedschaft - fuer "Mitglied seit" im Profilkopf. */
+export async function ladeMeineMitgliedschaft(): Promise<{ nummer: string; seit: string } | null> {
+  const { id } = await ladeIchSelbst();
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from("memberships")
+    .select("number, started_on")
+    .eq("member_id", id)
+    .eq("status", "active")
+    .order("started_on", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(translateDbError(error));
+  return data ? { nummer: data.number, seit: data.started_on } : null;
+}
+
+/**
+ * Das eigene SEPA-Mandat mit der Bankverbindung dahinter - nur lesen.
+ * Die IBAN kommt ausschliesslich mit ihren letzten vier Stellen; geaendert
+ * wird die Bankverbindung ueber den Vorstand.
+ */
+export async function ladeMeinMandat() {
+  const { id } = await ladeIchSelbst();
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from("sepa_mandates")
+    .select("reference, signed_on, scope, status, bank_accounts(holder, bank_name, iban_last4)")
+    .eq("member_id", id)
+    .eq("status", "active")
+    .order("signed_on", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(translateDbError(error));
+  return data;
+}
+
 export async function ladeArbeitsdienst() {
   const { data, error } = await supabase.rpc("my_work_duty", {});
   if (error) throw new Error(translateDbError(error));

@@ -1,6 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
-import logo from "@tcm/ui/logo-weiss.png";
+import { AnmeldeBuehne } from "@/components/AnmeldeBuehne";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Antragsformular, type FormularOption } from "@/components/Antragsformular";
 
@@ -24,14 +23,7 @@ export default async function AntragSeite() {
   const { data } = await supabase.rpc("application_form_options");
 
   return (
-    <div className="auth antragsseite">
-      <div className="crown">
-        <Image src={logo} alt="TC Muckensturm" height={34} priority />
-        <h1>Mitglied werden.</h1>
-        <p>Acht Sandplätze, rund 300 Mitglieder und ein Platz für dich.</p>
-      </div>
-
-      <div className="sheet">
+    <AnmeldeBuehne titel="Mitglied werden." unterzeile="Acht Sandplätze, rund 300 Mitglieder und ein Platz für dich." breit>
         <p className="unterzeile">
           Fülle den Antrag aus – der Vorstand meldet sich bei dir. Es ist noch nichts verbindlich.
         </p>
@@ -41,7 +33,6 @@ export default async function AntragSeite() {
         <p className="beschreibung" style={{ marginTop: 20 }}>
           Schon Mitglied? <Link href="/login">Hier geht es zur Anmeldung.</Link>
         </p>
-      </div>
-    </div>
+    </AnmeldeBuehne>
   );
 }

@@ -53,3 +53,19 @@ export function useTheme(): ThemeKontext {
   if (!k) throw new Error("useTheme braucht den ThemeAnbieter im Baum.");
   return k;
 }
+
+/**
+ * Immer dunkel, egal was gewaehlt ist - fuer die Anmeldeseiten
+ * (docs/design/clubhaus, AppLogin). Die Wahl des Mitglieds bleibt
+ * unangetastet; nur dieser Teilbaum sieht das dunkle Theme.
+ */
+export function ImmerDunkel({ children }: { children: ReactNode }) {
+  const aussen = useTheme();
+  return (
+    <Kontext.Provider
+      value={{ ...aussen, theme: "dunkel", farben: paletteFuer("dunkel"), stil: stilFuer("dunkel") }}
+    >
+      {children}
+    </Kontext.Provider>
+  );
+}

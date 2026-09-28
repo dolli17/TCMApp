@@ -1,20 +1,25 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Linking, Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
-import { formatCents } from "@tcm/core";
-import { abstand } from "@tcm/ui";
+import Svg, { Path } from "react-native-svg";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { formatCents, sumOpenDrinks } from "@tcm/core";
+import { abstand, radius } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
-import { GrosserKopf } from "@/components/GrosserKopf";
+import { Blatt, BlattKopf } from "@/components/Blatt";
+import { Glocke } from "@/components/Glocke";
 import { MerkmaleKarte, type MerkmalZeile } from "@/components/MerkmaleKarte";
+import { Schalter, Segmente } from "@/components/Segmente";
 import { Stammdatenformular } from "@/components/Stammdatenformular";
 import {
-  abmelden, ladeArbeitsdienst, ladeMeineForderungen, ladeMeineMannschaft, ladeMeineMerkmale,
-  ladeMeineStammdaten,
+  abmelden, ladeArbeitsdienst, ladeEigeneGetraenke, ladeMeineForderungen, ladeMeineMannschaft,
+  ladeMeineMerkmale, ladeMeineMitgliedschaft, ladeMeineStammdaten, ladeMeinMandat,
   speichereNotfallkontakt, speichereStammdaten,
   type Notfallkontakt, type Stammdaten,
 } from "@/lib/daten";
 import { useLaden } from "@/lib/laden";
 import { istAngemeldet, meldeGeraetAb, registriereGeraet } from "@/lib/push";
+import { mitDeckkraft } from "@/lib/stil";
 import { useTheme, type ThemeWahl } from "@/lib/theme";
 
 const ART_TEXT: Record<string, string> = {
@@ -22,193 +27,303 @@ const ART_TEXT: Record<string, string> = {
   work_duty: "Arbeitsdienst", guest: "Gastgebühr", misc: "Sonstiges",
 };
 
+const DATUM = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+const MONAT = new Intl.DateTimeFormat("de-DE", { month: "long", timeZone: "Europe/Berlin" });
+
+type Blattart = "daten" | "notfall" | "einwilligungen" | "bank";
+
 /**
- * Geld und Erscheinungsbild.
+ * Konto (Entwurf AppKonto, docs/design/clubhaus)
  *
- * Buchungen, offene Spiele und Benachrichtigungen standen früher ebenfalls
- * hier - alles untereinander in einem einzigen ScrollView. Wer wissen wollte,
- * wann er spielt, scrollte an seinem Arbeitsdienst vorbei. Seit sie eigene
- * Bildschirme haben, bleibt hier, was zusammengehört.
+ * Oben wer man ist, darunter was offen ist und der Arbeitsdienst. Die
+ * Einstellungen stehen als gruppierte Liste; Stammdaten, Notfallkontakt,
+ * Einwilligungen und das Mandat oeffnen je ein eigenes Blatt, statt als
+ * lange Formulare die Seite zu fuellen. Inhaltlich sind die Formulare
+ * dieselben wie vorher.
  */
 export default function Konto() {
-  const { stil } = useTheme();
+  const { stil, farben } = useTheme();
+  const rand = useSafeAreaInsets();
+  const [blatt, setBlatt] = useState<Blattart | null>(null);
+  const [meldung, setMeldung] = useState<string | null>(null);
 
   const laden = useCallback(async () => {
-    const [forderungen, dienst, stammdaten, merkmale, mannschaft] = await Promise.all([
-      ladeMeineForderungen(),
-      ladeArbeitsdienst(),
-      ladeMeineStammdaten(),
-      ladeMeineMerkmale(),
-      ladeMeineMannschaft(),
-    ]);
-    return { forderungen, dienst, stammdaten, merkmale, mannschaft };
+    const [forderungen, dienst, stammdaten, merkmale, mannschaft, mitgliedschaft, mandat, getraenke] =
+      await Promise.all([
+        ladeMeineForderungen(),
+        ladeArbeitsdienst(),
+        ladeMeineStammdaten(),
+        ladeMeineMerkmale(),
+        ladeMeineMannschaft(),
+        ladeMeineMitgliedschaft(),
+        ladeMeinMandat(),
+        ladeEigeneGetraenke(),
+      ]);
+    return { forderungen, dienst, stammdaten, merkmale, mannschaft, mitgliedschaft, mandat, getraenke };
   }, []);
 
   const zustand = useLaden(laden);
-  const forderungen = zustand.daten?.forderungen ?? [];
-  const dienst = zustand.daten?.dienst ?? null;
-  const stammdaten = zustand.daten?.stammdaten ?? null;
-  const merkmale = (zustand.daten?.merkmale ?? []) as unknown as MerkmalZeile[];
-  const mannschaft = zustand.daten?.mannschaft ?? null;
+  const d = zustand.daten;
+  const stammdaten = d?.stammdaten ?? null;
+  const merkmale = (d?.merkmale ?? []) as unknown as MerkmalZeile[];
 
-  // „returned" zählt mit: eine zurückgebuchte Lastschrift ist Geld, das der
-  // Verein nicht bekommen hat - die Forderung steht wieder offen.
-  const offen = forderungen
-    .filter((f) => f.status === "open" || f.status === "notified" || f.status === "returned")
-    .reduce((s, f) => s + f.amount_cents, 0);
-  const zurueck = forderungen.filter((f) => f.status === "returned");
+  // Offen ist, was noch eingezogen oder bezahlt werden muss. "returned" zaehlt
+  // mit: eine zurueckgebuchte Lastschrift ist Geld, das der Verein nicht
+  // bekommen hat - die Forderung steht wieder offen.
+  const offen = (d?.forderungen ?? []).filter(
+    (f) => f.status === "open" || f.status === "notified" || f.status === "returned",
+  );
+  const zurueck = offen.filter((f) => f.status === "returned");
+  // Die Getraenke des laufenden Monats sind noch keine Forderung - sie stehen
+  // trotzdem da, damit "Zusammen" die ehrliche Zahl ist.
+  const getraenkeLaufend = sumOpenDrinks(d?.getraenke ?? []);
+  const summe = offen.reduce((s, f) => s + f.amount_cents, 0) + getraenkeLaufend;
+
+  const vorname = stammdaten?.first_name ?? "";
+  const nachname = stammdaten?.last_name ?? "";
+  const initialen = `${vorname.charAt(0)}${nachname.charAt(0)}`.toUpperCase();
+
+  const dienst = d?.dienst ?? null;
+  const ist = Number(dienst?.completed_hours ?? 0);
+  const soll = Number(dienst?.required_hours ?? 0);
+
+  async function gespeichert() {
+    setBlatt(null);
+    await zustand.erneutHolen();
+  }
 
   return (
-    <Bildschirm
-      laedt={zustand.laedt}
-      aktualisiert={zustand.aktualisiert}
-      onAktualisieren={zustand.neuLaden}
-      fehler={zustand.fehler}
-      kopf={<GrosserKopf titel="Mein Konto" />}
-    >
-      {/* Kennzahlen als Kachelreihe wie im Web - zwei nebeneinander, ab da umbrechend. */}
-      <View style={stil.kachelReihe}>
-        <View style={stil.kachel}>
-          <Text style={stil.kachelTitel}>Offene Forderungen</Text>
-          <Text style={stil.kachelWert}>{formatCents(offen)}</Text>
+    <>
+      <Bildschirm
+        laedt={zustand.laedt}
+        aktualisiert={zustand.aktualisiert}
+        onAktualisieren={zustand.neuLaden}
+        fehler={zustand.fehler}
+        kopf={
+          // Kein grosser Titel: oben steht, wer man ist. Die Glocke bleibt rechts.
+          <View style={{ paddingTop: rand.top + 12, paddingHorizontal: abstand.rand, alignItems: "flex-end" }}>
+            <Glocke />
+          </View>
+        }
+      >
+        {/* --- Profilkopf -------------------------------------------------- */}
+        <View style={{ alignItems: "center", marginTop: -8 }}>
+          <View
+            style={{
+              width: 88, height: 88, borderRadius: 44, backgroundColor: farben.brand,
+              alignItems: "center", justifyContent: "center",
+            }}
+            accessibilityElementsHidden
+          >
+            <Text style={{ color: "#FFFFFF", fontSize: 30, fontFamily: "Barlow_800ExtraBold" }}>{initialen}</Text>
+          </View>
+          <Text
+            accessibilityRole="header"
+            style={{ marginTop: 14, fontSize: 28, lineHeight: 32, fontFamily: "Barlow_800ExtraBold", color: farben.ink, textAlign: "center" }}
+          >
+            {vorname} {nachname}
+          </Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 6, marginTop: 10 }}>
+            {d?.mitgliedschaft && <Marke>Mitglied seit {d.mitgliedschaft.seit.slice(0, 4)}</Marke>}
+            {d?.mannschaft && <Marke>{d.mannschaft.name}</Marke>}
+            {d?.mannschaft?.mannschaftsfuehrer && <Marke gelb>Mannschaftsführer</Marke>}
+          </View>
         </View>
 
-        {dienst && (
-          <View style={stil.kachel}>
-            <Text style={stil.kachelTitel}>Arbeitsdienst {dienst.year}</Text>
-            <Text style={stil.kachelWert}>
-              {Number(dienst.completed_hours)} / {Number(dienst.required_hours)} h
-            </Text>
-            {Number(dienst.missing_hours) > 0 && (
-              <Text style={stil.leise}>noch {Number(dienst.missing_hours)} Stunden offen</Text>
-            )}
-          </View>
+        {meldung && <Text style={stil.hinweisErfolg} accessibilityLiveRegion="polite">{meldung}</Text>}
+
+        {/* --- Offene Forderungen ----------------------------------------- */}
+        <Abschnitt titel="Offene Forderungen" />
+        {zurueck.length > 0 && (
+          <Text style={stil.hinweisFehler}>
+            {zurueck.length === 1 ? "Eine Lastschrift kam zurück" : `${zurueck.length} Lastschriften kamen zurück`}
+            {" – die Beträge sind wieder offen. Bitte melde dich beim Verein."}
+          </Text>
         )}
-      </View>
-
-      <Text style={stil.abschnitt}>Meine Daten</Text>
-
-      {stammdaten && (
-        <>
-          <Stammdatenformular
-            titel="Person und Kontakt"
-            erklaerung="Änderungen sind sofort für den Verein sichtbar."
-            felder={[
-              { name: "first_name", label: "Vorname" },
-              { name: "last_name", label: "Nachname" },
-              { name: "title", label: "Titel" },
-              { name: "phone", label: "Telefon", art: "telefon" },
-              { name: "mobile", label: "Mobil", art: "telefon" },
-              { name: "street", label: "Straße" },
-              { name: "postcode", label: "PLZ" },
-              { name: "city", label: "Ort" },
-            ]}
-            werte={stammdaten}
-            onSpeichern={(neu) =>
-              speichereStammdaten(neu as Stammdaten, stammdaten)
-            }
-            onGespeichert={zustand.erneutHolen}
-          />
-
-          <Stammdatenformular
-            titel="Notfallkontakt"
-            erklaerung="Wen sollen wir anrufen, wenn auf der Anlage etwas passiert?"
-            felder={[
-              { name: "emergency_contact_name", label: "Name" },
-              { name: "emergency_contact_phone", label: "Telefon", art: "telefon" },
-              { name: "emergency_contact_relation", label: "Verhältnis" },
-            ]}
-            werte={stammdaten}
-            onSpeichern={(neu) => speichereNotfallkontakt(neu as unknown as Notfallkontakt)}
-            onGespeichert={zustand.erneutHolen}
-          />
-        </>
-      )}
-
-      <MerkmaleKarte zeilen={merkmale} onGeaendert={zustand.erneutHolen} />
-
-      {/* Nur wer in einer Mannschaft spielt, sieht den Abschnitt - fuer die
-          meisten Mitglieder waere "keine" nur eine Zeile ohne Nutzen. */}
-      {mannschaft && (
-        <>
-          <Text style={stil.abschnitt}>Mannschaft</Text>
-          <View style={stil.karte}>
-            <View style={stil.zeile}>
-              <Text style={[stil.text, { fontFamily: "Barlow_600SemiBold" }]}>{mannschaft.name}</Text>
-              {mannschaft.mannschaftsfuehrer && (
-                <View style={[stil.markeKlein, stil.markeKleinGold]}>
-                  <Text style={[stil.markeKleinText, stil.markeKleinGoldText]}>Mannschaftsführer</Text>
-                </View>
-              )}
-            </View>
-          </View>
-        </>
-      )}
-
-      <Text style={stil.abschnitt}>Benachrichtigungen</Text>
-      <PushSchalter />
-
-      <Text style={stil.abschnitt}>Erscheinungsbild</Text>
-      <ThemeWahlKnoepfe />
-
-      <Text style={stil.abschnitt}>Forderungen</Text>
-
-      {zurueck.length > 0 && (
-        <Text style={stil.hinweisFehler}>
-          {zurueck.length === 1
-            ? "Eine Lastschrift kam zurück"
-            : `${zurueck.length} Lastschriften kamen zurück`}
-          {" – die Beträge sind wieder offen. Bitte melde dich beim Verein."}
-        </Text>
-      )}
-
-      {forderungen.length === 0 ? (
-        <Text style={stil.leise}>Keine Forderungen vorhanden.</Text>
-      ) : (
-        forderungen.map((f) => (
-          <View key={f.id} style={stil.karte}>
-            <View style={stil.zeile}>
-              <Text style={[stil.text, { fontFamily: "Barlow_600SemiBold" }]}>
-                {ART_TEXT[f.kind] ?? f.kind}
+        <Gruppe>
+          {offen.map((f, i) => (
+            <Zeile key={f.id} erste={i === 0} hoehe={64}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ fontSize: 15.5, fontFamily: "Barlow_600SemiBold", color: farben.ink }} numberOfLines={1}>
+                  {ART_TEXT[f.kind] ?? f.kind}
+                  {f.period_label ? ` ${f.period_label}` : ""}
+                  {f.is_for_other ? ` · für ${f.member_name}` : ""}
+                </Text>
+                {f.description ? (
+                  <Text style={[stil.leise, { fontSize: 12.5, marginTop: 2 }]} numberOfLines={2}>{f.description}</Text>
+                ) : null}
+                <Statusmarke status={f.status} faellig={f.due_date} />
+              </View>
+              <Betrag>{formatCents(f.amount_cents)}</Betrag>
+            </Zeile>
+          ))}
+          {getraenkeLaufend > 0 && (
+            <Zeile erste={offen.length === 0} hoehe={64}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15.5, fontFamily: "Barlow_600SemiBold", color: farben.ink }}>
+                  Getränke {MONAT.format(new Date())}
+                </Text>
+                <Statusmarke status="laufend" />
+              </View>
+              <Betrag>{formatCents(getraenkeLaufend)}</Betrag>
+            </Zeile>
+          )}
+          {offen.length === 0 && getraenkeLaufend === 0 ? (
+            <Zeile erste>
+              <Text style={stil.leise}>Nichts offen.</Text>
+            </Zeile>
+          ) : (
+            <View
+              style={{
+                flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+                paddingVertical: 14, paddingHorizontal: 16, backgroundColor: farben.surf2,
+              }}
+            >
+              <Text style={{ fontSize: 14, fontFamily: "Barlow_700Bold", color: farben.ink2 }}>Zusammen</Text>
+              <Text style={{ fontSize: 21, fontFamily: "BarlowSemiCondensed_700Bold", color: farben.ink }}>
+                {formatCents(summe)}
               </Text>
-              <Text style={stil.text}>{formatCents(f.amount_cents)}</Text>
             </View>
-            <Text style={stil.leise}>
-              {f.description}
-              {f.is_for_other ? ` · für ${f.member_name}` : ""}
-            </Text>
-            {/* Zurückgebucht ist kein Zustand wie die anderen: das Geld ist
-                zurück, und das Mitglied muss etwas tun. */}
-            {f.status === "returned" && (
-              <View style={[stil.markeKlein, stil.markeKleinRot, { marginTop: 4 }]}>
-                <Text style={[stil.markeKleinText, stil.markeKleinRotText]}>zurückgebucht</Text>
+          )}
+        </Gruppe>
+
+        {/* --- Arbeitsdienst ----------------------------------------------- */}
+        {dienst && (
+          <View style={[stil.listenkarte, { borderRadius: radius.karte, padding: 16, gap: 0 }]}>
+            <View style={[stil.zeile, { alignItems: "baseline" }]}>
+              <Text style={{ fontSize: 15.5, fontFamily: "Barlow_700Bold", color: farben.ink }}>
+                Arbeitsdienst {dienst.year}
+              </Text>
+              <Betrag>{soll > 0 ? `${ist} / ${soll} h` : `${ist} h`}</Betrag>
+            </View>
+            {soll > 0 && (
+              <View
+                style={{ height: 8, borderRadius: 4, backgroundColor: farben.surf2, marginTop: 12, overflow: "hidden" }}
+                accessibilityLabel={`${ist} von ${soll} Stunden geleistet`}
+              >
+                <View style={{ width: `${Math.min(100, (ist / soll) * 100)}%`, height: 8, borderRadius: 4, backgroundColor: farben.green }} />
               </View>
             )}
+            <Text style={[stil.leise, { marginTop: 10, lineHeight: 18 }]}>
+              {soll === 0
+                ? "Für dieses Jahr ist kein Arbeitsdienst vorgesehen."
+                : ist >= soll
+                  ? "Erledigt – danke für deinen Einsatz."
+                  : "Fehlende Stunden werden zum Jahresende als Ausgleich berechnet."}
+            </Text>
           </View>
-        ))
+        )}
+
+        {/* --- Einstellungen ----------------------------------------------- */}
+        <Abschnitt titel="Einstellungen" />
+        <Gruppe>
+          <Eintrag erste symbol={SYMBOL.person} titel="Meine Daten" onPress={() => setBlatt("daten")} />
+          <Eintrag symbol={SYMBOL.telefon} titel="Notfallkontakt" onPress={() => setBlatt("notfall")} />
+          {merkmale.some((z) => z.self_editable) && (
+            <Eintrag symbol={SYMBOL.haken} titel="Einwilligungen" onPress={() => setBlatt("einwilligungen")} />
+          )}
+          <Eintrag symbol={SYMBOL.bank} titel="Bankverbindung & Mandat" onPress={() => setBlatt("bank")} />
+          <PushZeile />
+          <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16, borderTopWidth: 1, borderTopColor: farben.line, gap: 10 }}>
+            <Text style={{ fontSize: 15.5, fontFamily: "Barlow_600SemiBold", color: farben.ink }}>Erscheinungsbild</Text>
+            <ThemeWahl />
+          </View>
+        </Gruppe>
+
+        {/* --- Rechtliches und Abmelden ----------------------------------- */}
+        <Gruppe>
+          {SITE_URL !== "" && (
+            <>
+              <Verweis erste titel="Datenschutz" onPress={() => Linking.openURL(`${SITE_URL}/datenschutz`)} />
+              <Verweis titel="Impressum" onPress={() => Linking.openURL(`${SITE_URL}/impressum`)} />
+            </>
+          )}
+          <Verweis
+            erste={SITE_URL === ""}
+            titel="Abmelden"
+            rot
+            onPress={async () => {
+              // Erst das Geraet abmelden, dann die Sitzung: danach fehlt die
+              // Berechtigung, und die Marke bliebe beim Vorbesitzer stehen.
+              await meldeGeraetAb().catch(() => {});
+              await abmelden();
+              router.replace("/anmelden");
+            }}
+          />
+        </Gruppe>
+      </Bildschirm>
+
+      {/* --- Die Blaetter ---------------------------------------------------- */}
+      {blatt && (
+        <Blatt onSchliessen={() => setBlatt(null)}>
+          {(zu) => (
+            <>
+              {blatt === "daten" && stammdaten && (
+                <>
+                  <BlattKopf titel="Meine Daten" onZu={zu} />
+                  <Stammdatenformular
+                    imBlatt
+                    titel="Person und Kontakt"
+                    erklaerung="Änderungen sind sofort für den Verein sichtbar. E-Mail und Geburtsdatum ändert der Vorstand."
+                    felder={[
+                      { name: "first_name", label: "Vorname" },
+                      { name: "last_name", label: "Nachname" },
+                      { name: "title", label: "Titel" },
+                      { name: "phone", label: "Telefon", art: "telefon" },
+                      { name: "mobile", label: "Mobil", art: "telefon" },
+                      { name: "street", label: "Straße" },
+                      { name: "postcode", label: "PLZ" },
+                      { name: "city", label: "Ort" },
+                    ]}
+                    werte={stammdaten}
+                    onSpeichern={async (neu) => {
+                      const r = await speichereStammdaten(neu as Stammdaten, stammdaten);
+                      if (r.ok) setMeldung(r.meldung);
+                      return r;
+                    }}
+                    onGespeichert={gespeichert}
+                  />
+                </>
+              )}
+              {blatt === "notfall" && stammdaten && (
+                <>
+                  <BlattKopf titel="Notfallkontakt" onZu={zu} />
+                  <Stammdatenformular
+                    imBlatt
+                    titel="Notfallkontakt"
+                    erklaerung="Wen sollen wir anrufen, wenn auf der Anlage etwas passiert?"
+                    felder={[
+                      { name: "emergency_contact_name", label: "Name" },
+                      { name: "emergency_contact_phone", label: "Telefon", art: "telefon" },
+                      { name: "emergency_contact_relation", label: "Verhältnis" },
+                    ]}
+                    werte={stammdaten}
+                    onSpeichern={async (neu) => {
+                      const r = await speichereNotfallkontakt(neu as unknown as Notfallkontakt);
+                      if (r.ok) setMeldung(r.meldung);
+                      return r;
+                    }}
+                    onGespeichert={gespeichert}
+                  />
+                </>
+              )}
+              {blatt === "einwilligungen" && (
+                <>
+                  <BlattKopf titel="Einwilligungen" onZu={zu} />
+                  <MerkmaleKarte imBlatt zeilen={merkmale} onGeaendert={zustand.erneutHolen} />
+                </>
+              )}
+              {blatt === "bank" && (
+                <>
+                  <BlattKopf titel="Bankverbindung & Mandat" onZu={zu} />
+                  <MandatAnsicht mandat={d?.mandat ?? null} />
+                </>
+              )}
+            </>
+          )}
+        </Blatt>
       )}
-
-      {/*
-        Der Abmeldeknopf sass frueher im Kachelmenue der Startseite. Seit die
-        Fussleiste das Menue ist, gehoert er hierher - im Web steht er ebenso
-        am Fuss der eigenen Seite, nicht in der Navigation.
-      */}
-      <Pressable
-        style={[stil.knopfLeise, { marginTop: abstand.m }]}
-        onPress={async () => {
-          // Erst das Geraet abmelden, dann die Sitzung: danach fehlt die
-          // Berechtigung, und die Marke bliebe beim Vorbesitzer stehen.
-          await meldeGeraetAb().catch(() => {});
-          await abmelden();
-          router.replace("/anmelden");
-        }}
-        accessibilityRole="button"
-      >
-        <Text style={stil.knopfLeiseText}>Abmelden</Text>
-      </Pressable>
-
-      <Rechtliches />
-    </Bildschirm>
+    </>
   );
 }
 
@@ -220,21 +335,131 @@ export default function Konto() {
  */
 const SITE_URL = (process.env.EXPO_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
 
-function Rechtliches() {
-  const { stil, farben } = useTheme();
-  if (!SITE_URL) return null;
+const SYMBOL = {
+  person: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
+  telefon: "M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z",
+  haken: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11",
+  bank: "M2 7h20v12H2zM2 11h20M6 15h4",
+  glocke: "M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0",
+};
 
-  const link = (pfad: string, text: string) => (
-    <Pressable onPress={() => Linking.openURL(`${SITE_URL}${pfad}`)} accessibilityRole="link">
-      <Text style={[stil.leise, { color: farben.blue }]}>{text}</Text>
+/* --- Bausteine ------------------------------------------------------------ */
+
+function Abschnitt({ titel }: { titel: string }) {
+  const { stil } = useTheme();
+  return (
+    <Text style={[stil.abschnitt, { marginTop: abstand.abschnitt - abstand.m }]} accessibilityRole="header">
+      {titel}
+    </Text>
+  );
+}
+
+function Gruppe({ children }: { children: ReactNode }) {
+  const { stil } = useTheme();
+  return (
+    <View style={[stil.listenkarte, { padding: 0, borderRadius: radius.karte, overflow: "hidden" }]}>{children}</View>
+  );
+}
+
+function Zeile({ children, erste, hoehe = 52 }: { children: ReactNode; erste?: boolean; hoehe?: number }) {
+  const { farben } = useTheme();
+  return (
+    <View
+      style={{
+        flexDirection: "row", alignItems: "center", gap: 12, minHeight: hoehe,
+        paddingVertical: 12, paddingHorizontal: 16,
+        borderTopWidth: erste ? 0 : 1, borderTopColor: farben.line,
+      }}
+    >
+      {children}
+    </View>
+  );
+}
+
+function Betrag({ children }: { children: ReactNode }) {
+  const { farben } = useTheme();
+  return (
+    <Text style={{ fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 19, color: farben.ink, fontVariant: ["tabular-nums"] }}>
+      {children}
+    </Text>
+  );
+}
+
+function Marke({ children, gelb }: { children: ReactNode; gelb?: boolean }) {
+  const { farben } = useTheme();
+  return (
+    <View style={{ height: 26, paddingHorizontal: 10, borderRadius: 13, justifyContent: "center", backgroundColor: gelb ? farben.goldSoft : farben.surf2 }}>
+      <Text style={{ fontSize: 12.5, fontFamily: "Barlow_600SemiBold", color: gelb ? farben.goldInk : farben.ink2 }}>{children}</Text>
+    </View>
+  );
+}
+
+/** Der Stand einer Forderung - zurueckgebucht in rot, denn da muss das Mitglied etwas tun. */
+function Statusmarke({ status, faellig }: { status: string; faellig?: string | null }) {
+  const { farben } = useTheme();
+  const art =
+    status === "notified"
+      ? { text: faellig ? `Einzug am ${DATUM.format(new Date(faellig))}` : "angekündigt", bg: farben.goldSoft, fg: farben.goldInk }
+      : status === "returned"
+        ? { text: "zurückgebucht", bg: mitDeckkraft(farben.red, 0.14), fg: farben.red }
+        : status === "laufend"
+          ? { text: "läuft noch", bg: farben.surf2, fg: farben.ink2 }
+          : { text: "offen", bg: farben.surf2, fg: farben.ink2 };
+  return (
+    <View style={{ alignSelf: "flex-start", height: 22, paddingHorizontal: 8, borderRadius: 11, marginTop: 5, justifyContent: "center", backgroundColor: art.bg }}>
+      <Text style={{ fontSize: 11.5, fontFamily: "Barlow_700Bold", color: art.fg }}>{art.text}</Text>
+    </View>
+  );
+}
+
+function Symbolkachel({ d }: { d: string }) {
+  const { farben } = useTheme();
+  return (
+    <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: farben.surf2, alignItems: "center", justifyContent: "center" }}>
+      <Svg width={18} height={18} viewBox="0 0 24 24">
+        <Path d={d} stroke={farben.ink2} strokeWidth={1.9} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </Svg>
+    </View>
+  );
+}
+
+function Eintrag({ titel, symbol, onPress, erste }: { titel: string; symbol: string; onPress: () => void; erste?: boolean }) {
+  const { farben } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => ({
+        flexDirection: "row", alignItems: "center", gap: 12, minHeight: 56, paddingHorizontal: 16,
+        borderTopWidth: erste ? 0 : 1, borderTopColor: farben.line,
+        backgroundColor: pressed ? mitDeckkraft(farben.ink, 0.04) : "transparent",
+      })}
+    >
+      <Symbolkachel d={symbol} />
+      <Text style={{ flex: 1, fontSize: 15.5, fontFamily: "Barlow_600SemiBold", color: farben.ink }}>{titel}</Text>
+      <Svg width={16} height={16} viewBox="0 0 24 24">
+        <Path d="M9 6l6 6-6 6" stroke={farben.muted} strokeWidth={2.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </Svg>
     </Pressable>
   );
+}
 
+function Verweis({ titel, onPress, rot, erste }: { titel: string; onPress: () => void; rot?: boolean; erste?: boolean }) {
+  const { farben } = useTheme();
   return (
-    <View style={[stil.zeile, { justifyContent: "center", gap: abstand.m, marginTop: abstand.m }]}>
-      {link("/datenschutz", "Datenschutz")}
-      {link("/impressum", "Impressum")}
-    </View>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole={rot ? "button" : "link"}
+      style={({ pressed }) => ({
+        minHeight: 52, justifyContent: "center", paddingHorizontal: 16,
+        borderTopWidth: erste ? 0 : 1, borderTopColor: farben.line,
+        backgroundColor: pressed ? mitDeckkraft(farben.ink, 0.04) : "transparent",
+      })}
+    >
+      <Text style={{ fontSize: 15.5, fontFamily: rot ? "Barlow_700Bold" : "Barlow_600SemiBold", color: rot ? farben.red : farben.ink }}>
+        {titel}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -246,8 +471,8 @@ function Rechtliches() {
  * hier. Ein Fehlschlag steht als Satz da und haelt nichts anderes auf - auf
  * dem Simulator etwa gibt es gar keine Kennung.
  */
-function PushSchalter() {
-  const { stil } = useTheme();
+function PushZeile() {
+  const { stil, farben } = useTheme();
   const [an, setAn] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<string | null>(null);
@@ -265,57 +490,76 @@ function PushSchalter() {
   }
 
   return (
-    <View style={{ gap: abstand.s }}>
-      <View style={stil.segment} accessibilityRole="radiogroup">
-        {[
-          { wert: true, label: "An" },
-          { wert: false, label: "Aus" },
-        ].map((o) => (
-          <Pressable
-            key={o.label}
-            style={[stil.segmentKnopf, an === o.wert && stil.segmentAktiv]}
-            disabled={laeuft}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: an === o.wert }}
-            onPress={() => umschalten(o.wert)}
-          >
-            <Text style={[stil.segmentText, an === o.wert && stil.segmentTextAktiv]}>
-              {o.label}
-            </Text>
-          </Pressable>
-        ))}
+    <View style={{ borderTopWidth: 1, borderTopColor: farben.line, paddingHorizontal: 16, paddingVertical: 12, gap: 6 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: 36 }}>
+        <Symbolkachel d={SYMBOL.glocke} />
+        <Text style={{ flex: 1, fontSize: 15.5, fontFamily: "Barlow_600SemiBold", color: farben.ink }}>
+          Mitteilungen aufs Handy
+        </Text>
+        <Schalter an={an} onWechsel={umschalten} deaktiviert={laeuft} beschriftung="Mitteilungen aufs Handy" />
       </View>
-      <Text style={stil.leise}>
-        {meldung ?? "Änderungen an deinen Buchungen kommen dann aufs Handy."}
-      </Text>
+      {meldung && <Text style={[stil.leise, { marginLeft: 44 }]}>{meldung}</Text>}
     </View>
   );
 }
 
-/** Systemeinstellung als Vorgabe, Wahl ueberlebt den Neustart. */
-function ThemeWahlKnoepfe() {
-  const { stil, wahl, setzeWahl } = useTheme();
-  const optionen: { wert: ThemeWahl; label: string }[] = [
-    { wert: "hell", label: "Hell" },
-    { wert: "system", label: "System" },
-    { wert: "dunkel", label: "Dunkel" },
-  ];
-
+/** Systemeinstellung als Vorgabe, die Wahl ueberlebt den Neustart. */
+function ThemeWahl() {
+  const { wahl, setzeWahl } = useTheme();
   return (
-    <View style={stil.segment} accessibilityRole="radiogroup">
-      {optionen.map((o) => (
-        <Pressable
-          key={o.wert}
-          style={[stil.segmentKnopf, wahl === o.wert && stil.segmentAktiv]}
-          onPress={() => setzeWahl(o.wert)}
-          accessibilityRole="radio"
-          accessibilityState={{ selected: wahl === o.wert }}
-        >
-          <Text style={[stil.segmentText, wahl === o.wert && stil.segmentTextAktiv]}>
-            {o.label}
-          </Text>
-        </Pressable>
-      ))}
+    <Segmente<ThemeWahl>
+      beschriftung="Erscheinungsbild"
+      wert={wahl}
+      onWahl={setzeWahl}
+      hoehe={38}
+      optionen={[
+        { wert: "system", label: "System" },
+        { wert: "hell", label: "Hell" },
+        { wert: "dunkel", label: "Dunkel" },
+      ]}
+    />
+  );
+}
+
+/** Das Mandat, nur zum Lesen - geaendert wird es ueber den Vorstand. */
+function MandatAnsicht({ mandat }: { mandat: Awaited<ReturnType<typeof ladeMeinMandat>> }) {
+  const { stil, farben } = useTheme();
+  if (!mandat) {
+    return (
+      <Text style={stil.text}>
+        Es liegt kein SEPA-Mandat vor. Beiträge zahlst du per Überweisung. Wenn du am
+        Lastschriftverfahren teilnehmen möchtest, wende dich an den Vorstand.
+      </Text>
+    );
+  }
+  const konto = Array.isArray(mandat.bank_accounts) ? mandat.bank_accounts[0] : mandat.bank_accounts;
+  const zeilen: [string, string][] = [
+    ["Kontoinhaber", konto?.holder ?? "–"],
+    ["IBAN", konto?.iban_last4 ? `•••• ${konto.iban_last4}` : "–"],
+    ["Bank", konto?.bank_name ?? "–"],
+    ["Mandatsreferenz", mandat.reference],
+    ["Unterschrieben am", DATUM.format(new Date(mandat.signed_on))],
+    ["Gilt für", mandat.scope === "all_payments" ? "alle Zahlungen" : "nur Beiträge"],
+  ];
+  return (
+    <View style={{ gap: 12 }}>
+      <View style={{ borderRadius: radius.karte, backgroundColor: farben.surf2, overflow: "hidden" }}>
+        {zeilen.map(([k, v], i) => (
+          <View
+            key={k}
+            style={{
+              flexDirection: "row", justifyContent: "space-between", gap: 12, paddingVertical: 12, paddingHorizontal: 16,
+              borderTopWidth: i === 0 ? 0 : 1, borderTopColor: farben.line,
+            }}
+          >
+            <Text style={stil.leise}>{k}</Text>
+            <Text style={[stil.text, { fontFamily: "Barlow_600SemiBold", flexShrink: 1, textAlign: "right" }]}>{v}</Text>
+          </View>
+        ))}
+      </View>
+      <Text style={stil.leise}>
+        Die Bankverbindung ändert der Vorstand – schreib ihm, wenn sich etwas geändert hat.
+      </Text>
     </View>
   );
 }

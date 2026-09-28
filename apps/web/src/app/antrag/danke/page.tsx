@@ -1,6 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
-import logo from "@tcm/ui/logo-weiss.png";
+import { AnmeldeBuehne } from "@/components/AnmeldeBuehne";
 
 export const metadata = {
   title: "Antrag eingegangen – TC Muckensturm",
@@ -8,14 +7,7 @@ export const metadata = {
 
 export default function DankeSeite() {
   return (
-    <div className="auth antragsseite">
-      <div className="crown">
-        <Image src={logo} alt="TC Muckensturm" height={34} priority />
-        <h1>Danke!</h1>
-        <p>Dein Antrag ist beim Vorstand angekommen.</p>
-      </div>
-
-      <div className="sheet">
+    <AnmeldeBuehne titel="Danke!" unterzeile="Dein Antrag ist beim Vorstand angekommen." breit>
         <div className="hinweis erfolg" role="status">
           Wir melden uns in den nächsten Tagen bei dir – meist per E-Mail.
         </div>
@@ -32,7 +24,6 @@ export default function DankeSeite() {
         <Link className="knopf block leise" href="/login">
           Zur Anmeldung
         </Link>
-      </div>
-    </div>
+    </AnmeldeBuehne>
   );
 }

@@ -1,24 +1,20 @@
 /**
- * Anmeldung
+ * Anmeldung (Entwurf AppLogin, docs/design/clubhaus)
  *
- * Nachbau der Auth-Buehne aus dem Web (globals.css, .auth): oben eine
- * blau-goldene Flaeche mit dem Vereinslogo, darunter ein Blatt, das ein Stueck
- * darueberrutscht. Die Form traegt die Marke - ein Formular auf grauem Grund
+ * Immer dunkel, mit dem Platz in Perspektive oben - der Rahmen steht in
+ * AnmeldeSeite.tsx. Die Form traegt die Marke; ein Formular auf grauem Grund
  * saehe aus wie jede andere App.
  */
 
 import { useState } from "react";
+import { Linking, View } from "react-native";
+import { router } from "expo-router";
 import {
-  Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View,
-} from "react-native";
-import { Link, router } from "expo-router";
-import { Verlaufsflaeche } from "@/components/Verlaufsflaeche";
+  AnmeldeFeld, AnmeldeFusszeile, AnmeldeHinweis, AnmeldeSeite, GelberKnopf, LeiserVerweis,
+} from "@/components/AnmeldeSeite";
 import { anmelden } from "@/lib/daten";
-import { useTheme } from "@/lib/theme";
-import logo from "@tcm/ui/logo-weiss.png";
 
 export default function Anmeldung() {
-  const { stil, farben } = useTheme();
   const [email, setEmail] = useState("");
   const [passwort, setPasswort] = useState("");
   const [fehler, setFehler] = useState<string | null>(null);
@@ -37,94 +33,44 @@ export default function Anmeldung() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: farben.bg }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Verlaufsflaeche
-          ohneSchatten
-          stil={{ paddingTop: 64, paddingHorizontal: 26, paddingBottom: 44 }}
-        >
-          {/* Weisse Logovariante mit gelbem Ball - wie im Web auf der Anmeldebuehne */}
-          <Image
-            source={logo}
-            style={{ width: 132, height: 38 }}
-            resizeMode="contain"
-            accessibilityIgnoresInvertColors
+    <AnmeldeSeite titel="Willkommen zurück auf dem Platz.">
+      <AnmeldeFeld
+        beschriftung="E-Mail"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        autoComplete="email"
+        keyboardType="email-address"
+        textContentType="username"
+      />
+      <AnmeldeFeld
+        beschriftung="Passwort"
+        value={passwort}
+        onChangeText={setPasswort}
+        secureTextEntry
+        autoComplete="current-password"
+        textContentType="password"
+        onSubmitEditing={absenden}
+        returnKeyType="go"
+      />
+      <LeiserVerweis rechts text="Passwort vergessen?" onPress={() => router.push("/passwort-vergessen")} />
+
+      {/* Die Meldung verraet bewusst nicht, ob die Adresse existiert. */}
+      {fehler && <AnmeldeHinweis text={fehler} />}
+
+      <View style={{ marginTop: "auto", gap: 14 }}>
+        <GelberKnopf text={laeuft ? "Anmelden…" : "Anmelden"} onPress={absenden} gesperrt={laeuft} />
+        {SITE_URL !== "" && (
+          <AnmeldeFusszeile
+            text="Noch kein Mitglied?"
+            verweis="Antrag stellen"
+            onPress={() => Linking.openURL(`${SITE_URL}/antrag`)}
           />
-          <Text
-            style={{
-              color: "#fff", fontSize: 30, marginTop: 18,
-              fontFamily: "BarlowSemiCondensed_700Bold", letterSpacing: -0.3,
-            }}
-          >
-            TC Muckensturm
-          </Text>
-          <Text style={{ color: "#fff", opacity: 0.88, fontSize: 14, marginTop: 6 }}>
-            Platzbuchung, Getränke und Beiträge.
-          </Text>
-        </Verlaufsflaeche>
-
-        <View
-          style={{
-            flex: 1, marginTop: -22, backgroundColor: farben.bg,
-            borderTopLeftRadius: 24, borderTopRightRadius: 24,
-            paddingHorizontal: 22, paddingTop: 26, paddingBottom: 40,
-          }}
-        >
-          <View style={{ width: "100%", maxWidth: 380, alignSelf: "center", gap: 12 }}>
-            <View>
-              <Text style={stil.feldLabel}>E-Mail</Text>
-              <TextInput
-                style={stil.feld}
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                autoComplete="email"
-                keyboardType="email-address"
-                textContentType="username"
-                accessibilityLabel="E-Mail"
-              />
-            </View>
-
-            <View>
-              <Text style={stil.feldLabel}>Passwort</Text>
-              <TextInput
-                style={stil.feld}
-                value={passwort}
-                onChangeText={setPasswort}
-                secureTextEntry
-                autoComplete="current-password"
-                textContentType="password"
-                accessibilityLabel="Passwort"
-                onSubmitEditing={absenden}
-                returnKeyType="go"
-              />
-            </View>
-
-            {fehler && <Text style={stil.hinweisFehler}>{fehler}</Text>}
-
-            <Pressable
-              style={[stil.knopf, laeuft && { opacity: 0.5 }]}
-              onPress={absenden}
-              disabled={laeuft}
-              accessibilityRole="button"
-            >
-              <Text style={stil.knopfText}>{laeuft ? "Anmelden…" : "Anmelden"}</Text>
-            </Pressable>
-
-            <Link href="/passwort-vergessen" asChild>
-              <Pressable accessibilityRole="link" style={{ alignItems: "center", paddingTop: 4 }}>
-                <Text style={[stil.leise, { color: farben.blueInk }]}>Passwort vergessen?</Text>
-              </Pressable>
-            </Link>
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        )}
+      </View>
+    </AnmeldeSeite>
   );
 }
+
+/** Der Mitgliedsantrag liegt im Web; ohne Adresse (lokal) bleibt die Zeile weg. */
+const SITE_URL = (process.env.EXPO_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");

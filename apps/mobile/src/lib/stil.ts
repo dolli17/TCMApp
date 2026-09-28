@@ -35,19 +35,6 @@ export function mitDeckkraft(farbe: string, anteil: number): string {
   return `rgba(${r}, ${g}, ${b}, ${anteil})`;
 }
 
-/**
- * Ersatz fuer color-mix(in srgb, <farbe> <100 - anteil>%, #000) aus der CSS:
- * dieselbe Farbe, um `anteil` zu Schwarz hin abgedunkelt. Nur fuer Hexwerte -
- * die Markenflaechen, auf die es angewandt wird, sind deckend.
- */
-export function abgedunkelt(farbe: string, anteil: number): string {
-  const hex = farbe.replace("#", "");
-  const [r, g, b] = [0, 2, 4].map((i) =>
-    Math.round(parseInt(hex.slice(i, i + 2), 16) * (1 - anteil)),
-  );
-  return `rgb(${r}, ${g}, ${b})`;
-}
-
 export function stilFuer(theme: ThemeName) {
   const f = paletteFuer(theme);
   const tiefe = schattenRn[theme];
@@ -182,19 +169,6 @@ export function stilFuer(theme: ThemeName) {
 
     zeile: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     zahl: { fontFamily: "BarlowSemiCondensed_700Bold", fontVariant: ["tabular-nums"] },
-
-    /** Modales Fenster - dieselbe Rolle wie <dialog> im Web */
-    fensterHuelle: {
-      flex: 1, justifyContent: "flex-end",
-      backgroundColor: "rgba(3,8,14,.62)",
-    },
-    fenster: {
-      backgroundColor: f.surf, borderTopLeftRadius: radius.blatt, borderTopRightRadius: radius.blatt,
-      padding: abstand.rand, gap: abstand.m, maxHeight: "88%",
-    },
-    fensterTitel: {
-      fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 21, color: f.ink,
-    },
 
     /** Gewaehlte Mitspieler als entfernbare Marken */
     marke: {

@@ -21,6 +21,7 @@ export interface AktionsErgebnis {
 function neuLaden(mitgliedId: string) {
   revalidatePath(`/admin/mitglieder/${mitgliedId}`);
   revalidatePath("/konto");
+  revalidatePath("/konto/einwilligungen");
 }
 
 export async function merkmalSetzen(

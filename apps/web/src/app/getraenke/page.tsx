@@ -1,4 +1,4 @@
-import { formatCents } from "@tcm/core";
+import { formatCents, sumOpenDrinks } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Getraenkekarte } from "@/components/Getraenkekarte";
 
@@ -18,33 +18,26 @@ export default async function GetraenkeSeite() {
   );
 
   const buchungen = buchungenRes.data ?? [];
-  const summe = buchungen
-    .filter((b) => !b.voided_at)
-    .reduce((s, b) => s + (b.total_cents ?? 0), 0);
-
-  const monat = new Intl.DateTimeFormat("de-DE", {
-    month: "long",
-    year: "numeric",
-    timeZone: "Europe/Berlin",
-  }).format(new Date());
+  const summe = sumOpenDrinks(buchungen);
+  const entnahmen = buchungen.filter((b) => !b.voided_at).length;
+  const monat = new Intl.DateTimeFormat("de-DE", { month: "long", timeZone: "Europe/Berlin" }).format(new Date());
 
   return (
     <>
       <h1 className="pagetitle">Getränke</h1>
-      <p className="unterzeile">
-        Jede Entnahme wird einzeln erfasst. Am Monatsende wird zusammengezählt.
-      </p>
 
-      <div className="kachel-reihe" style={{ marginBottom: "1.5rem" }}>
-        <div className="kachel">
-          <div className="titel">Offen im {monat}</div>
-          <div className="wert">{formatCents(summe)}</div>
-        </div>
-        <div className="kachel">
-          <div className="titel">Entnahmen</div>
-          <div className="wert">{buchungen.filter((b) => !b.voided_at).length}</div>
-        </div>
-      </div>
+      {/* Der laufende Monat - Entwurf AppGetraenke */}
+      <section className="monatskarte" aria-label={`Getränke im ${monat}`}>
+        <svg className="platzlinien" viewBox="0 0 350 150" preserveAspectRatio="xMaxYMin slice" aria-hidden="true">
+          <path d="M200 150 L250 0 M350 40 L260 150 M230 80 H350" />
+        </svg>
+        <div className="kicker">{monat} · läuft noch</div>
+        <div className="summe dpl tnum">{formatCents(summe)}</div>
+        <p>
+          {entnahmen} {entnahmen === 1 ? "Entnahme" : "Entnahmen"} · wird mit der Monatsabrechnung
+          eingezogen
+        </p>
+      </section>
 
       <Getraenkekarte
         artikel={karteRes.data ?? []}
