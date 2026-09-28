@@ -6,7 +6,7 @@
  * gegenseitig voneinander importieren.
  */
 
-import { minutesOf, minutesToTime, timeToMinutes } from "@tcm/core";
+import { canStartAt, freeCourtsNow, minutesOf, minutesToTime, timeToMinutes } from "@tcm/core";
 
 import type { ladeBuchungsarten, ladeTagesplan, ladeVerzeichnis } from "./daten";
 
@@ -30,3 +30,13 @@ export const lokaleMinuten = minutesOf;
 export const alsUhrzeit = minutesToTime;
 
 export const zuMinuten = (hhmm: string) => timeToMinutes(String(hhmm));
+
+/**
+ * Kann auf diesem Platz um genau diese Minute eine Buchung beginnen? Die Regel
+ * steht in @tcm/core (canStartAt) und gilt im Belegungsplan, auf der
+ * Startseite und im Web gleich.
+ */
+export const startMoeglich = canStartAt;
+
+/** Welche Plaetze sind ab jetzt frei, und bis wann? Siehe freeCourtsNow. */
+export const jetztFrei = freeCourtsNow;

@@ -9,8 +9,8 @@ import { usePathname } from "next/navigation";
  * Menüzustände geben, die auseinanderlaufen.
  *
  * Die Seitenleiste (ab 768 px) zeigt die Bereiche der Verwaltung einzeln in
- * einem eigenen Abschnitt; die schwebende Leiste hat dafür keinen Platz und
- * führt sie als einen Eintrag "Verwaltung".
+ * einem eigenen Abschnitt; die schwebende Leiste hat dafür keinen Platz - dort
+ * führt die Konto-Seite in die Verwaltung.
  */
 
 export interface NavEintrag {
@@ -21,6 +21,9 @@ export interface NavEintrag {
 }
 
 const SYMBOLE = {
+  home: (
+    <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+  ),
   platz: (
     <path d="M4 4h16v16H4zM4 12h16M8 8h8v8H8zM12 8v8" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
   ),
@@ -101,24 +104,14 @@ export function Seitenmenue({
 
 /**
  * Schwebende Leiste unter 768 px, rechts daneben der runde Buchen-Knopf.
- * Die Verwaltung erscheint hier als ein einziger Eintrag, aktiv auf jeder
- * ihrer Seiten.
+ * Nur die Haupteintraege - wie in der App. Admins erreichen die Verwaltung
+ * am Telefon ueber eine Karte auf der Konto-Seite.
  */
-export function Fussmenue({
-  eintraege, verwaltung,
-}: { eintraege: NavEintrag[]; verwaltung: NavEintrag[] }) {
-  const pfad = usePathname();
-  const inVerwaltung = pfad === "/admin" || pfad.startsWith("/admin/");
+export function Fussmenue({ eintraege }: { eintraege: NavEintrag[] }) {
   return (
     <>
       <nav className="schwebeleiste" aria-label="Hauptmenü">
         <Eintraege eintraege={eintraege} kurz />
-        {verwaltung.length > 0 && (
-          <Link href="/admin" aria-current={inVerwaltung ? "page" : undefined}>
-            <Symbol name="einstellung" />
-            Verwaltung
-          </Link>
-        )}
       </nav>
       <Link href="/plan" className="buchknopf" aria-label="Platz buchen">
         <Symbol name="plus" />

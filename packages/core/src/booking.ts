@@ -209,3 +209,102 @@ export function slotsForDay(
   }
   return out;
 }
+
+/** Eine Belegung, wie day_schedule sie liefert - nur was die Frei-Rechnung braucht. */
+export interface OccupiedSlot {
+  court_id: string;
+  starts_at: string;
+  ends_at: string;
+}
+
+/**
+ * Kann auf diesem Platz um genau diese Minute eine Buchung beginnen?
+ *
+ * Geprueft wird gegen die volle Dauer, nicht nur gegen die Startminute -
+ * sonst liesse sich 18:00 waehlen, obwohl 18:30 schon belegt ist. Jede
+ * Belegung zaehlt, auch Sperrungen und Serien.
+ *
+ * Stand vorher je einmal im Belegungsplan des Webs und in der App; die
+ * Startseite braucht dieselbe Regel ein drittes Mal.
+ */
+export function canStartAt(opts: {
+  day: string;
+  courtId: string;
+  minute: number;
+  durationMinutes: number;
+  closingMinutes: number;
+  occupied: readonly OccupiedSlot[];
+  now?: Date;
+}): boolean {
+  const jetzt = opts.now ?? new Date();
+  if (berlinTime(opts.day, opts.minute).getTime() < jetzt.getTime()) return false;
+  if (opts.minute + opts.durationMinutes > opts.closingMinutes) return false;
+  return !opts.occupied.some(
+    (b) =>
+      b.court_id === opts.courtId &&
+      minutesOf(b.starts_at) < opts.minute + opts.durationMinutes &&
+      minutesOf(b.ends_at) > opts.minute,
+  );
+}
+
+export interface FreeWindow {
+  courtId: string;
+  /** Erste Startzeit im Raster ab jetzt, in Minuten seit Mitternacht */
+  fromMinute: number;
+  /** Beginn der naechsten Belegung auf diesem Platz, sonst Schluss */
+  untilMinute: number;
+}
+
+/**
+ * Welche Plaetze sind ab jetzt frei - und bis wann?
+ *
+ * "Ab jetzt" heisst: ab der naechsten Startzeit im Raster (bei 30 Minuten um
+ * 15:10 also 15:30), frueh am Morgen ab der Oeffnung. Frei ist ein Platz, wenn
+ * dort zu dieser Zeit eine Buchung beginnen koennte - dieselbe Regel wie
+ * canStartAt. Frei bis zur naechsten Belegung, sonst bis zum Schluss.
+ *
+ * Sortiert nach der laengsten freien Zeit; bei Gleichstand bleibt die
+ * Reihenfolge der Plaetze.
+ */
+export function freeCourtsNow(opts: {
+  day: string;
+  courtIds: readonly string[];
+  openingMinutes: number;
+  closingMinutes: number;
+  slotMinutes: number;
+  durationMinutes: number;
+  occupied: readonly OccupiedSlot[];
+  now?: Date;
+}): FreeWindow[] {
+  const jetzt = opts.now ?? new Date();
+  const jetztMinuten = localMinutes(jetzt);
+  const ab =
+    jetztMinuten <= opts.openingMinutes
+      ? opts.openingMinutes
+      : opts.openingMinutes +
+        Math.ceil((jetztMinuten - opts.openingMinutes) / opts.slotMinutes) * opts.slotMinutes;
+
+  const out: FreeWindow[] = [];
+  for (const courtId of opts.courtIds) {
+    const frei = canStartAt({
+      day: opts.day,
+      courtId,
+      minute: ab,
+      durationMinutes: opts.durationMinutes,
+      closingMinutes: opts.closingMinutes,
+      occupied: opts.occupied,
+      now: jetzt,
+    });
+    if (!frei) continue;
+
+    const naechste = opts.occupied
+      .filter((b) => b.court_id === courtId && minutesOf(b.ends_at) > ab)
+      .map((b) => minutesOf(b.starts_at));
+    out.push({ courtId, fromMinute: ab, untilMinute: Math.min(opts.closingMinutes, ...naechste) });
+  }
+
+  return out
+    .map((f, i) => ({ f, i }))
+    .sort((a, b) => b.f.untilMinute - a.f.untilMinute || a.i - b.i)
+    .map(({ f }) => f);
+}

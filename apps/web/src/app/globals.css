@@ -815,6 +815,226 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
   color: var(--blue-ink); background: var(--blue-soft);
 }
 
+/* Einstieg in die Verwaltung auf der Konto-Seite - nur am Telefon, ab 768 px
+   steht die Verwaltung in der Seitenleiste. */
+.verwaltung-einstieg {
+  display: flex; align-items: center; gap: 12px; min-height: 56px;
+  margin: 4px 0 16px; padding: 12px 16px;
+  color: var(--ink); font-weight: 700; text-decoration: none;
+}
+.verwaltung-einstieg:hover { text-decoration: none; border-color: var(--line-2); }
+.verwaltung-einstieg svg { width: 22px; height: 22px; flex: 0 0 auto; }
+.verwaltung-einstieg span:first-of-type { flex: 1; }
+.verwaltung-einstieg span:last-child { color: var(--muted); font-size: 22px; line-height: 1; }
+@media (min-width: 768px) { .verwaltung-einstieg { display: none; } }
+
+/* ---------------------------------------------------------------------------
+   Home (docs/design/clubhaus, Abschnitt 5)
+
+   Am Telefon einspaltig wie die App, Termine und freie Plaetze waagerecht
+   wischbar. Ab 768 px ein 12er-Raster: links 8 Spalten, rechts 4.
+   --------------------------------------------------------------------------- */
+.home-kopf { margin-bottom: 8px; }
+.home-kopf .pagetitle { margin-top: 4px; }
+.home section + section, .home .schnellaktionen + section { margin-top: 0; }
+.home .sectionlabel { align-items: baseline; }
+.home .sectionlabel a { font-size: 14px; font-weight: 600; color: var(--blue); }
+.leer-klein { color: var(--muted); font-size: var(--font-size-klein); margin: 0; }
+.fehlertext { color: var(--red); }
+
+/* Waagerecht wischbar bis an den Rand */
+.naechstes, .frei-reihe {
+  display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory;
+  margin: 0 calc(-1 * var(--space-rand)); padding: 2px var(--space-rand) 6px;
+  /* Ohne scroll-padding rastet die erste Karte am Bildschirmrand ein statt am Inhaltsrand. */
+  scroll-padding-inline: var(--space-rand);
+  scrollbar-width: none; overscroll-behavior-x: contain;
+}
+.naechstes::-webkit-scrollbar, .frei-reihe::-webkit-scrollbar { display: none; }
+
+.termin-karte {
+  position: relative; overflow: hidden; flex: 0 0 min(318px, calc(100% - 32px));
+  scroll-snap-align: start; height: 216px; padding: 20px;
+  border-radius: var(--radius-kartegross); display: flex; flex-direction: column;
+  background: var(--surf); border: 1px solid var(--line); color: var(--ink);
+  text-decoration: none;
+}
+.termin-karte:hover { text-decoration: none; }
+.termin-karte.gross {
+  background: var(--brand); border-color: transparent; color: #fff;
+  box-shadow: 0 18px 40px color-mix(in srgb, var(--brand) 35%, transparent);
+}
+.termin-karte .termin-inhalt { position: relative; display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.termin-karte .kicker { color: var(--muted); }
+.termin-karte.gross .kicker { color: #fff; opacity: .85; padding-right: 40px; }
+.termin-karte .zeit {
+  font-family: var(--font-display); font-weight: 700; font-size: var(--font-size-hero);
+  line-height: 1; margin-top: 8px; white-space: nowrap;
+}
+.termin-karte .ort { font-size: 16px; font-weight: 600; margin-top: 6px; opacity: .92; }
+.termin-karte .fuss {
+  margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.termin-karte .mit {
+  font-size: 13px; opacity: .9; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.termin-karte .details {
+  flex: 0 0 auto; height: 40px; padding: 0 16px; border-radius: 20px;
+  display: inline-flex; align-items: center; font-size: 14px; font-weight: 700;
+  background: rgba(255,255,255,.18);
+}
+.termin-karte .platzlinien {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  fill: none; stroke: rgba(255,255,255,.13); stroke-width: 2;
+}
+.termin-karte .ball {
+  position: absolute; right: 20px; top: 20px; width: 26px; height: 26px;
+  border-radius: 13px; background: var(--gold);
+}
+.termin-karte .weitere { display: none; }
+.termin-leer { display: grid; gap: 4px; justify-items: start; }
+.termin-leer b { font-size: 18px; }
+.termin-leer .unterzeile { margin: 0 0 8px; }
+
+/* Schnellaktionen: drei Kacheln */
+.schnellaktionen {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
+  margin-top: 20px;
+}
+.schnellaktionen a {
+  height: 96px; padding: 14px; border-radius: var(--radius-karte);
+  display: flex; flex-direction: column; justify-content: space-between;
+  background: var(--surf); border: 1px solid var(--line); box-shadow: var(--shadow);
+  color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.15;
+  text-decoration: none;
+}
+.schnellaktionen a:hover { text-decoration: none; border-color: var(--line-2); }
+.schnellaktionen a.gelb { background: var(--gold); color: var(--on-gold); border-color: transparent; box-shadow: none; }
+.schnellaktionen svg { width: 24px; height: 24px; }
+
+/* Jetzt frei */
+.frei-karte {
+  flex: 0 0 150px; scroll-snap-align: start;
+  display: flex; flex-direction: column; gap: 10px; padding: 14px;
+  border-radius: var(--radius-karte); background: var(--surf);
+  border: 1px solid var(--line); box-shadow: var(--shadow);
+  color: var(--ink); text-decoration: none;
+}
+.frei-karte:hover { text-decoration: none; border-color: var(--line-2); }
+.frei-karte .kopf { display: flex; justify-content: space-between; align-items: center; }
+.frei-karte .kopf b { font-size: 20px; }
+.frei-karte .kopf i { width: 8px; height: 8px; border-radius: 4px; background: var(--green); }
+.frei-karte .bis { font-size: 13px; font-weight: 600; color: var(--green-ink); }
+
+.mini-zeitleiste {
+  position: relative; height: 8px; border-radius: 4px;
+  background: var(--surf-2); overflow: hidden;
+}
+.mini-zeitleiste i { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+.mini-zeitleiste i.belegt { background: var(--blue); }
+.mini-zeitleiste i.eigen { background: var(--gold); }
+.mini-zeitleiste i.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); }
+.mini-zeitleiste i.gesperrt {
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 16%, transparent) 0 3px, transparent 3px 6px), var(--surf-3);
+}
+.mini-zeitleiste b { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ink); }
+
+/* Offene Spiele */
+.offen-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.offen-karte {
+  display: flex; align-items: center; gap: 14px; padding: 14px;
+  border-radius: var(--radius-karte); background: var(--surf);
+  border: 1px solid var(--line); box-shadow: var(--shadow);
+}
+.offen-karte .datum {
+  width: 56px; height: 60px; flex: 0 0 auto; border-radius: 16px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--gold-soft); border: 1.5px dashed var(--gold-line);
+}
+.offen-karte .datum small { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; color: var(--ink-2); }
+.offen-karte .datum b { font-family: var(--font-display); font-size: 19px; line-height: 1.05; }
+.offen-karte .text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.offen-karte .text b { font-size: 16px; }
+.offen-karte .text small { font-size: 13px; color: var(--muted); }
+.offen-karte .text b, .offen-karte .text small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.offen-karte .mitspielen {
+  flex: 0 0 auto; height: 44px; padding: 0 14px; border-radius: 22px;
+  display: inline-flex; align-items: center; font-size: 14px; font-weight: 700;
+  background: var(--gold); color: var(--on-gold); text-decoration: none;
+}
+.offen-karte .dabei { font-size: 13px; font-weight: 700; color: var(--muted); }
+
+/* Rechte Spalte: Dein Monat, Neuigkeiten */
+.home-seite { display: grid; gap: 16px; margin-top: var(--space-abschnitt); align-content: start; }
+.home-seite h2 { margin: 0; font-size: 20px; font-weight: 700; }
+.karte.monat { display: grid; gap: 14px; }
+.karte.monat .zeile {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  color: var(--ink); text-decoration: none;
+}
+.karte.monat .zeile > span { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.karte.monat .zeile b { font-size: 26px; }
+.karte.monat .balken { height: 8px; border-radius: 4px; background: var(--surf-2); overflow: hidden; margin-top: -4px; }
+.karte.monat .balken i { display: block; height: 100%; border-radius: 4px; background: var(--green); }
+
+.karte.neuigkeiten { padding: 0; overflow: hidden; }
+.karte.neuigkeiten h2 { padding: 20px 20px 8px; }
+.karte.neuigkeiten .leer-klein, .karte.neuigkeiten .hinweis { margin: 0 20px 20px; }
+.karte.neuigkeiten ul { list-style: none; margin: 0; padding: 0; }
+.karte.neuigkeiten li { display: flex; gap: 12px; padding: 14px 20px; border-top: 1px solid var(--line); }
+.karte.neuigkeiten .symbol {
+  width: 38px; height: 38px; flex: 0 0 auto; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surf-2); color: var(--ink-2);
+}
+.karte.neuigkeiten li.neu .symbol { background: var(--gold-soft); color: var(--ink); }
+.karte.neuigkeiten .symbol svg { width: 18px; height: 18px; }
+.karte.neuigkeiten .text { min-width: 0; flex: 1; display: grid; gap: 2px; }
+.karte.neuigkeiten .titelzeile { display: flex; justify-content: space-between; gap: 8px; }
+.karte.neuigkeiten .titelzeile b { font-size: 14.5px; }
+.karte.neuigkeiten .titelzeile small { font-size: 12px; color: var(--muted); flex: 0 0 auto; }
+.karte.neuigkeiten .body { font-size: 13.5px; color: var(--ink-2); line-height: 1.4; }
+
+@media (min-width: 768px) {
+  .home-raster {
+    display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 24px;
+    align-items: start;
+  }
+  .home-haupt { grid-column: span 8; min-width: 0; }
+  .home-seite { grid-column: span 4; margin-top: 0; }
+  .home-seite .karte.monat { margin-top: 0; }
+
+  /* Die erste Karte wird breit und traegt die folgenden Termine rechts mit;
+     die kleinen Wischkarten entfallen. */
+  .naechstes { display: block; overflow: visible; margin: 0; padding: 0; }
+  .termin-karte.gross { flex-direction: row; gap: 28px; height: 220px; padding: 28px; }
+  .termin-karte.gross .zeit { font-size: 56px; margin-top: 10px; }
+  .termin-karte.gross .ort { font-size: 18px; margin-top: 8px; }
+  .termin-karte.gross .details { background: #fff; color: var(--on-gold); }
+  .termin-karte.gross .weitere {
+    position: relative; display: flex; flex-direction: column; justify-content: flex-end;
+    gap: 10px; width: 230px; flex: 0 0 auto; padding-top: 34px;
+  }
+  .termin-karte .weiterer {
+    display: grid; gap: 2px; padding: 12px 14px; border-radius: 16px;
+    background: rgba(7,17,29,.28);
+  }
+  .termin-karte .weiterer small { font-size: 12px; opacity: .8; }
+  .termin-karte .weiterer b { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .termin-karte.klein { display: none; }
+
+  /* Jetzt frei als vier Kacheln, Offene Spiele zweispaltig */
+  .frei-reihe {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;
+    overflow: visible; margin: 0; padding: 0;
+  }
+  .frei-reihe .frei-karte:nth-child(n+5) { display: none; }
+  .frei-karte { padding: 16px; }
+  .frei-karte .kopf b { font-size: 22px; }
+  .offen-liste { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+}
+
 /* Weniger Bewegung, wenn das System danach fragt */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }

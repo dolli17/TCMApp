@@ -5,6 +5,7 @@ export * from "./drinks";
 export * from "./workDuty";
 export * from "./errors";
 export * from "./booking";
+export * from "./home";
 export * from "./client";
 export * from "./schemas";
 export type { Database, Json } from "./database.types";

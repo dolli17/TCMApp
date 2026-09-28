@@ -33,7 +33,7 @@ export default function Anmeldung() {
       setFehler(ergebnis.meldung);
       return;
     }
-    router.replace("/plaetze");
+    router.replace("/home");
   }
 
   return (

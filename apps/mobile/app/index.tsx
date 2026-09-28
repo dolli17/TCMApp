@@ -2,8 +2,8 @@
  * Die Weiche
  *
  * Entspricht apps/web/src/app/page.tsx: entscheidet nur, wohin es geht, und
- * zeigt selbst nichts an. Das frueher hier stehende Kachelmenue ist entfallen -
- * die Fussleiste ist das Menue.
+ * zeigt selbst nichts an. Angemeldet geht es auf Home - bewusst /home und
+ * nicht (tabs)/index.tsx, das mit dieser Datei um "/" konkurrieren wuerde.
  */
 
 import { useEffect, useState } from "react";
@@ -38,5 +38,5 @@ export default function Start() {
     );
   }
 
-  return <Redirect href={angemeldet ? "/plaetze" : "/anmelden"} />;
+  return <Redirect href={angemeldet ? "/home" : "/anmelden"} />;
 }
