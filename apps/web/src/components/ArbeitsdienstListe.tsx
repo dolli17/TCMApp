@@ -6,6 +6,7 @@ import {
   jahrAbrechnen, sollStundenSetzen, stundenEintragen,
 } from "@/app/admin/arbeitsdienst/aktionen";
 import { FensterKnopf } from "@/components/FensterKnopf";
+import { Listenzeile } from "@/components/Listenzeile";
 
 export interface DienstZeile {
   member_id: string;
@@ -89,10 +90,8 @@ export function ArbeitsdienstListe({
         </div>
       </div>
 
-      <section className="karte tabellenkarte">
-        <div className="kartenkopf">
-          <h2>Stand {jahr}</h2>
-        </div>
+      <section className="karte" aria-labelledby="h-stand">
+        <h2 className="dpl" id="h-stand">Stand {jahr}</h2>
         <p className="unterzeile">
           Das Soll ist die höchste Regel über alle Beitragsarten des Mitglieds, nicht ihre Summe –
           wer Beitrag und Schlüsselpfand hat, arbeitet nicht doppelt.
@@ -104,69 +103,41 @@ export function ArbeitsdienstListe({
             schuldet niemand Arbeitsdienst.
           </p>
         ) : (
-          <table className="liste">
-            <thead>
-              <tr>
-                <th scope="col">Mitglied</th>
-                <th scope="col">Beitragsart</th>
-                <th scope="col" className="zahl">Soll</th>
-                <th scope="col" className="zahl">Geleistet</th>
-                <th scope="col" className="zahl">Fehlt</th>
-                <th scope="col" className="zahl">Wäre</th>
-                <th scope="col"><span className="sr-only">Aktion</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {zeilen.map((z) => (
-                <tr key={z.member_id}>
-                  <td className="fett">
-                    {z.member_name}
-                    {z.abgerechnet && (
-                      <span className="marken-zeile">
-                        <span className="statusmarke gruen">abgerechnet</span>
+          <ul className="liste-gruppe" aria-label={`Arbeitsdienst ${jahr}`}>
+            {zeilen.map((z) => {
+              const fehlt = Number(z.missing_hours);
+              return (
+                <li key={z.member_id}>
+                  <Listenzeile
+                    titel={z.member_name}
+                    kontext={`${z.arten} · ${Number(z.completed_hours)} von ${Number(z.required_hours)} h${
+                      z.eintraege > 0 ? ` · ${z.eintraege} ${z.eintraege === 1 ? "Einsatz" : "Einsätze"}` : ""
+                    }`}
+                    neben={
+                      <span className="neben">
+                        {z.abgerechnet ? (
+                          <span className="statusmarke gruen">abgerechnet</span>
+                        ) : fehlt > 0 ? (
+                          <>
+                            <span className="betrag tnum">{fehlt} h</span>
+                            <span className="hinweis-rechts gold">{formatCents(z.betrag_cents)}</span>
+                          </>
+                        ) : (
+                          <span className="hinweis-rechts gruen">erledigt</span>
+                        )}
                       </span>
-                    )}
-                  </td>
-                  <td data-label="Beitragsart" className="leiser">{z.arten}</td>
-                  <td data-label="Soll" className="zahl tnum">{Number(z.required_hours)} h</td>
-                  <td data-label="Geleistet" className="zahl tnum">
-                    {Number(z.completed_hours)} h
-                    {z.eintraege > 0 && (
-                      <div className="mit">
-                        {z.eintraege} {z.eintraege === 1 ? "Einsatz" : "Einsätze"}
-                      </div>
-                    )}
-                  </td>
-                  <td data-label="Fehlt" className="zahl tnum">
-                    {Number(z.missing_hours) > 0 ? (
-                      <strong>{Number(z.missing_hours)} h</strong>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td data-label="Wäre" className="zahl betrag dpl tnum">
-                    {z.betrag_cents > 0 ? formatCents(z.betrag_cents) : "—"}
-                  </td>
-                  <td className="aktion">
-                    {!z.abgerechnet && (
-                      <button
-                        type="button"
-                        className="knopf leise klein"
-                        disabled={laeuft}
-                        onClick={() => {
-                          setErfassen({ id: z.member_id, name: z.member_name });
-                          setAmTag(heute);
-                          setWas("");
-                        }}
-                      >
-                        Einsatz eintragen
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    }
+                    label={`${z.member_name}: Einsatz eintragen`}
+                    onClick={z.abgerechnet || laeuft ? undefined : () => {
+                      setErfassen({ id: z.member_id, name: z.member_name });
+                      setAmTag(heute);
+                      setWas("");
+                    }}
+                  />
+                </li>
+              );
+            })}
+          </ul>
         )}
       </section>
 
@@ -307,67 +278,66 @@ function SollKarte({
   starte: Starter;
   melde: Melder;
 }) {
-  const [werte, setWerte] = useState<Record<string, string>>({});
+  const [gewaehlt, setGewaehlt] = useState<SollZeile | null>(null);
+  const [wert, setWert] = useState("");
 
   return (
-    <section className="karte" style={{ marginBottom: 18 }}>
-      <h2 className="dpl">Soll-Stunden je Beitragsart</h2>
+    <section className="karte" aria-labelledby="h-soll">
+      <h2 className="dpl" id="h-soll">Soll-Stunden je Beitragsart</h2>
       <p className="unterzeile">
         Hier steht, wer überhaupt Arbeitsdienst schuldet. 0 bedeutet: diese Beitragsart leistet
         keinen.
       </p>
 
-      <div className="tabellenhuelle"><table className="liste">
-        <thead>
-          <tr>
-            <th>Beitragsart</th>
-            <th className="zahl">Mitglieder</th>
-            <th className="zahl">Soll {jahr}</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {arten.map((a) => (
-            <tr key={a.id}>
-              <td>{a.name}</td>
-              <td className="zahl tnum">{a.mitglieder}</td>
-              <td className="zahl tnum">
-                {a.soll_stunden === null ? "—" : `${Number(a.soll_stunden)} h`}
-              </td>
-              <td>
-                <input
-                  type="number"
-                  min={0}
-                  max={200}
-                  step={0.5}
-                  style={{ width: 80, marginRight: 8 }}
-                  aria-label={`Soll-Stunden für ${a.name}`}
-                  value={werte[a.id] ?? String(a.soll_stunden ?? 0)}
-                  onChange={(e) => setWerte({ ...werte, [a.id]: e.target.value })}
-                />
-                <button
-                  type="button"
-                  className="knopf leise klein"
-                  disabled={laeuft}
-                  onClick={() =>
-                    starte(async () =>
-                      melde(
-                        await sollStundenSetzen({
-                          artId: a.id,
-                          jahr,
-                          stunden: Number(werte[a.id] ?? a.soll_stunden ?? 0),
-                        }),
-                      ),
-                    )
-                  }
-                >
-                  Setzen
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table></div>
+      <ul className="liste-gruppe" aria-label={`Soll-Stunden ${jahr}`}>
+        {arten.map((a) => (
+          <li key={a.id}>
+            <Listenzeile
+              titel={a.name}
+              kontext={`${a.mitglieder} Mitglieder`}
+              hinweis={a.soll_stunden === null ? "—" : `${Number(a.soll_stunden)} h`}
+              hinweisTon={a.soll_stunden ? "gold" : "leise"}
+              onClick={() => {
+                setGewaehlt(a);
+                setWert(String(a.soll_stunden ?? 0));
+              }}
+            />
+          </li>
+        ))}
+      </ul>
+
+      {gewaehlt && (
+        <FensterKnopf titel={gewaehlt.name} unterzeile={`Soll-Stunden ${jahr}`} offen onSchliessen={() => setGewaehlt(null)}>
+          <div className="formraster">
+            <label>
+              <span>Stunden</span>
+              <input
+                type="number"
+                min={0}
+                max={200}
+                step={0.5}
+                aria-label={`Soll-Stunden für ${gewaehlt.name}`}
+                value={wert}
+                onChange={(e) => setWert(e.target.value)}
+              />
+            </label>
+          </div>
+          <button
+            type="button"
+            className="knopf gold block gross"
+            disabled={laeuft}
+            onClick={() =>
+              starte(async () => {
+                const e = await sollStundenSetzen({ artId: gewaehlt.id, jahr, stunden: Number(wert) });
+                melde(e);
+                if (e.ok) setGewaehlt(null);
+              })
+            }
+          >
+            Setzen
+          </button>
+        </FensterKnopf>
+      )}
     </section>
   );
 }

@@ -6,6 +6,7 @@ import {
   PlatzSperren, PlatzVerwaltung, type ArtZeile, type PlatzZeile,
 } from "@/components/PlatzVerwaltung";
 import { BereichSegmente } from "@/components/BereichSegmente";
+import { Gruppenkopf } from "@/components/Listenzeile";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { SerienFormular } from "@/components/SerienFormular";
 import { SerienListe, type SerienZeile } from "@/components/SerienListe";
@@ -116,10 +117,8 @@ export default async function PlaetzeSeite({
       )}
 
       {serienAnsicht ? (
-      <section className="karte tabellenkarte" aria-labelledby="h-serien">
-        <div className="kartenkopf">
-          <h2 id="h-serien">Serien</h2>
-        </div>
+      <section className="liste-abschnitt" aria-labelledby="h-serien">
+        <Gruppenkopf titel="Serien" id="h-serien" />
         <p className="unterzeile">
           Training und Verbandsspiele, die sich wöchentlich wiederholen. Bestehende Buchungen
           werden verdrängt – die Vorschau zeigt vorher, wen es trifft.

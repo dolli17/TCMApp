@@ -383,7 +383,7 @@ test.describe("Berechtigungen", () => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/mitglieder");
     await expect(page.getByRole("heading", { name: "Mitglieder" })).toBeVisible();
-    await expect(page.locator("table.liste tbody tr").first()).toBeVisible();
+    await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"] li').first()).toBeVisible();
   });
 
   test("Admin sieht den Beitragslauf mit Mandatslage", async ({ page }) => {
@@ -703,21 +703,26 @@ test.describe("Plätze und Sperrungen", () => {
     await page.goto("/admin/plaetze");
 
     const name = `ZZPlatz${Date.now().toString().slice(-6)}`;
-    const anlegen = page.locator("section", { hasText: "Neuen Platz anlegen" }).last();
+    // Anlegen über die letzte Zeile der Liste, das Formular steht im Blatt.
+    await page.getByRole("button", { name: "Neuen Platz anlegen" }).click();
+    const anlegen = page.locator("dialog.fenster");
     // exact, sonst trifft "Name" auch das Feld "Kurzname".
     await anlegen.getByLabel("Name", { exact: true }).fill(name);
     await anlegen.getByLabel("Kurzname").fill("ZZ");
-    await page.getByRole("button", { name: "Platz anlegen" }).click();
+    await anlegen.getByRole("button", { name: "Platz anlegen" }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("angelegt", { timeout: 15_000 });
 
-    // Die Plätze stehen als Karten, nicht mehr als Tabelle.
-    const zeile = page.locator(".platzkarte", { hasText: name });
+    // Die Plätze stehen als Listenzeilen; Stilllegen steht im Blatt des Platzes.
+    const zeile = page.locator('.liste-gruppe[aria-label="Plätze"] li', { hasText: name });
     await expect(zeile).toBeVisible();
     await expect(zeile).toContainText("im Plan");
 
-    await zeile.getByRole("button", { name: "Stilllegen" }).click();
+    await zeile.locator("button.listenzeile").click();
+    await page.locator("dialog.fenster").getByRole("button", { name: "Stilllegen" }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("stillgelegt", { timeout: 15_000 });
-    await expect(page.locator(".platzkarte", { hasText: name })).toContainText("stillgelegt");
+    await expect(
+      page.locator('.liste-gruppe[aria-label="Plätze"] li', { hasText: name }),
+    ).toContainText("stillgelegt");
   });
 
   test("Sperrung fragt vor dem Verdrängen und blockiert danach den Slot", async ({ page }) => {
@@ -946,11 +951,12 @@ test.describe("Serien ändern, sperren, Gründe nennen", () => {
     // Auf der Platzseite stehen drei Tabellen (Plätze, Buchungsarten, Serien) -
     // ein .first() träfe die falsche.
     const serien = page.locator('section[aria-labelledby="h-serien"]');
-    const zeile = serien.locator("table.liste tbody tr").first();
+    const zeile = serien.locator(".liste-gruppe li").first();
     test.skip((await zeile.count()) === 0, "Keine Serie im Bestand");
-    const vorher = ((await zeile.locator("td").first().textContent()) ?? "").trim();
+    const vorher = ((await zeile.locator(".titel").textContent()) ?? "").trim();
 
-    await zeile.getByRole("button", { name: "Bearbeiten" }).click();
+    // Ein Tippen auf die Zeile öffnet das Blatt zum Ändern.
+    await zeile.locator("button.listenzeile").click();
 
     const fenster = page.locator("dialog.fenster");
     await expect(fenster).toBeVisible();
@@ -959,10 +965,10 @@ test.describe("Serien ändern, sperren, Gründe nennen", () => {
     await fenster.getByRole("button", { name: "Änderung speichern" }).click();
 
     await expect(page.locator(".hinweis.erfolg")).toContainText("geändert", { timeout: 20_000 });
-    await expect(serien.locator("table.liste tbody tr").first()).toContainText(neu);
+    await expect(serien.locator(".liste-gruppe li").first()).toContainText(neu);
 
     // Zurückbenennen, damit der nächste Lauf denselben Bestand vorfindet.
-    await serien.locator("table.liste tbody tr").first().getByRole("button", { name: "Bearbeiten" }).click();
+    await serien.locator(".liste-gruppe li").first().locator("button.listenzeile").click();
     const nochmal = page.locator("dialog.fenster");
     await nochmal.getByLabel("Titel").fill(vorher);
     await nochmal.getByRole("button", { name: "Änderung speichern" }).click();
@@ -1046,7 +1052,7 @@ test.describe("Verwaltung", () => {
     await expect(page.getByRole("heading", { name: "Beitragsarten" })).toBeVisible();
     // Ohne diese Tabelle waere der Beitragslauf nicht startbar - sie war der
     // fehlende Unterbau.
-    await expect(page.locator("table.liste tbody tr").first()).toBeVisible();
+    await expect(page.locator('.liste-gruppe[aria-label="Beitragsarten"] li').first()).toBeVisible();
   });
 
   test("der Beitragslauf erzeugt Forderungen, ein zweites Mal nicht", async ({ page }) => {
@@ -1132,7 +1138,8 @@ test.describe("Verwaltung", () => {
 
     // Ein neues Getränk ohne Preis waere unsichtbar und unbuchbar - der Knopf
     // bleibt deshalb gesperrt, bis ein Preis dasteht.
-    await page.getByLabel("Name").fill("ZZTest Limonade");
+    await page.getByRole("button", { name: "Anlegen" }).click();
+    await page.locator("dialog.fenster").getByLabel("Name").fill("ZZTest Limonade");
     await expect(page.getByRole("button", { name: "Getränk anlegen" })).toBeDisabled();
   });
 
@@ -1166,7 +1173,7 @@ test.describe("Verwaltung", () => {
     await expect(karte.locator("select").first()).toHaveValue(getraenk);
     // Die Seite zeigt auch die Getränkemonate als Tabelle - gemeint ist die Karte.
     await expect(
-      page.locator("section.karte", { hasText: "Getränkekarte" }).locator("table.liste"),
+      page.locator('.liste-gruppe[aria-label="Getränke"]'),
     ).not.toContainText("9,99");
   });
 

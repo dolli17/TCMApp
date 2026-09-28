@@ -5,6 +5,8 @@ import { formatCents, parseAmountToCents } from "@tcm/core";
 import {
   beitragsartSpeichern, beitragsartUmschalten, beitragspreisSetzen,
 } from "@/app/admin/kasse/aktionen";
+import { FensterKnopf } from "@/components/FensterKnopf";
+import { Listenzeile } from "@/components/Listenzeile";
 
 export interface BeitragsartZeile {
   id: string;
@@ -52,6 +54,7 @@ export function BeitragsartenPflege({
   const [preisFuer, setPreisFuer] = useState<string | null>(null);
   const [preis, setPreis] = useState("");
   const [preisJahr, setPreisJahr] = useState(jahr + 1);
+  const [blattOffen, setBlattOffen] = useState(false);
   const [laeuft, starte] = useTransition();
 
   function melde(e: { ok: boolean; meldung: string }) {
@@ -59,10 +62,18 @@ export function BeitragsartenPflege({
   }
 
   const neu = form.id === null;
+  const bearbeitet = arten.find((a) => a.id === form.id) ?? null;
+
+  function oeffnen(a: BeitragsartZeile | null) {
+    setForm(a ? { id: a.id, code: a.code, name: a.name, beschreibung: a.description ?? "" } : LEER);
+    setPreisFuer(a?.id ?? null);
+    setPreis("");
+    setBlattOffen(true);
+  }
 
   return (
-    <section className="karte" style={{ marginBottom: 18 }}>
-      <h2 className="dpl">Beitragsarten</h2>
+    <section className="karte" aria-labelledby="h-beitragsarten">
+      <h2 className="dpl" id="h-beitragsarten">Beitragsarten</h2>
       <p className="unterzeile">
         Der Code bleibt nach dem Anlegen fest – er steht in den Zuordnungen der Mitglieder. Ein
         Preis lässt sich nur für Jahre setzen, für die noch keine Forderungen erzeugt wurden.
@@ -74,190 +85,154 @@ export function BeitragsartenPflege({
         </div>
       )}
 
-      <div className="tabellenhuelle"><table className="liste">
-        <thead>
-          <tr>
-            <th>Code</th>
-            <th>Name</th>
-            <th className="zahl">Preis {jahr}</th>
-            <th>Ab dem Folgejahr</th>
-            <th className="zahl">Mitglieder</th>
-            <th className="zahl">Soll-Stunden</th>
-            <th>Status</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {arten.map((a) => (
-            <tr key={a.id}>
-              <td>{a.code}</td>
-              <td>
-                {a.name}
-                {a.description && <div className="mit">{a.description}</div>}
-              </td>
-              <td className="zahl tnum">
-                {a.preis_cents === null ? "—" : formatCents(a.preis_cents)}
-              </td>
-              <td className="mit">
-                {a.naechster_preis_cents === null
-                  ? "—"
-                  : `${formatCents(a.naechster_preis_cents)} ab ${a.naechster_preis_ab_jahr}`}
-              </td>
-              <td className="zahl tnum">{a.mitglieder}</td>
-              <td className="zahl tnum">{a.soll_stunden ?? "—"}</td>
-              <td><span className="marke-klein">{a.active ? "aktiv" : "still"}</span></td>
-              <td>
-                <button
-                  type="button"
-                  className="knopf leise klein"
-                  disabled={laeuft}
-                  onClick={() => {
-                    setPreisFuer(a.id);
-                    setPreis("");
-                  }}
-                >
-                  Preis
-                </button>{" "}
-                <button
-                  type="button"
-                  className="knopf leise klein"
-                  disabled={laeuft}
-                  onClick={() =>
-                    setForm({
-                      id: a.id,
-                      code: a.code,
-                      name: a.name,
-                      beschreibung: a.description ?? "",
-                    })
-                  }
-                >
-                  Bearbeiten
-                </button>{" "}
-                <button
-                  type="button"
-                  className="knopf leise klein"
-                  disabled={laeuft}
-                  onClick={() =>
-                    starte(async () => melde(await beitragsartUmschalten(a.id, !a.active)))
-                  }
-                >
-                  {a.active ? "Stilllegen" : "Anbieten"}
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table></div>
+      <ul className="liste-gruppe" aria-label="Beitragsarten">
+        {arten.map((a) => (
+          <li key={a.id}>
+            <Listenzeile
+              titel={a.name}
+              kontext={[
+                a.code,
+                `${a.mitglieder} Mitglieder`,
+                a.soll_stunden !== null ? `${a.soll_stunden} h Arbeitsdienst` : null,
+                a.naechster_preis_cents !== null
+                  ? `${formatCents(a.naechster_preis_cents)} ab ${a.naechster_preis_ab_jahr}`
+                  : null,
+              ].filter(Boolean).join(" · ")}
+              neben={
+                <span className="neben">
+                  <span className="betrag tnum">{a.preis_cents === null ? "—" : formatCents(a.preis_cents)}</span>
+                  {!a.active && <span className="statusmarke">still</span>}
+                </span>
+              }
+              onClick={() => oeffnen(a)}
+            />
+          </li>
+        ))}
+        <li>
+          <Listenzeile titel="Neue Beitragsart" onClick={() => oeffnen(null)} />
+        </li>
+      </ul>
 
-      {preisFuer && (
-        <>
-          <h3 className="dpl">
-            Preis für „{arten.find((a) => a.id === preisFuer)?.name}"
-          </h3>
+      {/* Name, Preis und Stilllegen stehen im Blatt (Regeln 4 und 5) */}
+      {blattOffen && (
+        <FensterKnopf
+          titel={bearbeitet ? bearbeitet.name : "Neue Beitragsart"}
+          unterzeile={bearbeitet ? `Code ${bearbeitet.code}` : undefined}
+          offen
+          onSchliessen={() => setBlattOffen(false)}
+        >
           <div className="formraster">
             <label>
-              <span>Gilt ab Jahr</span>
+              <span>Code</span>
               <input
-                type="number"
-                min={jahr}
-                max={jahr + 5}
-                value={preisJahr}
-                onChange={(e) => setPreisJahr(Number(e.target.value))}
+                type="text"
+                value={form.code}
+                disabled={!neu}
+                placeholder="erwachsene"
+                onChange={(e) => setForm({ ...form, code: e.target.value })}
               />
             </label>
             <label>
-              <span>Jahresbeitrag</span>
+              <span>Name</span>
               <input
                 type="text"
-                inputMode="decimal"
-                value={preis}
-                placeholder="120,00"
-                onChange={(e) => setPreis(e.target.value)}
+                value={form.name}
+                placeholder="Erwachsene"
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </label>
+            <label className="breit">
+              <span>Beschreibung</span>
+              <input
+                type="text"
+                value={form.beschreibung}
+                onChange={(e) => setForm({ ...form, beschreibung: e.target.value })}
               />
             </label>
           </div>
-          <div className="fenster-fuss">
-            <button
-              type="button"
-              className="knopf"
-              disabled={laeuft || preis.trim() === ""}
-              onClick={() => {
-                const cents = inCents(preis);
-                if (cents === null) {
-                  melde(KEIN_BETRAG);
-                  return;
-                }
-                starte(async () => {
-                  const e = await beitragspreisSetzen({
-                    artId: preisFuer,
-                    jahr: preisJahr,
-                    betragCents: cents,
-                  });
-                  melde(e);
-                  if (e.ok) setPreisFuer(null);
-                });
-              }}
-            >
-              Preis setzen
-            </button>
-            <button type="button" className="knopf leise" onClick={() => setPreisFuer(null)}>
-              Abbrechen
-            </button>
-          </div>
-        </>
-      )}
-
-      <h3 className="dpl">{neu ? "Neue Beitragsart" : `„${form.name}" bearbeiten`}</h3>
-      <div className="formraster">
-        <label>
-          <span>Code</span>
-          <input
-            type="text"
-            value={form.code}
-            disabled={!neu}
-            placeholder="erwachsene"
-            onChange={(e) => setForm({ ...form, code: e.target.value })}
-          />
-        </label>
-        <label>
-          <span>Name</span>
-          <input
-            type="text"
-            value={form.name}
-            placeholder="Erwachsene"
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-          />
-        </label>
-        <label className="breit">
-          <span>Beschreibung</span>
-          <input
-            type="text"
-            value={form.beschreibung}
-            onChange={(e) => setForm({ ...form, beschreibung: e.target.value })}
-          />
-        </label>
-      </div>
-      <div className="fenster-fuss">
-        <button
-          type="button"
-          className="knopf"
-          disabled={laeuft || form.name.trim() === "" || (neu && form.code.trim() === "")}
-          onClick={() =>
-            starte(async () => {
-              const e = await beitragsartSpeichern(form);
-              melde(e);
-              if (e.ok) setForm(LEER);
-            })
-          }
-        >
-          {neu ? "Beitragsart anlegen" : "Änderungen speichern"}
-        </button>
-        {!neu && (
-          <button type="button" className="knopf leise" onClick={() => setForm(LEER)}>
-            Abbrechen
+          <button
+            type="button"
+            className="knopf gold block gross"
+            disabled={laeuft || form.name.trim() === "" || (neu && form.code.trim() === "")}
+            onClick={() =>
+              starte(async () => {
+                const e = await beitragsartSpeichern(form);
+                melde(e);
+                if (e.ok) setBlattOffen(false);
+              })
+            }
+          >
+            {neu ? "Beitragsart anlegen" : "Änderungen speichern"}
           </button>
-        )}
-      </div>
+
+          {preisFuer && (
+            <>
+              <h3 className="dpl">Preis</h3>
+              <div className="formraster">
+                <label>
+                  <span>Gilt ab Jahr</span>
+                  <input
+                    type="number"
+                    min={jahr}
+                    max={jahr + 5}
+                    value={preisJahr}
+                    onChange={(e) => setPreisJahr(Number(e.target.value))}
+                  />
+                </label>
+                <label>
+                  <span>Jahresbeitrag</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={preis}
+                    placeholder="120,00"
+                    onChange={(e) => setPreis(e.target.value)}
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                className="knopf leise block"
+                disabled={laeuft || preis.trim() === ""}
+                onClick={() => {
+                  const cents = inCents(preis);
+                  if (cents === null) {
+                    melde(KEIN_BETRAG);
+                    return;
+                  }
+                  starte(async () => {
+                    const e = await beitragspreisSetzen({
+                      artId: preisFuer,
+                      jahr: preisJahr,
+                      betragCents: cents,
+                    });
+                    melde(e);
+                    if (e.ok) setBlattOffen(false);
+                  });
+                }}
+              >
+                Preis setzen
+              </button>
+            </>
+          )}
+
+          {bearbeitet && (
+            <div className="liste-gruppe">
+              <Listenzeile
+                titel={bearbeitet.active ? "Stilllegen" : "Wieder anbieten"}
+                gefahr={bearbeitet.active}
+                pfeil={false}
+                onClick={laeuft ? undefined : () =>
+                  starte(async () => {
+                    melde(await beitragsartUmschalten(bearbeitet.id, !bearbeitet.active));
+                    setBlattOffen(false);
+                  })
+                }
+              />
+            </div>
+          )}
+        </FensterKnopf>
+      )}
     </section>
   );
 }

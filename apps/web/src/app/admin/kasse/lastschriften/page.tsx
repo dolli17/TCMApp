@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { KassenKennzahlen } from "@/components/KassenKennzahlen";
 import { LaufAnlegen } from "@/components/LaufAnlegen";
 import { LaufListe } from "@/components/LaufListe";
+import { Gruppenkopf } from "@/components/Listenzeile";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 
 export const dynamic = "force-dynamic";
@@ -55,10 +56,8 @@ export default async function LastschriftenSeite() {
         </div>
       )}
 
-      <section className="karte tabellenkarte" aria-labelledby="h-laeufe">
-        <div className="kartenkopf">
-          <h2 id="h-laeufe">Bisherige Läufe</h2>
-        </div>
+      <section className="liste-abschnitt" aria-labelledby="h-laeufe">
+        <Gruppenkopf titel="Bisherige Läufe" id="h-laeufe" />
         <LaufListe laeufe={laeufe} />
       </section>
 

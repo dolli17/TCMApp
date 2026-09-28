@@ -61,15 +61,17 @@ test.describe("Mitgliederverwaltung", () => {
     await page.goto("/admin/mitglieder");
 
     await expect(page.getByRole("heading", { name: "Mitglieder" })).toBeVisible();
-    await expect(page.locator("table.liste tbody tr").first()).toBeVisible();
+    await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"] li').first()).toBeVisible();
 
-    // Der Filter "Ohne Zugang" darf niemanden mit Login zeigen.
+    // Der Filter "Ohne Zugang" darf niemanden mit Login zeigen - der eine
+    // Hinweis je Zeile sagt es dann.
     await page.getByRole("link", { name: "Ohne Zugang", exact: true }).click();
     await expect(page).toHaveURL(/filter=ohne-login/);
-    const loginSpalten = page.locator("table.liste tbody tr td:nth-child(6)");
-    const anzahl = Math.min(await loginSpalten.count(), 10);
+    const hinweise = page.locator('.liste-gruppe[aria-label="Mitglieder"] li .hinweis-rechts');
+    const anzahl = Math.min(await hinweise.count(), 10);
+    expect(anzahl).toBeGreaterThan(0);
     for (let i = 0; i < anzahl; i++) {
-      await expect(loginSpalten.nth(i)).toHaveText("kein Zugang");
+      await expect(hinweise.nth(i)).toHaveText("kein Zugang");
     }
   });
 
@@ -123,7 +125,7 @@ test.describe("Mitgliederverwaltung", () => {
 
     await page.waitForURL(/\/admin\/mitglieder$/, { timeout: 20_000 });
     await page.goto("/admin/mitglieder?filter=alle&q=" + encodeURIComponent(nachname));
-    await expect(page.locator("table.liste tbody tr")).toHaveCount(0);
+    await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"] li')).toHaveCount(0);
   });
 
   test("Trainer setzen, in der Liste filtern, wieder abwählen", async ({ page }) => {
@@ -141,7 +143,7 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(page.locator(".marken-reihe")).toContainText("Trainer");
 
     await page.goto("/admin/mitglieder?filter=trainer");
-    await expect(page.locator("table.liste tbody")).toContainText(nachname);
+    await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"]')).toContainText(nachname);
 
     await aufraeumen(page, adresse, nachname);
   });
@@ -215,10 +217,7 @@ test.describe("Mitgliederverwaltung", () => {
     // Das Konto, mit dem sich das Testmitglied anmeldet, hat Getränke und
     // Buchungen im Bestand - genau der Fall, den der Riegel abfangen soll.
     await page.goto("/admin/mitglieder?filter=alle&q=" + encodeURIComponent("Bauer"));
-    await page.locator("table.liste tbody tr a").first().click();
-    await page.waitForURL(/\/admin\/mitglieder\/[0-9a-f-]{36}/);
-
-    const url = page.url().split("?")[0];
+    const url = (await page.locator('.liste-gruppe[aria-label="Mitglieder"] li a').first().getAttribute("href"))!;
     await page.goto(`${url}?abschnitt=mitgliedschaft`);
 
     const zone = page.locator('section[aria-label="Datensatz beenden"]');
@@ -275,7 +274,7 @@ test.describe("Mitgliederverwaltung", () => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/mitglieder?filter=alle");
 
-    const zeile = page.locator("table.liste tbody tr").filter({ hasText: NUTZER.mitglied });
+    const zeile = page.locator('.liste-gruppe[aria-label="Mitglieder"] li').filter({ hasText: NUTZER.mitglied });
     await expect(zeile).toHaveCount(1);
     const href = await zeile.locator("a").getAttribute("href");
 
@@ -326,7 +325,7 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(page.locator(".hinweis.erfolg")).toContainText("gespeichert");
 
     // Es steht in der Liste
-    await expect(page.locator("table.liste tbody")).toContainText(code);
+    await expect(page.locator('.liste-gruppe[aria-label="Merkmale"]')).toContainText(code);
 
     // Am Mitglied setzen
     const adresse = await mitgliedAnlegen(page, nachname);
@@ -351,7 +350,7 @@ test.describe("Mitgliederverwaltung", () => {
     await page.getByRole("button", { name: "Merkmal löschen" }).click();
     await page.getByRole("button", { name: "Wirklich löschen" }).click();
     await page.waitForURL(/\/admin\/system\/merkmale$/, { timeout: 20_000 });
-    await expect(page.locator("table.liste tbody")).not.toContainText(code);
+    await expect(page.locator('.liste-gruppe[aria-label="Merkmale"]')).not.toContainText(code);
   });
 
   test("Mannschaft anlegen, Mitglied als Mannschaftsführer eintragen, wieder löschen", async ({
@@ -369,7 +368,7 @@ test.describe("Mitgliederverwaltung", () => {
     await formular.getByLabel("Name").fill(mannschaft);
     await formular.getByRole("button", { name: "Speichern" }).click();
     await page.waitForURL(/\/admin\/mitglieder\/mannschaften\?bearbeiten=/, { timeout: 20_000 });
-    await expect(page.locator("table.liste tbody")).toContainText(mannschaft);
+    await expect(page.locator('.liste-gruppe[aria-label="Mannschaften"]')).toContainText(mannschaft);
     const mannschaftsAdresse = page.url();
 
     // Am Mitglied setzen
@@ -389,7 +388,7 @@ test.describe("Mitgliederverwaltung", () => {
     await page.goto(mannschaftsAdresse);
     const aufstellung = page.locator('section[aria-label="Aufstellung"]');
     await expect(aufstellung).toContainText(nachname);
-    await expect(aufstellung.locator(".marke-klein.gold")).toContainText("Mannschaftsführer");
+    await expect(aufstellung.locator(".hinweis-rechts.gold")).toContainText("Mannschaftsführer");
 
     // Und im Protokoll steht der Name der Mannschaft, nicht ihre Kennung
     await page.goto(`${adresse.split("?")[0]}?abschnitt=protokoll`);
@@ -401,7 +400,7 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(formular).toContainText("Ein Spieler wird aus der Mannschaft genommen");
     await formular.getByRole("button", { name: "Wirklich löschen" }).click();
     await page.waitForURL(/\/admin\/mitglieder\/mannschaften$/, { timeout: 20_000 });
-    await expect(page.locator("table.liste tbody")).not.toContainText(mannschaft);
+    await expect(page.locator('.liste-gruppe[aria-label="Mannschaften"]')).not.toContainText(mannschaft);
 
     // Das Mitglied spielt jetzt in keiner Mannschaft mehr
     await page.goto(`${adresse.split("?")[0]}?abschnitt=mitgliedschaft`);
@@ -499,8 +498,8 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(karte.locator(".hinweis.erfolg")).toContainText("Mandat TCM-");
 
     await page.reload();
-    await expect(karte.locator("table.liste tbody")).toContainText("nur Beiträge");
-    await expect(karte.locator("table.liste tbody .marke-klein.gruen")).toContainText("aktiv");
+    await expect(karte.locator(".liste-gruppe")).toContainText("nur Beiträge");
+    await expect(karte.locator(".liste-gruppe .hinweis-rechts.gruen")).toContainText("aktiv");
 
     // Solange das Mandat aktiv ist, lässt sich die Bankverbindung nicht stilllegen
     await expect(
@@ -530,7 +529,7 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(karte.locator(".hinweis.erfolg")).toContainText("zugeordnet");
 
     await page.reload();
-    await expect(karte.locator("table.liste tbody")).toContainText("Erwachsener");
+    await expect(karte.locator(".liste-gruppe")).toContainText("Erwachsener");
 
     // Ein zweiter Eintrag mit Sonderbetrag – der Fall Ehrenmitglied.
     await karte.getByRole("button", { name: "Beitragsart zuordnen" }).click();
@@ -541,11 +540,12 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(karte.locator(".hinweis.erfolg")).toContainText("zugeordnet");
 
     await page.reload();
-    await expect(karte.locator("table.liste tbody")).toContainText("Schlüssel bereits bezahlt");
-    await expect(karte.locator("table.liste tbody")).toContainText("0,00");
+    await expect(karte.locator(".liste-gruppe")).toContainText("Schlüssel bereits bezahlt");
+    await expect(karte.locator(".liste-gruppe")).toContainText("0,00");
 
     // Wieder lösen
-    await karte.locator("table.liste tbody tr").first().getByRole("button", { name: "Entfernen" }).click();
+    await karte.locator(".liste-gruppe li button.listenzeile").first().click();
+    await karte.getByRole("button", { name: "Entfernen" }).click();
     await expect(karte.locator(".hinweis.erfolg")).toContainText("entfernt");
 
     await aufraeumen(page, adresse, nachname);
@@ -597,7 +597,7 @@ test.describe("Mitgliederverwaltung", () => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/mitglieder?filter=alle");
 
-    const zeile = page.locator("table.liste tbody tr").filter({ hasText: NUTZER.admin });
+    const zeile = page.locator('.liste-gruppe[aria-label="Mitglieder"] li').filter({ hasText: NUTZER.admin });
     const href = await zeile.locator("a").first().getAttribute("href");
 
     await page.goto(`${href}?abschnitt=zugang`);
@@ -656,11 +656,11 @@ test.describe("Mitgliederverwaltung", () => {
     // Als Admin: der Antrag liegt vor, genau einmal
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/mitglieder/antraege");
-    const zeilen = page.locator("table.liste tbody tr").filter({ hasText: nachname });
+    const zeilen = page.locator('.liste-gruppe[aria-label="Anträge"] li').filter({ hasText: nachname });
     await expect(zeilen).toHaveCount(1);
 
     // Annehmen, mit Einladung
-    await zeilen.getByRole("button", { name: "Ansehen" }).click();
+    await zeilen.locator("button.listenzeile").click();
     const fenster = page.locator("dialog.fenster");
     await expect(fenster).toContainText(email);
     await fenster.getByRole("button", { name: "Aufnehmen" }).click();
@@ -706,8 +706,8 @@ test.describe("Mitgliederverwaltung", () => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/mitglieder/antraege");
 
-    const zeile = page.locator("table.liste tbody tr").filter({ hasText: nachname });
-    await zeile.getByRole("button", { name: "Ansehen" }).click();
+    const zeile = page.locator('.liste-gruppe[aria-label="Anträge"] li').filter({ hasText: nachname });
+    await zeile.locator("button.listenzeile").click();
 
     const fenster = page.locator("dialog.fenster");
     await fenster.getByRole("button", { name: "Ablehnen" }).click();
@@ -720,7 +720,7 @@ test.describe("Mitgliederverwaltung", () => {
 
     await page.goto("/admin/mitglieder/antraege?filter=erledigt");
     await expect(
-      page.locator("table.liste tbody tr").filter({ hasText: nachname }),
+      page.locator('.liste-gruppe[aria-label="Anträge"] li').filter({ hasText: nachname }),
     ).toContainText("abgelehnt");
   });
 
@@ -739,7 +739,7 @@ test.describe("Mitgliederverwaltung", () => {
   test("ein normales Mitglied kommt nicht an die Detailseite", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/mitglieder");
-    const ziel = await page.locator("table.liste tbody tr a").first().getAttribute("href");
+    const ziel = await page.locator('.liste-gruppe[aria-label="Mitglieder"] li a').first().getAttribute("href");
 
     await page.context().clearCookies();
     await anmelden(page, NUTZER.mitglied);

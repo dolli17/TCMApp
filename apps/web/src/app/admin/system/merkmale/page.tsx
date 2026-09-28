@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { FensterKnopf } from "@/components/FensterKnopf";
+import { Listenzeile } from "@/components/Listenzeile";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { MerkmalsFormular, type MerkmalsDefinition } from "@/components/MerkmalsFormular";
 
@@ -72,51 +72,28 @@ export default async function MerkmaleSeite({
         </FensterKnopf>
       </VerwaltungsKopf>
 
-      <div className="karte tabellenkarte">
-        {merkmale.length === 0 ? (
-          <p className="leer-klein">Noch keine Merkmale angelegt.</p>
-        ) : (
-          <table className="liste">
-            <thead>
-              <tr>
-                <th scope="col">Name</th>
-                <th scope="col">Schlüssel</th>
-                <th scope="col">Art</th>
-                <th scope="col">Wer setzt es</th>
-                <th scope="col" className="zahl">Vergeben</th>
-                <th scope="col"><span className="sr-only">Aktion</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {merkmale.map((m) => (
-                <tr key={m.id}>
-                  <td className="fett">
-                    {m.name}
-                    {(!m.active || m.in_application) && (
-                      <span className="marken-zeile">
-                        {!m.active && <span className="statusmarke">stillgelegt</span>}
-                        {m.in_application && <span className="statusmarke gelb">im Antrag</span>}
-                      </span>
-                    )}
-                  </td>
-                  <td data-label="Schlüssel" className="kennung">{m.code}</td>
-                  <td data-label="Art">
-                    {ART_TEXT[m.value_kind] ?? m.value_kind}
-                    {m.multiple && <span className="leiser"> · mehrfach</span>}
-                  </td>
-                  <td data-label="Wer setzt es" className="leiser">{m.self_editable ? "Mitglied selbst" : "Vorstand"}</td>
-                  <td data-label="Vergeben" className="zahl dpl tnum">{m.anzahl_werte}</td>
-                  <td className="aktion">
-                    <Link className="knopf leise klein" href={`/admin/system/merkmale?bearbeiten=${m.code}`}>
-                      bearbeiten
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {merkmale.length === 0 ? (
+        <p className="leer-klein">Noch keine Merkmale angelegt.</p>
+      ) : (
+        <ul className="liste-gruppe" aria-label="Merkmale">
+          {merkmale.map((m) => (
+            <li key={m.id}>
+              <Listenzeile
+                href={`/admin/system/merkmale?bearbeiten=${m.code}`}
+                titel={m.name}
+                kontext={[
+                  m.code,
+                  `${ART_TEXT[m.value_kind] ?? m.value_kind}${m.multiple ? ", mehrfach" : ""}`,
+                  m.self_editable ? "Mitglied selbst" : "Vorstand",
+                  m.in_application ? "im Antrag" : null,
+                  m.active ? null : "stillgelegt",
+                ].filter(Boolean).join(" · ")}
+                hinweis={`${m.anzahl_werte} vergeben`}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
 
       {inBearbeitung && (
         // Der Schlüssel im key baut das Formular beim Wechsel neu auf.

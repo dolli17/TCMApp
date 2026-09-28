@@ -7,6 +7,7 @@ import {
   beitragsartLoesen,
   beitragsartZuordnen,
 } from "@/app/admin/mitglieder/[id]/finanz-aktionen";
+import { Listenzeile } from "@/components/Listenzeile";
 
 export interface BeitragsZeile {
   fee_type_id: string;
@@ -40,6 +41,7 @@ export function BeitragsartenKarte({
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
   const [offen, setOffen] = useState(false);
+  const [gewaehlt, setGewaehlt] = useState<string | null>(null);
 
   const zugeordnet = zeilen.filter((z) => z.zugeordnet);
   const verfuegbar = zeilen.filter((z) => !z.zugeordnet);
@@ -95,46 +97,41 @@ export function BeitragsartenKarte({
       )}
 
       {zugeordnet.length > 0 && (
-        <div className="tabellenhuelle">
-          <table className="liste">
-            <thead>
-              <tr>
-                <th>Beitragsart</th>
-                <th className="zahl">Preis</th>
-                <th className="zahl">Sonderbetrag</th>
-                <th>Notiz</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {zugeordnet.map((z) => (
-                <tr key={z.fee_type_id}>
-                  <td>{z.name}</td>
-                  <td className="zahl">
-                    {z.preis_cents === null ? "—" : formatCents(z.preis_cents)}
-                  </td>
-                  <td className="zahl">
-                    {z.override_amount_cents === null ? (
-                      "—"
-                    ) : (
-                      <strong>{formatCents(z.override_amount_cents)}</strong>
-                    )}
-                  </td>
-                  <td>{z.note ?? "—"}</td>
-                  <td>
-                    <button
-                      className="knopf leise klein"
-                      disabled={laeuft}
-                      onClick={() => loesen(z.fee_type_id)}
-                    >
-                      Entfernen
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ul className="liste-gruppe" aria-label={`Beitragsarten ${jahr}`}>
+          {zugeordnet.map((z) => {
+            const betrag = z.override_amount_cents ?? z.preis_cents;
+            return (
+              <li key={z.fee_type_id}>
+                <Listenzeile
+                  titel={z.name}
+                  kontext={[
+                    z.override_amount_cents !== null && z.preis_cents !== null
+                      ? `Sonderbetrag statt ${formatCents(z.preis_cents)}`
+                      : null,
+                    z.note,
+                  ].filter(Boolean).join(" · ") || undefined}
+                  hinweis={betrag === null ? "—" : formatCents(betrag)}
+                  hinweisTon={z.override_amount_cents !== null ? "gold" : "leise"}
+                  aktuell={gewaehlt === z.fee_type_id}
+                  onClick={() => setGewaehlt(gewaehlt === z.fee_type_id ? null : z.fee_type_id)}
+                  pfeil={false}
+                />
+                {/* Keine Knöpfe in der Zeile: Entfernen erst nach dem Antippen */}
+                {gewaehlt === z.fee_type_id && (
+                  <Listenzeile
+                    titel="Entfernen"
+                    gefahr
+                    pfeil={false}
+                    onClick={laeuft ? undefined : () => {
+                      loesen(z.fee_type_id);
+                      setGewaehlt(null);
+                    }}
+                  />
+                )}
+              </li>
+            );
+          })}
+        </ul>
       )}
 
       {!offen ? (

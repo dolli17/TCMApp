@@ -6,6 +6,8 @@ import {
   geplantenPreisEntfernen, getraenkSpeichern, getraenkUmschalten, getraenkeSortieren,
   preisSetzen,
 } from "@/app/admin/getraenke/aktionen";
+import { FensterKnopf } from "@/components/FensterKnopf";
+import { Listenzeile } from "@/components/Listenzeile";
 
 export interface GetraenkZeile {
   id: string;
@@ -92,7 +94,7 @@ type Melder = (e: { ok: boolean; meldung: string }) => void;
 function Kartenliste({
   getraenke, laeuft, starte, melde,
 }: { getraenke: GetraenkZeile[]; laeuft: boolean; starte: Starter; melde: Melder }) {
-  const [form, setForm] = useState(LEER);
+  const [gewaehlt, setGewaehlt] = useState<GetraenkZeile | null>(null);
 
   function verschieben(index: number, richtung: -1 | 1) {
     const neu = [...getraenke];
@@ -102,10 +104,99 @@ function Kartenliste({
     starte(async () => melde(await getraenkeSortieren(neu.map((g) => g.id))));
   }
 
+  const index = gewaehlt ? getraenke.findIndex((g) => g.id === gewaehlt.id) : -1;
+
+  return (
+    <section className="karte" aria-labelledby="h-getraenkekarte">
+      <h2 className="dpl" id="h-getraenkekarte">Getränkekarte</h2>
+      <p className="unterzeile">
+        Was an der Theke angeboten wird, in der Reihenfolge, in der es dort erscheint. Ein
+        stillgelegtes Getränk verschwindet aus der Karte; seine bisherigen Buchungen bleiben.
+      </p>
+
+      <ul className="liste-gruppe" aria-label="Getränke">
+        {getraenke.map((g) => (
+          <li key={g.id}>
+            <Listenzeile
+              titel={g.name}
+              kontext={[
+                g.description,
+                ART_TEXT[g.category],
+                `${g.buchungen} Buchungen`,
+                g.naechster_preis_cents !== null && g.naechster_preis_ab !== null
+                  ? `${formatCents(g.naechster_preis_cents)} ab ${DATUM.format(new Date(g.naechster_preis_ab))}`
+                  : null,
+              ].filter(Boolean).join(" · ")}
+              neben={
+                <span className="neben">
+                  <span className="betrag tnum">{g.price_cents === null ? "—" : formatCents(g.price_cents)}</span>
+                  {!g.active && <span className="statusmarke">stillgelegt</span>}
+                </span>
+              }
+              onClick={() => setGewaehlt(g)}
+            />
+          </li>
+        ))}
+      </ul>
+
+      {/* Bearbeiten, Reihenfolge und Stilllegen stehen im Blatt (Regel 4) */}
+      {gewaehlt && (
+        <FensterKnopf titel={gewaehlt.name} unterzeile="Getränk bearbeiten" offen onSchliessen={() => setGewaehlt(null)}>
+          <GetraenkFormular key={gewaehlt.id} vorhanden={gewaehlt} onFertig={() => setGewaehlt(null)} />
+          <div className="liste-gruppe">
+            <Listenzeile
+              titel="Weiter nach oben"
+              pfeil={false}
+              onClick={laeuft || index <= 0 ? undefined : () => verschieben(index, -1)}
+            />
+            <Listenzeile
+              titel="Weiter nach unten"
+              pfeil={false}
+              onClick={laeuft || index >= getraenke.length - 1 ? undefined : () => verschieben(index, 1)}
+            />
+            <Listenzeile
+              titel={gewaehlt.active ? "Stilllegen" : "Wieder anbieten"}
+              gefahr={gewaehlt.active}
+              pfeil={false}
+              onClick={laeuft ? undefined : () =>
+                starte(async () => {
+                  melde(await getraenkUmschalten(gewaehlt.id, !gewaehlt.active));
+                  setGewaehlt(null);
+                })
+              }
+            />
+          </div>
+        </FensterKnopf>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Ein Getränk anlegen oder umbenennen - im Blatt, mit eigener Rückmeldung.
+ * Ohne Preis taucht ein neues Getränk in der Karte gar nicht auf, deshalb
+ * bleibt der Knopf bis dahin gesperrt.
+ */
+export function GetraenkFormular({
+  vorhanden,
+  onFertig,
+}: {
+  vorhanden?: GetraenkZeile;
+  onFertig?: () => void;
+}) {
+  const [form, setForm] = useState(
+    vorhanden
+      ? { id: vorhanden.id, name: vorhanden.name, beschreibung: vorhanden.description ?? "", art: vorhanden.category, preis: "" }
+      : LEER,
+  );
+  const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
+  const [laeuft, starte] = useTransition();
+  const neu = form.id === null;
+
   function speichern() {
     const preis = form.preis.trim() === "" ? null : inCents(form.preis);
     if (form.preis.trim() !== "" && preis === null) {
-      melde(KEIN_BETRAG);
+      setMeldung({ ok: false, text: KEIN_BETRAG.meldung });
       return;
     }
     starte(async () => {
@@ -116,110 +207,21 @@ function Kartenliste({
         art: form.art,
         preisCents: preis,
       });
-      melde(e);
-      if (e.ok) setForm(LEER);
+      setMeldung({ ok: e.ok, text: e.meldung });
+      if (e.ok) {
+        if (neu) setForm(LEER);
+        onFertig?.();
+      }
     });
   }
 
-  const neu = form.id === null;
-
   return (
-    <section className="karte">
-      <h2 className="dpl">Getränkekarte</h2>
-      <p className="unterzeile">
-        Was an der Theke angeboten wird, in der Reihenfolge, in der es dort erscheint. Ein
-        stillgelegtes Getränk verschwindet aus der Karte; seine bisherigen Buchungen bleiben.
-      </p>
-
-      <div className="tabellenhuelle tabellenkarte"><table className="liste">
-        <thead>
-          <tr>
-            <th scope="col">Name</th>
-            <th scope="col">Art</th>
-            <th scope="col" className="zahl">Preis</th>
-            <th scope="col">Geplant</th>
-            <th scope="col" className="zahl">Buchungen</th>
-            <th scope="col">Aktiv</th>
-            <th scope="col">Reihenfolge</th>
-            <th scope="col"><span className="sr-only">Aktion</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          {getraenke.map((g, i) => (
-            <tr key={g.id}>
-              <td className="fett">
-                {g.name}
-                {g.description && <div className="mit">{g.description}</div>}
-              </td>
-              <td data-label="Art">{ART_TEXT[g.category]}</td>
-              <td data-label="Preis" className="zahl betrag dpl tnum">
-                {g.price_cents === null ? "—" : formatCents(g.price_cents)}
-              </td>
-              <td data-label="Geplant" className="leiser">
-                {g.naechster_preis_cents === null || g.naechster_preis_ab === null
-                  ? "—"
-                  : `${formatCents(g.naechster_preis_cents)} ab ${DATUM.format(
-                      new Date(g.naechster_preis_ab),
-                    )}`}
-              </td>
-              <td data-label="Buchungen" className="zahl tnum">{g.buchungen}</td>
-              <td data-label="Aktiv">
-                <span className={`statusmarke${g.active ? " gruen" : ""}`}>
-                  {g.active ? "in der Karte" : "stillgelegt"}
-                </span>
-              </td>
-              <td data-label="Reihenfolge">
-                <button
-                  type="button"
-                  className="knopf leise klein"
-                  disabled={laeuft || i === 0}
-                  aria-label={`${g.name} nach oben`}
-                  onClick={() => verschieben(i, -1)}
-                >
-                  ↑
-                </button>{" "}
-                <button
-                  type="button"
-                  className="knopf leise klein"
-                  disabled={laeuft || i === getraenke.length - 1}
-                  aria-label={`${g.name} nach unten`}
-                  onClick={() => verschieben(i, 1)}
-                >
-                  ↓
-                </button>
-              </td>
-              <td className="aktion">
-                <button
-                  type="button"
-                  className="knopf leise klein"
-                  disabled={laeuft}
-                  onClick={() =>
-                    setForm({
-                      id: g.id,
-                      name: g.name,
-                      beschreibung: g.description ?? "",
-                      art: g.category,
-                      preis: "",
-                    })
-                  }
-                >
-                  Bearbeiten
-                </button>{" "}
-                <button
-                  type="button"
-                  className="knopf leise klein"
-                  disabled={laeuft}
-                  onClick={() => starte(async () => melde(await getraenkUmschalten(g.id, !g.active)))}
-                >
-                  {g.active ? "Stilllegen" : "Anbieten"}
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table></div>
-
-      <h3 className="dpl">{neu ? "Neues Getränk" : `„${form.name}" bearbeiten`}</h3>
+    <>
+      {meldung && (
+        <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">
+          {meldung.text}
+        </div>
+      )}
       <div className="formraster">
         <label>
           <span>Name</span>
@@ -267,22 +269,15 @@ function Kartenliste({
           Ein neues Getränk braucht einen Preis – ohne ihn taucht es in der Karte gar nicht auf.
         </p>
       )}
-      <div className="fenster-fuss">
-        <button
-          type="button"
-          className="knopf"
-          disabled={laeuft || form.name.trim() === "" || (neu && form.preis.trim() === "")}
-          onClick={speichern}
-        >
-          {neu ? "Getränk anlegen" : "Änderungen speichern"}
-        </button>
-        {!neu && (
-          <button type="button" className="knopf leise" onClick={() => setForm(LEER)}>
-            Abbrechen
-          </button>
-        )}
-      </div>
-    </section>
+      <button
+        type="button"
+        className="knopf gold block gross"
+        disabled={laeuft || form.name.trim() === "" || (neu && form.preis.trim() === "")}
+        onClick={speichern}
+      >
+        {neu ? "Getränk anlegen" : "Änderungen speichern"}
+      </button>
+    </>
   );
 }
 

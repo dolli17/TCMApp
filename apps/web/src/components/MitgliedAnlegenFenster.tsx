@@ -37,7 +37,7 @@ export function MitgliedAnlegenFenster({ onSchliessen }: { onSchliessen: () => v
   return (
     <dialog
       ref={dialog}
-      className="fenster breit"
+      className="fenster blatt breit"
       onClose={onSchliessen}
       onCancel={onSchliessen}
       onClick={(e) => {
@@ -45,6 +45,7 @@ export function MitgliedAnlegenFenster({ onSchliessen }: { onSchliessen: () => v
       }}
       aria-label="Mitglied anlegen"
     >
+      <span className="griff" aria-hidden="true" />
       <div className="fenster-kopf">
         <div>
           <h2 className="dpl">Mitglied anlegen</h2>

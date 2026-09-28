@@ -8,6 +8,7 @@ import { GefahrenzoneKarte, type Loeschfolgen } from "@/components/GefahrenzoneK
 import { LoginKarte, type LoginZustand } from "@/components/LoginKarte";
 import { MerkmaleKarte, type MerkmalZeile } from "@/components/MerkmaleKarte";
 import { MitgliedschaftsKarte } from "@/components/MitgliedschaftsKarte";
+import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 import { Reiter } from "@/components/Reiter";
 import { Stammdatenkarte, type Feld } from "@/components/Stammdatenkarte";
 import { ZugehoerigkeitKarte } from "@/components/ZugehoerigkeitKarte";
@@ -343,30 +344,22 @@ export default async function MitgliedSeite({
           />
 
           {mitgliedschaften.length > 1 && (
-            <section className="karte" aria-label="Frühere Mitgliedschaften">
-              <h2 className="dpl">Verlauf</h2>
-              <div className="tabellenhuelle">
-                <table className="liste">
-                  <thead>
-                    <tr>
-                      <th>Nr.</th>
-                      <th>Eintritt</th>
-                      <th>Austritt</th>
-                      <th>Grund</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mitgliedschaften.map((s) => (
-                      <tr key={s.id}>
-                        <td>{s.number}</td>
-                        <td>{datum(s.started_on)}</td>
-                        <td>{datum(s.ended_on)}</td>
-                        <td>{s.cancellation_reason ?? "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <section className="liste-abschnitt" aria-label="Frühere Mitgliedschaften">
+              <Gruppenkopf titel="Verlauf" />
+              <ul className="liste-gruppe">
+                {mitgliedschaften.map((s) => (
+                  <li key={s.id}>
+                    <Listenzeile
+                      titel={`Nr. ${s.number}`}
+                      kontext={`${datum(s.started_on)} – ${s.ended_on ? datum(s.ended_on) : "heute"}${
+                        s.cancellation_reason ? ` · ${s.cancellation_reason}` : ""
+                      }`}
+                      hinweis={s.ended_on ? "beendet" : "laufend"}
+                      hinweisTon={s.ended_on ? "leise" : "gruen"}
+                    />
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 
@@ -440,44 +433,35 @@ async function Forderungen({ id, jahr }: { id: string; jahr: number }) {
         />
       )}
 
-      <section className="karte tabellenkarte" aria-labelledby="h-forderungen">
-        <div className="kartenkopf">
-          <h2 id="h-forderungen">Forderungen</h2>
-        </div>
+      <section className="liste-abschnitt" aria-labelledby="h-forderungen">
+        <Gruppenkopf titel="Forderungen" id="h-forderungen" />
         {forderungenRes.error ? (
           <div className="hinweis fehler">{forderungenRes.error.message}</div>
         ) : (forderungenRes.data ?? []).length === 0 ? (
           <p className="leer-klein">Noch keine Forderung.</p>
         ) : (
-          <table className="liste">
-            <thead>
-              <tr>
-                <th scope="col">Forderung</th>
-                <th scope="col">Für</th>
-                <th scope="col">Fällig</th>
-                <th scope="col">Stand</th>
-                <th scope="col" className="zahl">Betrag</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(forderungenRes.data ?? []).map((f) => {
-                const stand = FORDERUNG_STAND[f.status] ?? { text: f.status, ton: "" };
-                return (
-                  <tr key={f.id}>
-                    <td className="fett">{f.description}</td>
-                    <td data-label="Für" className="leiser">
-                      {f.member_id === id ? "selbst" : `${f.members?.first_name ?? ""} ${f.members?.last_name ?? ""}`}
-                    </td>
-                    <td data-label="Fällig">{f.due_date ? isoDateLabel(f.due_date) : "–"}</td>
-                    <td data-label="Stand">
-                      <span className={`statusmarke ${stand.ton}`}>{stand.text}</span>
-                    </td>
-                    <td data-label="Betrag" className="zahl betrag dpl tnum">{formatCents(f.amount_cents)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <ul className="liste-gruppe" aria-label="Forderungen">
+            {(forderungenRes.data ?? []).map((f) => {
+              const stand = FORDERUNG_STAND[f.status] ?? { text: f.status, ton: "" };
+              return (
+                <li key={f.id}>
+                  <Listenzeile
+                    titel={f.description}
+                    kontext={[
+                      f.member_id === id ? null : `für ${f.members?.first_name ?? ""} ${f.members?.last_name ?? ""}`,
+                      f.due_date ? `fällig ${isoDateLabel(f.due_date)}` : null,
+                    ].filter(Boolean).join(" · ") || undefined}
+                    neben={
+                      <span className="neben">
+                        <span className="betrag tnum">{formatCents(f.amount_cents)}</span>
+                        <span className={`statusmarke ${stand.ton}`}>{stand.text}</span>
+                      </span>
+                    }
+                  />
+                </li>
+              );
+            })}
+          </ul>
         )}
       </section>
     </>

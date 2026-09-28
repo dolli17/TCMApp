@@ -8,6 +8,7 @@ import {
   mandatErteilen,
   mandatWiderrufen,
 } from "@/app/admin/mitglieder/[id]/finanz-aktionen";
+import { Listenzeile } from "@/components/Listenzeile";
 
 export interface FinanzZeile {
   bank_account_id: string;
@@ -162,75 +163,59 @@ export function BankUndMandatKarte({
           {k.mandate.length === 0 ? (
             <p className="beschreibung">Kein Mandat zu dieser Bankverbindung.</p>
           ) : (
-            <div className="tabellenhuelle">
-              <table className="liste">
-                <thead>
-                  <tr>
-                    <th>Referenz</th>
-                    <th>Unterschrieben</th>
-                    <th>Zuletzt genutzt</th>
-                    <th>Umfang</th>
-                    <th>Status</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {k.mandate.map((m) => (
-                    <tr key={m.mandate_id}>
-                      <td>
-                        {m.reference}
-                        {m.reference_conflict && (
-                          <span className="marke-klein rot" title="Aus eBuSy mit mehrfach vergebener Referenz">
-                            doppelt
-                          </span>
-                        )}
-                      </td>
-                      <td>{datum(m.signed_on)}</td>
-                      <td>{datum(m.last_used_on)}</td>
-                      <td>{UMFANG_TEXT[m.scope ?? ""] ?? m.scope}</td>
-                      <td>
-                        <span
-                          className={`marke-klein ${m.mandat_status === "active" ? "gruen" : "grau"}`}
-                        >
-                          {STATUS_TEXT[m.mandat_status ?? ""] ?? m.mandat_status}
-                        </span>
-                      </td>
-                      <td>
-                        {m.mandat_status === "active" &&
-                          (m.im_einzug ? (
-                            <span className="beschreibung">im Einzug</span>
-                          ) : widerrufOffen === m.mandate_id ? (
-                            <>
-                              <button
-                                className="knopf leise klein"
-                                disabled={laeuft}
-                                onClick={() => setWiderrufOffen(null)}
-                              >
-                                Abbrechen
-                              </button>{" "}
-                              <button
-                                className="knopf gefahr klein"
-                                disabled={laeuft}
-                                onClick={() => fuehreAus(() => mandatWiderrufen(mitgliedId, m.mandate_id!))}
-                              >
-                                Wirklich widerrufen
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              className="knopf leise klein"
-                              disabled={laeuft}
-                              onClick={() => setWiderrufOffen(m.mandate_id)}
-                            >
-                              Widerrufen
-                            </button>
-                          ))}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ul className="liste-gruppe" aria-label={`Mandate zu IBAN •••• ${k.last4}`}>
+              {k.mandate.map((m) => {
+                const aktiv = m.mandat_status === "active";
+                return (
+                  <li key={m.mandate_id}>
+                    <Listenzeile
+                      titel={
+                        <>
+                          {m.reference}
+                          {m.reference_conflict && (
+                            <span className="statusmarke rot" title="Aus eBuSy mit mehrfach vergebener Referenz">
+                              {" "}doppelt
+                            </span>
+                          )}
+                        </>
+                      }
+                      kontext={`${UMFANG_TEXT[m.scope ?? ""] ?? m.scope} · unterschrieben ${datum(m.signed_on)} · zuletzt genutzt ${datum(m.last_used_on)}`}
+                      hinweis={m.im_einzug && aktiv ? "im Einzug" : STATUS_TEXT[m.mandat_status ?? ""] ?? m.mandat_status}
+                      hinweisTon={aktiv ? "gruen" : "leise"}
+                    />
+                    {/* Keine Knöpfe in der Zeile: Widerrufen steht als rote
+                        Zeile darunter, mit Rückfrage. */}
+                    {aktiv && !m.im_einzug &&
+                      (widerrufOffen === m.mandate_id ? (
+                        <div className="zeilen-aktionen">
+                          <button
+                            className="knopf gefahr klein"
+                            disabled={laeuft}
+                            onClick={() => fuehreAus(() => mandatWiderrufen(mitgliedId, m.mandate_id!))}
+                          >
+                            Wirklich widerrufen
+                          </button>
+                          <button
+                            className="knopf leise klein"
+                            disabled={laeuft}
+                            onClick={() => setWiderrufOffen(null)}
+                          >
+                            Abbrechen
+                          </button>
+                        </div>
+                      ) : (
+                        <Listenzeile
+                          titel="Widerrufen"
+                          label="Widerrufen"
+                          gefahr
+                          pfeil={false}
+                          onClick={laeuft ? undefined : () => setWiderrufOffen(m.mandate_id)}
+                        />
+                      ))}
+                  </li>
+                );
+              })}
+            </ul>
           )}
 
           {k.aktiv && (

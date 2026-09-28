@@ -1061,6 +1061,7 @@ dialog.fenster.blatt {
   overflow-y: auto; padding: 10px 20px 22px;
 }
 .blatt .griff { display: none; }
+dialog.fenster.blatt.breit { width: min(680px, calc(100vw - 24px)); }
 .blatt .fenster-kopf { background: transparent; border: 0; padding: 8px 0 14px; align-items: flex-start; }
 .blatt .fenster-kopf .kicker { margin: 0; }
 .blatt .fenster-kopf h2 {
@@ -1477,6 +1478,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 .geldweg li.erledigt .nr { background: var(--green); color: #fff; }
 .geldweg li.aktuell .nr { background: var(--gold); color: var(--on-gold); }
+.geldweg li.offen .nr { background: transparent; box-shadow: inset 0 0 0 1.5px var(--surf-3); }
+.geldweg li.offen b { color: var(--muted); }
 .geldweg b { font-size: 14.5px; font-weight: 700; min-width: 0; hyphens: auto; overflow-wrap: anywhere; line-height: 1.2; }
 .geldweg small { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
 @media (max-width: 767px) {
@@ -1542,14 +1545,15 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .suchfeld svg { width: 18px; height: 18px; flex: 0 0 auto; }
 .suchfeld input { border: 0; padding: 0; height: 100%; background: transparent; box-shadow: none !important; font-size: 15px; }
 .filterchips { display: flex; flex-wrap: wrap; gap: 8px; }
-.filterchips a {
+.filterchips :is(a, button) {
   height: 38px; padding: 0 14px; border-radius: 19px;
   display: inline-flex; align-items: center; white-space: nowrap;
   font-size: 14px; font-weight: 600; text-decoration: none;
   border: 1px solid var(--line-2); background: var(--surf); color: var(--ink-2);
 }
-.filterchips a:hover { border-color: var(--ink-2); text-decoration: none; }
-.filterchips a[aria-current="true"] { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+.filterchips :is(a, button) { cursor: pointer; font-family: var(--font-text); }
+.filterchips :is(a, button):hover { border-color: var(--ink-2); text-decoration: none; }
+.filterchips :is(a[aria-current="true"], button[aria-pressed="true"]) { border-color: var(--ink); background: var(--ink); color: var(--bg); }
 .filterchips.leise { margin-top: -12px; gap: 4px; }
 .filterchips.leise a { height: 30px; padding: 0 10px; font-size: 13px; border-color: transparent; background: transparent; color: var(--muted); }
 .filterchips.leise a[aria-current="true"] { background: var(--surf-2); color: var(--ink); border-color: transparent; }
@@ -1681,6 +1685,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 
 /* Kleiner Weg des Geldes je Lauf: fuenf Balken */
 .mini-geldweg { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; }
+.listenzeile .mini-geldweg { margin-top: 6px; }
 .mini-geldweg li { width: 22px; height: 6px; border-radius: 3px; background: var(--surf-2); }
 .mini-geldweg li.erledigt { background: var(--green); }
 .mini-geldweg li.aktuell { background: var(--gold); }
@@ -1753,7 +1758,10 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .zweizeilig { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .je-zahler td.zahl { font-size: 16px; white-space: nowrap; }
 .je-zahler td.kennung { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--muted); }
-.je-zahler .grund { min-width: 190px; max-width: 230px; margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--muted); }
+.je-zahler .kennung { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+.je-zahler .unterzeile { margin: 0; }
+.je-zahler { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.je-zahler .grund { display: inline; min-width: 0; max-width: none; margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--muted); }
 .je-zahler .kam-zurueck { margin-left: 8px; }
 .je-zahler .leer-klein { padding: 0 20px 20px; }
 .je-zahler .ruecklaeufer { padding: 16px 20px 20px; border-top: 1px solid var(--line); }
@@ -1762,6 +1770,12 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .naechster-schritt {
   display: flex; flex-direction: column; gap: 12px; padding: 22px;
   border-radius: var(--radius-karte); background: var(--brand); color: #fff;
+}
+.naechster-schritt { position: relative; overflow: hidden; border-radius: 26px; }
+.naechster-schritt > :not(.linien) { position: relative; }
+.naechster-schritt .linien {
+  position: absolute; right: 0; top: 0; width: 350px; height: 196px;
+  fill: none; stroke: rgba(255,255,255,.13); stroke-width: 2;
 }
 .naechster-schritt .kicker { color: #fff; opacity: .7; }
 .naechster-schritt .titel { font-size: 24px; font-weight: 800; letter-spacing: -.3px; line-height: 1.15; }
@@ -1934,6 +1948,109 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   padding: 28px 18px; font-size: 18px; font-weight: 600; line-height: 1.4;
 }
 .kiosk-fertig svg { width: 56px; height: 56px; }
+
+/* ---------------------------------------------------------------------------
+   Verwaltung v2: Bausteine (docs/design/clubhaus/verwaltung)
+   --------------------------------------------------------------------------- */
+/* Gruppierte Karte mit Listenzeilen (Regel 3) */
+.liste-gruppe {
+  list-style: none; margin: 0; padding: 0; overflow: hidden;
+  background: var(--surf); border: 1px solid var(--line); border-radius: var(--radius-karte);
+  box-shadow: var(--shadow);
+}
+.liste-gruppe > li + li, .liste-gruppe > .listenzeile + .listenzeile { border-top: 1px solid var(--line); }
+.listenzeile {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; box-sizing: border-box;
+  padding: 10px 14px 10px 16px; margin: 0; border: 0; background: transparent;
+  font: inherit; text-align: left; color: var(--ink); text-decoration: none;
+}
+:is(a, button).listenzeile { cursor: pointer; }
+:is(a, button).listenzeile:hover { text-decoration: none; background: color-mix(in srgb, var(--ink) 4%, transparent); }
+.listenzeile:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.listenzeile[aria-current="true"] { background: var(--gold-soft); }
+.listenzeile .avatar { width: 40px; height: 40px; border-radius: 20px; font-size: 13px; }
+.listenzeile .symbolkachel {
+  width: 40px; height: 40px; border-radius: 12px;
+  font-family: var(--font-display); font-weight: 800; font-size: 15px; color: var(--ink);
+}
+.listenzeile .symbolkachel svg { width: 20px; height: 20px; }
+.listenzeile .text { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.listenzeile .titel { font-size: 16px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.listenzeile .kontext { font-size: 13px; color: var(--muted); line-height: 1.35; }
+.hinweis-rechts { flex: 0 0 auto; font-size: 13px; font-weight: 700; text-align: right; }
+.hinweis-rechts.gold { color: var(--gold-ink); }
+.hinweis-rechts.rot { color: color-mix(in srgb, var(--red) 78%, var(--ink)); }
+.hinweis-rechts.gruen { color: var(--green-ink); }
+.hinweis-rechts.leise { color: var(--muted); font-weight: 600; }
+.listenzeile > .pfeil { width: 18px; height: 18px; flex: 0 0 auto; color: var(--muted); }
+.listenzeile .neben { flex: 0 0 auto; display: grid; justify-items: end; gap: 4px; }
+.listenzeile .neben .betrag { font-family: var(--font-display); font-weight: 700; font-size: 17px; }
+.liste-gruppe li > .listenzeile + * { border-top: 1px solid var(--line); }
+.zeilen-aktionen { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 16px 14px; }
+/* Wochentag einer Serie: dieselbe Schraffur wie im Belegungsplan */
+.listenzeile .symbolkachel:has(.serien-kachel) {
+  width: 48px; height: 52px; border-radius: 14px;
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 16%, transparent) 0 3px, transparent 3px 6px), var(--surf-3);
+}
+.serien-kachel { font-family: var(--font-display); font-weight: 800; font-size: 17px; color: var(--ink); }
+.listenzeile .kontext .zeit { color: var(--ink-2); font-size: 13.5px; }
+/* Rote Textzeile am Ende eines Details (Regel 4) */
+.listenzeile.gefahr .titel { color: color-mix(in srgb, var(--red) 78%, var(--ink)); }
+
+.liste-abschnitt, .mitgliederliste { display: grid; gap: 12px; min-width: 0; }
+:is(.liste-abschnitt, .mitgliederliste) > .gruppenkopf { margin-bottom: 0; }
+.mitgliederliste { gap: 8px; }
+.gruppenkopf { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 6px 2px -12px; }
+.gruppenkopf h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.2px; }
+.gruppenkopf .neben { font-size: 14px; font-weight: 600; color: var(--muted); }
+.gruppenkopf .neben a { color: var(--blue-ink); text-decoration: none; }
+
+/* Formulare als Blatt (Regel 5): Felder gruppiert, Label links, Wert rechts */
+.blatt .formraster {
+  display: block; margin: 0; overflow: hidden;
+  background: var(--surf-2); border-radius: 18px;
+}
+.blatt .formraster > label {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px;
+  min-height: 52px; margin: 0; padding: 0 16px;
+}
+.blatt .formraster > label + label { border-top: 1px solid var(--line); }
+.blatt .formraster > label > span:first-child {
+  flex: 0 0 104px; margin: 0; font-size: 15px; font-weight: 600; color: var(--ink-2);
+}
+.blatt .formraster > label > :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  flex: 1 1 140px; min-width: 0; margin: 0; padding: 14px 0;
+  border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 16px;
+}
+.blatt .formraster > label > .feldfehler, .blatt .formraster > label > .beschreibung { flex-basis: 100%; margin: -6px 0 10px; }
+/* Folgen vor dem Absenden (Regel 5) */
+.folgen {
+  display: flex; gap: 12px; padding: 12px 14px; border-radius: 16px;
+  background: var(--gold-soft); border: 1.5px dashed var(--gold-line); font-size: 14px; line-height: 1.4;
+}
+/* Grosse Tippfelder fuer Uhrzeit und Datum */
+.tippfelder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.tippfeld {
+  display: grid; gap: 2px; margin: 0; padding: 8px 16px; border-radius: 16px; background: var(--surf-2);
+}
+.tippfeld > span { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.tippfeld input {
+  border: 0; padding: 0; background: transparent; box-shadow: none !important;
+  font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--ink);
+}
+.tippfeld.klein input { font-family: var(--font-text); font-size: 16px; }
+.serienformular { display: grid; gap: 16px; }
+.folgen-liste { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; }
+.knopf.gross { min-height: 58px; border-radius: 18px; font-family: var(--font-text); font-size: 17px; font-weight: 800; }
+/* Chips statt Auswahlliste bei bis zu acht Optionen */
+.chipwahl { border: 0; margin: 0; padding: 0; }
+.chipwahl legend { padding: 0; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.chipwahl > div { display: grid; grid-template-columns: repeat(var(--spalten, 7), minmax(0, 1fr)); gap: 6px; }
+.chipwahl button {
+  height: 44px; border: 0; border-radius: 14px; cursor: pointer;
+  background: var(--surf-2); color: var(--ink-2); font: inherit; font-size: 13.5px; font-weight: 700;
+}
+.chipwahl button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
 
 /* Weniger Bewegung, wenn das System danach fragt */
 @media (prefers-reduced-motion: reduce) {

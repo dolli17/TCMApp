@@ -4,9 +4,10 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 /**
- * Ein Formular im Fenster (Verwaltung, docs/design/clubhaus)
+ * Ein Formular als Blatt (docs/design/clubhaus/verwaltung, Regel 5)
  *
- * Natives <dialog> wie im Anlegefenster: Fokusfalle, Escape und Inertheit des
+ * Am Telefon faehrt es von unten herein wie das Buchungsblatt, am Desktop
+ * steht es mittig. Natives <dialog> wie im Anlegefenster: Fokusfalle, Escape und Inertheit des
  * Hintergrunds kommen mit. Das Formular selbst bleibt, wie es ist - es wird
  * nur als Kind hineingereicht.
  *
@@ -74,20 +75,23 @@ export function FensterKnopf({
       {offen && (
         <dialog
           ref={dialog}
-          className={`fenster${breit ? " breit" : ""}`}
+          className={`fenster blatt${breit ? " breit" : ""}`}
           aria-label={titel}
           onClose={geschlossen}
           onClick={(e) => {
             if (e.target === dialog.current) dialog.current?.close();
           }}
         >
+          <span className="griff" aria-hidden="true" />
           <div className="fenster-kopf">
             <div>
               <h2>{titel}</h2>
               {unterzeile && <p>{unterzeile}</p>}
             </div>
             <button type="button" className="fenster-zu" aria-label="Schließen" onClick={() => dialog.current?.close()}>
-              ×
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              </svg>
             </button>
           </div>
           <div className="fenster-inhalt">{children}</div>

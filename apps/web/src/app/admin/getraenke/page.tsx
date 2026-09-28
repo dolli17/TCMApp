@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
-import { GetraenkeVerwaltung, type GetraenkZeile } from "@/components/GetraenkeVerwaltung";
+import { FensterKnopf } from "@/components/FensterKnopf";
+import { GetraenkFormular, GetraenkeVerwaltung, type GetraenkZeile } from "@/components/GetraenkeVerwaltung";
 import { GetraenkemonatKarte, type MonatZeile } from "@/components/GetraenkemonatKarte";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 
@@ -62,7 +63,11 @@ export default async function GetraenkeSeite() {
       <VerwaltungsKopf
         titel="Getränke"
         unterzeile="Die Karte an der Theke und die Regeln, nach denen abgerechnet wird."
-      />
+      >
+        <FensterKnopf titel="Getränk anlegen" knopf="Anlegen">
+          <GetraenkFormular />
+        </FensterKnopf>
+      </VerwaltungsKopf>
 
       {karteRes.error && (
         <div className="hinweis fehler">

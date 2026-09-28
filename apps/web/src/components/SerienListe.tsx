@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { serieAendern, serieBeenden } from "@/app/admin/plaetze/aktionen";
+import { Listenzeile } from "@/components/Listenzeile";
 
 export interface SerienZeile {
   id: string;
@@ -17,10 +18,13 @@ export interface SerienZeile {
 }
 
 const WOCHENTAGE = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+const KURZ = ["SO", "MO", "DI", "MI", "DO", "FR", "SA"];
 const DATUM = new Intl.DateTimeFormat("de-DE");
 
 /**
- * Angelegte Serien mit der Möglichkeit, sie zu beenden.
+ * Angelegte Serien als Listenzeilen (docs/design/clubhaus/verwaltung, VwSerien):
+ * Wochentag-Kachel in der Serien-Schraffur, Titel, Zeit, Art und Platz.
+ * Ein Tippen öffnet das Blatt zum Ändern; dort steht auch „Serie beenden“.
  *
  * Beenden statt Löschen: die vergangenen Termine bleiben stehen. Wer sie
  * mitlöscht, kann hinterher nicht mehr belegen, wer wann auf dem Platz stand –
@@ -28,7 +32,6 @@ const DATUM = new Intl.DateTimeFormat("de-DE");
  */
 export function SerienListe({ serien }: { serien: SerienZeile[] }) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
-  const [nachfrage, setNachfrage] = useState<string | null>(null);
   const [bearbeitet, setBearbeitet] = useState<SerienZeile | null>(null);
   const [laeuft, starte] = useTransition();
 
@@ -44,85 +47,28 @@ export function SerienListe({ serien }: { serien: SerienZeile[] }) {
         </div>
       )}
 
-      <table className="liste">
-        <thead>
-          <tr>
-            <th scope="col">Titel</th>
-            <th scope="col">Wochentag</th>
-            <th scope="col">Zeit</th>
-            <th scope="col">Platz</th>
-            <th scope="col">Zeitraum</th>
-            <th scope="col" className="zahl">Offen</th>
-            <th scope="col"><span className="sr-only">Aktion</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          {serien.map((s) => (
-            <tr key={s.id}>
-              <td className="fett">
-                {/* Dieselbe Schraffur wie Serien im Belegungsplan */}
-                <span className="serien-muster" aria-hidden="true" />
-                {s.title}
-              </td>
-              <td data-label="Wochentag">{WOCHENTAGE[s.weekday]}</td>
-              <td data-label="Zeit" className="tnum">
-                {String(s.start_time).slice(0, 5)}–{String(s.end_time).slice(0, 5)}
-              </td>
-              <td data-label="Platz">{s.court_name}</td>
-              <td data-label="Zeitraum" className="leiser">
-                {DATUM.format(new Date(s.valid_from))} – {DATUM.format(new Date(s.valid_to))}
-              </td>
-              <td data-label="Offen" className="zahl dpl tnum">{s.kuenftige}</td>
-              <td className="aktion">
-                {nachfrage === s.id ? (
-                  <>
-                    <button
-                      type="button"
-                      className="knopf gefahr klein"
-                      disabled={laeuft}
-                      onClick={() =>
-                        starte(async () => {
-                          const e = await serieBeenden(s.id);
-                          setMeldung({ ok: e.ok, text: e.meldung });
-                          setNachfrage(null);
-                        })
-                      }
-                    >
-                      {s.kuenftige} Termine absagen
-                    </button>{" "}
-                    <button
-                      type="button"
-                      className="knopf leise klein"
-                      onClick={() => setNachfrage(null)}
-                    >
-                      Abbrechen
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      className="knopf leise klein"
-                      disabled={laeuft}
-                      onClick={() => setBearbeitet(s)}
-                    >
-                      Bearbeiten
-                    </button>{" "}
-                    <button
-                      type="button"
-                      className="knopf leise klein"
-                      disabled={laeuft}
-                      onClick={() => setNachfrage(s.id)}
-                    >
-                      Beenden
-                    </button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <ul className="liste-gruppe" aria-label="Serien">
+        {serien.map((s) => (
+          <li key={s.id}>
+            <Listenzeile
+              symbol={<span className="serien-kachel">{KURZ[s.weekday]}</span>}
+              titel={s.title}
+              kontext={
+                <>
+                  <span className="zeit tnum">
+                    {WOCHENTAGE[s.weekday]} · {String(s.start_time).slice(0, 5)} – {String(s.end_time).slice(0, 5)}
+                  </span>
+                  <br />
+                  {s.type_name} · {s.court_name} · bis {DATUM.format(new Date(s.valid_to))}
+                </>
+              }
+              hinweis={`${s.kuenftige} offen`}
+              label={`${s.title}, ${WOCHENTAGE[s.weekday]} ${String(s.start_time).slice(0, 5)}`}
+              onClick={laeuft ? undefined : () => setBearbeitet(s)}
+            />
+          </li>
+        ))}
+      </ul>
 
       {bearbeitet && (
         <SerienFenster
@@ -131,6 +77,13 @@ export function SerienListe({ serien }: { serien: SerienZeile[] }) {
           starte={starte}
           melde={(e) => setMeldung({ ok: e.ok, text: e.meldung })}
           onSchliessen={() => setBearbeitet(null)}
+          onBeenden={() =>
+            starte(async () => {
+              const e = await serieBeenden(bearbeitet.id);
+              setMeldung({ ok: e.ok, text: e.meldung });
+              if (e.ok) setBearbeitet(null);
+            })
+          }
         />
       )}
     </>
@@ -145,14 +98,16 @@ export function SerienListe({ serien }: { serien: SerienZeile[] }) {
  * Historie der alten mitzuschleppen — deshalb stehen sie hier nur als Text.
  */
 function SerienFenster({
-  serie, laeuft, starte, melde, onSchliessen,
+  serie, laeuft, starte, melde, onSchliessen, onBeenden,
 }: {
   serie: SerienZeile;
   laeuft: boolean;
   starte: (f: () => void | Promise<void>) => void;
   melde: (e: { ok: boolean; meldung: string }) => void;
   onSchliessen: () => void;
+  onBeenden: () => void;
 }) {
+  const [beendenFrage, setBeendenFrage] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const [von, setVon] = useState(String(serie.start_time).slice(0, 5));
   const [bis, setBis] = useState(String(serie.end_time).slice(0, 5));
@@ -184,7 +139,7 @@ function SerienFenster({
   return (
     <dialog
       ref={dialog}
-      className="fenster"
+      className="fenster blatt"
       onClose={onSchliessen}
       onCancel={onSchliessen}
       onClick={(e) => {
@@ -192,6 +147,7 @@ function SerienFenster({
       }}
       aria-label="Serie bearbeiten"
     >
+      <span className="griff" aria-hidden="true" />
       <div className="fenster-kopf">
         <div>
           <h2>{serie.title}</h2>
@@ -250,6 +206,22 @@ function SerienFenster({
           <button type="button" className="knopf leise" onClick={onSchliessen}>
             Abbrechen
           </button>
+        </div>
+
+        {/* Zerstörendes am Ende, als rote Zeile mit Rückfrage (Regel 4) */}
+        <div className="liste-gruppe">
+          {!beendenFrage ? (
+            <Listenzeile titel="Serie beenden" gefahr pfeil={false} onClick={() => setBeendenFrage(true)} />
+          ) : (
+            <div className="zeilen-aktionen">
+              <button type="button" className="knopf gefahr klein" disabled={laeuft} onClick={onBeenden}>
+                {serie.kuenftige} Termine absagen
+              </button>
+              <button type="button" className="knopf leise klein" onClick={() => setBeendenFrage(false)}>
+                Doch nicht
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </dialog>

@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { formatCents } from "@tcm/core";
 import { forderungAbhaken, forderungErlassen } from "@/app/admin/kasse/aktionen";
+import { FensterKnopf } from "@/components/FensterKnopf";
+import { Listenzeile } from "@/components/Listenzeile";
 
 export interface ForderungZeile {
   id: string;
@@ -41,6 +43,11 @@ const STAND: Record<ForderungZeile["status"], string> = {
 
 const DATUM = new Intl.DateTimeFormat("de-DE");
 
+const STAND_TON: Record<string, string> = { open: "gelb", notified: "gelb", settled: "gruen", returned: "rot" };
+
+/** Nur offene, angekuendigte und zurueckgebuchte lassen sich noch abhaken oder erlassen. */
+const offen = (f: ForderungZeile) => f.status === "open" || f.status === "notified" || f.status === "returned";
+
 /**
  * Alle Forderungen mit den beiden Handgriffen, die es dazu gibt.
  *
@@ -48,10 +55,14 @@ const DATUM = new Intl.DateTimeFormat("de-DE");
  * eine ewig offene Forderung, und niemand könnte sehen, wer tatsächlich noch
  * schuldet. „Erlassen" löscht nicht, sondern markiert — die Forderung ist
  * entstanden und soll nachvollziehbar bleiben.
+ *
+ * Als Listenzeilen (docs/design/clubhaus/verwaltung, Regel 3); beide
+ * Handgriffe stehen im Blatt der Forderung.
  */
 export function ForderungsListe({ forderungen }: { forderungen: ForderungZeile[] }) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
-  const [erlassen, setErlassen] = useState<string | null>(null);
+  const [gewaehlt, setGewaehlt] = useState<ForderungZeile | null>(null);
+  const [erlassen, setErlassen] = useState(false);
   const [grund, setGrund] = useState("");
   const [laeuft, starte] = useTransition();
 
@@ -64,117 +75,102 @@ export function ForderungsListe({ forderungen }: { forderungen: ForderungZeile[]
       )}
 
       {forderungen.length === 0 ? (
-        <p className="leer">Keine Forderungen in dieser Ansicht.</p>
+        <p className="leer-klein">Keine Forderungen in dieser Ansicht.</p>
       ) : (
-        <div className="tabellenhuelle"><table className="liste">
-          <thead>
-            <tr>
-              <th>Mitglied</th>
-              <th>Zahler</th>
-              <th>Art</th>
-              <th>Zeitraum</th>
-              <th className="zahl">Betrag</th>
-              <th>Fällig</th>
-              <th>Stand</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {forderungen.map((f) => (
-              <tr key={f.id}>
-                <td>
-                  {f.member_name}
-                  <div className="mit">{f.description}</div>
-                </td>
-                <td>
-                  {f.payer_id === f.member_id ? "selbst" : f.payer_name}
-                  {!f.hat_mandat && (
-                    <div className="mit" style={{ color: "var(--red)" }}>
-                      kein Mandat
-                    </div>
-                  )}
-                </td>
-                <td>{ART[f.kind]}</td>
-                <td className="mit">{f.period_label ?? "—"}</td>
-                <td className="zahl tnum">{formatCents(f.amount_cents)}</td>
-                <td className="mit">
-                  {f.due_date ? DATUM.format(new Date(f.due_date)) : "—"}
-                </td>
-                <td><span className="marke-klein">{STAND[f.status]}</span></td>
-                <td>
-                  {(f.status === "open" || f.status === "notified" || f.status === "returned") && (
-                    <>
-                      <button
-                        type="button"
-                        className="knopf leise klein"
-                        disabled={laeuft}
-                        onClick={() =>
-                          starte(async () => {
-                            const e = await forderungAbhaken(f.id, "per Ueberweisung");
-                            setMeldung({ ok: e.ok, text: e.meldung });
-                          })
-                        }
-                      >
-                        Bezahlt
-                      </button>{" "}
-                      <button
-                        type="button"
-                        className="knopf leise klein"
-                        disabled={laeuft}
-                        onClick={() => {
-                          setErlassen(f.id);
-                          setGrund("");
-                        }}
-                      >
-                        Erlassen
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table></div>
+        <ul className="liste-gruppe" aria-label="Forderungen">
+          {forderungen.map((f) => (
+            <li key={f.id}>
+              <Listenzeile
+                titel={f.member_name}
+                kontext={[
+                  f.description,
+                  f.payer_id === f.member_id ? null : `Zahler ${f.payer_name}`,
+                  f.due_date ? `fällig ${DATUM.format(new Date(f.due_date))}` : null,
+                ].filter(Boolean).join(" · ")}
+                neben={
+                  <span className="neben">
+                    <span className="betrag tnum">{formatCents(f.amount_cents)}</span>
+                    {!f.hat_mandat && offen(f) ? (
+                      <span className="statusmarke rot">kein Mandat</span>
+                    ) : (
+                      <span className={`statusmarke ${STAND_TON[f.status] ?? ""}`}>{STAND[f.status]}</span>
+                    )}
+                  </span>
+                }
+                onClick={offen(f) ? () => { setGewaehlt(f); setErlassen(false); setGrund(""); } : undefined}
+              />
+            </li>
+          ))}
+        </ul>
       )}
 
-      {erlassen && (
-        <section className="karte" style={{ marginTop: 14 }}>
-          <h3 className="dpl">Forderung erlassen</h3>
-          <p className="unterzeile">
-            Die Forderung bleibt als Beleg stehen und wird nicht mehr eingezogen. Der Grund ist
-            später die einzige Erklärung, die noch da ist.
-          </p>
-          <div className="formraster">
-            <label className="breit">
-              <span>Grund</span>
-              <input
-                type="text"
-                value={grund}
-                placeholder="z. B. Austritt zum Jahresanfang"
-                onChange={(e) => setGrund(e.target.value)}
+      {/* Die Handgriffe stehen im Blatt, nicht in der Zeile (Regel 4) */}
+      {gewaehlt && (
+        <FensterKnopf titel={gewaehlt.member_name} unterzeile={gewaehlt.description} offen onSchliessen={() => setGewaehlt(null)}>
+          <dl className="angaben gruppe">
+            <div><dt>Betrag</dt><dd className="tnum">{formatCents(gewaehlt.amount_cents)}</dd></div>
+            <div><dt>Art</dt><dd>{ART[gewaehlt.kind]}</dd></div>
+            <div><dt>Zeitraum</dt><dd>{gewaehlt.period_label ?? "—"}</dd></div>
+            <div><dt>Zahler</dt><dd>{gewaehlt.payer_id === gewaehlt.member_id ? "selbst" : gewaehlt.payer_name}</dd></div>
+            <div><dt>Mandat</dt><dd>{gewaehlt.hat_mandat ? "liegt vor" : "fehlt"}</dd></div>
+            <div><dt>Stand</dt><dd>{STAND[gewaehlt.status]}</dd></div>
+          </dl>
+
+          {!erlassen ? (
+            <div className="liste-gruppe">
+              <Listenzeile
+                titel="Als bezahlt vermerken"
+                kontext="Für Überweiser: die Forderung ist beglichen."
+                pfeil={false}
+                onClick={laeuft ? undefined : () =>
+                  starte(async () => {
+                    const e = await forderungAbhaken(gewaehlt.id, "per Ueberweisung");
+                    setMeldung({ ok: e.ok, text: e.meldung });
+                    if (e.ok) setGewaehlt(null);
+                  })
+                }
               />
-            </label>
-          </div>
-          <div className="fenster-fuss">
-            <button
-              type="button"
-              className="knopf gefahr"
-              disabled={laeuft || grund.trim() === ""}
-              onClick={() =>
-                starte(async () => {
-                  const e = await forderungErlassen(erlassen, grund);
-                  setMeldung({ ok: e.ok, text: e.meldung });
-                  if (e.ok) setErlassen(null);
-                })
-              }
-            >
-              Wirklich erlassen
-            </button>
-            <button type="button" className="knopf leise" onClick={() => setErlassen(null)}>
-              Abbrechen
-            </button>
-          </div>
-        </section>
+              <Listenzeile titel="Erlassen" gefahr pfeil={false} onClick={() => setErlassen(true)} />
+            </div>
+          ) : (
+            <>
+              <p className="unterzeile">
+                Die Forderung bleibt als Beleg stehen und wird nicht mehr eingezogen. Der Grund ist
+                später die einzige Erklärung, die noch da ist.
+              </p>
+              <div className="formraster">
+                <label>
+                  <span>Grund</span>
+                  <input
+                    type="text"
+                    value={grund}
+                    placeholder="z. B. Austritt zum Jahresanfang"
+                    onChange={(e) => setGrund(e.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="fenster-fuss">
+                <button
+                  type="button"
+                  className="knopf gefahr"
+                  disabled={laeuft || grund.trim() === ""}
+                  onClick={() =>
+                    starte(async () => {
+                      const e = await forderungErlassen(gewaehlt.id, grund);
+                      setMeldung({ ok: e.ok, text: e.meldung });
+                      if (e.ok) setGewaehlt(null);
+                    })
+                  }
+                >
+                  Wirklich erlassen
+                </button>
+                <button type="button" className="knopf leise" onClick={() => setErlassen(false)}>
+                  Abbrechen
+                </button>
+              </div>
+            </>
+          )}
+        </FensterKnopf>
       )}
     </>
   );

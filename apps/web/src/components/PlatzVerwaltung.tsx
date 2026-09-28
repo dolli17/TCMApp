@@ -5,6 +5,8 @@ import { berlinTime, timeToMinutes } from "@tcm/core";
 import {
   buchungsartSpeichern, platzSpeichern, platzUmschalten, plaetzeSortieren, sperren,
 } from "@/app/admin/plaetze/aktionen";
+import { FensterKnopf } from "@/components/FensterKnopf";
+import { Listenzeile } from "@/components/Listenzeile";
 
 export interface PlatzZeile {
   id: string;
@@ -265,21 +267,32 @@ function Platzliste({
   melde: Melder;
 }) {
   const [form, setForm] = useState(LEERER_PLATZ);
+  const [offen, setOffen] = useState(false);
+  const index = plaetze.findIndex((p) => p.id === form.id);
+  const bearbeitet = index >= 0 ? plaetze[index]! : null;
 
   function speichern() {
     starte(async () => {
       const e = await platzSpeichern(form);
       melde(e);
-      if (e.ok) setForm(LEERER_PLATZ);
+      if (e.ok) {
+        setForm(LEERER_PLATZ);
+        setOffen(false);
+      }
     });
   }
 
-  function verschieben(index: number, richtung: -1 | 1) {
+  function verschieben(i: number, richtung: -1 | 1) {
     const neu = [...plaetze];
-    const ziel = index + richtung;
+    const ziel = i + richtung;
     if (ziel < 0 || ziel >= neu.length) return;
-    [neu[index], neu[ziel]] = [neu[ziel]!, neu[index]!];
+    [neu[i], neu[ziel]] = [neu[ziel]!, neu[i]!];
     starte(async () => melde(await plaetzeSortieren(neu.map((p) => p.id))));
+  }
+
+  function oeffnen(p: PlatzZeile | null) {
+    setForm(p ? { id: p.id, name: p.name, kurzname: p.short_name, zusatz: p.subline ?? "" } : LEERER_PLATZ);
+    setOffen(true);
   }
 
   return (
@@ -290,121 +303,97 @@ function Platzliste({
         Platz verschwindet aus dem Plan; seine bisherigen Buchungen bleiben erhalten.
       </p>
 
-      <ul className="platzkarten">
-        {plaetze.map((p, i) => {
+      <ul className="liste-gruppe" aria-label="Plätze">
+        {plaetze.map((p) => {
           const heute = zustand[p.id];
           return (
-            <li key={p.id} className={`platzkarte${p.active ? "" : " still"}`}>
-              <div className="kopf">
-                <span className="kuerzel dpl" aria-hidden="true">{p.short_name}</span>
-                <div>
-                  <b>{p.name}</b>
-                  <small>{p.subline ?? "ohne Zusatz"}</small>
-                </div>
-              </div>
-              <div className="marken-zeile">
-                {!p.active ? (
-                  <span className="statusmarke">stillgelegt</span>
-                ) : heute ? (
-                  <span className={`statusmarke ${heute.art === "gesperrt" ? "rot" : "gelb"}`}>{heute.text}</span>
-                ) : (
-                  <span className="statusmarke gruen">im Plan</span>
-                )}
-                {p.offene_buchungen > 0 && (
-                  <span className="statusmarke">{p.offene_buchungen} offene Buchungen</span>
-                )}
-              </div>
-              <div className="aktionen">
-                <button
-                  type="button"
-                  className="knopf leise klein"
-                  disabled={laeuft || i === 0}
-                  aria-label={`${p.name} nach vorne`}
-                  onClick={() => verschieben(i, -1)}
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  className="knopf leise klein"
-                  disabled={laeuft || i === plaetze.length - 1}
-                  aria-label={`${p.name} nach hinten`}
-                  onClick={() => verschieben(i, 1)}
-                >
-                  ↓
-                </button>
-                <button
-                  type="button"
-                  className="knopf leise klein"
-                  disabled={laeuft}
-                  onClick={() =>
-                    setForm({
-                      id: p.id,
-                      name: p.name,
-                      kurzname: p.short_name,
-                      zusatz: p.subline ?? "",
-                    })
-                  }
-                >
-                  Bearbeiten
-                </button>
-                <button
-                  type="button"
-                  className="knopf leise klein"
-                  disabled={laeuft}
-                  onClick={() => starte(async () => melde(await platzUmschalten(p.id, !p.active)))}
-                >
-                  {p.active ? "Stilllegen" : "Aktivieren"}
-                </button>
-              </div>
+            <li key={p.id}>
+              <Listenzeile
+                symbol={p.short_name}
+                titel={p.name}
+                kontext={[p.subline, p.offene_buchungen > 0 ? `${p.offene_buchungen} offene Buchungen` : null]
+                  .filter(Boolean).join(" · ") || undefined}
+                hinweis={!p.active ? "stillgelegt" : heute ? heute.text : "im Plan"}
+                hinweisTon={!p.active ? "leise" : heute ? (heute.art === "gesperrt" ? "rot" : "gold") : "gruen"}
+                onClick={() => oeffnen(p)}
+              />
             </li>
           );
         })}
+        <li>
+          <Listenzeile titel="Neuen Platz anlegen" onClick={() => oeffnen(null)} />
+        </li>
       </ul>
 
-      <h3 className="dpl">{form.id ? "Platz bearbeiten" : "Neuen Platz anlegen"}</h3>
-      <div className="formraster">
-        <label>
-          <span>Name</span>
-          <input
-            type="text"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-          />
-        </label>
-        <label>
-          <span>Kurzname</span>
-          <input
-            type="text"
-            value={form.kurzname}
-            onChange={(e) => setForm({ ...form, kurzname: e.target.value })}
-          />
-        </label>
-        <label>
-          <span>Zusatz</span>
-          <input
-            type="text"
-            value={form.zusatz}
-            placeholder="z. B. Sandplatz"
-            onChange={(e) => setForm({ ...form, zusatz: e.target.value })}
-          />
-        </label>
-      </div>
-      <div className="fenster-fuss">
-        <button
-          type="button"
-          className="knopf"
-          disabled={laeuft || form.name.trim() === "" || form.kurzname.trim() === ""}
-          onClick={speichern}
+      {offen && (
+        <FensterKnopf
+          titel={bearbeitet ? bearbeitet.name : "Neuen Platz anlegen"}
+          offen
+          onSchliessen={() => setOffen(false)}
         >
-          {form.id ? "Änderungen speichern" : "Platz anlegen"}
-        </button>
-        {form.id && (
-          <button type="button" className="knopf leise" onClick={() => setForm(LEERER_PLATZ)}>
-            Abbrechen
+          <div className="formraster">
+            <label>
+              <span>Name</span>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </label>
+            <label>
+              <span>Kurzname</span>
+              <input
+                type="text"
+                value={form.kurzname}
+                onChange={(e) => setForm({ ...form, kurzname: e.target.value })}
+              />
+            </label>
+            <label>
+              <span>Zusatz</span>
+              <input
+                type="text"
+                value={form.zusatz}
+                placeholder="z. B. Sandplatz"
+                onChange={(e) => setForm({ ...form, zusatz: e.target.value })}
+              />
+            </label>
+          </div>
+          <button
+            type="button"
+            className="knopf gold block gross"
+            disabled={laeuft || form.name.trim() === "" || form.kurzname.trim() === ""}
+            onClick={speichern}
+          >
+            {form.id ? "Änderungen speichern" : "Platz anlegen"}
           </button>
-        )}
-      </div>
+
+          {bearbeitet && (
+            <div className="liste-gruppe">
+              <Listenzeile
+                titel="Im Plan weiter nach vorne"
+                pfeil={false}
+                onClick={laeuft || index <= 0 ? undefined : () => verschieben(index, -1)}
+              />
+              <Listenzeile
+                titel="Im Plan weiter nach hinten"
+                pfeil={false}
+                onClick={laeuft || index >= plaetze.length - 1 ? undefined : () => verschieben(index, 1)}
+              />
+              <Listenzeile
+                titel={bearbeitet.active ? "Stilllegen" : "Aktivieren"}
+                gefahr={bearbeitet.active}
+                pfeil={false}
+                onClick={laeuft ? undefined : () =>
+                  starte(async () => {
+                    melde(await platzUmschalten(bearbeitet.id, !bearbeitet.active));
+                    setOffen(false);
+                  })
+                }
+              />
+            </div>
+          )}
+        </FensterKnopf>
+      )}
     </section>
   );
 }
@@ -425,166 +414,155 @@ function Artenliste({
   arten, laeuft, starte, melde,
 }: { arten: ArtZeile[]; laeuft: boolean; starte: Starter; melde: Melder }) {
   const [form, setForm] = useState(LEERE_ART);
+  const [offen, setOffen] = useState(false);
+  const vorhanden = arten.some((a) => a.code === form.code);
+
+  function oeffnen(a: ArtZeile | null) {
+    setForm(
+      a
+        ? {
+            code: a.code,
+            name: a.name,
+            art: a.applies_to,
+            dauer: a.duration_minutes,
+            minSpieler: a.min_players,
+            maxSpieler: a.max_players,
+            brauchtPartner: a.requires_partner,
+            zaehltAufKontingent: a.counts_towards_quota,
+            aktiv: a.active,
+          }
+        : LEERE_ART,
+    );
+    setOffen(true);
+  }
 
   return (
-    <section className="karte">
-      <h2 className="dpl">Buchungsarten</h2>
+    <section className="karte" aria-labelledby="h-arten">
+      <h2 className="dpl" id="h-arten">Buchungsarten</h2>
       <p className="unterzeile">
         Der Code bleibt nach dem Anlegen fest – er steht in bestehenden Buchungen. Wer ihn ändern
         will, legt eine neue Art an und stellt die alte still.
       </p>
 
-      <div className="tabellenhuelle"><table className="liste">
-        <thead>
-          <tr>
-            <th>Code</th>
-            <th>Name</th>
-            <th>Wofür</th>
-            <th className="zahl">Dauer</th>
-            <th className="zahl">Spieler</th>
-            <th>Kontingent</th>
-            <th>Status</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {arten.map((a) => (
-            <tr key={a.code}>
-              <td>{a.code}</td>
-              <td>{a.name}</td>
-              <td>{a.applies_to === "booking" ? "Buchung" : "Blockung"}</td>
-              <td className="zahl tnum">{a.duration_minutes} min</td>
-              <td className="zahl tnum">{a.min_players}–{a.max_players}</td>
-              <td>{a.counts_towards_quota ? "zählt" : "zählt nicht"}</td>
-              <td><span className="marke-klein">{a.active ? "aktiv" : "still"}</span></td>
-              <td>
-                <button
-                  type="button"
-                  className="knopf leise klein"
-                  disabled={laeuft}
-                  onClick={() =>
-                    setForm({
-                      code: a.code,
-                      name: a.name,
-                      art: a.applies_to,
-                      dauer: a.duration_minutes,
-                      minSpieler: a.min_players,
-                      maxSpieler: a.max_players,
-                      brauchtPartner: a.requires_partner,
-                      zaehltAufKontingent: a.counts_towards_quota,
-                      aktiv: a.active,
-                    })
-                  }
-                >
-                  Bearbeiten
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table></div>
+      <ul className="liste-gruppe" aria-label="Buchungsarten">
+        {arten.map((a) => (
+          <li key={a.code}>
+            <Listenzeile
+              titel={a.name}
+              kontext={`${a.code} · ${a.applies_to === "booking" ? "Buchung" : "Blockung"} · ${a.duration_minutes} min · ${a.min_players}–${a.max_players} Spieler · ${a.counts_towards_quota ? "zählt aufs Kontingent" : "zählt nicht"}`}
+              hinweis={a.active ? undefined : "still"}
+              onClick={() => oeffnen(a)}
+            />
+          </li>
+        ))}
+        <li>
+          <Listenzeile titel="Neue Buchungsart" onClick={() => oeffnen(null)} />
+        </li>
+      </ul>
 
-      <h3 className="dpl">{form.code ? `„${form.code}" bearbeiten` : "Neue Buchungsart"}</h3>
-      <div className="formraster">
-        <label>
-          <span>Code</span>
-          <input
-            type="text"
-            value={form.code}
-            disabled={arten.some((a) => a.code === form.code)}
-            onChange={(e) => setForm({ ...form, code: e.target.value })}
-          />
-        </label>
-        <label>
-          <span>Name</span>
-          <input
-            type="text"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-          />
-        </label>
-        <label>
-          <span>Wofür</span>
-          <select
-            value={form.art}
-            onChange={(e) => setForm({ ...form, art: e.target.value as "booking" | "blocking" })}
-          >
-            <option value="booking">Buchung durch Mitglieder</option>
-            <option value="blocking">Blockung durch den Vorstand</option>
-          </select>
-        </label>
-        <label>
-          <span>Dauer in Minuten</span>
-          <input
-            type="number"
-            min={15}
-            max={1440}
-            value={form.dauer}
-            onChange={(e) => setForm({ ...form, dauer: Number(e.target.value) })}
-          />
-        </label>
-        <label>
-          <span>Spieler mindestens</span>
-          <input
-            type="number"
-            min={0}
-            value={form.minSpieler}
-            onChange={(e) => setForm({ ...form, minSpieler: Number(e.target.value) })}
-          />
-        </label>
-        <label>
-          <span>Spieler höchstens</span>
-          <input
-            type="number"
-            min={0}
-            value={form.maxSpieler}
-            onChange={(e) => setForm({ ...form, maxSpieler: Number(e.target.value) })}
-          />
-        </label>
-        <label className="breit schalter">
-          <input
-            type="checkbox"
-            checked={form.zaehltAufKontingent}
-            onChange={(e) => setForm({ ...form, zaehltAufKontingent: e.target.checked })}
-          />
-          <span>Zählt auf das Buchungskontingent</span>
-        </label>
-        <label className="breit schalter">
-          <input
-            type="checkbox"
-            checked={form.brauchtPartner}
-            onChange={(e) => setForm({ ...form, brauchtPartner: e.target.checked })}
-          />
-          <span>Mindestens ein Mitspieler ist Pflicht</span>
-        </label>
-        <label className="breit schalter">
-          <input
-            type="checkbox"
-            checked={form.aktiv}
-            onChange={(e) => setForm({ ...form, aktiv: e.target.checked })}
-          />
-          <span>Aktiv – wird zur Auswahl angeboten</span>
-        </label>
-      </div>
-      <div className="fenster-fuss">
-        <button
-          type="button"
-          className="knopf"
-          disabled={laeuft || form.code.trim() === "" || form.name.trim() === ""}
-          onClick={() =>
-            starte(async () => {
-              const e = await buchungsartSpeichern(form);
-              melde(e);
-              if (e.ok) setForm(LEERE_ART);
-            })
-          }
+      {offen && (
+        <FensterKnopf
+          titel={vorhanden ? `„${form.code}" bearbeiten` : "Neue Buchungsart"}
+          offen
+          onSchliessen={() => setOffen(false)}
         >
-          Speichern
-        </button>
-        <button type="button" className="knopf leise" onClick={() => setForm(LEERE_ART)}>
-          Zurücksetzen
-        </button>
-      </div>
+          <div className="formraster">
+            <label>
+              <span>Code</span>
+              <input
+                type="text"
+                value={form.code}
+                disabled={vorhanden}
+                onChange={(e) => setForm({ ...form, code: e.target.value })}
+              />
+            </label>
+            <label>
+              <span>Name</span>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </label>
+            <label>
+              <span>Wofür</span>
+              <select
+                value={form.art}
+                onChange={(e) => setForm({ ...form, art: e.target.value as "booking" | "blocking" })}
+              >
+                <option value="booking">Buchung durch Mitglieder</option>
+                <option value="blocking">Blockung durch den Vorstand</option>
+              </select>
+            </label>
+            <label>
+              <span>Dauer in Minuten</span>
+              <input
+                type="number"
+                min={15}
+                max={1440}
+                value={form.dauer}
+                onChange={(e) => setForm({ ...form, dauer: Number(e.target.value) })}
+              />
+            </label>
+            <label>
+              <span>Spieler mindestens</span>
+              <input
+                type="number"
+                min={0}
+                value={form.minSpieler}
+                onChange={(e) => setForm({ ...form, minSpieler: Number(e.target.value) })}
+              />
+            </label>
+            <label>
+              <span>Spieler höchstens</span>
+              <input
+                type="number"
+                min={0}
+                value={form.maxSpieler}
+                onChange={(e) => setForm({ ...form, maxSpieler: Number(e.target.value) })}
+              />
+            </label>
+            <label className="breit schalter">
+              <input
+                type="checkbox"
+                checked={form.zaehltAufKontingent}
+                onChange={(e) => setForm({ ...form, zaehltAufKontingent: e.target.checked })}
+              />
+              <span>Zählt auf das Buchungskontingent</span>
+            </label>
+            <label className="breit schalter">
+              <input
+                type="checkbox"
+                checked={form.brauchtPartner}
+                onChange={(e) => setForm({ ...form, brauchtPartner: e.target.checked })}
+              />
+              <span>Mindestens ein Mitspieler ist Pflicht</span>
+            </label>
+            <label className="breit schalter">
+              <input
+                type="checkbox"
+                checked={form.aktiv}
+                onChange={(e) => setForm({ ...form, aktiv: e.target.checked })}
+              />
+              <span>Aktiv – wird zur Auswahl angeboten</span>
+            </label>
+          </div>
+          <button
+            type="button"
+            className="knopf gold block gross"
+            disabled={laeuft || form.code.trim() === "" || form.name.trim() === ""}
+            onClick={() =>
+              starte(async () => {
+                const e = await buchungsartSpeichern(form);
+                melde(e);
+                if (e.ok) setOffen(false);
+              })
+            }
+          >
+            Speichern
+          </button>
+        </FensterKnopf>
+      )}
     </section>
   );
 }

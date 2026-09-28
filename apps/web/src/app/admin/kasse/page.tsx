@@ -4,6 +4,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
 import { KassenKennzahlen } from "@/components/KassenKennzahlen";
 import { LaufListe, type LaufZeile } from "@/components/LaufListe";
+import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 import { BereichSegmente } from "@/components/BereichSegmente";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { AnkuendigungsKarte } from "@/components/AnkuendigungsKarte";
@@ -302,46 +303,32 @@ function Beitragslauf({
         faelligVorschlag={faellig}
       />
 
-      <section className="karte tabellenkarte" aria-labelledby="h-positionen">
-        <div className="kartenkopf">
-          <h2 id="h-positionen">Positionen</h2>
-        </div>
-        <table className="liste">
-          <thead>
-            <tr>
-              <th scope="col">Mitglied</th>
-              <th scope="col">Zahler</th>
-              <th scope="col">Beitragsarten</th>
-              <th scope="col" className="zahl">Betrag</th>
-              <th scope="col">Mandat</th>
-              <th scope="col">Stand</th>
-            </tr>
-          </thead>
-          <tbody>
-            {zeilen.map((z) => (
-              <tr key={z.member_id}>
-                <td className="fett">{z.member_name}</td>
-                <td data-label="Zahler" className="leiser">{z.payer_name || "selbst"}</td>
-                <td data-label="Beitragsarten">{z.fee_types}</td>
-                <td data-label="Betrag" className="zahl betrag dpl tnum">{formatCents(z.amount_cents ?? 0)}</td>
-                <td data-label="Mandat">
-                  {z.has_mandate ? (
-                    <span className="statusmarke gruen">
-                      {z.mandate_scope === "all_payments" ? "alle Zahlungen" : "nur Beiträge"}
-                    </span>
-                  ) : (
-                    <span className="statusmarke rot">fehlt</span>
-                  )}
-                </td>
-                <td data-label="Stand">
-                  <span className={`statusmarke${z.already_charged ? " gruen" : ""}`}>
-                    {z.already_charged ? "berechnet" : "offen"}
+      <section className="liste-abschnitt" aria-labelledby="h-positionen">
+        <Gruppenkopf titel="Positionen" id="h-positionen" neben={`${zeilen.length} · ${formatCents(summe)}`} />
+        <ul className="liste-gruppe" aria-label="Positionen">
+          {zeilen.map((z) => (
+            <li key={z.member_id}>
+              <Listenzeile
+                titel={z.member_name}
+                kontext={`${z.fee_types} · ${z.payer_name ? `Zahler ${z.payer_name}` : "zahlt selbst"} · ${
+                  z.has_mandate ? (z.mandate_scope === "all_payments" ? "Mandat alle Zahlungen" : "Mandat nur Beiträge") : "kein Mandat"
+                }`}
+                neben={
+                  <span className="neben">
+                    <span className="betrag tnum">{formatCents(z.amount_cents ?? 0)}</span>
+                    {!z.has_mandate ? (
+                      <span className="statusmarke rot">kein Mandat</span>
+                    ) : (
+                      <span className={`statusmarke${z.already_charged ? " gruen" : ""}`}>
+                        {z.already_charged ? "berechnet" : "offen"}
+                      </span>
+                    )}
                   </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                }
+              />
+            </li>
+          ))}
+        </ul>
       </section>
 
       <p className="mit">
@@ -360,11 +347,8 @@ function Beitragslauf({
  */
 function Lastschriftband({ laeufe }: { laeufe: LaufZeile[] }) {
   return (
-    <section className="karte tabellenkarte" aria-labelledby="h-lastschrift">
-      <div className="kartenkopf">
-        <h2 id="h-lastschrift">Lastschriftläufe</h2>
-        <Link href="/admin/kasse/lastschriften">Alle Läufe</Link>
-      </div>
+    <section className="liste-abschnitt" aria-labelledby="h-lastschrift">
+      <Gruppenkopf titel="Lastschriftläufe" id="h-lastschrift" />
       <p className="unterzeile">Aus angekündigten Forderungen wird eine Datei fürs Onlinebanking.</p>
       <LaufListe laeufe={laeufe} />
     </section>
