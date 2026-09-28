@@ -9,6 +9,7 @@ import {
   BarlowSemiCondensed_800ExtraBold,
 } from "@expo-google-fonts/barlow-semi-condensed";
 import { ActivityIndicator, View } from "react-native";
+import { farben } from "@tcm/ui";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ThemeAnbieter, useTheme } from "@/lib/theme";
@@ -61,8 +62,9 @@ export default function Layout() {
 
   if (!bereit) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", backgroundColor: "#EBEFF3" }}>
-        <ActivityIndicator color="#1A82C6" />
+      // Derselbe Grund wie der Splash (app.json), damit nichts aufblitzt
+      <View style={{ flex: 1, justifyContent: "center", backgroundColor: farben.hell.brand }}>
+        <ActivityIndicator color={farben.hell.gold} />
       </View>
     );
   }

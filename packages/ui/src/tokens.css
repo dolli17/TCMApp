@@ -61,9 +61,7 @@
   --space-m: 12px;
   --space-l: 14px;
   --space-rand: 20px;
-  --space-xl: 22px;
   --space-abschnitt: 28px;
-  --space-xxl: 32px;
 
   --radius-klein: 10px;
   --radius-feld: 16px;
@@ -219,4 +217,41 @@
   --shadow-sm: none;
   --shadow-float: 0 16px 40px rgba(0,0,0,.5);
   color-scheme: dark;
+}
+
+/* Immer hell, auch in dunkler Umgebung - die Eintragen-Spalte des Kiosks. */
+.immer-hell {
+  --blue: #1A6FB0;
+  --blue-ink: #0F4C81;
+  --blue-soft: #E2EFFA;
+  --gold: #FFD21F;
+  --gold-soft: #FFF6D1;
+  --gold-ink: #7A5C00;
+  --gold-line: #E0B400;
+  --on-gold: #0A1624;
+  --green: #1E9E6A;
+  --green-ink: #167A52;
+  --red: #D7544B;
+  --brand: #1466A8;
+  --bg: #F3F5F8;
+  --surf: #FFFFFF;
+  --surf-2: #EEF2F6;
+  --surf-3: #E2E8EF;
+  --ink: #0A1624;
+  --ink-2: #44566B;
+  --muted: #596A7D;
+  --line: #E3E8EE;
+  --line-2: #CBD5E0;
+  --chip: #EEF2F6;
+  --glass: rgba(255,255,255,.82);
+  --glass-line: rgba(10,22,36,.08);
+  --tab-aktiv: #FFD21F;
+  --tab-aktiv-ink: #0A1624;
+  --nav-aktiv: #0A1624;
+  --nav-aktiv-ink: #FFFFFF;
+  --seg-aktiv: #FFFFFF;
+  --shadow: 0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06);
+  --shadow-sm: 0 1px 2px rgba(10,22,36,.05);
+  --shadow-float: 0 16px 40px rgba(10,22,36,.16);
+  color-scheme: light;
 }

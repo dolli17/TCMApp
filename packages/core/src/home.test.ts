@@ -5,6 +5,8 @@ import {
   bookingKicker,
   dayLabel,
   dayTag,
+  groupNotifications,
+  notificationSymbol,
   relativeTimeLabel,
   sumOpenDrinks,
   timelinePosition,
@@ -156,5 +158,45 @@ describe("timelinePosition", () => {
     expect(timelinePosition(timeToMinutes("06:00"), 480, 1260)).toBe(0);
     expect(timelinePosition(timeToMinutes("14:30"), 480, 1260)).toBe(50);
     expect(timelinePosition(timeToMinutes("22:00"), 480, 1260)).toBe(100);
+  });
+});
+
+describe("notificationSymbol", () => {
+  it("ordnet die Arten einem Symbol zu", () => {
+    expect(notificationSymbol("booking_added")).toBe("platz");
+    expect(notificationSymbol("player_left")).toBe("platz");
+    expect(notificationSymbol("booking_displaced")).toBe("storno");
+    expect(notificationSymbol("booking_cancelled")).toBe("storno");
+    expect(notificationSymbol("charge_announced")).toBe("geld");
+    expect(notificationSymbol("application_new")).toBe("person");
+    expect(notificationSymbol("etwas_neues")).toBe("glocke");
+  });
+});
+
+describe("groupNotifications", () => {
+  // Montag, 28.09.2026, 10:00 in Berlin
+  const jetzt = new Date("2026-09-28T08:00:00Z");
+  const n = (iso: string) => ({ created_at: iso });
+
+  it("gruppiert nach Kalendertagen in Berlin", () => {
+    const g = groupNotifications(
+      [
+        n("2026-09-28T07:00:00Z"),
+        // 00:30 Berlin am 28. - in UTC noch der 27.
+        n("2026-09-27T22:30:00Z"),
+        n("2026-09-27T10:00:00Z"),
+        n("2026-09-23T10:00:00Z"),
+        n("2026-09-10T10:00:00Z"),
+      ],
+      jetzt,
+    );
+    expect(g.map((x) => [x.label, x.items.length])).toEqual([
+      ["Heute", 2], ["Gestern", 1], ["Diese Woche", 1], ["Früher", 1],
+    ]);
+  });
+
+  it("laesst leere Gruppen weg", () => {
+    expect(groupNotifications([n("2026-09-01T10:00:00Z")], jetzt).map((x) => x.label)).toEqual(["Früher"]);
+    expect(groupNotifications([], jetzt)).toEqual([]);
   });
 });

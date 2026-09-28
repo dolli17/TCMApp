@@ -1,7 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <rect width="1024" height="1024" fill="none"/>
-  <circle cx="790" cy="250" r="110" fill="#F2A900"/>
-  <path d="M700 300 Q790 250 880 300" stroke="#FFFFFF" stroke-width="16" fill="none" stroke-linecap="round"/>
-  <path d="M700 200 Q790 250 880 200" stroke="#FFFFFF" stroke-width="16" fill="none" stroke-linecap="round"/>
-  <text x="512" y="690" text-anchor="middle" font-family="Helvetica-Bold, Helvetica, Arial, sans-serif" font-weight="700" font-size="360" fill="#FFFFFF" letter-spacing="-8">TCM</text>
+  <!-- Splash: das Icon-Motiv ohne Flaeche; der Grund (brand) kommt aus
+       app.json. Der Platz laeuft unten nicht aus, damit "contain" ihn
+       vollstaendig zeigt. -->
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M190 900 L372 380 H652 L834 900 Z" stroke="#9DC0DF" stroke-width="22"/>
+    <path d="M318 536 H706" stroke="#7FA9D0" stroke-width="18"/>
+    <path d="M246 740 H778" stroke="#7FA9D0" stroke-width="18"/>
+    <path d="M512 536 V740" stroke="#7FA9D0" stroke-width="18"/>
+    <path d="M110 380 H914"  stroke-width="16" stroke-dasharray="4 28"/>
+  </g>
+  <circle cx="700" cy="270" r="84" fill="#FFD21F"/>
 </svg>

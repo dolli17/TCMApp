@@ -87,6 +87,13 @@ ${block(farben.dunkel)}
 ${schattenBlock(schatten.dunkel)}
   color-scheme: dark;
 }
+
+/* Immer hell, auch in dunkler Umgebung - die Eintragen-Spalte des Kiosks. */
+.immer-hell {
+${block(farben.hell)}
+${schattenBlock(schatten.hell)}
+  color-scheme: light;
+}
 `;
 
 const ziel = join(hier, "..", "src", "tokens.css");

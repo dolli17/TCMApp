@@ -217,9 +217,7 @@ export const abstand = {
   m: 12,
   l: 14,
   rand: 20,
-  xl: 22,
   abschnitt: 28,
-  xxl: 32,
 } as const;
 
 export const radius = {

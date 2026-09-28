@@ -297,3 +297,72 @@ Nachrichten als eigene Seite, Passwort vergessen/setzen, Mitgliedsantrag,
 Datenschutz/Impressum, Plätze & Serien, Getränkeverwaltung, System,
 Anträge/Mannschaften/Merkmale/Arbeitsdienst im Admin. Diese Seiten aus den
 Bausteinen oben ableiten; im Zweifel nachfragen statt erfinden.
+
+## 8. Stand der Umsetzung
+
+Stand: 28.09.2026, nach Phase 7. Jede Phase ist ein eigener PR auf `main`
+(#1 bis #7, dazu dieser). Geprüft wurde jeweils mit `pnpm lint`,
+`pnpm typecheck`, `pnpm test` und `pnpm e2e`.
+
+### Umgesetzt
+
+| Phase | Inhalt |
+|---|---|
+| 1 Tokens | neue Farben, Schatten, Radien und Größen in `tokens.ts`, `tokens.css` daraus erzeugt; `.immer-dunkel` (Anmeldung, Kiosk) und seit Phase 7 `.immer-hell` (Eintragen-Spalte des Kiosks); weiße Logovariante mit gelbem Ball |
+| 2 Navigation | schwebende Tab-Leiste in der App, Seitenleiste im Web ab 768 px, schwebende Leiste darunter, Glocke im Kopf |
+| 3 Home | neue Startseite in App und Web, Start nach dem Login auf Home; Regel „jetzt frei“ in `@tcm/core` (`freeCourtsNow`) |
+| 4 Plätze | Zeit zuerst (App und Web mobil), Buchen als Blatt, „Meine & offene Spiele“ zusammengelegt, Raster mit Blöcken im Web |
+| 5 | Getränke (Kacheln mit Zähler, Sammelauswahl über `drinkBatchReport`), Konto, Anmeldeseiten mit Bühne |
+| 6a Verwaltung | Übersicht (Kennzahlen, Weg des Geldes, Anlage heute, Heute zu tun), Mitgliederliste, Lastschriftlauf; `debitFlow`/`adminTodos` in `@tcm/core` |
+| 6b Verwaltung | Mitglied-Detail mit Reitern, Anträge, Mannschaften, Merkmale, Arbeitsdienst, Kasse, Lastschriftläufe, Plätze & Serien, Getränke, System – mit den Bausteinen aus 6a (Kennzahl, Statusmarke, Tabellenkarte, Reiter, Filter-Chips, Fenster, Nächster Schritt, Geldweg) |
+| 7 | Kiosk (drei Spalten, immer dunkel), Nachrichten in App (Blatt an der Glocke) und Web, Rechtstexte und Antrag auf der Bühne, App-Icon und Splash, Aufräumen |
+
+### Abweichungen vom Entwurf
+
+- **`muted`:** hell `#596A7D` statt `#5F7185`, dunkel `#879AAE` statt
+  `#8497AC`. Die Entwurfswerte lagen auf einzelnen Flächen knapp unter 4,5:1
+  (dunkel 4,36:1); die neuen halten 4,5:1 auf allen Flächen. Begründung in
+  `packages/ui/src/tokens.ts`, geprüft von `tokens.test.ts`.
+- **Glocke:** zeigt weiter die Zahl der ungelesenen Nachrichten statt nur
+  eines Punktes – die Zahl gab es vorher schon.
+- **Verwaltung am Telefon (App):** kein fünfter Tab; eine Karte auf der
+  Konto-Seite führt hinein. Im Web bleibt das Reiterband der Verwaltung
+  zusätzlich zur Seitenleiste stehen.
+- **Verwaltung hell:** gilt, solange niemand ein Theme gewählt hat. Wer
+  einmal ausdrücklich wählt – auch „System“ –, dessen Wahl gilt überall.
+- **Mitgliederliste:** neben den Chips des Entwurfs bleibt eine leise Zeile
+  mit den bisherigen Bestandsfiltern (Ohne Zugang, Trainer, Admins,
+  Archiviert, Alle Datensätze). Einen Export gibt es nicht, deshalb auch
+  keinen Knopf.
+- **Lastschriftlauf:** „pain.008 erzeugen“ ist gesperrt, solange nichts im
+  Lauf ist; als Begründung stehen die Sätze aus `debit_batch_candidates`.
+  Das Datum „ab …“ ist der angekündigte Fälligkeitstag (`charges.due_date`).
+  Keine Frist wird im Client gerechnet.
+- **Mitglied-Detail:** der Reiter „Forderungen“ zeigt neben der
+  Beitragskarte die Forderungen des Mitglieds als Liste (nur Anzeige).
+- **Getränke (Verwaltung):** die Getränkemonate stehen zusätzlich zur Kasse
+  auch hier, weil „Nächster Schritt“ auf sie verweist.
+- **Nachrichten:** gelesen markiert wird wie bisher beim Öffnen; die
+  Hervorhebung auf `goldSoft` bleibt stehen, bis „Alle als gelesen“ sie
+  wegnimmt. Gruppiert nach Heute / Gestern / Diese Woche / Früher
+  (`groupNotifications`).
+- **Kiosk:** „Zuletzt an der Theke“ merkt sich das Gerät selbst (lokal, nur
+  die Kennungen); der Kiosk darf keine Buchungen lesen. Mehr als sechs
+  Getränke scrollen innerhalb des 2×3-Rasters. Tippen = +1, langes Drücken
+  oder der kleine Knopf = −1.
+
+### Bewusst offen
+
+- Die Seiten aus Abschnitt 7 ohne eigenen Entwurf sind aus den Bausteinen
+  abgeleitet, nicht gestaltet: Passwort vergessen/setzen, Mitgliedsantrag,
+  Datenschutz/Impressum, die Verwaltungsseiten aus 6b.
+- **Logo:** `logo-weiss.png` ist weiter die hochskalierte Übergangsversion;
+  besser aus der Vektorvorlage des Vereins erzeugen.
+- **App-Icon und Splash:** nach dem Vorschlag in Abschnitt 4 als SVG in
+  `apps/mobile/assets` (`icon.svg`, `adaptive-icon.svg`, `splash-icon.svg`),
+  PNGs mit `rsvg-convert` gebaut. Auf einem Gerät und im App Store noch nicht
+  geprüft; ein Favicon für das Web fehlt.
+- **Rechtstexte:** Datenschutz und Impressum enthalten noch Platzhalter in
+  `[[…]]`, die der Vorstand füllen muss.
+- **Nachrichten als eigene Seite im Web:** weiter nur das Fenster an der
+  Glocke.

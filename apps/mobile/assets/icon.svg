@@ -1,7 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <rect width="1024" height="1024" fill="#1A82C6"/>
-  <circle cx="790" cy="250" r="110" fill="#F2A900"/>
-  <path d="M700 300 Q790 250 880 300" stroke="#FFFFFF" stroke-width="16" fill="none" stroke-linecap="round"/>
-  <path d="M700 200 Q790 250 880 200" stroke="#FFFFFF" stroke-width="16" fill="none" stroke-linecap="round"/>
-  <text x="512" y="690" text-anchor="middle" font-family="Helvetica-Bold, Helvetica, Arial, sans-serif" font-weight="700" font-size="360" fill="#FFFFFF" letter-spacing="-8">TCM</text>
+  <!-- App-Icon (docs/design/clubhaus, Abschnitt 3): Flaeche brand,
+       Platzlinien in Perspektive, gelber Ball. Farben aus packages/ui/tokens.ts. -->
+  <rect width="1024" height="1024" fill="#1466A8"/>
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Seitenlinien und Grundlinie hinten -->
+    <path d="M150 1024 L372 380 H652 L874 1024" stroke="#9DC0DF" stroke-width="26"/>
+    <!-- Aufschlaglinien und Mittellinie -->
+    <path d="M318 536 H706" stroke="#7FA9D0" stroke-width="22"/>
+    <path d="M232 786 H792" stroke="#7FA9D0" stroke-width="22"/>
+    <path d="M512 536 V786" stroke="#7FA9D0" stroke-width="22"/>
+    <!-- Netz -->
+    <path d="M60 380 H964"  stroke-width="18" stroke-dasharray="4 30"/>
+  </g>
+  <circle cx="700" cy="270" r="96" fill="#FFD21F"/>
 </svg>

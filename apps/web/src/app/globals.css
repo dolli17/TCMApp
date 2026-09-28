@@ -74,10 +74,6 @@ a:hover { text-decoration: underline; }
 }
 :root[data-theme="dunkel"] .logo-hell { display: none !important; }
 :root[data-theme="dunkel"] .logo-dunkel { display: block !important; }
-.marke .sub {
-  font-size: 11px; font-weight: 600; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--muted);
-}
 
 .pagetitle {
   font-weight: 800; font-size: var(--font-size-seitentitel);
@@ -163,24 +159,6 @@ a.avatar:hover { text-decoration: none; }
   border-radius: var(--radius-karte); padding: 11px 13px;
   box-shadow: var(--shadow-sm);
 }
-
-.kachel-reihe {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
-}
-.kachel {
-  background: var(--surf); border: 1px solid var(--line);
-  border-radius: var(--radius-karte); box-shadow: var(--shadow-sm);
-  padding: 14px; text-align: left; font: inherit; color: inherit;
-}
-button.kachel { cursor: pointer; }
-button.kachel:hover { border-color: var(--blue); }
-.kachel .wert {
-  font-family: var(--font-display); font-size: 26px; font-weight: 700;
-  line-height: 1.1; letter-spacing: -.02em;
-}
-.kachel .titel { font-size: var(--font-size-klein); color: var(--muted); font-weight: 500; }
-.kachel .preis { color: var(--blue-ink); font-weight: 700; margin-top: 6px; }
 
 /* ---------------------------------------------------------------------------
    Knöpfe
@@ -298,24 +276,9 @@ table.liste .zahl {
 .slotknopf:disabled { opacity: .4; cursor: not-allowed; }
 
 /* ---------------------------------------------------------------------------
-   Anmeldung — "Crown" mit Verlauf, darauf ein aufliegendes Blatt
+   Anmeldung — Grundgerüst; die Bühne steht weiter unten (AppLogin)
    --------------------------------------------------------------------------- */
 .auth { min-height: 100dvh; display: flex; flex-direction: column; }
-.auth .crown {
-  position: relative; padding: 40px 26px 44px; color: #fff; overflow: hidden;
-  background:
-    radial-gradient(130% 120% at 85% 0%, color-mix(in srgb, var(--gold) 40%, transparent), transparent 50%),
-    linear-gradient(160deg, var(--brand), color-mix(in srgb, var(--brand) 72%, #000));
-}
-/* Auf der blauen Buehne steht die weisse Logovariante mit gelbem Ball
-   (logo-weiss.png). Frueher kam das Negativ per filter: brightness(0)
-   invert(1) aus dem dunkelblauen Logo - das faerbte den Ball mit weiss. */
-.auth .crown img { height: 34px; width: auto; margin-bottom: 18px; display: block; }
-.auth .crown h1 {
-  font-family: var(--font-display); font-weight: 700; font-size: 30px;
-  line-height: 1.02; letter-spacing: -.3px; margin: 0; text-wrap: balance;
-}
-.auth .crown p { margin: 9px 0 0; font-size: 14px; opacity: .88; max-width: 280px; }
 .auth .sheet {
   flex: 1; margin-top: -22px; background: var(--bg);
   border-radius: var(--radius-blatt) var(--radius-blatt) 0 0; padding: 26px 22px 40px;
@@ -377,13 +340,30 @@ table.liste .zahl {
   font-size: 10.5px; font-weight: 700; line-height: 17px; text-align: center;
 }
 
-.nachrichtenliste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.nachrichtenliste li {
-  display: grid; gap: 2px;
-  border: 1px solid var(--line); border-radius: var(--radius-karte);
-  padding: 10px 12px; background: var(--surf);
+/* Benachrichtigungen: nach Tagen gruppiert, je Art ein Symbol, neue auf goldSoft */
+.nachrichtengruppe + .nachrichtengruppe { margin-top: 18px; }
+.nachrichtengruppe > .kicker { margin: 0 2px 8px; }
+.nachrichtenliste {
+  list-style: none; margin: 0; padding: 0; overflow: hidden;
+  border: 1px solid var(--line); border-radius: var(--radius-karte); background: var(--surf);
 }
-.nachrichtenliste li.neu { border-color: var(--blue); background: var(--blue-soft); }
+.nachrichtenliste li { display: flex; gap: 12px; padding: 14px 16px; }
+.nachrichtenliste li + li { border-top: 1px solid var(--line); }
+.nachrichtenliste li.neu { background: var(--gold-soft); }
+.nachrichtenliste .symbol {
+  width: 40px; height: 40px; border-radius: 12px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surf-2); color: var(--ink-2);
+}
+.nachrichtenliste li.neu .symbol { background: var(--surf); color: var(--ink); }
+.nachrichtenliste .symbol svg { width: 20px; height: 20px; }
+.nachrichtenliste .text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.nachrichtenliste .titelzeile { display: flex; justify-content: space-between; gap: 8px; }
+.nachrichtenliste strong { font-size: 15px; }
+.nachrichtenliste small { flex: 0 0 auto; font-size: 12px; color: var(--muted); }
+.nachrichtenliste .body { font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
+.fenster-kopf > .knopf { align-self: center; margin-left: auto; white-space: nowrap; }
+.fenster-kopf > .knopf + .fenster-zu { margin-left: 0; }
 
 /* ---------------------------------------------------------------------------
    Meine Buchungen
@@ -529,11 +509,6 @@ dialog.fenster::backdrop { background: rgba(3,8,14,.62); backdrop-filter: blur(2
 .marken li:not(.chip) button:hover { background: rgba(0,0,0,.08); }
 ul.marken:not(:has(.chip)) { margin-bottom: 9px; gap: 6px; }
 
-/* Wegweiser auf der Verwaltungsübersicht: eine Liste, die sagt, was wo steht.
-   Bewusst schlicht - sie wird gelesen, nicht bedient. */
-.wegweiser { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
-.wegweiser li { color: var(--ink-2); font-size: 14.5px; }
-
 .trefferliste {
   list-style: none; margin: 6px 0 0; padding: 4px;
   border: 1px solid var(--line-2); border-radius: var(--radius-feld);
@@ -549,9 +524,6 @@ ul.marken:not(:has(.chip)) { margin-bottom: 9px; gap: 6px; }
 }
 .trefferliste li.leer { padding: 8px 10px; color: var(--muted); font-size: 13.5px; }
 
-/* Gaeste kommen ueber einen eigenen Knopf, nicht mehr ueber das Suchfeld: sie
-   kosten Geld, und das soll eine bewusste Handlung sein. */
-.gastknopf { margin-top: 8px; align-self: flex-start; }
 .gasthinweis { margin: 8px 0 0; color: var(--ink-2); }
 
 .knopf.gefahr { background: var(--red); border-color: var(--red); color: #fff; }
@@ -657,11 +629,9 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 
 /* Öffentliche Seiten ohne Anmeldung (Mitgliedsantrag, Passwort setzen).
    Nutzt dieselbe Bühne wie die Anmeldung, nur mit breiterem Blatt. */
-.antragsseite .sheet { max-width: 640px; }
 
 /* Datenschutz und Impressum: Fließtext auf dem Blatt. Die Blatt-Breite kommt
    von .antragsseite, hier nur Absätze, Überschriften und Listen. */
-.rechtstext { max-width: 640px; }
 .rechtstext h2 {
   font-family: var(--font-display); font-weight: 700; font-size: 18px;
   margin: 26px 0 8px; color: var(--ink);
@@ -1263,7 +1233,21 @@ li.chip { padding-right: 4px; }
   margin-top: 0; border-radius: 0; background: var(--bg); padding: 8px 24px 36px;
   width: 100%; max-width: 480px; margin-inline: auto;
 }
-.auth.immer-dunkel.antragsseite .sheet { max-width: 680px; }
+/* Antrag, Danke, Datenschutz, Impressum: Inhalt auf surf, max. 680 breit, Fliesstext 16 */
+.auth.immer-dunkel.antragsseite .sheet {
+  max-width: 680px; box-sizing: border-box; width: calc(100% - 32px);
+  margin: 0 auto 40px; padding: 26px 24px 28px;
+  background: var(--surf); border: 1px solid var(--line); border-radius: var(--radius-kartegross);
+  flex: 0 0 auto;
+}
+.auth.antragsseite .buehne-inhalt { max-width: 680px; }
+.auth.immer-dunkel.antragsseite .sheet :is(p, li, .beschreibung, .unterzeile) { font-size: 16px; line-height: 1.55; }
+.auth.immer-dunkel.antragsseite .sheet input:not([type="checkbox"]):not([type="radio"]),
+.auth.immer-dunkel.antragsseite .sheet select,
+.auth.immer-dunkel.antragsseite .sheet textarea { background: var(--surf-2); }
+.auth.immer-dunkel .sheet.rechtstext { max-width: 680px; }
+.auth.immer-dunkel .sheet.rechtstext h2 { font-size: 19px; margin: 26px 0 8px; }
+.auth.immer-dunkel .sheet.rechtstext h2:first-of-type { margin-top: 14px; }
 .auth.immer-dunkel .sheet form { max-width: none; display: flex; flex-direction: column; gap: 14px; }
 .auth.immer-dunkel .sheet label { margin-bottom: 0; }
 .auth.immer-dunkel .sheet label > span { font-size: 13px; color: var(--ink-2); margin-bottom: 8px; }
@@ -1811,6 +1795,139 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   .kennzahlen { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
   .verwaltung-raster { grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); }
 }
+
+/* ---------------------------------------------------------------------------
+   Kiosk (Entwurf Kiosk): immer dunkel, drei Spalten, alles ab 48 px hoch
+   --------------------------------------------------------------------------- */
+.kiosk {
+  height: 100dvh; box-sizing: border-box; overflow: hidden;
+  display: flex; flex-direction: column; gap: 20px; padding: 24px 28px 28px;
+  background: var(--bg); color: var(--ink);
+}
+.kiosk-kopf { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.kiosk-kopf > div { display: flex; align-items: center; gap: 20px; }
+.kiosk-kopf img { height: 36px; width: auto; }
+.kiosk-kopf .trenner { width: 1px; height: 28px; background: var(--line-2); }
+.kiosk-kopf h1 { margin: 0; font-size: 22px; font-weight: 700; }
+.kiosk-knopf {
+  min-height: 52px; padding: 0 22px; border-radius: 16px; cursor: pointer;
+  border: 1px solid var(--line-2); background: var(--surf); color: var(--ink);
+  font: inherit; font-size: 16px; font-weight: 600;
+}
+.kiosk-spalten {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: 330px minmax(0, 1fr) 320px; gap: 20px;
+}
+.kiosk h2 { margin: 0; display: flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 700; }
+.kiosk .schritt {
+  width: 30px; height: 30px; border-radius: 15px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--gold); color: var(--on-gold); font-size: 15px; font-weight: 800;
+}
+
+/* 1 Wer nimmt etwas? */
+.kiosk-wer {
+  min-height: 0; display: flex; flex-direction: column; gap: 14px; padding: 22px;
+  border-radius: 28px; background: var(--surf); border: 1px solid var(--line);
+}
+.kiosk-suche {
+  height: 60px; margin: 0; box-sizing: border-box; flex: 0 0 auto;
+  display: flex; align-items: center; gap: 12px; padding: 0 16px;
+  border-radius: 18px; background: var(--surf-2); border: 2px solid var(--line-2); color: var(--muted);
+}
+.kiosk-suche:focus-within { border-color: var(--blue); }
+.kiosk-suche svg { width: 22px; height: 22px; flex: 0 0 auto; }
+.kiosk-suche input {
+  border: 0; padding: 0; height: 100%; background: transparent; box-shadow: none !important;
+  font-size: 20px; font-weight: 600; color: var(--ink);
+}
+.kiosk-treffer { flex: 1; min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 10px; }
+.kiosk-treffer button {
+  height: 72px; display: flex; align-items: center; gap: 14px; padding: 0 14px; cursor: pointer;
+  border-radius: 18px; border: 1px solid var(--line); background: var(--surf-2); color: var(--ink);
+  font: inherit; text-align: left;
+}
+.kiosk-treffer button.an { border: 2px solid var(--gold); background: var(--gold-soft); }
+.kiosk-treffer .avatar { width: 46px; height: 46px; border-radius: 23px; font-size: 16px; font-weight: 800; }
+.kiosk-treffer button.an .avatar { background: var(--gold); color: var(--on-gold); }
+.kiosk-treffer .name { flex: 1; font-size: 19px; font-weight: 700; }
+.kiosk-treffer svg { width: 24px; height: 24px; color: var(--gold); }
+.kiosk-hinweis { margin: 4px 2px; font-size: 16px; color: var(--muted); }
+.kiosk-zuletzt { display: grid; gap: 10px; }
+.kiosk-zuletzt .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.kiosk-zuletzt button {
+  height: 48px; padding: 0 16px; border-radius: 24px; cursor: pointer;
+  border: 1px solid var(--line-2); background: var(--surf-2); color: var(--ink-2);
+  font: inherit; font-size: 16px; font-weight: 600;
+}
+.kiosk-zuletzt button[aria-pressed="true"] { border-color: var(--gold); color: var(--ink); }
+
+/* 2 Was? */
+.kiosk-was { min-height: 0; display: flex; flex-direction: column; gap: 14px; padding-top: 22px; }
+.kiosk-kacheln {
+  flex: 1; min-height: 0; list-style: none; margin: 0; padding: 0; overflow-y: auto;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: minmax(max(96px, calc((100% - 28px) / 3)), auto); gap: 14px;
+}
+.kiosk-kacheln li { position: relative; }
+.kiosk-kacheln .kachel-knopf {
+  width: 100%; height: 100%; min-height: 96px; cursor: pointer; touch-action: manipulation;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 8px;
+  padding: 18px 20px; border-radius: 24px; text-align: left; font: inherit; color: var(--ink);
+  border: 1px solid var(--line); background: var(--surf);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+.kiosk-kacheln li.an .kachel-knopf { border: 2px solid var(--gold); background: var(--surf-2); }
+.kiosk-kacheln .name { font-size: 22px; font-weight: 700; }
+.kiosk-kacheln li.an .name { padding-right: 72px; }
+.kiosk-kacheln .preis { font-size: 16px; color: var(--ink-2); }
+.kiosk-kacheln .zahl {
+  position: absolute; right: 16px; top: 50%; margin-top: -28px; pointer-events: none;
+  width: 56px; height: 56px; border-radius: 28px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--gold); color: var(--on-gold); font-size: 30px; font-weight: 700;
+}
+.kiosk-kacheln .weniger {
+  position: absolute; right: 14px; bottom: 12px; width: 48px; height: 48px; border-radius: 24px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line-2); background: var(--surf); color: var(--ink);
+}
+.kiosk-kacheln .weniger svg { width: 20px; height: 20px; }
+.kiosk-kacheln li.an .zahl { top: 16px; margin-top: 0; }
+
+/* 3 Eintragen: die helle Spalte */
+.kiosk-eintragen {
+  min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 22px;
+  border-radius: 28px; background: var(--bg); color: var(--ink);
+}
+.kiosk-eintragen h2 { margin-bottom: 8px; }
+.kiosk-eintragen .schritt { background: var(--ink); color: var(--gold); }
+.kiosk-eintragen .fuer { font-size: 15px; color: var(--ink-2); }
+.kiosk-eintragen .wer { font-size: 26px; font-weight: 800; letter-spacing: -.3px; margin-bottom: 10px; line-height: 1.15; }
+.kiosk-eintragen .posten { list-style: none; margin: 0; padding: 0; overflow-y: auto; min-height: 0; }
+.kiosk-eintragen .posten li {
+  display: flex; justify-content: space-between; gap: 12px; padding: 12px 0;
+  border-top: 1px solid var(--line-2); font-size: 17px;
+}
+.kiosk-eintragen .posten span { font-weight: 600; }
+.kiosk-eintragen .zusammen {
+  display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0;
+  border-top: 2px solid var(--ink);
+}
+.kiosk-eintragen .zusammen span { font-size: 17px; font-weight: 700; }
+.kiosk-eintragen .zusammen b { font-size: 30px; }
+.kiosk-eintragen .hinweis { margin: 4px 0; }
+.kiosk-los {
+  margin-top: auto; min-height: 76px; border-radius: 22px; font-size: 21px; font-weight: 800;
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--gold) 35%, transparent);
+}
+.kiosk-los:disabled { box-shadow: none; }
+.kiosk-eintragen .fussnote { margin-top: 8px; }
+.kiosk-fertig {
+  margin: auto 0; display: grid; justify-items: center; gap: 12px; text-align: center;
+  padding: 28px 18px; font-size: 18px; font-weight: 600; line-height: 1.4;
+}
+.kiosk-fertig svg { width: 56px; height: 56px; }
 
 /* Weniger Bewegung, wenn das System danach fragt */
 @media (prefers-reduced-motion: reduce) {

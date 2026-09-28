@@ -1,14 +1,9 @@
-import { useCallback, useRef } from "react";
-import { Text, View } from "react-native";
+import { useCallback, useRef, useState } from "react";
+import { View } from "react-native";
 import { Bildschirm } from "@/components/Bildschirm";
+import { AlleGelesenKnopf, NachrichtenListe } from "@/components/NachrichtenListe";
 import { ladeBenachrichtigungen, markiereBenachrichtigungenGelesen } from "@/lib/daten";
 import { useLaden } from "@/lib/laden";
-import { useTheme } from "@/lib/theme";
-
-const ZEIT = new Intl.DateTimeFormat("de-DE", {
-  day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
-  timeZone: "Europe/Berlin",
-});
 
 /**
  * Was sich an den eigenen Buchungen geändert hat.
@@ -23,10 +18,13 @@ const ZEIT = new Intl.DateTimeFormat("de-DE", {
  * wird gerendert, dann abgehakt. Beim Herunterziehen unterbleibt das Abhaken
  * ganz - wer die Liste bewusst neu lädt, will sehen, was inzwischen kam, und
  * nicht dabei zusehen, wie die Hervorhebung ein zweites Mal verschwindet.
+ *
+ * Die Liste selbst ist dieselbe wie im Blatt hinter der Glocke
+ * (NachrichtenListe); "Alle als gelesen" nimmt die Hervorhebung weg.
  */
 export default function Nachrichten() {
-  const { stil, farben } = useTheme();
   const schonAbgehakt = useRef(false);
+  const [alleGesehen, setAlleGesehen] = useState(false);
 
   const laden = useCallback(async () => {
     const liste = await ladeBenachrichtigungen();
@@ -51,23 +49,12 @@ export default function Nachrichten() {
       onAktualisieren={zustand.neuLaden}
       fehler={zustand.fehler}
     >
-      {nachrichten.length === 0 ? (
-        <Text style={stil.leise}>Es liegt nichts vor.</Text>
-      ) : (
-        nachrichten.map((n) => (
-          <View
-            key={n.id}
-            style={[
-              stil.karte,
-              n.read_at === null && { borderColor: farben.blue, borderWidth: 1.5 },
-            ]}
-          >
-            <Text style={[stil.text, { fontFamily: "Barlow_600SemiBold" }]}>{n.title}</Text>
-            <Text style={stil.leise}>{n.body}</Text>
-            <Text style={stil.leise}>{ZEIT.format(new Date(n.created_at))} Uhr</Text>
-          </View>
-        ))
+      {!alleGesehen && nachrichten.some((n) => n.read_at === null) && (
+        <View style={{ alignItems: "flex-end", marginBottom: -8 }}>
+          <AlleGelesenKnopf onPress={() => setAlleGesehen(true)} />
+        </View>
       )}
+      <NachrichtenListe liste={nachrichten} alleGesehen={alleGesehen} />
     </Bildschirm>
   );
 }
