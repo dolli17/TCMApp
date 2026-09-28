@@ -7,6 +7,10 @@ import {
 
 export const dynamic = "force-dynamic";
 
+function heuteInBerlin(): string {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
+}
+
 export default async function LaufSeite({
   params,
 }: {
@@ -34,17 +38,34 @@ export default async function LaufSeite({
       : Promise.resolve({ data: null }),
     supabase.rpc("debit_batch_items", { p_batch_id: id }),
   ]);
+  const kandidaten = (kandidatenRes.data ?? []) as unknown as KandidatZeile[];
+
+  // Der angekuendigte Faelligkeitstag steht an jeder Forderung. Gelesen, nicht
+  // gerechnet: ab wann eingezogen werden darf, prueft die Datenbank.
+  const { data: spaetester } = kandidaten.length
+    ? await supabase
+        .from("charges")
+        .select("due_date")
+        .eq("status", "notified")
+        .not("due_date", "is", null)
+        .order("due_date", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    : { data: null };
+  const faelligAb = spaetester?.due_date ?? null;
 
   return (
     <>
-      <p className="zurueck">
-        <Link href="/admin/kasse/lastschriften">← Lastschriftläufe</Link>
-      </p>
+      <Link href="/admin/kasse/lastschriften" className="zurueck">
+        ‹ Kasse · Lastschriftläufe
+      </Link>
 
       <LastschriftLauf
         lauf={lauf as unknown as LaufKopf}
-        kandidaten={(kandidatenRes.data ?? []) as unknown as KandidatZeile[]}
+        kandidaten={kandidaten}
         posten={(postenRes.data ?? []) as unknown as PostenZeile[]}
+        faelligAb={faelligAb}
+        heute={heuteInBerlin()}
       />
     </>
   );

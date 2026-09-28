@@ -64,3 +64,23 @@ export function useLaden<T>(laden: () => Promise<T>): Ladezustand<T> {
     setzeDaten: setDaten,
   };
 }
+
+/**
+ * Ergebnis eines Abschnitts, der fuer sich laedt: entweder ein Wert oder ein
+ * Fehlertext. Mit Promise.allSettled bleibt so jeder Abschnitt fuer sich -
+ * schlaegt einer fehl, steht dort der Fehler, und der Rest bleibt gefuellt.
+ */
+export type Abschnitt<T> = { wert: T; fehler: null } | { wert: null; fehler: string };
+
+export function abschnitt<T>(r: PromiseSettledResult<T>): Abschnitt<T> {
+  if (r.status === "fulfilled") return { wert: r.value, fehler: null };
+  const grund: unknown = r.reason;
+  return { wert: null, fehler: grund instanceof Error ? grund.message : "Konnte nicht geladen werden." };
+}
+
+/** Der erste Fehler aus mehreren Quellen, die ein Abschnitt gemeinsam braucht. */
+export function ersterFehler(ergebnisse: PromiseSettledResult<unknown>[]): { wert: null; fehler: string } {
+  const kaputt = ergebnisse.find((r) => r.status === "rejected");
+  const r = abschnitt(kaputt ?? { status: "rejected", reason: null });
+  return { wert: null, fehler: r.fehler ?? "Konnte nicht geladen werden." };
+}

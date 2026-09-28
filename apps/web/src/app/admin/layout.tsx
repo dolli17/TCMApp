@@ -1,5 +1,6 @@
 import { getCurrentMember, isAdmin } from "@/lib/supabase/server";
 import { AdminReiter } from "@/components/AdminReiter";
+import { VerwaltungHell } from "@/components/ThemeUmschalter";
 
 /**
  * Die Klammer um alles, was der Vorstand verwaltet.
@@ -20,6 +21,9 @@ import { AdminReiter } from "@/components/AdminReiter";
  *    und zusammengehörende Dinge lagen an verschiedenen Orten: die Buchungsregeln
  *    in den Einstellungen, die Buchungsarten bei den Plätzen. Jetzt ein Menüpunkt,
  *    sechs Bereiche, und jede Einstellung steht bei ihrem Gegenstand.
+ *
+ * Dazu ist die Verwaltung hell, solange niemand ein Theme gewaehlt hat
+ * (docs/design/clubhaus, Abschnitt 1).
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const angemeldet = await getCurrentMember();
@@ -30,6 +34,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <>
+      <VerwaltungHell />
       <AdminReiter />
       {children}
     </>
