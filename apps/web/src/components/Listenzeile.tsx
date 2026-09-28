@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-export type HinweisTon = "gold" | "rot" | "gruen" | "leise";
+export type HinweisTon = "gold" | "rot" | "gruen" | "leise" | "blau";
 
 /** Eine von vier Blautoenen fuer den Avatar, fest je Kennung. */
 export function avatarTon(id: string): number {
@@ -25,6 +25,7 @@ export function Listenzeile({
   onClick,
   avatar,
   symbol,
+  punkt,
   titel,
   kontext,
   hinweis,
@@ -41,6 +42,8 @@ export function Listenzeile({
   avatar?: { kurz: string; id: string };
   /** Inhalt der Symbolkachel, etwa ein SVG oder ein Kuerzel */
   symbol?: ReactNode;
+  /** Kleiner Punkt vorn: gelb = zu handeln, umrandet = nur zur Kenntnis */
+  punkt?: "dringend" | "info";
   titel: ReactNode;
   kontext?: ReactNode;
   hinweis?: ReactNode;
@@ -61,6 +64,7 @@ export function Listenzeile({
         <span className={`avatar ton-${avatarTon(avatar.id)}`} aria-hidden="true">{avatar.kurz}</span>
       )}
       {symbol && <span className="symbolkachel" aria-hidden="true">{symbol}</span>}
+      {punkt && <span className={`punkt ${punkt}`} aria-hidden="true" />}
       <span className="text">
         <b className="titel">{titel}</b>
         {kontext && <small className="kontext">{kontext}</small>}

@@ -2052,6 +2052,57 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 .chipwahl button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
 
+/* Uebersicht als Home (Verwaltung v2, Regel 7) */
+.uebersicht-raster { display: grid; gap: 28px; align-items: start; }
+.uebersicht-raster > .uebersicht-spalte { display: grid; gap: 28px; min-width: 0; }
+.nur-breit { display: none !important; }
+@media (min-width: 1100px) {
+  .uebersicht-raster { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px; }
+  .nur-breit { display: revert !important; }
+  .nur-schmal { display: none !important; }
+}
+.aufgabe-gross {
+  position: relative; overflow: hidden; min-height: 196px; box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 6px; padding: 20px;
+  border-radius: 26px; background: var(--brand); color: #fff;
+}
+.aufgabe-gross > :not(.linien) { position: relative; }
+.aufgabe-gross .linien {
+  position: absolute; right: 0; top: 0; width: 350px; height: 196px;
+  fill: none; stroke: rgba(255,255,255,.13); stroke-width: 2;
+}
+.aufgabe-gross .kicker { color: #fff; opacity: .85; }
+.aufgabe-gross .titel { font-size: 28px; font-weight: 800; letter-spacing: -.4px; line-height: 1.08; margin-top: 2px; }
+.aufgabe-gross p { margin: 0; font-size: 14.5px; opacity: .9; }
+.aufgabe-gross .knopf { margin-top: auto; align-self: flex-start; min-height: 44px; padding: 0 18px; border-radius: 22px; font-family: var(--font-text); font-size: 15px; font-weight: 800; text-decoration: none; }
+@media (min-width: 1100px) {
+  .aufgabe-gross { min-height: 200px; padding: 26px 28px; border-radius: 28px; }
+  .aufgabe-gross .titel { font-size: 34px; }
+}
+.listenzeile .punkt { width: 10px; height: 10px; border-radius: 5px; flex: 0 0 auto; }
+.listenzeile .punkt.dringend { background: var(--gold); }
+.listenzeile .punkt.info { background: var(--surf-3); box-shadow: inset 0 0 0 1.5px var(--muted); }
+.hinweis-rechts.blau { color: var(--blue-ink); }
+@media (max-width: 767px) {
+  .aufgaben .hinweis-rechts.blau { display: none; }
+}
+.geldweg-karte { display: grid; gap: 10px; padding: 16px; color: var(--ink); text-decoration: none; }
+.geldweg-karte:hover { text-decoration: none; border-color: var(--line-2); }
+.geldweg-balken { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; }
+.geldweg-balken li { flex: 1; height: 6px; border-radius: 3px; background: var(--surf-3); }
+.geldweg-balken li.erledigt { background: var(--green); }
+.geldweg-balken li.aktuell { background: var(--gold); }
+.geldweg-karte .zeile { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.geldweg-karte .zeile b { font-size: 15.5px; }
+.geldweg-karte small { font-size: 13px; color: var(--muted); }
+@media (min-width: 1100px) {
+  /* Am Desktop steht statt der Balken der ausgeschriebene Weg */
+  .geldweg-karte .geldweg-balken, .geldweg-karte .zeile, .geldweg-karte > small { display: none; }
+  .geldweg-karte { padding: 20px 22px; }
+}
+.kennzahlen.zwei { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.kennzahlen.zwei .wert { font-size: 30px; }
+
 /* Weniger Bewegung, wenn das System danach fragt */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
