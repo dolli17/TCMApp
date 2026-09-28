@@ -71,7 +71,7 @@ test.describe("Layout", () => {
       await anmelden(page);
       await page.goto("/plan");
 
-      await expect(page.locator(".bottomnav")).toBeVisible();
+      await expect(page.locator(".schwebeleiste")).toBeVisible();
       await expect(page.locator(".seitenleiste")).toBeHidden();
     });
 
@@ -97,16 +97,17 @@ test.describe("Layout", () => {
       });
     }
 
-    test("die Bottom-Navigation eines Admins sprengt die Breite nicht", async ({ page }) => {
-      // Ein Admin hat vier Einträge statt drei, dazu die Glocke. Vorher waren
-      // es acht, und die Leiste musste seitwärts scrollen; seit die Verwaltung
-      // ein einziger Punkt ist, passt alles nebeneinander. Das Dokument darf
-      // sich in keinem Fall mitverschieben.
+    test("die schwebende Leiste eines Admins sprengt die Breite nicht", async ({ page }) => {
+      // Ein Admin hat vier Einträge statt drei; die Glocke sitzt seit der
+      // schwebenden Leiste im Seitenkopf. Vorher waren es acht Einträge, und
+      // die Leiste musste seitwärts scrollen; seit die Verwaltung ein einziger
+      // Punkt ist, passt alles nebeneinander. Das Dokument darf sich in keinem
+      // Fall mitverschieben.
       await anmelden(page, ADMIN);
       await page.goto("/plan");
 
-      await expect(page.locator(".bottomnav a")).toHaveCount(4);
-      await expect(page.locator(".bottomnav .glocke")).toHaveCount(1);
+      await expect(page.locator(".schwebeleiste a")).toHaveCount(4);
+      await expect(page.locator(".seitenkopf .glocke")).toHaveCount(1);
       const ueberbreite = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       );
@@ -142,7 +143,7 @@ test.describe("Layout", () => {
       await page.goto("/plan");
 
       await expect(page.locator(".seitenleiste")).toBeVisible();
-      await expect(page.locator(".bottomnav")).toBeHidden();
+      await expect(page.locator(".schwebeleiste")).toBeHidden();
     });
 
     test("der Belegungsplan zeigt das volle Raster", async ({ page }) => {

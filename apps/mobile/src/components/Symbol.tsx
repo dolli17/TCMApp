@@ -11,7 +11,7 @@
 import Svg, { Path } from "react-native-svg";
 
 const PFADE = {
-  platz: "M3 5h18v14H3zM12 5v14M3 12h18",
+  platz: "M4 4h16v16H4zM4 12h16M8 8h8v8H8zM12 8v8",
   getraenk: "M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8",
   konto: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
   glocke: "M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8M13.7 21a2 2 0 0 1-3.4 0",
@@ -33,7 +33,7 @@ export function Symbol({
       <Path
         d={PFADE[name]}
         stroke={farbe}
-        strokeWidth={1.7}
+        strokeWidth={1.8}
         fill="none"
         strokeLinecap="round"
         strokeLinejoin="round"

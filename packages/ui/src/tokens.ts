@@ -53,6 +53,9 @@ export const farben = {
     glassLine: "rgba(10,22,36,.08)",
     tabAktiv: "#FFD21F",
     tabAktivInk: "#0A1624",
+    // Aktiver Eintrag der Seitenleiste (Web ab 768 px)
+    navAktiv: "#0A1624",
+    navAktivInk: "#FFFFFF",
   },
   dunkel: {
     blue: "#3A9BE0",
@@ -85,6 +88,8 @@ export const farben = {
     glassLine: "rgba(255,255,255,.12)",
     tabAktiv: "rgba(255,210,31,.14)",
     tabAktivInk: "#FFD21F",
+    navAktiv: "rgba(255,210,31,.12)",
+    navAktivInk: "#FFD21F",
   },
 } as const;
 

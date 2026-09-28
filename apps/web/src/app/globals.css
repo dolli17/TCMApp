@@ -6,7 +6,7 @@
    einzige Quelle; hier stehen nur Formen, Abstände und Layout.
 
    Zwei Layoutzustände:
-     < 768px  Bottom-Navigation, Inhalte einspaltig       (wie im Design)
+     < 768px  schwebende Leiste unten, Inhalte einspaltig  (wie in der App)
      >= 768px Seitenleiste links, Inhalte bis 1100px breit
    =========================================================================== */
 
@@ -52,7 +52,8 @@ a:hover { text-decoration: underline; }
   width: 100%;
   max-width: 1100px;
   margin: 0 auto;
-  padding: 16px var(--space-rand) 96px;
+  /* Unten Platz fuer die schwebende Leiste: 26 Abstand + 64 Leiste + Luft */
+  padding: 16px var(--space-rand) calc(110px + env(safe-area-inset-bottom));
 }
 
 /* --- Seitenleiste: erst ab Tablet ---------------------------------------- */
@@ -62,7 +63,17 @@ a:hover { text-decoration: underline; }
   display: flex; align-items: center; gap: 10px;
   padding: 18px var(--space-rand) 14px;
 }
-.marke img { height: 30px; width: auto; display: block; }
+.marke img { height: 34px; width: auto; display: block; }
+
+/* Auf dunklem Grund die weisse Logovariante mit gelbem Ball - dieselben
+   Bedingungen wie das dunkle Theme in tokens.css. */
+.logo-dunkel { display: none !important; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="hell"]) .logo-hell { display: none !important; }
+  :root:not([data-theme="hell"]) .logo-dunkel { display: block !important; }
+}
+:root[data-theme="dunkel"] .logo-hell { display: none !important; }
+:root[data-theme="dunkel"] .logo-dunkel { display: block !important; }
 .marke .sub {
   font-size: 11px; font-weight: 600; letter-spacing: .14em;
   text-transform: uppercase; color: var(--muted);
@@ -91,30 +102,51 @@ a:hover { text-decoration: underline; }
   letter-spacing: -.2px; color: var(--ink); margin: 0;
 }
 
-/* --- Bottom-Navigation: nur am Telefon ------------------------------------ */
-.bottomnav {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
-  display: flex; justify-content: space-around; align-items: flex-start;
-  padding: 9px 8px calc(8px + env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--surf) 88%, transparent);
-  border-top: 1px solid var(--line);
-  backdrop-filter: blur(12px);
-  /* Admins haben vier Einträge plus Glocke - vorher acht, weil jeder
-     Verwaltungsbereich einen eigenen Punkt hatte. Die Leiste scrollt weiterhin
-     in sich selbst, falls doch einmal etwas dazukommt; das Dokument bleibt
-     dabei unverschiebbar. */
-  overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+/* --- Schwebende Leiste: nur am Telefon ------------------------------------
+   Pille ueber dem Inhalt, rechts daneben der runde Buchen-Knopf - dieselbe
+   Leiste wie in der App (docs/design/clubhaus, Abschnitt 4). */
+.schwebeleiste {
+  position: fixed; z-index: 20;
+  left: 16px; right: 92px; bottom: calc(26px + env(safe-area-inset-bottom));
+  height: 64px; border-radius: 32px; padding: 0 6px;
+  display: flex; align-items: center; gap: 2px;
+  background: var(--glass); border: 1px solid var(--glass-line);
+  -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+  box-shadow: var(--shadow-float);
 }
-.bottomnav::-webkit-scrollbar { display: none; }
-.bottomnav a {
-  flex: 1 0 auto; min-width: 62px;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  color: var(--muted); font-size: 10px; font-weight: 600; text-decoration: none;
-  padding: 2px 4px; white-space: nowrap;
+.schwebeleiste a {
+  flex: 1 1 0; min-width: 0; height: 52px; border-radius: 26px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  color: var(--muted); font-size: 11px; font-weight: 600; text-decoration: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.bottomnav a[aria-current="page"] { color: var(--blue); }
-.bottomnav a:hover { text-decoration: none; }
-.bottomnav svg { width: 24px; height: 24px; }
+.schwebeleiste a[aria-current="page"] { background: var(--tab-aktiv); color: var(--tab-aktiv-ink); }
+.schwebeleiste a:hover { text-decoration: none; }
+.schwebeleiste svg { width: 22px; height: 22px; flex: 0 0 auto; }
+
+.buchknopf {
+  position: fixed; z-index: 20;
+  right: 16px; bottom: calc(26px + env(safe-area-inset-bottom));
+  width: 64px; height: 64px; border-radius: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--gold); color: var(--on-gold);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--gold) 35%, transparent);
+}
+.buchknopf:hover { text-decoration: none; filter: brightness(.96); }
+.buchknopf svg { width: 26px; height: 26px; }
+
+/* --- Kopf jeder Seite: Glocke und (am Telefon) Avatar ---------------------- */
+.seitenkopf {
+  display: flex; justify-content: flex-end; align-items: center; gap: 10px;
+  margin-bottom: 12px;
+}
+.avatar {
+  width: 44px; height: 44px; border-radius: 22px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--brand); color: #fff; font-weight: 700; font-size: 15px;
+  text-decoration: none;
+}
+a.avatar:hover { text-decoration: none; }
 
 /* ---------------------------------------------------------------------------
    Hero — Blickfang oben, Verlauf blau nach gold wie im Design
@@ -410,28 +442,23 @@ table.liste .zahl {
    Benachrichtigungen: Glocke im Menue, Liste im Fenster
    --------------------------------------------------------------------------- */
 
-/* Am Telefon sitzt die Glocke in der Bottom-Navigation und sieht aus wie ein
-   Eintrag darin; ab Tablet steht sie unten in der Seitenleiste. Sie ist in
-   beiden Menues vorhanden - sichtbar ist immer nur eines. */
+/* Rund, 44 Pixel, im Kopf der Seite. Der Text steht nur fuer Screenreader
+   im aria-label; sichtbar ist das Symbol mit dem Zaehler. */
 .glocke {
-  appearance: none; background: none; border: 0; cursor: pointer;
-  position: relative; font: inherit; color: var(--muted);
+  appearance: none; cursor: pointer; position: relative; font: inherit;
+  width: 44px; height: 44px; border-radius: 22px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); background: var(--surf-2); color: var(--ink);
 }
-.glocke svg { display: block; }
+.glocke:hover { background: var(--surf-3); }
+.glocke svg { display: block; width: 21px; height: 21px; }
+.glocke-text { display: none; }
 .glocke-zahl {
-  position: absolute; top: -3px; right: -6px; min-width: 17px; height: 17px;
+  position: absolute; top: -3px; right: -3px; min-width: 17px; height: 17px;
   padding: 0 4px; border-radius: 99px;
   background: var(--red); color: #fff;
   font-size: 10.5px; font-weight: 700; line-height: 17px; text-align: center;
 }
-
-.bottomnav .glocke {
-  flex: 1 0 auto; min-width: 62px;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  font-size: 10px; font-weight: 600; padding: 2px 4px; white-space: nowrap;
-}
-.bottomnav .glocke svg { width: 24px; height: 24px; }
-.bottomnav .glocke .glocke-zahl { top: -2px; right: 12px; }
 
 .nachrichtenliste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .nachrichtenliste li {
@@ -463,37 +490,57 @@ table.liste .zahl {
 
   .seitenleiste {
     display: flex; flex-direction: column;
-    width: 240px; flex: 0 0 240px;
+    width: 264px; flex: 0 0 264px;
+    padding: 28px 16px 20px;
     background: var(--surf); border-right: 1px solid var(--line);
-    height: 100dvh; position: sticky; top: 0;
+    height: 100dvh; position: sticky; top: 0; overflow-y: auto;
   }
-  .seitenleiste nav { display: flex; flex-direction: column; padding: 8px 12px; gap: 2px; }
-  .seitenleiste nav a {
-    display: flex; align-items: center; gap: 11px;
-    padding: 10px 12px; border-radius: 11px;
-    color: var(--ink-2); font-weight: 600; font-size: 14.5px; text-decoration: none;
+  .seitenleiste .marke { padding: 0 10px 24px; }
+  .seitenleiste .buchen-gross {
+    height: 46px; border-radius: 14px; font-family: var(--font-text);
+    font-size: 15px; font-weight: 800; margin-bottom: 18px; text-decoration: none;
   }
-  .seitenleiste nav a:hover { background: var(--chip); color: var(--ink); }
-  .seitenleiste nav a[aria-current="page"] {
-    background: var(--blue-soft); color: var(--blue-ink);
+  .seitenleiste .buchen-gross svg { width: 18px; height: 18px; }
+  .seitenleiste .menue { display: flex; flex-direction: column; gap: 2px; }
+  .seitenleiste .menue a {
+    display: flex; align-items: center; gap: 12px;
+    height: 44px; padding: 0 12px; border-radius: 12px;
+    color: var(--ink-2); font-weight: 600; font-size: 15px; text-decoration: none;
   }
-  .seitenleiste svg { width: 20px; height: 20px; flex: 0 0 auto; }
-  .seitenleiste .fuss {
-    margin-top: auto; padding: 14px 20px 20px;
-    border-top: 1px solid var(--line); font-size: 13px; color: var(--muted);
-    display: flex; flex-direction: column; gap: 10px;
+  .seitenleiste .menue.klein a { height: 40px; font-size: 14.5px; }
+  .seitenleiste .menue a:hover { background: var(--surf-2); color: var(--ink); }
+  .seitenleiste .menue a[aria-current="page"] {
+    background: var(--nav-aktiv); color: var(--nav-aktiv-ink);
   }
+  .seitenleiste .menue svg { width: 20px; height: 20px; flex: 0 0 auto; }
+  .seitenleiste .menue.klein svg { width: 18px; height: 18px; }
+  .seitenleiste .menue-abschnitt { margin: 22px 12px 8px; }
 
-  /* In der Seitenleiste traegt die Glocke dieselbe Form wie die Menuepunkte. */
-  .seitenleiste nav .glocke {
-    display: flex; align-items: center; gap: 11px;
-    padding: 10px 12px; border-radius: 11px;
-    font-weight: 600; font-size: 14.5px; text-align: left;
+  .nutzerkarte {
+    margin-top: auto; display: flex; align-items: center; gap: 10px;
+    padding: 12px; border-radius: 16px; background: var(--surf-2);
   }
-  .seitenleiste nav .glocke:hover { background: var(--chip); color: var(--ink); }
-  .seitenleiste nav .glocke .glocke-zahl { position: static; margin-left: auto; }
+  .nutzerkarte .avatar { width: 38px; height: 38px; border-radius: 19px; font-size: 13px; }
+  .nutzerkarte .wer { flex: 1 1 auto; min-width: 0; display: grid; }
+  .nutzerkarte .name {
+    font-size: 14px; font-weight: 700;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .nutzerkarte .rolle { font-size: 12px; color: var(--muted); }
+  .abmelden {
+    appearance: none; border: 0; cursor: pointer; flex: 0 0 auto;
+    width: 44px; height: 44px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; color: var(--muted);
+  }
+  .abmelden:hover { background: var(--surf-3); color: var(--ink); }
+  .abmelden:disabled { opacity: .5; cursor: wait; }
+  .abmelden svg { width: 18px; height: 18px; }
 
-  .bottomnav { display: none; }
+  /* Die Nutzerkarte zeigt den Avatar schon - im Seitenkopf bleibt die Glocke. */
+  .seitenkopf .avatar { display: none; }
+
+  .schwebeleiste, .buchknopf { display: none; }
   .inhalt { padding: 24px 32px 48px; }
 
   .pagetitle { font-size: 42px; }

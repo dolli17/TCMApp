@@ -1,9 +1,12 @@
 /**
  * Die Benachrichtigungsglocke
  *
- * Sitzt im Kopf jedes Tabs, wie im Web in beiden Menues. Der Zaehler wird bei
- * jedem Fokuswechsel neu geholt: sonst bliebe die rote Marke stehen, nachdem
- * die Nachrichten gelesen wurden.
+ * Rund, 44 Pixel, im grossen Kopf jedes Tabs neben dem Avatar. Der Zaehler
+ * wird bei jedem Fokuswechsel neu geholt: sonst bliebe die rote Marke stehen,
+ * nachdem die Nachrichten gelesen wurden.
+ *
+ * Der Entwurf zeigt nur einen Punkt; die Zahl bleibt, weil sie im Web wie in
+ * der App schon vorher da war und niemandem etwas wegnehmen soll.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -15,6 +18,7 @@ import { useTheme } from "@/lib/theme";
 
 export function Glocke() {
   const { farben } = useTheme();
+  const groesse = 44;
   const [ungelesen, setUngelesen] = useState(0);
 
   const zaehlen = useCallback(() => {
@@ -33,13 +37,17 @@ export function Glocke() {
       accessibilityLabel={
         ungelesen > 0 ? `Benachrichtigungen, ${ungelesen} ungelesen` : "Benachrichtigungen"
       }
-      style={{ paddingHorizontal: 14, paddingVertical: 6 }}
+      style={{
+        width: groesse, height: groesse, borderRadius: groesse / 2,
+        borderWidth: 1, borderColor: farben.line, backgroundColor: farben.surf2,
+        alignItems: "center", justifyContent: "center",
+      }}
     >
-      <Symbol name="glocke" farbe={farben.ink2} groesse={22} />
+      <Symbol name="glocke" farbe={farben.ink} groesse={21} />
       {ungelesen > 0 && (
         <View
           style={{
-            position: "absolute", top: 0, right: 8,
+            position: "absolute", top: -3, right: -3,
             minWidth: 17, height: 17, borderRadius: 99,
             backgroundColor: farben.red,
             alignItems: "center", justifyContent: "center",

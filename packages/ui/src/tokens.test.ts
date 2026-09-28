@@ -170,6 +170,7 @@ describe("Kontrast", () => {
     // Im Dunkeln ist tabAktiv ein durchscheinender Schimmer; dort traegt die
     // Leiste selbst den Kontrast, und gold auf dunklem Grund liegt weit ueber 4,5.
     expect(verhaeltnis(farben.hell.tabAktivInk, farben.hell.tabAktiv)).toBeGreaterThanOrEqual(4.5);
+    expect(verhaeltnis(farben.hell.navAktivInk, farben.hell.navAktiv)).toBeGreaterThanOrEqual(4.5);
   });
 
   it("die farbigen Texttöne erfüllen AA (4.5:1) auf Seite und Karte", () => {

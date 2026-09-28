@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { formatCents } from "@tcm/core";
 import { abstand } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
+import { GrosserKopf } from "@/components/GrosserKopf";
 import { MerkmaleKarte, type MerkmalZeile } from "@/components/MerkmaleKarte";
 import { Stammdatenformular } from "@/components/Stammdatenformular";
 import {
@@ -63,6 +64,7 @@ export default function Konto() {
       aktualisiert={zustand.aktualisiert}
       onAktualisieren={zustand.neuLaden}
       fehler={zustand.fehler}
+      kopf={<GrosserKopf titel="Mein Konto" />}
     >
       {/* Kennzahlen als Kachelreihe wie im Web - zwei nebeneinander, ab da umbrechend. */}
       <View style={stil.kachelReihe}>

@@ -487,7 +487,7 @@ test.describe("Meine Buchungen und Benachrichtigungen", () => {
   }) => {
     // 1. Wie heisst das Testmitglied? Der Name steht in der Seitenleiste.
     await anmelden(page, NUTZER.mitglied);
-    const name = ((await page.locator(".seitenleiste .fuss span").first().textContent()) ?? "").trim();
+    const name = ((await page.locator(".seitenleiste .nutzerkarte .name").textContent()) ?? "").trim();
     expect(name.length, "Der Name des Testmitglieds ist nicht lesbar").toBeGreaterThan(2);
     // Voller Name, nicht nur der Nachname: "Bauer" gibt es im Testbestand
     // mehrfach, und der erste Treffer waere die falsche Person.
@@ -532,7 +532,7 @@ test.describe("Meine Buchungen und Benachrichtigungen", () => {
     await anmelden(page, NUTZER.mitglied);
     await page.goto("/plan/meine");
 
-    const glocke = page.locator(".seitenleiste button.glocke");
+    const glocke = page.locator(".seitenkopf button.glocke");
     await expect(glocke.locator(".glocke-zahl")).toBeVisible();
     await glocke.click();
 
@@ -554,7 +554,7 @@ test.describe("Meine Buchungen und Benachrichtigungen", () => {
 
     // 4. Nach dem Lesen ist der Zaehler weg.
     await page.reload();
-    await expect(page.locator(".seitenleiste .glocke-zahl")).toHaveCount(0);
+    await expect(page.locator(".seitenkopf .glocke-zahl")).toHaveCount(0);
 
     // 5. Aufraeumen: der Bucher storniert ueber seine eigene Liste.
     await anmelden(page, NUTZER.admin);
@@ -636,7 +636,7 @@ test.describe("Offene Spiele und Gäste", () => {
     // Der Bucher wird benachrichtigt und storniert; die Gebühr wird erlassen.
     await anmelden(page, NUTZER.admin);
     await page.goto("/plan/meine");
-    await expect(page.locator(".seitenleiste .glocke-zahl")).toBeVisible();
+    await expect(page.locator(".seitenkopf .glocke-zahl")).toBeVisible();
 
     const eigener = page
       .locator(".terminliste .termin")
@@ -868,7 +868,7 @@ test.describe("Serien ändern, sperren, Gründe nennen", () => {
     // Das Mitglied findet den Grund in der Nachricht.
     await anmelden(page, NUTZER.mitglied);
     await page.goto("/plan");
-    await page.locator(".seitenleiste button.glocke").click();
+    await page.locator(".seitenkopf button.glocke").click();
     await expect(page.locator("dialog.fenster .nachrichtenliste li").first()).toContainText(
       "ZZTest Platz unbespielbar",
       { timeout: 15_000 },
@@ -951,11 +951,12 @@ test.describe("Verwaltung", () => {
   test("ein Menüpunkt führt in sechs Bereiche", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
 
-    const nav = page.getByRole("navigation", { name: "Hauptmenü" }).first();
-    await nav.getByRole("link", { name: "Verwaltung" }).click();
+    // Die Seitenleiste fuehrt die Bereiche einzeln; die Uebersicht ist der Einstieg.
+    const nav = page.getByRole("navigation", { name: "Verwaltungsmenü" });
+    await nav.getByRole("link", { name: "Übersicht" }).click();
     await page.waitForURL(/\/admin$/);
 
-    const reiter = page.getByRole("navigation", { name: "Verwaltung" });
+    const reiter = page.getByRole("navigation", { name: "Verwaltung", exact: true });
     for (const name of ["Übersicht", "Mitglieder", "Plätze", "Getränke", "Kasse", "System"]) {
       await expect(reiter.getByRole("link", { name })).toBeVisible();
     }

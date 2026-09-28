@@ -3,6 +3,7 @@ import { Pressable, Text, View } from "react-native";
 import { canVoidSelf, formatCents } from "@tcm/core";
 import { abstand } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
+import { GrosserKopf } from "@/components/GrosserKopf";
 import { GetraenkeFenster } from "@/components/GetraenkeFenster";
 import {
   bucheGetraenk, ladeEigeneGetraenke, ladeGetraenkekarte, ladeStornoFenster, storniereGetraenk,
@@ -82,6 +83,7 @@ export default function Getraenke() {
         aktualisiert={zustand.aktualisiert}
         onAktualisieren={zustand.neuLaden}
         fehler={zustand.fehler}
+        kopf={<GrosserKopf titel="Getränke" />}
       >
         {meldung && (
           <Text style={meldung.ok ? stil.hinweisErfolg : stil.hinweisFehler}>{meldung.text}</Text>

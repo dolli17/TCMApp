@@ -187,6 +187,20 @@ export async function storniereBuchung(bookingId: string): Promise<Ergebnis> {
   return { ok: true, meldung: "Buchung storniert." };
 }
 
+/** Vor- und Nachname fuer den Avatar im Kopf - nicht mehr als das. */
+export async function ladeMeinenNamen(): Promise<{ vorname: string; nachname: string } | null> {
+  const { id } = await ladeIchSelbst();
+  if (!id) return null;
+
+  const { data } = await supabase
+    .from("members")
+    .select("first_name, last_name")
+    .eq("id", id)
+    .maybeSingle();
+  if (!data) return null;
+  return { vorname: data.first_name ?? "", nachname: data.last_name ?? "" };
+}
+
 /** Genau die Felder, die der Spalten-Grant auf members hergibt. */
 export const STAMMDATENFELDER = [
   "first_name", "last_name", "title", "phone", "mobile", "street", "postcode", "city",
