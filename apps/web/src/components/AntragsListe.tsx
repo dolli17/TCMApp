@@ -32,47 +32,53 @@ export function AntragsListe({
   const [offen, setOffen] = useState<Antrag | null>(null);
 
   if (antraege.length === 0) {
-    return <p className="leer">Keine Anträge in dieser Ansicht.</p>;
+    return <p className="leer-klein">Keine Anträge in dieser Ansicht.</p>;
   }
 
   return (
     <>
-      <div className="tabellenhuelle">
+      <div className="karte tabellenkarte">
         <table className="liste">
           <thead>
             <tr>
-              <th>Eingegangen</th>
-              <th>Name</th>
-              <th>E-Mail</th>
-              <th>Status</th>
-              <th></th>
+              <th scope="col">Name</th>
+              <th scope="col">Eingegangen</th>
+              <th scope="col">Stand</th>
+              <th scope="col"><span className="sr-only">Aktion</span></th>
             </tr>
           </thead>
           <tbody>
             {antraege.map((a) => (
               <tr key={a.id}>
-                <td style={{ whiteSpace: "nowrap" }}>{datum(a.submitted_at)}</td>
                 <td>
-                  {a.last_name}, {a.first_name}
-                  {a.possible_duplicate && (
-                    <span className="marke-klein rot" title="Diese Adresse gehört bereits zu einem Mitglied">
-                      Dublette?
+                  <div className="person">
+                    <span className={`avatar ton-${a.id.charCodeAt(0) % 4}`} aria-hidden="true">
+                      {(a.first_name[0] ?? "") + (a.last_name[0] ?? "")}
                     </span>
-                  )}
+                    <div>
+                      <b>
+                        {a.last_name}, {a.first_name}
+                      </b>
+                      <small>{a.email}</small>
+                      {a.possible_duplicate && (
+                        <span className="marken-zeile">
+                          <span className="statusmarke rot" title="Diese Adresse gehört bereits zu einem Mitglied">
+                            Dublette?
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </td>
-                <td>{a.email}</td>
-                <td>
-                  <span
-                    className={`marke-klein ${
-                      a.status === "new" ? "" : a.status === "accepted" ? "gruen" : "grau"
-                    }`}
-                  >
+                <td data-label="Eingegangen" className="leiser">{datum(a.submitted_at)}</td>
+                <td data-label="Stand">
+                  <span className={`statusmarke ${a.status === "new" ? "gelb" : a.status === "accepted" ? "gruen" : ""}`}>
                     {STATUS_TEXT[a.status] ?? a.status}
                   </span>
                 </td>
-                <td>
+                <td className="aktion">
                   {a.status === "new" && (
-                    <button className="knopf klein" onClick={() => setOffen(a)}>
+                    <button className="knopf leise klein" onClick={() => setOffen(a)}>
                       Ansehen
                     </button>
                   )}

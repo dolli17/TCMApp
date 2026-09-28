@@ -1,5 +1,6 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
+import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 
 export const dynamic = "force-dynamic";
 
@@ -49,32 +50,34 @@ export default async function SystemSeite() {
   const sonstige = alle.filter((e) => !bekannt.has(e.key.split(".")[0] ?? ""));
 
   return (
-    <>
-      <h1 className="pagetitle">System</h1>
-      <p className="unterzeile">
-        Werte, die man einmal einrichtet. Änderungen wirken sofort – auch für alle anderen.
-      </p>
+    <div className="verwaltung">
+      <VerwaltungsKopf
+        titel="System"
+        unterzeile="Werte, die man einmal einrichtet. Änderungen wirken sofort – auch für alle anderen."
+      />
 
-      {GRUPPEN.map((g) => {
-        const eintraege = alle.filter((e) => e.key.startsWith(g.praefix + "."));
-        if (eintraege.length === 0) return null;
-        return (
+      <div className="einstellungs-raster">
+        {GRUPPEN.map((g) => {
+          const eintraege = alle.filter((e) => e.key.startsWith(g.praefix + "."));
+          if (eintraege.length === 0) return null;
+          return (
+            <EinstellungsGruppe
+              key={g.praefix}
+              titel={g.titel}
+              text={g.text}
+              eintraege={eintraege}
+            />
+          );
+        })}
+
+        {sonstige.length > 0 && (
           <EinstellungsGruppe
-            key={g.praefix}
-            titel={g.titel}
-            text={g.text}
-            eintraege={eintraege}
+            titel="Weitere"
+            text="Werte ohne festen Ort. Kommt hier etwas an, gehört es vermutlich in einen der Bereiche oben."
+            eintraege={sonstige}
           />
-        );
-      })}
-
-      {sonstige.length > 0 && (
-        <EinstellungsGruppe
-          titel="Weitere"
-          text="Werte ohne festen Ort. Kommt hier etwas an, gehört es vermutlich in einen der Bereiche oben."
-          eintraege={sonstige}
-        />
-      )}
-    </>
+        )}
+      </div>
+    </div>
   );
 }

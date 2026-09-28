@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { MitgliederBereiche } from "@/components/MitgliederBereiche";
+import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import {
   ArbeitsdienstListe, type DienstZeile, type SollZeile,
 } from "@/components/ArbeitsdienstListe";
@@ -37,38 +39,22 @@ export default async function ArbeitsdienstSeite({
   const satz = Number(satzRes.data?.value ?? 1500);
 
   return (
-    <>
-      <p className="zurueck">
-        <Link href="/admin/mitglieder">← Mitglieder</Link>
-      </p>
+    <div className="verwaltung">
+      <VerwaltungsKopf
+        kicker="Verwaltung · Mitglieder"
+        titel="Arbeitsdienst"
+        unterzeile="Wer wie viele Stunden schuldet, was geleistet wurde und was am Jahresende offen bleibt."
+      />
+      <MitgliederBereiche aktiv="/admin/mitglieder/arbeitsdienst" />
 
-      <h1 className="pagetitle">Arbeitsdienst</h1>
-      <p className="unterzeile">
-        Wer wie viele Stunden schuldet, was geleistet wurde und was am Jahresende offen bleibt.
-      </p>
-
-      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "1rem" }}>
-        <Link
-          className="knopf leise klein"
-          href={`/admin/mitglieder/arbeitsdienst?jahr=${jahr - 1}`}
-        >
-          ‹ {jahr - 1}
-        </Link>
-        <strong className="dpl tnum" style={{ minWidth: 70, textAlign: "center" }}>
+      <nav className="filterchips" aria-label="Jahr">
+        <Link href={`/admin/mitglieder/arbeitsdienst?jahr=${jahr - 1}`}>‹ {jahr - 1}</Link>
+        <Link href={`/admin/mitglieder/arbeitsdienst?jahr=${jahr}`} aria-current="true">
           {jahr}
-        </strong>
-        <Link
-          className="knopf leise klein"
-          href={`/admin/mitglieder/arbeitsdienst?jahr=${jahr + 1}`}
-        >
-          {jahr + 1} ›
         </Link>
-        {jahr !== aktuell && (
-          <Link className="knopf leise klein" href="/admin/mitglieder/arbeitsdienst">
-            Dieses Jahr
-          </Link>
-        )}
-      </div>
+        <Link href={`/admin/mitglieder/arbeitsdienst?jahr=${jahr + 1}`}>{jahr + 1} ›</Link>
+        {jahr !== aktuell && <Link href="/admin/mitglieder/arbeitsdienst">Dieses Jahr</Link>}
+      </nav>
 
       <ArbeitsdienstListe
         jahr={jahr}
@@ -77,6 +63,6 @@ export default async function ArbeitsdienstSeite({
         stundensatzCents={satz}
         abrechenbar={jahr < aktuell}
       />
-    </>
+    </div>
   );
 }

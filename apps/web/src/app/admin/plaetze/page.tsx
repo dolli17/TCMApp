@@ -1,8 +1,11 @@
+import { minutesOf, minutesToTime, occupancyKind } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
+import { FensterKnopf } from "@/components/FensterKnopf";
 import {
-  PlatzVerwaltung, type ArtZeile, type PlatzZeile,
+  PlatzSperren, PlatzVerwaltung, type ArtZeile, type PlatzZeile,
 } from "@/components/PlatzVerwaltung";
+import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { SerienFormular } from "@/components/SerienFormular";
 import { SerienListe, type SerienZeile } from "@/components/SerienListe";
 
@@ -22,7 +25,8 @@ export const dynamic = "force-dynamic";
 export default async function PlaetzeSeite() {
   const supabase = await createServerSupabase();
 
-  const [plaetzeRes, artenRes, serienRes, aktivePlaetzeRes, einstellungRes] = await Promise.all([
+  const heute = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
+  const [plaetzeRes, artenRes, serienRes, aktivePlaetzeRes, einstellungRes, planRes] = await Promise.all([
     supabase.rpc("court_overview"),
     supabase
       .from("booking_types")
@@ -38,6 +42,7 @@ export default async function PlaetzeSeite() {
       .select("key, value, value_type, label, description, updated_at")
       .like("key", "booking.%")
       .order("key"),
+    supabase.rpc("day_schedule", { p_date: heute }),
   ]);
 
   const plaetze = (plaetzeRes.data ?? []) as PlatzZeile[];
@@ -49,18 +54,41 @@ export default async function PlaetzeSeite() {
   // Die Oeffnungszeiten stehen nur noch hier, nicht mehr zusaetzlich hart
   // kodiert im Sperrformular - sonst laufen die beiden auseinander, sobald
   // jemand die Zeiten aendert.
+  // Was liegt jetzt gerade auf dem Platz? Sperrung und Serie aus dem
+  // Tagesplan, eingeordnet wie im Belegungsplan (occupancyKind).
+  const jetzt = Date.now();
+  const zustand: Record<string, { text: string; art: "gesperrt" | "serie" }> = {};
+  for (const b of planRes.data ?? []) {
+    const art = occupancyKind(b);
+    if ((art !== "gesperrt" && art !== "serie") || zustand[b.court_id]) continue;
+    if (new Date(b.starts_at).getTime() <= jetzt && jetzt < new Date(b.ends_at).getTime()) {
+      const bis = minutesToTime(minutesOf(b.ends_at));
+      zustand[b.court_id] = { art, text: art === "gesperrt" ? `gesperrt bis ${bis}` : `Serie bis ${bis}` };
+    }
+  }
+
   const einstellungen = einstellungRes.data ?? [];
   const zeit = (schluessel: string, ersatz: string) =>
     String(einstellungen.find((e) => e.key === schluessel)?.value ?? `"${ersatz}"`)
       .replace(/"/g, "")
       .slice(0, 5);
 
+  const oeffnung = zeit("booking.opening_time", "08:00");
+  const schluss = zeit("booking.closing_time", "21:00");
+
   return (
-    <>
-      <h1 className="pagetitle">Plätze</h1>
-      <p className="unterzeile">
-        Sperrungen, Serien, die Plätze selbst und die Regeln, nach denen gebucht wird.
-      </p>
+    <div className="verwaltung">
+      <VerwaltungsKopf
+        titel="Plätze & Serien"
+        unterzeile="Sperrungen, Serien, die Plätze selbst und die Regeln, nach denen gebucht wird."
+      >
+        <FensterKnopf titel="Serie anlegen" knopf="Serie anlegen" breit>
+          <SerienFormular plaetze={aktivePlaetzeRes.data ?? []} arten={blockungsarten} />
+        </FensterKnopf>
+        <FensterKnopf titel="Plätze sperren" knopf="Plätze sperren" breit>
+          <PlatzSperren plaetze={plaetze} arten={blockungsarten} oeffnung={oeffnung} schluss={schluss} />
+        </FensterKnopf>
+      </VerwaltungsKopf>
 
       {plaetzeRes.error && (
         <div className="hinweis fehler">
@@ -68,32 +96,24 @@ export default async function PlaetzeSeite() {
         </div>
       )}
 
-      <PlatzVerwaltung
-        plaetze={plaetze}
-        arten={arten}
-        blockungsarten={blockungsarten}
-        oeffnung={zeit("booking.opening_time", "08:00")}
-        schluss={zeit("booking.closing_time", "21:00")}
-      />
-
-      <section className="karte" style={{ marginBottom: 18 }}>
-        <h2 className="dpl">Serien</h2>
+      <section className="karte tabellenkarte" aria-labelledby="h-serien">
+        <div className="kartenkopf">
+          <h2 id="h-serien">Serien</h2>
+        </div>
         <p className="unterzeile">
           Training und Verbandsspiele, die sich wöchentlich wiederholen. Bestehende Buchungen
           werden verdrängt – die Vorschau zeigt vorher, wen es trifft.
         </p>
-
-        <SerienFormular plaetze={aktivePlaetzeRes.data ?? []} arten={blockungsarten} />
-
-        <h3 className="dpl">Angelegte Serien</h3>
         <SerienListe serien={(serienRes.data ?? []) as SerienZeile[]} />
       </section>
+
+      <PlatzVerwaltung plaetze={plaetze} arten={arten} zustand={zustand} />
 
       <EinstellungsGruppe
         titel="Buchungsregeln"
         text="Zeiten, Raster, Kontingent und Gastgebühr."
         eintraege={einstellungen}
       />
-    </>
+    </div>
   );
 }

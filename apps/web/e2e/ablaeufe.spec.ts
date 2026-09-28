@@ -397,6 +397,8 @@ test.describe("Berechtigungen", () => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/plaetze");
     await expect(page.getByRole("heading", { name: "Serien", exact: true })).toBeVisible();
+    // Das Formular steht im Fenster hinter dem Kopfknopf.
+    await page.getByRole("button", { name: "Serie anlegen" }).click();
     await expect(page.getByRole("button", { name: "Vorschau" })).toBeVisible();
   });
 
@@ -706,13 +708,14 @@ test.describe("Plätze und Sperrungen", () => {
     await page.getByRole("button", { name: "Platz anlegen" }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("angelegt", { timeout: 15_000 });
 
-    const zeile = page.locator("table.liste tr", { hasText: name });
+    // Die Plätze stehen als Karten, nicht mehr als Tabelle.
+    const zeile = page.locator(".platzkarte", { hasText: name });
     await expect(zeile).toBeVisible();
     await expect(zeile).toContainText("im Plan");
 
     await zeile.getByRole("button", { name: "Stilllegen" }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("stillgelegt", { timeout: 15_000 });
-    await expect(page.locator("table.liste tr", { hasText: name })).toContainText("stillgelegt");
+    await expect(page.locator(".platzkarte", { hasText: name })).toContainText("stillgelegt");
   });
 
   test("Sperrung fragt vor dem Verdrängen und blockiert danach den Slot", async ({ page }) => {
@@ -741,7 +744,9 @@ test.describe("Plätze und Sperrungen", () => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/plaetze");
 
-    const sperren = page.locator("section", { hasText: "Plätze sperren" }).first();
+    // Das Sperrformular steht im Fenster hinter dem Kopfknopf.
+    await page.getByRole("button", { name: "Plätze sperren" }).click();
+    const sperren = page.locator("dialog.fenster section", { hasText: "Plätze sperren" }).first();
     await sperren.getByRole("button", { name: "Alle" }).click();
     await sperren.getByLabel("Tag").fill(tag);
     await sperren.getByLabel("Grund").fill("ZZTest Platzpflege");
@@ -938,7 +943,7 @@ test.describe("Serien ändern, sperren, Gründe nennen", () => {
 
     // Auf der Platzseite stehen drei Tabellen (Plätze, Buchungsarten, Serien) -
     // ein .first() träfe die falsche.
-    const serien = page.locator("section.karte", { hasText: "Angelegte Serien" });
+    const serien = page.locator('section[aria-labelledby="h-serien"]');
     const zeile = serien.locator("table.liste tbody tr").first();
     test.skip((await zeile.count()) === 0, "Keine Serie im Bestand");
     const vorher = ((await zeile.locator("td").first().textContent()) ?? "").trim();
@@ -992,7 +997,7 @@ test.describe("Verwaltung", () => {
     await page.goto("/admin/plaetze");
 
     // Alles zum Platz auf einer Seite: sperren, Serien, Plätze, Arten, Regeln.
-    await expect(page.getByRole("heading", { name: "Plätze sperren" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Plätze sperren" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Serien", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Buchungsarten" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Buchungsregeln" })).toBeVisible();
@@ -1148,7 +1153,10 @@ test.describe("Verwaltung", () => {
 
     // Der heutige Preis war zu keinem Zeitpunkt betroffen.
     await expect(karte.locator("select").first()).toHaveValue(getraenk);
-    await expect(page.locator("table.liste")).not.toContainText("9,99");
+    // Die Seite zeigt auch die Getränkemonate als Tabelle - gemeint ist die Karte.
+    await expect(
+      page.locator("section.karte", { hasText: "Getränkekarte" }).locator("table.liste"),
+    ).not.toContainText("9,99");
   });
 
   test("die Lastschriftläufe sagen, was zum Einziehen noch fehlt", async ({ page }) => {

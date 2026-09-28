@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { FensterKnopf } from "@/components/FensterKnopf";
+import { MitgliederBereiche } from "@/components/MitgliederBereiche";
+import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { AufstellungKarte, type Aufstellungszeile } from "@/components/AufstellungKarte";
 import { MannschaftsFormular, type Mannschaft } from "@/components/MannschaftsFormular";
 import type { Person } from "@/components/Personensuche";
@@ -37,76 +40,70 @@ export default async function MannschaftenSeite({
   }
 
   return (
-    <>
-      <Link href="/admin/mitglieder" className="zurueck">
-        ← Mitglieder
-      </Link>
+    <div className="verwaltung">
+      <VerwaltungsKopf
+        kicker="Verwaltung · Mitglieder"
+        titel="Mannschaften"
+        unterzeile="Wer spielt in welcher Mannschaft, und wer führt sie. Ein Spieler steht in höchstens einer Mannschaft – die meisten Mitglieder in keiner."
+      >
+        <FensterKnopf titel="Mannschaft anlegen" knopf="Mannschaft anlegen">
+          <MannschaftsFormular key="neu" />
+        </FensterKnopf>
+      </VerwaltungsKopf>
+      <MitgliederBereiche aktiv="/admin/mitglieder/mannschaften" />
 
-      <h1 className="pagetitle">Mannschaften</h1>
-      <p className="unterzeile">
-        Wer spielt in welcher Mannschaft, und wer führt sie. Ein Spieler steht in höchstens
-        einer Mannschaft – die meisten Mitglieder in keiner.
-      </p>
-
-      <div className="tabellenhuelle">
-        <table className="liste">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th className="zahl">Spieler</th>
-              <th>Mannschaftsführer</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {mannschaften.length === 0 ? (
+      <div className="karte tabellenkarte">
+        {mannschaften.length === 0 ? (
+          <p className="leer-klein">Noch keine Mannschaften angelegt.</p>
+        ) : (
+          <table className="liste">
+            <thead>
               <tr>
-                <td colSpan={4} className="leer">
-                  Noch keine Mannschaften angelegt.
-                </td>
+                <th scope="col">Name</th>
+                <th scope="col" className="zahl">Spieler</th>
+                <th scope="col">Mannschaftsführer</th>
+                <th scope="col"><span className="sr-only">Aktion</span></th>
               </tr>
-            ) : (
-              mannschaften.map((m) => (
+            </thead>
+            <tbody>
+              {mannschaften.map((m) => (
                 <tr key={m.id}>
-                  <td>
+                  <td className="fett">
                     {m.name}
-                    {!m.active && <span className="marke-klein grau"> stillgelegt</span>}
+                    {!m.active && <span className="statusmarke"> stillgelegt</span>}
                   </td>
-                  <td className="zahl">{m.member_count}</td>
-                  <td>{m.captain_name ?? <span className="beschreibung">–</span>}</td>
-                  <td>
-                    <Link href={`/admin/mitglieder/mannschaften?bearbeiten=${m.id}`}>
+                  <td data-label="Spieler" className="zahl dpl tnum">{m.member_count}</td>
+                  <td data-label="Mannschaftsführer" className="leiser">{m.captain_name ?? "–"}</td>
+                  <td className="aktion">
+                    <Link className="knopf leise klein" href={`/admin/mitglieder/mannschaften?bearbeiten=${m.id}`}>
                       bearbeiten
                     </Link>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      <h2 className="dpl" style={{ marginTop: "2rem" }}>
-        {inBearbeitung ? "Mannschaft bearbeiten" : "Mannschaft anlegen"}
-      </h2>
-
-      {/* Der key baut das Formular beim Wechsel zwischen Bearbeiten und
-          Anlegen neu auf, wie beim Merkmalsformular. */}
-      <MannschaftsFormular key={inBearbeitung?.id ?? "neu"} vorhanden={inBearbeitung} />
-
       {inBearbeitung && (
-        <>
+        // Der key baut das Formular beim Wechsel der Mannschaft neu auf.
+        <FensterKnopf
+          key={inBearbeitung.id}
+          titel="Mannschaft bearbeiten"
+          offen
+          zurueck="/admin/mitglieder/mannschaften"
+          breit
+        >
+          <MannschaftsFormular vorhanden={inBearbeitung} />
           <AufstellungKarte
             mannschaftId={inBearbeitung.id}
             aktiv={inBearbeitung.active}
             zeilen={aufstellung}
             verzeichnis={verzeichnis}
           />
-          <Link href="/admin/mitglieder/mannschaften" className="knopf leise">
-            Neue Mannschaft anlegen
-          </Link>
-        </>
+        </FensterKnopf>
       )}
-    </>
+    </div>
   );
 }

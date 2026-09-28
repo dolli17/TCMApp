@@ -2,7 +2,10 @@ import Link from "next/link";
 import { formatCents } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
+import { KassenKennzahlen } from "@/components/KassenKennzahlen";
+import { LaufListe, type LaufZeile } from "@/components/LaufListe";
 import { Reiter } from "@/components/Reiter";
+import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { AnkuendigungsKarte } from "@/components/AnkuendigungsKarte";
 import { BeitragslaufKarte } from "@/components/BeitragslaufKarte";
 import { BeitragsartenPflege, type BeitragsartZeile } from "@/components/BeitragsartenPflege";
@@ -83,11 +86,13 @@ export default async function KasseSeite({
   );
 
   return (
-    <>
-      <h1 className="pagetitle">Kasse</h1>
-      <p className="unterzeile">
-        Beiträge, Getränkeabrechnung und alles, was daraus an Forderungen entsteht.
-      </p>
+    <div className="verwaltung">
+      <VerwaltungsKopf
+        titel="Kasse"
+        unterzeile="Beiträge, Getränkeabrechnung und alles, was daraus an Forderungen entsteht."
+      />
+
+      <KassenKennzahlen />
 
       <Reiter eintraege={[...ABSCHNITTE]} aktiv={gewaehlt} />
 
@@ -143,7 +148,7 @@ export default async function KasseSeite({
           />
         </>
       )}
-    </>
+    </div>
   );
 }
 
@@ -183,23 +188,16 @@ function Beitragslauf({
 
   return (
     <>
-      <h2 className="dpl">Beitragslauf {jahr}</h2>
-
-      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "1rem" }}>
-        <Link className="knopf leise klein" href={`/admin/kasse?abschnitt=lauf&jahr=${jahr - 1}`}>
-          ‹ {jahr - 1}
-        </Link>
-        <strong className="dpl tnum" style={{ minWidth: 70, textAlign: "center" }}>
-          {jahr}
-        </strong>
-        <Link className="knopf leise klein" href={`/admin/kasse?abschnitt=lauf&jahr=${jahr + 1}`}>
-          {jahr + 1} ›
-        </Link>
-        {jahr !== new Date().getFullYear() && (
-          <Link className="knopf leise klein" href="/admin/kasse?abschnitt=lauf">
-            Dieses Jahr
+      <div className="abschnittskopf">
+        <h2 className="dpl">Beitragslauf {jahr}</h2>
+        <nav className="filterchips" aria-label="Jahr">
+          <Link href={`/admin/kasse?abschnitt=lauf&jahr=${jahr - 1}`}>‹ {jahr - 1}</Link>
+          <Link href={`/admin/kasse?abschnitt=lauf&jahr=${jahr}`} aria-current="true">
+            {jahr}
           </Link>
-        )}
+          <Link href={`/admin/kasse?abschnitt=lauf&jahr=${jahr + 1}`}>{jahr + 1} ›</Link>
+          {jahr !== new Date().getFullYear() && <Link href="/admin/kasse?abschnitt=lauf">Dieses Jahr</Link>}
+        </nav>
       </div>
 
       {!glaeubigerId && (
@@ -210,23 +208,26 @@ function Beitragslauf({
         </div>
       )}
 
-      <div className="kachel-reihe" style={{ marginBottom: "1.5rem" }}>
-        <div className="kachel">
-          <div className="titel">Mitglieder</div>
-          <div className="wert">{zeilen.length}</div>
+      <div className="kennzahlen">
+        <div className="kennzahl">
+          <span className="label">Mitglieder</span>
+          <span className="wert dpl tnum">{zeilen.length}</span>
+          <span className="info">im Beitragslauf {jahr}</span>
         </div>
-        <div className="kachel">
-          <div className="titel">Summe</div>
-          <div className="wert">{formatCents(summe)}</div>
+        <div className="kennzahl">
+          <span className="label">Summe</span>
+          <span className="wert dpl tnum">{formatCents(summe)}</span>
+          <span className="info">alle Beitragsarten</span>
         </div>
-        <div className="kachel">
-          <div className="titel">Ohne Mandat</div>
-          <div className="wert">{ohneMandat.length}</div>
-          <div className="titel">zahlen per Überweisung</div>
+        <div className="kennzahl">
+          <span className="label">Ohne Mandat</span>
+          <span className="wert dpl tnum">{ohneMandat.length}</span>
+          <span className="info">zahlen per Überweisung</span>
         </div>
-        <div className="kachel">
-          <div className="titel">Bereits berechnet</div>
-          <div className="wert">{schonBerechnet.length}</div>
+        <div className="kennzahl">
+          <span className="label">Bereits berechnet</span>
+          <span className="wert dpl tnum">{schonBerechnet.length}</span>
+          <span className="info">Forderung erzeugt</span>
         </div>
       </div>
 
@@ -271,41 +272,49 @@ function Beitragslauf({
         faelligVorschlag={faellig}
       />
 
-      <h2 className="dpl">Positionen</h2>
-      <div className="tabellenhuelle"><table className="liste">
-        <thead>
-          <tr>
-            <th>Mitglied</th>
-            <th>Zahler</th>
-            <th>Beitragsarten</th>
-            <th className="zahl">Betrag</th>
-            <th>Mandat</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {zeilen.map((z) => (
-            <tr key={z.member_id}>
-              <td>{z.member_name}</td>
-              <td style={{ color: "var(--muted)" }}>{z.payer_name || "selbst"}</td>
-              <td>{z.fee_types}</td>
-              <td className="zahl tnum">{formatCents(z.amount_cents ?? 0)}</td>
-              <td>
-                {z.has_mandate ? (
-                  <span className="marke-klein">
-                    {z.mandate_scope === "all_payments" ? "alle Zahlungen" : "nur Beiträge"}
-                  </span>
-                ) : (
-                  <span style={{ color: "var(--red)" }}>fehlt</span>
-                )}
-              </td>
-              <td>{z.already_charged ? <span className="marke-klein">berechnet</span> : "offen"}</td>
+      <section className="karte tabellenkarte" aria-labelledby="h-positionen">
+        <div className="kartenkopf">
+          <h2 id="h-positionen">Positionen</h2>
+        </div>
+        <table className="liste">
+          <thead>
+            <tr>
+              <th scope="col">Mitglied</th>
+              <th scope="col">Zahler</th>
+              <th scope="col">Beitragsarten</th>
+              <th scope="col" className="zahl">Betrag</th>
+              <th scope="col">Mandat</th>
+              <th scope="col">Stand</th>
             </tr>
-          ))}
-        </tbody>
-      </table></div>
+          </thead>
+          <tbody>
+            {zeilen.map((z) => (
+              <tr key={z.member_id}>
+                <td className="fett">{z.member_name}</td>
+                <td data-label="Zahler" className="leiser">{z.payer_name || "selbst"}</td>
+                <td data-label="Beitragsarten">{z.fee_types}</td>
+                <td data-label="Betrag" className="zahl betrag dpl tnum">{formatCents(z.amount_cents ?? 0)}</td>
+                <td data-label="Mandat">
+                  {z.has_mandate ? (
+                    <span className="statusmarke gruen">
+                      {z.mandate_scope === "all_payments" ? "alle Zahlungen" : "nur Beiträge"}
+                    </span>
+                  ) : (
+                    <span className="statusmarke rot">fehlt</span>
+                  )}
+                </td>
+                <td data-label="Stand">
+                  <span className={`statusmarke${z.already_charged ? " gruen" : ""}`}>
+                    {z.already_charged ? "berechnet" : "offen"}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
 
-      <p style={{ color: "var(--muted)", fontSize: "0.85rem", marginTop: "1rem" }}>
+      <p className="mit">
         Nach dem Erzeugen der Forderungen geht zuerst die Vorabankündigung mit Betrag und
         Fälligkeit an die Mitglieder; erst nach Ablauf der Frist darf eingezogen werden.
       </p>
@@ -313,52 +322,21 @@ function Beitragslauf({
   );
 }
 
-const LAUF_STAND: Record<string, string> = {
-  draft: "Entwurf",
-  generated: "Datei erzeugt",
-  submitted: "eingereicht",
-  completed: "abgeschlossen",
-};
-
 /**
  * Der Einstieg in die Lastschriftläufe.
  *
  * Bewusst nur ein Ausschnitt mit Weg dorthin: ein Lauf ist ein Vorgang über
  * mehrere Tage und braucht eine eigene Adresse, die man verlinken kann.
  */
-function Lastschriftband({
-  laeufe,
-}: {
-  laeufe: { id: string; title: string; collection_date: string; status: string;
-            total_cents: number; item_count: number }[];
-}) {
+function Lastschriftband({ laeufe }: { laeufe: LaufZeile[] }) {
   return (
-    <section className="karte">
-      <h2 className="dpl">Lastschriftläufe</h2>
-      <p className="unterzeile">
-        Aus angekündigten Forderungen wird eine Datei fürs Onlinebanking.
-      </p>
-
-      {laeufe.length === 0 ? (
-        <p className="leer">Es gibt noch keinen Lastschriftlauf.</p>
-      ) : (
-        <ul className="wegweiser">
-          {laeufe.map((l) => (
-            <li key={l.id}>
-              <Link href={`/admin/kasse/lastschriften/${l.id}`}>{l.title}</Link> –{" "}
-              {new Intl.DateTimeFormat("de-DE").format(new Date(l.collection_date))},{" "}
-              {l.item_count} {l.item_count === 1 ? "Lastschrift" : "Lastschriften"} über{" "}
-              {formatCents(l.total_cents)} · {LAUF_STAND[l.status] ?? l.status}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className="fenster-fuss">
-        <Link className="knopf" href="/admin/kasse/lastschriften">
-          Zu den Lastschriftläufen
-        </Link>
+    <section className="karte tabellenkarte" aria-labelledby="h-lastschrift">
+      <div className="kartenkopf">
+        <h2 id="h-lastschrift">Lastschriftläufe</h2>
+        <Link href="/admin/kasse/lastschriften">Alle Läufe</Link>
       </div>
+      <p className="unterzeile">Aus angekündigten Forderungen wird eine Datei fürs Onlinebanking.</p>
+      <LaufListe laeufe={laeufe} />
     </section>
   );
 }
@@ -374,12 +352,12 @@ const STAENDE = [
 
 function StandFilter({ aktiv }: { aktiv: string }) {
   return (
-    <nav className="reiter" aria-label="Stand">
+    <nav className="filterchips" aria-label="Stand">
       {STAENDE.map((s) => (
         <Link
           key={s.wert || "alle"}
           href={`/admin/kasse?abschnitt=forderungen${s.wert ? `&stand=${s.wert}` : ""}`}
-          aria-current={s.wert === aktiv ? "page" : undefined}
+          aria-current={s.wert === aktiv ? "true" : undefined}
         >
           {s.label}
         </Link>

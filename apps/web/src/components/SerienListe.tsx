@@ -33,7 +33,7 @@ export function SerienListe({ serien }: { serien: SerienZeile[] }) {
   const [laeuft, starte] = useTransition();
 
   if (serien.length === 0) {
-    return <p className="leer">Noch keine Serien angelegt.</p>;
+    return <p className="leer-klein">Noch keine Serien angelegt.</p>;
   }
 
   return (
@@ -44,31 +44,36 @@ export function SerienListe({ serien }: { serien: SerienZeile[] }) {
         </div>
       )}
 
-      <div className="tabellenhuelle"><table className="liste">
+      <table className="liste">
         <thead>
           <tr>
-            <th>Titel</th>
-            <th>Platz</th>
-            <th>Wann</th>
-            <th>Zeitraum</th>
-            <th className="zahl">Offen</th>
-            <th />
+            <th scope="col">Titel</th>
+            <th scope="col">Wochentag</th>
+            <th scope="col">Zeit</th>
+            <th scope="col">Platz</th>
+            <th scope="col">Zeitraum</th>
+            <th scope="col" className="zahl">Offen</th>
+            <th scope="col"><span className="sr-only">Aktion</span></th>
           </tr>
         </thead>
         <tbody>
           {serien.map((s) => (
             <tr key={s.id}>
-              <td>{s.title}</td>
-              <td>{s.court_name}</td>
-              <td>
-                {WOCHENTAGE[s.weekday]}, {String(s.start_time).slice(0, 5)}–
-                {String(s.end_time).slice(0, 5)}
+              <td className="fett">
+                {/* Dieselbe Schraffur wie Serien im Belegungsplan */}
+                <span className="serien-muster" aria-hidden="true" />
+                {s.title}
               </td>
-              <td>
-                {DATUM.format(new Date(s.valid_from))} bis {DATUM.format(new Date(s.valid_to))}
+              <td data-label="Wochentag">{WOCHENTAGE[s.weekday]}</td>
+              <td data-label="Zeit" className="tnum">
+                {String(s.start_time).slice(0, 5)}–{String(s.end_time).slice(0, 5)}
               </td>
-              <td className="zahl tnum">{s.kuenftige}</td>
-              <td>
+              <td data-label="Platz">{s.court_name}</td>
+              <td data-label="Zeitraum" className="leiser">
+                {DATUM.format(new Date(s.valid_from))} – {DATUM.format(new Date(s.valid_to))}
+              </td>
+              <td data-label="Offen" className="zahl dpl tnum">{s.kuenftige}</td>
+              <td className="aktion">
                 {nachfrage === s.id ? (
                   <>
                     <button
@@ -117,7 +122,7 @@ export function SerienListe({ serien }: { serien: SerienZeile[] }) {
             </tr>
           ))}
         </tbody>
-      </table></div>
+      </table>
 
       {bearbeitet && (
         <SerienFenster

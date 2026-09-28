@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { MitgliederBereiche } from "@/components/MitgliederBereiche";
+import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { AntragsListe } from "@/components/AntragsListe";
 import type { Antrag, Beitragsart } from "@/components/AntragsFenster";
 
@@ -57,24 +59,24 @@ export default async function AntraegeSeite({
   const offene = antraege.filter((a) => a.status === "new").length;
 
   return (
-    <>
-      <Link href="/admin/mitglieder" className="zurueck">
-        ← Mitglieder
-      </Link>
+    <div className="verwaltung">
+      <VerwaltungsKopf
+        kicker="Verwaltung · Mitglieder"
+        titel="Aufnahmeanträge"
+        unterzeile={
+          gewaehlt === "offen" && offene === 0
+            ? "Zurzeit liegt nichts vor."
+            : `${antraege.length} Anträge in dieser Ansicht.`
+        }
+      />
+      <MitgliederBereiche aktiv="/admin/mitglieder/antraege" />
 
-      <h1 className="pagetitle">Aufnahmeanträge</h1>
-      <p className="unterzeile">
-        {gewaehlt === "offen" && offene === 0
-          ? "Zurzeit liegt nichts vor."
-          : `${antraege.length} Anträge in dieser Ansicht.`}
-      </p>
-
-      <nav className="reiter" aria-label="Filter">
+      <nav className="filterchips" aria-label="Filter">
         {FILTER.map((f) => (
           <Link
             key={f.wert}
             href={`/admin/mitglieder/antraege?filter=${f.wert}`}
-            aria-current={f.wert === gewaehlt ? "page" : undefined}
+            aria-current={f.wert === gewaehlt ? "true" : undefined}
           >
             {f.label}
           </Link>
@@ -83,10 +85,10 @@ export default async function AntraegeSeite({
 
       <AntragsListe antraege={antraege} beitragsarten={beitragsarten} />
 
-      <p className="beschreibung" style={{ marginTop: "1.5rem" }}>
+      <p className="beschreibung">
         Das öffentliche Formular steht unter <Link href="/antrag">/antrag</Link>. Wer dort einen
         Antrag stellt, taucht hier auf – angelegt wird erst mit der Aufnahme.
       </p>
-    </>
+    </div>
   );
 }

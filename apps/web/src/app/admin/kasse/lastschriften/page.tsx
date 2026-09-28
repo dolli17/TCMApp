@@ -1,18 +1,11 @@
 import Link from "next/link";
-import { formatCents } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { KassenKennzahlen } from "@/components/KassenKennzahlen";
 import { LaufAnlegen } from "@/components/LaufAnlegen";
+import { LaufListe } from "@/components/LaufListe";
+import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 
 export const dynamic = "force-dynamic";
-
-const DATUM = new Intl.DateTimeFormat("de-DE");
-
-const STAND: Record<string, string> = {
-  draft: "Entwurf",
-  generated: "Datei erzeugt",
-  submitted: "eingereicht",
-  completed: "abgeschlossen",
-};
 
 /**
  * Die Lastschriftläufe.
@@ -44,15 +37,15 @@ export default async function LastschriftenSeite() {
   const laeufe = laeufeRes.data ?? [];
 
   return (
-    <>
-      <p className="zurueck">
-        <Link href="/admin/kasse">← Kasse</Link>
-      </p>
+    <div className="verwaltung">
+      <VerwaltungsKopf
+        kicker="Verwaltung · Kasse"
+        titel="Lastschriftläufe"
+        unterzeile="Aus angekündigten Forderungen wird eine Datei für das Onlinebanking."
+        zurueck={{ href: "/admin/kasse", text: "Kasse" }}
+      />
 
-      <h1 className="pagetitle">Lastschriftläufe</h1>
-      <p className="unterzeile">
-        Aus angekündigten Forderungen wird eine Datei für das Onlinebanking.
-      </p>
+      <KassenKennzahlen />
 
       {fehlend.length > 0 && (
         <div className="hinweis fehler">
@@ -62,45 +55,14 @@ export default async function LastschriftenSeite() {
         </div>
       )}
 
-      <LaufAnlegen fristTage={frist} />
-
-      <section className="karte">
-        <h2 className="dpl">Bisherige Läufe</h2>
-        {laeufe.length === 0 ? (
-          <p className="leer">Es gibt noch keinen Lastschriftlauf.</p>
-        ) : (
-          <div className="tabellenhuelle"><table className="liste">
-            <thead>
-              <tr>
-                <th>Bezeichnung</th>
-                <th>Fällig</th>
-                <th className="zahl">Lastschriften</th>
-                <th className="zahl">Summe</th>
-                <th className="zahl">Zurück</th>
-                <th>Stand</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {laeufe.map((l) => (
-                <tr key={l.id}>
-                  <td>{l.title}</td>
-                  <td className="mit">{DATUM.format(new Date(l.collection_date))}</td>
-                  <td className="zahl tnum">{l.item_count}</td>
-                  <td className="zahl tnum">{formatCents(l.total_cents)}</td>
-                  <td className="zahl tnum">{l.zurueck || "—"}</td>
-                  <td><span className="marke-klein">{STAND[l.status] ?? l.status}</span></td>
-                  <td>
-                    <Link className="knopf leise klein" href={`/admin/kasse/lastschriften/${l.id}`}>
-                      Öffnen
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table></div>
-        )}
+      <section className="karte tabellenkarte" aria-labelledby="h-laeufe">
+        <div className="kartenkopf">
+          <h2 id="h-laeufe">Bisherige Läufe</h2>
+        </div>
+        <LaufListe laeufe={laeufe} />
       </section>
-    </>
+
+      <LaufAnlegen fristTage={frist} />
+    </div>
   );
 }
