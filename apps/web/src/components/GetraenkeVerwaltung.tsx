@@ -124,49 +124,51 @@ function Kartenliste({
   const neu = form.id === null;
 
   return (
-    <section className="karte" style={{ marginBottom: 18 }}>
+    <section className="karte">
       <h2 className="dpl">Getränkekarte</h2>
       <p className="unterzeile">
         Was an der Theke angeboten wird, in der Reihenfolge, in der es dort erscheint. Ein
         stillgelegtes Getränk verschwindet aus der Karte; seine bisherigen Buchungen bleiben.
       </p>
 
-      <div className="tabellenhuelle"><table className="liste">
+      <div className="tabellenhuelle tabellenkarte"><table className="liste">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Art</th>
-            <th className="zahl">Preis</th>
-            <th>Geplant</th>
-            <th className="zahl">Buchungen</th>
-            <th>Status</th>
-            <th>Reihenfolge</th>
-            <th />
+            <th scope="col">Name</th>
+            <th scope="col">Art</th>
+            <th scope="col" className="zahl">Preis</th>
+            <th scope="col">Geplant</th>
+            <th scope="col" className="zahl">Buchungen</th>
+            <th scope="col">Aktiv</th>
+            <th scope="col">Reihenfolge</th>
+            <th scope="col"><span className="sr-only">Aktion</span></th>
           </tr>
         </thead>
         <tbody>
           {getraenke.map((g, i) => (
             <tr key={g.id}>
-              <td>
+              <td className="fett">
                 {g.name}
                 {g.description && <div className="mit">{g.description}</div>}
               </td>
-              <td>{ART_TEXT[g.category]}</td>
-              <td className="zahl tnum">
+              <td data-label="Art">{ART_TEXT[g.category]}</td>
+              <td data-label="Preis" className="zahl betrag dpl tnum">
                 {g.price_cents === null ? "—" : formatCents(g.price_cents)}
               </td>
-              <td className="mit">
+              <td data-label="Geplant" className="leiser">
                 {g.naechster_preis_cents === null || g.naechster_preis_ab === null
                   ? "—"
                   : `${formatCents(g.naechster_preis_cents)} ab ${DATUM.format(
                       new Date(g.naechster_preis_ab),
                     )}`}
               </td>
-              <td className="zahl tnum">{g.buchungen}</td>
-              <td>
-                <span className="marke-klein">{g.active ? "in der Karte" : "stillgelegt"}</span>
+              <td data-label="Buchungen" className="zahl tnum">{g.buchungen}</td>
+              <td data-label="Aktiv">
+                <span className={`statusmarke${g.active ? " gruen" : ""}`}>
+                  {g.active ? "in der Karte" : "stillgelegt"}
+                </span>
               </td>
-              <td>
+              <td data-label="Reihenfolge">
                 <button
                   type="button"
                   className="knopf leise klein"
@@ -186,7 +188,7 @@ function Kartenliste({
                   ↓
                 </button>
               </td>
-              <td>
+              <td className="aktion">
                 <button
                   type="button"
                   className="knopf leise klein"

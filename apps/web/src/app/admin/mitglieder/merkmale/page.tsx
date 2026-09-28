@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { FensterKnopf } from "@/components/FensterKnopf";
+import { MitgliederBereiche } from "@/components/MitgliederBereiche";
+import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { MerkmalsFormular, type MerkmalsDefinition } from "@/components/MerkmalsFormular";
 
 export const dynamic = "force-dynamic";
@@ -58,77 +61,76 @@ export default async function MerkmaleSeite({
   const inBearbeitung = merkmale.find((m) => m.code === bearbeiten);
 
   return (
-    <>
-      <Link href="/admin/mitglieder" className="zurueck">
-        ← Mitglieder
-      </Link>
+    <div className="verwaltung">
+      <VerwaltungsKopf
+        kicker="Verwaltung · Mitglieder"
+        titel="Merkmale"
+        unterzeile="Alles, was der Verein am Mitglied festhalten will, ohne dass jemand Code ändern muss – Einwilligungen, Ehrungen, eigene Kennzeichnungen. Fachlich Wichtiges wie Trainer oder Leistungsklasse steht dagegen fest in den Stammdaten."
+      >
+        <FensterKnopf titel="Merkmal anlegen" knopf="Merkmal anlegen" breit>
+          <MerkmalsFormular key="neu" />
+        </FensterKnopf>
+      </VerwaltungsKopf>
+      <MitgliederBereiche aktiv="/admin/mitglieder/merkmale" />
 
-      <h1 className="pagetitle">Merkmale</h1>
-      <p className="unterzeile">
-        Alles, was der Verein am Mitglied festhalten will, ohne dass jemand Code ändern muss –
-        Einwilligungen, Ehrungen, eigene Kennzeichnungen. Fachlich Wichtiges wie Trainer oder
-        Leistungsklasse steht dagegen fest in den Stammdaten.
-      </p>
-
-      <div className="tabellenhuelle">
-        <table className="liste">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Schlüssel</th>
-              <th>Art</th>
-              <th>Wer setzt es</th>
-              <th className="zahl">Vergeben</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {merkmale.length === 0 ? (
+      <div className="karte tabellenkarte">
+        {merkmale.length === 0 ? (
+          <p className="leer-klein">Noch keine Merkmale angelegt.</p>
+        ) : (
+          <table className="liste">
+            <thead>
               <tr>
-                <td colSpan={6} className="leer">
-                  Noch keine Merkmale angelegt.
-                </td>
+                <th scope="col">Name</th>
+                <th scope="col">Schlüssel</th>
+                <th scope="col">Art</th>
+                <th scope="col">Wer setzt es</th>
+                <th scope="col" className="zahl">Vergeben</th>
+                <th scope="col"><span className="sr-only">Aktion</span></th>
               </tr>
-            ) : (
-              merkmale.map((m) => (
+            </thead>
+            <tbody>
+              {merkmale.map((m) => (
                 <tr key={m.id}>
-                  <td>
+                  <td className="fett">
                     {m.name}
-                    {!m.active && <span className="marke-klein grau"> stillgelegt</span>}
-                    {m.in_application && <span className="marke-klein"> im Antrag</span>}
+                    {(!m.active || m.in_application) && (
+                      <span className="marken-zeile">
+                        {!m.active && <span className="statusmarke">stillgelegt</span>}
+                        {m.in_application && <span className="statusmarke gelb">im Antrag</span>}
+                      </span>
+                    )}
                   </td>
-                  <td className="tnum">{m.code}</td>
-                  <td>
+                  <td data-label="Schlüssel" className="kennung">{m.code}</td>
+                  <td data-label="Art">
                     {ART_TEXT[m.value_kind] ?? m.value_kind}
-                    {m.multiple && <span className="marke-klein grau"> mehrfach</span>}
+                    {m.multiple && <span className="leiser"> · mehrfach</span>}
                   </td>
-                  <td>{m.self_editable ? "Mitglied selbst" : "Vorstand"}</td>
-                  <td className="zahl">{m.anzahl_werte}</td>
-                  <td>
-                    <Link href={`/admin/einstellungen/merkmale?bearbeiten=${m.code}`}>
+                  <td data-label="Wer setzt es" className="leiser">{m.self_editable ? "Mitglied selbst" : "Vorstand"}</td>
+                  <td data-label="Vergeben" className="zahl dpl tnum">{m.anzahl_werte}</td>
+                  <td className="aktion">
+                    <Link className="knopf leise klein" href={`/admin/mitglieder/merkmale?bearbeiten=${m.code}`}>
                       bearbeiten
                     </Link>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      <h2 className="dpl" style={{ marginTop: "2rem" }}>
-        {inBearbeitung ? "Merkmal bearbeiten" : "Merkmal anlegen"}
-      </h2>
-
-      {/* Der Schlüssel im key sorgt dafür, dass das Formular beim Wechsel
-          zwischen Bearbeiten und Anlegen neu aufgebaut wird. */}
-      <MerkmalsFormular key={inBearbeitung?.code ?? "neu"} vorhanden={inBearbeitung} />
-
       {inBearbeitung && (
-        <Link href="/admin/mitglieder/merkmale" className="knopf leise">
-          Neues Merkmal anlegen
-        </Link>
+        // Der Schlüssel im key baut das Formular beim Wechsel neu auf.
+        <FensterKnopf
+          key={inBearbeitung.code}
+          titel="Merkmal bearbeiten"
+          offen
+          zurueck="/admin/mitglieder/merkmale"
+          breit
+        >
+          <MerkmalsFormular vorhanden={inBearbeitung} />
+        </FensterKnopf>
       )}
-    </>
+    </div>
   );
 }

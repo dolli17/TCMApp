@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { formatCents, isoDateLabel } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { BankUndMandatKarte, type FinanzZeile } from "@/components/BankUndMandatKarte";
 import { BeitragsartenKarte, type BeitragsZeile } from "@/components/BeitragsartenKarte";
@@ -18,10 +19,24 @@ export const dynamic = "force-dynamic";
 const ABSCHNITTE = [
   { wert: "stammdaten", label: "Stammdaten" },
   { wert: "mitgliedschaft", label: "Mitgliedschaft" },
-  { wert: "finanzen", label: "Finanzen" },
+  { wert: "bank", label: "Bank & Mandat" },
+  { wert: "forderungen", label: "Forderungen" },
   { wert: "merkmale", label: "Merkmale" },
-  { wert: "protokoll", label: "Änderungen" },
+  { wert: "zugang", label: "Zugang" },
+  { wert: "protokoll", label: "Protokoll" },
 ];
+
+/** Aeltere Verweise zeigen noch auf den frueheren Sammelabschnitt. */
+const ALIAS: Record<string, string> = { finanzen: "bank" };
+
+const FORDERUNG_STAND: Record<string, { text: string; ton: string }> = {
+  open: { text: "offen", ton: "gelb" },
+  notified: { text: "angekündigt", ton: "gelb" },
+  submitted: { text: "eingereicht", ton: "" },
+  settled: { text: "bezahlt", ton: "gruen" },
+  returned: { text: "zurückgebucht", ton: "rot" },
+  waived: { text: "erlassen", ton: "" },
+};
 
 const STATUS_TEXT: Record<string, string> = {
   active: "aktiv",
@@ -120,7 +135,8 @@ export default async function MitgliedSeite({
 }) {
   const { id } = await params;
   const { abschnitt: gewaehlt, jahr: jahrParam } = await searchParams;
-  const abschnitt = ABSCHNITTE.some((a) => a.wert === gewaehlt) ? gewaehlt! : "stammdaten";
+  const gesucht = ALIAS[gewaehlt ?? ""] ?? gewaehlt;
+  const abschnitt = ABSCHNITTE.some((a) => a.wert === gesucht) ? gesucht! : "stammdaten";
 
   // Das Rollenschloss steht im Layout - siehe app/admin/layout.tsx. Wer
   // angemeldet ist, wird hier trotzdem gebraucht: ein Admin darf sich selbst
@@ -222,38 +238,44 @@ export default async function MitgliedSeite({
   ];
 
   return (
-    <>
+    <div className="verwaltung mitglied-detail">
       <Link href="/admin/mitglieder" className="zurueck">
-        ← Alle Mitglieder
+        ‹ Alle Mitglieder
       </Link>
 
-      <div className="detailkopf">
-        <div>
+      <header className="mitglied-kopf">
+        <span className="avatar gross" aria-hidden="true">
+          {(m.first_name[0] ?? "") + (m.last_name[0] ?? "")}
+        </span>
+        <div className="mitglied-kopf-text">
           <h1 className="pagetitle">
             {m.last_name}, {m.first_name}
           </h1>
           <div className="marken-reihe">
-            <span className={`marke-klein ${m.status === "active" ? "gruen" : m.status === "archived" ? "rot" : "grau"}`}>
+            <span className={`statusmarke ${m.status === "active" ? "gruen" : m.status === "archived" ? "rot" : ""}`}>
               {STATUS_TEXT[m.status] ?? m.status}
             </span>
-            {laufend && <span className="marke-klein">Nr. {laufend.number}</span>}
-            {rollen.includes("admin") && <span className="marke-klein gold">Administrator</span>}
-            {m.is_trainer && <span className="marke-klein gold">Trainer</span>}
+            {laufend && <span className="statusmarke">Nr. {laufend.number}</span>}
+            {rollen.includes("admin") && <span className="statusmarke gelb">Administrator</span>}
+            {m.is_trainer && <span className="statusmarke gelb">Trainer</span>}
             {m.teams && (
-              <span className={`marke-klein${m.is_team_captain ? " gold" : ""}`}>
+              <span className={`statusmarke${m.is_team_captain ? " gelb" : ""}`}>
                 {m.teams.name}
                 {m.is_team_captain ? " · Mannschaftsführer" : ""}
               </span>
             )}
-            {m.auth_user_id ? (
-              <span className="marke-klein grau">Login vorhanden</span>
-            ) : (
-              <span className="marke-klein grau">kein Login</span>
-            )}
-            {m.source === "ebusy_import" && <span className="marke-klein grau">aus eBuSy</span>}
+            <span className="statusmarke">{m.auth_user_id ? "Login vorhanden" : "kein Login"}</span>
+            {m.source === "ebusy_import" && <span className="statusmarke">aus eBuSy</span>}
           </div>
         </div>
-      </div>
+        <div className="aktionen">
+          {m.email && (
+            <a className="knopf leise" href={`mailto:${m.email}`}>
+              E-Mail schreiben
+            </a>
+          )}
+        </div>
+      </header>
 
       <Reiter eintraege={ABSCHNITTE} aktiv={abschnitt} />
 
@@ -348,20 +370,22 @@ export default async function MitgliedSeite({
             </section>
           )}
 
-          <Zugang id={id} selbst={istSelbst} />
-
           <Gefahrenzone id={id} nachname={m.last_name} archiviert={m.status === "archived"} selbst={istSelbst} />
         </>
       )}
 
-      {abschnitt === "finanzen" && (
-        <Finanzen id={id} jahr={Number(jahrParam) || new Date().getFullYear()} />
+      {abschnitt === "bank" && <BankUndMandat id={id} />}
+
+      {abschnitt === "forderungen" && (
+        <Forderungen id={id} jahr={Number(jahrParam) || new Date().getFullYear()} />
       )}
 
       {abschnitt === "merkmale" && <Merkmale id={id} />}
 
+      {abschnitt === "zugang" && <Zugang id={id} selbst={istSelbst} />}
+
       {abschnitt === "protokoll" && <Protokoll id={id} />}
-    </>
+    </div>
   );
 }
 
@@ -377,31 +401,85 @@ async function Zugang({ id, selbst }: { id: string; selbst: boolean }) {
   return <LoginKarte mitgliedId={id} zustand={zustand as LoginZustand} selbst={selbst} />;
 }
 
+/** Bankverbindung und SEPA-Mandat: ohne Bankverbindung kein Mandat. */
+async function BankUndMandat({ id }: { id: string }) {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.rpc("member_finances", { p_member_id: id });
+
+  if (error) return <div className="hinweis fehler">{error.message}</div>;
+
+  return <BankUndMandatKarte mitgliedId={id} zeilen={(data ?? []) as FinanzZeile[]} />;
+}
+
 /**
- * Bank, Mandat und Beiträge.
- *
- * Beides in einem Abschnitt, weil es zusammengehört: ohne Bankverbindung kein
- * Mandat, ohne Mandat kein Einzug – und ohne Beitragsart nichts einzuziehen.
+ * Die Beitragsarten des Jahres und darunter, was daraus an Forderungen
+ * entstanden ist - fuer dieses Mitglied oder als Zahler fuer andere.
  */
-async function Finanzen({ id, jahr }: { id: string; jahr: number }) {
+async function Forderungen({ id, jahr }: { id: string; jahr: number }) {
   const supabase = await createServerSupabase();
 
-  const [finanzenRes, beitraegeRes] = await Promise.all([
-    supabase.rpc("member_finances", { p_member_id: id }),
+  const [beitraegeRes, forderungenRes] = await Promise.all([
     supabase.rpc("member_fee_overview", { p_member_id: id, p_year: jahr }),
+    supabase
+      .from("charges")
+      .select("id, description, amount_cents, status, due_date, created_at, member_id, members!charges_member_id_fkey(first_name, last_name)")
+      .or(`member_id.eq.${id},payer_id.eq.${id}`)
+      .order("created_at", { ascending: false })
+      .limit(100),
   ]);
-
-  if (finanzenRes.error) return <div className="hinweis fehler">{finanzenRes.error.message}</div>;
-  if (beitraegeRes.error) return <div className="hinweis fehler">{beitraegeRes.error.message}</div>;
 
   return (
     <>
-      <BeitragsartenKarte
-        mitgliedId={id}
-        jahr={jahr}
-        zeilen={(beitraegeRes.data ?? []) as BeitragsZeile[]}
-      />
-      <BankUndMandatKarte mitgliedId={id} zeilen={(finanzenRes.data ?? []) as FinanzZeile[]} />
+      {beitraegeRes.error ? (
+        <div className="hinweis fehler">{beitraegeRes.error.message}</div>
+      ) : (
+        <BeitragsartenKarte
+          mitgliedId={id}
+          jahr={jahr}
+          zeilen={(beitraegeRes.data ?? []) as BeitragsZeile[]}
+        />
+      )}
+
+      <section className="karte tabellenkarte" aria-labelledby="h-forderungen">
+        <div className="kartenkopf">
+          <h2 id="h-forderungen">Forderungen</h2>
+        </div>
+        {forderungenRes.error ? (
+          <div className="hinweis fehler">{forderungenRes.error.message}</div>
+        ) : (forderungenRes.data ?? []).length === 0 ? (
+          <p className="leer-klein">Noch keine Forderung.</p>
+        ) : (
+          <table className="liste">
+            <thead>
+              <tr>
+                <th scope="col">Forderung</th>
+                <th scope="col">Für</th>
+                <th scope="col">Fällig</th>
+                <th scope="col">Stand</th>
+                <th scope="col" className="zahl">Betrag</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(forderungenRes.data ?? []).map((f) => {
+                const stand = FORDERUNG_STAND[f.status] ?? { text: f.status, ton: "" };
+                return (
+                  <tr key={f.id}>
+                    <td className="fett">{f.description}</td>
+                    <td data-label="Für" className="leiser">
+                      {f.member_id === id ? "selbst" : `${f.members?.first_name ?? ""} ${f.members?.last_name ?? ""}`}
+                    </td>
+                    <td data-label="Fällig">{f.due_date ? isoDateLabel(f.due_date) : "–"}</td>
+                    <td data-label="Stand">
+                      <span className={`statusmarke ${stand.ton}`}>{stand.text}</span>
+                    </td>
+                    <td data-label="Betrag" className="zahl betrag dpl tnum">{formatCents(f.amount_cents)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </section>
     </>
   );
 }

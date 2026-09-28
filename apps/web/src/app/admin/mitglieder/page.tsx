@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatCents, memberCategory, type MemberCategory } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { MitgliederBereiche } from "@/components/MitgliederBereiche";
 import { MitgliederKopf } from "@/components/MitgliederKopf";
 
 export const dynamic = "force-dynamic";
@@ -53,17 +54,13 @@ export default async function MitgliederSeite({
   // und begrenzt in der Datenbank. Der Suchbegriff geht als Parameter hinein
   // und nicht in einen Filterausdruck - ein Komma im Namen kann ihn deshalb
   // nicht zerlegen.
-  const [{ data, error }, antraegeRes, beitraegeRes, zuordnungRes, mannschaftenRes, mandateRes, offenRes] =
+  const [{ data, error }, beitraegeRes, zuordnungRes, mannschaftenRes, mandateRes, offenRes] =
     await Promise.all([
       supabase.rpc("member_overview", {
         p_filter: gewaehlt,
         p_query: suche || undefined,
         p_limit: 1000,
       }),
-      supabase
-        .from("membership_applications")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "new"),
       supabase.from("member_fees").select("member_id, fee_types(code, name, sort_order)").eq("year", jahr),
       supabase.from("members").select("id, team_id, billing_payer_id"),
       supabase.from("teams").select("id, name"),
@@ -78,7 +75,6 @@ export default async function MitgliederSeite({
     return <div className="hinweis fehler">{error.message}</div>;
   }
 
-  const offeneAntraege = antraegeRes.count ?? 0;
   // Mehrere Beitragsarten je Jahr sind moeglich, etwa Beitrag und Pfand.
   const beitrag = new Map<string, { code: string; name: string; sort_order: number }[]>();
   for (const b of beitraegeRes.data ?? []) {
@@ -139,18 +135,7 @@ export default async function MitgliederSeite({
         </div>
       </header>
 
-      <nav className="reiter unterreiter" aria-label="Bereiche Mitglieder">
-        <Link href="/admin/mitglieder" aria-current="page">Liste</Link>
-        <Link href="/admin/mitglieder/antraege">
-          Anträge
-          {offeneAntraege > 0 && (
-            <span className="zaehler" aria-label={`${offeneAntraege} offen`}>{offeneAntraege}</span>
-          )}
-        </Link>
-        <Link href="/admin/mitglieder/mannschaften">Mannschaften</Link>
-        <Link href="/admin/mitglieder/merkmale">Merkmale</Link>
-        <Link href="/admin/mitglieder/arbeitsdienst">Arbeitsdienst</Link>
-      </nav>
+      <MitgliederBereiche aktiv="/admin/mitglieder" />
 
       <div className="suchleiste">
         <form className="suchfeld" role="search">
@@ -186,7 +171,7 @@ export default async function MitgliederSeite({
       {sichtbar.length === 0 ? (
         <p className="leer">Keine Mitglieder gefunden.</p>
       ) : (
-        <div className="karte mitgliederliste">
+        <div className="karte tabellenkarte">
           <table className="liste">
             <thead>
               <tr>

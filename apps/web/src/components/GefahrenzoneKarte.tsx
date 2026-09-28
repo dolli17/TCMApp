@@ -81,7 +81,7 @@ export function GefahrenzoneKarte(props: Props) {
 
   if (props.selbst) {
     return (
-      <section className="karte einstellungen" aria-label="Datensatz beenden">
+      <section className="karte einstellungen gefahrenzone" aria-label="Datensatz beenden">
         <h2 className="dpl">Datensatz beenden</h2>
         <p className="hinweis">
           Das ist dein eigener Datensatz. Archivieren, anonymisieren und löschen sind für die eigene
@@ -92,7 +92,7 @@ export function GefahrenzoneKarte(props: Props) {
   }
 
   return (
-    <section className="karte einstellungen" aria-label="Datensatz beenden">
+    <section className="karte einstellungen gefahrenzone" aria-label="Datensatz beenden">
       <h2 className="dpl">Datensatz beenden</h2>
       <p className="unterzeile">Drei Wege, vom schonendsten zum endgültigen.</p>
 

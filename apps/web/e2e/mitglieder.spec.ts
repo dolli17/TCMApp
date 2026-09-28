@@ -91,7 +91,7 @@ test.describe("Mitgliederverwaltung", () => {
     const adresse = await mitgliedAnlegen(page, nachname);
 
     await expect(page.getByRole("heading", { name: new RegExp(nachname) })).toBeVisible();
-    await expect(page.locator(".marke-klein.gruen")).toContainText("aktiv");
+    await expect(page.locator(".mitglied-kopf .statusmarke.gruen")).toContainText("aktiv");
 
     // Ändern
     const karte = page.locator('section[aria-label="Person und Kontakt"]');
@@ -317,6 +317,7 @@ test.describe("Mitgliederverwaltung", () => {
     const name = `E2E-Kennzeichnung ${code}`;
 
     await page.goto("/admin/mitglieder/merkmale");
+    await page.getByRole("button", { name: "Merkmal anlegen" }).click();
     await page.getByLabel("Schlüssel").fill(code);
     await page.getByLabel("Name").fill(name);
     await page.getByLabel("Wofür wird das gebraucht?").fill("Nur für den automatischen Test.");
@@ -363,6 +364,7 @@ test.describe("Mitgliederverwaltung", () => {
 
     // Anlegen - danach springt die Seite in die Bearbeitung der neuen Mannschaft
     await page.goto("/admin/mitglieder/mannschaften");
+    await page.getByRole("button", { name: "Mannschaft anlegen" }).click();
     const formular = page.locator('form[aria-label="Mannschaft"]');
     await formular.getByLabel("Name").fill(mannschaft);
     await formular.getByRole("button", { name: "Speichern" }).click();
@@ -467,7 +469,7 @@ test.describe("Mitgliederverwaltung", () => {
     await anmelden(page, NUTZER.admin);
     const adresse = await mitgliedAnlegen(page, nachname);
 
-    await page.goto(`${adresse.split("?")[0]}?abschnitt=finanzen`);
+    await page.goto(`${adresse.split("?")[0]}?abschnitt=bank`);
     const karte = page.locator('section[aria-label="Bankverbindung und Mandat"]');
     await expect(karte).toContainText("Keine Bankverbindung erfasst");
 
@@ -518,7 +520,7 @@ test.describe("Mitgliederverwaltung", () => {
     await anmelden(page, NUTZER.admin);
     const adresse = await mitgliedAnlegen(page, nachname);
 
-    await page.goto(`${adresse.split("?")[0]}?abschnitt=finanzen`);
+    await page.goto(`${adresse.split("?")[0]}?abschnitt=forderungen`);
     const karte = page.locator('section[aria-label="Beitragsarten"]');
     await expect(karte).toContainText("Noch keine Beitragsart zugeordnet");
 
@@ -554,7 +556,7 @@ test.describe("Mitgliederverwaltung", () => {
     await anmelden(page, NUTZER.admin);
     const adresse = await mitgliedAnlegen(page, nachname);
 
-    await page.goto(`${adresse.split("?")[0]}?abschnitt=mitgliedschaft`);
+    await page.goto(`${adresse.split("?")[0]}?abschnitt=zugang`);
     const karte = page.locator('section[aria-label="Zugang"]');
     await expect(karte).toBeVisible();
 
@@ -572,7 +574,7 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(stamm.locator(".hinweis.erfolg")).toContainText("Gespeichert");
 
     // Jetzt ist die Einladung möglich
-    await page.goto(`${adresse.split("?")[0]}?abschnitt=mitgliedschaft`);
+    await page.goto(`${adresse.split("?")[0]}?abschnitt=zugang`);
     await expect(karte).toContainText(email);
     await expect(karte.getByRole("button", { name: "Einladung verschicken" })).toBeEnabled();
 
@@ -598,7 +600,7 @@ test.describe("Mitgliederverwaltung", () => {
     const zeile = page.locator("table.liste tbody tr").filter({ hasText: NUTZER.admin });
     const href = await zeile.locator("a").first().getAttribute("href");
 
-    await page.goto(`${href}?abschnitt=mitgliedschaft`);
+    await page.goto(`${href}?abschnitt=zugang`);
     const karte = page.locator('section[aria-label="Zugang"]');
     await expect(karte).toContainText("Den eigenen Zugang kannst du hier nicht sperren");
     await expect(karte.getByRole("button", { name: "Zugang sperren" })).toHaveCount(0);
@@ -677,7 +679,7 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(page.getByRole("heading", { name: new RegExp(nachname) })).toBeVisible();
 
     // Der Zugang wurde gleich mit eingerichtet
-    await page.goto(`${adresse.split("?")[0]}?abschnitt=mitgliedschaft`);
+    await page.goto(`${adresse.split("?")[0]}?abschnitt=zugang`);
     await expect(page.locator('section[aria-label="Zugang"]')).toContainText("Eingeladen:");
 
     // Aufräumen: erst den Zugang, dann das Mitglied

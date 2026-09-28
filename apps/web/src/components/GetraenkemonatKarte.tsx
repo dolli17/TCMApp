@@ -28,6 +28,7 @@ const STAND: Record<MonatZeile["status"], string> = {
   closed: "geschlossen",
   charged: "abgerechnet",
 };
+const STAND_TON: Record<MonatZeile["status"], string> = { open: "", closed: "gelb", charged: "gruen" };
 
 /**
  * Der Getränkemonat in zwei Schritten.
@@ -61,7 +62,7 @@ export function GetraenkemonatKarte({
   const jetzt = Number(heute.slice(0, 4)) * 12 + Number(heute.slice(5, 7));
 
   return (
-    <section className="karte" style={{ marginBottom: 18 }}>
+    <section className="karte" id="getraenkemonate">
       <h2 className="dpl">Getränkemonate</h2>
       <p className="unterzeile">
         Erst schließen, dann abrechnen. Ein geschlossener Monat lässt sich an der Theke nicht
@@ -75,18 +76,18 @@ export function GetraenkemonatKarte({
       )}
 
       {monate.length === 0 ? (
-        <p className="leer">Es gibt noch keine Abrechnungszeiträume.</p>
+        <p className="leer-klein">Es gibt noch keine Abrechnungszeiträume.</p>
       ) : (
-        <div className="tabellenhuelle"><table className="liste">
+        <div className="tabellenhuelle tabellenkarte"><table className="liste">
           <thead>
             <tr>
-              <th>Monat</th>
-              <th className="zahl">Entnahmen</th>
-              <th className="zahl">Mitglieder</th>
-              <th className="zahl">Summe</th>
-              <th className="zahl">Forderungen</th>
-              <th>Stand</th>
-              <th />
+              <th scope="col">Monat</th>
+              <th scope="col" className="zahl">Entnahmen</th>
+              <th scope="col" className="zahl">Mitglieder</th>
+              <th scope="col" className="zahl">Summe</th>
+              <th scope="col" className="zahl">Forderungen</th>
+              <th scope="col">Stand</th>
+              <th scope="col"><span className="sr-only">Aktion</span></th>
             </tr>
           </thead>
           <tbody>
@@ -94,13 +95,15 @@ export function GetraenkemonatKarte({
               const laufend = m.year * 12 + m.month >= jetzt;
               return (
                 <tr key={m.id}>
-                  <td>{MONAT.format(new Date(m.year, m.month - 1, 1))}</td>
-                  <td className="zahl tnum">{m.buchungen}</td>
-                  <td className="zahl tnum">{m.mitglieder}</td>
-                  <td className="zahl tnum">{formatCents(m.summe_cents)}</td>
-                  <td className="zahl tnum">{m.forderungen || "—"}</td>
-                  <td><span className="marke-klein">{STAND[m.status]}</span></td>
-                  <td>
+                  <td className="fett">{MONAT.format(new Date(m.year, m.month - 1, 1))}</td>
+                  <td data-label="Entnahmen" className="zahl tnum">{m.buchungen}</td>
+                  <td data-label="Mitglieder" className="zahl tnum">{m.mitglieder}</td>
+                  <td data-label="Summe" className="zahl betrag dpl tnum">{formatCents(m.summe_cents)}</td>
+                  <td data-label="Forderungen" className="zahl tnum">{m.forderungen || "—"}</td>
+                  <td data-label="Stand">
+                    <span className={`statusmarke ${STAND_TON[m.status]}`}>{STAND[m.status]}</span>
+                  </td>
+                  <td className="aktion">
                     {m.status === "open" &&
                       (laufend ? (
                         <span className="mit">läuft noch</span>

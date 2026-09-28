@@ -31,11 +31,8 @@ export interface ArtZeile {
 interface Props {
   plaetze: PlatzZeile[];
   arten: ArtZeile[];
-  /** Blockungsarten fuer die Sperrung, nach sort_order. */
-  blockungsarten: { code: string; name: string }[];
-  /** Oeffnungs- und Schliesszeit aus den Einstellungen, als "HH:MM". */
-  oeffnung: string;
-  schluss: string;
+  /** Was heute gerade auf dem Platz liegt, etwa "gesperrt bis 14:00" */
+  zustand: Record<string, { text: string; art: "gesperrt" | "serie" }>;
 }
 
 const LEERER_PLATZ = { id: null as string | null, name: "", kurzname: "", zusatz: "" };
@@ -56,17 +53,13 @@ export function PlatzVerwaltung(props: Props) {
         </div>
       )}
 
-      <Sperrformular
-        plaetze={props.plaetze.filter((p) => p.active)}
-        arten={props.blockungsarten}
-        oeffnung={props.oeffnung}
-        schluss={props.schluss}
+      <Platzliste
+        plaetze={props.plaetze}
+        zustand={props.zustand}
         laeuft={laeuft}
         starte={starte}
         melde={melde}
       />
-
-      <Platzliste plaetze={props.plaetze} laeuft={laeuft} starte={starte} melde={melde} />
 
       <Artenliste arten={props.arten} laeuft={laeuft} starte={starte} melde={melde} />
     </>
@@ -75,6 +68,39 @@ export function PlatzVerwaltung(props: Props) {
 
 type Starter = (f: () => void | Promise<void>) => void;
 type Melder = (e: { ok: boolean; meldung: string }) => void;
+
+/**
+ * Das Sperrformular fuer sich, mit eigener Rueckmeldung - es steht im
+ * Fenster hinter dem Kopfknopf "Plätze sperren".
+ */
+export function PlatzSperren(props: {
+  plaetze: PlatzZeile[];
+  /** Blockungsarten fuer die Sperrung, nach sort_order. */
+  arten: { code: string; name: string }[];
+  /** Oeffnungs- und Schliesszeit aus den Einstellungen, als "HH:MM". */
+  oeffnung: string;
+  schluss: string;
+}) {
+  const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
+  const [laeuft, starte] = useTransition();
+
+  return (
+    <>
+      {meldung && (
+        <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">
+          {meldung.text}
+        </div>
+      )}
+      <Sperrformular
+        {...props}
+        plaetze={props.plaetze.filter((p) => p.active)}
+        laeuft={laeuft}
+        starte={starte}
+        melde={(e) => setMeldung({ ok: e.ok, text: e.meldung })}
+      />
+    </>
+  );
+}
 
 /**
  * Platz sperren.
@@ -132,7 +158,7 @@ function Sperrformular({
   }
 
   return (
-    <section className="karte" style={{ marginBottom: 18 }}>
+    <section className="karte">
       <h2 className="dpl">Plätze sperren</h2>
       <p className="unterzeile">
         Regen, Turnier, Platzpflege. Bestehende Buchungen werden erst nach Rückfrage verdrängt.
@@ -230,8 +256,14 @@ function Sperrformular({
 }
 
 function Platzliste({
-  plaetze, laeuft, starte, melde,
-}: { plaetze: PlatzZeile[]; laeuft: boolean; starte: Starter; melde: Melder }) {
+  plaetze, zustand, laeuft, starte, melde,
+}: {
+  plaetze: PlatzZeile[];
+  zustand: Props["zustand"];
+  laeuft: boolean;
+  starte: Starter;
+  melde: Melder;
+}) {
   const [form, setForm] = useState(LEERER_PLATZ);
 
   function speichern() {
@@ -251,36 +283,38 @@ function Platzliste({
   }
 
   return (
-    <section className="karte" style={{ marginBottom: 18 }}>
-      <h2 className="dpl">Plätze</h2>
+    <section className="karte" aria-labelledby="h-plaetze">
+      <h2 className="dpl" id="h-plaetze">Plätze</h2>
       <p className="unterzeile">
         Die Reihenfolge bestimmt, wie die Spalten im Belegungsplan stehen. Ein stillgelegter
         Platz verschwindet aus dem Plan; seine bisherigen Buchungen bleiben erhalten.
       </p>
 
-      <div className="tabellenhuelle"><table className="liste">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Kurz</th>
-            <th>Zusatz</th>
-            <th className="zahl">Offen</th>
-            <th>Status</th>
-            <th>Reihenfolge</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {plaetze.map((p, i) => (
-            <tr key={p.id}>
-              <td>{p.name}</td>
-              <td>{p.short_name}</td>
-              <td>{p.subline ?? "—"}</td>
-              <td className="zahl tnum">{p.offene_buchungen}</td>
-              <td>
-                <span className="marke-klein">{p.active ? "im Plan" : "stillgelegt"}</span>
-              </td>
-              <td>
+      <ul className="platzkarten">
+        {plaetze.map((p, i) => {
+          const heute = zustand[p.id];
+          return (
+            <li key={p.id} className={`platzkarte${p.active ? "" : " still"}`}>
+              <div className="kopf">
+                <span className="kuerzel dpl" aria-hidden="true">{p.short_name}</span>
+                <div>
+                  <b>{p.name}</b>
+                  <small>{p.subline ?? "ohne Zusatz"}</small>
+                </div>
+              </div>
+              <div className="marken-zeile">
+                {!p.active ? (
+                  <span className="statusmarke">stillgelegt</span>
+                ) : heute ? (
+                  <span className={`statusmarke ${heute.art === "gesperrt" ? "rot" : "gelb"}`}>{heute.text}</span>
+                ) : (
+                  <span className="statusmarke gruen">im Plan</span>
+                )}
+                {p.offene_buchungen > 0 && (
+                  <span className="statusmarke">{p.offene_buchungen} offene Buchungen</span>
+                )}
+              </div>
+              <div className="aktionen">
                 <button
                   type="button"
                   className="knopf leise klein"
@@ -289,7 +323,7 @@ function Platzliste({
                   onClick={() => verschieben(i, -1)}
                 >
                   ↑
-                </button>{" "}
+                </button>
                 <button
                   type="button"
                   className="knopf leise klein"
@@ -299,8 +333,6 @@ function Platzliste({
                 >
                   ↓
                 </button>
-              </td>
-              <td>
                 <button
                   type="button"
                   className="knopf leise klein"
@@ -315,7 +347,7 @@ function Platzliste({
                   }
                 >
                   Bearbeiten
-                </button>{" "}
+                </button>
                 <button
                   type="button"
                   className="knopf leise klein"
@@ -324,11 +356,11 @@ function Platzliste({
                 >
                   {p.active ? "Stilllegen" : "Aktivieren"}
                 </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table></div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
 
       <h3 className="dpl">{form.id ? "Platz bearbeiten" : "Neuen Platz anlegen"}</h3>
       <div className="formraster">

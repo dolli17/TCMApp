@@ -484,23 +484,22 @@ dialog.fenster::backdrop { background: rgba(3,8,14,.62); backdrop-filter: blur(2
 
 .fenster-kopf {
   display: flex; align-items: flex-start; gap: 12px;
-  padding: 16px 18px 12px; border-bottom: 1px solid var(--line);
-  background: var(--surf-2);
+  padding: 20px 22px 6px;
 }
 .fenster-kopf h2 {
-  font-family: var(--font-display); font-weight: 700; font-size: 21px;
-  margin: 0; line-height: 1.1;
+  font-family: var(--font-display); font-weight: 700; font-size: 26px;
+  margin: 0; line-height: 1.1; letter-spacing: -.3px;
 }
 .fenster-kopf p { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); }
 .fenster-zu {
-  margin-left: auto; flex: 0 0 auto; width: 32px; height: 32px; line-height: 1;
-  font-size: 22px; border-radius: 10px; cursor: pointer;
-  border: 1px solid var(--line-2); background: var(--surf); color: var(--ink-2);
+  margin-left: auto; flex: 0 0 auto; width: 40px; height: 40px; line-height: 1;
+  font-size: 22px; border-radius: 20px; cursor: pointer;
+  border: 0; background: var(--surf-2); color: var(--ink-2);
 }
 .fenster-zu:hover { background: var(--chip); }
 
 .fenster-inhalt {
-  padding: 16px 18px 18px; overflow-y: auto;
+  padding: 14px 22px 22px; overflow-y: auto;
   max-height: calc(min(88dvh, 760px) - 74px);
 }
 .fenster-inhalt > label { display: block; margin-bottom: 14px; }
@@ -1463,7 +1462,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
-.verwaltung { display: grid; gap: 24px; }
+.verwaltung { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
 .verwaltung > header .pagetitle { margin-top: 4px; }
 
 .kennzahlen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -1480,6 +1479,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 
 .verwaltung-raster { display: grid; gap: 24px; align-items: start; }
 .verwaltung-raster > .haupt { display: grid; gap: 24px; min-width: 0; }
+.verwaltung-raster > .haupt > *, .verwaltung-raster > * { min-width: 0; }
+.statusmarke { white-space: nowrap; }
 .karte.gross { border-radius: 24px; padding: 22px 24px; }
 .kartenkopf {
   display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 18px;
@@ -1551,7 +1552,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .verwaltung-kopf .aktionen { display: flex; flex-wrap: wrap; gap: 10px; }
 .verwaltung .reiter { margin-bottom: 0; }
 .reiter.unterreiter a { display: inline-flex; align-items: center; gap: 8px; }
-.reiter.unterreiter a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--ink); }
+.reiter.unterreiter a[aria-current="page"], .verwaltung .reiter a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--ink); }
 .reiter .zaehler {
   height: 20px; min-width: 20px; padding: 0 7px; border-radius: 10px;
   display: inline-flex; align-items: center; justify-content: center;
@@ -1585,21 +1586,26 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .statusmarke { height: 24px; padding: 0 9px; border-radius: 12px; font-size: 12px; }
 .statusmarke.gruen { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green-ink); }
 
-/* Die Mitgliedertabelle */
-.karte.mitgliederliste { padding: 0; overflow: hidden; }
-.mitgliederliste table.liste { font-size: 14.5px; }
-.mitgliederliste table.liste th { background: var(--surf-2); padding: 12px 18px; font-size: 11.5px; letter-spacing: .08em; }
-.mitgliederliste table.liste td { padding: 12px 18px; }
-.mitgliederliste table.liste tr:last-child td { border-bottom: 1px solid var(--line); }
-.mitgliederliste td.leiser { color: var(--ink-2); }
-.mitgliederliste td.betrag { font-weight: 700; font-size: 16px; white-space: nowrap; }
-.mitgliederliste td .nichts, .mitgliederliste td.leiser { color: var(--muted); font-weight: 400; }
-.mitgliederliste .person { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.mitgliederliste .person > div { min-width: 0; display: grid; }
-.mitgliederliste .person a { font-weight: 700; color: var(--ink); }
-.mitgliederliste .person small { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mitgliederliste .marken-zeile { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-.mitgliederliste .avatar { width: 36px; height: 36px; border-radius: 18px; font-size: 12.5px; }
+/* Tabelle in einer Karte (Entwurf AdminMitglieder) - unter 768 px Karten */
+.karte.tabellenkarte { padding: 0; overflow: hidden; }
+.tabellenkarte table.liste { font-size: 14.5px; }
+.tabellenkarte table.liste th { background: var(--surf-2); padding: 12px 18px; font-size: 11.5px; letter-spacing: .08em; }
+.tabellenkarte table.liste td { padding: 12px 18px; }
+.tabellenkarte table.liste tr:last-child td { border-bottom: 1px solid var(--line); }
+.tabellenkarte td.leiser { color: var(--ink-2); }
+.tabellenkarte td.betrag { font-weight: 700; font-size: 16px; white-space: nowrap; }
+.tabellenkarte td.fett { font-weight: 700; }
+.tabellenkarte > .kartenkopf { padding: 18px 18px 0; margin-bottom: 14px; flex-wrap: wrap; }
+.tabellenkarte > .kartenkopf h2 { font-size: 19px; }
+.tabellenkarte > .leer-klein, .tabellenkarte > .hinweis { margin: 0 18px 18px; }
+.tabellenkarte > .unterzeile { margin: -6px 18px 14px; }
+.tabellenkarte td .nichts, .tabellenkarte td.leiser { color: var(--muted); font-weight: 400; }
+.tabellenkarte .person { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.tabellenkarte .person > div { min-width: 0; display: grid; }
+.tabellenkarte .person a { font-weight: 700; color: var(--ink); }
+.tabellenkarte .person small { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tabellenkarte .marken-zeile { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.tabellenkarte .avatar { width: 36px; height: 36px; border-radius: 18px; font-size: 12.5px; }
 .avatar.ton-1 { background: color-mix(in srgb, var(--brand) 78%, #000); }
 .avatar.ton-2 { background: color-mix(in srgb, var(--brand) 82%, #6A9CC0); }
 .avatar.ton-3 { background: color-mix(in srgb, var(--brand) 55%, #4A5A70); }
@@ -1616,22 +1622,122 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 
 @media (max-width: 767px) {
   /* Unter 768 px wird jede Zeile zur Karte */
-  .karte.mitgliederliste { background: transparent; border: 0; box-shadow: none; overflow: visible; }
-  .mitgliederliste table.liste, .mitgliederliste tbody { display: block; }
-  .mitgliederliste thead { display: none; }
-  .mitgliederliste tbody { display: grid; gap: 10px; }
-  .mitgliederliste tbody tr {
+  .karte.tabellenkarte { background: transparent; border: 0; box-shadow: none; overflow: visible; }
+  .tabellenkarte table.liste, .tabellenkarte tbody { display: block; }
+  .tabellenkarte thead { display: none; }
+  .tabellenkarte tbody { display: grid; gap: 10px; }
+  .tabellenkarte tbody tr {
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px;
     padding: 14px 16px; border-radius: var(--radius-karte);
     background: var(--surf); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
   }
-  .mitgliederliste table.liste td, .mitgliederliste table.liste tr:last-child td { padding: 0; border: 0; }
-  .mitgliederliste td:first-child { grid-column: 1 / -1; }
-  .mitgliederliste td[data-label]::before {
+  .tabellenkarte table.liste td, .tabellenkarte table.liste tr:last-child td { padding: 0; border: 0; }
+  .tabellenkarte td:first-child { grid-column: 1 / -1; }
+  .tabellenkarte td[data-label]::before {
     content: attr(data-label); display: block; margin-bottom: 3px;
     font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
   }
   .tabellenfuss { padding: 14px 2px 0; }
+}
+
+/* Kopf des Mitglied-Details: grosser Avatar, Name, Marken, Aktionen rechts */
+.mitglied-detail > .zurueck, .verwaltung > .zurueck { margin: 0 0 -12px; }
+.mitglied-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 20px; }
+.mitglied-kopf-text { flex: 1 1 280px; min-width: 0; }
+.mitglied-kopf .pagetitle { margin: 0; }
+.mitglied-kopf .marken-reihe { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.mitglied-kopf .aktionen { display: flex; flex-wrap: wrap; gap: 10px; }
+.avatar.gross { width: 72px; height: 72px; border-radius: 36px; font-size: 24px; }
+.mitglied-detail .karte.einstellungen { margin-bottom: 0; }
+.mitglied-detail > .reiter + * { margin-top: 0; }
+.verwaltung .knopf { text-decoration: none; }
+
+/* Bausteine der uebrigen Verwaltungsseiten (Phase 6b) */
+.verwaltung-kopf .titelzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.verwaltung-kopf .zurueck { display: inline-block; margin-bottom: 8px; }
+.verwaltung-kopf .unterzeile { margin: 8px 0 0; max-width: 720px; }
+.verwaltung .karte.einstellungen, .verwaltung section.karte { margin-bottom: 0; }
+.tabellenkarte td.aktion { text-align: right; white-space: nowrap; }
+.tabellenkarte td.kennung, .je-zahler td.kennung { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--muted); }
+.tabellenkarte td.zahl, .tabellenkarte th.zahl { text-align: right; }
+.tabellenkarte .person b { font-weight: 700; }
+.kennzahl:is(div) { cursor: default; }
+.kennzahl:is(div):hover { border-color: var(--line); }
+@media (max-width: 767px) {
+  .tabellenkarte td.aktion { grid-column: 1 / -1; text-align: left; }
+  .tabellenkarte td.zahl { text-align: left; }
+}
+@media (min-width: 1100px) {
+  .kennzahlen.drei { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Formulare im Fenster: die Karte des Formulars verschmilzt mit dem Fenster */
+.fenster-inhalt > .karte { border: 0; box-shadow: none; padding: 0; background: transparent; border-radius: 0; }
+.fenster-inhalt > .karte + .karte { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.fenster-inhalt > :is(form, section).karte:first-of-type > h2:first-child { display: none; }
+.fenster-inhalt > .unterzeile:first-child { margin-top: 0; }
+
+/* Einstellungen: gruppierte Karten, Wert rechts, Schluessel in Mono darunter */
+.einstellungs-raster { display: grid; gap: 24px; align-items: start; }
+@media (min-width: 1100px) {
+  .einstellungs-raster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 768px) {
+  .einstellung {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, 220px);
+    column-gap: 20px; align-items: center; margin-bottom: 0;
+  }
+  .einstellung > :not(input) { grid-column: 1; }
+  .einstellung > input:not([type="hidden"]) { grid-column: 2; grid-row: 1 / span 3; max-width: none; }
+}
+.karte.einstellungen form > .knopf { margin-top: 14px; }
+
+/* Gefahrenzone: rot abgesetzt */
+.karte.gefahrenzone {
+  border-color: color-mix(in srgb, var(--red) 45%, var(--line));
+  background: color-mix(in srgb, var(--red) 4%, var(--surf));
+}
+.karte.gefahrenzone > h2 { color: var(--red); }
+
+/* Getraenke- und Tabellenkarten innerhalb einer Karte */
+.tabellenhuelle.tabellenkarte { border-radius: 16px; box-shadow: none; }
+@media (max-width: 767px) {
+  .tabellenhuelle.tabellenkarte { background: transparent; border: 0; overflow: visible; }
+}
+.abschnittskopf { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+.abschnittskopf h2 { margin: 0; }
+
+/* Kleiner Weg des Geldes je Lauf: fuenf Balken */
+.mini-geldweg { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; }
+.mini-geldweg li { width: 22px; height: 6px; border-radius: 3px; background: var(--surf-2); }
+.mini-geldweg li.erledigt { background: var(--green); }
+.mini-geldweg li.aktuell { background: var(--gold); }
+
+/* Plaetze als Karten */
+.platzkarten {
+  list-style: none; margin: 0 0 18px; padding: 0;
+  display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+.platzkarte {
+  display: grid; gap: 12px; padding: 16px; border-radius: 18px;
+  background: var(--surf); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+}
+.platzkarte.still { opacity: .7; }
+.platzkarte .kopf { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.platzkarte .kopf > div { display: grid; min-width: 0; }
+.platzkarte .kopf small { font-size: 12.5px; color: var(--muted); }
+.platzkarte .kuerzel {
+  width: 44px; height: 44px; border-radius: 12px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--brand); color: #fff; font-weight: 700; font-size: 17px;
+}
+.platzkarte .marken-zeile { display: flex; flex-wrap: wrap; gap: 6px; }
+.platzkarte .aktionen { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Serien: dieselbe Schraffur wie im Belegungsplan */
+.serien-muster {
+  display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 8px; vertical-align: -1px;
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 16%, transparent) 0 3px, transparent 3px 6px), var(--surf-3);
 }
 
 /* Der Lastschriftlauf */
@@ -1672,6 +1778,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .naechster-schritt p { margin: 0; font-size: 14px; line-height: 1.5; opacity: .85; }
 .naechster-schritt .knopf { height: 50px; padding: 0 16px; border-radius: 14px; font-size: 15px; text-decoration: none; }
 .naechster-schritt .knopf.gold { box-shadow: none; }
+.naechster-schritt.quer { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; }
+.naechster-schritt.quer > div { display: grid; gap: 8px; flex: 1 1 360px; }
 .knopf.auf-blau { background: rgba(255,255,255,.16); color: #fff; box-shadow: none; }
 .knopf.auf-blau:hover { background: rgba(255,255,255,.24); }
 .knopf.gesperrt, .knopf.gesperrt:disabled {

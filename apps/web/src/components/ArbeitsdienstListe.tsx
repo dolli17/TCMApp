@@ -5,6 +5,7 @@ import { formatCents } from "@tcm/core";
 import {
   jahrAbrechnen, sollStundenSetzen, stundenEintragen,
 } from "@/app/admin/mitglieder/arbeitsdienst/aktionen";
+import { FensterKnopf } from "@/components/FensterKnopf";
 
 export interface DienstZeile {
   member_id: string;
@@ -70,58 +71,65 @@ export function ArbeitsdienstListe({
         </div>
       )}
 
-      <div className="kachel-reihe" style={{ marginBottom: "1.5rem" }}>
-        <div className="kachel">
-          <div className="titel">Dienstpflichtig</div>
-          <div className="wert">{zeilen.length}</div>
+      <div className="kennzahlen drei">
+        <div className="kennzahl">
+          <span className="label">Dienstpflichtig</span>
+          <span className="wert dpl tnum">{zeilen.length}</span>
+          <span className="info">Mitglieder mit Soll-Stunden</span>
         </div>
-        <div className="kachel">
-          <div className="titel">Noch offen</div>
-          <div className="wert">{schuldner.length}</div>
-          <div className="titel">haben Stunden nachzuholen</div>
+        <div className="kennzahl">
+          <span className="label">Noch offen</span>
+          <span className="wert dpl tnum">{schuldner.length}</span>
+          <span className="info">haben Stunden nachzuholen</span>
         </div>
-        <div className="kachel">
-          <div className="titel">Käme zusammen</div>
-          <div className="wert">{formatCents(summe)}</div>
-          <div className="titel">bei {formatCents(stundensatzCents)} je Stunde</div>
+        <div className="kennzahl">
+          <span className="label">Käme zusammen</span>
+          <span className="wert dpl tnum">{formatCents(summe)}</span>
+          <span className="info">bei {formatCents(stundensatzCents)} je Stunde</span>
         </div>
       </div>
 
-      <section className="karte" style={{ marginBottom: 18 }}>
-        <h2 className="dpl">Stand {jahr}</h2>
+      <section className="karte tabellenkarte">
+        <div className="kartenkopf">
+          <h2>Stand {jahr}</h2>
+        </div>
         <p className="unterzeile">
           Das Soll ist die höchste Regel über alle Beitragsarten des Mitglieds, nicht ihre Summe –
           wer Beitrag und Schlüsselpfand hat, arbeitet nicht doppelt.
         </p>
 
         {zeilen.length === 0 ? (
-          <p className="leer">
+          <p className="leer-klein">
             Für {jahr} ist keine Beitragsart mit Soll-Stunden hinterlegt. Solange das so ist,
             schuldet niemand Arbeitsdienst.
           </p>
         ) : (
-          <div className="tabellenhuelle"><table className="liste">
+          <table className="liste">
             <thead>
               <tr>
-                <th>Mitglied</th>
-                <th>Beitragsart</th>
-                <th className="zahl">Soll</th>
-                <th className="zahl">Geleistet</th>
-                <th className="zahl">Fehlt</th>
-                <th className="zahl">Wäre</th>
-                <th />
+                <th scope="col">Mitglied</th>
+                <th scope="col">Beitragsart</th>
+                <th scope="col" className="zahl">Soll</th>
+                <th scope="col" className="zahl">Geleistet</th>
+                <th scope="col" className="zahl">Fehlt</th>
+                <th scope="col" className="zahl">Wäre</th>
+                <th scope="col"><span className="sr-only">Aktion</span></th>
               </tr>
             </thead>
             <tbody>
               {zeilen.map((z) => (
                 <tr key={z.member_id}>
-                  <td>
+                  <td className="fett">
                     {z.member_name}
-                    {z.abgerechnet && <div className="mit">abgerechnet</div>}
+                    {z.abgerechnet && (
+                      <span className="marken-zeile">
+                        <span className="statusmarke gruen">abgerechnet</span>
+                      </span>
+                    )}
                   </td>
-                  <td className="mit">{z.arten}</td>
-                  <td className="zahl tnum">{Number(z.required_hours)} h</td>
-                  <td className="zahl tnum">
+                  <td data-label="Beitragsart" className="leiser">{z.arten}</td>
+                  <td data-label="Soll" className="zahl tnum">{Number(z.required_hours)} h</td>
+                  <td data-label="Geleistet" className="zahl tnum">
                     {Number(z.completed_hours)} h
                     {z.eintraege > 0 && (
                       <div className="mit">
@@ -129,17 +137,17 @@ export function ArbeitsdienstListe({
                       </div>
                     )}
                   </td>
-                  <td className="zahl tnum">
+                  <td data-label="Fehlt" className="zahl tnum">
                     {Number(z.missing_hours) > 0 ? (
                       <strong>{Number(z.missing_hours)} h</strong>
                     ) : (
                       "—"
                     )}
                   </td>
-                  <td className="zahl tnum">
+                  <td data-label="Wäre" className="zahl betrag dpl tnum">
                     {z.betrag_cents > 0 ? formatCents(z.betrag_cents) : "—"}
                   </td>
-                  <td>
+                  <td className="aktion">
                     {!z.abgerechnet && (
                       <button
                         type="button"
@@ -158,74 +166,74 @@ export function ArbeitsdienstListe({
                 </tr>
               ))}
             </tbody>
-          </table></div>
-        )}
-
-        {erfassen && (
-          <>
-            <h3 className="dpl">Einsatz von {erfassen.name}</h3>
-            <p className="unterzeile">
-              Das Jahr ergibt sich aus dem Einsatztag – ein im Januar nachgetragener
-              Dezember-Einsatz zählt fürs alte Jahr.
-            </p>
-            <div className="formraster">
-              <label>
-                <span>Stunden</span>
-                <input
-                  type="number"
-                  min={0.25}
-                  max={24}
-                  step={0.25}
-                  value={stunden}
-                  onChange={(e) => setStunden(e.target.value)}
-                />
-              </label>
-              <label>
-                <span>Am</span>
-                <input
-                  type="date"
-                  max={heute}
-                  value={amTag}
-                  onChange={(e) => setAmTag(e.target.value)}
-                />
-              </label>
-              <label className="breit">
-                <span>Was wurde gemacht</span>
-                <input
-                  type="text"
-                  value={was}
-                  placeholder="z. B. Platzaufbau im Frühjahr"
-                  onChange={(e) => setWas(e.target.value)}
-                />
-              </label>
-            </div>
-            <div className="fenster-fuss">
-              <button
-                type="button"
-                className="knopf"
-                disabled={laeuft || amTag === "" || Number(stunden) <= 0}
-                onClick={() =>
-                  starte(async () => {
-                    const e = await stundenEintragen({
-                      mitgliedId: erfassen.id,
-                      stunden: Number(stunden),
-                      amTag,
-                      beschreibung: was,
-                    });
-                    melde(e);
-                    if (e.ok) setErfassen(null);
-                  })
-                }
-              >
-                Eintragen
-              </button>
-              <button type="button" className="knopf leise" onClick={() => setErfassen(null)}>
-                Abbrechen
-              </button>
-            </div>
-          </>
+          </table>
         )}
       </section>
+
+
+      {erfassen && (
+        <FensterKnopf titel={`Einsatz von ${erfassen.name}`} offen onSchliessen={() => setErfassen(null)}>
+          <p className="unterzeile">
+            Das Jahr ergibt sich aus dem Einsatztag – ein im Januar nachgetragener
+            Dezember-Einsatz zählt fürs alte Jahr.
+          </p>
+          <div className="formraster">
+            <label>
+              <span>Stunden</span>
+              <input
+                type="number"
+                min={0.25}
+                max={24}
+                step={0.25}
+                value={stunden}
+                onChange={(e) => setStunden(e.target.value)}
+              />
+            </label>
+            <label>
+              <span>Am</span>
+              <input
+                type="date"
+                max={heute}
+                value={amTag}
+                onChange={(e) => setAmTag(e.target.value)}
+              />
+            </label>
+            <label className="breit">
+              <span>Was wurde gemacht</span>
+              <input
+                type="text"
+                value={was}
+                placeholder="z. B. Platzaufbau im Frühjahr"
+                onChange={(e) => setWas(e.target.value)}
+              />
+            </label>
+          </div>
+          <div className="fenster-fuss">
+            <button
+              type="button"
+              className="knopf"
+              disabled={laeuft || amTag === "" || Number(stunden) <= 0}
+              onClick={() =>
+                starte(async () => {
+                  const e = await stundenEintragen({
+                    mitgliedId: erfassen.id,
+                    stunden: Number(stunden),
+                    amTag,
+                    beschreibung: was,
+                  });
+                  melde(e);
+                  if (e.ok) setErfassen(null);
+                })
+              }
+            >
+              Eintragen
+            </button>
+            <button type="button" className="knopf leise" onClick={() => setErfassen(null)}>
+              Abbrechen
+            </button>
+          </div>
+        </FensterKnopf>
+      )}
 
       <SollKarte arten={arten} jahr={jahr} laeuft={laeuft} starte={starte} melde={melde} />
 
