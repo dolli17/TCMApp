@@ -178,3 +178,41 @@ export function timelinePosition(minute: number, openingMinutes: number, closing
   if (spanne <= 0) return 0;
   return Math.min(100, Math.max(0, ((minute - openingMinutes) / spanne) * 100));
 }
+
+// ---------------------------------------------------------------------------
+// Benachrichtigungen
+// ---------------------------------------------------------------------------
+
+/** Welches Symbol eine Nachricht bekommt, nach ihrer Art (notifications.kind). */
+export type NotificationSymbol = "platz" | "storno" | "geld" | "person" | "glocke";
+
+export function notificationSymbol(kind: string): NotificationSymbol {
+  if (kind === "booking_cancelled" || kind === "booking_displaced" || kind === "booking_removed") return "storno";
+  if (kind.startsWith("booking_") || kind === "player_left") return "platz";
+  if (kind.startsWith("charge_")) return "geld";
+  if (kind.startsWith("application_")) return "person";
+  return "glocke";
+}
+
+/**
+ * Nachrichten nach Tagen gruppiert (Berlin): Heute, Gestern, Diese Woche
+ * (die letzten sieben Tage), Frueher. Leere Gruppen fallen weg; die
+ * Reihenfolge innerhalb bleibt, wie sie kam (neueste zuerst).
+ */
+export function groupNotifications<T extends { created_at: string }>(
+  list: readonly T[],
+  now: Date = new Date(),
+): { label: string; items: T[] }[] {
+  const gruppen = [
+    { label: "Heute", items: [] as T[] },
+    { label: "Gestern", items: [] as T[] },
+    { label: "Diese Woche", items: [] as T[] },
+    { label: "Früher", items: [] as T[] },
+  ];
+  for (const n of list) {
+    const tage = tageZwischen(new Date(n.created_at), now);
+    const i = tage <= 0 ? 0 : tage === 1 ? 1 : tage < 7 ? 2 : 3;
+    gruppen[i]!.items.push(n);
+  }
+  return gruppen.filter((g) => g.items.length > 0);
+}

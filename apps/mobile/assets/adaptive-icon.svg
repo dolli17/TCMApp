@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Vordergrund des adaptiven Android-Icons: dasselbe Motiv ohne Flaeche,
+       auf die sichere Mitte (66 %) verkleinert. Die Flaeche kommt aus
+       app.json (backgroundColor, brand). -->
+  <g transform="translate(174 174) scale(0.66)">
+    <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M150 1024 L372 380 H652 L874 1024" stroke="#9DC0DF" stroke-width="26"/>
+      <path d="M318 536 H706" stroke="#7FA9D0" stroke-width="22"/>
+      <path d="M232 786 H792" stroke="#7FA9D0" stroke-width="22"/>
+      <path d="M512 536 V786" stroke="#7FA9D0" stroke-width="22"/>
+      <path d="M60 380 H964"  stroke-width="18" stroke-dasharray="4 30"/>
+    </g>
+    <circle cx="700" cy="270" r="96" fill="#FFD21F"/>
+  </g>
+</svg>

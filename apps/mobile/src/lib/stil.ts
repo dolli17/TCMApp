@@ -64,7 +64,6 @@ export function stilFuer(theme: ThemeName) {
       textTransform: "uppercase",
       letterSpacing: schrift.groesse.kicker * schrift.laufweiteKicker,
     },
-    unterzeile: { fontSize: 14, color: f.ink2, fontFamily: "Barlow_400Regular" },
     leise: { fontSize: schrift.groesse.klein, color: f.muted, fontFamily: "Barlow_400Regular" },
     text: { fontSize: schrift.groesse.normal, color: f.ink, fontFamily: "Barlow_400Regular" },
 
@@ -81,25 +80,6 @@ export function stilFuer(theme: ThemeName) {
       backgroundColor: f.surf, borderColor: f.line, borderWidth: 1,
       borderRadius: radius.karte, padding: 12,
       ...tiefe.klein,
-    },
-
-    /** Kennzahl in einer Reihe: .kachel-reihe / .kachel aus der CSS */
-    kachelReihe: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-    kachel: {
-      flexGrow: 1, flexBasis: 150, minWidth: 150,
-      backgroundColor: f.surf, borderColor: f.line, borderWidth: 1,
-      borderRadius: radius.karte, padding: abstand.l, gap: 2,
-      ...tiefe.klein,
-    },
-    kachelTitel: {
-      fontSize: schrift.groesse.klein, color: f.muted,
-      fontFamily: "Barlow_500Medium",
-    },
-    kachelWert: {
-      fontFamily: "BarlowSemiCondensed_700Bold",
-      fontSize: 26,
-      color: f.ink,
-      fontVariant: ["tabular-nums"],
     },
 
     knopf: {
@@ -119,14 +99,11 @@ export function stilFuer(theme: ThemeName) {
       color: f.ink, fontFamily: "BarlowSemiCondensed_700Bold", fontSize: schrift.groesse.normal,
     },
 
-    /** Varianten aus der CSS: .knopf.gold / .gefahr / .klein / .block */
+    /** Varianten aus der CSS: .knopf.gold / .klein */
     knopfGold: { backgroundColor: f.gold },
     knopfGoldText: { color: f.onGold },
-    knopfGefahr: { backgroundColor: f.red, borderColor: f.red },
-    knopfGefahrText: { color: "#fff" },
     knopfKlein: { paddingVertical: 7, paddingHorizontal: 11, borderRadius: radius.klein },
     knopfKleinText: { fontSize: schrift.groesse.klein },
-    knopfBlock: { alignSelf: "stretch" },
 
     feld: {
       borderWidth: 1.5, borderColor: f.line2, borderRadius: radius.feld,
@@ -138,12 +115,6 @@ export function stilFuer(theme: ThemeName) {
     feldLabel: {
       fontSize: 12, fontFamily: "Barlow_600SemiBold", color: f.ink2, marginBottom: 7,
     },
-
-    chip: {
-      backgroundColor: f.chip, borderRadius: radius.chip,
-      paddingVertical: 6, paddingHorizontal: 12,
-    },
-    chipText: { fontSize: 12, color: f.ink2, fontFamily: "Barlow_600SemiBold" },
 
     segment: {
       flexDirection: "row", gap: 4, padding: 4,
@@ -168,7 +139,6 @@ export function stilFuer(theme: ThemeName) {
     },
 
     zeile: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-    zahl: { fontFamily: "BarlowSemiCondensed_700Bold", fontVariant: ["tabular-nums"] },
 
     /** Gewaehlte Mitspieler als entfernbare Marken */
     marke: {
@@ -186,34 +156,8 @@ export function stilFuer(theme: ThemeName) {
       paddingVertical: 3, paddingHorizontal: 8,
     },
     markeKleinText: { fontSize: 11, fontFamily: "Barlow_600SemiBold", color: f.blueInk },
-    markeKleinGold: { backgroundColor: f.goldSoft },
-    markeKleinGoldText: { color: f.goldInk },
     markeKleinGrau: { backgroundColor: f.chip },
     markeKleinGrauText: { color: f.ink2 },
-    markeKleinGruen: { backgroundColor: mitDeckkraft(f.green, 0.16) },
-    markeKleinGruenText: { color: f.greenInk },
-    markeKleinRot: { backgroundColor: mitDeckkraft(f.red, 0.14) },
-    markeKleinRotText: { color: f.red },
-
-    /** Tabellen als Flex-Zeilen - eine echte Tabelle gibt es in RN nicht. */
-    tabellenkopf: {
-      flexDirection: "row", gap: abstand.m,
-      paddingVertical: 10,
-      borderBottomWidth: 1, borderBottomColor: f.line,
-    },
-    tabellenkopfText: {
-      fontSize: 10.5, fontFamily: "Barlow_700Bold", color: f.muted,
-      textTransform: "uppercase", letterSpacing: 0.6,
-    },
-    tabellenzeile: {
-      flexDirection: "row", gap: abstand.m, alignItems: "center",
-      paddingVertical: 11,
-      borderBottomWidth: 1, borderBottomColor: f.line,
-    },
-    tabellenzelleZahl: {
-      fontFamily: "BarlowSemiCondensed_700Bold",
-      fontVariant: ["tabular-nums"], textAlign: "right", color: f.ink,
-    },
 
     trefferzeile: {
       paddingVertical: 10, paddingHorizontal: 11, borderRadius: 9,

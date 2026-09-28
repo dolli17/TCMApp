@@ -21,6 +21,7 @@ import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { translateDbError } from "@tcm/core";
+import { farben } from "@tcm/ui";
 import { supabase } from "./supabase";
 import type { Ergebnis } from "./daten";
 
@@ -46,7 +47,7 @@ async function stelleKanalSicher(): Promise<void> {
   await Notifications.setNotificationChannelAsync("standard", {
     name: "Buchungen",
     importance: Notifications.AndroidImportance.MAX,
-    lightColor: "#1A82C6",
+    lightColor: farben.hell.brand,
   });
 }
 

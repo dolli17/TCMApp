@@ -13,12 +13,15 @@ export function AnmeldeBuehne({
   titel,
   unterzeile,
   breit = false,
+  klasse,
   children,
 }: {
   titel: string;
   unterzeile?: string;
   /** Breiteres Formular, etwa für den Mitgliedsantrag */
   breit?: boolean;
+  /** Zusaetzliche Klasse fuer den Inhalt, etwa "rechtstext" */
+  klasse?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -39,7 +42,7 @@ export function AnmeldeBuehne({
           </div>
         </div>
       </div>
-      <div className="sheet">{children}</div>
+      <div className={`sheet${klasse ? ` ${klasse}` : ""}`}>{children}</div>
     </div>
   );
 }

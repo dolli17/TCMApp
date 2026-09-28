@@ -2,16 +2,20 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
+  groupNotifications, notificationSymbol, relativeTimeLabel, type NotificationSymbol,
+} from "@tcm/core";
+import {
   alsGelesenMarkieren, ladeBenachrichtigungen, type Benachrichtigung,
 } from "@/app/benachrichtigungen-aktionen";
 
-const ZEIT = new Intl.DateTimeFormat("de-DE", {
-  day: "2-digit",
-  month: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-  timeZone: "Europe/Berlin",
-});
+/** Ein Symbol je Art der Nachricht (notificationSymbol) */
+const SYMBOL: Record<NotificationSymbol, string> = {
+  platz: "M4 4h16v16H4zM4 12h16M8 8h8v8H8zM12 8v8",
+  storno: "M6 6l12 12M18 6 6 18",
+  geld: "M2 7h20v12H2zM2 11h20M6 15h4",
+  person: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
+  glocke: "M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8M13.7 21a2 2 0 0 1-3.4 0",
+};
 
 /**
  * Die Glocke in der Navigation.
@@ -23,7 +27,11 @@ const ZEIT = new Intl.DateTimeFormat("de-DE", {
  *
  * Gelesen wird beim Oeffnen markiert, nicht beim Schliessen: wer aufmacht, hat
  * sie gesehen, und ein Zaehler, der nach dem Zumachen noch eine Weile falsch
- * steht, verwirrt mehr als er nuetzt.
+ * steht, verwirrt mehr als er nuetzt. Die Hervorhebung der neuen bleibt in
+ * der offenen Liste stehen, bis "Alle als gelesen" sie wegnimmt.
+ *
+ * Aussehen nach docs/design/clubhaus: nach Tagen gruppiert, je Art ein
+ * Symbol, relative Zeit, ungelesene auf goldSoft.
  */
 export function Benachrichtigungen({ ungelesen, label }: { ungelesen: number; label: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -31,6 +39,7 @@ export function Benachrichtigungen({ ungelesen, label }: { ungelesen: number; la
   const [liste, setListe] = useState<Benachrichtigung[] | null>(null);
   const [zaehler, setZaehler] = useState(ungelesen);
   const [laeuft, starte] = useTransition();
+  const [alleGesehen, setAlleGesehen] = useState(false);
 
   // Der Zaehler kommt vom Server; nach einer Navigation gilt der neue Wert.
   useEffect(() => setZaehler(ungelesen), [ungelesen]);
@@ -45,8 +54,15 @@ export function Benachrichtigungen({ ungelesen, label }: { ungelesen: number; la
     if (el && !el.open) el.showModal();
   }, [offen]);
 
+  function alleGelesen() {
+    setAlleGesehen(true);
+    setZaehler(0);
+    void alsGelesenMarkieren();
+  }
+
   function oeffnen() {
     setOffen(true);
+    setAlleGesehen(false);
     starte(async () => {
       const daten = await ladeBenachrichtigungen();
       setListe(daten);
@@ -96,6 +112,11 @@ export function Benachrichtigungen({ ungelesen, label }: { ungelesen: number; la
               <h2>Benachrichtigungen</h2>
               <p>Was sich an deinen Buchungen geändert hat</p>
             </div>
+            {!alleGesehen && liste?.some((n) => n.read_at === null) && (
+              <button type="button" className="knopf leise klein" onClick={alleGelesen}>
+                Alle als gelesen
+              </button>
+            )}
             <button
               type="button"
               className="fenster-zu"
@@ -112,17 +133,35 @@ export function Benachrichtigungen({ ungelesen, label }: { ungelesen: number; la
             ) : liste.length === 0 ? (
               <p className="unterzeile">Es liegt nichts vor.</p>
             ) : (
-              <ul className="nachrichtenliste">
-                {liste.map((n) => (
-                  <li key={n.id} className={n.read_at === null ? "neu" : undefined}>
-                    <strong>{n.title}</strong>
-                    <span className="mit">{n.body}</span>
-                    <span className="mit tnum">{ZEIT.format(new Date(n.created_at))}</span>
-                  </li>
-                ))}
-              </ul>
-          )}
-        </div>
+              groupNotifications(liste).map((g) => (
+                <section key={g.label} className="nachrichtengruppe" aria-label={g.label}>
+                  <div className="kicker">{g.label}</div>
+                  <ul className="nachrichtenliste">
+                    {g.items.map((n) => (
+                      <li key={n.id} className={n.read_at === null && !alleGesehen ? "neu" : undefined}>
+                        <span className="symbol" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" focusable="false">
+                            <path
+                              d={SYMBOL[notificationSymbol(n.kind)]}
+                              fill="none" stroke="currentColor" strokeWidth="1.9"
+                              strokeLinecap="round" strokeLinejoin="round"
+                            />
+                          </svg>
+                        </span>
+                        <span className="text">
+                          <span className="titelzeile">
+                            <strong>{n.title}</strong>
+                            <small className="tnum">{relativeTimeLabel(n.created_at)}</small>
+                          </span>
+                          <span className="body">{n.body}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))
+            )}
+          </div>
       </dialog>
       )}
     </>

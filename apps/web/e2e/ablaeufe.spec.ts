@@ -473,8 +473,9 @@ test.describe("Kiosk", () => {
     await expect(page).toHaveURL(/\/kiosk/);
     await expect(page.getByRole("heading", { name: /Theke/, level: 1 })).toBeVisible();
 
-    // Namensauswahl vorhanden
-    await expect(page.locator(".kachel-reihe button.kachel").first()).toBeVisible();
+    // Namensauswahl vorhanden: die Suche liefert Trefferzeilen
+    await page.getByPlaceholder("Name eingeben…").fill("a");
+    await expect(page.locator(".kiosk-treffer button").first()).toBeVisible();
 
     // Aber keine Mitgliederverwaltung
     await page.goto("/admin/mitglieder");
@@ -486,13 +487,13 @@ test.describe("Kiosk", () => {
     await page.goto("/kiosk");
 
     await page.getByPlaceholder("Name eingeben…").fill("a");
-    await page.locator(".kachel-reihe button.kachel").first().click();
+    await page.locator(".kiosk-treffer button").first().click();
 
-    // Jetzt erscheint die Getraenkekarte
-    await expect(page.getByText(/anderes Mitglied/)).toBeVisible();
-    await page.locator(".kachel-reihe button.kachel").first().click();
+    // Tippen zählt eins dazu, eingetragen wird erst über den gelben Knopf
+    await page.locator(".kiosk-kacheln .kachel-knopf").first().click();
+    await page.getByRole("button", { name: /^Für .+ eintragen$/ }).click();
 
-    await expect(page.locator(".hinweis.erfolg")).toContainText("gebucht", {
+    await expect(page.locator(".hinweis.erfolg")).toContainText("Eingetragen", {
       timeout: 15_000,
     });
   });
