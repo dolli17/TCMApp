@@ -14,10 +14,19 @@ export type Belegung = Awaited<ReturnType<typeof ladeTagesplan>>[number];
 export type Buchungsart = Awaited<ReturnType<typeof ladeBuchungsarten>>[number];
 export type Mitglied = Awaited<ReturnType<typeof ladeVerzeichnis>>[number];
 
-/** Was im Fenster gerade bearbeitet wird. */
+/**
+ * Was im Blatt gerade bearbeitet wird.
+ *
+ * buchen: stunde ist der Anzeigeblock (bei 60 Minuten 17:00-18:00), aus dem
+ * das Segment "Beginn" seine :00/:30 nimmt; start die vorgewaehlte Zeit.
+ * tag ist der Tag im Format JJJJ-MM-TT, fuer Kicker und Sperrzeit.
+ */
 export type Fenster =
-  | { modus: "buchen"; courtId: string; platzName: string; stunde: number; startzeiten: number[] }
-  | { modus: "verwalten"; belegung: Belegung; platzName: string };
+  | {
+      modus: "buchen"; courtId: string; platzName: string; tag: string;
+      stunde: number; startzeiten: number[]; start: number;
+    }
+  | { modus: "verwalten"; belegung: Belegung; platzName: string; tag: string };
 
 // Die drei Zeitrechnungen standen hier und in der Web-App je einmal nachgebaut.
 // Dieselbe Regel an zwei Stellen heisst frueher oder spaeter: zwei Regeln - und

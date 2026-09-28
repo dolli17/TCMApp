@@ -1,31 +1,41 @@
 /**
- * Die drei Sichten auf den Platz
+ * Plaetze: Belegung und "Meine & offene Spiele"
  *
- * Grosser Kopf mit Reiterleiste darunter: im Web sitzen Belegung, Meine
- * Buchungen und Offene Spiele ebenso als Reiter unter einer gemeinsamen
- * Ueberschrift. Ein Stack mit Zurueck-Pfeil wuerde daraus drei getrennte
- * Seiten machen, zwischen denen man nur ueber Umwege wechselt.
+ * Grosser Kopf, darunter ein Segment-Schalter statt der frueheren
+ * Reiterleiste (docs/design/clubhaus, Abschnitt 4). Zwei Sichten auf
+ * denselben Bereich - ein Stack mit Zurueck-Pfeil wuerde daraus zwei
+ * getrennte Seiten machen, zwischen denen man nur ueber Umwege wechselt.
  */
 
 import { View } from "react-native";
-import { Slot } from "expo-router";
+import { router, Slot, usePathname } from "expo-router";
+import { abstand } from "@tcm/ui";
 import { GrosserKopf } from "@/components/GrosserKopf";
-import { Reiter } from "@/components/Reiter";
+import { Segmente } from "@/components/Segmente";
 import { useTheme } from "@/lib/theme";
 
-const EINTRAEGE = [
-  { pfad: "/plaetze", label: "Belegung" },
-  { pfad: "/plaetze/meine", label: "Meine Buchungen" },
-  { pfad: "/plaetze/offen", label: "Offene Spiele" },
-];
+type Sicht = "/plaetze" | "/plaetze/spiele";
 
 export default function PlaetzeLayout() {
   const { farben } = useTheme();
+  const pfad = usePathname();
+  // Die alten Adressen /plaetze/meine und /plaetze/offen leiten auf die Spiele.
+  const sicht: Sicht = pfad === "/plaetze" ? "/plaetze" : "/plaetze/spiele";
 
   return (
     <View style={{ flex: 1, backgroundColor: farben.bg }}>
       <GrosserKopf titel="Plätze">
-        <Reiter eintraege={EINTRAEGE} />
+        <View style={{ paddingHorizontal: abstand.rand, paddingBottom: abstand.m }}>
+          <Segmente<Sicht>
+            beschriftung="Ansicht"
+            wert={sicht}
+            onWahl={(ziel) => router.replace(ziel)}
+            optionen={[
+              { wert: "/plaetze", label: "Belegung" },
+              { wert: "/plaetze/spiele", label: "Meine & offene Spiele" },
+            ]}
+          />
+        </View>
       </GrosserKopf>
       <Slot />
     </View>

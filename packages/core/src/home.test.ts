@@ -3,6 +3,7 @@ import { berlinTime, timeToMinutes } from "./booking";
 import {
   berlinDay,
   bookingKicker,
+  dayLabel,
   dayTag,
   relativeTimeLabel,
   sumOpenDrinks,
@@ -58,6 +59,14 @@ describe("bookingKicker", () => {
   it("morgen und spaeter", () => {
     expect(kicker("2026-09-29", "09:00", "10:00")).toBe("Morgen");
     expect(kicker("2026-09-30", "18:00", "19:00")).toBe("Mittwoch · 30.09.");
+  });
+});
+
+describe("dayLabel", () => {
+  it("heute, morgen, dann Wochentag mit Datum", () => {
+    expect(dayLabel(um(TAG, "17:00").toISOString(), JETZT)).toBe("Heute");
+    expect(dayLabel(um("2026-09-29", "17:00").toISOString(), JETZT)).toBe("Morgen");
+    expect(dayLabel(um("2026-10-01", "19:00").toISOString(), JETZT)).toBe("Donnerstag, 01.10.");
   });
 });
 
@@ -131,7 +140,13 @@ describe("timelineSegments", () => {
       AUF,
       ZU,
     ).map((s) => s.art);
-    expect(arten).toEqual(["belegt", "eigen", "sucht", "belegt", "gesperrt", "gesperrt"]);
+    // Sperrung flach, Serie (Training) schraffiert - zwei verschiedene Arten
+    expect(arten).toEqual(["belegt", "eigen", "sucht", "belegt", "gesperrt", "serie"]);
+  });
+
+  it("eine Serie bleibt Serie, auch wenn sie dem Mitglied selbst gehoert", () => {
+    const [s] = timelineSegments([b("16:00", "19:00", { series_id: "s1", is_own: true })], AUF, ZU);
+    expect(s!.art).toBe("serie");
   });
 });
 

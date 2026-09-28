@@ -81,46 +81,6 @@ export function stilFuer(theme: ThemeName) {
     leise: { fontSize: schrift.groesse.klein, color: f.muted, fontFamily: "Barlow_400Regular" },
     text: { fontSize: schrift.groesse.normal, color: f.ink, fontFamily: "Barlow_400Regular" },
 
-    /**
-     * Blickfang oben. Zwei Ebenen, weil iOS auf einer View mit
-     * overflow:"hidden" keinen Schatten zeichnet: aussen liegt der Schatten,
-     * innen der beschnittene Verlauf. Siehe Verlaufsflaeche.tsx.
-     */
-    heroHuelle: {
-      borderRadius: radius.karteGross,
-      shadowColor: f.brand,
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.34,
-      shadowRadius: 15,
-      elevation: 8,
-    },
-    hero: {
-      borderRadius: radius.karteGross,
-      padding: abstand.rand,
-      backgroundColor: f.brand,
-      overflow: "hidden",
-    },
-    heroKicker: {
-      color: "#fff", opacity: 0.85, fontSize: schrift.groesse.kicker,
-      fontFamily: "BarlowSemiCondensed_700Bold",
-      letterSpacing: schrift.groesse.kicker * schrift.laufweiteKicker,
-      textTransform: "uppercase",
-    },
-    heroTitel: {
-      color: "#fff", fontSize: schrift.groesse.seitentitel, marginTop: 9,
-      fontFamily: "Barlow_800ExtraBold", letterSpacing: schrift.laufweiteTitel,
-    },
-    heroPillen: { flexDirection: "row", gap: abstand.s, marginTop: abstand.l },
-    heroPille: {
-      flex: 1, backgroundColor: "rgba(255,255,255,.13)",
-      borderWidth: 1, borderColor: "rgba(255,255,255,.16)",
-      borderRadius: 13, padding: 10,
-    },
-    heroPilleWert: {
-      color: "#fff", fontSize: 19, fontFamily: "BarlowSemiCondensed_700Bold",
-    },
-    heroPilleLabel: { color: "#fff", opacity: 0.82, fontSize: 11 },
-
     // Der Schatten steckt fest in der Karte, damit ihn kein Aufrufer vergessen
     // kann - im Web haengt er ebenso an der Klasse und nicht am Benutzer.
     karte: {
@@ -209,23 +169,6 @@ export function stilFuer(theme: ThemeName) {
     segmentText: { color: f.muted, fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 15 },
     segmentTextAktiv: { color: f.ink },
 
-    /** Reiter innerhalb eines Bereichs: .reiter aus der CSS */
-    reiter: {
-      flexDirection: "row", gap: 4,
-      borderBottomWidth: 1, borderBottomColor: f.line,
-    },
-    reiterKnopf: {
-      paddingVertical: 10, paddingHorizontal: 13,
-      borderBottomWidth: 2.5, borderBottomColor: "transparent",
-      marginBottom: -1,
-    },
-    reiterKnopfAktiv: { borderBottomColor: f.blue },
-    reiterText: {
-      fontFamily: "BarlowSemiCondensed_700Bold",
-      fontSize: schrift.groesse.normal, color: f.muted,
-    },
-    reiterTextAktiv: { color: f.blueInk },
-
     // Die Flaechen folgen der Palette statt zwei festen Farben - wie im Web,
     // wo dieselbe Mischung per color-mix aus --red und --green entsteht.
     hinweisFehler: {
@@ -239,21 +182,6 @@ export function stilFuer(theme: ThemeName) {
 
     zeile: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     zahl: { fontFamily: "BarlowSemiCondensed_700Bold", fontVariant: ["tabular-nums"] },
-
-    /** Belegung: farbiger Strich links wie im Web */
-    belegzeile: { borderLeftWidth: 3, borderLeftColor: f.blue, paddingLeft: 11, marginTop: 8 },
-    belegzeileEigen: { borderLeftColor: f.green },
-    belegzeileBlockung: { borderLeftColor: f.muted },
-
-    /** Freie Stunden als antippbare Marken unter der Platzkarte */
-    slotreihe: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 },
-    slot: {
-      borderWidth: 1, borderColor: f.line, backgroundColor: f.chip,
-      borderRadius: radius.chip, paddingVertical: 7, paddingHorizontal: 11,
-    },
-    slotAktiv: { backgroundColor: f.blue, borderColor: f.blue },
-    slotText: { fontSize: 13, color: f.ink2, fontVariant: ["tabular-nums"] },
-    slotTextAktiv: { color: "#fff" },
 
     /** Modales Fenster - dieselbe Rolle wie <dialog> im Web */
     fensterHuelle: {
@@ -274,7 +202,6 @@ export function stilFuer(theme: ThemeName) {
       backgroundColor: f.blueSoft, borderWidth: 1, borderColor: f.blue,
       borderRadius: radius.chip, paddingVertical: 5, paddingLeft: 11, paddingRight: 7,
     },
-    markeGast: { backgroundColor: f.goldSoft, borderColor: f.goldLine },
     markeText: { fontSize: 13, color: f.ink, fontFamily: "Barlow_600SemiBold" },
     markeWeg: { fontSize: 17, color: f.ink2, paddingHorizontal: 3 },
 

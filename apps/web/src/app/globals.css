@@ -935,9 +935,11 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 .mini-zeitleiste i.belegt { background: var(--blue); }
 .mini-zeitleiste i.eigen { background: var(--gold); }
 .mini-zeitleiste i.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); }
-.mini-zeitleiste i.gesperrt {
+/* Serie (Training) schraffiert, Sperrung flach - im Handoff zwei Zustaende */
+.mini-zeitleiste i.serie {
   background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 16%, transparent) 0 3px, transparent 3px 6px), var(--surf-3);
 }
+.mini-zeitleiste i.gesperrt { background: var(--surf-3); }
 .mini-zeitleiste b { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ink); }
 
 /* Offene Spiele */

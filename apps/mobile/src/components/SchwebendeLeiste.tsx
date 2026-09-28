@@ -3,7 +3,9 @@
  *
  * Eine Pille ueber dem Inhalt statt der festen Leiste am unteren Rand, rechts
  * daneben der runde gelbe Knopf "Platz buchen" (docs/design/clubhaus,
- * Abschnitt 4). Sie wird ueber die tabBar-Prop von <Tabs> eingesetzt.
+ * Abschnitt 4). Sie wird ueber die tabBar-Prop von <Tabs> eingesetzt. Der
+ * Knopf oeffnet das Buchungsblatt mit der naechsten freien Zeit
+ * (plaetze/index.tsx, ?buchen=jetzt).
  *
  * Die Eintraege kommen aus den Tabs.Screen-Angaben (title, tabBarLabel,
  * tabBarIcon), nicht aus einer eigenen Liste: ein weiterer Tab braucht nur
@@ -108,7 +110,7 @@ export function SchwebendeLeiste({ state, descriptors, navigation }: LeistenEige
       </View>
 
       <Pressable
-        onPress={() => router.navigate("/plaetze")}
+        onPress={() => router.navigate({ pathname: "/plaetze", params: { buchen: "jetzt" } })}
         accessibilityRole="button"
         accessibilityLabel="Platz buchen"
         style={({ pressed }) => [
