@@ -97,7 +97,7 @@ export function BeitragsartenKarte({
       )}
 
       {zugeordnet.length > 0 && (
-        <ul className="liste-gruppe" aria-label={`Beitragsarten ${jahr}`}>
+        <ul className="liste-gruppe" aria-label={`Zugeordnet ${jahr}`}>
           {zugeordnet.map((z) => {
             const betrag = z.override_amount_cents ?? z.preis_cents;
             return (

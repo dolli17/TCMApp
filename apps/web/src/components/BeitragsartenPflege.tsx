@@ -73,7 +73,7 @@ export function BeitragsartenPflege({
 
   return (
     <section className="liste-abschnitt" aria-labelledby="h-beitragsarten">
-      <Gruppenkopf titel="Beitragsarten" id="h-beitragsarten" />
+      <Gruppenkopf titel="Arten und Preise" id="h-beitragsarten" />
       <p className="unterzeile">
         Der Code bleibt nach dem Anlegen fest – er steht in den Zuordnungen der Mitglieder. Ein
         Preis lässt sich nur für Jahre setzen, für die noch keine Forderungen erzeugt wurden.

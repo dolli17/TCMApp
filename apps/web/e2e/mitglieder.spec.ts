@@ -120,7 +120,8 @@ test.describe("Mitgliederverwaltung", () => {
     const adresse = await mitgliedAnlegen(page, nachname);
 
     await expect(page.getByRole("heading", { name: new RegExp(nachname) })).toBeVisible();
-    await expect(page.locator(".mitglied-profil .statusmarke.gruen").first()).toContainText("aktiv");
+    // Aktive Mitglieder tragen keine Statusmarke, nur inaktive und archivierte
+    await expect(page.locator(".mitglied-profil .marken-reihe")).not.toContainText(/inaktiv|archiviert/);
 
     // Ändern - die Stammdaten sind eine Unterseite des Mitglieds
     await page.goto(`${adresse.split("?")[0]}?teil=stammdaten`);
