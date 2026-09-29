@@ -10,6 +10,9 @@
  * Die Eintraege kommen aus den Tabs.Screen-Angaben (title, tabBarLabel,
  * tabBarIcon), nicht aus einer eigenen Liste: ein weiterer Tab braucht nur
  * einen weiteren Tabs.Screen, die Leiste teilt die Breite von selbst auf.
+ * Tabs mit href: null (die Verwaltung fuer Nicht-Admins) laesst sie aus -
+ * expo-router uebersetzt das in tabBarItemStyle { display: "none" }, und
+ * eine eigene Leiste muss das selbst beachten.
  *
  * Die Leiste liegt absolut ueber dem Inhalt. Damit nichts darunter
  * verschwindet, laesst Bildschirm.tsx unten INHALT_LUFT_UNTEN frei.
@@ -72,6 +75,7 @@ export function SchwebendeLeiste({ state, descriptors, navigation }: LeistenEige
 
         {state.routes.map((route, index) => {
           const optionen = descriptors[route.key]!.options;
+          if (StyleSheet.flatten(optionen.tabBarItemStyle)?.display === "none") return null;
           const aktiv = state.index === index;
           const farbe = aktiv ? farben.tabAktivInk : farben.muted;
           const label =
