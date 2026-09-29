@@ -12,7 +12,7 @@
 
 import { Children, Fragment, isValidElement, useState, type ReactNode } from "react";
 import {
-  ActivityIndicator, Alert, Pressable, Text, TextInput, View, type KeyboardTypeOptions,
+  ActivityIndicator, Alert, Platform, Pressable, Text, TextInput, View, type KeyboardTypeOptions,
 } from "react-native";
 import { Blatt, BlattKopf } from "@/components/Blatt";
 import { Schalter } from "@/components/Segmente";
@@ -399,6 +399,10 @@ export function Folgen({ children }: { children: ReactNode }) {
 /**
  * Rueckfrage vor einer folgenreichen Aktion. Im Web ein confirm() oder ein
  * zweiter Knopf; hier der native Dialog.
+ *
+ * Alert.alert ist in react-native-web ein leerer Aufruf - im Browser (der
+ * Web-Vorschau der App) erschiene keine Rueckfrage, und die Aktion liesse
+ * sich nie ausloesen. Dort springt window.confirm ein.
  */
 export function bestaetige(
   titel: string,
@@ -407,6 +411,10 @@ export function bestaetige(
   aktion: () => void,
   gefaehrlich = true,
 ): void {
+  if (Platform.OS === "web") {
+    if (typeof window !== "undefined" && window.confirm(`${titel}\n\n${text}`)) aktion();
+    return;
+  }
   Alert.alert(titel, text, [
     { text: "Abbrechen", style: "cancel" },
     { text: ja, style: gefaehrlich ? "destructive" : "default", onPress: aktion },
