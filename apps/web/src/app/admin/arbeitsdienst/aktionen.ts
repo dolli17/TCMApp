@@ -10,7 +10,7 @@ export interface AktionsErgebnis {
 }
 
 function frisch() {
-  revalidatePath("/admin/mitglieder/arbeitsdienst");
+  revalidatePath("/admin/arbeitsdienst");
   revalidatePath("/admin/kasse");
   revalidatePath("/konto");
 }

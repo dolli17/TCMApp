@@ -1,29 +1,19 @@
 import { getCurrentMember, isAdmin } from "@/lib/supabase/server";
-import { AdminReiter } from "@/components/AdminReiter";
-import { VerwaltungHell } from "@/components/ThemeUmschalter";
 
 /**
- * Die Klammer um alles, was der Vorstand verwaltet.
+ * Die Klammer um alles, was der Vorstand verwaltet: das Rollenschloss.
  *
- * Zwei Dinge stehen hier, damit sie nicht mehr in jeder Seite einzeln stehen:
+ * Vorher prüfte jede Adminseite selbst, ob der Aufrufer Administrator ist –
+ * und die nächste Seite hätte es vergessen können. Hier gilt es für alles
+ * unter /admin, auch für Seiten, die es noch nicht gibt.
  *
- * 1. **Das Rollenschloss.** Vorher prüfte jede der acht Adminseiten selbst, ob
- *    der Aufrufer Administrator ist — achtmal derselbe Block, und die neunte
- *    Seite hätte ihn vergessen können. Hier gilt er für alles unter /admin,
- *    auch für Seiten, die es noch nicht gibt.
+ * Das ist ausdrücklich nur die Oberfläche. Die eigentliche Absicherung liegt
+ * unverändert in den RPCs, die selbst `private.is_admin()` prüfen – wer die
+ * Adresse einer Server Action kennt, kommt an diesem Layout ohnehin vorbei.
  *
- *    Das ist ausdrücklich nur die Oberfläche. Die eigentliche Absicherung
- *    liegt unverändert in den RPCs, die selbst `private.is_admin()` prüfen —
- *    wer die Adresse einer Server Action kennt, kommt an diesem Layout ohnehin
- *    vorbei.
- *
- * 2. **Das Reiterband.** Vorher hatte der Vorstand fünf Menüeinträge nebeneinander,
- *    und zusammengehörende Dinge lagen an verschiedenen Orten: die Buchungsregeln
- *    in den Einstellungen, die Buchungsarten bei den Plätzen. Jetzt ein Menüpunkt,
- *    sechs Bereiche, und jede Einstellung steht bei ihrem Gegenstand.
- *
- * Dazu ist die Verwaltung hell, solange niemand ein Theme gewaehlt hat
- * (docs/design/clubhaus, Abschnitt 1).
+ * Navigation und Theme stehen nicht mehr hier (docs/design/clubhaus/
+ * verwaltung, Regeln 1 und 2): die Seitenleiste bzw. der Admin-Tab führt,
+ * und es gilt das Theme, das das Mitglied gewählt hat.
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const angemeldet = await getCurrentMember();
@@ -32,11 +22,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     return <div className="hinweis fehler">Diese Seite ist Administratoren vorbehalten.</div>;
   }
 
-  return (
-    <>
-      <VerwaltungHell />
-      <AdminReiter />
-      {children}
-    </>
-  );
+  return children;
 }

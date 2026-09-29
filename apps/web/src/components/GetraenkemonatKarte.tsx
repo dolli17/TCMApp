@@ -5,6 +5,8 @@ import { formatCents } from "@tcm/core";
 import {
   forderungenAnkuendigen, monatAbrechnen, monatSchliessen,
 } from "@/app/admin/kasse/aktionen";
+import { FensterKnopf } from "@/components/FensterKnopf";
+import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 
 export interface MonatZeile {
   id: string;
@@ -31,6 +33,25 @@ const STAND: Record<MonatZeile["status"], string> = {
 const STAND_TON: Record<MonatZeile["status"], string> = { open: "", closed: "gelb", charged: "gruen" };
 
 /**
+ * Was bei einem Monat als Naechstes zu tun ist: erst schliessen, dann
+ * abrechnen, dann ankuendigen. Der laufende Monat hat noch nichts zu tun.
+ */
+function naechsterSchritt(m: MonatZeile, jetzt: number) {
+  if (m.status === "open") {
+    return m.year * 12 + m.month >= jetzt
+      ? null
+      : { marke: "schließen", knopf: "Monat schließen", text: "Schließen friert die Summe ein; danach nimmt die Theke für diesen Monat nichts mehr an." };
+  }
+  if (m.status === "closed") {
+    return { marke: "abrechnen", knopf: "Forderungen erzeugen", text: "Die Summe steht fest. Das Abrechnen macht daraus Forderungen je Mitglied." };
+  }
+  if (m.offen > 0) {
+    return { marke: "ankündigen", knopf: `${m.offen} ankündigen`, text: "Ohne Vorabankündigung darf nicht eingezogen werden." };
+  }
+  return null;
+}
+
+/**
  * Der Getränkemonat in zwei Schritten.
  *
  * Schließen und Abrechnen sind bewusst getrennt: das Schließen friert die
@@ -46,6 +67,7 @@ export function GetraenkemonatKarte({
 }) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
+  const [gewaehlt, setGewaehlt] = useState<MonatZeile | null>(null);
 
   /** Der früheste Tag, an dem eingezogen werden darf. */
   function fruehesteFaelligkeit(): string {
@@ -62,8 +84,8 @@ export function GetraenkemonatKarte({
   const jetzt = Number(heute.slice(0, 4)) * 12 + Number(heute.slice(5, 7));
 
   return (
-    <section className="karte" id="getraenkemonate">
-      <h2 className="dpl">Getränkemonate</h2>
+    <section className="liste-abschnitt" id="getraenkemonate" aria-labelledby="h-getraenkemonate">
+      <Gruppenkopf titel="Getränkemonate" id="h-getraenkemonate" />
       <p className="unterzeile">
         Erst schließen, dann abrechnen. Ein geschlossener Monat lässt sich an der Theke nicht
         mehr verändern – nur so steht der Betrag fest, bevor er angekündigt wird.
@@ -78,97 +100,76 @@ export function GetraenkemonatKarte({
       {monate.length === 0 ? (
         <p className="leer-klein">Es gibt noch keine Abrechnungszeiträume.</p>
       ) : (
-        <div className="tabellenhuelle tabellenkarte"><table className="liste">
-          <thead>
-            <tr>
-              <th scope="col">Monat</th>
-              <th scope="col" className="zahl">Entnahmen</th>
-              <th scope="col" className="zahl">Mitglieder</th>
-              <th scope="col" className="zahl">Summe</th>
-              <th scope="col" className="zahl">Forderungen</th>
-              <th scope="col">Stand</th>
-              <th scope="col"><span className="sr-only">Aktion</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            {monate.map((m) => {
-              const laufend = m.year * 12 + m.month >= jetzt;
-              return (
-                <tr key={m.id}>
-                  <td className="fett">{MONAT.format(new Date(m.year, m.month - 1, 1))}</td>
-                  <td data-label="Entnahmen" className="zahl tnum">{m.buchungen}</td>
-                  <td data-label="Mitglieder" className="zahl tnum">{m.mitglieder}</td>
-                  <td data-label="Summe" className="zahl betrag dpl tnum">{formatCents(m.summe_cents)}</td>
-                  <td data-label="Forderungen" className="zahl tnum">{m.forderungen || "—"}</td>
-                  <td data-label="Stand">
-                    <span className={`statusmarke ${STAND_TON[m.status]}`}>{STAND[m.status]}</span>
-                  </td>
-                  <td className="aktion">
-                    {m.status === "open" &&
-                      (laufend ? (
-                        <span className="mit">läuft noch</span>
-                      ) : (
-                        <button
-                          type="button"
-                          className="knopf leise klein"
-                          disabled={laeuft}
-                          onClick={() =>
-                            starte(async () => {
-                              const e = await monatSchliessen(m.year, m.month);
-                              setMeldung({ ok: e.ok, text: e.meldung });
-                            })
-                          }
-                        >
-                          Monat schließen
-                        </button>
-                      ))}
-                    {m.status === "closed" && (
-                      <button
-                        type="button"
-                        className="knopf klein"
-                        disabled={laeuft}
-                        onClick={() =>
-                          starte(async () => {
-                            const e = await monatAbrechnen(m.year, m.month, null);
-                            setMeldung({ ok: e.ok, text: e.meldung });
-                          })
-                        }
-                      >
-                        Forderungen erzeugen
-                      </button>
-                    )}
-                    {/* Der dritte Schritt: erst schließen, dann abrechnen,
-                        dann ankündigen. Ohne Ankündigung darf nicht eingezogen
-                        werden. */}
-                    {m.status === "charged" &&
-                      (m.offen > 0 ? (
-                        <button
-                          type="button"
-                          className="knopf klein"
-                          disabled={laeuft}
-                          onClick={() =>
-                            starte(async () => {
-                              const e = await forderungenAnkuendigen({
-                                faelligAm: fruehesteFaelligkeit(),
-                                art: "drinks",
-                                zeitraum: `${m.year}-${String(m.month).padStart(2, "0")}`,
-                              });
-                              setMeldung({ ok: e.ok, text: e.meldung });
-                            })
-                          }
-                        >
-                          {m.offen} ankündigen
-                        </button>
-                      ) : (
-                        <span className="mit">angekündigt</span>
-                      ))}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table></div>
+        <ul className="liste-gruppe" aria-label="Getränkemonate">
+          {monate.map((m) => {
+            const schritt = naechsterSchritt(m, jetzt);
+            return (
+              <li key={m.id}>
+                <Listenzeile
+                  symbol={String(m.month).padStart(2, "0")}
+                  titel={MONAT.format(new Date(m.year, m.month - 1, 1))}
+                  kontext={`${m.buchungen} Entnahmen · ${m.mitglieder} Mitglieder${m.forderungen ? ` · ${m.forderungen} Forderungen` : ""}`}
+                  neben={
+                    <span className="neben">
+                      <span className="betrag tnum">{formatCents(m.summe_cents)}</span>
+                      <span className={`statusmarke ${schritt ? "gelb" : STAND_TON[m.status]}`}>
+                        {schritt?.marke ?? STAND[m.status]}
+                      </span>
+                    </span>
+                  }
+                  onClick={schritt ? () => setGewaehlt(m) : undefined}
+                />
+              </li>
+            );
+          })}
+        </ul>
       )}
+
+      {/* Der eine Schritt eines Monats steht im Blatt, nicht in der Zeile (Regel 4) */}
+      {gewaehlt && (() => {
+        const schritt = naechsterSchritt(gewaehlt, jetzt);
+        return (
+          <FensterKnopf
+            titel={MONAT.format(new Date(gewaehlt.year, gewaehlt.month - 1, 1))}
+            unterzeile={STAND[gewaehlt.status]}
+            offen
+            onSchliessen={() => setGewaehlt(null)}
+          >
+            <dl className="angaben gruppe">
+              <div><dt>Entnahmen</dt><dd className="tnum">{gewaehlt.buchungen}</dd></div>
+              <div><dt>Mitglieder</dt><dd className="tnum">{gewaehlt.mitglieder}</dd></div>
+              <div><dt>Summe</dt><dd className="tnum">{formatCents(gewaehlt.summe_cents)}</dd></div>
+              <div><dt>Forderungen</dt><dd className="tnum">{gewaehlt.forderungen || "—"}</dd></div>
+            </dl>
+            {schritt && <p className="unterzeile">{schritt.text}</p>}
+            {schritt && (
+              <button
+                type="button"
+                className="knopf gold block"
+                disabled={laeuft}
+                onClick={() =>
+                  starte(async () => {
+                    const e =
+                      gewaehlt.status === "open"
+                        ? await monatSchliessen(gewaehlt.year, gewaehlt.month)
+                        : gewaehlt.status === "closed"
+                          ? await monatAbrechnen(gewaehlt.year, gewaehlt.month, null)
+                          : await forderungenAnkuendigen({
+                              faelligAm: fruehesteFaelligkeit(),
+                              art: "drinks",
+                              zeitraum: `${gewaehlt.year}-${String(gewaehlt.month).padStart(2, "0")}`,
+                            });
+                    setMeldung({ ok: e.ok, text: e.meldung });
+                    if (e.ok) setGewaehlt(null);
+                  })
+                }
+              >
+                {schritt.knopf}
+              </button>
+            )}
+          </FensterKnopf>
+        );
+      })()}
     </section>
   );
 }

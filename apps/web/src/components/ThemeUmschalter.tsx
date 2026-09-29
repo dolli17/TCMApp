@@ -6,9 +6,6 @@ export type ThemeWahl = "system" | "hell" | "dunkel";
 
 const COOKIE = "tcm-theme";
 
-/** Die Verwaltung ist hell, solange niemand etwas anderes gewaehlt hat. */
-const VERWALTUNG = /^\/admin(\/|$)/;
-
 /**
  * Wird beim ersten Rendern im <head> ausgeführt, noch bevor der Körper
  * gezeichnet wird. Ohne das blitzt beim Laden kurz das helle Theme auf, bevor
@@ -20,37 +17,13 @@ export const THEME_SKRIPT = `
 (function () {
   try {
     var m = document.cookie.match(/(?:^|;\\s*)${COOKIE}=([^;]*)/);
-    var wahl = m ? decodeURIComponent(m[1]) : "";
+    var wahl = m ? decodeURIComponent(m[1]) : "system";
     if (wahl === "hell" || wahl === "dunkel") {
       document.documentElement.setAttribute("data-theme", wahl);
-    } else if (!wahl && ${VERWALTUNG}.test(location.pathname)) {
-      document.documentElement.setAttribute("data-theme", "hell");
     }
   } catch (e) {}
 })();
 `.trim();
-
-/** Hat der Nutzer ausdruecklich gewaehlt - auch "System"? */
-function eigeneWahl(): boolean {
-  return new RegExp(`(?:^|;\\s*)${COOKIE}=`).test(document.cookie);
-}
-
-/**
- * Setzt in der Verwaltung hell, solange kein Theme gewaehlt ist, und nimmt
- * es beim Verlassen wieder weg. Das Kopfskript deckt das erste Laden ab,
- * dies hier den Wechsel innerhalb der Seite.
- */
-export function VerwaltungHell() {
-  useEffect(() => {
-    if (eigeneWahl()) return;
-    const html = document.documentElement;
-    html.setAttribute("data-theme", "hell");
-    return () => {
-      if (!eigeneWahl()) html.removeAttribute("data-theme");
-    };
-  }, []);
-  return null;
-}
 
 function schreibeCookie(wahl: ThemeWahl) {
   // Ein Jahr haltbar, gilt für die ganze Seite, kein Drittanbieter-Versand.

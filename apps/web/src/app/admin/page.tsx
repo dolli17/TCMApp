@@ -5,6 +5,8 @@ import {
 } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Geldweg } from "@/components/Geldweg";
+import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
+import { Symbol } from "@/components/Navigation";
 import { MiniZeitleiste } from "@/components/MiniZeitleiste";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +15,16 @@ const BERLIN = "Europe/Berlin";
 const HEUTE_LANG = new Intl.DateTimeFormat("de-DE", {
   weekday: "long", day: "numeric", month: "long", timeZone: BERLIN,
 });
+
+/** Die Bereiche als Liste - am Telefon, wo keine Seitenleiste steht. */
+const BEREICHE = [
+  { href: "/admin/mitglieder", label: "Mitglieder", symbol: "mitglieder" },
+  { href: "/admin/arbeitsdienst", label: "Arbeitsdienst", symbol: "dienst" },
+  { href: "/admin/kasse", label: "Kasse", symbol: "kasse" },
+  { href: "/admin/plaetze", label: "Plätze & Serien", symbol: "serie" },
+  { href: "/admin/getraenke", label: "Getränke", symbol: "getraenk" },
+  { href: "/admin/system", label: "System", symbol: "system" },
+] as const;
 
 function heuteInBerlin(): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: BERLIN }).format(new Date());
@@ -100,7 +112,7 @@ export default async function VerwaltungSeite() {
       : null,
     today: heute,
   });
-  const laufHref = lauf ? `/admin/kasse/lastschriften/${lauf.id}` : "/admin/kasse/lastschriften";
+  const laufHref = lauf ? `/admin/kasse/lastschriften/${lauf.id}` : "/admin/kasse?abschnitt=lastschrift";
 
   // --- Heute zu tun --------------------------------------------------------
   const aufgaben = adminTodos({
@@ -111,8 +123,6 @@ export default async function VerwaltungSeite() {
     returnedCharges: forderungen.filter((f) => f.status === "returned").length,
     openDrinkMonths: monateRes.data ?? [],
   });
-  // Gelb nur fuer die eine Hauptaktion: den ersten Punkt, der zu handeln ist.
-  const hauptaufgabe = aufgaben.find((a) => a.urgent)?.key;
   const aufgabenFehler = antraegeRes.error ?? forderungenRes.error ?? monateRes.error;
 
   // --- Die Anlage heute ----------------------------------------------------
@@ -124,9 +134,9 @@ export default async function VerwaltungSeite() {
 
   const kennzahlen = [
     {
-      label: "Aktive Mitglieder",
+      label: "Mitglieder",
       wert: mitgliederRes.error ? "–" : String(mitgliederRes.count ?? 0),
-      info: "zur Mitgliederliste",
+      info: "aktiv",
       href: "/admin/mitglieder",
     },
     {
@@ -136,102 +146,167 @@ export default async function VerwaltungSeite() {
       href: "/plan",
     },
     {
-      label: "Offene Anträge",
+      label: "Offen",
+      wert: forderungenRes.error ? "–" : formatCents(offenSumme),
+      info: "alle Forderungen",
+      href: "/admin/kasse?abschnitt=forderungen",
+    },
+    {
+      label: "Anträge",
       wert: antraegeRes.error ? "–" : String(offeneAntraege),
       info: offeneAntraege === 0 ? "nichts zu prüfen" : "warten auf Prüfung",
       href: "/admin/mitglieder/antraege",
     },
-    {
-      label: "Offene Forderungen",
-      wert: forderungenRes.error ? "–" : formatCents(offenSumme),
-      info: "alle Arten zusammen",
-      href: "/admin/kasse?abschnitt=forderungen",
-    },
   ];
 
+  // Die dringendste Aufgabe als grosse Karte, die uebrigen als Zeilen.
+  const erste = aufgaben[0]?.urgent ? aufgaben[0] : null;
+  const weitere = erste ? aufgaben.slice(1) : aufgaben;
+  const nr = weg.steps.findIndex((x) => x.state === "aktuell") + 1;
+  const aktuellerSchritt = weg.steps[nr - 1];
+
   return (
-    <div className="verwaltung">
+    <div className="verwaltung uebersicht">
       <header>
-        <div className="kicker">Verwaltung · {HEUTE_LANG.format(new Date())}</div>
-        <h1 className="pagetitle">Übersicht</h1>
+        <div className="kicker">{HEUTE_LANG.format(new Date())}</div>
+        <h1 className="pagetitle">Verwaltung</h1>
       </header>
 
-      <div className="kennzahlen">
-        {kennzahlen.map((k) => (
-          <Link key={k.label} href={k.href} className="kennzahl">
-            <span className="label">{k.label}</span>
-            <span className="wert dpl tnum">{k.wert}</span>
-            <span className="info">{k.info}</span>
-          </Link>
-        ))}
-      </div>
-
-      <div className="verwaltung-raster">
-        <div className="haupt">
-          <section className="karte gross" aria-labelledby="h-geldweg">
-            <div className="kartenkopf">
-              <h2 id="h-geldweg">{lauf ? lauf.title : "Beitragslauf"} · der Weg des Geldes</h2>
-              <Link href={laufHref}>{lauf ? "Lauf öffnen" : "Zu den Läufen"}</Link>
-            </div>
-            {forderungenRes.error || laeufeRes.error ? (
-              <div className="hinweis fehler">Der Stand der Lastschrift konnte nicht geladen werden.</div>
+      <div className="uebersicht-raster">
+        <div className="uebersicht-spalte">
+          {/* --- Heute zu tun (Regel 7) ------------------------------------ */}
+          <section className="liste-abschnitt" aria-labelledby="h-zutun">
+            <Gruppenkopf
+              titel="Heute zu tun"
+              id="h-zutun"
+              neben={aufgaben.length > 0 ? `${aufgaben.length} offen` : undefined}
+            />
+            {aufgabenFehler ? (
+              <div className="hinweis fehler">Die offenen Punkte konnten nicht geladen werden.</div>
+            ) : aufgaben.length === 0 ? (
+              <div className="liste-gruppe">
+                <Listenzeile punkt="info" titel="Alles erledigt" kontext="Heute liegt nichts an." />
+              </div>
             ) : (
-              <Geldweg schritte={weg.steps} />
+              <>
+                {erste && (
+                  <div className="aufgabe-gross">
+                    <svg className="linien" viewBox="0 0 350 196" preserveAspectRatio="xMaxYMin slice" aria-hidden="true">
+                      <path d="M170 196 L225 0 M350 55 L225 196 M200 95 H350 M218 36 H350" />
+                    </svg>
+                    <div className="kicker">Zuerst</div>
+                    <b className="titel">{erste.title}</b>
+                    <p>{erste.text}</p>
+                    <Link href={erste.href} className="knopf gold">
+                      {erste.action}
+                    </Link>
+                  </div>
+                )}
+                {weitere.length > 0 && (
+                  <ul className="liste-gruppe aufgaben" aria-label="Weitere Aufgaben">
+                    {weitere.map((x) => (
+                      <li key={x.key}>
+                        <Listenzeile
+                          href={x.href}
+                          punkt={x.urgent ? "dringend" : "info"}
+                          titel={x.title}
+                          kontext={x.text}
+                          hinweis={x.action}
+                          hinweisTon="blau"
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
             )}
           </section>
 
-          <section className="karte gross" aria-labelledby="h-anlage">
-            <div className="kartenkopf">
-              <h2 id="h-anlage">Heute auf der Anlage</h2>
-              <Link href="/plan">Belegungsplan</Link>
-            </div>
-            {anlageFehler ? (
-              <div className="hinweis fehler">Die Belegung konnte nicht geladen werden.</div>
+          {/* --- Beitragslauf ---------------------------------------------- */}
+          <section className="liste-abschnitt" aria-labelledby="h-geldweg">
+            <Gruppenkopf
+              titel={lauf ? lauf.title : "Beitragslauf"}
+              id="h-geldweg"
+              neben={<Link href={laufHref}>{lauf ? "Öffnen" : "Läufe"}</Link>}
+            />
+            {forderungenRes.error || laeufeRes.error ? (
+              <div className="hinweis fehler">Der Stand der Lastschrift konnte nicht geladen werden.</div>
             ) : (
-              <ul className="anlage-heute">
-                {plaetze.map((p) => (
-                  <li key={p.id}>
-                    <span>{p.name}</span>
-                    <MiniZeitleiste
-                      segmente={timelineSegments(belegung.filter((b) => b.court_id === p.id), auf, zu)}
-                      markierung={jetzt}
-                      gross
-                    />
-                  </li>
-                ))}
-              </ul>
+              <Link href={laufHref} className="karte geldweg-karte">
+                <ol className="geldweg-balken" aria-hidden="true">
+                  {weg.steps.map((x) => <li key={x.key} className={x.state} />)}
+                </ol>
+                <span className="zeile">
+                  <b>{nr > 0 ? `Schritt ${nr} von 5 · ${aktuellerSchritt!.name}` : "Alle Schritte erledigt"}</b>
+                  <span className={`statusmarke ${weg.current === null ? "gruen" : "gelb"}`}>{weg.label}</span>
+                </span>
+                <small>
+                  {[aktuellerSchritt?.info, weg.steps[0]!.info].filter(Boolean).join(" · ")}
+                </small>
+                {/* Am Desktop steht der Weg zusätzlich ausgeschrieben */}
+                <span className="nur-breit">
+                  <Geldweg schritte={weg.steps} />
+                </span>
+              </Link>
             )}
           </section>
         </div>
 
-        <aside className="karte gross zu-tun" aria-labelledby="h-zutun">
-          <div className="zu-tun-kopf">
-            <h2 id="h-zutun">Heute zu tun</h2>
-            <p>Was liegen bleibt, kostet Geld oder Nerven.</p>
-          </div>
-          {aufgabenFehler ? (
-            <div className="hinweis fehler">Die offenen Punkte konnten nicht geladen werden.</div>
-          ) : aufgaben.length === 0 ? (
-            <p className="alles-erledigt">Alles erledigt.</p>
-          ) : (
-            <ul>
-              {aufgaben.map((a) => (
-                <li key={a.key}>
-                  <div className="aufgabe">
-                    <i className={a.urgent ? "dringend" : undefined} aria-hidden="true" />
-                    <div>
-                      <b>{a.title}</b>
-                      <p>{a.text}</p>
-                    </div>
-                  </div>
-                  <Link href={a.href} className={`knopf klein ${a.key === hauptaufgabe ? "gold" : "leise"}`}>
-                    {a.action}
-                  </Link>
-                </li>
+        <div className="uebersicht-spalte">
+          {/* --- Auf einen Blick ------------------------------------------- */}
+          <section className="liste-abschnitt" aria-labelledby="h-blick">
+            <Gruppenkopf titel="Auf einen Blick" id="h-blick" />
+            <div className="kennzahlen zwei">
+              {kennzahlen.map((k) => (
+                <Link key={k.label} href={k.href} className="kennzahl">
+                  <span className="label">{k.label}</span>
+                  <span className="wert dpl tnum">{k.wert}</span>
+                  <span className="info">{k.info}</span>
+                </Link>
               ))}
-            </ul>
-          )}
-        </aside>
+            </div>
+          </section>
+
+          {/* --- Heute auf der Anlage (Desktop) ----------------------------- */}
+          <section className="liste-abschnitt nur-breit" aria-labelledby="h-anlage">
+            <Gruppenkopf titel="Heute auf der Anlage" id="h-anlage" neben={<Link href="/plan">Plan</Link>} />
+            <div className="karte">
+              {anlageFehler ? (
+                <div className="hinweis fehler">Die Belegung konnte nicht geladen werden.</div>
+              ) : (
+                <ul className="anlage-heute">
+                  {plaetze.map((p) => (
+                    <li key={p.id}>
+                      <span>{p.name}</span>
+                      <MiniZeitleiste
+                        segmente={timelineSegments(belegung.filter((b) => b.court_id === p.id), auf, zu)}
+                        markierung={jetzt}
+                        gross
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
+
+          {/* --- Bereiche (nur Telefon; am Desktop führt die Seitenleiste) -- */}
+          <section className="liste-abschnitt nur-schmal" aria-labelledby="h-bereiche">
+            <Gruppenkopf titel="Bereiche" id="h-bereiche" />
+            <nav className="liste-gruppe" aria-label="Bereiche der Verwaltung">
+              {BEREICHE.map((b) => (
+                <Listenzeile
+                  key={b.href}
+                  href={b.href}
+                  symbol={<Symbol name={b.symbol} />}
+                  titel={b.label}
+                  hinweis={b.href === "/admin/mitglieder" && offeneAntraege > 0 ? `${offeneAntraege} Anträge` : undefined}
+                  hinweisTon="gold"
+                />
+              ))}
+            </nav>
+          </section>
+        </div>
       </div>
     </div>
   );

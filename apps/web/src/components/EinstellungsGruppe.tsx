@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { einstellungenSpeichern } from "@/app/admin/einstellungs-aktionen";
+import { Gruppenkopf } from "@/components/Listenzeile";
 
 export interface Einstellung {
   key: string;
@@ -29,7 +30,8 @@ function feldTyp(valueType: string): string {
 }
 
 /**
- * Eine Karte je Themengruppe, jede mit eigenem Formular und eigener Rückmeldung.
+ * Eine gruppierte Karte je Themengruppe, jede mit eigenem Formular und eigener
+ * Rückmeldung; die Felder stehen als Zeilen darin, das Eingabefeld rechts.
  *
  * Getrennt statt ein großes Formular über alles: wer die Schließzeit ändert,
  * soll nicht versehentlich die Gläubiger-ID mit abschicken.
@@ -52,8 +54,8 @@ export function EinstellungsGruppe({
   }
 
   return (
-    <section className="karte einstellungen" aria-label={titel}>
-      <h2 className="dpl">{titel}</h2>
+    <section className="liste-abschnitt einstellungen" aria-label={titel}>
+      <Gruppenkopf titel={titel} />
       <p className="unterzeile">{text}</p>
 
       {meldung && (
@@ -63,25 +65,27 @@ export function EinstellungsGruppe({
       )}
 
       <form action={abschicken}>
-        {eintraege.map((e) => {
-          const wert = alsText(e.value);
-          return (
-            <label key={e.key} className="einstellung">
-              <span className="titel">{e.label ?? e.key}</span>
-              {e.description && <span className="beschreibung">{e.description}</span>}
-              <input
-                type={feldTyp(e.value_type)}
-                name={`wert:${e.key}`}
-                defaultValue={wert}
-                min={e.value_type === "integer" ? 0 : undefined}
-                step={e.value_type === "time" ? 900 : undefined}
-                aria-label={e.label ?? e.key}
-              />
-              <input type="hidden" name={`alt:${e.key}`} value={wert} />
-              <span className="schluessel">{e.key}</span>
-            </label>
-          );
-        })}
+        <div className="liste-gruppe einstellungs-felder">
+          {eintraege.map((e) => {
+            const wert = alsText(e.value);
+            return (
+              <label key={e.key} className="einstellung">
+                <span className="titel">{e.label ?? e.key}</span>
+                {e.description && <span className="beschreibung">{e.description}</span>}
+                <input
+                  type={feldTyp(e.value_type)}
+                  name={`wert:${e.key}`}
+                  defaultValue={wert}
+                  min={e.value_type === "integer" ? 0 : undefined}
+                  step={e.value_type === "time" ? 900 : undefined}
+                  aria-label={e.label ?? e.key}
+                />
+                <input type="hidden" name={`alt:${e.key}`} value={wert} />
+                <span className="schluessel">{e.key}</span>
+              </label>
+            );
+          })}
+        </div>
 
         <button className="knopf" disabled={laeuft}>
           {laeuft ? "Wird gespeichert…" : "Speichern"}

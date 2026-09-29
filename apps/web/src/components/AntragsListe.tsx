@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AntragsFenster, type Antrag, type Beitragsart } from "@/components/AntragsFenster";
+import { Listenzeile, type HinweisTon } from "@/components/Listenzeile";
 
 const STATUS_TEXT: Record<string, string> = {
   new: "offen",
@@ -37,57 +38,26 @@ export function AntragsListe({
 
   return (
     <>
-      <div className="karte tabellenkarte">
-        <table className="liste">
-          <thead>
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Eingegangen</th>
-              <th scope="col">Stand</th>
-              <th scope="col"><span className="sr-only">Aktion</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            {antraege.map((a) => (
-              <tr key={a.id}>
-                <td>
-                  <div className="person">
-                    <span className={`avatar ton-${a.id.charCodeAt(0) % 4}`} aria-hidden="true">
-                      {(a.first_name[0] ?? "") + (a.last_name[0] ?? "")}
-                    </span>
-                    <div>
-                      <b>
-                        {a.last_name}, {a.first_name}
-                      </b>
-                      <small>{a.email}</small>
-                      {a.possible_duplicate && (
-                        <span className="marken-zeile">
-                          <span className="statusmarke rot" title="Diese Adresse gehört bereits zu einem Mitglied">
-                            Dublette?
-                          </span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </td>
-                <td data-label="Eingegangen" className="leiser">{datum(a.submitted_at)}</td>
-                <td data-label="Stand">
-                  <span className={`statusmarke ${a.status === "new" ? "gelb" : a.status === "accepted" ? "gruen" : ""}`}>
-                    {STATUS_TEXT[a.status] ?? a.status}
-                  </span>
-                </td>
-                <td className="aktion">
-                  {a.status === "new" && (
-                    <button className="knopf leise klein" onClick={() => setOffen(a)}>
-                      Ansehen
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ul className="liste-gruppe" aria-label="Anträge">
+        {antraege.map((a) => {
+          const neu = a.status === "new";
+          const zeile = {
+            avatar: { kurz: (a.first_name[0] ?? "") + (a.last_name[0] ?? ""), id: a.id },
+            titel: `${a.last_name}, ${a.first_name}`,
+            kontext: `${datum(a.submitted_at)} · ${a.email}`,
+            hinweis: a.possible_duplicate && neu ? "Dublette?" : STATUS_TEXT[a.status] ?? a.status,
+            hinweisTon: (a.possible_duplicate && neu
+              ? "rot"
+              : neu ? "gold" : a.status === "accepted" ? "gruen" : "leise") as HinweisTon,
+          };
+          return (
+            <li key={a.id}>
+              {/* Nur offene Anträge öffnen das Blatt; erledigte stehen zur Ansicht da */}
+              <Listenzeile {...zeile} onClick={neu ? () => setOffen(a) : undefined} />
+            </li>
+          );
+        })}
+      </ul>
 
       {offen && (
         <AntragsFenster

@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { FensterKnopf } from "@/components/FensterKnopf";
-import { MitgliederBereiche } from "@/components/MitgliederBereiche";
+import { Listenzeile } from "@/components/Listenzeile";
+import { MitgliederSegmente } from "@/components/MitgliederSegmente";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { AufstellungKarte, type Aufstellungszeile } from "@/components/AufstellungKarte";
 import { MannschaftsFormular, type Mannschaft } from "@/components/MannschaftsFormular";
@@ -50,41 +50,25 @@ export default async function MannschaftenSeite({
           <MannschaftsFormular key="neu" />
         </FensterKnopf>
       </VerwaltungsKopf>
-      <MitgliederBereiche aktiv="/admin/mitglieder/mannschaften" />
+      <MitgliederSegmente aktiv="/admin/mitglieder/mannschaften" />
 
-      <div className="karte tabellenkarte">
-        {mannschaften.length === 0 ? (
-          <p className="leer-klein">Noch keine Mannschaften angelegt.</p>
-        ) : (
-          <table className="liste">
-            <thead>
-              <tr>
-                <th scope="col">Name</th>
-                <th scope="col" className="zahl">Spieler</th>
-                <th scope="col">Mannschaftsführer</th>
-                <th scope="col"><span className="sr-only">Aktion</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {mannschaften.map((m) => (
-                <tr key={m.id}>
-                  <td className="fett">
-                    {m.name}
-                    {!m.active && <span className="statusmarke"> stillgelegt</span>}
-                  </td>
-                  <td data-label="Spieler" className="zahl dpl tnum">{m.member_count}</td>
-                  <td data-label="Mannschaftsführer" className="leiser">{m.captain_name ?? "–"}</td>
-                  <td className="aktion">
-                    <Link className="knopf leise klein" href={`/admin/mitglieder/mannschaften?bearbeiten=${m.id}`}>
-                      bearbeiten
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {mannschaften.length === 0 ? (
+        <p className="leer-klein">Noch keine Mannschaften angelegt.</p>
+      ) : (
+        <ul className="liste-gruppe" aria-label="Mannschaften">
+          {mannschaften.map((m) => (
+            <li key={m.id}>
+              <Listenzeile
+                href={`/admin/mitglieder/mannschaften?bearbeiten=${m.id}`}
+                symbol={m.name.replace(/[^A-ZÄÖÜ0-9]/g, "").slice(0, 3) || m.name.slice(0, 2)}
+                titel={m.name}
+                kontext={`${m.member_count} Spieler${m.captain_name ? ` · Führer: ${m.captain_name}` : ""}`}
+                hinweis={m.active ? undefined : "stillgelegt"}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
 
       {inBearbeitung && (
         // Der key baut das Formular beim Wechsel der Mannschaft neu auf.

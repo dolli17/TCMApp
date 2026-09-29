@@ -115,14 +115,14 @@ test.describe("Layout", () => {
     }
 
     test("die schwebende Leiste eines Admins sprengt die Breite nicht", async ({ page }) => {
-      // Auch ein Admin hat nur die vier Haupteinträge; die Glocke sitzt im
-      // Seitenkopf. Vorher waren es acht Einträge, und die Leiste musste
-      // seitwärts scrollen. Das Dokument darf sich in keinem Fall mitverschieben.
+      // Ein Admin hat die vier Haupteinträge und dazu den Tab „Admin“
+      // (docs/design/clubhaus/verwaltung, Regel 1); die Glocke sitzt im
+      // Seitenkopf. Das Dokument darf sich in keinem Fall mitverschieben.
       await anmelden(page, ADMIN);
       await page.goto("/plan");
 
-      // Home, Plätze, Getränke, Konto
-      await expect(page.locator(".schwebeleiste a")).toHaveCount(4);
+      // Home, Plätze, Getränke, Konto, Admin
+      await expect(page.locator(".schwebeleiste a")).toHaveCount(5);
       await expect(page.locator(".seitenkopf .glocke")).toHaveCount(1);
       const ueberbreite = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -130,11 +130,21 @@ test.describe("Layout", () => {
       expect(ueberbreite, `Die Seite ist ${ueberbreite}px zu breit`).toBeLessThanOrEqual(0);
     });
 
-    test("ein Admin erreicht die Verwaltung über die Konto-Seite", async ({ page }) => {
+    test("ein Admin erreicht die Verwaltung über den Tab „Admin“", async ({ page }) => {
       await anmelden(page, ADMIN);
       await page.goto("/konto");
-      await page.locator("a.verwaltung-einstieg").click();
+      const tab = page.locator(".schwebeleiste").getByRole("link", { name: "Admin" });
+      await tab.click();
       await page.waitForURL(/\/admin$/);
+      // Auch in einem Bereich der Verwaltung bleibt der Tab hervorgehoben.
+      await page.goto("/admin/kasse");
+      await expect(tab).toHaveAttribute("aria-current", "page");
+    });
+
+    test("ein normales Mitglied hat keinen Tab „Admin“", async ({ page }) => {
+      await anmelden(page);
+      await page.goto("/plan");
+      await expect(page.locator(".schwebeleiste a")).toHaveCount(4);
     });
 
     test("das Buchungsfenster passt auf 390 Pixel", async ({ page }) => {

@@ -56,8 +56,8 @@ export default async function LaufSeite({
 
   return (
     <>
-      <Link href="/admin/kasse/lastschriften" className="zurueck">
-        ‹ Kasse · Lastschriftläufe
+      <Link href="/admin/kasse?abschnitt=lastschrift" className="zurueck">
+        ‹ Kasse
       </Link>
 
       <LastschriftLauf

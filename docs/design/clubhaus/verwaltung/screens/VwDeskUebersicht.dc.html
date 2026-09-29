@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Verwaltung – Übersicht (Desktop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&amp;family=Barlow+Semi+Condensed:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 960px; display: flex; overflow: hidden; background: {{t.bg}}; color: {{t.ink}}; font-family: 'Barlow', system-ui, sans-serif">
+
+<aside style="width: 264px; flex-shrink: 0; box-sizing: border-box; background: {{t.side}}; border-right: 1px solid {{t.line}}; padding: 28px 16px 20px; display: flex; flex-direction: column">
+<img src="{{t.logo}}" alt="TC Muckensturm" style="height: 34px; width: auto; align-self: flex-start; margin: 0 10px 24px">
+<a href="#" style="height: 46px; border-radius: 14px; background: {{t.gold}}; color: {{t.onGold}}; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; margin-bottom: 18px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Platz buchen</a>
+<nav aria-label="Hauptmenü" style="display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="4">
+<a href="{{n.href}}" style="height: 44px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; text-decoration: none; font-size: 15px; font-weight: 600; {{n.stil}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.d}}"></path></svg>{{n.label}}</a>
+</sc-for>
+</nav>
+<div style="margin: 22px 12px 8px; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: {{t.muted}}">Verwaltung</div>
+<nav aria-label="Verwaltung" style="display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{admin}}" as="n" hint-placeholder-count="7">
+<a href="{{n.href}}" style="height: 40px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; text-decoration: none; font-size: 14.5px; font-weight: 600; {{n.stil}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.d}}"></path></svg><span style="flex-grow: 1">{{n.label}}</span><span style="font-size: 12px; font-weight: 800; {{n.zahlStil}}">{{n.zahl}}</span></a>
+</sc-for>
+</nav>
+<div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 16px; background: {{t.surf2}}">
+<span style="width: 38px; height: 38px; border-radius: 19px; background: {{t.brand}}; color: #FFFFFF; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">LD</span>
+<div style="flex-grow: 1; min-width: 0"><div style="font-size: 14px; font-weight: 700">Lucas Dollmann</div><div style="font-size: 12px; color: {{t.muted}}">Admin</div></div>
+</div>
+</aside>
+
+<main style="flex-grow: 1; min-width: 0; box-sizing: border-box; padding: 40px 48px; display: flex; flex-direction: column; gap: 26px">
+<div>
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: {{t.muted}}">Montag, 28. September</div>
+<h1 style="margin: 4px 0 0; font-size: 44px; font-weight: 800; letter-spacing: -1px; line-height: 1.05">Verwaltung</h1>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 24px">
+<div style="grid-column: span 7; display: flex; flex-direction: column; gap: 24px; min-width: 0">
+<section aria-labelledby="h-tun">
+<div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px"><h2 id="h-tun" style="margin: 0; font-size: 22px; font-weight: 700">Heute zu tun</h2><span style="font-size: 14px; font-weight: 600; color: {{t.muted}}">3 offen</span></div>
+<div style="height: 200px; box-sizing: border-box; border-radius: 28px; background: {{t.brand}}; color: #FFFFFF; position: relative; overflow: hidden; padding: 26px 28px; display: flex; flex-direction: column">
+<svg width="620" height="200" viewBox="0 0 620 200" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="2" style="position: absolute; right: 0; top: 0"><path d="M330 200 L400 0 M620 50 L480 200 M380 100 H620 M400 40 H620"></path></svg>
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; opacity: .85; position: relative">Neu seit Freitag</div>
+<div style="font-size: 34px; font-weight: 800; letter-spacing: -.5px; line-height: 1.08; margin-top: 8px; position: relative">[n] Mitgliedsanträge prüfen</div>
+<div style="font-size: 15.5px; opacity: .9; margin-top: 6px; position: relative">Mitgliedschaft zuordnen, dann bekommt die Person ihren Zugang.</div>
+<a href="VwDeskMitglieder.dc.html" style="margin-top: auto; align-self: flex-start; height: 46px; padding: 0 20px; border-radius: 23px; background: {{t.gold}}; color: {{t.onGold}}; font-size: 15px; font-weight: 800; display: flex; align-items: center; text-decoration: none; position: relative">Jetzt prüfen</a>
+</div>
+<div style="margin-top: 12px; border-radius: 22px; background: {{t.surf}}; border: 1px solid {{t.line}}; box-shadow: {{t.karte}}; overflow: hidden">
+<sc-for list="{{aufgaben}}" as="a" hint-placeholder-count="2">
+<a href="#" style="display: flex; align-items: center; gap: 14px; padding: 0 18px; min-height: 64px; border-bottom: 1px solid {{t.line}}; text-decoration: none; color: {{t.ink}}">
+<span style="width: 10px; height: 10px; border-radius: 5px; flex-shrink: 0; {{a.punkt}}"></span>
+<span style="flex-grow: 1"><span style="display: block; font-size: 16px; font-weight: 700">{{a.titel}}</span><span style="display: block; font-size: 13.5px; color: {{t.muted}}; margin-top: 1px">{{a.text}}</span></span>
+<span style="font-size: 14px; font-weight: 700; color: {{t.blue}}">{{a.aktion}}</span>
+</a>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="h-lauf" style="border-radius: 22px; background: {{t.surf}}; border: 1px solid {{t.line}}; box-shadow: {{t.karte}}; padding: 20px 22px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 id="h-lauf" style="margin: 0; font-size: 20px; font-weight: 700">Beitragslauf 2026</h2><a href="#" style="font-size: 14px; font-weight: 700; color: {{t.blue}}; text-decoration: none">Lauf öffnen</a></div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 18px">
+<sc-for list="{{weg}}" as="w" hint-placeholder-count="5">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="height: 6px; border-radius: 3px; {{w.balken}}"></div>
+<span style="font-size: 14.5px; font-weight: 700; {{w.titelStil}}">{{w.name}}</span>
+<span style="font-size: 12.5px; color: {{t.muted}}; line-height: 1.35">{{w.info}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+</div>
+
+<div style="grid-column: span 5; display: flex; flex-direction: column; gap: 24px; min-width: 0">
+<section aria-labelledby="h-blick">
+<h2 id="h-blick" style="margin: 0 0 12px; font-size: 22px; font-weight: 700">Auf einen Blick</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<sc-for list="{{kacheln}}" as="k" hint-placeholder-count="4">
+<a href="#" style="border-radius: 22px; background: {{t.surf}}; border: 1px solid {{t.line}}; box-shadow: {{t.karte}}; padding: 16px 18px; display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: {{t.ink}}">
+<span style="font-size: 13.5px; font-weight: 600; color: {{t.muted}}">{{k.label}}</span>
+<span style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 34px; line-height: 1.1">{{k.wert}}</span>
+<span style="font-size: 13px; color: {{t.muted}}">{{k.info}}</span>
+</a>
+</sc-for>
+</div>
+</section>
+<section aria-labelledby="h-anlage" style="border-radius: 22px; background: {{t.surf}}; border: 1px solid {{t.line}}; box-shadow: {{t.karte}}; padding: 20px 22px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px"><h2 id="h-anlage" style="margin: 0; font-size: 20px; font-weight: 700">Heute auf der Anlage</h2><a href="#" style="font-size: 14px; font-weight: 700; color: {{t.blue}}; text-decoration: none">Plan</a></div>
+<div style="display: grid; grid-template-columns: 64px minmax(0, 1fr); row-gap: 11px; align-items: center">
+<sc-for list="{{anlage}}" as="a" hint-placeholder-count="8">
+<span style="font-size: 13.5px; font-weight: 700">{{a.name}}</span>
+<div style="position: relative; height: 10px; border-radius: 5px; background: {{t.surf2}}">
+<sc-for list="{{a.segs}}" as="s" hint-placeholder-count="2"><div style="position: absolute; top: 0; bottom: 0; border-radius: 5px; box-sizing: border-box; {{s.stil}}"></div></sc-for>
+<div style="position: absolute; top: -4px; bottom: -4px; left: 47.7%; width: 2px; background: {{t.red}}"></div>
+</div>
+</sc-for>
+</div>
+</section>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"modus":{"editor":"enum","options":["dunkel","hell"],"default":"dunkel"},"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+renderVals() {
+var T = {
+dunkel: { bg: '#07111D', side: '#0A1522', surf: '#0E1A29', surf2: '#152538', surf3: '#1E3249', line: 'rgba(255,255,255,.08)', ink: '#F3F7FB', ink2: '#B3C2D2', muted: '#879AAE', blue: '#3A9BE0', brand: '#1466A8', gold: '#FFD21F', goldSoft: 'rgba(255,210,31,.14)', goldLine: '#FFD21F', onGold: '#0A1624', green: '#3DD68C', red: '#FF6B61', karte: 'none', navAn: 'background: rgba(255,210,31,.12); color: #FFD21F', navAus: 'color: #B3C2D2', logo: '/_blob/49d8207af8a37600cd37ff4a72865df3', hatch: 'repeating-linear-gradient(135deg, rgba(255,255,255,.18) 0 3px, transparent 3px 6px), #1E3249' },
+hell: { bg: '#F3F5F8', side: '#FFFFFF', surf: '#FFFFFF', surf2: '#EEF2F6', surf3: '#E2E8EF', line: '#E3E8EE', ink: '#0A1624', ink2: '#44566B', muted: '#596A7D', blue: '#1A6FB0', brand: '#1466A8', gold: '#FFD21F', goldSoft: '#FFF6D1', goldLine: '#E0B400', onGold: '#0A1624', green: '#1E9E6A', red: '#D7544B', karte: '0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06)', navAn: 'background: #0A1624; color: #FFFFFF', navAus: 'color: #44566B', logo: '/_blob/d494a1dd6862562fd26acdf91cca58bc', hatch: 'repeating-linear-gradient(135deg, rgba(10,22,36,.14) 0 3px, transparent 3px 6px), #E2E8EF' }
+};
+var t = T[this.props.modus] || T.dunkel;
+var I = {
+home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+platz: 'M4 4h16v16H4zM4 12h16M8 8h8v8H8zM12 8v8',
+getraenk: 'M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8',
+konto: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
+uebersicht: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
+mitglieder: 'M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 20v-1a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
+dienst: 'M9 4h6v3H9zM7 5H5v16h14V5h-2M9 14l2 2 4-4',
+kasse: 'M2 7h20v12H2zM2 11h20M6 15h4',
+serie: 'M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z',
+system: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'
+};
+var badge = 'background: ' + t.gold + '; color: ' + t.onGold + '; padding: 1px 7px; border-radius: 10px';
+var baue = function (liste, aktiv) {
+return liste.map(function (x) { return { label: x[0], d: I[x[1]], href: x[2], stil: x[0] === aktiv ? t.navAn : t.navAus, zahl: x[3] || '', zahlStil: x[3] ? badge : '' }; });
+};
+var pos = function (von, bis) { return 'left: ' + ((von - 8) / 13 * 100).toFixed(2) + '%; width: ' + ((bis - von) / 13 * 100).toFixed(2) + '%; '; };
+var F = { belegt: 'background: ' + t.blue, sucht: 'background: ' + t.goldSoft + '; border: 1.5px dashed ' + t.goldLine, serie: 'background: ' + t.hatch, gesperrt: 'background: ' + t.surf3 };
+var seg = function (von, bis, art) { return { stil: pos(von, bis) + F[art] }; };
+var w = function (name, info, art) {
+var s = { fertig: ['background: ' + t.green, ''], jetzt: ['background: ' + t.gold, ''], offen: ['background: ' + t.surf3, 'color: ' + t.muted] }[art];
+return { name: name, info: info, balken: s[0], titelStil: s[1] };
+};
+return {
+t: t,
+nav: baue([['Home', 'home', '#'], ['Belegungsplan', 'platz', '#'], ['Getränke', 'getraenk', '#'], ['Mein Konto', 'konto', '#']], ''),
+admin: baue([['Übersicht', 'uebersicht', 'VwDeskUebersicht.dc.html'], ['Mitglieder', 'mitglieder', 'VwDeskMitglieder.dc.html', '[n]'], ['Arbeitsdienst', 'dienst', '#'], ['Kasse', 'kasse', '#'], ['Plätze & Serien', 'serie', '#'], ['Getränke', 'getraenk', '#'], ['System', 'system', '#']], 'Übersicht'),
+aufgaben: [
+{ titel: 'Rückläufer eintragen', text: '[n] Lastschriften kamen zurück', aktion: 'Eintragen', punkt: 'background: ' + t.red },
+{ titel: 'Getränkemonat September', text: 'endet am 30.09., danach abrechnen', aktion: 'Ansehen', punkt: 'background: ' + t.surf3 + '; box-shadow: inset 0 0 0 1.5px ' + t.muted }
+],
+weg: [w('Forderung', '[n] Zahler · [Summe]', 'fertig'), w('Ankündigung', 'Frist bis [Datum]', 'jetzt'), w('Lastschriftlauf', 'ab [Datum]', 'offen'), w('Datei', 'pain.008', 'offen'), w('Rückläufer', 'per EndToEndId', 'offen')],
+kacheln: [
+{ label: 'Mitglieder', wert: '[n]', info: 'aktiv' },
+{ label: 'Heute gebucht', wert: '10', info: 'auf 6 von 8 Plätzen' },
+{ label: 'Offen', wert: '[Summe]', info: 'alle Forderungen' },
+{ label: 'Anträge', wert: '[n]', info: 'warten auf Prüfung' }
+],
+anlage: [
+{ name: 'Platz 1', segs: [seg(10, 11, 'belegt'), seg(17, 18, 'belegt')] },
+{ name: 'Platz 2', segs: [seg(16, 19, 'serie')] },
+{ name: 'Platz 3', segs: [seg(9, 10, 'belegt'), seg(18, 19, 'sucht')] },
+{ name: 'Platz 4', segs: [seg(17, 18, 'sucht'), seg(20, 21, 'belegt')] },
+{ name: 'Platz 5', segs: [seg(11, 12, 'belegt'), seg(17, 19, 'belegt')] },
+{ name: 'Platz 6', segs: [] },
+{ name: 'Platz 7', segs: [seg(8, 10, 'belegt'), seg(19, 21, 'belegt')] },
+{ name: 'Platz 8', segs: [seg(8, 21, 'gesperrt')] }
+]
+};
+}
+}
+</script>
+</body>
+</html>

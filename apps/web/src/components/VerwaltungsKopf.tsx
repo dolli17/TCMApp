@@ -2,9 +2,9 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 /**
- * Der Kopf einer Verwaltungsseite (Entwuerfe AdminMitglieder, AdminKasse):
- * optional ein Rueckweg, Kicker, Titel, eine Unterzeile; rechts die Aktionen,
- * meist ein gelber Knopf.
+ * Der Kopf einer Verwaltungsseite (docs/design/clubhaus/verwaltung):
+ * Rueckweg (am Telefon "‹ Verwaltung"), Titel, eine Unterzeile; rechts die
+ * eine Hauptaktion in Gelb (Regel 4) - am Telefon kompakt in der Titelzeile.
  */
 export function VerwaltungsKopf({
   kicker = "Verwaltung",
@@ -25,12 +25,17 @@ export function VerwaltungsKopf({
   return (
     <header className="verwaltung-kopf">
       <div>
-        {zurueck && (
+        {zurueck ? (
           <Link href={zurueck.href} className="zurueck">
             ‹ {zurueck.text}
           </Link>
+        ) : (
+          // Am Telefon fehlt die Seitenleiste: der Weg zurück zur Übersicht
+          <Link href="/admin" className="zurueck nur-telefon">
+            ‹ Verwaltung
+          </Link>
         )}
-        <div className="kicker">{kicker}</div>
+        <div className="kicker nur-ab-tablet">{kicker}</div>
         <div className="titelzeile">
           <h1 className="pagetitle">{titel}</h1>
           {marke}

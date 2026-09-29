@@ -2,9 +2,12 @@ import Link from "next/link";
 import { formatCents } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
+import { FensterKnopf } from "@/components/FensterKnopf";
 import { KassenKennzahlen } from "@/components/KassenKennzahlen";
+import { LaufAnlegen } from "@/components/LaufAnlegen";
 import { LaufListe, type LaufZeile } from "@/components/LaufListe";
-import { Reiter } from "@/components/Reiter";
+import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
+import { BereichSegmente } from "@/components/BereichSegmente";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { AnkuendigungsKarte } from "@/components/AnkuendigungsKarte";
 import { BeitragslaufKarte } from "@/components/BeitragslaufKarte";
@@ -15,13 +18,16 @@ import { GetraenkemonatKarte, type MonatZeile } from "@/components/Getraenkemona
 export const dynamic = "force-dynamic";
 
 const ABSCHNITTE = [
-  { wert: "lauf", label: "Beitragslauf" },
-  { wert: "getraenke", label: "Getränkemonate" },
   { wert: "forderungen", label: "Forderungen" },
-  { wert: "lastschrift", label: "Lastschrift" },
+  { wert: "lastschrift", label: "Lastschriften" },
+  { wert: "getraenke", label: "Getränkemonate" },
+  { wert: "lauf", label: "Beitragslauf" },
   { wert: "arten", label: "Beitragsarten" },
   { wert: "regeln", label: "Regeln" },
 ] as const;
+
+/** Die drei Teile des Segment-Schalters (Regel 1); der Rest sind Unterseiten. */
+const SEGMENTE = ["forderungen", "lastschrift", "getraenke"];
 
 /**
  * Alles, was Geld betrifft, an einem Ort.
@@ -40,7 +46,8 @@ export default async function KasseSeite({
   searchParams: Promise<{ abschnitt?: string; jahr?: string; stand?: string }>;
 }) {
   const { abschnitt, jahr: jahrParam, stand } = await searchParams;
-  const gewaehlt = ABSCHNITTE.some((a) => a.wert === abschnitt) ? abschnitt! : "lauf";
+  const gewaehlt = ABSCHNITTE.some((a) => a.wert === abschnitt) ? abschnitt! : "forderungen";
+  const unterseite = SEGMENTE.includes(gewaehlt) ? null : ABSCHNITTE.find((a) => a.wert === gewaehlt)!;
   const jahr = Number(jahrParam) || new Date().getFullYear();
 
   const supabase = await createServerSupabase();
@@ -73,7 +80,7 @@ export default async function KasseSeite({
       ? supabase.rpc("announceable_charges", { p_kind: "fee", p_period_label: String(jahr) })
       : Promise.resolve({ data: null, error: null }),
     gewaehlt === "lastschrift"
-      ? supabase.rpc("debit_batch_overview", { p_limit: 6 })
+      ? supabase.rpc("debit_batch_overview", { p_limit: 24 })
       : Promise.resolve({ data: null, error: null }),
   ]);
 
@@ -84,17 +91,51 @@ export default async function KasseSeite({
   const frist = Number(
     einstellungen.find((s) => s.key === "sepa.prenotification_days")?.value ?? 14,
   );
+  const wert = (k: string) => String(einstellungen.find((e) => e.key === k)?.value ?? "").replace(/"/g, "");
+  const fehlend = [
+    wert("sepa.creditor_id") === "" ? "die Gläubiger-Identifikationsnummer" : null,
+    wert("sepa.creditor_iban") === "" ? "die IBAN des Vereinskontos" : null,
+  ].filter(Boolean);
 
   return (
     <div className="verwaltung">
-      <VerwaltungsKopf
-        titel="Kasse"
-        unterzeile="Beiträge, Getränkeabrechnung und alles, was daraus an Forderungen entsteht."
-      />
+      {unterseite ? (
+        <VerwaltungsKopf
+          kicker="Verwaltung · Kasse"
+          titel={unterseite.label}
+          zurueck={{ href: "/admin/kasse", text: "Kasse" }}
+        />
+      ) : (
+        <>
+          <VerwaltungsKopf
+            titel="Kasse"
+            unterzeile="Beiträge, Getränkeabrechnung und alles, was daraus an Forderungen entsteht."
+          >
+            {/* Ein gelber Knopf je Seite (Regel 4), passend zum Segment */}
+            {gewaehlt === "forderungen" && (
+              <Link href="/admin/kasse?abschnitt=lauf" className="knopf gold">
+                Beitragslauf
+              </Link>
+            )}
+            {gewaehlt === "lastschrift" && (
+              <FensterKnopf titel="Neuer Lastschriftlauf" knopf="Lauf anlegen" knopfKurz="Lauf">
+                <LaufAnlegen fristTage={frist} />
+              </FensterKnopf>
+            )}
+          </VerwaltungsKopf>
 
-      <KassenKennzahlen />
+          <KassenKennzahlen />
 
-      <Reiter eintraege={[...ABSCHNITTE]} aktiv={gewaehlt} />
+          <BereichSegmente
+            label="Kasse"
+            aktiv={`/admin/kasse?abschnitt=${gewaehlt}`}
+            eintraege={SEGMENTE.map((wert) => ({
+              href: `/admin/kasse?abschnitt=${wert}`,
+              label: ABSCHNITTE.find((a) => a.wert === wert)!.label,
+            }))}
+          />
+        </>
+      )}
 
       {gewaehlt === "lauf" && (
         <Beitragslauf
@@ -118,6 +159,15 @@ export default async function KasseSeite({
 
       {gewaehlt === "forderungen" && (
         <>
+          {/* Was man seltener braucht, steht als Unterseite darunter */}
+          <nav className="gruppe" aria-label="Einrichtung der Kasse">
+            {(["lauf", "arten", "regeln"] as const).map((wert) => (
+              <Link key={wert} href={`/admin/kasse?abschnitt=${wert}`} className="gruppen-zeile">
+                <span className="titel">{ABSCHNITTE.find((a) => a.wert === wert)!.label}</span>
+                <span className="pfeil" aria-hidden="true">›</span>
+              </Link>
+            ))}
+          </nav>
           <StandFilter aktiv={stand ?? ""} />
           <ForderungsListe
             forderungen={(forderungenRes.data ?? []) as unknown as ForderungZeile[]}
@@ -125,7 +175,20 @@ export default async function KasseSeite({
         </>
       )}
 
-      {gewaehlt === "lastschrift" && <Lastschriftband laeufe={laeufeRes.data ?? []} />}
+      {gewaehlt === "lastschrift" && (
+        <>
+          {/* Ohne Gläubiger-ID und Vereins-IBAN lässt sich keine Datei bauen.
+              Das steht hier, nicht erst beim Klick auf "erzeugen". */}
+          {fehlend.length > 0 && (
+            <div className="hinweis fehler">
+              Es fehlt noch {fehlend.join(" und ")}. Ohne diese Angaben lässt sich keine
+              Lastschriftdatei erzeugen – sie stehen unter{" "}
+              <Link href="/admin/kasse?abschnitt=regeln">Kasse → Regeln</Link>.
+            </div>
+          )}
+          <Lastschriftband laeufe={laeufeRes.data ?? []} />
+        </>
+      )}
 
       {gewaehlt === "arten" && (
         <BeitragsartenPflege
@@ -272,46 +335,32 @@ function Beitragslauf({
         faelligVorschlag={faellig}
       />
 
-      <section className="karte tabellenkarte" aria-labelledby="h-positionen">
-        <div className="kartenkopf">
-          <h2 id="h-positionen">Positionen</h2>
-        </div>
-        <table className="liste">
-          <thead>
-            <tr>
-              <th scope="col">Mitglied</th>
-              <th scope="col">Zahler</th>
-              <th scope="col">Beitragsarten</th>
-              <th scope="col" className="zahl">Betrag</th>
-              <th scope="col">Mandat</th>
-              <th scope="col">Stand</th>
-            </tr>
-          </thead>
-          <tbody>
-            {zeilen.map((z) => (
-              <tr key={z.member_id}>
-                <td className="fett">{z.member_name}</td>
-                <td data-label="Zahler" className="leiser">{z.payer_name || "selbst"}</td>
-                <td data-label="Beitragsarten">{z.fee_types}</td>
-                <td data-label="Betrag" className="zahl betrag dpl tnum">{formatCents(z.amount_cents ?? 0)}</td>
-                <td data-label="Mandat">
-                  {z.has_mandate ? (
-                    <span className="statusmarke gruen">
-                      {z.mandate_scope === "all_payments" ? "alle Zahlungen" : "nur Beiträge"}
-                    </span>
-                  ) : (
-                    <span className="statusmarke rot">fehlt</span>
-                  )}
-                </td>
-                <td data-label="Stand">
-                  <span className={`statusmarke${z.already_charged ? " gruen" : ""}`}>
-                    {z.already_charged ? "berechnet" : "offen"}
+      <section className="liste-abschnitt" aria-labelledby="h-positionen">
+        <Gruppenkopf titel="Positionen" id="h-positionen" neben={`${zeilen.length} · ${formatCents(summe)}`} />
+        <ul className="liste-gruppe" aria-label="Positionen">
+          {zeilen.map((z) => (
+            <li key={z.member_id}>
+              <Listenzeile
+                titel={z.member_name}
+                kontext={`${z.fee_types} · ${z.payer_name ? `Zahler ${z.payer_name}` : "zahlt selbst"} · ${
+                  z.has_mandate ? (z.mandate_scope === "all_payments" ? "Mandat alle Zahlungen" : "Mandat nur Beiträge") : "kein Mandat"
+                }`}
+                neben={
+                  <span className="neben">
+                    <span className="betrag tnum">{formatCents(z.amount_cents ?? 0)}</span>
+                    {!z.has_mandate ? (
+                      <span className="statusmarke rot">kein Mandat</span>
+                    ) : (
+                      <span className={`statusmarke${z.already_charged ? " gruen" : ""}`}>
+                        {z.already_charged ? "berechnet" : "offen"}
+                      </span>
+                    )}
                   </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                }
+              />
+            </li>
+          ))}
+        </ul>
       </section>
 
       <p className="mit">
@@ -330,11 +379,8 @@ function Beitragslauf({
  */
 function Lastschriftband({ laeufe }: { laeufe: LaufZeile[] }) {
   return (
-    <section className="karte tabellenkarte" aria-labelledby="h-lastschrift">
-      <div className="kartenkopf">
-        <h2 id="h-lastschrift">Lastschriftläufe</h2>
-        <Link href="/admin/kasse/lastschriften">Alle Läufe</Link>
-      </div>
+    <section className="liste-abschnitt" aria-labelledby="h-lastschrift">
+      <Gruppenkopf titel="Lastschriftläufe" id="h-lastschrift" />
       <p className="unterzeile">Aus angekündigten Forderungen wird eine Datei fürs Onlinebanking.</p>
       <LaufListe laeufe={laeufe} />
     </section>

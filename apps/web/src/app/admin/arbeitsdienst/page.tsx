@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { MitgliederBereiche } from "@/components/MitgliederBereiche";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import {
   ArbeitsdienstListe, type DienstZeile, type SollZeile,
@@ -41,19 +40,18 @@ export default async function ArbeitsdienstSeite({
   return (
     <div className="verwaltung">
       <VerwaltungsKopf
-        kicker="Verwaltung · Mitglieder"
+        kicker="Verwaltung"
         titel="Arbeitsdienst"
         unterzeile="Wer wie viele Stunden schuldet, was geleistet wurde und was am Jahresende offen bleibt."
       />
-      <MitgliederBereiche aktiv="/admin/mitglieder/arbeitsdienst" />
 
       <nav className="filterchips" aria-label="Jahr">
-        <Link href={`/admin/mitglieder/arbeitsdienst?jahr=${jahr - 1}`}>‹ {jahr - 1}</Link>
-        <Link href={`/admin/mitglieder/arbeitsdienst?jahr=${jahr}`} aria-current="true">
+        <Link href={`/admin/arbeitsdienst?jahr=${jahr - 1}`}>‹ {jahr - 1}</Link>
+        <Link href={`/admin/arbeitsdienst?jahr=${jahr}`} aria-current="true">
           {jahr}
         </Link>
-        <Link href={`/admin/mitglieder/arbeitsdienst?jahr=${jahr + 1}`}>{jahr + 1} ›</Link>
-        {jahr !== aktuell && <Link href="/admin/mitglieder/arbeitsdienst">Dieses Jahr</Link>}
+        <Link href={`/admin/arbeitsdienst?jahr=${jahr + 1}`}>{jahr + 1} ›</Link>
+        {jahr !== aktuell && <Link href="/admin/arbeitsdienst">Dieses Jahr</Link>}
       </nav>
 
       <ArbeitsdienstListe

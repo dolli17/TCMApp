@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useTransition } from "react";
 import { spielerEntfernen, spielerSetzen } from "@/app/admin/mitglieder/mannschaften/aktionen";
+import { Listenzeile } from "@/components/Listenzeile";
 import { Personensuche, type Person } from "@/components/Personensuche";
 
 export interface Aufstellungszeile {
@@ -26,10 +26,15 @@ interface Props {
  * steht, wird umgehaengt - die Datenbank kennt nur eine je Spieler. Das
  * Mannschaftsfuehrer-Kennzeichen wandert per Knopf; ein zweiter wird von der
  * Datenbank abgewiesen, deshalb setzt der Knopf den bisherigen vorher zurueck.
+ *
+ * Keine Knoepfe in den Zeilen (docs/design/clubhaus/verwaltung, Regel 4):
+ * ein Tippen waehlt den Spieler, darunter stehen seine Aktionen.
  */
 export function AufstellungKarte(props: Props) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
+  const [gewaehltId, setGewaehltId] = useState<string | null>(null);
+  const gewaehlt = props.zeilen.find((z) => z.member_id === gewaehltId) ?? null;
 
   function hinzufuegen(id: string | null) {
     if (!id) return;
@@ -74,51 +79,43 @@ export function AufstellungKarte(props: Props) {
       {props.zeilen.length === 0 ? (
         <p className="beschreibung">Noch niemand eingetragen.</p>
       ) : (
-        <div className="tabellenhuelle">
-          <table className="liste">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th></th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {props.zeilen.map((z) => (
-                <tr key={z.member_id}>
-                  <td>
-                    <Link href={`/admin/mitglieder/${z.member_id}`}>
-                      {z.last_name}, {z.first_name}
-                    </Link>
-                    {z.is_team_captain && (
-                      <span className="marke-klein gold"> Mannschaftsführer</span>
-                    )}
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="knopf leise"
-                      disabled={laeuft}
-                      onClick={() => fuehrer(z)}
-                    >
-                      {z.is_team_captain ? "Kennzeichen entfernen" : "Zum Mannschaftsführer machen"}
-                    </button>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="knopf leise"
-                      disabled={laeuft}
-                      onClick={() => entfernen(z)}
-                    >
-                      Herausnehmen
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <ul className="liste-gruppe">
+            {props.zeilen.map((z) => (
+              <li key={z.member_id}>
+                <Listenzeile
+                  avatar={{ kurz: (z.first_name[0] ?? "") + (z.last_name[0] ?? ""), id: z.member_id }}
+                  titel={`${z.last_name}, ${z.first_name}`}
+                  hinweis={z.is_team_captain ? "Mannschaftsführer" : undefined}
+                  hinweisTon="gold"
+                  aktuell={z.member_id === gewaehltId}
+                  onClick={() => setGewaehltId(z.member_id === gewaehltId ? null : z.member_id)}
+                  pfeil={false}
+                />
+              </li>
+            ))}
+          </ul>
+
+          {gewaehlt && (
+            <div className="liste-gruppe" aria-label={`Aktionen für ${gewaehlt.first_name} ${gewaehlt.last_name}`}>
+              <Listenzeile
+                titel={gewaehlt.is_team_captain ? "Kennzeichen entfernen" : "Zum Mannschaftsführer machen"}
+                kontext={`${gewaehlt.first_name} ${gewaehlt.last_name}`}
+                onClick={laeuft ? undefined : () => fuehrer(gewaehlt)}
+              />
+              <Listenzeile titel="Zum Mitglied" href={`/admin/mitglieder/${gewaehlt.member_id}`} />
+              <Listenzeile
+                titel="Herausnehmen"
+                gefahr
+                onClick={laeuft ? undefined : () => {
+                  entfernen(gewaehlt);
+                  setGewaehltId(null);
+                }}
+                pfeil={false}
+              />
+            </div>
+          )}
+        </>
       )}
 
       <div className="einstellung">

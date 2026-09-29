@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { formatCents, memberCategory, type MemberCategory } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { MitgliederBereiche } from "@/components/MitgliederBereiche";
+import { MitgliederSegmente } from "@/components/MitgliederSegmente";
+import { Listenzeile, type HinweisTon } from "@/components/Listenzeile";
 import { MitgliederKopf } from "@/components/MitgliederKopf";
+import { MitgliederWahl } from "@/components/MitgliederWahl";
+import { MitgliedUebersicht } from "@/components/MitgliedUebersicht";
+import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 
 export const dynamic = "force-dynamic";
 
@@ -40,9 +44,11 @@ const JE_SEITE = 50;
 export default async function MitgliederSeite({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; filter?: string; art?: string; seite?: string }>;
+  searchParams: Promise<{ q?: string; filter?: string; art?: string; seite?: string; id?: string }>;
 }) {
-  const { q, filter, art, seite } = await searchParams;
+  const { q, filter, art, seite, id: gewaehlteId } = await searchParams;
+  // Nur eine gültige Kennung wählt aus - sie landet in einer Abfrage.
+  const auswahl = gewaehlteId && /^[0-9a-f-]{36}$/.test(gewaehlteId) ? gewaehlteId : null;
   // Das Rollenschloss steht im Layout - siehe app/admin/layout.tsx.
   const gewaehlt = BESTAND.some((f) => f.wert === filter) ? filter! : "aktiv";
   const artWahl = ARTEN.find((a) => a.wert === art)?.wert ?? "";
@@ -125,18 +131,16 @@ export default async function MitgliederSeite({
 
   return (
     <div className="verwaltung mitglieder">
-      <header className="verwaltung-kopf">
-        <div>
-          <div className="kicker">Verwaltung</div>
-          <h1 className="pagetitle">Mitglieder</h1>
-        </div>
-        <div className="aktionen">
-          <MitgliederKopf />
-        </div>
-      </header>
+      <VerwaltungsKopf titel="Mitglieder">
+        <MitgliederKopf />
+      </VerwaltungsKopf>
 
-      <MitgliederBereiche aktiv="/admin/mitglieder" />
+      <MitgliederSegmente aktiv="/admin/mitglieder" />
 
+      {/* Liste links, Mitglied rechts - am Desktop ohne Seitenwechsel (?id=).
+          Unter 1100 px steht nur eins von beiden. */}
+      <div className={`mitglieder-desk${auswahl ? " mit-auswahl" : ""}`}>
+      <section className="mitglieder-listenseite" aria-label="Mitgliederliste">
       <div className="suchleiste">
         <form className="suchfeld" role="search">
           {gewaehlt !== "aktiv" && <input type="hidden" name="filter" value={gewaehlt} />}
@@ -171,62 +175,43 @@ export default async function MitgliederSeite({
       {sichtbar.length === 0 ? (
         <p className="leer">Keine Mitglieder gefunden.</p>
       ) : (
-        <div className="karte tabellenkarte">
-          <table className="liste">
-            <thead>
-              <tr>
-                <th scope="col">Name</th>
-                <th scope="col">Mitgliedschaft</th>
-                <th scope="col">Mannschaft</th>
-                <th scope="col">SEPA-Mandat</th>
-                <th scope="col">Offen</th>
-                <th scope="col">App</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sichtbar.map((m) => (
-                <tr key={m.id}>
-                  <td>
-                    <div className="person">
-                      <span className={`avatar ton-${ton(m.id)}`} aria-hidden="true">
-                        {(m.first_name[0] ?? "") + (m.last_name[0] ?? "")}
-                      </span>
-                      <div>
-                        <Link href={`/admin/mitglieder/${m.id}`}>
-                          {m.last_name}, {m.first_name}
-                        </Link>
-                        <small>{m.email ?? "keine E-Mail"}</small>
-                        {(m.is_admin || m.is_trainer || m.is_paid_by || m.status !== "active") && (
-                          <span className="marken-zeile">
-                            {m.is_admin && <span className="marke-klein gold">Admin</span>}
-                            {m.is_trainer && <span className="marke-klein">Trainer</span>}
-                            {m.is_paid_by && <span className="marke-klein grau">fremdgezahlt</span>}
-                            {m.status === "archived" && <span className="marke-klein rot">archiviert</span>}
-                            {m.status === "inactive" && <span className="marke-klein grau">inaktiv</span>}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td data-label="Mitgliedschaft">{m.beitragsart ?? "–"}</td>
-                  <td data-label="Mannschaft" className="leiser">{m.mannschaft ?? "–"}</td>
-                  <td data-label="SEPA-Mandat">
-                    <span className={`statusmarke ${m.mandat ? "gruen" : "rot"}`}>
-                      {m.mandat ? "liegt vor" : "fehlt"}
-                    </span>
-                  </td>
-                  <td data-label="Offen" className="betrag dpl tnum">
-                    {m.offenCents > 0 ? formatCents(m.offenCents) : <span className="nichts">–</span>}
-                  </td>
-                  <td data-label="App">
-                    <span className={`zugang${m.has_login ? " aktiv" : ""}`}>
-                      {m.has_login ? "Zugang aktiv" : "kein Zugang"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="mitgliederliste">
+          <div className="gruppenkopf klein">
+            <span className="kicker">{gefiltert.length} Mitglieder · A–Z</span>
+          </div>
+          <MitgliederWahl>
+          <ul className="liste-gruppe" aria-label="Mitglieder">
+            {sichtbar.map((m) => {
+              const h = hinweis(m);
+              return (
+                <li key={m.id}>
+                  <Listenzeile
+                    href={`/admin/mitglieder/${m.id}`}
+                    avatar={{ kurz: (m.first_name[0] ?? "") + (m.last_name[0] ?? ""), id: m.id }}
+                    titel={`${m.last_name}, ${m.first_name}`}
+                    kontext={
+                      <>
+                        {[
+                          m.beitragsart,
+                          m.mannschaft,
+                          m.status === "archived" ? "archiviert" : m.status === "inactive" ? "inaktiv" : null,
+                          m.is_admin ? "Admin" : null,
+                          m.is_trainer ? "Trainer" : null,
+                          m.is_paid_by ? "fremdgezahlt" : null,
+                        ].filter(Boolean).join(" · ") || "ohne Beitragsart"}
+                        {/* Die E-Mail macht Namensgleiche unterscheidbar, auch vorgelesen */}
+                        {m.email && <span className="sr-only"> · {m.email}</span>}
+                      </>
+                    }
+                    hinweis={h?.text}
+                    hinweisTon={h?.ton}
+                    aktuell={m.id === auswahl}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+          </MitgliederWahl>
           <div className="tabellenfuss">
             <span>
               {gefiltert.length} Mitglieder · {sichtbar.length} angezeigt
@@ -248,13 +233,35 @@ export default async function MitgliederSeite({
           </div>
         </div>
       )}
+      </section>
+
+      <section className="mitglieder-detailseite" aria-label="Ausgewähltes Mitglied">
+        {auswahl ? (
+          <>
+            <Link href={link({})} className="zurueck nur-schmal">‹ Alle Mitglieder</Link>
+            <MitgliedUebersicht id={auswahl} kompakt />
+          </>
+        ) : (
+          <div className="karte leer-auswahl">
+            <b>Ein Mitglied auswählen</b>
+            <p>Links antippen – das Mitglied erscheint hier, die Liste bleibt stehen.</p>
+          </div>
+        )}
+      </section>
+      </div>
     </div>
   );
-}
 
-/** Eine von vier Blautoenen fuer den Avatar, fest je Mitglied. */
-function ton(id: string): number {
-  let h = 0;
-  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return h % 4;
+  /**
+   * Genau ein Hinweis je Zeile (Regel 3): was die gewaehlte Ansicht sucht,
+   * sonst das Dringendste - fehlendes Mandat vor offenem Betrag vor fehlendem
+   * Zugang.
+   */
+  function hinweis(m: (typeof zeilen)[number]): { text: string; ton: HinweisTon } | null {
+    if (gewaehlt === "ohne-login" && !m.has_login) return { text: "kein Zugang", ton: "leise" };
+    if (!m.mandat) return { text: "kein Mandat", ton: "rot" };
+    if (m.offenCents > 0) return { text: formatCents(m.offenCents), ton: "gold" };
+    if (!m.has_login) return { text: "kein Zugang", ton: "leise" };
+    return null;
+  }
 }

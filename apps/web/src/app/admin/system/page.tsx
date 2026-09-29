@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
@@ -55,6 +56,14 @@ export default async function SystemSeite() {
         titel="System"
         unterzeile="Werte, die man einmal einrichtet. Änderungen wirken sofort – auch für alle anderen."
       />
+
+      {/* Merkmale gehoeren seit der Verwaltung v2 hierher (Regel 1) */}
+      <nav className="gruppe" aria-label="Einrichtung">
+        <Link href="/admin/system/merkmale" className="gruppen-zeile">
+          <span className="titel">Merkmale</span>
+          <span className="pfeil" aria-hidden="true">›</span>
+        </Link>
+      </nav>
 
       <div className="einstellungs-raster">
         {GRUPPEN.map((g) => {

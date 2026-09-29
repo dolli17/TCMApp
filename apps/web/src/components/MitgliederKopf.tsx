@@ -18,7 +18,9 @@ export function MitgliederKopf() {
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
           <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
         </svg>
-        Mitglied anlegen
+        {/* Am Telefon kurz: "Anlegen" (VwMitglieder) */}
+        <span className="text-lang">Mitglied anlegen</span>
+        <span className="text-kurz">Anlegen</span>
       </button>
       {offen && <MitgliedAnlegenFenster onSchliessen={() => setOffen(false)} />}
     </>

@@ -112,7 +112,7 @@ export function AntragsFenster({
   return (
     <dialog
       ref={dialog}
-      className="fenster breit"
+      className="fenster blatt breit"
       onClose={() => {
         // Erst jetzt auffrischen: währenddessen würde der Teilbau samt
         // Fenster ersetzt.
@@ -125,6 +125,7 @@ export function AntragsFenster({
       }}
       aria-label={`Antrag von ${antrag.first_name} ${antrag.last_name}`}
     >
+      <span className="griff" aria-hidden="true" />
       <div className="fenster-kopf">
         <div>
           <h2 className="dpl">
@@ -160,63 +161,59 @@ export function AntragsFenster({
           </div>
         )}
 
-        <div className="tabellenhuelle">
-          <table className="liste">
-            <tbody>
-              <tr>
-                <th>E-Mail</th>
-                <td>{antrag.email}</td>
-              </tr>
-              <tr>
-                <th>Telefon</th>
-                <td>{antrag.mobile ?? antrag.phone ?? "—"}</td>
-              </tr>
-              <tr>
-                <th>Geburtstag</th>
-                <td>{datum(antrag.birthday)}</td>
-              </tr>
-              <tr>
-                <th>Anschrift</th>
-                <td>
-                  {antrag.street ?? "—"}
-                  {antrag.postcode || antrag.city ? (
-                    <>
-                      <br />
-                      {antrag.postcode} {antrag.city}
-                    </>
-                  ) : null}
-                </td>
-              </tr>
-              {(antrag.guardian_name || antrag.guardian_email) && (
-                <tr>
-                  <th>Erziehungsberechtigte</th>
-                  <td>
-                    {antrag.guardian_name ?? "—"}
-                    {antrag.guardian_email ? <> · {antrag.guardian_email}</> : null}
-                  </td>
-                </tr>
-              )}
-              {antrag.emergency_contact_name && (
-                <tr>
-                  <th>Notfallkontakt</th>
-                  <td>
-                    {antrag.emergency_contact_name} · {antrag.emergency_contact_phone ?? "—"}
-                  </td>
-                </tr>
-              )}
-              <tr>
-                <th>Einwilligungen</th>
-                <td>{einwilligungen.length > 0 ? einwilligungen.join(", ") : "keine"}</td>
-              </tr>
-              {antrag.message && (
-                <tr>
-                  <th>Nachricht</th>
-                  <td>{antrag.message}</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <dl className="angaben gruppe">
+          <div>
+            <dt>E-Mail</dt>
+            <dd>{antrag.email}</dd>
+          </div>
+          <div>
+            <dt>Telefon</dt>
+            <dd>{antrag.mobile ?? antrag.phone ?? "—"}</dd>
+          </div>
+          <div>
+            <dt>Geburtstag</dt>
+            <dd>{datum(antrag.birthday)}</dd>
+          </div>
+          <div>
+            <dt>Anschrift</dt>
+            <dd>
+              {antrag.street ?? "—"}
+              {antrag.postcode || antrag.city ? (
+                <>
+                  <br />
+                  {antrag.postcode} {antrag.city}
+                </>
+              ) : null}
+            </dd>
+          </div>
+          {(antrag.guardian_name || antrag.guardian_email) && (
+            <div>
+              <dt>Erziehungsberechtigte</dt>
+              <dd>
+                {antrag.guardian_name ?? "—"}
+                {antrag.guardian_email ? <> · {antrag.guardian_email}</> : null}
+              </dd>
+            </div>
+          )}
+          {antrag.emergency_contact_name && (
+            <div>
+              <dt>Notfallkontakt</dt>
+              <dd>
+                {antrag.emergency_contact_name} · {antrag.emergency_contact_phone ?? "—"}
+              </dd>
+            </div>
+          )}
+          <div>
+            <dt>Einwilligungen</dt>
+            <dd>{einwilligungen.length > 0 ? einwilligungen.join(", ") : "keine"}</dd>
+          </div>
+          {antrag.message && (
+            <div>
+              <dt>Nachricht</dt>
+              <dd>{antrag.message}</dd>
+            </div>
+          )}
+        </dl>
 
         {!ablehnenOffen ? (
           <>
