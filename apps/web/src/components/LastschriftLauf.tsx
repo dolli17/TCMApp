@@ -61,6 +61,8 @@ export interface LaufKopf {
  * steht, was die Datenbank dazu sagt. Nach dem Erzeugen ist der Lauf zu: die
  * Datei ist ein Buchungsbeleg und darf sich nicht mehr aendern.
  */
+const AUSSCHNITT = 25;
+
 export function LastschriftLauf({
   lauf, kandidaten, posten, faelligAb, heute,
 }: {
@@ -121,7 +123,15 @@ export function LastschriftLauf({
 
   const [nurOhneMandat, setNurOhneMandat] = useState(false);
   const ohneMandat = kandidaten.filter((k) => !k.mandate_id);
-  const zeigeKandidaten = nurOhneMandat ? ohneMandat : kandidaten;
+  // Ein Lauf hat schnell einige hundert Zahler; die Seite zeigt erst einen
+  // Ausschnitt, der Rest kommt auf Wunsch dazu.
+  const [alle, setAlle] = useState(false);
+  const zeigePosten = nurOhneMandat ? [] : posten;
+  const alleKandidaten = nurOhneMandat ? ohneMandat : kandidaten;
+  const gesamt = zeigePosten.length + alleKandidaten.length;
+  const grenze = alle ? Infinity : AUSSCHNITT;
+  const sichtbarePosten = zeigePosten.slice(0, grenze);
+  const zeigeKandidaten = alleKandidaten.slice(0, Math.max(0, grenze - sichtbarePosten.length));
   const zurueckPosten = posten.find((p) => p.end_to_end_id === zurueck) ?? null;
 
   return (
@@ -283,7 +293,7 @@ export function LastschriftLauf({
             <p className="leer-klein">Für diesen Fälligkeitstag liegt keine angekündigte Forderung vor.</p>
           ) : (
             <ul className="liste-gruppe" aria-label="Je Zahler">
-              {!nurOhneMandat && posten.map((p) => {
+              {sichtbarePosten.map((p) => {
                 // Erst nach dem Einreichen: vorher ist noch nichts unterwegs,
                 // das zurückkommen könnte.
                 const kannZurueck =
@@ -345,6 +355,11 @@ export function LastschriftLauf({
                   />
                 </li>
               ))}
+              {gesamt > grenze && (
+                <li>
+                  <Listenzeile titel={`Alle ${gesamt} zeigen`} hinweis={`${gesamt - grenze} weitere`} onClick={() => setAlle(true)} />
+                </li>
+              )}
             </ul>
           )}
         </section>

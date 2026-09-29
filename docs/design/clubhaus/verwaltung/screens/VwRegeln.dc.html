@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Verwaltung – was sich ändert</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&amp;family=Barlow+Semi+Condensed:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1080px; box-sizing: border-box; padding: 64px 72px; background: #07111D; color: #F3F7FB; font-family: 'Barlow', system-ui, sans-serif; display: flex; flex-direction: column; gap: 36px">
+<div style="max-width: 900px">
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .16em; text-transform: uppercase; color: #FFD21F">Verwaltung · Überarbeitung</div>
+<h1 style="margin: 10px 0 0; font-size: 56px; font-weight: 800; letter-spacing: -1.2px; line-height: 1">Dieselbe App, auch für den Vorstand</h1>
+<p style="margin: 14px 0 0; font-size: 18px; line-height: 1.5; color: #B3C2D2">Die Verwaltung folgt jetzt denselben Mustern wie der Mitgliederteil: großer Titel, gruppierte Listen, ein gelber Knopf, Formulare als Blatt. Wer Plätze buchen kann, findet sich auch hier zurecht.</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<sc-for list="{{regeln}}" as="r" hint-placeholder-count="8">
+<div style="border-radius: 22px; background: #0E1A29; border: 1px solid rgba(255,255,255,.08); padding: 20px 22px; display: flex; gap: 18px">
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 800; font-size: 32px; line-height: 1; color: #FFD21F; width: 36px; flex-shrink: 0">{{r.nr}}</div>
+<div style="display: flex; flex-direction: column; gap: 8px; min-width: 0">
+<div style="font-size: 19px; font-weight: 700">{{r.titel}}</div>
+<div style="font-size: 14px; line-height: 1.45; color: #879AAE"><span style="font-weight: 700; color: #B3C2D2">Heute:</span> {{r.heute}}</div>
+<div style="font-size: 14px; line-height: 1.45; color: #F3F7FB"><span style="font-weight: 700; color: #3DD68C">Neu:</span> {{r.neu}}</div>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+regeln: [
+{ nr: '01', titel: 'Ein Menü statt drei', heute: 'Seitenleiste, darunter ein Reiterband mit denselben sechs Bereichen, bei Mitgliedern noch ein drittes Band und im Mitglied sieben Reiter.', neu: 'Die Seitenleiste führt, am Telefon ein fünfter Tab „Admin“. Innerhalb eines Bereichs höchstens ein Segment-Schalter mit zwei oder drei Teilen, wie bei den Plätzen.' },
+{ nr: '02', titel: 'Das Theme des Mitglieds gilt', heute: '/admin schaltet auf hell um, sobald man die Verwaltung betritt, und springt beim Verlassen zurück.', neu: 'Hell oder dunkel ist die Wahl im Konto, überall gleich. Kein Umschalten, kein Aufblitzen.' },
+{ nr: '03', titel: 'Listen statt Tabellen', heute: 'Tabellen mit Großbuchstaben-Köpfen, am Telefon zu Karten umgebrochen.', neu: 'Gruppierte Zeilen: Avatar, Name, eine Zeile Kontext, rechts genau ein Hinweis (offen, kein Mandat), Pfeil. Die ganze Zeile ist tippbar, auf jeder Breite gleich.' },
+{ nr: '04', titel: 'Ein gelber Knopf pro Seite', heute: 'Viele kleine graue Knöpfe in Zeilen und Karten, die Hauptaktion geht unter.', neu: 'Oben rechts die eine Hauptaktion in Gelb („Anlegen“, „Jetzt prüfen“). Alles andere steckt im Detail oder im Blatt.' },
+{ nr: '05', titel: 'Formulare als Blatt', heute: 'Mehrspaltige Formulare in Fenstern, Auswahllisten, Folgen erst nach dem Absenden.', neu: 'Aufbau wie beim Buchen: gruppierte Felder, Chips statt Auswahllisten, die Folgen stehen vor dem Absenden („[n] Buchungen liegen im Weg“).' },
+{ nr: '06', titel: 'Ein Mitglied sieht aus wie das eigene Konto', heute: 'Sieben Reiter, je Reiter eine eigene Seite.', neu: 'Profilkopf mit Schnellaktionen, darunter Mitgliedschaft, Geld, Kontakt und Arbeitsdienst als gruppierte Abschnitte. Am Desktop Liste links, Mitglied rechts, ohne Seitenwechsel.' },
+{ nr: '07', titel: 'Die Übersicht ist ein Home', heute: 'Kennzahlen oben, Aufgaben in der Seitenspalte.', neu: '„Heute zu tun“ zuerst, die dringendste Aufgabe als große blaue Karte wie „Als Nächstes“. Danach Kennzahlen, der Weg des Geldes und die Bereiche.' },
+{ nr: '08', titel: 'Abläufe senkrecht erzählen', heute: 'Der Weg des Geldes als waagerechter Balken, am Telefon gequetscht.', neu: 'Am Telefon senkrecht mit Häkchen, Schritt-Nummer und Satz dazu; am Desktop waagerecht. Der nächste Schritt steht darüber, gesperrt mit Grund.' }
+]
+};
+}
+}
+</script>
+</body>
+</html>

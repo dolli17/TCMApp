@@ -6,7 +6,7 @@ import {
   beitragsartSpeichern, beitragsartUmschalten, beitragspreisSetzen,
 } from "@/app/admin/kasse/aktionen";
 import { FensterKnopf } from "@/components/FensterKnopf";
-import { Listenzeile } from "@/components/Listenzeile";
+import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 
 export interface BeitragsartZeile {
   id: string;
@@ -72,8 +72,8 @@ export function BeitragsartenPflege({
   }
 
   return (
-    <section className="karte" aria-labelledby="h-beitragsarten">
-      <h2 className="dpl" id="h-beitragsarten">Beitragsarten</h2>
+    <section className="liste-abschnitt" aria-labelledby="h-beitragsarten">
+      <Gruppenkopf titel="Beitragsarten" id="h-beitragsarten" />
       <p className="unterzeile">
         Der Code bleibt nach dem Anlegen fest – er steht in den Zuordnungen der Mitglieder. Ein
         Preis lässt sich nur für Jahre setzen, für die noch keine Forderungen erzeugt wurden.

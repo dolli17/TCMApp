@@ -7,7 +7,7 @@ import {
   preisSetzen,
 } from "@/app/admin/getraenke/aktionen";
 import { FensterKnopf } from "@/components/FensterKnopf";
-import { Listenzeile } from "@/components/Listenzeile";
+import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 
 export interface GetraenkZeile {
   id: string;
@@ -107,8 +107,8 @@ function Kartenliste({
   const index = gewaehlt ? getraenke.findIndex((g) => g.id === gewaehlt.id) : -1;
 
   return (
-    <section className="karte" aria-labelledby="h-getraenkekarte">
-      <h2 className="dpl" id="h-getraenkekarte">Getränkekarte</h2>
+    <section className="liste-abschnitt" aria-labelledby="h-getraenkekarte">
+      <Gruppenkopf titel="Getränkekarte" id="h-getraenkekarte" />
       <p className="unterzeile">
         Was an der Theke angeboten wird, in der Reihenfolge, in der es dort erscheint. Ein
         stillgelegtes Getränk verschwindet aus der Karte; seine bisherigen Buchungen bleiben.

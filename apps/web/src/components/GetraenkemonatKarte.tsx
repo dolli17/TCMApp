@@ -6,7 +6,7 @@ import {
   forderungenAnkuendigen, monatAbrechnen, monatSchliessen,
 } from "@/app/admin/kasse/aktionen";
 import { FensterKnopf } from "@/components/FensterKnopf";
-import { Listenzeile } from "@/components/Listenzeile";
+import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 
 export interface MonatZeile {
   id: string;
@@ -84,8 +84,8 @@ export function GetraenkemonatKarte({
   const jetzt = Number(heute.slice(0, 4)) * 12 + Number(heute.slice(5, 7));
 
   return (
-    <section className="karte" id="getraenkemonate">
-      <h2 className="dpl">Getränkemonate</h2>
+    <section className="liste-abschnitt" id="getraenkemonate" aria-labelledby="h-getraenkemonate">
+      <Gruppenkopf titel="Getränkemonate" id="h-getraenkemonate" />
       <p className="unterzeile">
         Erst schließen, dann abrechnen. Ein geschlossener Monat lässt sich an der Theke nicht
         mehr verändern – nur so steht der Betrag fest, bevor er angekündigt wird.

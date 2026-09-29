@@ -6,7 +6,7 @@ import {
   jahrAbrechnen, sollStundenSetzen, stundenEintragen,
 } from "@/app/admin/arbeitsdienst/aktionen";
 import { FensterKnopf } from "@/components/FensterKnopf";
-import { Listenzeile } from "@/components/Listenzeile";
+import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 
 export interface DienstZeile {
   member_id: string;
@@ -90,8 +90,8 @@ export function ArbeitsdienstListe({
         </div>
       </div>
 
-      <section className="karte" aria-labelledby="h-stand">
-        <h2 className="dpl" id="h-stand">Stand {jahr}</h2>
+      <section className="liste-abschnitt" aria-labelledby="h-stand">
+        <Gruppenkopf titel={`Stand ${jahr}`} id="h-stand" />
         <p className="unterzeile">
           Das Soll ist die höchste Regel über alle Beitragsarten des Mitglieds, nicht ihre Summe –
           wer Beitrag und Schlüsselpfand hat, arbeitet nicht doppelt.
@@ -282,8 +282,8 @@ function SollKarte({
   const [wert, setWert] = useState("");
 
   return (
-    <section className="karte" aria-labelledby="h-soll">
-      <h2 className="dpl" id="h-soll">Soll-Stunden je Beitragsart</h2>
+    <section className="liste-abschnitt" aria-labelledby="h-soll">
+      <Gruppenkopf titel="Soll-Stunden je Beitragsart" id="h-soll" />
       <p className="unterzeile">
         Hier steht, wer überhaupt Arbeitsdienst schuldet. 0 bedeutet: diese Beitragsart leistet
         keinen.

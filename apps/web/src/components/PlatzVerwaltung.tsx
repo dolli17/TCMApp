@@ -6,7 +6,7 @@ import {
   buchungsartSpeichern, platzSpeichern, platzUmschalten, plaetzeSortieren, sperren,
 } from "@/app/admin/plaetze/aktionen";
 import { FensterKnopf } from "@/components/FensterKnopf";
-import { Listenzeile } from "@/components/Listenzeile";
+import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 
 export interface PlatzZeile {
   id: string;
@@ -310,8 +310,8 @@ function Platzliste({
   }
 
   return (
-    <section className="karte" aria-labelledby="h-plaetze">
-      <h2 className="dpl" id="h-plaetze">Plätze</h2>
+    <section className="liste-abschnitt" aria-labelledby="h-plaetze">
+      <Gruppenkopf titel="Plätze" id="h-plaetze" />
       <p className="unterzeile">
         Die Reihenfolge bestimmt, wie die Spalten im Belegungsplan stehen. Ein stillgelegter
         Platz verschwindet aus dem Plan; seine bisherigen Buchungen bleiben erhalten.
@@ -451,8 +451,8 @@ function Artenliste({
   }
 
   return (
-    <section className="karte" aria-labelledby="h-arten">
-      <h2 className="dpl" id="h-arten">Buchungsarten</h2>
+    <section className="liste-abschnitt" aria-labelledby="h-arten">
+      <Gruppenkopf titel="Buchungsarten" id="h-arten" />
       <p className="unterzeile">
         Der Code bleibt nach dem Anlegen fest – er steht in bestehenden Buchungen. Wer ihn ändern
         will, legt eine neue Art an und stellt die alte still.

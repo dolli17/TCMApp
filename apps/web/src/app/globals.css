@@ -265,16 +265,6 @@ table.liste .zahl {
 
 .leer { color: var(--muted); padding: 32px 0; text-align: center; }
 
-.slotknopf {
-  font: inherit; font-size: 13px; font-variant-numeric: tabular-nums;
-  cursor: pointer; padding: 7px 11px; border-radius: 99px;
-  background: var(--chip); color: var(--ink-2); border: 1px solid var(--line);
-}
-.slotknopf:hover:not(:disabled) {
-  background: var(--blue-soft); color: var(--blue-ink); border-color: var(--blue);
-}
-.slotknopf:disabled { opacity: .4; cursor: not-allowed; }
-
 /* ---------------------------------------------------------------------------
    Anmeldung — Grundgerüst; die Bühne steht weiter unten (AppLogin)
    --------------------------------------------------------------------------- */
@@ -287,14 +277,9 @@ table.liste .zahl {
 .auth .sheet form { max-width: 380px; margin: 0 auto; }
 
 /* Plätze einer Sperrung auswählen: dieselben Marken wie die Startzeitwahl im
-   Buchungsfenster, damit sich das Muster nicht doppelt. */
-.platzwahl {
+   Buchungsfenster {
   border: 0; padding: 0; margin: 0 0 12px;
   display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
-}
-.platzwahl legend {
-  padding: 0; margin-bottom: 6px;
-  font-size: 12.5px; font-weight: 600; color: var(--ink-2);
 }
 
 /* Sperren im Buchungsfenster steht unter dem Formular, abgesetzt durch eine
@@ -488,10 +473,6 @@ dialog.fenster::backdrop { background: rgba(3,8,14,.62); backdrop-filter: blur(2
   padding-top: 14px; border-top: 1px solid var(--line);
 }
 
-.slotknopf.aktiv {
-  background: var(--blue); border-color: var(--blue); color: #fff;
-}
-
 /* --- Mitspielersuche ------------------------------------------------------ */
 /* Marken als entfernbare Pillen - Merkmale, Personensuche. Die Chips im
    Buchungsblatt (li.chip) haben ihren eigenen Stil weiter unten. */
@@ -530,6 +511,10 @@ ul.marken:not(:has(.chip)) { margin-bottom: 9px; gap: 6px; }
 
 /* --- Admin-Dashboard: Einstellungen --------------------------------------- */
 .karte.einstellungen { margin-bottom: 20px; }
+.liste-abschnitt.einstellungen > .unterzeile { margin: 0 4px 10px; }
+.liste-abschnitt.einstellungen form > .knopf { margin-top: 12px; }
+.einstellungs-felder > .einstellung { padding: 14px 16px; }
+.einstellungs-felder > .einstellung:first-child { border-top: 0; }
 .karte.einstellungen > .unterzeile { margin-bottom: 14px; }
 .einstellung {
   display: block; padding: 12px 0; border-top: 1px solid var(--line);
@@ -627,9 +612,6 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
 }
 
-/* Öffentliche Seiten ohne Anmeldung (Mitgliedsantrag, Passwort setzen).
-   Nutzt dieselbe Bühne wie die Anmeldung, nur mit breiterem Blatt. */
-
 /* Datenschutz und Impressum: Fließtext auf dem Blatt. Die Blatt-Breite kommt
    von .antragsseite, hier nur Absätze, Überschriften und Listen. */
 .rechtstext h2 {
@@ -641,7 +623,6 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 .rechtstext ul { margin: 0 0 10px; padding-left: 20px; }
 .rechtstext li { margin-bottom: 8px; }
 .rechtstext strong { color: var(--ink); font-weight: 600; }
-
 
 /* ---------------------------------------------------------------------------
    Home (docs/design/clubhaus, Abschnitt 5)
@@ -1451,15 +1432,9 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .kennzahl .info { font-size: 13px; color: var(--muted); }
 
 .verwaltung-raster { display: grid; gap: 24px; align-items: start; }
-.verwaltung-raster > .haupt { display: grid; gap: 24px; min-width: 0; }
-.verwaltung-raster > .haupt > *, .verwaltung-raster > * { min-width: 0; }
+.verwaltung-raster > * { min-width: 0; }
 .statusmarke { white-space: nowrap; }
 .karte.gross { border-radius: 24px; padding: 22px 24px; }
-.kartenkopf {
-  display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 18px;
-}
-.kartenkopf h2 { margin: 0; font-size: 20px; font-weight: 700; }
-.kartenkopf a { font-size: 14px; font-weight: 600; color: var(--blue-ink); text-decoration: none; white-space: nowrap; }
 
 /* Der Weg des Geldes: fuenf Schritte, je Balken, Nummer, Name, Angabe */
 .geldweg {
@@ -1502,32 +1477,12 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .anlage-heute .mini-zeitleiste.gross i { border-radius: 7px; }
 .anlage-heute .mini-zeitleiste b { background: var(--red); }
 
-/* Heute zu tun */
-.karte.gross.zu-tun { padding: 0; overflow: hidden; }
-.zu-tun-kopf { padding: 22px 22px 12px; }
-.zu-tun-kopf h2 { margin: 0; font-size: 20px; font-weight: 700; }
-.zu-tun-kopf p { margin: 4px 0 0; font-size: 13.5px; color: var(--muted); }
-.zu-tun ul { list-style: none; margin: 0; padding: 0; }
-.zu-tun li { padding: 16px 22px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
-.zu-tun .aufgabe { display: flex; gap: 12px; }
-.zu-tun .aufgabe > i {
-  width: 10px; height: 10px; border-radius: 5px; margin-top: 6px; flex: 0 0 auto;
-  background: var(--surf-2); border: 1.5px solid var(--muted);
-}
-.zu-tun .aufgabe > i.dringend { background: var(--gold); border-color: var(--gold); }
-.zu-tun .aufgabe b { font-size: 15px; }
-.zu-tun .aufgabe p { margin: 2px 0 0; font-size: 13px; color: var(--muted); line-height: 1.4; }
-.zu-tun li > .knopf { justify-self: start; margin-left: 22px; text-decoration: none; }
-.zu-tun .alles-erledigt, .zu-tun .hinweis { margin: 0 22px 22px; }
-.zu-tun .alles-erledigt { padding-top: 14px; border-top: 1px solid var(--line); color: var(--green-ink); font-weight: 600; }
-
 /* Kopf einer Verwaltungsseite: Titel links, Aktionen rechts */
 .verwaltung-kopf { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px; }
 .verwaltung-kopf .pagetitle { margin-top: 4px; }
 .verwaltung-kopf .aktionen { display: flex; flex-wrap: wrap; gap: 10px; }
 .verwaltung .reiter { margin-bottom: 0; }
-.reiter.unterreiter a { display: inline-flex; align-items: center; gap: 8px; }
-.reiter.unterreiter a[aria-current="page"], .verwaltung .reiter a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--ink); }
+.verwaltung .reiter a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--ink); }
 .reiter .zaehler {
   height: 20px; min-width: 20px; padding: 0 7px; border-radius: 10px;
   display: inline-flex; align-items: center; justify-content: center;
@@ -1561,27 +1516,6 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 /* Marken im Entwurf: gruen liegt vor, rot fehlt */
 .statusmarke { height: 24px; padding: 0 9px; border-radius: 12px; font-size: 12px; }
 .statusmarke.gruen { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green-ink); }
-
-/* Tabelle in einer Karte (Entwurf AdminMitglieder) - unter 768 px Karten */
-.karte.tabellenkarte { padding: 0; overflow: hidden; }
-.tabellenkarte table.liste { font-size: 14.5px; }
-.tabellenkarte table.liste th { background: var(--surf-2); padding: 12px 18px; font-size: 11.5px; letter-spacing: .08em; }
-.tabellenkarte table.liste td { padding: 12px 18px; }
-.tabellenkarte table.liste tr:last-child td { border-bottom: 1px solid var(--line); }
-.tabellenkarte td.leiser { color: var(--ink-2); }
-.tabellenkarte td.betrag { font-weight: 700; font-size: 16px; white-space: nowrap; }
-.tabellenkarte td.fett { font-weight: 700; }
-.tabellenkarte > .kartenkopf { padding: 18px 18px 0; margin-bottom: 14px; flex-wrap: wrap; }
-.tabellenkarte > .kartenkopf h2 { font-size: 19px; }
-.tabellenkarte > .leer-klein, .tabellenkarte > .hinweis { margin: 0 18px 18px; }
-.tabellenkarte > .unterzeile { margin: -6px 18px 14px; }
-.tabellenkarte td .nichts, .tabellenkarte td.leiser { color: var(--muted); font-weight: 400; }
-.tabellenkarte .person { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.tabellenkarte .person > div { min-width: 0; display: grid; }
-.tabellenkarte .person a { font-weight: 700; color: var(--ink); }
-.tabellenkarte .person small { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tabellenkarte .marken-zeile { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-.tabellenkarte .avatar { width: 36px; height: 36px; border-radius: 18px; font-size: 12.5px; }
 .avatar.ton-1 { background: color-mix(in srgb, var(--brand) 78%, #000); }
 .avatar.ton-2 { background: color-mix(in srgb, var(--brand) 82%, #6A9CC0); }
 .avatar.ton-3 { background: color-mix(in srgb, var(--brand) 55%, #4A5A70); }
@@ -1597,32 +1531,11 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .tabellenfuss span.knopf[aria-disabled="true"] { opacity: .45; cursor: default; }
 
 @media (max-width: 767px) {
-  /* Unter 768 px wird jede Zeile zur Karte */
-  .karte.tabellenkarte { background: transparent; border: 0; box-shadow: none; overflow: visible; }
-  .tabellenkarte table.liste, .tabellenkarte tbody { display: block; }
-  .tabellenkarte thead { display: none; }
-  .tabellenkarte tbody { display: grid; gap: 10px; }
-  .tabellenkarte tbody tr {
-    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px;
-    padding: 14px 16px; border-radius: var(--radius-karte);
-    background: var(--surf); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
-  }
-  .tabellenkarte table.liste td, .tabellenkarte table.liste tr:last-child td { padding: 0; border: 0; }
-  .tabellenkarte td:first-child { grid-column: 1 / -1; }
-  .tabellenkarte td[data-label]::before {
-    content: attr(data-label); display: block; margin-bottom: 3px;
-    font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
-  }
   .tabellenfuss { padding: 14px 2px 0; }
 }
 
 /* Kopf des Mitglied-Details: grosser Avatar, Name, Marken, Aktionen rechts */
 .mitglied-detail > .zurueck, .verwaltung > .zurueck { margin: 0 0 -12px; }
-.mitglied-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 20px; }
-.mitglied-kopf-text { flex: 1 1 280px; min-width: 0; }
-.mitglied-kopf .pagetitle { margin: 0; }
-.mitglied-kopf .marken-reihe { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.mitglied-kopf .aktionen { display: flex; flex-wrap: wrap; gap: 10px; }
 .avatar.gross { width: 72px; height: 72px; border-radius: 36px; font-size: 24px; }
 .mitglied-detail .karte.einstellungen { margin-bottom: 0; }
 .mitglied-detail > .reiter + * { margin-top: 0; }
@@ -1633,16 +1546,9 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .verwaltung-kopf .zurueck { display: inline-block; margin-bottom: 8px; }
 .verwaltung-kopf .unterzeile { margin: 8px 0 0; max-width: 720px; }
 .verwaltung .karte.einstellungen, .verwaltung section.karte { margin-bottom: 0; }
-.tabellenkarte td.aktion { text-align: right; white-space: nowrap; }
-.tabellenkarte td.kennung, .je-zahler td.kennung { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--muted); }
-.tabellenkarte td.zahl, .tabellenkarte th.zahl { text-align: right; }
-.tabellenkarte .person b { font-weight: 700; }
+.je-zahler td.kennung { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--muted); }
 .kennzahl:is(div) { cursor: default; }
 .kennzahl:is(div):hover { border-color: var(--line); }
-@media (max-width: 767px) {
-  .tabellenkarte td.aktion { grid-column: 1 / -1; text-align: left; }
-  .tabellenkarte td.zahl { text-align: left; }
-}
 @media (min-width: 1100px) {
   .kennzahlen.drei { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
@@ -1674,12 +1580,6 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   background: color-mix(in srgb, var(--red) 4%, var(--surf));
 }
 .karte.gefahrenzone > h2 { color: var(--red); }
-
-/* Getraenke- und Tabellenkarten innerhalb einer Karte */
-.tabellenhuelle.tabellenkarte { border-radius: 16px; box-shadow: none; }
-@media (max-width: 767px) {
-  .tabellenhuelle.tabellenkarte { background: transparent; border: 0; overflow: visible; }
-}
 .abschnittskopf { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
 .abschnittskopf h2 { margin: 0; }
 
@@ -1689,33 +1589,6 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .mini-geldweg li { width: 22px; height: 6px; border-radius: 3px; background: var(--surf-2); }
 .mini-geldweg li.erledigt { background: var(--green); }
 .mini-geldweg li.aktuell { background: var(--gold); }
-
-/* Plaetze als Karten */
-.platzkarten {
-  list-style: none; margin: 0 0 18px; padding: 0;
-  display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-}
-.platzkarte {
-  display: grid; gap: 12px; padding: 16px; border-radius: 18px;
-  background: var(--surf); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
-}
-.platzkarte.still { opacity: .7; }
-.platzkarte .kopf { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.platzkarte .kopf > div { display: grid; min-width: 0; }
-.platzkarte .kopf small { font-size: 12.5px; color: var(--muted); }
-.platzkarte .kuerzel {
-  width: 44px; height: 44px; border-radius: 12px; flex: 0 0 auto;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--brand); color: #fff; font-weight: 700; font-size: 17px;
-}
-.platzkarte .marken-zeile { display: flex; flex-wrap: wrap; gap: 6px; }
-.platzkarte .aktionen { display: flex; flex-wrap: wrap; gap: 6px; }
-
-/* Serien: dieselbe Schraffur wie im Belegungsplan */
-.serien-muster {
-  display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 8px; vertical-align: -1px;
-  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 16%, transparent) 0 3px, transparent 3px 6px), var(--surf-3);
-}
 
 /* Segment-Schalter eines Verwaltungsbereichs (Verwaltung v2, Regel 1) */
 .segtoggle.bereich-segmente { margin: 0; }
@@ -1744,31 +1617,20 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .statusmarke.gross { height: 30px; padding: 0 12px; border-radius: 15px; font-size: 13.5px; }
 .lastschriftlauf > .hinweis { margin: 0; }
 .karte.gross.je-zahler { padding: 0; overflow: hidden; min-width: 0; }
-.je-zahler .kartenkopf { padding: 16px 20px 0; flex-wrap: wrap; margin-bottom: 14px; }
-.je-zahler .kartenkopf h2 { font-size: 19px; }
-.je-zahler .kartenkopf span { font-size: 13px; color: var(--muted); }
 .je-zahler .tabellenhuelle { border: 0; border-radius: 0; box-shadow: none; }
 .je-zahler table.liste { font-size: 14.5px; }
 .je-zahler table.liste th { background: var(--surf-2); padding: 11px 14px; font-size: 11.5px; letter-spacing: .08em; border-top: 1px solid var(--line); }
 .je-zahler table.liste td { padding: 12px 14px; }
 .je-zahler table.liste th:first-child, .je-zahler table.liste td:first-child { padding-left: 20px; }
-.je-zahler td.leiser { min-width: 180px; }
 .je-zahler td.name { font-weight: 700; }
-.je-zahler td.leiser { color: var(--ink-2); }
-.je-zahler td.leiser small { display: block; color: var(--muted); font-size: 12.5px; }
 .je-zahler td.name { white-space: nowrap; }
-.zweizeilig { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .je-zahler td.zahl { font-size: 16px; white-space: nowrap; }
 .je-zahler td.kennung { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--muted); }
 .je-zahler .kennung { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
 .je-zahler .unterzeile { margin: 0; }
 .je-zahler { display: grid; gap: 12px; align-content: start; min-width: 0; }
 .je-zahler .grund { display: inline; min-width: 0; max-width: none; margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--muted); }
-.je-zahler .kam-zurueck { margin-left: 8px; }
 .je-zahler .leer-klein { padding: 0 20px 20px; }
-.je-zahler .ruecklaeufer { padding: 16px 20px 20px; border-top: 1px solid var(--line); }
-
-.lauf-seite { display: grid; gap: 16px; min-width: 0; }
 .naechster-schritt {
   display: flex; flex-direction: column; gap: 12px; padding: 22px;
   border-radius: var(--radius-karte); background: var(--brand); color: #fff;
@@ -1803,11 +1665,6 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .zusammenfassung dt { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 .zusammenfassung dd { margin: 0; font-size: 22px; font-weight: 700; }
 .zusammenfassung dd.rot { color: var(--red); }
-
-@media (max-width: 1099px) {
-  /* Schmaler: der naechste Schritt vor die lange Zahlerliste */
-  .lastschriftlauf .lauf-seite { order: -1; }
-}
 @media (max-width: 767px) {
   .kennzahl { padding: 16px; }
   .kennzahl .wert { font-size: 26px; }
