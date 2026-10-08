@@ -24,7 +24,9 @@ cd $ZIEL/src
 git fetch -q origin main
 git reset -q --hard origin/main
 cd $ZIEL
-docker compose --project-name tcm-web --project-directory $ZIEL \
+# Pfade in der Compose-Datei gelten relativ zu ihr selbst (Build-Kontext ist
+# der Checkout), die Werte kommen aus der .env daneben.
+docker compose --project-name tcm-web --env-file $ZIEL/.env \
   -f src/deploy/web/docker-compose.yml up -d --build --wait
 docker image prune -f >/dev/null
 ENTFERNT
