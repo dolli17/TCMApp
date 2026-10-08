@@ -8,6 +8,7 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { AKTIV_COOKIE, istAbgelaufen } from "@/lib/inaktivitaet";
 
 /**
  * Seiten, die ohne Anmeldung erreichbar sind.
@@ -63,6 +64,30 @@ export async function middleware(request: NextRequest) {
     ziel.pathname = "/login";
     ziel.searchParams.set("weiter", pfad);
     return NextResponse.redirect(ziel);
+  }
+
+  // Ohne Sitzung gilt ein alter Aktivitaetsstempel nichts mehr - er wuerde
+  // sonst den naechsten Login gleich wieder abmelden.
+  if (!user) {
+    if (request.cookies.has(AKTIV_COOKIE)) response.cookies.delete(AKTIV_COOKIE);
+    return response;
+  }
+
+  // Zu lange nichts getan (lib/inaktivitaet.ts): abmelden, bevor eine Seite
+  // gerendert wird. signOut schreibt die geleerten Auth-Cookies ueber setAll
+  // in response; die muessen auf die Umleitung mit.
+  if (!oeffentlich && istAbgelaufen(request.cookies.get(AKTIV_COOKIE)?.value, Date.now())) {
+    // Nur dieser Browser - die App auf dem Telefon bleibt angemeldet.
+    await supabase.auth.signOut({ scope: "local" });
+    const ziel = request.nextUrl.clone();
+    ziel.pathname = "/login";
+    ziel.search = "";
+    ziel.searchParams.set("grund", "inaktiv");
+    ziel.searchParams.set("weiter", pfad);
+    const umleitung = NextResponse.redirect(ziel);
+    for (const c of response.cookies.getAll()) umleitung.cookies.set(c);
+    umleitung.cookies.delete(AKTIV_COOKIE);
+    return umleitung;
   }
 
   return response;

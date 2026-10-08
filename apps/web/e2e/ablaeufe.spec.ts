@@ -75,6 +75,57 @@ test.describe("Anmeldung", () => {
   });
 });
 
+test.describe("Abmelden nach Inaktivität", () => {
+  test("nach 30 Minuten ohne Aktivität wird abgemeldet", async ({ page }) => {
+    await page.clock.install();
+    await anmelden(page, NUTZER.mitglied);
+    await page.clock.fastForward("31:00");
+
+    await expect(page).toHaveURL(/\/login\?grund=inaktiv/);
+    await expect(page.getByRole("status")).toContainText("ohne Aktivität abgemeldet");
+    // Auch wirklich abgemeldet, nicht nur umgeleitet
+    await page.goto("/plan");
+    await expect(page).toHaveURL(/\/login/);
+  });
+
+  test("wer etwas tut, bleibt angemeldet", async ({ page }) => {
+    await page.clock.install();
+    await anmelden(page, NUTZER.mitglied);
+    await page.clock.fastForward("20:00");
+    await page.mouse.click(5, 5);
+    await page.clock.fastForward("20:00");
+
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(page.getByRole("heading", { level: 1, name: /^Hallo, / })).toBeVisible();
+  });
+
+  test("ein alter Stempel meldet schon beim Seitenaufruf ab", async ({ page, context }) => {
+    // Der Rechner war zugeklappt: kein Timer lief, die Middleware muss es merken.
+    await anmelden(page, NUTZER.mitglied);
+    const herkunft = new URL(page.url()).origin;
+    // Erst weg von der App - sonst bemerkt die offene Seite den Stempel selbst
+    // und leitet um, bevor die Middleware gefragt wird.
+    await page.goto("about:blank");
+    await context.addCookies([
+      { name: "tcm_aktiv", value: String(Date.now() - 31 * 60_000), url: herkunft },
+    ]);
+    await page.goto("/plan");
+
+    await expect(page).toHaveURL(/\/login\?grund=inaktiv&weiter=%2Fplan/);
+    await page.goto("/plan");
+    await expect(page).toHaveURL(/\/login/);
+  });
+
+  test("der Kiosk bleibt angemeldet", async ({ page }) => {
+    await page.clock.install();
+    await anmelden(page, NUTZER.kiosk);
+    await expect(page).toHaveURL(/\/kiosk/);
+    await page.clock.fastForward("31:00");
+
+    await expect(page).toHaveURL(/\/kiosk/);
+  });
+});
+
 test.describe("Platzbuchung", () => {
   /** Auf einen kuenftigen Tag wechseln und die Navigation abwarten. */
   async function tageWeiter(page: Page, anzahl: number) {

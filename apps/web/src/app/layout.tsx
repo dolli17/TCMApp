@@ -7,6 +7,7 @@ import logoWeiss from "@tcm/ui/logo-weiss.png";
 import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
 import { AbmeldeKnopf } from "@/components/AbmeldeKnopf";
 import { Benachrichtigungen } from "@/components/Benachrichtigungen";
+import { Inaktivitaet } from "@/components/Inaktivitaet";
 import { Fussmenue, Seitenmenue, Symbol, type NavEintrag } from "@/components/Navigation";
 import { THEME_SKRIPT } from "@/components/ThemeUmschalter";
 
@@ -123,6 +124,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   nicht mehr im Menue. Ein Exemplar fuer alle Breiten. */}
               <div className="seitenkopf">
                 <Benachrichtigungen ungelesen={ungelesen} label="Benachrichtigungen" />
+                <Inaktivitaet />
                 <Link href="/konto" className="avatar" aria-label="Konto">
                   {initialen}
                 </Link>

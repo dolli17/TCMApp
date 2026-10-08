@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { AnmeldeBuehne } from "@/components/AnmeldeBuehne";
+import { aktivitaetMerken } from "@/lib/inaktivitaet";
 import { createClient } from "@/lib/supabase/client";
 
 function Formular() {
@@ -12,6 +13,8 @@ function Formular() {
   // Ziel "/" statt "/plan": die Startseite entscheidet, ob jemand ein Mitglied
   // ist oder ein Kiosk-Geraet, und leitet entsprechend weiter.
   const weiter = params.get("weiter") ?? "/";
+  // Nach der automatischen Abmeldung (lib/inaktivitaet.ts) sagen, warum.
+  const inaktiv = params.get("grund") === "inaktiv";
 
   const [email, setEmail] = useState("");
   const [passwort, setPasswort] = useState("");
@@ -36,6 +39,8 @@ function Formular() {
       return;
     }
 
+    // Frischer Stempel, bevor die erste Seite hinter dem Login geladen wird.
+    aktivitaetMerken();
     router.push(weiter);
     router.refresh();
   }
@@ -43,6 +48,11 @@ function Formular() {
   return (
     <AnmeldeBuehne titel="Willkommen zurück auf dem Platz.">
         <form onSubmit={anmelden}>
+          {inaktiv && !fehler && (
+            <div className="hinweis" role="status">
+              Du wurdest nach 30 Minuten ohne Aktivität abgemeldet. Bitte melde dich erneut an.
+            </div>
+          )}
           <label>
             <span>E-Mail</span>
             <input
