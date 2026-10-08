@@ -1138,7 +1138,6 @@ begin
   return next matches(v_ref, '^TCM-', 'Die Referenz folgt der Vereinsform');
   return next is(v_m.status::text, 'active', 'Das Mandat ist aktiv');
   return next is(v_m.sequence_type::text, 'FRST', 'Der erste Einzug ist eine Erstlastschrift');
-  return next is(v_m.scope::text, 'fees_only', 'Standardmaessig deckt es nur Beitraege ab');
 
   perform tests.act_as(a.auth_id);
   perform public.revoke_sepa_mandate(v_m.id);
@@ -1152,7 +1151,7 @@ end; $f$;
 
 create or replace function tests.test_zweites_aktives_mandat_wird_abgewiesen()
 returns setof text language plpgsql as $f$
-declare a record; v_neu uuid; v_konto uuid;
+declare a record; v_neu uuid; v_konto uuid; v_erstes uuid;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
   perform tests.act_as(a.auth_id);
@@ -1163,15 +1162,34 @@ begin
 
   return next throws_ok(
     format('select public.create_sepa_mandate(%L, %L)', v_neu, v_konto),
-    '23514', null, 'Zwei aktive Mandate fuer denselben Zweck gibt es nicht');
+    '23514', null, 'Ein Mitglied hat hoechstens ein aktives Mandat');
 
-  -- Fuer einen anderen Zweck dagegen schon.
+  -- Nach dem Widerruf geht ein neues.
+  select id into v_erstes from public.sepa_mandates
+   where member_id = v_neu and status = 'active';
+  perform public.revoke_sepa_mandate(v_erstes);
   return next lives_ok(
-    format($q$select public.create_sepa_mandate(%L, %L, null, null, 'all_payments')$q$,
-           v_neu, v_konto),
-    'Ein Mandat fuer alle Zahlungen darf danebenstehen');
+    format('select public.create_sepa_mandate(%L, %L)', v_neu, v_konto),
+    'Nach dem Widerruf laesst sich ein neues Mandat erteilen');
 
   perform set_config('role', 'postgres', true);
+end; $f$;
+
+/** Der Index haelt auch Schreibwege an create_sepa_mandate vorbei auf. */
+create or replace function tests.test_zweites_aktives_mandat_per_insert_abgewiesen()
+returns setof text language plpgsql as $f$
+declare u record; v_konto uuid; v_ref text;
+begin
+  select * into u from tests.fixture_user() limit 1;
+  v_ref := tests.fixture_mandat(u.member_id);
+  select bank_account_id into v_konto from public.sepa_mandates where reference = v_ref;
+
+  return next throws_ok(
+    format($q$insert into public.sepa_mandates
+                (member_id, bank_account_id, reference, signed_on, sequence_type, status)
+              values (%L, %L, 'ZZTEST-ZWEI', current_date, 'FRST', 'active')$q$,
+           u.member_id, v_konto),
+    '23505', null, 'Ein zweites aktives Mandat scheitert am Index');
 end; $f$;
 
 create or replace function tests.test_mandat_fuer_fremdes_konto_abgewiesen()

@@ -6,7 +6,7 @@
 --   1. Eine Forderung, deren Frist noch laeuft, kommt nicht in den Lauf - und
 --      ein direkter Insert prallt am Trigger ab. Die Frist ist damit nicht
 --      "verboten", sondern nicht konstruierbar.
---   2. Ein Mandat nur fuer Beitraege traegt keinen Getraenkeeinzug.
+--   2. Ein Mandat traegt jede Forderungsart - Beitrag und Getraenke zusammen.
 --   3. Ein Zahler mit mehreren Kindern ergibt EINE Lastschrift. Zwei Posten
 --      mit derselben Mandatsreferenz wuerde validateBatch abweisen, und die
 --      Bank koennte eine Rueckgabe nicht zuordnen.
@@ -17,8 +17,7 @@
 
 /** Ein Mitglied mit Bankverbindung und Mandat. */
 create or replace function tests.fixture_mandat(
-  p_member_id uuid, p_scope public.mandate_scope default 'all_payments',
-  p_signed date default null
+  p_member_id uuid, p_signed date default null
 )
 returns text language plpgsql as $f$
 declare adm record; v_konto uuid; v_ref text;
@@ -28,7 +27,7 @@ begin
   select public.add_bank_account(p_member_id, 'DE02120300000000202051', 'ZZTest Kontoinhaber')
     into v_konto;
   select public.create_sepa_mandate(p_member_id, v_konto, null,
-                                    coalesce(p_signed, current_date - 30), p_scope)
+                                    coalesce(p_signed, current_date - 30))
     into v_ref;
   perform set_config('role', 'postgres', true);
   return v_ref;
@@ -171,47 +170,29 @@ end; $f$;
 -- ---------------------------------------------------------------------------
 
 /**
- * Ein Beitragsmandat traegt den Beitrag, aber nicht die Getraenke.
+ * Ein Mandat traegt jede Forderungsart.
  *
- * Zieht der Verein trotzdem ein, kann das Mitglied 13 Monate lang
- * widersprechen statt der ueblichen acht Wochen.
+ * Es gibt keinen Umfang mehr: der Mandatstext nennt alle Zahlungen an den
+ * Verein, Beitrag und Getraenke gehen also in derselben Lastschrift mit.
  */
-create or replace function tests.test_beitragsmandat_traegt_keine_getraenke()
+create or replace function tests.test_mandat_traegt_beitrag_und_getraenke()
 returns setof text language plpgsql as $f$
-declare adm record; u record; v_tag date; v_faehig boolean; v_grund text;
+declare adm record; u record; v_tag date; v_faehig boolean; v_pos integer;
 begin
   select * into adm from tests.fixture_user('admin') limit 1;
   select * into u from tests.fixture_user() limit 1;
-  perform tests.fixture_mandat(u.member_id, 'fees_only');
+  perform tests.fixture_mandat(u.member_id);
+  perform tests.fixture_angekuendigt(u.member_id, 19000, 'fee');
   perform tests.fixture_angekuendigt(u.member_id, 4500, 'drinks');
   v_tag := tests.fixture_einzugstag();
 
   perform tests.act_as(adm.auth_id);
-  select k.einzugsfaehig, k.grund into v_faehig, v_grund
+  select k.einzugsfaehig, k.positionen into v_faehig, v_pos
   from public.debit_batch_candidates(v_tag) k where k.payer_id = u.member_id;
   perform set_config('role', 'postgres', true);
 
-  return next is(v_faehig, false, 'Ein Beitragsmandat traegt keinen Getraenkeeinzug');
-  return next ok(v_grund like '%Beitraege%', 'und sagt das auch');
-end; $f$;
-
-/** Derselbe Zahler mit Beitragsforderung geht dagegen mit. */
-create or replace function tests.test_beitragsmandat_traegt_den_beitrag()
-returns setof text language plpgsql as $f$
-declare adm record; u record; v_tag date; v_faehig boolean;
-begin
-  select * into adm from tests.fixture_user('admin') limit 1;
-  select * into u from tests.fixture_user() limit 1;
-  perform tests.fixture_mandat(u.member_id, 'fees_only');
-  perform tests.fixture_angekuendigt(u.member_id, 19000, 'fee');
-  v_tag := tests.fixture_einzugstag();
-
-  perform tests.act_as(adm.auth_id);
-  select k.einzugsfaehig into v_faehig
-  from public.debit_batch_candidates(v_tag) k where k.payer_id = u.member_id;
-  perform set_config('role', 'postgres', true);
-
-  return next is(v_faehig, true, 'Der Beitrag geht mit einem Beitragsmandat mit');
+  return next is(v_faehig, true, 'Beitrag und Getraenke gehen mit demselben Mandat');
+  return next is(v_pos, 2, 'beide Forderungen in einer Lastschrift');
 end; $f$;
 
 /** Ohne Mandat kein Einzug. */
@@ -245,7 +226,7 @@ declare adm record; u record; v_tag date; v_faehig boolean; v_grund text;
 begin
   select * into adm from tests.fixture_user('admin') limit 1;
   select * into u from tests.fixture_user() limit 1;
-  perform tests.fixture_mandat(u.member_id, 'all_payments', current_date - 1200);
+  perform tests.fixture_mandat(u.member_id, current_date - 1200);
   perform tests.fixture_angekuendigt(u.member_id, 8000);
   v_tag := tests.fixture_einzugstag();
 

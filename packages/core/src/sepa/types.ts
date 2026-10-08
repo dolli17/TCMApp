@@ -18,8 +18,6 @@ export type PainVersion = "pain.008.001.02" | "pain.008.001.08";
 
 export type SequenceType = "FRST" | "RCUR" | "OOFF" | "FNAL";
 
-export type MandateScope = "fees_only" | "all_payments";
-
 /**
  * Muss zu public.charge_kind passen. `guest` kam mit der Gastgebuehr dazu und
  * fehlte hier - der Dateierzeuger haette nicht uebersetzt, sobald eine solche
@@ -41,7 +39,6 @@ export interface Mandate {
   signedOn: string;      // ISO-Datum
   lastUsedOn?: string | null;
   sequenceType: SequenceType;
-  scope: MandateScope;
   status: "active" | "revoked" | "expired";
 }
 

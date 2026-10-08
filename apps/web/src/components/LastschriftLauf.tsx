@@ -18,7 +18,6 @@ export interface KandidatZeile {
   amount_cents: number;
   mandate_id: string | null;
   mandate_reference: string | null;
-  mandate_scope: "fees_only" | "all_payments" | null;
   einzugsfaehig: boolean;
   grund: string | null;
 }

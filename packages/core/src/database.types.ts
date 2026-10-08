@@ -1553,7 +1553,6 @@ export type Database = {
           reference: string
           reference_conflict: boolean
           revoked_on: string | null
-          scope: Database["public"]["Enums"]["mandate_scope"]
           sequence_type: Database["public"]["Enums"]["mandate_sequence"]
           signed_on: string
           source: Database["public"]["Enums"]["record_source"]
@@ -1570,7 +1569,6 @@ export type Database = {
           reference: string
           reference_conflict?: boolean
           revoked_on?: string | null
-          scope?: Database["public"]["Enums"]["mandate_scope"]
           sequence_type?: Database["public"]["Enums"]["mandate_sequence"]
           signed_on: string
           source?: Database["public"]["Enums"]["record_source"]
@@ -1587,7 +1585,6 @@ export type Database = {
           reference?: string
           reference_conflict?: boolean
           revoked_on?: string | null
-          scope?: Database["public"]["Enums"]["mandate_scope"]
           sequence_type?: Database["public"]["Enums"]["mandate_sequence"]
           signed_on?: string
           source?: Database["public"]["Enums"]["record_source"]
@@ -2097,7 +2094,6 @@ export type Database = {
           p_bank_account_id: string
           p_member_id: string
           p_reference?: string
-          p_scope?: Database["public"]["Enums"]["mandate_scope"]
           p_signed_on?: string
         }
         Returns: string
@@ -2160,7 +2156,6 @@ export type Database = {
           grund: string
           mandate_id: string
           mandate_reference: string
-          mandate_scope: Database["public"]["Enums"]["mandate_scope"]
           payer_id: string
           payer_name: string
           positionen: number
@@ -2210,7 +2205,6 @@ export type Database = {
           kind: Database["public"]["Enums"]["charge_kind"]
           mandate_last_used_on: string
           mandate_reference: string
-          mandate_scope: Database["public"]["Enums"]["mandate_scope"]
           mandate_signed_on: string
           pain_version: string
           remittance_info: string
@@ -2304,7 +2298,6 @@ export type Database = {
           amount_cents: number
           fee_types: string
           has_mandate: boolean
-          mandate_scope: Database["public"]["Enums"]["mandate_scope"]
           member_id: string
           member_name: string
           payer_name: string
@@ -2425,7 +2418,6 @@ export type Database = {
           reference: string
           reference_conflict: boolean
           revoked_on: string
-          scope: Database["public"]["Enums"]["mandate_scope"]
           sequence_type: Database["public"]["Enums"]["mandate_sequence"]
           signed_on: string
         }[]
@@ -2990,7 +2982,6 @@ export type Database = {
       debit_item_result: "pending" | "settled" | "returned"
       drink_category: "drink" | "food" | "other"
       gender: "female" | "male" | "diverse"
-      mandate_scope: "fees_only" | "all_payments"
       mandate_sequence: "FRST" | "RCUR" | "OOFF" | "FNAL"
       mandate_status: "active" | "revoked" | "expired"
       member_status: "active" | "inactive" | "archived"
@@ -3148,7 +3139,6 @@ export const Constants = {
       debit_item_result: ["pending", "settled", "returned"],
       drink_category: ["drink", "food", "other"],
       gender: ["female", "male", "diverse"],
-      mandate_scope: ["fees_only", "all_payments"],
       mandate_sequence: ["FRST", "RCUR", "OOFF", "FNAL"],
       mandate_status: ["active", "revoked", "expired"],
       member_status: ["active", "inactive", "archived"],

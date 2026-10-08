@@ -649,7 +649,7 @@ export async function bankverbindungStilllegen(kontoId: string): Promise<Ergebni
 
 export async function mandatErteilen(
   id: string,
-  f: { konto: string; reference?: string; signed_on?: string; scope: "fees_only" | "all_payments" },
+  f: { konto: string; reference?: string; signed_on?: string },
 ): Promise<Ergebnis> {
   if (!f.konto) return { ok: false, meldung: "Bitte eine Bankverbindung wählen." };
   const d = datumFeld(f.signed_on, "Unterschrieben am");
@@ -659,7 +659,6 @@ export async function mandatErteilen(
     p_bank_account_id: f.konto,
     p_reference: oderNichts(f.reference),
     p_signed_on: d.iso,
-    p_scope: f.scope,
   });
   if (error) return { ok: false, meldung: translateDbError(error) };
   return { ok: true, meldung: `Mandat ${data} erteilt.` };

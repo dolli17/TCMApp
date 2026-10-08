@@ -575,7 +575,6 @@ function MandatAnsicht({ mandat }: { mandat: Awaited<ReturnType<typeof ladeMeinM
     ["Bank", konto?.bank_name ?? "–"],
     ["Mandatsreferenz", mandat.reference],
     ["Unterschrieben am", DATUM.format(new Date(mandat.signed_on))],
-    ["Gilt für", mandat.scope === "all_payments" ? "alle Zahlungen" : "nur Beiträge"],
   ];
   return (
     <View style={{ gap: 12 }}>

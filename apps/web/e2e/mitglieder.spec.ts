@@ -528,7 +528,7 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(karte.locator(".hinweis.erfolg")).toContainText("Mandat TCM-");
 
     await page.reload();
-    await expect(karte.locator(".liste-gruppe")).toContainText("nur Beiträge");
+    await expect(karte.locator(".liste-gruppe")).toContainText("unterschrieben");
     await expect(karte.locator(".liste-gruppe .hinweis-rechts.gruen")).toContainText("aktiv");
 
     // Solange das Mandat aktiv ist, lässt sich die Bankverbindung nicht stilllegen

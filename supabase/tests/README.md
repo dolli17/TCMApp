@@ -41,7 +41,7 @@ sie danach zurück. Die Tests hinterlassen also keinen Zustand – auch nicht di
 | `10_getraenkekarte.sql` | Preise, Preishistorie, Karte pflegen |
 | `11_forderungen.sql` | Beitragslauf, Getränkemonat, Beitragsarten, Forderungen |
 | `12_vorabankuendigung.sql` | Frist, Bündelung je Zahler, Idempotenz der Ankündigung |
-| `13_lastschrift.sql` | Auswahl, Mandatsdeckung, Bündelung, Datei und Einreichung |
+| `13_lastschrift.sql` | Auswahl, Mandat, Bündelung, Datei und Einreichung |
 | `14_ruecklaeufer.sql` | Rücklastschrift, Wiedervorlage, Abschluss eines Laufs |
 | `15_arbeitsdienst.sql` | Soll-Regeln, Stunden erfassen, Jahresausgleich |
 | `16_benachrichtigungs_pushes.sql` | Push-Marken, Auswahl und Abhaken der Push-Benachrichtigungen |

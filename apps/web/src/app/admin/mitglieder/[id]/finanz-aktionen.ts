@@ -60,7 +60,6 @@ export async function mandatErteilen(formData: FormData): Promise<AktionsErgebni
   const kontoId = String(formData.get("konto") ?? "");
   const referenz = String(formData.get("reference") ?? "");
   const unterschrieben = String(formData.get("signed_on") ?? "");
-  const umfang = String(formData.get("scope") ?? "fees_only") as "fees_only" | "all_payments";
 
   if (!kontoId) return { ok: false, meldung: "Bitte eine Bankverbindung wählen." };
 
@@ -70,7 +69,6 @@ export async function mandatErteilen(formData: FormData): Promise<AktionsErgebni
     p_bank_account_id: kontoId,
     p_reference: referenz || undefined,
     p_signed_on: unterschrieben || undefined,
-    p_scope: umfang,
   });
 
   if (error) return { ok: false, meldung: translateDbError(error) };

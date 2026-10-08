@@ -128,10 +128,10 @@ describe("bankverbindungAnlegen", () => {
 describe("mandatErteilen und beitragsartZuordnen", () => {
   it("meldet die vergebene Mandatsreferenz", async () => {
     rpc.mockResolvedValue({ data: "TCM-0042", error: null });
-    const r = await m.mandatErteilen("m-1", { konto: "k-1", signed_on: "29.09.2026", scope: "fees_only" });
+    const r = await m.mandatErteilen("m-1", { konto: "k-1", signed_on: "29.09.2026" });
     expect(r).toEqual({ ok: true, meldung: "Mandat TCM-0042 erteilt." });
     expect(rpc).toHaveBeenCalledWith("create_sepa_mandate", {
-      p_member_id: "m-1", p_bank_account_id: "k-1", p_reference: undefined, p_signed_on: "2026-09-29", p_scope: "fees_only",
+      p_member_id: "m-1", p_bank_account_id: "k-1", p_reference: undefined, p_signed_on: "2026-09-29",
     });
   });
 

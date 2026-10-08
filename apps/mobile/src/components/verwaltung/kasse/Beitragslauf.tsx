@@ -51,7 +51,6 @@ export function Beitragslauf({
 
   const summe = zeilen.reduce((s, z) => s + (z.amount_cents ?? 0), 0);
   const ohneMandat = zeilen.filter((z) => !z.has_mandate);
-  const nurBeitraege = zeilen.filter((z) => z.has_mandate && z.mandate_scope === "fees_only");
   const schonBerechnet = zeilen.filter((z) => z.already_charged);
   const glaeubigerId = einstellungsWert(einstellungen, "sepa.creditor_id");
 
@@ -107,12 +106,6 @@ export function Beitragslauf({
         </Hinweis>
       )}
 
-      {nurBeitraege.length > 0 && (
-        <Hinweis>
-          {`Bei ${nurBeitraege.length} Mandaten deckt der Text nur Beiträge ab. Für den Beitragslauf reicht das; der monatliche Getränkeeinzug braucht bei diesen Mitgliedern ein eigenes Mandat.`}
-        </Hinweis>
-      )}
-
       {/* Gezaehlt wird nur, was eine Forderung ergibt: beitragsbefreite
           Mitglieder stehen mit 0,00 in der Vorschau und bekaemen nie eine. */}
       <BeitragslaufKarte
@@ -147,7 +140,7 @@ export function Beitragslauf({
                 key={z.member_id}
                 titel={z.member_name}
                 kontext={`${z.fee_types} · ${z.payer_name ? `Zahler ${z.payer_name}` : "zahlt selbst"} · ${
-                  z.has_mandate ? (z.mandate_scope === "all_payments" ? "Mandat alle Zahlungen" : "Mandat nur Beiträge") : "kein Mandat"
+                  z.has_mandate ? "Mandat" : "kein Mandat"
                 }`}
                 neben={
                   !z.has_mandate ? (

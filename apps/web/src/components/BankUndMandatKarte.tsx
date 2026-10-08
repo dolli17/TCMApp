@@ -20,7 +20,6 @@ export interface FinanzZeile {
   reference: string | null;
   signed_on: string | null;
   last_used_on: string | null;
-  scope: "fees_only" | "all_payments" | null;
   sequence_type: string | null;
   mandat_status: "active" | "revoked" | "expired" | null;
   revoked_on: string | null;
@@ -36,11 +35,6 @@ interface Konto {
   aktiv: boolean;
   mandate: FinanzZeile[];
 }
-
-const UMFANG_TEXT: Record<string, string> = {
-  fees_only: "nur Beiträge",
-  all_payments: "alle Zahlungen",
-};
 
 const STATUS_TEXT: Record<string, string> = {
   active: "aktiv",
@@ -179,7 +173,7 @@ export function BankUndMandatKarte({
                           )}
                         </>
                       }
-                      kontext={`${UMFANG_TEXT[m.scope ?? ""] ?? m.scope} · unterschrieben ${datum(m.signed_on)} · zuletzt genutzt ${datum(m.last_used_on)}`}
+                      kontext={`unterschrieben ${datum(m.signed_on)} · zuletzt genutzt ${datum(m.last_used_on)}`}
                       hinweis={m.im_einzug && aktiv ? "im Einzug" : STATUS_TEXT[m.mandat_status ?? ""] ?? m.mandat_status}
                       hinweisTon={aktiv ? "gruen" : "leise"}
                     />
@@ -249,13 +243,6 @@ export function BankUndMandatKarte({
                 <label>
                   <span>Unterschrieben am</span>
                   <input type="date" name="signed_on" defaultValue={heute} max={heute} />
-                </label>
-                <label>
-                  <span>Umfang</span>
-                  <select name="scope" defaultValue="fees_only">
-                    <option value="fees_only">nur Beiträge</option>
-                    <option value="all_payments">alle Zahlungen</option>
-                  </select>
                 </label>
                 <label>
                   <span>Referenz</span>

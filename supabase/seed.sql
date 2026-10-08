@@ -353,12 +353,11 @@ with basis as (
     ba.id as bank_account_id,
     row_number() over (order by ba.created_at, ba.id) as rn,
     (current_date - make_interval(days => (60 + floor(random() * 1200))::int))::date as signed_on,
-    random() as r_used,
-    random() as r_scope
+    random() as r_used
   from public.bank_accounts ba
 )
 insert into public.sepa_mandates
-  (member_id, bank_account_id, reference, signed_on, last_used_on, sequence_type, scope)
+  (member_id, bank_account_id, reference, signed_on, last_used_on, sequence_type)
 select
   member_id,
   bank_account_id,
@@ -370,9 +369,7 @@ select
        then (signed_on + make_interval(
               days => floor(random() * greatest(current_date - signed_on, 1))::int))::date
        else null end,
-  'RCUR',
-  case when r_scope < 0.5 then 'all_payments'::public.mandate_scope
-       else 'fees_only'::public.mandate_scope end
+  'RCUR'
 from basis;
 
 -- ---------------------------------------------------------------------------

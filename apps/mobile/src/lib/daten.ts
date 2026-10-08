@@ -531,7 +531,7 @@ export async function ladeMeinMandat() {
   if (!id) return null;
   const { data, error } = await supabase
     .from("sepa_mandates")
-    .select("reference, signed_on, scope, status, bank_accounts(holder, bank_name, iban_last4)")
+    .select("reference, signed_on, status, bank_accounts(holder, bank_name, iban_last4)")
     .eq("member_id", id)
     .eq("status", "active")
     .order("signed_on", { ascending: false })

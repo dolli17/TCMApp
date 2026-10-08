@@ -222,7 +222,6 @@ interface VorschauZeile {
   fee_types: string;
   amount_cents: number;
   has_mandate: boolean;
-  mandate_scope: "fees_only" | "all_payments" | null;
   already_charged: boolean;
 }
 
@@ -238,7 +237,6 @@ function Beitragslauf({
 }) {
   const summe = zeilen.reduce((s, z) => s + (z.amount_cents ?? 0), 0);
   const ohneMandat = zeilen.filter((z) => !z.has_mandate);
-  const nurBeitraege = zeilen.filter((z) => z.has_mandate && z.mandate_scope === "fees_only");
   const schonBerechnet = zeilen.filter((z) => z.already_charged);
 
   const zahl = (schluessel: string, ersatz: number) =>
@@ -304,14 +302,6 @@ function Beitragslauf({
         </div>
       )}
 
-      {nurBeitraege.length > 0 && (
-        <div className="hinweis">
-          Bei {nurBeitraege.length} Mandaten deckt der Text nur Beiträge ab. Für den Beitragslauf
-          reicht das; der monatliche Getränkeeinzug braucht bei diesen Mitgliedern ein eigenes
-          Mandat.
-        </div>
-      )}
-
       {/* Gezählt wird nur, was eine Forderung ergibt: beitragsbefreite
           Mitglieder stehen mit 0,00 € in der Vorschau, bekommen nie eine
           Forderung und würden den Knopf sonst für immer stehen lassen. */}
@@ -343,7 +333,7 @@ function Beitragslauf({
               <Listenzeile
                 titel={z.member_name}
                 kontext={`${z.fee_types} · ${z.payer_name ? `Zahler ${z.payer_name}` : "zahlt selbst"} · ${
-                  z.has_mandate ? (z.mandate_scope === "all_payments" ? "Mandat alle Zahlungen" : "Mandat nur Beiträge") : "kein Mandat"
+                  z.has_mandate ? "Mandat" : "kein Mandat"
                 }`}
                 neben={
                   <span className="neben">

@@ -137,7 +137,6 @@ export async function dateiErzeugen(batchId: string): Promise<AktionsErgebnis> {
           // auch eines, das letzten Monat benutzt wurde.
           lastUsedOn: z.mandate_last_used_on,
           sequenceType: z.sequence_type,
-          scope: z.mandate_scope,
           status: "active",
         },
       });

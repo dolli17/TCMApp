@@ -47,25 +47,6 @@ export function isMandateExpired(
   return heute > grenze.getTime();
 }
 
-/**
- * Deckt das Mandat diese Forderungsart ab?
- *
- * Ein Mandat, dessen Text nur Mitgliedsbeitraege nennt, traegt den monatlichen
- * Getraenkeeinzug nicht. Zieht der Verein trotzdem ein, kann das Mitglied noch
- * 13 Monate lang widersprechen statt der ueblichen 8 Wochen.
- *
- * Arbeitsdienst und Pfand gehen mit: beides sind Pflichten aus der
- * Mitgliedschaft selbst. Gastgebuehr und Sonstiges nicht - sie entstehen aus
- * einer einzelnen Handlung und sind vom Beitragstext nicht gedeckt.
- */
-export function mandateCoversKind(
-  scope: "fees_only" | "all_payments",
-  kind: DebtorItem["kind"],
-): boolean {
-  if (scope === "all_payments") return true;
-  return kind === "fee" || kind === "work_duty" || kind === "deposit";
-}
-
 export function validateBatch(
   batch: DirectDebitBatch,
   reference: Date = new Date(),
@@ -144,14 +125,6 @@ export function validateBatch(
         "error",
         `Mandat von ${item.debtorName} ist seit ueber ${MANDATE_EXPIRY_MONTHS} ` +
           "Monaten ungenutzt und damit erloschen. Es muss neu eingeholt werden.",
-        item,
-      );
-    }
-    if (!mandateCoversKind(item.mandate.scope, item.kind)) {
-      add(
-        "error",
-        `Das Mandat von ${item.debtorName} deckt nur Beitraege ab und traegt ` +
-          "diesen Einzug nicht. Dafuer wird ein separates Mandat gebraucht.",
         item,
       );
     }

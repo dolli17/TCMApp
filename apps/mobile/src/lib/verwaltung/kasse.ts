@@ -322,7 +322,6 @@ export interface VorschauZeile {
   fee_types: string;
   amount_cents: number;
   has_mandate: boolean;
-  mandate_scope: "fees_only" | "all_payments" | null;
   already_charged: boolean;
 }
 
@@ -455,7 +454,6 @@ export interface KandidatZeile {
   amount_cents: number;
   mandate_id: string | null;
   mandate_reference: string | null;
-  mandate_scope: "fees_only" | "all_payments" | null;
   einzugsfaehig: boolean;
   grund: string | null;
 }
@@ -553,7 +551,6 @@ export type PayloadZeile = {
   kind: DebtorItem["kind"];
   mandate_last_used_on: string | null;
   mandate_reference: string;
-  mandate_scope: DebtorItem["mandate"]["scope"];
   mandate_signed_on: string;
   pain_version: string;
   remittance_info: string;
@@ -595,7 +592,6 @@ export function baueLastschriftLauf(
           // und haelt jedes Mandat fuer erloschen, das aelter als drei Jahre ist.
           lastUsedOn: z.mandate_last_used_on,
           sequenceType: z.sequence_type,
-          scope: z.mandate_scope,
           status: "active",
         },
       });

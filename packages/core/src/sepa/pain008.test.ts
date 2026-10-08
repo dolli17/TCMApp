@@ -3,7 +3,6 @@ import { buildPain008, escapeXml, painNamespace } from "./pain008";
 import {
   hasErrors,
   isMandateExpired,
-  mandateCoversKind,
   validateBatch,
 } from "./validation";
 import { ibanCheckDigits } from "../iban";
@@ -23,7 +22,6 @@ function mandat(over: Partial<Mandate> = {}): Mandate {
     signedOn: "2025-03-01",
     lastUsedOn: "2026-01-15",
     sequenceType: "RCUR",
-    scope: "all_payments",
     status: "active",
     ...over,
   };
@@ -207,13 +205,12 @@ describe("Abbruchbedingungen", () => {
     ).toThrow(/36/);
   });
 
-  it("bricht ab, wenn das Mandat den Einzug nicht deckt", () => {
-    expect(() =>
-      buildPain008(
-        lauf({ items: [posten({ kind: "drinks", mandate: mandat({ scope: "fees_only" }) })] }),
-        HEUTE,
-      ),
-    ).toThrow(/separates Mandat/);
+  it("ein Mandat traegt jede Forderungsart", () => {
+    // Es gibt keinen Umfang mehr: der Mandatstext nennt alle Zahlungen an den
+    // Verein. Auch guest muss durchgehen - der Wert fehlte einmal in ChargeKind.
+    for (const kind of ["fee", "drinks", "deposit", "work_duty", "guest", "misc"] as const) {
+      expect(() => buildPain008(lauf({ items: [posten({ kind })] }), HEUTE)).not.toThrow();
+    }
   });
 
   it("bricht bei doppelter Mandatsreferenz ab", () => {
@@ -274,29 +271,6 @@ describe("isMandateExpired", () => {
   it("die Grenze liegt bei genau 36 Monaten", () => {
     expect(isMandateExpired({ signedOn: "2023-08-03", lastUsedOn: null }, HEUTE)).toBe(false);
     expect(isMandateExpired({ signedOn: "2023-08-02", lastUsedOn: null }, HEUTE)).toBe(true);
-  });
-});
-
-describe("mandateCoversKind", () => {
-  it("all_payments deckt alles", () => {
-    for (const kind of ["fee", "drinks", "deposit", "work_duty", "guest", "misc"] as const) {
-      expect(mandateCoversKind("all_payments", kind)).toBe(true);
-    }
-  });
-
-  it("fees_only deckt keine Getraenke", () => {
-    expect(mandateCoversKind("fees_only", "fee")).toBe(true);
-    expect(mandateCoversKind("fees_only", "work_duty")).toBe(true);
-    expect(mandateCoversKind("fees_only", "deposit")).toBe(true);
-    expect(mandateCoversKind("fees_only", "drinks")).toBe(false);
-    expect(mandateCoversKind("fees_only", "misc")).toBe(false);
-  });
-
-  it("fees_only deckt auch keine Gastgebuehr", () => {
-    // Sie entsteht aus einer einzelnen Buchung, nicht aus der Mitgliedschaft.
-    // Der Wert kam mit der Gastgebuehr in charge_kind dazu und fehlte in
-    // ChargeKind - eine solche Forderung haette den Erzeuger nicht passiert.
-    expect(mandateCoversKind("fees_only", "guest")).toBe(false);
   });
 });
 

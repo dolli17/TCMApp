@@ -56,7 +56,6 @@ function zeile(teil: Partial<PayloadZeile>): PayloadZeile {
     kind: "fee",
     mandate_last_used_on: null,
     mandate_reference: "TCM-M-0001",
-    mandate_scope: "all_payments",
     mandate_signed_on: "2025-01-10",
     pain_version: "pain.008.001.08",
     remittance_info: "Beitrag 2026 Anna",

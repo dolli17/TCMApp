@@ -12,7 +12,7 @@ import { useState } from "react";
 import { Text, View } from "react-native";
 import { formatIban, isValidIban, normalizeIban } from "@tcm/core";
 import {
-  Chipwahl, FormBlatt, FormFeld, FormGruppe, Karte, Knopf, Meldung, bestaetige, useAktion,
+  FormBlatt, FormFeld, FormGruppe, Karte, Knopf, Meldung, bestaetige, useAktion,
 } from "@/components/verwaltung/Formular";
 import { ListenGruppe, Listenzeile, Statusmarke } from "@/components/verwaltung/Liste";
 import { datum } from "@/components/verwaltung/mitglieder/optionen";
@@ -24,7 +24,6 @@ import {
   type FinanzZeile,
 } from "@/lib/verwaltung/mitglieder";
 
-const UMFANG_TEXT: Record<string, string> = { fees_only: "nur Beiträge", all_payments: "alle Zahlungen" };
 const STATUS_TEXT: Record<string, string> = { active: "aktiv", revoked: "widerrufen", expired: "abgelaufen" };
 
 interface Konto {
@@ -99,7 +98,7 @@ export function Bank({ mitgliedId, onGeaendert }: { mitgliedId: string; onGeaend
                     <View key={m.mandate_id}>
                       <Listenzeile
                         titel={`${m.reference}${m.reference_conflict ? " · doppelt" : ""}`}
-                        kontext={`${UMFANG_TEXT[m.scope ?? ""] ?? m.scope} · unterschrieben ${datum(m.signed_on)} · zuletzt genutzt ${datum(m.last_used_on)}`}
+                        kontext={`unterschrieben ${datum(m.signed_on)} · zuletzt genutzt ${datum(m.last_used_on)}`}
                         hinweis={m.im_einzug && aktiv ? "im Einzug" : (STATUS_TEXT[m.mandat_status ?? ""] ?? m.mandat_status)}
                         hinweisTon={aktiv ? "gruen" : "leise"}
                       />
@@ -229,7 +228,6 @@ function MandatBlatt(props: {
   onGespeichert: (t: string) => Promise<void>;
 }) {
   const [unterschrieben, setUnterschrieben] = useState(isoZuDeutsch(heuteInBerlin()));
-  const [umfang, setUmfang] = useState<"fees_only" | "all_payments">("fees_only");
   const [referenz, setReferenz] = useState("");
   const { laeuft, meldung, ausfuehren } = useAktion();
 
@@ -255,15 +253,6 @@ function MandatBlatt(props: {
               beschreibung="Bestandsmandate aus eBuSy behalten ihre Referenz – nur dann bleiben sie gültig."
             />
           </FormGruppe>
-          <Chipwahl
-            label="Umfang"
-            optionen={[
-              { wert: "fees_only" as const, label: "nur Beiträge" },
-              { wert: "all_payments" as const, label: "alle Zahlungen" },
-            ]}
-            wert={umfang}
-            onWahl={setUmfang}
-          />
           <Knopf
             art="gold"
             gross
@@ -277,7 +266,6 @@ function MandatBlatt(props: {
                     konto: props.konto.id,
                     reference: referenz,
                     signed_on: unterschrieben,
-                    scope: umfang,
                   }),
                 async (e) => {
                   zu();
