@@ -1,0 +1,13 @@
+# Nur, was das Abbild der Web-App braucht (apps/web/Dockerfile).
+**/node_modules
+**/.next
+**/.env*
+**/.DS_Store
+.git
+apps/mobile
+apps/web/playwright-report
+apps/web/test-results
+supabase
+docs
+tools
+scripts

@@ -1,0 +1,37 @@
+# Die Web-App auf dem eigenen Server.
+#
+# Auf dem Server liegt diese Datei im Checkout unter /docker/tcm-web/src; die
+# Werte stehen in /docker/tcm-web/.env (nicht im Repo). Gestartet wird ueber
+# deploy/web/deploy.sh.
+#
+# Traefik (/docker/traefik) steht davor: es nimmt 80/443 an, holt das
+# Zertifikat und findet die App ueber die Labels unten.
+
+services:
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:?fehlt in .env}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:?fehlt in .env}
+    image: tcm-web:latest
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.http.routers.tcm.rule=Host(`${APP_DOMAIN:?fehlt in .env}`) || Host(`${TEST_DOMAIN:-${APP_DOMAIN}}`)
+      - traefik.http.routers.tcm.entrypoints=websecure
+      - traefik.http.routers.tcm.tls.certresolver=letsencrypt
+      - traefik.http.routers.tcm.middlewares=tcm-header
+      - traefik.http.services.tcm.loadbalancer.server.port=3000
+      - traefik.http.middlewares.tcm-header.headers.stsSeconds=31536000
+      - traefik.http.middlewares.tcm-header.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.tcm-header.headers.referrerPolicy=strict-origin-when-cross-origin
+      - traefik.http.middlewares.tcm-header.headers.frameDeny=true
+
+networks:
+  traefik-public:
+    external: true

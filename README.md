@@ -99,9 +99,17 @@ pnpm test                 # Unit- und Datenbanktests
 pnpm dev                  # Web-App
 ```
 
-Das Web läuft auf Vercel (Projektwurzel `apps/web`, Region Frankfurt, siehe
-`apps/web/vercel.json`) unter https://app.tennisclub-muckensturm.de – jeder
-Push auf `main` geht live.
+Das Web läuft als Docker-Container auf dem eigenen Server (187.124.4.243)
+unter https://app.tennisclub-muckensturm.de, hinter dem dortigen Traefik.
+Ein Push allein geht **nicht** live – nach dem Push auf `main`:
+
+```bash
+./deploy/web/deploy.sh    # baut origin/main auf dem Server und startet neu
+```
+
+Abbild: `apps/web/Dockerfile`, Dienst: `deploy/web/docker-compose.yml`. Die
+Werte (Domain, Supabase-URL und -Key) stehen auf dem Server in
+`/docker/tcm-web/.env`.
 
 Die App unter `apps/mobile` liest ihre Supabase-Werte aus `apps/mobile/.env`
 (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`) und startet mit

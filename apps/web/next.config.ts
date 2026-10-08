@@ -1,8 +1,15 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
   // @tcm/core wird als TypeScript-Quelle eingebunden, nicht als gebautes Paket.
   transpilePackages: ["@tcm/core"],
+
+  // Fuer das Docker-Image (apps/web/Dockerfile): der Build legt einen
+  // eigenstaendigen Server samt der tatsaechlich benoetigten node_modules ab.
+  // Die Wurzel ist das Repo, weil @tcm/core und @tcm/ui im Workspace liegen.
+  output: "standalone",
+  outputFileTracingRoot: path.join(__dirname, "../.."),
   reactStrictMode: true,
 
   /**
