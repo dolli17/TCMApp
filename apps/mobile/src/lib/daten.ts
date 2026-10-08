@@ -587,12 +587,13 @@ export async function sucheMitspieler(bookingId: string, gesucht: boolean): Prom
  * Eigene Abfrage statt "Liste laden und zaehlen": der Zaehler steht auf der
  * Startseite, die Liste liegt einen Bildschirm weiter. Ueber den Teilindex
  * notifications_unread_idx kostet das praktisch nichts.
+ *
+ * Als RPC und nicht direkt auf der Tabelle: RLS laesst Admins alle
+ * Benachrichtigungen sehen, die Glocke soll aber nur die eigenen zaehlen -
+ * genau die, die my_notifications auch liefert.
  */
 export async function zaehleUngelesen(): Promise<number> {
-  const { count, error } = await supabase
-    .from("notifications")
-    .select("id", { count: "exact", head: true })
-    .is("read_at", null);
+  const { data, error } = await supabase.rpc("my_unread_notification_count");
   if (error) return 0;
-  return count ?? 0;
+  return data ?? 0;
 }

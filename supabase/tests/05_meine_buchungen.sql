@@ -245,6 +245,35 @@ begin
   return next is(v_anzahl, 1, 'Das Lesedatum steht in der Tabelle');
 end; $f$;
 
+/**
+ * Der Zaehler der Glocke zaehlt nur eigene Benachrichtigungen.
+ *
+ * Admins sehen ueber RLS alle Zeilen in notifications. Der Zaehler darf das
+ * nicht mitnehmen, sonst zeigt die Glocke eine Zahl, die Liste aber nichts.
+ */
+create or replace function tests.test_ungelesen_zaehler_nur_eigene()
+returns setof text language plpgsql as $f$
+declare adm record; b record;
+begin
+  select * into adm from tests.fixture_user('admin') limit 1;
+  select * into b from tests.fixture_user() limit 1;
+  insert into public.notifications (member_id, kind, title, body)
+  values (b.member_id, 'booking_added', 'Eins', 'x'),
+         (b.member_id, 'booking_added', 'Zwei', 'x');
+
+  perform tests.act_as(adm.auth_id);
+  return next is(public.my_unread_notification_count(), 0,
+    'Der Admin zaehlt keine fremden Benachrichtigungen');
+  perform set_config('role', 'postgres', true);
+
+  perform tests.act_as(b.auth_id);
+  return next is(public.my_unread_notification_count(), 2,
+    'Das Mitglied zaehlt seine eigenen');
+  perform public.mark_notifications_read(null);
+  return next is(public.my_unread_notification_count(), 0,
+    'Nach dem Lesen steht der Zaehler auf null');
+end; $f$;
+
 -- Diese Datei definiert nur Testfunktionen; ausgefuehrt werden sie in
 -- 99_runtests.sql. Ohne Plan haelt pg_prove die Datei fuer kaputt.
 select extensions.plan(1);

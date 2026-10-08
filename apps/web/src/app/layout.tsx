@@ -30,14 +30,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Nur der Zaehler, nicht die Liste: die Glocke steht auf jeder Seite, und
   // eine Zeilenzahl aus dem Teilindex notifications_unread_idx kostet
   // praktisch nichts. Den Inhalt holt die Glocke selbst, wenn jemand aufmacht.
+  // Ueber die RPC statt direkt auf der Tabelle: RLS zeigt Admins alle
+  // Benachrichtigungen, gezaehlt werden sollen nur die eigenen.
   let ungelesen = 0;
   if (istMitglied) {
     const supabase = await createServerSupabase();
-    const { count } = await supabase
-      .from("notifications")
-      .select("id", { count: "exact", head: true })
-      .is("read_at", null);
-    ungelesen = count ?? 0;
+    const { data } = await supabase.rpc("my_unread_notification_count");
+    ungelesen = data ?? 0;
   }
 
   const eintraege: NavEintrag[] = [

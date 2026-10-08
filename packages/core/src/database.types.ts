@@ -2541,6 +2541,7 @@ export type Database = {
           title: string
         }[]
       }
+      my_unread_notification_count: { Args: never; Returns: number }
       my_work_duty: {
         Args: { p_year?: number }
         Returns: {

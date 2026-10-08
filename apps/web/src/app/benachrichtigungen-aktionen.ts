@@ -20,10 +20,15 @@ export interface Benachrichtigung {
  * kostet mehr, als er einbringt. Der Zaehler kommt beim Anmelden einmal mit,
  * die Liste erst beim Oeffnen.
  */
-export async function ladeBenachrichtigungen(): Promise<Benachrichtigung[]> {
+export async function ladeBenachrichtigungen(): Promise<
+  { daten: Benachrichtigung[]; fehler: string }
+> {
   const supabase = await createServerSupabase();
-  const { data } = await supabase.rpc("my_notifications", { p_limit: 30 });
-  return (data ?? []) as Benachrichtigung[];
+  const { data, error } = await supabase.rpc("my_notifications", { p_limit: 30 });
+  // Nicht still als leere Liste ausgeben - sonst sieht ein Fehler aus wie
+  // "Es liegt nichts vor".
+  if (error) return { daten: [], fehler: translateDbError(error) };
+  return { daten: (data ?? []) as Benachrichtigung[], fehler: "" };
 }
 
 export async function alsGelesenMarkieren(): Promise<{ ok: boolean; meldung: string }> {

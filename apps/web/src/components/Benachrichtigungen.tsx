@@ -40,6 +40,7 @@ export function Benachrichtigungen({ ungelesen, label }: { ungelesen: number; la
   const [zaehler, setZaehler] = useState(ungelesen);
   const [laeuft, starte] = useTransition();
   const [alleGesehen, setAlleGesehen] = useState(false);
+  const [fehler, setFehler] = useState("");
 
   // Der Zaehler kommt vom Server; nach einer Navigation gilt der neue Wert.
   useEffect(() => setZaehler(ungelesen), [ungelesen]);
@@ -64,7 +65,8 @@ export function Benachrichtigungen({ ungelesen, label }: { ungelesen: number; la
     setOffen(true);
     setAlleGesehen(false);
     starte(async () => {
-      const daten = await ladeBenachrichtigungen();
+      const { daten, fehler } = await ladeBenachrichtigungen();
+      setFehler(fehler);
       setListe(daten);
       if (daten.some((n) => n.read_at === null)) {
         await alsGelesenMarkieren();
@@ -130,6 +132,8 @@ export function Benachrichtigungen({ ungelesen, label }: { ungelesen: number; la
           <div className="fenster-inhalt">
             {liste === null || laeuft ? (
               <p className="unterzeile">Wird geladen…</p>
+            ) : fehler ? (
+              <p className="unterzeile" role="alert">{fehler}</p>
             ) : liste.length === 0 ? (
               <p className="unterzeile">Es liegt nichts vor.</p>
             ) : (
