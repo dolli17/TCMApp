@@ -22,10 +22,19 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-public
-      - traefik.http.routers.tcm.rule=Host(`${APP_DOMAIN:?fehlt in .env}`) || Host(`${TEST_DOMAIN:-${APP_DOMAIN}}`)
+      # Zwei Router statt einer Regel mit "||": Traefik holt je Router EIN
+      # Zertifikat fuer alle Namen. Zeigt einer davon (noch) woanders hin,
+      # scheitert sonst das Zertifikat fuer beide.
+      - traefik.http.routers.tcm.rule=Host(`${APP_DOMAIN:?fehlt in .env}`)
       - traefik.http.routers.tcm.entrypoints=websecure
       - traefik.http.routers.tcm.tls.certresolver=letsencrypt
       - traefik.http.routers.tcm.middlewares=tcm-header
+      - traefik.http.routers.tcm.service=tcm
+      - traefik.http.routers.tcm-test.rule=Host(`${TEST_DOMAIN:-${APP_DOMAIN}}`)
+      - traefik.http.routers.tcm-test.entrypoints=websecure
+      - traefik.http.routers.tcm-test.tls.certresolver=letsencrypt
+      - traefik.http.routers.tcm-test.middlewares=tcm-header
+      - traefik.http.routers.tcm-test.service=tcm
       - traefik.http.services.tcm.loadbalancer.server.port=3000
       - traefik.http.middlewares.tcm-header.headers.stsSeconds=31536000
       - traefik.http.middlewares.tcm-header.headers.contentTypeNosniff=true
