@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import {
   buildPain008, pain008Filename, translateDbError,
-  type DebtorItem, type DirectDebitBatch, type PainVersion,
+  type ChargeKind, type DebtorItem, type DirectDebitBatch, type PainVersion,
 } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -22,12 +22,15 @@ function frisch(batchId?: string) {
 export async function laufAnlegen(daten: {
   titel: string;
   faelligAm: string;
+  /** null = alle angekündigten Arten */
+  arten: ChargeKind[] | null;
 }): Promise<AktionsErgebnis & { id?: string }> {
   const supabase = await createServerSupabase();
 
   const { data, error } = await supabase.rpc("create_debit_batch", {
     p_title: daten.titel,
     p_collection_date: daten.faelligAm,
+    p_kinds: daten.arten ?? undefined,
   });
 
   if (error) return { ok: false, meldung: translateDbError(error) };

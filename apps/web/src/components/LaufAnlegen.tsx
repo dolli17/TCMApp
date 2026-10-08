@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { CHARGE_KINDS, CHARGE_KIND_LABEL, debitBatchTitle, type ChargeKind } from "@tcm/core";
 import { laufAnlegen } from "@/app/admin/kasse/lastschriften/aktionen";
 
 /**
@@ -11,6 +12,11 @@ import { laufAnlegen } from "@/app/admin/kasse/lastschriften/aktionen";
  * Kandidatenliste steht. Das ist bewusst zweistufig — der Fälligkeitstag
  * bestimmt, wer überhaupt in Frage kommt, und den will man erst setzen und
  * dann sehen, was er bedeutet.
+ *
+ * Ein Lauf zieht alle angekündigten Arten ein, außer man schränkt ihn ein -
+ * etwa auf die Beiträge im Frühjahr, ohne dass Getränke mitgehen. Der Name
+ * wird aus Datum und Auswahl vorgeschlagen; früher stand hier der Platzhalter
+ * „Beitragslauf 2027“, obwohl der Lauf auch Getränke einzog.
  */
 export function LaufAnlegen({ fristTage }: { fristTage: number }) {
   const router = useRouter();
@@ -20,10 +26,24 @@ export function LaufAnlegen({ fristTage }: { fristTage: number }) {
   vorschlag.setDate(vorschlag.getDate() + fristTage + 1);
   const vorgabe = vorschlag.toISOString().slice(0, 10);
 
-  const [titel, setTitel] = useState("");
   const [faellig, setFaellig] = useState(vorgabe);
+  const [alle, setAlle] = useState(true);
+  const [arten, setArten] = useState<ChargeKind[]>(["fee"]);
+  const [titel, setTitel] = useState(debitBatchTitle(vorgabe));
+  // Solange niemand den Namen angefasst hat, folgt er Datum und Auswahl.
+  const [titelSelbst, setTitelSelbst] = useState(false);
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
+
+  function neuBenennen(datum: string, mitAllen: boolean, auswahl: ChargeKind[]) {
+    if (!titelSelbst) setTitel(debitBatchTitle(datum, mitAllen ? null : auswahl));
+  }
+
+  function umschalten(k: ChargeKind) {
+    const neu = arten.includes(k) ? arten.filter((a) => a !== k) : [...arten, k];
+    setArten(neu);
+    neuBenennen(faellig, alle, neu);
+  }
 
   return (
     <section className="karte">
@@ -41,21 +61,54 @@ export function LaufAnlegen({ fristTage }: { fristTage: number }) {
 
       <div className="formraster">
         <label>
-          <span>Bezeichnung</span>
-          <input
-            type="text"
-            value={titel}
-            placeholder="Beitragslauf 2027"
-            onChange={(e) => setTitel(e.target.value)}
-          />
-        </label>
-        <label>
           <span>Fällig am</span>
           <input
             type="date"
             min={heute}
             value={faellig}
-            onChange={(e) => setFaellig(e.target.value)}
+            onChange={(e) => {
+              setFaellig(e.target.value);
+              neuBenennen(e.target.value, alle, arten);
+            }}
+          />
+        </label>
+        <fieldset className="art-wahl">
+          <legend>Was einziehen?</legend>
+          <label className="wahl">
+            <input
+              type="radio"
+              name="umfang"
+              checked={alle}
+              onChange={() => { setAlle(true); neuBenennen(faellig, true, arten); }}
+            />
+            Alles Angekündigte
+          </label>
+          <label className="wahl">
+            <input
+              type="radio"
+              name="umfang"
+              checked={!alle}
+              onChange={() => { setAlle(false); neuBenennen(faellig, false, arten); }}
+            />
+            Nur bestimmte Arten
+          </label>
+          {!alle && (
+            <div className="art-haken">
+              {CHARGE_KINDS.map((k) => (
+                <label key={k} className="wahl">
+                  <input type="checkbox" checked={arten.includes(k)} onChange={() => umschalten(k)} />
+                  {CHARGE_KIND_LABEL[k]}
+                </label>
+              ))}
+            </div>
+          )}
+        </fieldset>
+        <label>
+          <span>Bezeichnung</span>
+          <input
+            type="text"
+            value={titel}
+            onChange={(e) => { setTitel(e.target.value); setTitelSelbst(true); }}
           />
         </label>
       </div>
@@ -64,10 +117,10 @@ export function LaufAnlegen({ fristTage }: { fristTage: number }) {
         <button
           type="button"
           className="knopf gold block gross"
-          disabled={laeuft || titel.trim() === "" || faellig === ""}
+          disabled={laeuft || titel.trim() === "" || faellig === "" || (!alle && arten.length === 0)}
           onClick={() =>
             starte(async () => {
-              const e = await laufAnlegen({ titel, faelligAm: faellig });
+              const e = await laufAnlegen({ titel, faelligAm: faellig, arten: alle ? null : arten });
               setMeldung({ ok: e.ok, text: e.meldung });
               if (e.ok && e.id) router.push(`/admin/kasse/lastschriften/${e.id}`);
             })

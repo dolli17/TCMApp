@@ -69,7 +69,7 @@ export function Beitraege({ mitgliedId, onGeaendert }: { mitgliedId: string; onG
         ) : (
           <Text style={[stil.leise, { fontSize: 14 }]}>
             {zugeordnet.length === 0
-              ? "Noch keine Beitragsart zugeordnet – dieses Mitglied bliebe beim Beitragslauf außen vor."
+              ? "Noch keine Beitragsart zugeordnet – dieses Mitglied bekäme keinen Jahresbeitrag."
               : `Zusammen ${formatCents(summe)} im Jahr.`}
           </Text>
         )}

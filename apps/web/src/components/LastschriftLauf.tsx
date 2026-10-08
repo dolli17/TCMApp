@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { debitFlow, formatCents, isoDateLabel } from "@tcm/core";
+import {
+  CHARGE_KIND_LABEL, debitFlow, formatCents, isoDateLabel, sortChargeKinds,
+} from "@tcm/core";
 import {
   dateiErzeugen, laufAbschliessen, laufEingereicht, postenAufnehmen, ruecklaeuferErfassen,
 } from "@/app/admin/kasse/lastschriften/aktionen";
+import { ArtMarken } from "@/components/ArtMarke";
 import { FensterKnopf } from "@/components/FensterKnopf";
 import { Geldweg } from "@/components/Geldweg";
 import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
@@ -15,6 +18,7 @@ export interface KandidatZeile {
   charge_ids: string[];
   positionen: number;
   arten: string;
+  kinds: string[];
   amount_cents: number;
   mandate_id: string | null;
   mandate_reference: string | null;
@@ -27,6 +31,7 @@ export interface PostenZeile {
   payer_name: string;
   mitglieder: string;
   positionen: number;
+  kinds: string[];
   amount_cents: number;
   mandate_reference: string;
   result: "pending" | "settled" | "returned";
@@ -38,6 +43,8 @@ export interface LaufKopf {
   id: string;
   title: string;
   collection_date: string;
+  /** Eingeschränkt auf diese Arten; null = alle angekündigten */
+  kinds: string[] | null;
   status: "draft" | "generated" | "submitted" | "completed";
   total_cents: number;
   item_count: number;
@@ -62,12 +69,20 @@ export interface LaufKopf {
  */
 const AUSSCHNITT = 25;
 
+/** Summe je Art im Lauf (debit_batch_kinds) */
+export interface ArtSumme {
+  kind: string;
+  positionen: number;
+  summe_cents: number;
+}
+
 export function LastschriftLauf({
-  lauf, kandidaten, posten, faelligAb, heute,
+  lauf, kandidaten, posten, jeArt, faelligAb, heute,
 }: {
   lauf: LaufKopf;
   kandidaten: KandidatZeile[];
   posten: PostenZeile[];
+  jeArt: ArtSumme[];
   /** Der spaeteste angekuendigte Faelligkeitstag der Kandidaten, ISO */
   faelligAb: string | null;
   heute: string;
@@ -141,6 +156,14 @@ export function LastschriftLauf({
           <h1 className="pagetitle">{lauf.title}</h1>
           <span className={`statusmarke gross ${weg.current === null ? "gruen" : "gelb"}`}>{weg.label}</span>
         </div>
+        {/* Was dieser Lauf einzieht - früher war das nirgends zu sehen */}
+        <p className="unterzeile lauf-arten">
+          {lauf.kinds ? (
+            <>Zieht nur ein: <ArtMarken arten={lauf.kinds} /></>
+          ) : (
+            "Zieht alle angekündigten Forderungen ein, gleich welcher Art."
+          )}
+        </p>
       </header>
 
       {meldung && (
@@ -303,7 +326,7 @@ export function LastschriftLauf({
                       titel={p.payer_name}
                       kontext={
                         <>
-                          {p.mitglieder}
+                          <ArtMarken arten={p.kinds} /> {p.mitglieder}
                           {p.positionen > 1 ? ` · ${p.positionen} Posten` : ""}
                           <br />
                           <span className="kennung">{p.end_to_end_id}</span>
@@ -331,7 +354,7 @@ export function LastschriftLauf({
                     titel={k.payer_name}
                     kontext={
                       <>
-                        {k.arten}
+                        <ArtMarken arten={k.kinds} /> {k.arten}
                         {k.positionen > 1 ? ` · ${k.positionen} Posten` : ""}
                         {!k.einzugsfaehig && k.grund && (
                           <>
@@ -380,6 +403,17 @@ export function LastschriftLauf({
             <dt>Fällig am</dt>
             <dd className="dpl tnum">{isoDateLabel(lauf.collection_date)}</dd>
           </div>
+          {/* Aufschlüsselung, sobald etwas im Lauf ist: was davon Beitrag,
+              was Getränke, was Arbeitsdienst ist */}
+          {sortChargeKinds(jeArt.map((a) => a.kind)).map((k) => {
+            const a = jeArt.find((x) => x.kind === k)!;
+            return (
+              <div key={k}>
+                <dt>{CHARGE_KIND_LABEL[k]}</dt>
+                <dd className="dpl tnum">{formatCents(a.summe_cents)}</dd>
+              </div>
+            );
+          })}
         </dl>
       </div>
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import {
-  LastschriftLauf, type KandidatZeile, type LaufKopf, type PostenZeile,
+  LastschriftLauf, type ArtSumme, type KandidatZeile, type LaufKopf, type PostenZeile,
 } from "@/components/LastschriftLauf";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +21,7 @@ export default async function LaufSeite({
 
   const { data: lauf } = await supabase
     .from("debit_batches")
-    .select("id, title, collection_date, status, total_cents, item_count, storage_path")
+    .select("id, title, collection_date, kinds, status, total_cents, item_count, storage_path")
     .eq("id", id)
     .maybeSingle();
 
@@ -29,14 +29,16 @@ export default async function LaufSeite({
 
   // Die Kandidaten nur solange der Lauf ein Entwurf ist: danach ist die
   // Auswahl entschieden, und eine Liste, die sich noch bewegt, wäre irreführend.
-  const [kandidatenRes, postenRes] = await Promise.all([
+  const [kandidatenRes, postenRes, jeArtRes] = await Promise.all([
     lauf.status === "draft"
       ? supabase.rpc("debit_batch_candidates", {
           p_collection_date: lauf.collection_date,
-          p_kinds: undefined,
+          // Nur die Arten, auf die der Lauf eingeschränkt ist
+          p_kinds: lauf.kinds ?? undefined,
         })
       : Promise.resolve({ data: null }),
     supabase.rpc("debit_batch_items", { p_batch_id: id }),
+    supabase.rpc("debit_batch_kinds", { p_batch_id: id }),
   ]);
   const kandidaten = (kandidatenRes.data ?? []) as unknown as KandidatZeile[];
 
@@ -64,6 +66,7 @@ export default async function LaufSeite({
         lauf={lauf as unknown as LaufKopf}
         kandidaten={kandidaten}
         posten={(postenRes.data ?? []) as unknown as PostenZeile[]}
+        jeArt={(jeArtRes.data ?? []) as unknown as ArtSumme[]}
         faelligAb={faelligAb}
         heute={heuteInBerlin()}
       />

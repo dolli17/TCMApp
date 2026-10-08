@@ -37,6 +37,7 @@ export default function LaufSeite() {
             lauf={d.lauf}
             kandidaten={d.kandidaten}
             posten={d.posten}
+            jeArt={d.jeArt}
             faelligAb={d.faelligAb}
             heute={d.heute}
             onGeaendert={zustand.erneutHolen}

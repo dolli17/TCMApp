@@ -1,6 +1,8 @@
 /**
- * Der Beitragslauf eines Jahres (Nachbau des Abschnitts "lauf" aus
- * apps/web/src/app/admin/kasse/page.tsx samt BeitragslaufKarte).
+ * Die Jahresbeitraege eines Jahres (Nachbau des Abschnitts "beitraege" aus
+ * apps/web/src/app/admin/kasse/page.tsx samt BeitragslaufKarte). Frueher hiess
+ * das "Beitragslauf" - das Wort "Lauf" steht jetzt nur noch fuer den
+ * Lastschriftlauf; Datei- und Funktionsnamen sind geblieben.
  *
  * Oben die Vorschau als Kennzahlen, darunter die zwei Schritte: Forderungen
  * erzeugen, dann ankuendigen - der zweite steht direkt unter dem ersten, weil
@@ -73,7 +75,7 @@ export function Beitragslauf({
   return (
     <>
       <Abschnitt>
-        <Gruppenkopf titel={`Beitragslauf ${jahr}`} />
+        <Gruppenkopf titel={`Jahresbeiträge ${jahr}`} />
         <Chipwahl optionen={jahre} wert={jahr} onWahl={onJahr} />
       </Abschnitt>
 
@@ -86,7 +88,7 @@ export function Beitragslauf({
       )}
 
       <Kennzahlen>
-        <Kennzahl label="Mitglieder" wert={String(zeilen.length)} info={`im Beitragslauf ${jahr}`} />
+        <Kennzahl label="Mitglieder" wert={String(zeilen.length)} info={`mit Beitrag ${jahr}`} />
         <Kennzahl label="Summe" wert={formatCents(summe)} info="alle Beitragsarten" />
         <Kennzahl label="Ohne Mandat" wert={String(ohneMandat.length)} info="zahlen per Überweisung" />
         <Kennzahl label="Bereits berechnet" wert={String(schonBerechnet.length)} info="Forderung erzeugt" />

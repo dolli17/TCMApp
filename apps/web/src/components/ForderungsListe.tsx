@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { formatCents } from "@tcm/core";
+import { CHARGE_KIND_LABEL, formatCents } from "@tcm/core";
 import { forderungAbhaken, forderungErlassen } from "@/app/admin/kasse/aktionen";
+import { ArtMarke } from "@/components/ArtMarke";
 import { FensterKnopf } from "@/components/FensterKnopf";
 import { Listenzeile } from "@/components/Listenzeile";
 
@@ -22,15 +23,6 @@ export interface ForderungZeile {
   created_at: string;
   hat_mandat: boolean;
 }
-
-const ART: Record<ForderungZeile["kind"], string> = {
-  fee: "Beitrag",
-  drinks: "Getränke",
-  deposit: "Pfand",
-  work_duty: "Arbeitsdienst",
-  guest: "Gastgebühr",
-  misc: "Sonstiges",
-};
 
 const STAND: Record<ForderungZeile["status"], string> = {
   open: "offen",
@@ -82,11 +74,16 @@ export function ForderungsListe({ forderungen }: { forderungen: ForderungZeile[]
             <li key={f.id}>
               <Listenzeile
                 titel={f.member_name}
-                kontext={[
-                  f.description,
-                  f.payer_id === f.member_id ? null : `Zahler ${f.payer_name}`,
-                  f.due_date ? `fällig ${DATUM.format(new Date(f.due_date))}` : null,
-                ].filter(Boolean).join(" · ")}
+                kontext={
+                  <>
+                    <ArtMarke art={f.kind} />{" "}
+                    {[
+                      f.description,
+                      f.payer_id === f.member_id ? null : `Zahler ${f.payer_name}`,
+                      f.due_date ? `fällig ${DATUM.format(new Date(f.due_date))}` : null,
+                    ].filter(Boolean).join(" · ")}
+                  </>
+                }
                 neben={
                   <span className="neben">
                     <span className="betrag tnum">{formatCents(f.amount_cents)}</span>
@@ -109,7 +106,7 @@ export function ForderungsListe({ forderungen }: { forderungen: ForderungZeile[]
         <FensterKnopf titel={gewaehlt.member_name} unterzeile={gewaehlt.description} offen onSchliessen={() => setGewaehlt(null)}>
           <dl className="angaben gruppe">
             <div><dt>Betrag</dt><dd className="tnum">{formatCents(gewaehlt.amount_cents)}</dd></div>
-            <div><dt>Art</dt><dd>{ART[gewaehlt.kind]}</dd></div>
+            <div><dt>Art</dt><dd>{CHARGE_KIND_LABEL[gewaehlt.kind]}</dd></div>
             <div><dt>Zeitraum</dt><dd>{gewaehlt.period_label ?? "—"}</dd></div>
             <div><dt>Zahler</dt><dd>{gewaehlt.payer_id === gewaehlt.member_id ? "selbst" : gewaehlt.payer_name}</dd></div>
             <div><dt>Mandat</dt><dd>{gewaehlt.hat_mandat ? "liegt vor" : "fehlt"}</dd></div>

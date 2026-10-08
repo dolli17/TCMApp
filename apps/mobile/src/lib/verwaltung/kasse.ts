@@ -16,15 +16,16 @@
  */
 
 import {
-  buildPain008, pain008Filename, translateDbError,
-  type DebitBatchStatus, type DebtorItem, type DirectDebitBatch, type PainVersion,
+  CHARGE_KINDS, buildPain008, pain008Filename, translateDbError,
+  type ChargeKind, type DebitBatchStatus, type DebtorItem, type DirectDebitBatch, type PainVersion,
 } from "@tcm/core";
 import { supabase } from "@/lib/supabase";
 import {
   heuteInBerlin, ladeEinstellungen, oderWirf, type Einstellung, type Ergebnis,
 } from "@/lib/verwaltung/gemeinsam";
 
-export type ForderungsArt = "fee" | "drinks" | "deposit" | "work_duty" | "misc" | "guest";
+/** Die Art einer Forderung - Bezeichnungen und Farben stehen in @tcm/core (forderungen.ts). */
+export type ForderungsArt = ChargeKind;
 export type ForderungsStand = "open" | "notified" | "submitted" | "settled" | "returned" | "waived";
 
 /** Fehler als Ergebnis - der eine Satz, den alle Schreibfunktionen teilen. */
@@ -212,15 +213,83 @@ export interface ForderungZeile {
   hat_mandat: boolean;
 }
 
-export async function ladeForderungen(stand: string | null): Promise<ForderungZeile[]> {
+export async function ladeForderungen(
+  stand: string | null,
+  art: ForderungsArt | null = null,
+): Promise<ForderungZeile[]> {
   const data = oderWirf(
     await supabase.rpc("charge_overview", {
       p_status: (stand || undefined) as never,
-      p_kind: undefined,
+      p_kind: art ?? undefined,
       p_limit: 500,
     }),
   );
   return (data ?? []) as unknown as ForderungZeile[];
+}
+
+/** Was je Art noch angekuendigt werden muss (announceable_charges). */
+export interface AnkuendbarZeile {
+  art: ForderungsArt;
+  anzahl: number;
+  summe_cents: number;
+  zahler: number;
+}
+
+/**
+ * Je Art ein Aufruf, parallel - wie die Kasse im Web. Bisher liessen sich nur
+ * Beitraege und Getraenke ankuendigen; Arbeitsdienst, Gastgebuehr, Pfand und
+ * Sonstiges blieben offen und kamen nie in einen Lastschriftlauf.
+ */
+export async function ladeAnkuendbar(): Promise<AnkuendbarZeile[]> {
+  const antworten = await Promise.all(
+    CHARGE_KINDS.map((k) => supabase.rpc("announceable_charges", { p_kind: k })),
+  );
+  return CHARGE_KINDS.map((k, i) => {
+    const z = (oderWirf(antworten[i]!) ?? [])[0];
+    return { art: k, anzahl: z?.anzahl ?? 0, summe_cents: z?.summe_cents ?? 0, zahler: z?.zahler ?? 0 };
+  });
+}
+
+/** Ein Mitglied zur Auswahl (gleiche Form wie Person in mitglieder.ts). */
+export interface MitgliedWahl {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
+/** Die aktiven Mitglieder fuer "Forderung anlegen" - wie im Web. */
+export async function ladeAktiveMitglieder(): Promise<MitgliedWahl[]> {
+  const data = oderWirf(
+    await supabase
+      .from("members")
+      .select("id, first_name, last_name")
+      .eq("status", "active")
+      .order("last_name")
+      .order("first_name"),
+  );
+  return (data ?? []).map((m) => ({ id: m.id, first_name: m.first_name ?? "", last_name: m.last_name ?? "" }));
+}
+
+/**
+ * Eine Forderung von Hand - fuer alles ohne eigene Abrechnung. Sie entsteht
+ * offen und wird wie jede andere angekuendigt und eingezogen.
+ */
+export async function forderungAnlegen(daten: {
+  mitgliedId: string;
+  art: ForderungsArt;
+  betragCents: number;
+  beschreibung: string;
+}): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("create_manual_charge", {
+    p_member_id: daten.mitgliedId,
+    p_kind: daten.art,
+    p_amount_cents: daten.betragCents,
+    p_description: daten.beschreibung,
+    p_period_label: undefined,
+    p_due_date: undefined,
+  });
+  if (error) return fehlschlag(error);
+  return { ok: true, meldung: "Die Forderung ist angelegt." };
 }
 
 export async function forderungErlassen(id: string, grund: string): Promise<Ergebnis> {
@@ -312,7 +381,7 @@ export async function beitragsartUmschalten(id: string, aktiv: boolean): Promise
 }
 
 // ===========================================================================
-// Der Beitragslauf
+// Jahresbeitraege (frueher "Beitragslauf")
 // ===========================================================================
 
 export interface VorschauZeile {
@@ -372,6 +441,8 @@ export interface LaufZeile {
   id: string;
   title: string;
   collection_date: string;
+  /** Eingeschraenkt auf diese Arten; null = alle angekuendigten */
+  kinds: ForderungsArt[] | null;
   status: DebitBatchStatus;
   total_cents: number;
   item_count: number;
@@ -411,7 +482,11 @@ export async function ladeLaeufe(limit = 24): Promise<Laeufe> {
   const [faelligAb] = await Promise.all([
     entwuerfe.length ? spaetesteFaelligkeit() : Promise.resolve(null),
     ...entwuerfe.map(async (l) => {
-      const { data } = await supabase.rpc("debit_batch_candidates", { p_collection_date: l.collection_date });
+      const { data } = await supabase.rpc("debit_batch_candidates", {
+        p_collection_date: l.collection_date,
+        // Nur die Arten, auf die der Lauf eingeschraenkt ist
+        p_kinds: l.kinds ?? undefined,
+      });
       kandidaten.set(l.id, {
         alle: (data ?? []).length,
         bereit: (data ?? []).filter((k) => k.einzugsfaehig).length,
@@ -425,6 +500,7 @@ export async function ladeLaeufe(limit = 24): Promise<Laeufe> {
       id: l.id,
       title: l.title,
       collection_date: l.collection_date,
+      kinds: l.kinds ?? null,
       status: l.status,
       total_cents: l.total_cents,
       item_count: l.item_count,
@@ -434,10 +510,16 @@ export async function ladeLaeufe(limit = 24): Promise<Laeufe> {
   };
 }
 
-export async function laufAnlegen(daten: { titel: string; faelligAm: string }): Promise<Ergebnis<string>> {
+export async function laufAnlegen(daten: {
+  titel: string;
+  faelligAm: string;
+  /** null = alle angekuendigten Arten */
+  arten: ForderungsArt[] | null;
+}): Promise<Ergebnis<string>> {
   const { data, error } = await supabase.rpc("create_debit_batch", {
     p_title: daten.titel,
     p_collection_date: daten.faelligAm,
+    p_kinds: daten.arten ?? undefined,
   });
   if (error) return fehlschlag(error);
   return { ok: true, meldung: "Der Lauf ist angelegt.", daten: data as string };
@@ -451,6 +533,7 @@ export interface KandidatZeile {
   charge_ids: string[];
   positionen: number;
   arten: string;
+  kinds: string[];
   amount_cents: number;
   mandate_id: string | null;
   mandate_reference: string | null;
@@ -463,6 +546,7 @@ export interface PostenZeile {
   payer_name: string;
   mitglieder: string;
   positionen: number;
+  kinds: string[];
   amount_cents: number;
   mandate_reference: string;
   result: "pending" | "settled" | "returned";
@@ -474,16 +558,26 @@ export interface LaufKopf {
   id: string;
   title: string;
   collection_date: string;
+  /** Eingeschraenkt auf diese Arten; null = alle angekuendigten */
+  kinds: ForderungsArt[] | null;
   status: DebitBatchStatus;
   total_cents: number;
   item_count: number;
   storage_path: string | null;
 }
 
+/** Summe je Art im Lauf (debit_batch_kinds) */
+export interface ArtSumme {
+  kind: string;
+  positionen: number;
+  summe_cents: number;
+}
+
 export interface LaufDaten {
   lauf: LaufKopf | null;
   kandidaten: KandidatZeile[];
   posten: PostenZeile[];
+  jeArt: ArtSumme[];
   faelligAb: string | null;
   heute: string;
 }
@@ -494,27 +588,33 @@ export async function ladeLauf(id: string): Promise<LaufDaten> {
   const lauf = oderWirf(
     await supabase
       .from("debit_batches")
-      .select("id, title, collection_date, status, total_cents, item_count, storage_path")
+      .select("id, title, collection_date, kinds, status, total_cents, item_count, storage_path")
       .eq("id", id)
       .maybeSingle(),
   ) as LaufKopf | null;
-  if (!lauf) return { lauf: null, kandidaten: [], posten: [], faelligAb: null, heute };
+  if (!lauf) return { lauf: null, kandidaten: [], posten: [], jeArt: [], faelligAb: null, heute };
 
   // Die Kandidaten nur solange der Lauf ein Entwurf ist: danach ist die
   // Auswahl entschieden.
-  const [kandidatenRes, postenRes] = await Promise.all([
+  const [kandidatenRes, postenRes, jeArtRes] = await Promise.all([
     lauf.status === "draft"
-      ? supabase.rpc("debit_batch_candidates", { p_collection_date: lauf.collection_date, p_kinds: undefined })
+      ? supabase.rpc("debit_batch_candidates", {
+          p_collection_date: lauf.collection_date,
+          // Nur die Arten, auf die der Lauf eingeschraenkt ist
+          p_kinds: lauf.kinds ?? undefined,
+        })
       : Promise.resolve({ data: [], error: null }),
     supabase.rpc("debit_batch_items", { p_batch_id: id }),
+    supabase.rpc("debit_batch_kinds", { p_batch_id: id }),
   ]);
   const kandidaten = (oderWirf(kandidatenRes) ?? []) as unknown as KandidatZeile[];
   const posten = (oderWirf(postenRes) ?? []) as unknown as PostenZeile[];
+  const jeArt = (oderWirf(jeArtRes) ?? []) as unknown as ArtSumme[];
 
   // Gelesen, nicht gerechnet: ab wann eingezogen werden darf, prueft die Datenbank.
   const faelligAb = kandidaten.length ? await spaetesteFaelligkeit() : null;
 
-  return { lauf, kandidaten, posten, faelligAb, heute };
+  return { lauf, kandidaten, posten, jeArt, faelligAb, heute };
 }
 
 export async function postenAufnehmen(batchId: string, zahlerIds: string[] | null): Promise<Ergebnis> {
@@ -746,17 +846,40 @@ export async function laufAbschliessen(batchId: string): Promise<Ergebnis> {
 
 export const ABSCHNITTE = [
   { wert: "forderungen", label: "Forderungen" },
+  { wert: "abrechnen", label: "Abrechnen" },
   { wert: "lastschrift", label: "Lastschriften" },
-  { wert: "getraenke", label: "Getränkemonate" },
-  { wert: "lauf", label: "Beitragslauf" },
+  { wert: "beitraege", label: "Jahresbeiträge" },
   { wert: "arten", label: "Beitragsarten" },
   { wert: "regeln", label: "Regeln" },
 ] as const;
 
 export type KassenAbschnitt = (typeof ABSCHNITTE)[number]["wert"];
 
-/** Die drei Teile des Segment-Schalters; der Rest sind Unterseiten. */
-export const SEGMENTE: KassenAbschnitt[] = ["forderungen", "lastschrift", "getraenke"];
+/**
+ * Die drei Teile des Segment-Schalters; der Rest sind Unterseiten.
+ *
+ * Sie folgen dem Weg des Geldes: abrechnen (Forderungen entstehen), in den
+ * Forderungen ankuendigen, mit einem Lastschriftlauf einziehen. "Lauf" steht
+ * nur noch fuer den Lastschriftlauf.
+ */
+export const SEGMENTE: KassenAbschnitt[] = ["forderungen", "abrechnen", "lastschrift"];
+
+/**
+ * Alte Adressen aus Lesezeichen und Links. appPfad() uebersetzt Web-Links
+ * /admin/kasse?abschnitt=... unveraendert - die Aliase muessen hier greifen.
+ */
+export const ABSCHNITT_ALIAS: Record<string, KassenAbschnitt> = { lauf: "beitraege", getraenke: "abrechnen" };
+
+/** Der Abschnitt aus der Adresse: Alias aufloesen, Unbekanntes -> Forderungen. */
+export function abschnittAus(roh: string | undefined | null): KassenAbschnitt {
+  const w = roh ? (ABSCHNITT_ALIAS[roh] ?? roh) : "";
+  return ABSCHNITTE.some((a) => a.wert === w) ? (w as KassenAbschnitt) : "forderungen";
+}
+
+/** Die Art aus der Adresse (?art=), Unbekanntes -> keine Einschraenkung. */
+export function artAus(roh: string | undefined | null): ForderungsArt | null {
+  return CHARGE_KINDS.includes(roh as ForderungsArt) ? (roh as ForderungsArt) : null;
+}
 
 export interface KassenDaten {
   /** Welche Ansicht geladen wurde - die Seite zeigt nur passende Daten. */
@@ -765,39 +888,56 @@ export interface KassenDaten {
   einstellungen: Einstellung[];
   kennzahlen: KassenKennzahlen | null;
   forderungen: ForderungZeile[] | null;
+  /** Je Art, was noch anzukuendigen ist (Forderungen und Abrechnen) */
+  ankuendbar: AnkuendbarZeile[] | null;
+  /** Aktive Mitglieder fuer "Forderung anlegen" (Abrechnen) */
+  mitglieder: MitgliedWahl[] | null;
   laeufe: Laeufe | null;
   monate: MonatZeile[] | null;
   arten: BeitragsartZeile[] | null;
   beitragslauf: Beitragslauf | null;
 }
 
+export interface KassenAnsicht {
+  abschnitt: KassenAbschnitt;
+  jahr: number;
+  stand: string | null;
+  art?: ForderungsArt | null;
+}
+
 /**
  * Was eine Ansicht der Kasse braucht - wie page.tsx im Web nur die Quellen
  * des gewaehlten Abschnitts, die Einstellungen immer (Frist, Glaeubiger-ID).
  */
-export async function ladeKasse(ansicht: {
-  abschnitt: KassenAbschnitt;
-  jahr: number;
-  stand: string | null;
-}): Promise<KassenDaten> {
+export async function ladeKasse(ansicht: KassenAnsicht): Promise<KassenDaten> {
   const { abschnitt, jahr, stand } = ansicht;
+  const art = ansicht.art ?? null;
   const unterseite = !SEGMENTE.includes(abschnitt);
-  const [einstellungen, kennzahlen, forderungen, laeufe, monate, arten, beitragslauf] = await Promise.all([
-    ladeKassenEinstellungen(),
-    unterseite ? null : ladeKassenKennzahlen(),
-    abschnitt === "forderungen" ? ladeForderungen(stand) : null,
-    abschnitt === "lastschrift" ? ladeLaeufe() : null,
-    abschnitt === "getraenke" ? ladeGetraenkemonate() : null,
-    abschnitt === "arten" ? ladeBeitragsarten(jahr) : null,
-    abschnitt === "lauf" ? ladeBeitragslauf(jahr) : null,
-  ]);
+  const [einstellungen, kennzahlen, forderungen, ankuendbar, mitglieder, laeufe, monate, arten, beitragslauf] =
+    await Promise.all([
+      ladeKassenEinstellungen(),
+      unterseite ? null : ladeKassenKennzahlen(),
+      abschnitt === "forderungen" ? ladeForderungen(stand, art) : null,
+      abschnitt === "forderungen" || abschnitt === "abrechnen" ? ladeAnkuendbar() : null,
+      // Ohne Mitgliederliste bleibt der Rest der Seite brauchbar.
+      abschnitt === "abrechnen" ? ladeAktiveMitglieder().catch(() => []) : null,
+      abschnitt === "lastschrift" ? ladeLaeufe() : null,
+      abschnitt === "abrechnen" ? ladeGetraenkemonate() : null,
+      abschnitt === "arten" ? ladeBeitragsarten(jahr) : null,
+      abschnitt === "beitraege" ? ladeBeitragslauf(jahr) : null,
+    ]);
   return {
     schluessel: kassenSchluessel(ansicht),
     heute: heuteInBerlin(),
-    einstellungen, kennzahlen, forderungen, laeufe, monate, arten, beitragslauf,
+    einstellungen, kennzahlen, forderungen, ankuendbar, mitglieder, laeufe, monate, arten, beitragslauf,
   };
 }
 
-export function kassenSchluessel(a: { abschnitt: string; jahr: number; stand: string | null }): string {
-  return `${a.abschnitt}|${a.jahr}|${a.stand ?? ""}`;
+export function kassenSchluessel(a: {
+  abschnitt: string;
+  jahr: number;
+  stand: string | null;
+  art?: string | null;
+}): string {
+  return `${a.abschnitt}|${a.jahr}|${a.stand ?? ""}|${a.art ?? ""}`;
 }

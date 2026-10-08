@@ -2,12 +2,14 @@
  * Die Lastschriftlaeufe als Listenzeilen (Nachbau von
  * apps/web/src/components/LaufListe.tsx): je Lauf die Statusmarke und ein
  * kleiner Weg des Geldes - dieselbe Rechnung wie auf der Laufseite (debitFlow).
+ * Ist ein Lauf auf bestimmte Arten eingeschraenkt, stehen sie als Marken dabei.
  */
 
 import { Text, View } from "react-native";
 import { debitFlow, isoDateLabel } from "@tcm/core";
 import { GeldwegBalken } from "@/components/verwaltung/Geldweg";
 import { LeereZeile, ListenGruppe, Listenzeile } from "@/components/verwaltung/Liste";
+import { ArtMarken } from "@/components/verwaltung/kasse/ArtMarke";
 import { BetragMitMarke } from "@/components/verwaltung/kasse/Teile";
 import { useTheme } from "@/lib/theme";
 import type { Laeufe } from "@/lib/verwaltung/kasse";
@@ -46,6 +48,8 @@ export function LaufListe({ daten, heute }: { daten: Laeufe; heute: string }) {
               titel={l.title}
               kontext={
                 <View style={{ gap: 6 }}>
+                  {/* Nur bei eingeschraenkten Laeufen: was sie einziehen */}
+                  {l.kinds && <ArtMarken arten={l.kinds} />}
                   <Text style={{ fontSize: 13, color: farben.muted, fontFamily: "Barlow_400Regular", fontVariant: ["tabular-nums"] }}>
                     Fällig {isoDateLabel(l.collection_date)} · {l.item_count}{" "}
                     {l.item_count === 1 ? "Lastschrift" : "Lastschriften"}

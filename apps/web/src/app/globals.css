@@ -224,6 +224,21 @@ input:focus, select:focus, textarea:focus {
 }
 .marke-klein.gold { background: var(--gold-soft); color: var(--gold-ink); }
 .marke-klein.grau { background: var(--chip); color: var(--ink-2); }
+.marke-klein.blau { background: var(--blue-soft); color: var(--blue-ink); }
+/* Forderungsarten (ArtMarke): mehrere nebeneinander, etwa je Lastschrift */
+.art-marken { display: inline-flex; flex-wrap: wrap; gap: 4px; vertical-align: middle; }
+.kontext .marke-klein { margin-right: 2px; vertical-align: 1px; }
+/* Auswahl der Arten beim Anlegen eines Lastschriftlaufs */
+.art-wahl { border: 0; padding: 0; margin: 0 0 14px; display: flex; flex-direction: column; gap: 8px; }
+.art-wahl legend { padding: 0; font-size: 15px; font-weight: 600; color: var(--ink-2); margin-bottom: 8px; }
+.art-wahl label.wahl { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; color: var(--ink); }
+.art-wahl label.wahl > input { width: auto; flex: none; margin: 0; padding: 0; accent-color: var(--blue); }
+.art-haken { display: flex; flex-wrap: wrap; gap: 8px 18px; padding-left: 26px; }
+/* Im Blatt: wie eine Feldzeile, mit Linie zur nächsten */
+.blatt .formraster > .art-wahl {
+  margin: 0; padding: 14px 16px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.blatt .formraster > .art-wahl + label { border-top: 0; }
 
 /* ---------------------------------------------------------------------------
    Hinweise

@@ -12,27 +12,19 @@
  */
 
 import { useState } from "react";
-import { View } from "react-native";
-import { formatCents } from "@tcm/core";
+import { Text, View } from "react-native";
+import { CHARGE_KIND_LABEL, formatCents } from "@tcm/core";
 import {
   FormBlatt, FormFeld, FormGruppe, Knopf, Meldung, Wertzeile, useAktion,
 } from "@/components/verwaltung/Formular";
 import { LeereZeile, ListenGruppe, Listenzeile, type MarkenTon } from "@/components/verwaltung/Liste";
+import { ArtMarke } from "@/components/verwaltung/kasse/ArtMarke";
 import { BetragMitMarke, Unterzeile } from "@/components/verwaltung/kasse/Teile";
 import { useTheme } from "@/lib/theme";
 import { isoZuDeutsch } from "@/lib/verwaltung/gemeinsam";
 import {
   forderungAbhaken, forderungErlassen, type ForderungZeile,
 } from "@/lib/verwaltung/kasse";
-
-export const ART: Record<ForderungZeile["kind"], string> = {
-  fee: "Beitrag",
-  drinks: "Getränke",
-  deposit: "Pfand",
-  work_duty: "Arbeitsdienst",
-  guest: "Gastgebühr",
-  misc: "Sonstiges",
-};
 
 const STAND: Record<ForderungZeile["status"], string> = {
   open: "offen",
@@ -87,11 +79,18 @@ export function ForderungsListe({
             <Listenzeile
               key={f.id}
               titel={f.member_name}
-              kontext={[
-                f.description,
-                f.payer_id === f.member_id ? null : `Zahler ${f.payer_name}`,
-                f.due_date ? `fällig ${isoZuDeutsch(f.due_date)}` : null,
-              ].filter(Boolean).join(" · ")}
+              kontext={
+                <View style={{ gap: 3, alignItems: "flex-start" }}>
+                  <ArtMarke art={f.kind} />
+                  <Text style={{ fontSize: 13, color: farben.muted, fontFamily: "Barlow_400Regular", lineHeight: 17.5 }}>
+                    {[
+                      f.description,
+                      f.payer_id === f.member_id ? null : `Zahler ${f.payer_name}`,
+                      f.due_date ? `fällig ${isoZuDeutsch(f.due_date)}` : null,
+                    ].filter(Boolean).join(" · ")}
+                  </Text>
+                </View>
+              }
               neben={
                 !f.hat_mandat && offen(f) ? (
                   <BetragMitMarke cents={f.amount_cents} marke="kein Mandat" ton="rot" />
@@ -119,7 +118,7 @@ export function ForderungsListe({
             <>
               <View style={{ backgroundColor: farben.surf2, borderRadius: 18, paddingVertical: 8, paddingHorizontal: 16 }}>
                 <Wertzeile name="Betrag" wert={formatCents(gewaehlt.amount_cents)} />
-                <Wertzeile name="Art" wert={ART[gewaehlt.kind]} />
+                <Wertzeile name="Art" wert={CHARGE_KIND_LABEL[gewaehlt.kind]} />
                 <Wertzeile name="Zeitraum" wert={gewaehlt.period_label ?? "—"} />
                 <Wertzeile name="Zahler" wert={gewaehlt.payer_id === gewaehlt.member_id ? "selbst" : gewaehlt.payer_name} />
                 <Wertzeile name="Mandat" wert={gewaehlt.hat_mandat ? "liegt vor" : "fehlt"} />

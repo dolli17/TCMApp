@@ -3,7 +3,7 @@ import { Linking, Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import Svg, { Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { formatCents, sumOpenDrinks } from "@tcm/core";
+import { formatCents, sumOpenDrinks, CHARGE_KIND_LABEL, type ChargeKind } from "@tcm/core";
 import { abstand, radius } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
 import { Blatt, BlattKopf } from "@/components/Blatt";
@@ -21,11 +21,6 @@ import { abschnitt, useLaden } from "@/lib/laden";
 import { istAngemeldet, meldeGeraetAb, registriereGeraet } from "@/lib/push";
 import { mitDeckkraft } from "@/lib/stil";
 import { useTheme, type ThemeWahl } from "@/lib/theme";
-
-const ART_TEXT: Record<string, string> = {
-  fee: "Mitgliedsbeitrag", drinks: "Getränke", deposit: "Pfand",
-  work_duty: "Arbeitsdienst", guest: "Gastgebühr", misc: "Sonstiges",
-};
 
 const DATUM = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
 const MONAT = new Intl.DateTimeFormat("de-DE", { month: "long", timeZone: "Europe/Berlin" });
@@ -164,7 +159,7 @@ export default function Konto() {
             <Zeile key={f.id} erste={i === 0} hoehe={64}>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={{ fontSize: 15.5, fontFamily: "Barlow_600SemiBold", color: farben.ink }} numberOfLines={1}>
-                  {ART_TEXT[f.kind] ?? f.kind}
+                  {CHARGE_KIND_LABEL[f.kind as ChargeKind] ?? f.kind}
                   {f.period_label ? ` ${f.period_label}` : ""}
                   {f.is_for_other ? ` · für ${f.member_name}` : ""}
                 </Text>

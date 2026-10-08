@@ -199,11 +199,39 @@ describe("Schreibaktionen", () => {
     expect((await kasse.postenAufnehmen(LAUF, null)).meldung).toBe("Es war nichts Einzugsfähiges dabei.");
   });
 
-  it("laufAnlegen gibt die neue Id zurueck", async () => {
+  it("laufAnlegen gibt die neue Id zurueck und zieht ohne Auswahl alle Arten ein", async () => {
     rpc.mockResolvedValue({ data: "neu-1", error: null });
-    const e = await kasse.laufAnlegen({ titel: "Beitragslauf 2027", faelligAm: "2027-01-15" });
-    expect(rpc).toHaveBeenCalledWith("create_debit_batch", { p_title: "Beitragslauf 2027", p_collection_date: "2027-01-15" });
+    const e = await kasse.laufAnlegen({ titel: "Lastschrift 15.01.2027", faelligAm: "2027-01-15", arten: null });
+    expect(rpc).toHaveBeenCalledWith("create_debit_batch", {
+      p_title: "Lastschrift 15.01.2027", p_collection_date: "2027-01-15", p_kinds: undefined,
+    });
     expect(e).toEqual({ ok: true, meldung: "Der Lauf ist angelegt.", daten: "neu-1" });
+  });
+
+  it("laufAnlegen schraenkt auf die gewaehlten Arten ein", async () => {
+    rpc.mockResolvedValue({ data: "neu-2", error: null });
+    await kasse.laufAnlegen({ titel: "Lastschrift 15.01.2027 · Beitrag", faelligAm: "2027-01-15", arten: ["fee"] });
+    expect(rpc).toHaveBeenCalledWith("create_debit_batch", {
+      p_title: "Lastschrift 15.01.2027 · Beitrag", p_collection_date: "2027-01-15", p_kinds: ["fee"],
+    });
+  });
+
+  it("forderungAnlegen legt eine offene Forderung von Hand an", async () => {
+    rpc.mockResolvedValue({ data: "f-neu", error: null });
+    const e = await kasse.forderungAnlegen({
+      mitgliedId: "m1", art: "deposit", betragCents: 2500, beschreibung: "Pfand Hallenkarte",
+    });
+    expect(rpc).toHaveBeenCalledWith("create_manual_charge", {
+      p_member_id: "m1", p_kind: "deposit", p_amount_cents: 2500, p_description: "Pfand Hallenkarte",
+      p_period_label: undefined, p_due_date: undefined,
+    });
+    expect(e).toEqual({ ok: true, meldung: "Die Forderung ist angelegt." });
+  });
+
+  it("forderungAnlegen uebersetzt Fehler", async () => {
+    rpc.mockResolvedValue({ data: null, error: { message: "boom", code: "42501" } });
+    const e = await kasse.forderungAnlegen({ mitgliedId: "m1", art: "misc", betragCents: 100, beschreibung: "x" });
+    expect(e.ok).toBe(false);
   });
 
   it("beitragslaufStarten meldet den zweiten Klick nicht als Erfolg mit null", async () => {
@@ -264,6 +292,74 @@ describe("Schreibaktionen", () => {
     const e = await kasse.laufEingereicht(LAUF, null);
     expect(e.ok).toBe(false);
     expect(typeof e.meldung).toBe("string");
+  });
+});
+
+describe("Lastschriftlaeufe nach Art", () => {
+  it("ladeLaeufe fragt die Kandidaten eines Entwurfs nur fuer seine Arten", async () => {
+    rpc.mockImplementation((name: string) =>
+      Promise.resolve(
+        name === "debit_batch_overview"
+          ? {
+              data: [
+                { id: "l1", title: "A", collection_date: "2026-11-02", kinds: ["fee", "drinks"], status: "draft",
+                  total_cents: 0, item_count: 0, zurueck: 0 },
+                { id: "l2", title: "B", collection_date: "2026-11-03", kinds: null, status: "draft",
+                  total_cents: 0, item_count: 0, zurueck: 0 },
+              ],
+              error: null,
+            }
+          : { data: [{ einzugsfaehig: true }, { einzugsfaehig: false }], error: null },
+      ),
+    );
+    const d = await kasse.ladeLaeufe();
+    expect(rpc).toHaveBeenCalledWith("debit_batch_candidates", {
+      p_collection_date: "2026-11-02", p_kinds: ["fee", "drinks"],
+    });
+    expect(rpc).toHaveBeenCalledWith("debit_batch_candidates", {
+      p_collection_date: "2026-11-03", p_kinds: undefined,
+    });
+    expect(d.laeufe.map((l) => l.kinds)).toEqual([["fee", "drinks"], null]);
+    expect(d.laeufe[0]!.kandidaten).toEqual({ alle: 2, bereit: 1 });
+  });
+
+  it("ladeAnkuendbar fragt jede Art einzeln und fuellt Luecken mit null", async () => {
+    rpc.mockImplementation((_name: string, args: { p_kind: string }) =>
+      Promise.resolve({
+        data: args.p_kind === "guest" ? [{ anzahl: 3, summe_cents: 1500, zahler: 2 }] : [],
+        error: null,
+      }),
+    );
+    const z = await kasse.ladeAnkuendbar();
+    expect(rpc).toHaveBeenCalledTimes(6);
+    expect(z.map((x) => x.art)).toEqual(["fee", "drinks", "work_duty", "guest", "deposit", "misc"]);
+    expect(z.find((x) => x.art === "guest")).toEqual({ art: "guest", anzahl: 3, summe_cents: 1500, zahler: 2 });
+    expect(z.find((x) => x.art === "fee")).toEqual({ art: "fee", anzahl: 0, summe_cents: 0, zahler: 0 });
+  });
+});
+
+describe("Abschnitte der Kasse", () => {
+  it("loest alte Adressen auf", () => {
+    expect(kasse.abschnittAus("lauf")).toBe("beitraege");
+    expect(kasse.abschnittAus("getraenke")).toBe("abrechnen");
+  });
+
+  it("nimmt bekannte Abschnitte, sonst die Forderungen", () => {
+    expect(kasse.abschnittAus("abrechnen")).toBe("abrechnen");
+    expect(kasse.abschnittAus("regeln")).toBe("regeln");
+    expect(kasse.abschnittAus(undefined)).toBe("forderungen");
+    expect(kasse.abschnittAus("unsinn")).toBe("forderungen");
+  });
+
+  it("Segmente folgen dem Weg des Geldes", () => {
+    expect(kasse.SEGMENTE).toEqual(["forderungen", "abrechnen", "lastschrift"]);
+    expect(kasse.ABSCHNITTE.map((a) => a.label)).not.toContain("Beitragslauf");
+  });
+
+  it("artAus nimmt nur bekannte Arten", () => {
+    expect(kasse.artAus("drinks")).toBe("drinks");
+    expect(kasse.artAus("bier")).toBeNull();
+    expect(kasse.artAus(undefined)).toBeNull();
   });
 });
 

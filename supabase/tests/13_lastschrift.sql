@@ -195,6 +195,97 @@ begin
   return next is(v_pos, 2, 'beide Forderungen in einer Lastschrift');
 end; $f$;
 
+/**
+ * Arbeitsdienst laesst sich ankuendigen und einziehen.
+ *
+ * Bisher bot die Oberflaeche die Ankuendigung nur fuer Beitraege und
+ * Getraenke an; eine Arbeitsdienst-Forderung blieb fuer immer offen.
+ */
+create or replace function tests.test_arbeitsdienst_wird_angekuendigt_und_eingezogen()
+returns setof text language plpgsql as $f$
+declare adm record; u record; v_charge uuid; v_tag date; v_kinds public.charge_kind[];
+        v_faehig boolean; v_batch uuid;
+begin
+  select * into adm from tests.fixture_user('admin') limit 1;
+  select * into u from tests.fixture_user() limit 1;
+  perform tests.fixture_mandat(u.member_id);
+
+  perform tests.act_as(adm.auth_id);
+  v_charge := public.create_manual_charge(u.member_id, 'work_duty', 3000, 'ZZTest Arbeitsdienst');
+  perform public.announce_charges(
+    (now() at time zone 'Europe/Berlin')::date + 30, 'work_duty');
+  perform set_config('role', 'postgres', true);
+
+  return next is((select status::text from public.charges where id = v_charge), 'notified',
+    'Die Arbeitsdienst-Forderung ist angekuendigt');
+
+  -- Die Frist ist im Test schon um
+  update public.charges
+     set notified_at = now() - interval '20 days',
+         due_date = (now() at time zone 'Europe/Berlin')::date + 1
+   where id = v_charge;
+  v_tag := tests.fixture_einzugstag();
+
+  perform tests.act_as(adm.auth_id);
+  select k.einzugsfaehig, k.kinds into v_faehig, v_kinds
+  from public.debit_batch_candidates(v_tag) k where k.payer_id = u.member_id;
+  v_batch := public.create_debit_batch('ZZTest Arbeitsdienst', v_tag);
+  perform public.add_charges_to_debit_batch(v_batch);
+  perform set_config('role', 'postgres', true);
+
+  return next is(v_faehig, true, 'und ist einzugsfaehig');
+  return next is(v_kinds, array['work_duty']::public.charge_kind[], 'mit der Art Arbeitsdienst');
+  return next is((select count(*)::integer from public.debit_items where charge_id = v_charge), 1,
+    'und kommt in den Lauf');
+end; $f$;
+
+/** Ein Lauf nur fuer Beitraege laesst die Getraenke draussen. */
+create or replace function tests.test_lauf_nur_fuer_beitraege()
+returns setof text language plpgsql as $f$
+declare adm record; u record; v_tag date; v_batch uuid; v_kinds public.charge_kind[];
+        v_arten public.charge_kind[];
+begin
+  select * into adm from tests.fixture_user('admin') limit 1;
+  select * into u from tests.fixture_user() limit 1;
+  perform tests.fixture_mandat(u.member_id);
+  perform tests.fixture_angekuendigt(u.member_id, 19000, 'fee');
+  perform tests.fixture_angekuendigt(u.member_id, 4500, 'drinks');
+  v_tag := tests.fixture_einzugstag();
+
+  perform tests.act_as(adm.auth_id);
+  select k.kinds into v_kinds
+  from public.debit_batch_candidates(v_tag) k where k.payer_id = u.member_id;
+  v_batch := public.create_debit_batch('ZZTest Nur Beitraege', v_tag, array['fee']::public.charge_kind[]);
+  perform public.add_charges_to_debit_batch(v_batch);
+  select array_agg(k.kind order by k.kind) into v_arten from public.debit_batch_kinds(v_batch) k;
+  perform set_config('role', 'postgres', true);
+
+  return next ok(v_kinds @> array['fee', 'drinks']::public.charge_kind[]
+                 and cardinality(v_kinds) = 2,
+    'Ohne Auswahl zeigen die Kandidaten beide Arten');
+  return next is((select kinds from public.debit_batches where id = v_batch),
+    array['fee']::public.charge_kind[], 'Der Lauf kennt seine Auswahl');
+  return next is(v_arten, array['fee']::public.charge_kind[], 'Im Lauf steht nur der Beitrag');
+  return next is(
+    (select status::text from public.charges
+      where member_id = u.member_id and kind = 'drinks' and description = 'ZZTest Posten'),
+    'notified', 'Die Getraenke bleiben angekuendigt und warten auf den naechsten Lauf');
+end; $f$;
+
+/** Eine leere Auswahl ist ein Versehen. */
+create or replace function tests.test_lauf_ohne_arten_abgewiesen()
+returns setof text language plpgsql as $f$
+declare adm record; v_tag date := tests.fixture_einzugstag();
+begin
+  select * into adm from tests.fixture_user('admin') limit 1;
+  perform tests.act_as(adm.auth_id);
+  return next throws_ok(
+    format($q$select public.create_debit_batch('ZZTest Leer', %L, array[]::public.charge_kind[])$q$,
+           v_tag),
+    '22023', null, 'Ein Lauf ohne Arten wird abgewiesen');
+  perform set_config('role', 'postgres', true);
+end; $f$;
+
 /** Ohne Mandat kein Einzug. */
 create or replace function tests.test_ohne_mandat_kein_einzug()
 returns setof text language plpgsql as $f$

@@ -69,7 +69,7 @@ export function BeitragsartenKarte({
           <h2 className="dpl">Beiträge {jahr}</h2>
           <p className="unterzeile">
             {zugeordnet.length === 0
-              ? "Noch keine Beitragsart zugeordnet – dieses Mitglied bliebe beim Beitragslauf außen vor."
+              ? "Noch keine Beitragsart zugeordnet – dieses Mitglied bekäme keinen Jahresbeitrag."
               : `Zusammen ${formatCents(summe)} im Jahr.`}
           </p>
         </div>

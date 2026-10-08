@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatCents, sumOpenDrinks } from "@tcm/core";
+import { formatCents, sumOpenDrinks, CHARGE_KIND_LABEL, type ChargeKind } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { AbmeldeKnopf } from "@/components/AbmeldeKnopf";
 import { ThemeUmschalter } from "@/components/ThemeUmschalter";
@@ -13,15 +13,6 @@ const STATUS_TEXT: Record<string, string> = {
   settled: "bezahlt",
   returned: "zurückgebucht",
   waived: "erlassen",
-};
-
-const ART_TEXT: Record<string, string> = {
-  fee: "Mitgliedsbeitrag",
-  drinks: "Getränke",
-  deposit: "Pfand",
-  work_duty: "Arbeitsdienst",
-  guest: "Gastgebühr",
-  misc: "Sonstiges",
 };
 
 const DATUM = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -113,7 +104,7 @@ export default async function KontoSeite() {
                 <li key={f.id} className="forderung">
                   <span className="was">
                     <b>
-                      {ART_TEXT[f.kind] ?? f.kind}
+                      {CHARGE_KIND_LABEL[f.kind as ChargeKind] ?? f.kind}
                       {f.period_label ? ` ${f.period_label}` : ""}
                       {f.is_for_other ? ` · für ${f.member_name}` : ""}
                     </b>
@@ -150,7 +141,7 @@ export default async function KontoSeite() {
                     <li key={f.id} className="forderung">
                       <span className="was">
                         <b>
-                          {ART_TEXT[f.kind] ?? f.kind}
+                          {CHARGE_KIND_LABEL[f.kind as ChargeKind] ?? f.kind}
                           {f.period_label ? ` ${f.period_label}` : ""}
                         </b>
                         <small>

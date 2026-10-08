@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatCents } from "@tcm/core";
+import { CHARGE_KINDS, CHARGE_KIND_LABEL, formatCents, type ChargeKind } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
 import { FensterKnopf } from "@/components/FensterKnopf";
@@ -10,6 +10,8 @@ import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 import { BereichSegmente } from "@/components/BereichSegmente";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { AnkuendigungsKarte } from "@/components/AnkuendigungsKarte";
+import { AnkuendigungNachArt, type AnkuendbarZeile } from "@/components/AnkuendigungNachArt";
+import { ForderungAnlegen } from "@/components/ForderungAnlegen";
 import { BeitragslaufKarte } from "@/components/BeitragslaufKarte";
 import { BeitragsartenPflege, type BeitragsartZeile } from "@/components/BeitragsartenPflege";
 import { ForderungsListe, type ForderungZeile } from "@/components/ForderungsListe";
@@ -19,15 +21,29 @@ export const dynamic = "force-dynamic";
 
 const ABSCHNITTE = [
   { wert: "forderungen", label: "Forderungen" },
+  { wert: "abrechnen", label: "Abrechnen" },
   { wert: "lastschrift", label: "Lastschriften" },
-  { wert: "getraenke", label: "Getränkemonate" },
-  { wert: "lauf", label: "Beitragslauf" },
+  { wert: "beitraege", label: "Jahresbeiträge" },
   { wert: "arten", label: "Beitragsarten" },
   { wert: "regeln", label: "Regeln" },
 ] as const;
 
-/** Die drei Teile des Segment-Schalters (Regel 1); der Rest sind Unterseiten. */
-const SEGMENTE = ["forderungen", "lastschrift", "getraenke"];
+/**
+ * Die drei Teile des Segment-Schalters (Regel 1); der Rest sind Unterseiten.
+ *
+ * Sie folgen dem Weg des Geldes: abrechnen (Forderungen entstehen), in den
+ * Forderungen ankündigen, mit einem Lastschriftlauf einziehen. Das Wort
+ * „Lauf“ steht nur noch für den Lastschriftlauf - früher hieß auch das
+ * Erzeugen der Beitragsforderungen „Beitragslauf“, und niemand wusste, was
+ * ein Lauf eigentlich einzieht.
+ */
+const SEGMENTE = ["forderungen", "abrechnen", "lastschrift"];
+
+/** Alte Adressen aus Lesezeichen und Links. */
+const ALIAS: Record<string, string> = { lauf: "beitraege", getraenke: "abrechnen" };
+
+/** Unterseiten führen dorthin zurück, wo sie verlinkt sind. */
+const ZURUECK: Record<string, string> = { beitraege: "abrechnen", arten: "abrechnen", regeln: "abrechnen" };
 
 /**
  * Alles, was Geld betrifft, an einem Ort.
@@ -36,17 +52,20 @@ const SEGMENTE = ["forderungen", "lastschrift", "getraenke"];
  * Getränkemonat wurde nirgends geschlossen, Forderungen entstanden gar nicht,
  * und die Beitragspreise ließen sich nur direkt in der Datenbank ändern.
  *
- * Die Abschnitte folgen dem Ablauf eines Vereinsjahres: einmal im Januar der
- * Beitragslauf, monatlich die Getränke, dazwischen die Forderungsliste als
- * Antwort auf „wer schuldet uns noch was".
+ * Die Abschnitte folgen dem Weg des Geldes: unter „Abrechnen“ entstehen die
+ * Forderungen (Jahresbeiträge, Getränkemonate, Arbeitsdienst, von Hand), unter
+ * „Forderungen“ werden sie angekündigt und beantworten „wer schuldet uns noch
+ * was“, unter „Lastschriften“ werden sie eingezogen.
  */
 export default async function KasseSeite({
   searchParams,
 }: {
-  searchParams: Promise<{ abschnitt?: string; jahr?: string; stand?: string }>;
+  searchParams: Promise<{ abschnitt?: string; jahr?: string; stand?: string; art?: string }>;
 }) {
-  const { abschnitt, jahr: jahrParam, stand } = await searchParams;
+  const { abschnitt: roh, jahr: jahrParam, stand, art: artParam } = await searchParams;
+  const abschnitt = roh ? (ALIAS[roh] ?? roh) : undefined;
   const gewaehlt = ABSCHNITTE.some((a) => a.wert === abschnitt) ? abschnitt! : "forderungen";
+  const art = CHARGE_KINDS.includes(artParam as ChargeKind) ? (artParam as ChargeKind) : null;
   const unterseite = SEGMENTE.includes(gewaehlt) ? null : ABSCHNITTE.find((a) => a.wert === gewaehlt)!;
   const jahr = Number(jahrParam) || new Date().getFullYear();
 
@@ -54,8 +73,9 @@ export default async function KasseSeite({
 
   const [
     vorschauRes, einstellungRes, monateRes, forderungenRes, artenRes, offenRes, laeufeRes,
+    mitgliederRes, ...ankuendbarRes
   ] = await Promise.all([
-    gewaehlt === "lauf"
+    gewaehlt === "beitraege"
       ? supabase.rpc("fee_run_preview", { p_year: jahr })
       : Promise.resolve({ data: null, error: null }),
     supabase
@@ -63,26 +83,46 @@ export default async function KasseSeite({
       .select("key, value, value_type, label, description, updated_at")
       .or("key.like.sepa.%,key.like.fees.%")
       .order("key"),
-    gewaehlt === "getraenke"
+    gewaehlt === "abrechnen"
       ? supabase.rpc("billing_period_overview", { p_limit: 18 })
       : Promise.resolve({ data: null, error: null }),
     gewaehlt === "forderungen"
       ? supabase.rpc("charge_overview", {
           p_status: (stand ?? undefined) as never,
-          p_kind: undefined,
+          p_kind: art ?? undefined,
           p_limit: 500,
         })
       : Promise.resolve({ data: null, error: null }),
     gewaehlt === "arten"
       ? supabase.rpc("fee_type_overview", { p_year: jahr })
       : Promise.resolve({ data: null, error: null }),
-    gewaehlt === "lauf"
+    gewaehlt === "beitraege"
       ? supabase.rpc("announceable_charges", { p_kind: "fee", p_period_label: String(jahr) })
       : Promise.resolve({ data: null, error: null }),
     gewaehlt === "lastschrift"
       ? supabase.rpc("debit_batch_overview", { p_limit: 24 })
       : Promise.resolve({ data: null, error: null }),
+    gewaehlt === "abrechnen"
+      ? supabase
+          .from("members")
+          .select("id, first_name, last_name")
+          .eq("status", "active")
+          .order("last_name")
+          .order("first_name")
+      : Promise.resolve({ data: null, error: null }),
+    // Was je Art noch angekündigt werden muss - in den Forderungen für die
+    // Karte, beim Abrechnen für den Stand der Gastgebühren.
+    ...CHARGE_KINDS.map((k) =>
+      gewaehlt === "forderungen" || gewaehlt === "abrechnen"
+        ? supabase.rpc("announceable_charges", { p_kind: k })
+        : Promise.resolve({ data: null, error: null }),
+    ),
   ]);
+
+  const ankuendbar: AnkuendbarZeile[] = CHARGE_KINDS.map((k, i) => {
+    const z = (ankuendbarRes[i]?.data as { anzahl: number; summe_cents: number; zahler: number }[] | null)?.[0];
+    return { art: k, anzahl: z?.anzahl ?? 0, summe_cents: z?.summe_cents ?? 0, zahler: z?.zahler ?? 0 };
+  });
 
   const einstellungen = einstellungRes.data ?? [];
   const glaeubigerId = String(
@@ -103,19 +143,27 @@ export default async function KasseSeite({
         <VerwaltungsKopf
           kicker="Verwaltung · Kasse"
           titel={unterseite.label}
-          zurueck={{ href: "/admin/kasse", text: "Kasse" }}
+          zurueck={{
+            href: ZURUECK[gewaehlt] ? `/admin/kasse?abschnitt=${ZURUECK[gewaehlt]}` : "/admin/kasse",
+            text: "Kasse",
+          }}
         />
       ) : (
         <>
           <VerwaltungsKopf
             titel="Kasse"
-            unterzeile="Beiträge, Getränkeabrechnung und alles, was daraus an Forderungen entsteht."
+            unterzeile="Abrechnen, ankündigen, einziehen – Beiträge, Getränke, Arbeitsdienst und Gastgebühren."
           >
             {/* Ein gelber Knopf je Seite (Regel 4), passend zum Segment */}
-            {gewaehlt === "forderungen" && (
-              <Link href="/admin/kasse?abschnitt=lauf" className="knopf gold">
-                Beitragslauf
-              </Link>
+            {gewaehlt === "abrechnen" && (
+              <FensterKnopf titel="Forderung von Hand" knopf="Forderung anlegen" knopfKurz="Forderung">
+                <ForderungAnlegen
+                  mitglieder={(mitgliederRes.data ?? []).map((m) => ({
+                    id: m.id,
+                    name: `${m.first_name ?? ""} ${m.last_name ?? ""}`.trim(),
+                  }))}
+                />
+              </FensterKnopf>
             )}
             {gewaehlt === "lastschrift" && (
               <FensterKnopf titel="Neuer Lastschriftlauf" knopf="Lauf anlegen" knopfKurz="Lauf">
@@ -137,8 +185,8 @@ export default async function KasseSeite({
         </>
       )}
 
-      {gewaehlt === "lauf" && (
-        <Beitragslauf
+      {gewaehlt === "beitraege" && (
+        <Jahresbeitraege
           jahr={jahr}
           zeilen={(vorschauRes.data ?? []) as VorschauZeile[]}
           glaeubigerId={glaeubigerId}
@@ -150,25 +198,62 @@ export default async function KasseSeite({
         />
       )}
 
-      {gewaehlt === "getraenke" && (
-        <GetraenkemonatKarte
-          monate={(monateRes.data ?? []) as unknown as MonatZeile[]}
-          fristTage={frist}
-        />
-      )}
-
-      {gewaehlt === "forderungen" && (
+      {gewaehlt === "abrechnen" && (
         <>
+          <section className="liste-abschnitt" aria-labelledby="h-quellen">
+            <Gruppenkopf titel="Woraus Forderungen entstehen" id="h-quellen" />
+            <ul className="liste-gruppe" aria-label="Abrechnungen">
+              <li>
+                <Listenzeile
+                  href="/admin/kasse?abschnitt=beitraege"
+                  titel={`Jahresbeiträge ${jahr}`}
+                  kontext="Einmal im Jahr · Vorschau, Forderungen erzeugen, ankündigen"
+                />
+              </li>
+              <li>
+                <Listenzeile
+                  href="/admin/arbeitsdienst"
+                  titel={`Arbeitsdienst ${jahr}`}
+                  kontext="Nach Saisonende · nicht geleistete Stunden abrechnen"
+                />
+              </li>
+              <li>
+                <Listenzeile
+                  href="/admin/kasse?abschnitt=forderungen&art=guest"
+                  titel="Gastgebühren"
+                  kontext={(() => {
+                    const g = ankuendbar.find((z) => z.art === "guest");
+                    return g && g.anzahl > 0
+                      ? `Entstehen beim Buchen mit Gast · ${g.anzahl} offen über ${formatCents(g.summe_cents)}`
+                      : "Entstehen beim Buchen mit Gast · nichts offen";
+                  })()}
+                />
+              </li>
+            </ul>
+          </section>
+
+          <GetraenkemonatKarte
+            monate={(monateRes.data ?? []) as unknown as MonatZeile[]}
+            fristTage={frist}
+          />
+
           {/* Was man seltener braucht, steht als Unterseite darunter */}
           <nav className="gruppe" aria-label="Einrichtung der Kasse">
-            {(["lauf", "arten", "regeln"] as const).map((wert) => (
+            {(["arten", "regeln"] as const).map((wert) => (
               <Link key={wert} href={`/admin/kasse?abschnitt=${wert}`} className="gruppen-zeile">
                 <span className="titel">{ABSCHNITTE.find((a) => a.wert === wert)!.label}</span>
                 <span className="pfeil" aria-hidden="true">›</span>
               </Link>
             ))}
           </nav>
-          <StandFilter aktiv={stand ?? ""} />
+        </>
+      )}
+
+      {gewaehlt === "forderungen" && (
+        <>
+          <AnkuendigungNachArt zeilen={ankuendbar} fristTage={frist} />
+          <ArtFilter aktiv={art} stand={stand ?? ""} />
+          <StandFilter aktiv={stand ?? ""} art={art} />
           <ForderungsListe
             forderungen={(forderungenRes.data ?? []) as unknown as ForderungZeile[]}
           />
@@ -225,7 +310,7 @@ interface VorschauZeile {
   already_charged: boolean;
 }
 
-function Beitragslauf({
+function Jahresbeitraege({
   jahr, zeilen, glaeubigerId, einstellungen, frist, anzukuendigen,
 }: {
   jahr: number;
@@ -250,14 +335,14 @@ function Beitragslauf({
   return (
     <>
       <div className="abschnittskopf">
-        <h2 className="dpl">Beitragslauf {jahr}</h2>
+        <h2 className="dpl">Jahresbeiträge {jahr}</h2>
         <nav className="filterchips" aria-label="Jahr">
-          <Link href={`/admin/kasse?abschnitt=lauf&jahr=${jahr - 1}`}>‹ {jahr - 1}</Link>
-          <Link href={`/admin/kasse?abschnitt=lauf&jahr=${jahr}`} aria-current="true">
+          <Link href={`/admin/kasse?abschnitt=beitraege&jahr=${jahr - 1}`}>‹ {jahr - 1}</Link>
+          <Link href={`/admin/kasse?abschnitt=beitraege&jahr=${jahr}`} aria-current="true">
             {jahr}
           </Link>
-          <Link href={`/admin/kasse?abschnitt=lauf&jahr=${jahr + 1}`}>{jahr + 1} ›</Link>
-          {jahr !== new Date().getFullYear() && <Link href="/admin/kasse?abschnitt=lauf">Dieses Jahr</Link>}
+          <Link href={`/admin/kasse?abschnitt=beitraege&jahr=${jahr + 1}`}>{jahr + 1} ›</Link>
+          {jahr !== new Date().getFullYear() && <Link href="/admin/kasse?abschnitt=beitraege">Dieses Jahr</Link>}
         </nav>
       </div>
 
@@ -273,7 +358,7 @@ function Beitragslauf({
         <div className="kennzahl">
           <span className="label">Mitglieder</span>
           <span className="wert dpl tnum">{zeilen.length}</span>
-          <span className="info">im Beitragslauf {jahr}</span>
+          <span className="info">mit Beitrag {jahr}</span>
         </div>
         <div className="kennzahl">
           <span className="label">Summe</span>
@@ -386,13 +471,36 @@ const STAENDE = [
   { wert: "returned", label: "Zurückgebucht" },
 ] as const;
 
-function StandFilter({ aktiv }: { aktiv: string }) {
+function forderungsLink(stand: string, art: string | null) {
+  return `/admin/kasse?abschnitt=forderungen${stand ? `&stand=${stand}` : ""}${art ? `&art=${art}` : ""}`;
+}
+
+/**
+ * Die Art als eigener Filter: die Frage „welche Getränke sind noch offen?“
+ * ließ sich vorher nur über die Beschreibung beantworten.
+ */
+function ArtFilter({ aktiv, stand }: { aktiv: ChargeKind | null; stand: string }) {
+  return (
+    <nav className="filterchips" aria-label="Art">
+      <Link href={forderungsLink(stand, null)} aria-current={aktiv === null ? "true" : undefined}>
+        Alle Arten
+      </Link>
+      {CHARGE_KINDS.map((k) => (
+        <Link key={k} href={forderungsLink(stand, k)} aria-current={k === aktiv ? "true" : undefined}>
+          {CHARGE_KIND_LABEL[k]}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+function StandFilter({ aktiv, art }: { aktiv: string; art: ChargeKind | null }) {
   return (
     <nav className="filterchips" aria-label="Stand">
       {STAENDE.map((s) => (
         <Link
           key={s.wert || "alle"}
-          href={`/admin/kasse?abschnitt=forderungen${s.wert ? `&stand=${s.wert}` : ""}`}
+          href={forderungsLink(s.wert, art)}
           aria-current={s.wert === aktiv ? "true" : undefined}
         >
           {s.label}

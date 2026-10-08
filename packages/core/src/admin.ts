@@ -227,7 +227,7 @@ export function adminTodos(input: AdminTodoInput): AdminTodo[] {
       title: `Getränkemonat ${MONATE[p.month - 1]} abschließen`,
       text: "Der Monat ist vorbei. Abschließen, damit die Abrechnung in den Einzug kann.",
       action: "Zur Getränkeabrechnung",
-      href: "/admin/kasse?abschnitt=getraenke",
+      href: "/admin/kasse?abschnitt=abrechnen",
       urgent: true,
     });
   }
@@ -251,7 +251,7 @@ export function adminTodos(input: AdminTodoInput): AdminTodo[] {
       title: `Getränkemonat ${MONATE[monat - 1]}`,
       text: `Endet am ${String(letzter).padStart(2, "0")}.${String(monat).padStart(2, "0")}. Danach wird die Abrechnung erzeugt.`,
       action: "Zur Getränkeabrechnung",
-      href: "/admin/kasse?abschnitt=getraenke",
+      href: "/admin/kasse?abschnitt=abrechnen",
       urgent: false,
     });
   }

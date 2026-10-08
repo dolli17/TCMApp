@@ -549,6 +549,7 @@ export type Database = {
           creditor_id: string | null
           id: string
           item_count: number
+          kinds: Database["public"]["Enums"]["charge_kind"][] | null
           pain_version: string | null
           status: Database["public"]["Enums"]["debit_batch_status"]
           storage_path: string | null
@@ -563,6 +564,7 @@ export type Database = {
           creditor_id?: string | null
           id?: string
           item_count?: number
+          kinds?: Database["public"]["Enums"]["charge_kind"][] | null
           pain_version?: string | null
           status?: Database["public"]["Enums"]["debit_batch_status"]
           storage_path?: string | null
@@ -577,6 +579,7 @@ export type Database = {
           creditor_id?: string | null
           id?: string
           item_count?: number
+          kinds?: Database["public"]["Enums"]["charge_kind"][] | null
           pain_version?: string | null
           status?: Database["public"]["Enums"]["debit_batch_status"]
           storage_path?: string | null
@@ -2052,7 +2055,11 @@ export type Database = {
         Returns: string
       }
       create_debit_batch: {
-        Args: { p_collection_date: string; p_title: string }
+        Args: {
+          p_collection_date: string
+          p_kinds?: Database["public"]["Enums"]["charge_kind"][]
+          p_title: string
+        }
         Returns: string
       }
       create_manual_charge: {
@@ -2154,6 +2161,7 @@ export type Database = {
           charge_ids: string[]
           einzugsfaehig: boolean
           grund: string
+          kinds: Database["public"]["Enums"]["charge_kind"][]
           mandate_id: string
           mandate_reference: string
           payer_id: string
@@ -2166,6 +2174,7 @@ export type Database = {
         Returns: {
           amount_cents: number
           end_to_end_id: string
+          kinds: Database["public"]["Enums"]["charge_kind"][]
           mandate_reference: string
           mitglieder: string
           payer_name: string
@@ -2173,6 +2182,14 @@ export type Database = {
           result: Database["public"]["Enums"]["debit_item_result"]
           return_reason: string
           returned_on: string
+        }[]
+      }
+      debit_batch_kinds: {
+        Args: { p_batch_id: string }
+        Returns: {
+          kind: Database["public"]["Enums"]["charge_kind"]
+          positionen: number
+          summe_cents: number
         }[]
       }
       debit_batch_overview: {
@@ -2183,6 +2200,7 @@ export type Database = {
           hat_datei: boolean
           id: string
           item_count: number
+          kinds: Database["public"]["Enums"]["charge_kind"][]
           positionen: number
           status: Database["public"]["Enums"]["debit_batch_status"]
           title: string

@@ -222,10 +222,10 @@ export default async function VerwaltungSeite() {
             )}
           </section>
 
-          {/* --- Beitragslauf ---------------------------------------------- */}
+          {/* --- Lastschriftlauf -------------------------------------------- */}
           <section className="liste-abschnitt" aria-labelledby="h-geldweg">
             <Gruppenkopf
-              titel={lauf ? lauf.title : "Beitragslauf"}
+              titel={lauf ? lauf.title : "Lastschriftlauf"}
               id="h-geldweg"
               neben={<Link href={laufHref}>{lauf ? "Öffnen" : "Läufe"}</Link>}
             />

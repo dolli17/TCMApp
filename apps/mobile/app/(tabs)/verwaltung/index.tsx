@@ -201,10 +201,10 @@ export default function VerwaltungUebersicht() {
         )}
       </Abschnitt>
 
-      {/* --- Beitragslauf -------------------------------------------------- */}
+      {/* --- Lastschriftlauf ----------------------------------------------- */}
       <Abschnitt>
         <Gruppenkopf
-          titel={lauf ? lauf.title : "Beitragslauf"}
+          titel={lauf ? lauf.title : "Lastschriftlauf"}
           neben={lauf ? "Öffnen" : "Läufe"}
           onNeben={() => geh(laufHref)}
         />

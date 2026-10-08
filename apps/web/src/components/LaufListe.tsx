@@ -1,11 +1,14 @@
 import { debitFlow, formatCents, isoDateLabel, type DebitBatchStatus } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { ArtMarken } from "@/components/ArtMarke";
 import { Listenzeile } from "@/components/Listenzeile";
 
 export interface LaufZeile {
   id: string;
   title: string;
   collection_date: string;
+  /** Eingeschränkt auf diese Arten; null = alle */
+  kinds: string[] | null;
   status: string;
   total_cents: number;
   item_count: number;
@@ -42,7 +45,10 @@ export async function LaufListe({ laeufe }: { laeufe: LaufZeile[] }) {
           .maybeSingle()
       : Promise.resolve({ data: null }),
     ...entwuerfe.map(async (l) => {
-      const { data } = await supabase.rpc("debit_batch_candidates", { p_collection_date: l.collection_date });
+      const { data } = await supabase.rpc("debit_batch_candidates", {
+        p_collection_date: l.collection_date,
+        p_kinds: (l.kinds ?? undefined) as never,
+      });
       kandidaten.set(l.id, {
         alle: (data ?? []).length,
         bereit: (data ?? []).filter((k) => k.einzugsfaehig).length,
@@ -82,6 +88,7 @@ export async function LaufListe({ laeufe }: { laeufe: LaufZeile[] }) {
               titel={l.title}
               kontext={
                 <>
+                  {l.kinds && <ArtMarken arten={l.kinds} />}{" "}
                   <span className="tnum">
                     Fällig {isoDateLabel(l.collection_date)} · {l.item_count}{" "}
                     {l.item_count === 1 ? "Lastschrift" : "Lastschriften"}

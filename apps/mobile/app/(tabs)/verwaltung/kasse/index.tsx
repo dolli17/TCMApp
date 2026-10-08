@@ -1,31 +1,35 @@
 /**
  * Die Kasse (Nachbau von apps/web/src/app/admin/kasse/page.tsx)
  *
- * Alles, was Geld betrifft, an einem Ort. Die Abschnitte folgen dem Ablauf
- * eines Vereinsjahres: einmal im Januar der Beitragslauf, monatlich die
- * Getraenke, dazwischen die Forderungsliste als Antwort auf "wer schuldet uns
- * noch was".
+ * Alles, was Geld betrifft, an einem Ort. Die Abschnitte folgen dem Weg des
+ * Geldes: unter "Abrechnen" entstehen die Forderungen (Jahresbeitraege,
+ * Getraenkemonate, Arbeitsdienst, von Hand), unter "Forderungen" werden sie
+ * angekuendigt und beantworten "wer schuldet uns noch was", unter
+ * "Lastschriften" werden sie eingezogen.
  *
- * Forderungen, Lastschriften und Getraenkemonate stehen im Segment-Schalter;
- * Beitragslauf, Beitragsarten und Regeln sind Unterseiten derselben Route
- * (?abschnitt=lauf|arten|regeln) mit eigenem Titel und Zurueck-Pfeil - wie im
- * Web. Filter (?stand=) und Jahr (?jahr=) stehen in der Adresse.
+ * Forderungen, Abrechnen und Lastschriften stehen im Segment-Schalter;
+ * Jahresbeitraege, Beitragsarten und Regeln sind Unterseiten derselben Route
+ * (?abschnitt=beitraege|arten|regeln) mit eigenem Titel - wie im Web. Alte
+ * Adressen (?abschnitt=lauf, ?abschnitt=getraenke) fuehren weiter an die
+ * neue Stelle. Filter (?stand=, ?art=) und Jahr (?jahr=) stehen in der Adresse.
  */
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { Stack, router, useFocusEffect, useLocalSearchParams, type Href } from "expo-router";
-import { formatCents } from "@tcm/core";
+import { CHARGE_KINDS, CHARGE_KIND_LABEL, formatCents } from "@tcm/core";
 import { Bildschirm } from "@/components/Bildschirm";
 import { Segmente } from "@/components/Segmente";
 import { EinstellungsGruppe } from "@/components/verwaltung/EinstellungsGruppe";
-import { Chipwahl, Knopf } from "@/components/verwaltung/Formular";
+import { Chipwahl } from "@/components/verwaltung/Formular";
 import {
   Abschnitt, Gruppenkopf, Kennzahl, ListenGruppe, Listenzeile,
 } from "@/components/verwaltung/Liste";
 import { VerwaltungsKopf } from "@/components/verwaltung/VerwaltungsKopf";
+import { AnkuendigungNachArt } from "@/components/verwaltung/kasse/AnkuendigungNachArt";
 import { BeitragsartenPflege } from "@/components/verwaltung/kasse/BeitragsartenPflege";
 import { Beitragslauf } from "@/components/verwaltung/kasse/Beitragslauf";
+import { ForderungAnlegen } from "@/components/verwaltung/kasse/ForderungAnlegen";
 import { ForderungsListe } from "@/components/verwaltung/kasse/ForderungsListe";
 import { GetraenkemonatKarte } from "@/components/verwaltung/kasse/GetraenkemonatKarte";
 import { LaufAnlegen } from "@/components/verwaltung/kasse/LaufAnlegen";
@@ -33,7 +37,7 @@ import { LaufListe } from "@/components/verwaltung/kasse/LaufListe";
 import { Hinweis, Unterzeile } from "@/components/verwaltung/kasse/Teile";
 import { useTheme } from "@/lib/theme";
 import {
-  ABSCHNITTE, SEGMENTE, ankuendigungsfrist, einstellungsWert, kassenSchluessel, ladeKasse,
+  ABSCHNITTE, SEGMENTE, abschnittAus, ankuendigungsfrist, artAus, einstellungsWert, kassenSchluessel, ladeKasse,
   type KassenAbschnitt, type KassenDaten, type KassenKennzahlen,
 } from "@/lib/verwaltung/kasse";
 
@@ -52,15 +56,14 @@ function einParam(w: string | string[] | undefined): string | undefined {
 
 export default function KasseSeite() {
   const { farben } = useTheme();
-  const params = useLocalSearchParams<{ abschnitt?: string; jahr?: string; stand?: string }>();
-  const abschnittParam = einParam(params.abschnitt);
-  const gewaehlt: KassenAbschnitt = ABSCHNITTE.some((a) => a.wert === abschnittParam)
-    ? (abschnittParam as KassenAbschnitt)
-    : "forderungen";
+  const params = useLocalSearchParams<{ abschnitt?: string; jahr?: string; stand?: string; art?: string }>();
+  // Alte Werte (lauf, getraenke) kommen ueber appPfad() aus Web-Links herein.
+  const gewaehlt: KassenAbschnitt = abschnittAus(einParam(params.abschnitt));
   const unterseite = SEGMENTE.includes(gewaehlt) ? null : ABSCHNITTE.find((a) => a.wert === gewaehlt)!;
   const jahr = Number(einParam(params.jahr)) || new Date().getFullYear();
   const stand = einParam(params.stand) || null;
-  const schluessel = kassenSchluessel({ abschnitt: gewaehlt, jahr, stand });
+  const art = artAus(einParam(params.art));
+  const schluessel = kassenSchluessel({ abschnitt: gewaehlt, jahr, stand, art });
 
   // --- Laden -----------------------------------------------------------------
   // Eigenes Laden statt useLaden: die Ansicht wechselt mit der Adresse, und
@@ -75,7 +78,7 @@ export default function KasseSeite() {
       const nr = ++zaehler.current;
       if (nachladen) setAktualisiert(true);
       try {
-        const d = await ladeKasse({ abschnitt: gewaehlt, jahr, stand });
+        const d = await ladeKasse({ abschnitt: gewaehlt, jahr, stand, art });
         if (nr === zaehler.current) {
           setDaten(d);
           setFehler(null);
@@ -86,7 +89,7 @@ export default function KasseSeite() {
         if (nr === zaehler.current) setAktualisiert(false);
       }
     },
-    [gewaehlt, jahr, stand],
+    [gewaehlt, jahr, stand, art],
   );
 
   useEffect(() => {
@@ -109,6 +112,7 @@ export default function KasseSeite() {
 
   const neuLaden = useCallback(() => holen(true), [holen]);
   const [laufBlatt, setLaufBlatt] = useState(false);
+  const [forderungBlatt, setForderungBlatt] = useState(false);
 
   const d = daten?.schluessel === schluessel ? daten : null;
   const einstellungen = daten?.einstellungen ?? [];
@@ -131,31 +135,33 @@ export default function KasseSeite() {
 
       {!unterseite && (
         <>
+          {/* Ein gelber Knopf je Seite (Regel 4), passend zum Segment */}
           <VerwaltungsKopf
-            unterzeile="Beiträge, Getränkeabrechnung und alles, was daraus an Forderungen entsteht."
-            aktion={gewaehlt === "lastschrift" ? { text: "Lauf anlegen", onPress: () => setLaufBlatt(true) } : undefined}
-          >
-            {/* Ein gelber Knopf je Seite (Regel 4), passend zum Segment */}
-            {gewaehlt === "forderungen" && (
-              <Knopf art="gold" text="Beitragslauf" onPress={() => geh("lauf")} />
-            )}
-          </VerwaltungsKopf>
+            unterzeile="Abrechnen, ankündigen, einziehen – Beiträge, Getränke, Arbeitsdienst und Gastgebühren."
+            aktion={
+              gewaehlt === "lastschrift"
+                ? { text: "Lauf anlegen", onPress: () => setLaufBlatt(true) }
+                : gewaehlt === "abrechnen"
+                  ? { text: "Forderung anlegen", onPress: () => setForderungBlatt(true) }
+                  : undefined
+            }
+          />
 
           <KennzahlenReihe
             kennzahlen={daten?.kennzahlen ?? null}
-            onForderungen={() => router.setParams({ abschnitt: "forderungen", stand: "" })}
-            onLastschrift={() => router.setParams({ abschnitt: "lastschrift", stand: "" })}
-            onRuecklaeufer={() => router.setParams({ abschnitt: "forderungen", stand: "returned" })}
+            onForderungen={() => router.setParams({ abschnitt: "forderungen", stand: "", art: "" })}
+            onLastschrift={() => router.setParams({ abschnitt: "lastschrift", stand: "", art: "" })}
+            onRuecklaeufer={() => router.setParams({ abschnitt: "forderungen", stand: "returned", art: "" })}
           />
 
           <Segmente
             beschriftung="Kasse"
             optionen={SEGMENTE.map((wert) => ({
               wert,
-              label: wert === "getraenke" ? "Getränke" : ABSCHNITTE.find((a) => a.wert === wert)!.label,
+              label: ABSCHNITTE.find((a) => a.wert === wert)!.label,
             }))}
             wert={gewaehlt}
-            onWahl={(w) => router.setParams({ abschnitt: w, stand: "" })}
+            onWahl={(w) => router.setParams({ abschnitt: w, stand: "", art: "" })}
           />
         </>
       )}
@@ -168,11 +174,39 @@ export default function KasseSeite() {
         )
       ) : (
         <>
-          {gewaehlt === "forderungen" && d.forderungen && (
+          {gewaehlt === "abrechnen" && (
             <>
+              <Abschnitt>
+                <Gruppenkopf titel="Woraus Forderungen entstehen" />
+                <ListenGruppe>
+                  <Listenzeile
+                    titel={`Jahresbeiträge ${jahr}`}
+                    kontext="Einmal im Jahr · Vorschau, Forderungen erzeugen, ankündigen"
+                    onPress={() => geh("beitraege")}
+                  />
+                  <Listenzeile
+                    href="/verwaltung/arbeitsdienst"
+                    titel={`Arbeitsdienst ${jahr}`}
+                    kontext="Nach Saisonende · nicht geleistete Stunden abrechnen"
+                  />
+                  <Listenzeile
+                    titel="Gastgebühren"
+                    kontext={(() => {
+                      const g = d.ankuendbar?.find((z) => z.art === "guest");
+                      return g && g.anzahl > 0
+                        ? `Entstehen beim Buchen mit Gast · ${g.anzahl} offen über ${formatCents(g.summe_cents)}`
+                        : "Entstehen beim Buchen mit Gast · nichts offen";
+                    })()}
+                    onPress={() => router.setParams({ abschnitt: "forderungen", stand: "", art: "guest" })}
+                  />
+                </ListenGruppe>
+              </Abschnitt>
+
+              {d.monate && <GetraenkemonatKarte monate={d.monate} fristTage={frist} onGeaendert={neuLaden} />}
+
               {/* Was man seltener braucht, steht als Unterseite darunter */}
               <ListenGruppe>
-                {(["lauf", "arten", "regeln"] as const).map((wert) => (
+                {(["arten", "regeln"] as const).map((wert) => (
                   <Listenzeile
                     key={wert}
                     titel={ABSCHNITTE.find((a) => a.wert === wert)!.label}
@@ -180,6 +214,24 @@ export default function KasseSeite() {
                   />
                 ))}
               </ListenGruppe>
+            </>
+          )}
+
+          {gewaehlt === "forderungen" && d.forderungen && (
+            <>
+              {d.ankuendbar && (
+                <AnkuendigungNachArt zeilen={d.ankuendbar} fristTage={frist} onGeaendert={neuLaden} />
+              )}
+              {/* Die Art als eigener Filter: "welche Getraenke sind noch offen?"
+                  liess sich vorher nur ueber die Beschreibung beantworten. */}
+              <Chipwahl
+                optionen={[
+                  { wert: "", label: "Alle Arten" },
+                  ...CHARGE_KINDS.map((k) => ({ wert: k as string, label: CHARGE_KIND_LABEL[k] })),
+                ]}
+                wert={art ?? ""}
+                onWahl={(w) => router.setParams({ art: w })}
+              />
               <Chipwahl
                 optionen={STAENDE.map((s) => ({ wert: s.wert, label: s.label }))}
                 wert={stand ?? ""}
@@ -203,11 +255,7 @@ export default function KasseSeite() {
             </>
           )}
 
-          {gewaehlt === "getraenke" && d.monate && (
-            <GetraenkemonatKarte monate={d.monate} fristTage={frist} onGeaendert={neuLaden} />
-          )}
-
-          {gewaehlt === "lauf" && d.beitragslauf && (
+          {gewaehlt === "beitraege" && d.beitragslauf && (
             <Beitragslauf
               jahr={jahr}
               daten={d.beitragslauf}
@@ -246,6 +294,13 @@ export default function KasseSeite() {
 
       {laufBlatt && (
         <LaufAnlegen fristTage={frist} onSchliessen={() => setLaufBlatt(false)} onAngelegt={neuLaden} />
+      )}
+      {forderungBlatt && (
+        <ForderungAnlegen
+          mitglieder={d?.mitglieder ?? []}
+          onSchliessen={() => setForderungBlatt(false)}
+          onAngelegt={neuLaden}
+        />
       )}
     </Bildschirm>
     </>

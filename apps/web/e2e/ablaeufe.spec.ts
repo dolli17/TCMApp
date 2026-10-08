@@ -437,10 +437,10 @@ test.describe("Berechtigungen", () => {
     await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"] li').first()).toBeVisible();
   });
 
-  test("Admin sieht den Beitragslauf mit Mandatslage", async ({ page }) => {
+  test("Admin sieht die Jahresbeiträge mit Mandatslage", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/admin/kasse?abschnitt=lauf");
-    await expect(page.getByRole("heading", { name: /Beitragslauf/ }).first()).toBeVisible();
+    await page.goto("/admin/kasse?abschnitt=beitraege");
+    await expect(page.getByRole("heading", { name: /Jahresbeiträge/ }).first()).toBeVisible();
     // Die fehlende Glaeubiger-ID muss deutlich sichtbar sein
     await expect(page.locator(".hinweis.fehler").first()).toContainText(/Gläubiger|Mandat/);
   });
@@ -1076,41 +1076,46 @@ test.describe("Verwaltung", () => {
     await expect(page.getByText("sepa.creditor_id")).toBeVisible();
 
     const jahr = new Date().getFullYear();
-    await page.goto("/admin/kasse?abschnitt=lauf");
+    await page.goto("/admin/kasse?abschnitt=beitraege");
     await page.getByRole("link", { name: `‹ ${jahr - 1}` }).click();
-    await expect(page.getByRole("heading", { name: `Beitragslauf ${jahr - 1}` })).toBeVisible();
+    await expect(page.getByRole("heading", { name: `Jahresbeiträge ${jahr - 1}` })).toBeVisible();
   });
 
   test("die Kasse führt über drei Segmente und ihre Unterseiten", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/kasse");
 
+    // Die Segmente folgen dem Weg des Geldes: abrechnen, ankündigen, einziehen
     const segmente = page.getByRole("navigation", { name: "Kasse", exact: true });
-    for (const name of ["Forderungen", "Lastschriften", "Getränkemonate"]) {
+    for (const name of ["Forderungen", "Abrechnen", "Lastschriften"]) {
       await expect(segmente.getByRole("link", { name })).toBeVisible();
     }
-    // Beitragslauf, Beitragsarten und Regeln stehen als Unterseiten darunter
+
+    // Unter „Abrechnen“ stehen alle Quellen von Forderungen, darunter die
+    // Getränkemonate und die Einrichtung
+    await segmente.getByRole("link", { name: "Abrechnen" }).click();
+    const quellen = page.locator('.liste-gruppe[aria-label="Abrechnungen"]');
+    for (const name of [/^Jahresbeiträge \d{4}/, /^Arbeitsdienst \d{4}/, /^Gastgebühren/]) {
+      await expect(quellen.getByRole("link", { name })).toBeVisible();
+    }
+    await expect(page.getByRole("heading", { name: "Getränkemonate" })).toBeVisible();
     const einrichtung = page.getByRole("navigation", { name: "Einrichtung der Kasse" });
-    for (const name of ["Beitragslauf", "Beitragsarten", "Regeln"]) {
+    for (const name of ["Beitragsarten", "Regeln"]) {
       await expect(einrichtung.getByRole("link", { name })).toBeVisible();
     }
 
-    await segmente.getByRole("link", { name: "Getränkemonate" }).click();
-    await expect(page.getByRole("heading", { name: "Getränkemonate" })).toBeVisible();
-
-    await page.goto("/admin/kasse");
     await einrichtung.getByRole("link", { name: "Beitragsarten" }).click();
     await expect(page.getByRole("heading", { name: "Beitragsarten" })).toBeVisible();
-    // Ohne diese Tabelle waere der Beitragslauf nicht startbar - sie war der
+    // Ohne diese Tabelle liessen sich keine Jahresbeitraege erzeugen - sie war der
     // fehlende Unterbau.
     await expect(page.locator('.liste-gruppe[aria-label="Beitragsarten"] li').first()).toBeVisible();
   });
 
-  test("der Beitragslauf erzeugt Forderungen, ein zweites Mal nicht", async ({ page }) => {
+  test("die Jahresbeiträge erzeugen Forderungen, ein zweites Mal nicht", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
     // Ein Jahr, das der Seed nicht kennt: der Lauf soll hier nichts zu tun
     // finden und das auch sagen, statt schweigend Erfolg zu melden.
-    await page.goto("/admin/kasse?abschnitt=lauf&jahr=2029");
+    await page.goto("/admin/kasse?abschnitt=beitraege&jahr=2029");
 
     await expect(page.getByRole("heading", { name: "Forderungen erzeugen" })).toBeVisible();
     await expect(
@@ -1120,7 +1125,7 @@ test.describe("Verwaltung", () => {
 
   test("die Vorabankündigung lässt kein zu frühes Datum zu", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/admin/kasse?abschnitt=lauf");
+    await page.goto("/admin/kasse?abschnitt=beitraege");
 
     // Über die Überschrift filtern: „Vorabankündigung" steht auch im Fließtext
     // der Karte darüber, und hasText würde beide treffen.
@@ -1241,6 +1246,53 @@ test.describe("Verwaltung", () => {
     // Ohne Gläubiger-ID und Vereins-IBAN lässt sich keine Datei bauen. Das muss
     // hier stehen und nicht erst beim Klick auf „erzeugen".
     await expect(page.locator(".hinweis.fehler")).toContainText(/Gläubiger|IBAN/);
+  });
+
+  test("alte Kassen-Adressen führen zu den neuen Abschnitten", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/kasse?abschnitt=lauf");
+    await expect(page.getByRole("heading", { name: /^Jahresbeiträge \d{4}/ })).toBeVisible();
+    await page.goto("/admin/kasse?abschnitt=getraenke");
+    await expect(page.getByRole("heading", { name: "Getränkemonate" })).toBeVisible();
+  });
+
+  test("Forderungen zeigen ihre Art und lassen sich danach filtern", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/kasse?abschnitt=forderungen");
+
+    const arten = page.getByRole("navigation", { name: "Art" });
+    await expect(arten.getByRole("link", { name: "Alle Arten" })).toHaveAttribute("aria-current", "true");
+    await arten.getByRole("link", { name: "Beitrag" }).click();
+    await expect(page).toHaveURL(/art=fee/);
+    await expect(arten.getByRole("link", { name: "Beitrag" })).toHaveAttribute("aria-current", "true");
+
+    // Jede Zeile trägt ihre Art als Marke - gefiltert also nur „Beitrag“
+    const marken = page.locator('.liste-gruppe[aria-label="Forderungen"] .marke-klein');
+    const anzahl = await marken.count();
+    for (let i = 0; i < Math.min(anzahl, 20); i++) {
+      await expect(marken.nth(i)).toHaveText("Beitrag");
+    }
+  });
+
+  test("ein neuer Lastschriftlauf schlägt einen Namen vor und lässt Arten wählen", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/kasse?abschnitt=lastschrift");
+    await page.getByRole("button", { name: "Lauf anlegen" }).click();
+
+    const name = page.getByLabel("Bezeichnung");
+    await expect(name).toHaveValue(/^Lastschrift \d{2}\.\d{2}\.\d{4}$/);
+
+    await page.getByLabel("Nur bestimmte Arten").check();
+    // Vorausgewählt ist der Beitrag; der Name sagt jetzt, was eingezogen wird
+    await expect(page.getByLabel("Beitrag", { exact: true })).toBeChecked();
+    await expect(name).toHaveValue(/· Beitrag$/);
+    await page.getByLabel("Getränke", { exact: true }).check();
+    await expect(name).toHaveValue(/· Beitrag, Getränke$/);
+
+    // Ohne Art lässt sich nichts anlegen
+    await page.getByLabel("Beitrag", { exact: true }).uncheck();
+    await page.getByLabel("Getränke", { exact: true }).uncheck();
+    await expect(page.getByRole("button", { name: "Lauf anlegen" }).last()).toBeDisabled();
   });
 
   test("die Lastschriftdatei ist keinem normalen Mitglied zugänglich", async ({ page }) => {

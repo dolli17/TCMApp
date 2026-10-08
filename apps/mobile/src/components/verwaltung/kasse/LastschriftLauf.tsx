@@ -18,7 +18,9 @@
 import { useState, type ReactNode } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { debitFlow, formatCents, isoDateLabel } from "@tcm/core";
+import {
+  CHARGE_KIND_LABEL, debitFlow, formatCents, isoDateLabel, sortChargeKinds,
+} from "@tcm/core";
 import {
   Chipwahl, FormBlatt, FormFeld, FormGruppe, Karte, Knopf, Meldung, bestaetige, useAktion,
 } from "@/components/verwaltung/Formular";
@@ -27,12 +29,13 @@ import {
   Abschnitt, Gruppenkopf, Kennzahl, Kennzahlen, LeereZeile, ListenGruppe, Listenzeile, Statusmarke,
 } from "@/components/verwaltung/Liste";
 import { VerwaltungsKopf } from "@/components/verwaltung/VerwaltungsKopf";
+import { ArtMarken } from "@/components/verwaltung/kasse/ArtMarke";
 import { teileLastschriftdatei } from "@/components/verwaltung/kasse/dateiTeilen";
 import { BetragMitMarke, Unterzeile, zahlwort } from "@/components/verwaltung/kasse/Teile";
 import { useTheme } from "@/lib/theme";
 import {
   dateiErzeugen, laufAbschliessen, laufEingereicht, postenAufnehmen, ruecklaeuferErfassen,
-  type KandidatZeile, type LaufKopf, type PostenZeile,
+  type ArtSumme, type KandidatZeile, type LaufKopf, type PostenZeile,
 } from "@/lib/verwaltung/kasse";
 import type { Ergebnis } from "@/lib/verwaltung/gemeinsam";
 
@@ -43,6 +46,7 @@ export function LastschriftLauf({
   lauf,
   kandidaten,
   posten,
+  jeArt,
   faelligAb,
   heute,
   onGeaendert,
@@ -50,6 +54,8 @@ export function LastschriftLauf({
   lauf: LaufKopf;
   kandidaten: KandidatZeile[];
   posten: PostenZeile[];
+  /** Summe je Art im Lauf (debit_batch_kinds) */
+  jeArt: ArtSumme[];
   /** Der spaeteste angekuendigte Faelligkeitstag der Kandidaten, ISO */
   faelligAb: string | null;
   heute: string;
@@ -118,7 +124,19 @@ export function LastschriftLauf({
       <VerwaltungsKopf
         marke={<Statusmarke gross text={weg.label} ton={weg.current === null ? "gruen" : "gelb"} />}
         unterzeile={`Fällig am ${isoDateLabel(lauf.collection_date)}`}
-      />
+      >
+        {/* Was dieser Lauf einzieht - frueher war das nirgends zu sehen */}
+        {lauf.kinds ? (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+            <Text style={{ fontSize: 14, color: farben.ink2, fontFamily: "Barlow_400Regular" }}>Zieht nur ein:</Text>
+            <ArtMarken arten={lauf.kinds} />
+          </View>
+        ) : (
+          <Text style={{ fontSize: 14, lineHeight: 19.5, color: farben.ink2, fontFamily: "Barlow_400Regular" }}>
+            Zieht alle angekündigten Forderungen ein, gleich welcher Art.
+          </Text>
+        )}
+      </VerwaltungsKopf>
 
       <Meldung meldung={meldung} />
 
@@ -276,6 +294,7 @@ export function LastschriftLauf({
                     titel={p.payer_name}
                     kontext={
                       <View style={{ gap: 2 }}>
+                        <ArtMarken arten={p.kinds} />
                         <Text style={{ fontSize: 13, color: farben.muted, fontFamily: "Barlow_400Regular" }}>
                           {p.mitglieder}
                           {p.positionen > 1 ? ` · ${p.positionen} Posten` : ""}
@@ -309,6 +328,7 @@ export function LastschriftLauf({
                   titel={k.payer_name}
                   kontext={
                     <View style={{ gap: 2 }}>
+                      <ArtMarken arten={k.kinds} />
                       <Text style={{ fontSize: 13, color: farben.muted, fontFamily: "Barlow_400Regular" }}>
                         {k.arten}
                         {k.positionen > 1 ? ` · ${k.positionen} Posten` : ""}
@@ -341,6 +361,12 @@ export function LastschriftLauf({
         <Kennzahl label="Summe" wert={formatCents(summeAlle)} />
         <Kennzahl label="Ohne Mandat" wert={String(ohneMandat.length)} />
         <Kennzahl label="Fällig am" wert={isoDateLabel(lauf.collection_date)} />
+        {/* Aufschluesselung, sobald etwas im Lauf ist: was davon Beitrag,
+            was Getraenke, was Arbeitsdienst ist */}
+        {sortChargeKinds(jeArt.map((a) => a.kind)).map((k) => {
+          const a = jeArt.find((x) => x.kind === k)!;
+          return <Kennzahl key={k} label={CHARGE_KIND_LABEL[k]} wert={formatCents(a.summe_cents)} />;
+        })}
       </Kennzahlen>
 
       {zurueckPosten && (
