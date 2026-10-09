@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnmeldeBuehne } from "@/components/AnmeldeBuehne";
+import { aktivitaetVergessen } from "@/lib/inaktivitaet";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -30,7 +31,7 @@ export default function PasswortSetzenSeite() {
   const [konto, setKonto] = useState<string | null>(null);
 
   useEffect(() => {
-    const supabase = createClient();
+    const supabase = createClient({ linkSelbstEinloesen: true });
     let aktiv = true;
 
     (async () => {
@@ -44,6 +45,18 @@ export default function PasswortSetzenSeite() {
       const access = fragment.get("access_token");
       const refresh = fragment.get("refresh_token");
       if (access && refresh) {
+        // Nie zwei Konten zugleich: wer schon angemeldet ist - etwa mit dem
+        // Mitgliedskonto, bevor er den Link fürs Admin-Konto öffnet -, wird
+        // erst abgemeldet. "local" beendet genau diese Sitzung auch bei
+        // Supabase; andere Geräte bleiben angemeldet.
+        const {
+          data: { session: bisher },
+        } = await supabase.auth.getSession();
+        if (bisher) {
+          await supabase.auth.signOut({ scope: "local" });
+          aktivitaetVergessen();
+        }
+
         const { data: neu, error } = await supabase.auth.setSession({
           access_token: access,
           refresh_token: refresh,
@@ -67,8 +80,36 @@ export default function PasswortSetzenSeite() {
         return;
       }
 
-      // „Passwort vergessen“ aus der Web-App kommt mit ?code=… (PKCE); den
-      // tauscht der Client selbst, getSession wartet darauf.
+      // „Passwort vergessen“ aus der Web-App kommt mit ?code=… (PKCE). Den Code
+      // lösen wir selbst ein, damit eine bisherige Anmeldung danach beendet
+      // werden kann - vorher abmelden ginge nicht, denn signOut verwirft den
+      // PKCE-Schlüssel, den der Code braucht.
+      const code = new URLSearchParams(window.location.search).get("code");
+      if (code) {
+        const {
+          data: { session: bisher },
+        } = await supabase.auth.getSession();
+        const { data: neu, error } = await supabase.auth.exchangeCodeForSession(code);
+        window.history.replaceState(null, "", window.location.pathname);
+        if (!error && bisher && bisher.user.id !== neu.user?.id) {
+          // Die alte Sitzung bei Supabase beenden, mit ihrem eigenen Token.
+          await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/logout?scope=local`, {
+            method: "POST",
+            headers: {
+              apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+              Authorization: `Bearer ${bisher.access_token}`,
+            },
+          }).catch(() => undefined);
+          aktivitaetVergessen();
+        }
+        if (!aktiv) return;
+        setGueltig(!error);
+        setKonto(neu.user?.email ?? null);
+        setBereit(true);
+        return;
+      }
+
+      // Ohne Link: wer angemeldet ist, ändert hier sein eigenes Passwort.
       const {
         data: { session },
       } = await supabase.auth.getSession();

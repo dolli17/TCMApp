@@ -10,7 +10,12 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { Database } from "@tcm/core";
 
-export function createClient() {
+/**
+ * linkSelbstEinloesen: der Client tauscht ?code=… aus der Adresse nicht von
+ * selbst ein. Nur fuer /passwort-setzen - dort muss vorher die bisherige
+ * Anmeldung beendet werden (nie zwei Konten zugleich).
+ */
+export function createClient({ linkSelbstEinloesen = false } = {}) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -21,5 +26,12 @@ export function createClient() {
     );
   }
 
+  if (linkSelbstEinloesen) {
+    // Eigene Instanz: der geteilte Client wuerde die Option ignorieren.
+    return createBrowserClient<Database>(url, key, {
+      isSingleton: false,
+      auth: { detectSessionInUrl: false },
+    });
+  }
   return createBrowserClient<Database>(url, key);
 }
