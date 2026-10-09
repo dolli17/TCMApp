@@ -9,6 +9,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { AKTIV_COOKIE, istAbgelaufen } from "@/lib/inaktivitaet";
+import { PFAD_KOPF } from "@/lib/pfad";
 
 /**
  * Seiten, die ohne Anmeldung erreichbar sind.
@@ -31,8 +32,15 @@ const OEFFENTLICH = [
   "/impressum",
 ];
 
+/** Der Pfad fuer das Layout (lib/pfad.ts): Anmeldeseiten ohne Menue. */
+function weiter(request: NextRequest) {
+  const kopf = new Headers(request.headers);
+  kopf.set(PFAD_KOPF, request.nextUrl.pathname);
+  return NextResponse.next({ request: { headers: kopf } });
+}
+
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  let response = weiter(request);
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -43,7 +51,7 @@ export async function middleware(request: NextRequest) {
       getAll: () => request.cookies.getAll(),
       setAll: (list) => {
         for (const { name, value } of list) request.cookies.set(name, value);
-        response = NextResponse.next({ request });
+        response = weiter(request);
         for (const { name, value, options } of list) {
           response.cookies.set(name, value, options);
         }

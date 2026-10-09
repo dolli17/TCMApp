@@ -25,6 +25,9 @@ export default function PasswortSetzenSeite() {
   const [fehler, setFehler] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
   const [fertig, setFertig] = useState(false);
+  // Für welches Konto das Passwort gilt - wer schon als Mitglied angemeldet
+  // ist und den Link fürs Admin-Konto öffnet, soll sehen, welches er setzt.
+  const [konto, setKonto] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -41,18 +44,27 @@ export default function PasswortSetzenSeite() {
       const access = fragment.get("access_token");
       const refresh = fragment.get("refresh_token");
       if (access && refresh) {
-        const { error } = await supabase.auth.setSession({
+        const { data: neu, error } = await supabase.auth.setSession({
           access_token: access,
           refresh_token: refresh,
         });
         // Die Token nicht in Adresszeile und Verlauf stehen lassen.
         window.history.replaceState(null, "", window.location.pathname);
         if (!aktiv) return;
-        if (!error) {
-          setGueltig(true);
-          setBereit(true);
-          return;
-        }
+        // Kein Rückgriff auf eine schon bestehende Anmeldung: sonst änderte,
+        // wer als Mitglied angemeldet ist, mit einem kaputten Admin-Link das
+        // Passwort des Mitgliedskontos.
+        setGueltig(!error);
+        setKonto(neu.user?.email ?? null);
+        setBereit(true);
+        return;
+      }
+      // Der Link meldet selbst einen Fehler, etwa einen abgelaufenen Code.
+      if (fragment.get("error")) {
+        window.history.replaceState(null, "", window.location.pathname);
+        setGueltig(false);
+        setBereit(true);
+        return;
       }
 
       // „Passwort vergessen“ aus der Web-App kommt mit ?code=… (PKCE); den
@@ -62,6 +74,7 @@ export default function PasswortSetzenSeite() {
       } = await supabase.auth.getSession();
       if (!aktiv) return;
       setGueltig(Boolean(session));
+      setKonto(session?.user.email ?? null);
       setBereit(true);
     })();
 
@@ -121,6 +134,11 @@ export default function PasswortSetzenSeite() {
           </div>
         ) : (
           <form onSubmit={speichern}>
+            {konto && (
+              <p className="unterzeile">
+                Für das Konto <strong>{konto}</strong>
+              </p>
+            )}
             <label>
               <span>Neues Passwort</span>
               <input

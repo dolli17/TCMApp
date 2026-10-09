@@ -1,10 +1,12 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import logo from "@tcm/ui/logo.png";
 import logoWeiss from "@tcm/ui/logo-weiss.png";
 import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
+import { OHNE_RAHMEN, PFAD_KOPF } from "@/lib/pfad";
 import { AbmeldeKnopf } from "@/components/AbmeldeKnopf";
 import { Benachrichtigungen } from "@/components/Benachrichtigungen";
 import { Inaktivitaet } from "@/components/Inaktivitaet";
@@ -26,6 +28,9 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const angemeldet = await getCurrentMember();
   const rollen = angemeldet?.roles ?? [];
+  const pfad = (await headers()).get(PFAD_KOPF) ?? "";
+  // Mit Menue nur fuer Mitglieder - und nicht auf den Anmeldeseiten.
+  const mitRahmen = Boolean(angemeldet?.member) && !OHNE_RAHMEN.includes(pfad);
   const istMitglied = Boolean(angemeldet?.member);
 
   // Nur der Zaehler, nicht die Liste: die Glocke steht auf jeder Seite, und
@@ -90,7 +95,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: THEME_SKRIPT }} />
       </head>
       <body>
-        {istMitglied ? (
+        {mitRahmen ? (
           <div className="huelle">
             <aside className="seitenleiste">
               {/* Zwei Logos, die CSS zeigt das passende: auf dunklem Grund die
