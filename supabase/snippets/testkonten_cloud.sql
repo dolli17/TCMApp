@@ -8,16 +8,18 @@
 --   1. Alle Logins ausser dem Kiosk werden geloescht. Die Mitglieder bleiben;
 --      members.auth_user_id wird ueber den Fremdschluessel geleert. Alle
 --      Admin-Rollen fallen weg - Admin sind danach nur die Tester (+admin).
---   2. Je Testperson zwei neue Mitglieder mit Login:
---        name+mitglied@domain  (Rolle member)
---        name+admin@domain     (Rollen member, admin)
+--   2. Je Testperson zwei neue Mitglieder mit Login, je mit eigener Adresse:
+--        Mitglied  (Rolle member)
+--        Admin     (Rollen member, admin)
 --      Ein Login gehoert genau einem Mitglied (members.auth_user_id unique),
---      deshalb zwei Mitgliederzeilen fuer eine Person.
+--      deshalb zwei Mitgliederzeilen fuer eine Person. Bei Gmail eignen sich
+--      name+mitglied@ / name+admin@; GMX, web.de und T-Online nehmen "+" nicht
+--      zuverlaessig an - dort zwei echte Adressen verwenden.
 --   3. 200 Seed-Mitglieder mit @example.org-Adresse bekommen einen Login mit
 --      gemeinsamem Passwort. Mails an diese Adressen kommen nie an - die
 --      Konten sind nur zum Anmelden da.
---   4. 10 Seed-Mitglieder ohne Login bekommen echte Adressen von Testern.
---      Den Login erzeugt der Admin ueber "Einladung verschicken".
+--   4. Optional: Seed-Mitglieder ohne Login bekommen echte Adressen von
+--      Testern; den Login erzeugt der Admin ueber "Einladung verschicken".
 --   5. Ein Konto fuer Apples Pruefer (TestFlight -> Testinformationen).
 --
 -- Vor dem Ausfuehren die Platzhalter <<...>> ersetzen. Die Passwoerter
@@ -28,16 +30,16 @@
 -- Anmelden mit HTTP 500.
 -- ===========================================================================
 
-create temp table _tester (vorname text, nachname text, email text);
+create temp table _tester (vorname text, nachname text, mail_mitglied text, mail_admin text);
 create temp table _einladung (vorname text, nachname text, email text);
 
 insert into _tester values
-  -- ('Lucas', 'Dollmann', 'lucas.dollmann2003@gmail.com'),
+  -- ('Lucas', 'Dollmann', 'lucas.dollmann2003+mitglied@gmail.com', 'lucas.dollmann2003+admin@gmail.com'),
   <<TESTER>>;
 
-insert into _einladung values
-  -- ('Anna', 'Beispiel', 'anna@example.com'),   -- Name null = Seed-Name behalten
-  <<EINLADUNGEN>>;
+-- Optional, sonst diese Zeile leer lassen:
+-- insert into _einladung values ('Anna', 'Beispiel', 'anna@example.com');  -- Name null = Seed-Name behalten
+<<EINLADUNGEN>>
 
 create function pg_temp.login_anlegen(p_email text, p_passwort text)
 returns uuid language plpgsql as $f$
@@ -67,18 +69,12 @@ begin
   return v_auth;
 end $f$;
 
-/** a.b@x.de + 'admin' -> a.b+admin@x.de */
-create function pg_temp.plus(p_email text, p_zusatz text)
-returns text language sql immutable as $f$
-  select lower(split_part(p_email, '@', 1) || '+' || p_zusatz || '@' || split_part(p_email, '@', 2));
-$f$;
-
 do $$
 declare
   v_pw_tester  constant text := '<<PASSWORT_TESTER>>';
   v_pw_200     constant text := '<<PASSWORT_200>>';
   v_pw_pruefer constant text := '<<PASSWORT_PRUEFER>>';
-  t record; m record; v_member uuid; v_auth uuid; v_rolle text;
+  t record; m record; v_member uuid; v_auth uuid; v_rolle text; v_mail text;
 begin
   -- 1. Alte Logins weg (ausser Kiosk). Der Fremdschluessel leert
   --    members.auth_user_id; ein Admin ohne Login darf es nicht geben.
@@ -94,15 +90,16 @@ begin
   -- 2. Tester: je zwei Mitglieder
   for t in select * from _tester loop
     foreach v_rolle in array array['mitglied', 'admin'] loop
+      v_mail := lower(case v_rolle when 'admin' then t.mail_admin else t.mail_mitglied end);
       -- Aus einem frueheren Lauf schon da? Dann wiederverwenden - loeschen
       -- ginge nicht, sobald das Mitglied gebucht hat.
-      select id into v_member from public.members where email = pg_temp.plus(t.email, v_rolle);
+      select id into v_member from public.members where email = v_mail;
       if v_member is null then
         insert into public.members (first_name, last_name, email, status, birthday)
-        values (t.vorname, t.nachname, pg_temp.plus(t.email, v_rolle), 'active', date '1990-01-01')
+        values (t.vorname, t.nachname, v_mail, 'active', date '1990-01-01')
         returning id into v_member;
       end if;
-      v_auth := pg_temp.login_anlegen(pg_temp.plus(t.email, v_rolle), v_pw_tester);
+      v_auth := pg_temp.login_anlegen(v_mail, v_pw_tester);
       update public.members set auth_user_id = v_auth where id = v_member;
       insert into public.member_roles (member_id, role) values (v_member, 'member') on conflict do nothing;
       if v_rolle = 'admin' then
@@ -162,7 +159,8 @@ end $$;
 select
   (select count(*) from auth.users) as logins,
   (select count(*) from public.kiosk_devices) as kiosk,
-  (select count(*) from public.members where email like '%+admin@%' or email like '%+mitglied@%') as tester_konten,
+  (select count(*) from public.members m join _tester t
+    on m.email in (lower(t.mail_mitglied), lower(t.mail_admin)) where m.auth_user_id is not null) as tester_konten,
   (select count(*) from public.member_roles where role = 'admin') as admins,
   (select count(*) from public.members m join _einladung e on lower(e.email) = m.email
     where m.auth_user_id is null) as einladungen_offen;
