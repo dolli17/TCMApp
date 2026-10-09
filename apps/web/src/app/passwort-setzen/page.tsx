@@ -28,20 +28,46 @@ export default function PasswortSetzenSeite() {
 
   useEffect(() => {
     const supabase = createClient();
+    let aktiv = true;
 
-    // Der Client verarbeitet das Token aus der Adresse asynchron. Erst danach
-    // steht fest, ob der Link noch gültig war.
-    const { data } = supabase.auth.onAuthStateChange((_ereignis, sitzung) => {
-      setGueltig(Boolean(sitzung));
+    (async () => {
+      // Einladung und Zurücksetzen durch den Vorstand entstehen auf dem Server
+      // (Edge Function member-login) und kommen im impliziten Verfahren an: die
+      // Sitzung steht im Fragment (#access_token=…&refresh_token=…). Der
+      // Browser-Client arbeitet mit PKCE (?code=…) und übergeht das Fragment –
+      // ohne diesen Schritt meldete die Seite jeden Einladungslink als
+      // abgelaufen, obwohl Supabase ihn gerade bestätigt hatte.
+      const fragment = new URLSearchParams(window.location.hash.slice(1));
+      const access = fragment.get("access_token");
+      const refresh = fragment.get("refresh_token");
+      if (access && refresh) {
+        const { error } = await supabase.auth.setSession({
+          access_token: access,
+          refresh_token: refresh,
+        });
+        // Die Token nicht in Adresszeile und Verlauf stehen lassen.
+        window.history.replaceState(null, "", window.location.pathname);
+        if (!aktiv) return;
+        if (!error) {
+          setGueltig(true);
+          setBereit(true);
+          return;
+        }
+      }
+
+      // „Passwort vergessen“ aus der Web-App kommt mit ?code=… (PKCE); den
+      // tauscht der Client selbst, getSession wartet darauf.
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!aktiv) return;
+      setGueltig(Boolean(session));
       setBereit(true);
-    });
+    })();
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setGueltig(true);
-      setBereit(true);
-    });
-
-    return () => data.subscription.unsubscribe();
+    return () => {
+      aktiv = false;
+    };
   }, []);
 
   async function speichern(e: React.FormEvent) {
