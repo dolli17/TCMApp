@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { AnmeldeBuehne } from "@/components/AnmeldeBuehne";
 import { aktivitaetMerken } from "@/lib/inaktivitaet";
+import { kontoGewechselt } from "@/lib/konto-kanal";
 import { createClient } from "@/lib/supabase/client";
 
 function Formular() {
@@ -14,7 +15,15 @@ function Formular() {
   // ist oder ein Kiosk-Geraet, und leitet entsprechend weiter.
   const weiter = params.get("weiter") ?? "/";
   // Nach der automatischen Abmeldung (lib/inaktivitaet.ts) sagen, warum.
-  const inaktiv = params.get("grund") === "inaktiv";
+  const grund = params.get("grund");
+  const hinweis =
+    grund === "inaktiv"
+      ? "Du wurdest nach 30 Minuten ohne Aktivität abgemeldet. Bitte melde dich erneut an."
+      : grund === "anderes-konto"
+        ? "Du wurdest in diesem Tab abgemeldet, weil sich im selben Browser ein anderes Konto angemeldet hat."
+        : grund === "abgemeldet"
+          ? "Du wurdest in diesem Tab abgemeldet, weil du dich in einem anderen Tab abgemeldet hast."
+          : null;
 
   const [email, setEmail] = useState("");
   const [passwort, setPasswort] = useState("");
@@ -26,7 +35,19 @@ function Formular() {
     setFehler(null);
     setLaeuft(true);
 
-    const { error } = await createClient().auth.signInWithPassword({
+    const supabase = createClient();
+
+    // Nie zwei Konten zugleich (lib/konto-kanal.ts): ist hier schon ein
+    // anderes Konto angemeldet, wird dessen Sitzung erst beendet - auch bei
+    // Supabase, nicht nur im Browser.
+    const {
+      data: { session: bisher },
+    } = await supabase.auth.getSession();
+    if (bisher && bisher.user.email?.toLowerCase() !== email.trim().toLowerCase()) {
+      await supabase.auth.signOut({ scope: "local" });
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password: passwort,
     });
@@ -41,6 +62,7 @@ function Formular() {
 
     // Frischer Stempel, bevor die erste Seite hinter dem Login geladen wird.
     aktivitaetMerken();
+    kontoGewechselt();
     router.push(weiter);
     router.refresh();
   }
@@ -48,9 +70,9 @@ function Formular() {
   return (
     <AnmeldeBuehne titel="Willkommen zurück auf dem Platz.">
         <form onSubmit={anmelden}>
-          {inaktiv && !fehler && (
+          {hinweis && !fehler && (
             <div className="hinweis" role="status">
-              Du wurdest nach 30 Minuten ohne Aktivität abgemeldet. Bitte melde dich erneut an.
+              {hinweis}
             </div>
           )}
           <label>

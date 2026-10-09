@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { aktivitaetVergessen } from "@/lib/inaktivitaet";
+import { abmeldungInDiesemTab, kontoGewechselt } from "@/lib/konto-kanal";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -15,8 +16,10 @@ export function AbmeldeKnopf({ alsZeile = false }: { alsZeile?: boolean } = {}) 
 
   async function abmelden() {
     setLaeuft(true);
+    abmeldungInDiesemTab();
     await createClient().auth.signOut();
     aktivitaetVergessen();
+    kontoGewechselt();
     router.push("/login");
     router.refresh();
   }

@@ -8,6 +8,7 @@ import {
   aktivitaetVergessen,
   istAbgelaufen,
 } from "@/lib/inaktivitaet";
+import { abmeldungInDiesemTab, kontoGewechselt } from "@/lib/konto-kanal";
 
 /** Wie oft gemerkt bzw. geprueft wird - auf die halbe Minute genau reicht. */
 const TAKT_MS = 30_000;
@@ -35,9 +36,11 @@ export function Inaktivitaet() {
     async function pruefen() {
       if (fertig || !istAbgelaufen(aktivitaetLesen(), Date.now())) return;
       fertig = true;
+      abmeldungInDiesemTab();
       // Nur dieser Browser - die App auf dem Telefon bleibt angemeldet.
       await createClient().auth.signOut({ scope: "local" });
       aktivitaetVergessen();
+      kontoGewechselt();
       // Voller Seitenwechsel statt router.push: nichts von der Sitzung bleibt
       // im Speicher des Tabs.
       window.location.replace("/login?grund=inaktiv");

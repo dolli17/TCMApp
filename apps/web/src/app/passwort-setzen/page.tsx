@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnmeldeBuehne } from "@/components/AnmeldeBuehne";
 import { aktivitaetVergessen } from "@/lib/inaktivitaet";
+import { kontoGewechselt } from "@/lib/konto-kanal";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -67,6 +68,7 @@ export default function PasswortSetzenSeite() {
         // Kein Rückgriff auf eine schon bestehende Anmeldung: sonst änderte,
         // wer als Mitglied angemeldet ist, mit einem kaputten Admin-Link das
         // Passwort des Mitgliedskontos.
+        if (!error) kontoGewechselt();
         setGueltig(!error);
         setKonto(neu.user?.email ?? null);
         setBereit(true);
@@ -103,6 +105,7 @@ export default function PasswortSetzenSeite() {
           aktivitaetVergessen();
         }
         if (!aktiv) return;
+        if (!error) kontoGewechselt();
         setGueltig(!error);
         setKonto(neu.user?.email ?? null);
         setBereit(true);

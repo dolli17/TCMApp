@@ -10,6 +10,7 @@ import { OHNE_RAHMEN, PFAD_KOPF } from "@/lib/pfad";
 import { AbmeldeKnopf } from "@/components/AbmeldeKnopf";
 import { Benachrichtigungen } from "@/components/Benachrichtigungen";
 import { Inaktivitaet } from "@/components/Inaktivitaet";
+import { KontoWaechter } from "@/components/KontoWaechter";
 import { Fussmenue, Seitenmenue, Symbol, type NavEintrag } from "@/components/Navigation";
 import { THEME_SKRIPT } from "@/components/ThemeUmschalter";
 
@@ -95,6 +96,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: THEME_SKRIPT }} />
       </head>
       <body>
+        {/* Ein Konto pro Browser (lib/konto-kanal.ts) - auch am Kiosk. Nicht
+            auf den Anmeldeseiten: dort findet der Wechsel gerade statt. */}
+        {angemeldet && !OHNE_RAHMEN.includes(pfad) && <KontoWaechter kontoId={angemeldet.user.id} />}
         {mitRahmen ? (
           <div className="huelle">
             <aside className="seitenleiste">

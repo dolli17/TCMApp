@@ -75,6 +75,39 @@ test.describe("Anmeldung", () => {
   });
 });
 
+test.describe("Ein Konto pro Browser", () => {
+  test("meldet sich in Tab 2 ein anderes Konto an, meldet sich Tab 1 ab", async ({ page, context }) => {
+    await anmelden(page, NUTZER.mitglied);
+    const tab2 = await context.newPage();
+    await anmelden(tab2, NUTZER.admin);
+
+    await expect(page).toHaveURL(/\/login\?grund=anderes-konto/, { timeout: 10_000 });
+    await expect(page.getByRole("status")).toContainText("anderes Konto");
+    // Tab 2 bleibt im neuen Konto
+    await tab2.goto("/admin");
+    await expect(tab2.getByRole("navigation", { name: "Verwaltungsmenü" })).toBeVisible();
+  });
+
+  test("meldet sich Tab 2 ab, geht auch Tab 1 zur Anmeldung", async ({ page, context }) => {
+    await anmelden(page, NUTZER.mitglied);
+    const tab2 = await context.newPage();
+    await tab2.goto("/konto");
+    await tab2.getByRole("button", { name: "Abmelden" }).first().click();
+    await expect(tab2).toHaveURL(/\/login/);
+
+    await expect(page).toHaveURL(/\/login\?grund=abgemeldet/, { timeout: 10_000 });
+  });
+
+  test("zwei Tabs mit demselben Konto bleiben angemeldet", async ({ page, context }) => {
+    await anmelden(page, NUTZER.mitglied);
+    const tab2 = await context.newPage();
+    await tab2.goto("/plan");
+    await expect(tab2.getByRole("heading", { level: 1, name: "Belegungsplan" })).toBeVisible();
+    await page.waitForTimeout(3_000);
+    await expect(page).not.toHaveURL(/\/login/);
+  });
+});
+
 test.describe("Abmelden nach Inaktivität", () => {
   test("nach 30 Minuten ohne Aktivität wird abgemeldet", async ({ page }) => {
     await page.clock.install();
