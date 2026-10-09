@@ -76,7 +76,7 @@ begin
   -- Die Regression, die der zweite Verbraucher einfuehren kann: teilten sich
   -- beide eine Abhak-Spalte, bekaeme nur der schnellere Lauf etwas.
   select * into u from tests.fixture_user_mit_geraet() limit 1;
-  v_mail := 'zzpush-' || substr(u.member_id::text, 1, 8) || '@example.org';
+  v_mail := 'zzpush-' || substr(u.member_id::text, 1, 8) || '@zztest-verein.de';
   update public.members set email = v_mail where id = u.member_id;
 
   perform tests.lege_push_nachricht_an(u.member_id, 'booking_cancelled');

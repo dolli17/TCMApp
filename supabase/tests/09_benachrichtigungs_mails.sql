@@ -9,13 +9,18 @@
 -- werden sie in 99_runtests.sql.
 -- ===========================================================================
 
-/** Ein Mitglied mit Adresse - fixture_user() legt sie ohne an. */
+/**
+ * Ein Mitglied mit Adresse - fixture_user() legt sie ohne an.
+ *
+ * Bewusst keine Adresse unter example.org: dorthin verschickt
+ * claim_notification_mails seit 20260812130000 nichts mehr.
+ */
 create or replace function tests.fixture_user_mit_mail()
 returns table (member_id uuid, auth_id uuid, email text) language plpgsql as $f$
 declare u record; v_mail text;
 begin
   select * into u from tests.fixture_user() limit 1;
-  v_mail := 'zztest-' || substr(u.member_id::text, 1, 8) || '@example.org';
+  v_mail := 'zztest-' || substr(u.member_id::text, 1, 8) || '@zztest-verein.de';
   update public.members set email = v_mail where id = u.member_id;
   return query select u.member_id, u.auth_id, v_mail;
 end; $f$;
@@ -42,6 +47,44 @@ returns uuid language sql as $f$
   values (p_member_id, p_kind, 'ZZTest ' || p_kind, 'Text zu ' || p_kind)
   returning id;
 $f$;
+
+-- ---------------------------------------------------------------------------
+-- Testadressen
+-- ---------------------------------------------------------------------------
+
+create or replace function tests.test_testadressen_erkannt()
+returns setof text language plpgsql as $f$
+begin
+  return next ok(public.ist_testadresse('anna.meier12@example.org'), 'example.org ist eine Testadresse');
+  return next ok(public.ist_testadresse('x@Example.COM'), 'auch example.com, gross geschrieben');
+  return next ok(public.ist_testadresse('x@mail.example.net'), 'und Unterdomains von example.net');
+  return next ok(public.ist_testadresse('admin@tcm.local'), '.local ist eine Testadresse');
+  return next ok(public.ist_testadresse('a@b.test'), '.test ist eine Testadresse');
+  return next ok(not public.ist_testadresse('lucas@gmail.com'), 'gmail.com ist keine');
+  return next ok(not public.ist_testadresse('noreply@tennisclub-muckensturm.de'), 'die Vereinsdomain ist keine');
+  return next ok(not public.ist_testadresse('info@myexample.org'), 'myexample.org ist keine');
+  return next ok(not public.ist_testadresse('kontakt@firma.com'), 'gewoehnliches .com ist keine');
+end; $f$;
+
+/**
+ * An eine Testadresse geht nichts raus - die Nachricht ist trotzdem abgehakt,
+ * sonst versuchte es jeder Lauf aufs Neue.
+ */
+create or replace function tests.test_mail_nicht_an_testadresse()
+returns setof text language plpgsql as $f$
+declare u record; v_id uuid; v_zeilen integer;
+begin
+  select * into u from tests.fixture_user_mit_mail() limit 1;
+  update public.members set email = 'zztest-' || substr(u.member_id::text, 1, 8) || '@example.org'
+   where id = u.member_id;
+  v_id := tests.lege_nachricht_an(u.member_id, 'booking_displaced');
+
+  select count(*)::integer into v_zeilen
+  from public.claim_notification_mails() c where c.member_id = u.member_id;
+  return next is(v_zeilen, 0, 'An eine example.org-Adresse wird nichts verschickt');
+  return next isnt((select mailed_at from public.notifications where id = v_id), null,
+    'und die Nachricht ist trotzdem abgehakt');
+end; $f$;
 
 -- ---------------------------------------------------------------------------
 -- Abholen

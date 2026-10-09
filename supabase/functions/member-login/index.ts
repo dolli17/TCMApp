@@ -126,6 +126,9 @@ Deno.serve(async (req) => {
         if (mitglied.status === "archived") {
           return antwort(false, "Archivierte Mitglieder bekommen keinen Zugang.", 400);
         }
+        if (await istTestadresse(alsDienst, mitglied.email)) {
+          return antwort(false, TESTADRESSE, 400);
+        }
 
         const { data, error } = await alsDienst.auth.admin.inviteUserByEmail(mitglied.email, {
           redirectTo: `${SITE_URL}/passwort-setzen`,
@@ -161,6 +164,9 @@ Deno.serve(async (req) => {
       case "passwort_zuruecksetzen": {
         if (!mitglied.auth_user_id || !mitglied.email) {
           return antwort(false, "Dieses Mitglied hat keinen Zugang.", 400);
+        }
+        if (await istTestadresse(alsDienst, mitglied.email)) {
+          return antwort(false, TESTADRESSE, 400);
         }
 
         const { error } = await alsDienst.auth.resetPasswordForEmail(mitglied.email, {
@@ -243,6 +249,23 @@ Deno.serve(async (req) => {
     return antwort(false, meldung, 400);
   }
 });
+
+const TESTADRESSE =
+  "Das ist eine Testadresse (z. B. @example.org) – dorthin wird keine Mail verschickt. " +
+  "Bitte zuerst eine echte E-Mail-Adresse beim Mitglied eintragen.";
+
+/**
+ * Geht an diese Adresse keine Mail? Dieselbe Regel wie beim Versand der
+ * Benachrichtigungen (public.ist_testadresse, Migration 20260812130000):
+ * Mails an reservierte Test-Domains kommen garantiert zurück, und eine hohe
+ * Rücklaufquote gefährdet das Absenderkonto bei Resend.
+ */
+async function istTestadresse(
+  client: ReturnType<typeof createClient>,
+  email: string,
+): Promise<boolean> {
+  return (await rpc<boolean>(client, "ist_testadresse", { p_email: email })) === true;
+}
 
 /** Ruft eine RPC auf und wirft, wenn sie einen Fehler meldet. */
 async function rpc<T = unknown>(
