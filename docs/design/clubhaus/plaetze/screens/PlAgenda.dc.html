@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Plätze – ein Platz, ein Tag</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&amp;family=Barlow+Semi+Condensed:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 960px; position: relative; overflow: hidden; box-sizing: border-box; background: #07111D; color: #F3F7FB; font-family: 'Barlow', system-ui, sans-serif">
+
+<div style="padding: 60px 20px 0; display: flex; justify-content: space-between; align-items: flex-end">
+<div>
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: #879AAE">Heute · Dienstag 13.10.</div>
+<h1 style="margin: 4px 0 0; font-size: 34px; font-weight: 800; letter-spacing: -.6px; line-height: 1.05">Plätze</h1>
+</div>
+<button type="button" aria-label="Tag wählen" style="width: 44px; height: 44px; border: 0; border-radius: 22px; background: #152538; color: #F3F7FB; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"></path></svg></button>
+</div>
+
+<div style="margin: 16px 20px 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 5px">
+<sc-for list="{{plaetze}}" as="p" hint-placeholder-count="8">
+<button type="button" aria-pressed="{{p.an}}" aria-label="{{p.aria}}" style="height: 58px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 20px; font-weight: 700; {{p.stil}}">{{p.nr}}<span style="width: 7px; height: 7px; border-radius: 4px; {{p.punkt}}"></span></button>
+</sc-for>
+</div>
+<div style="padding: 8px 20px 0; display: flex; gap: 14px; font-size: 12px; color: #879AAE"><span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 7px; height: 7px; border-radius: 4px; background: #3DD68C"></span>jetzt frei</span><span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 7px; height: 7px; border-radius: 4px; background: #3A9BE0"></span>jetzt belegt</span><span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 7px; height: 7px; border-radius: 4px; background: #4A5D72"></span>gesperrt</span></div>
+
+<div style="margin: 16px 20px 0; border-radius: 24px; background: #0E1A29; border: 1px solid rgba(255,255,255,.08); padding: 16px 16px 18px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<h2 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 26px; font-weight: 700">Platz 3</h2>
+<span style="font-size: 14px; font-weight: 700; color: #3DD68C">jetzt frei bis 18:00</span>
+</div>
+<div style="position: relative; height: 420px; margin-top: 14px; display: flex">
+<div style="width: 46px; flex-shrink: 0; position: relative">
+<sc-for list="{{stunden}}" as="h" hint-placeholder-count="8">
+<span style="position: absolute; left: 0; font-size: 12px; font-weight: 600; color: #879AAE; font-variant-numeric: tabular-nums; {{h.stil}}">{{h.l}}</span>
+</sc-for>
+</div>
+<div style="flex-grow: 1; position: relative; background: repeating-linear-gradient(to bottom, rgba(255,255,255,.07) 0 1px, transparent 1px 60px)">
+<sc-for list="{{bloecke}}" as="b" hint-placeholder-count="3">
+<a href="#" style="position: absolute; left: 0; right: 0; box-sizing: border-box; border-radius: 14px; padding: 10px 12px; text-decoration: none; display: flex; flex-direction: column; gap: 2px; {{b.stil}}"><span style="font-size: 15px; font-weight: 700">{{b.t1}}</span><span style="font-size: 13px; opacity: .85">{{b.t2}}</span></a>
+</sc-for>
+<div style="position: absolute; left: -6px; right: 0; top: 12px; height: 2px; background: #FF6B61"></div>
+<div style="position: absolute; left: -8px; top: 8px; width: 10px; height: 10px; border-radius: 5px; background: #FF6B61"></div>
+</div>
+</div>
+<div style="display: flex; justify-content: space-between; margin-top: 14px; font-size: 13px; font-weight: 600; color: #879AAE"><span>‹ Platz 2</span><span>wischen</span><span>Platz 4 ›</span></div>
+</div>
+
+<nav aria-label="Hauptmenü" style="position: absolute; left: 16px; right: 92px; bottom: 26px; height: 64px; border-radius: 32px; background: rgba(22,36,54,.78); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: 0 16px 40px rgba(0,0,0,.5); display: flex; align-items: center; padding: 0 6px; gap: 2px">
+<sc-for list="{{tabs}}" as="tab" hint-placeholder-count="4">
+<a href="#" style="flex-grow: 1; flex-basis: 0; height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; font-size: 11px; font-weight: 600; {{tab.stil}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{tab.d}}"></path></svg>{{tab.label}}</a>
+</sc-for>
+</nav>
+<a href="#" aria-label="Platz buchen" style="position: absolute; right: 16px; bottom: 26px; width: 64px; height: 64px; border-radius: 32px; background: #FFD21F; color: #0A1624; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 28px rgba(255,210,31,.35)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":960}}'>
+class Component extends DCLogic {
+renderVals() {
+var H = 60, START = 14;
+var A = {
+frei: 'background: rgba(61,214,140,.08); border: 1.5px dashed rgba(61,214,140,.6); color: #8BEBC0',
+sucht: 'background: rgba(255,210,31,.12); border: 1.5px dashed #FFD21F; color: #FFD21F'
+};
+var b = function (von, bis, art, t1, t2) {
+return { t1: t1, t2: t2, stil: 'top: ' + ((von - START) * H + 3) + 'px; height: ' + ((bis - von) * H - 6) + 'px; ' + A[art] };
+};
+var status = ['frei', 'frei', 'frei', 'frei', 'frei', 'frei', 'frei', 'gesperrt'];
+var punkt = { frei: 'background: #3DD68C', belegt: 'background: #3A9BE0', gesperrt: 'background: #4A5D72' };
+var stunden = [];
+for (var h = 14; h <= 21; h++) { stunden.push({ l: h + ':00', stil: 'top: ' + ((h - START) * H - 7) + 'px' }); }
+var I = {
+home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+platz: 'M4 4h16v16H4zM4 12h16M8 8h8v8H8zM12 8v8',
+getraenk: 'M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8',
+konto: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0'
+};
+return {
+plaetze: status.map(function (s, i) {
+var an = i === 2;
+return { nr: String(i + 1), an: an ? 'true' : 'false', aria: 'Platz ' + (i + 1) + ', jetzt ' + s, punkt: punkt[s], stil: an ? 'border: 0; background: #F3F7FB; color: #07111D' : 'border: 1px solid rgba(255,255,255,.1); background: #152538; color: #B3C2D2' };
+}),
+stunden: stunden,
+bloecke: [
+b(14.5, 18, 'frei', 'frei 14:30 – 18:00', 'Tippen, um hier zu buchen'),
+b(18, 19, 'sucht', 'Doppel · sucht 2', 'Mitspielen'),
+b(19, 21, 'frei', 'frei 19:00 – 21:00', 'Tippen, um hier zu buchen')
+],
+tabs: [['Home', 'home'], ['Plätze', 'platz'], ['Getränke', 'getraenk'], ['Konto', 'konto']].map(function (x, i) {
+return { label: x[0], d: I[x[1]], stil: i === 1 ? 'background: rgba(255,210,31,.14); color: #FFD21F' : 'color: #879AAE' };
+})
+};
+}
+}
+</script>
+</body>
+</html>
