@@ -47,7 +47,6 @@ jobs:
       NUR_WEB: ${{ github.event_name == 'workflow_dispatch' }}
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
     steps:
       - name: Umgebung eingerichtet?
         id: bereit
@@ -59,12 +58,12 @@ jobs:
             echo "ja=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.bereit.outputs.ja == 'true'
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         if: steps.bereit.outputs.ja == 'true'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: steps.bereit.outputs.ja == 'true'
         with:
           node-version: 22
