@@ -39,6 +39,14 @@ describe("translateDbError", () => {
     expect(translateDbError({ message: satz, code: "23514" })).toBe(satz);
   });
 
+  it("reicht die Doppelbelegung einer Person durch, ohne sie als belegten Platz zu werten", () => {
+    // Der Platz ist frei, nur die Person steht schon woanders. Die Oberflaeche
+    // soll den Namen und den anderen Platz zeigen, nicht "Platz belegt".
+    const fehler = { message: "Robin Heinzler spielt zu dieser Zeit schon auf Platz 2.", code: "23514" };
+    expect(translateDbError(fehler)).toBe(fehler.message);
+    expect(isSlotConflict(fehler)).toBe(false);
+  });
+
   it("reicht eine Meldung ohne Satzzeichen NICHT durch", () => {
     // Ohne Punkt gilt sie als technischer Text; der Benutzer bekommt den
     // allgemeinen Satz zum Fehlercode.
