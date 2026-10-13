@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Web – Belegungsplan</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&amp;family=Barlow+Semi+Condensed:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 980px; display: flex; overflow: hidden; background: {{t.bg}}; color: {{t.ink}}; font-family: 'Barlow', system-ui, sans-serif">
+
+<aside style="width: 264px; flex-shrink: 0; box-sizing: border-box; background: {{t.side}}; border-right: 1px solid {{t.line}}; padding: 28px 16px 20px; display: flex; flex-direction: column">
+<img src="{{t.logo}}" alt="TC Muckensturm" style="height: 34px; width: auto; align-self: flex-start; margin: 0 10px 24px">
+<a href="WebPlan.dc.html" style="height: 46px; border-radius: 14px; background: {{t.yellow}}; color: {{t.onYellow}}; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; margin-bottom: 18px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Platz buchen</a>
+<nav aria-label="Hauptmenü" style="display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="4">
+<a href="{{n.href}}" style="height: 44px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; text-decoration: none; font-size: 15px; font-weight: 600; {{n.stil}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.d}}"></path></svg>{{n.label}}</a>
+</sc-for>
+</nav>
+<div style="margin: 22px 12px 8px; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: {{t.muted}}">Verwaltung</div>
+<nav aria-label="Verwaltung" style="display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{admin}}" as="n" hint-placeholder-count="6">
+<a href="{{n.href}}" style="height: 40px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; text-decoration: none; font-size: 14.5px; font-weight: 600; {{n.stil}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.d}}"></path></svg>{{n.label}}</a>
+</sc-for>
+</nav>
+<div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 16px; background: {{t.surf2}}">
+<span style="width: 38px; height: 38px; border-radius: 19px; background: #1466A8; color: #FFFFFF; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">LD</span>
+<div style="flex-grow: 1; min-width: 0"><div style="font-size: 14px; font-weight: 700">Lucas Dollmann</div><div style="font-size: 12px; color: {{t.muted}}">Admin</div></div>
+</div>
+</aside>
+
+<main style="flex-grow: 1; min-width: 0; box-sizing: border-box; padding: 36px 40px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px">
+<div>
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: {{t.muted}}">8 Sandplätze · 08 bis 21 Uhr</div>
+<h1 style="margin: 4px 0 0; font-size: 40px; font-weight: 800; letter-spacing: -.9px; line-height: 1.05">Belegungsplan</h1>
+</div>
+<div style="display: flex; gap: 8px; align-items: center">
+<sc-for list="{{tage}}" as="d" hint-placeholder-count="8">
+<button type="button" aria-pressed="{{d.aktiv}}" style="width: 54px; height: 62px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'Barlow', sans-serif; {{d.stil}}"><span style="font-size: 10.5px; font-weight: 700; letter-spacing: .08em">{{d.wt}}</span><span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 23px; font-weight: 700; line-height: 1">{{d.nr}}</span></button>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: center">
+<div style="display: flex; gap: 18px; flex-wrap: wrap">
+<sc-for list="{{legende}}" as="l" hint-placeholder-count="5">
+<span style="display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: {{t.ink2}}"><span style="width: 20px; height: 12px; border-radius: 4px; box-sizing: border-box; {{l.stil}}"></span>{{l.name}}</span>
+</sc-for>
+</div>
+<span style="font-size: 13px; color: {{t.muted}}">Freie Zeit anklicken zum Buchen · 60 Minuten, Start zur vollen oder halben Stunde</span>
+</div>
+
+<div style="border-radius: 24px; background: {{t.surf}}; border: 1px solid {{t.line}}; box-shadow: {{t.cardShadow}}; overflow: hidden; display: flex; flex-direction: column">
+<div style="display: grid; grid-template-columns: 64px repeat(8, minmax(0, 1fr)); border-bottom: 1px solid {{t.line}}; background: {{t.surf2}}">
+<div></div>
+<sc-for list="{{spalten}}" as="s" hint-placeholder-count="8">
+<div style="padding: 12px 10px; border-left: 1px solid {{t.line}}"><div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 17px">{{s.name}}</div><div style="font-size: 12px; font-weight: 600; margin-top: 1px; color: {{s.farbe}}">{{s.info}}</div></div>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: 64px repeat(8, minmax(0, 1fr)); position: relative">
+<div style="position: relative; height: 572px">
+<sc-for list="{{stunden}}" as="h" hint-placeholder-count="13">
+<span style="position: absolute; right: 10px; font-size: 12px; font-weight: 600; color: {{t.muted}}; font-variant-numeric: tabular-nums; {{h.stil}}">{{h.l}}</span>
+</sc-for>
+</div>
+<sc-for list="{{spalten}}" as="s" hint-placeholder-count="8">
+<div style="position: relative; height: 572px; border-left: 1px solid {{t.line}}; background: repeating-linear-gradient(to bottom, {{t.line}} 0 1px, transparent 1px 44px)">
+<sc-for list="{{s.bloecke}}" as="b" hint-placeholder-count="2">
+<div style="position: absolute; left: 5px; right: 5px; box-sizing: border-box; border-radius: 11px; padding: 6px 9px; overflow: hidden; font-size: 12.5px; line-height: 1.3; {{b.stil}}">
+<div style="font-weight: 700; font-variant-numeric: tabular-nums">{{b.zeit}}</div>
+<div style="font-weight: 600; opacity: .9">{{b.text}}</div>
+</div>
+</sc-for>
+</div>
+</sc-for>
+<div style="position: absolute; left: 58px; right: 0; top: 273px; height: 2px; background: {{t.red}}"></div>
+<div style="position: absolute; left: 8px; top: 264px; height: 20px; padding: 0 6px; border-radius: 10px; background: {{t.red}}; color: #FFFFFF; font-size: 11px; font-weight: 700; display: flex; align-items: center">14:12</div>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"modus":{"editor":"enum","options":["hell","dunkel"],"default":"hell"},"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+renderVals() {
+var T = {
+dunkel: { bg: '#07111D', side: '#0A1522', surf: '#0E1A29', surf2: '#122133', surf3: '#1E3249', line: 'rgba(255,255,255,.07)', ink: '#F3F7FB', ink2: '#B3C2D2', muted: '#8497AC', blue: '#3A9BE0', greenInk: '#3DD68C', red: '#FF6B61', yellow: '#FFD21F', onYellow: '#0A1624', navOn: 'background: rgba(255,210,31,.12); color: #FFD21F', navOff: 'color: #B3C2D2', cardShadow: 'none', logo: '/_blob/49d8207af8a37600cd37ff4a72865df3', dayOff: 'border: 1px solid rgba(255,255,255,.08); background: #152538; color: #B3C2D2',
+belegt: 'background: rgba(58,155,224,.22); color: #D4E9F9', eigen: 'background: #FFD21F; color: #0A1624', sucht: 'background: rgba(255,210,31,.12); border: 1.5px dashed #FFD21F; color: #FFE27A', serie: 'background: repeating-linear-gradient(135deg, rgba(255,255,255,.10) 0 6px, transparent 6px 12px), #1A2C42; color: #B3C2D2', gesperrt: 'background: #16263A; color: #8497AC', frei: 'border: 1.5px dashed #3A9BE0; background: rgba(58,155,224,.08); color: #8CC6F0' },
+hell: { bg: '#F3F5F8', side: '#FFFFFF', surf: '#FFFFFF', surf2: '#F7F9FB', surf3: '#E2E8EF', line: '#E6EBF0', ink: '#0A1624', ink2: '#44566B', muted: '#5F7185', blue: '#1A6FB0', greenInk: '#167A52', red: '#D7544B', yellow: '#FFD21F', onYellow: '#0A1624', navOn: 'background: #0A1624; color: #FFFFFF', navOff: 'color: #44566B', cardShadow: '0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06)', logo: '/_blob/d494a1dd6862562fd26acdf91cca58bc', dayOff: 'border: 1px solid #E3E8EE; background: #FFFFFF; color: #44566B',
+belegt: 'background: #DCEBF8; color: #0F4C81', eigen: 'background: #FFD21F; color: #0A1624', sucht: 'background: #FFF6D1; border: 1.5px dashed #E0B400; color: #6B5100', serie: 'background: repeating-linear-gradient(135deg, rgba(10,22,36,.07) 0 6px, transparent 6px 12px), #EEF2F6; color: #44566B', gesperrt: 'background: #E8EDF2; color: #5F7185', frei: 'border: 1.5px dashed #1A6FB0; background: #F0F7FD; color: #1A6FB0' }
+};
+var t = T[this.props.modus] || T.hell;
+var I = {
+home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+platz: 'M4 4h16v16H4zM4 12h16M8 8h8v8H8zM12 8v8',
+getraenk: 'M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8',
+konto: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
+uebersicht: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+mitglieder: 'M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 20v-1a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
+kasse: 'M2 7h20v12H2zM2 11h20M6 15h4',
+serie: 'M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z',
+system: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'
+};
+var baue = function (liste, aktiv) {
+return liste.map(function (x) { return { label: x[0], d: I[x[1]], href: x[2], stil: x[0] === aktiv ? t.navOn : t.navOff }; });
+};
+var H = 44;
+var fmt = function (h) { var s = Math.floor(h); var m = Math.round((h - s) * 60); return (s < 10 ? '0' : '') + s + ':' + (m < 10 ? '0' : '') + m; };
+var block = function (von, bis, art, text) {
+return { zeit: fmt(von) + ' – ' + fmt(bis), text: text, stil: 'top: ' + ((von - 8) * H + 3) + 'px; height: ' + ((bis - von) * H - 6) + 'px; ' + t[art] };
+};
+var spalte = function (name, info, farbe, bloecke) { return { name: name, info: info, farbe: farbe, bloecke: bloecke }; };
+var tage = [['MO', '28'], ['DI', '29'], ['MI', '30'], ['DO', '1'], ['FR', '2'], ['SA', '3'], ['SO', '4'], ['MO', '5']].map(function (d, i) {
+return { wt: d[0], nr: d[1], aktiv: i === 0 ? 'true' : 'false', stil: i === 0 ? 'border: 0; background: #FFD21F; color: #0A1624' : t.dayOff };
+});
+var stunden = [];
+for (var h = 8; h <= 20; h++) { stunden.push({ l: (h < 10 ? '0' : '') + h + ':00', stil: 'top: ' + ((h - 8) * H + 4) + 'px' }); }
+return {
+t: t,
+nav: baue([['Home', 'home', 'WebHome.dc.html'], ['Belegungsplan', 'platz', 'WebPlan.dc.html'], ['Getränke', 'getraenk', '#'], ['Mein Konto', 'konto', '#']], 'Belegungsplan'),
+admin: baue([['Übersicht', 'uebersicht', 'AdminUebersicht.dc.html'], ['Mitglieder', 'mitglieder', 'AdminMitglieder.dc.html'], ['Kasse', 'kasse', 'AdminKasse.dc.html'], ['Plätze & Serien', 'serie', '#'], ['Getränke', 'getraenk', '#'], ['System', 'system', '#']], ''),
+tage: tage,
+stunden: stunden,
+spalten: [
+spalte('Platz 1', 'frei bis 17:00', t.greenInk, [block(10, 11, 'belegt', '[Mitglied]'), block(17, 18, 'eigen', 'Du · Einzel')]),
+spalte('Platz 2', 'Training ab 16:00', t.muted, [block(16, 19, 'serie', 'Training · Serie')]),
+spalte('Platz 3', 'frei bis 18:00', t.greenInk, [block(9, 10, 'belegt', '[Mitglied]'), block(18, 19, 'sucht', 'Doppel · sucht 2')]),
+spalte('Platz 4', 'frei bis 17:00', t.greenInk, [block(17, 18, 'sucht', 'Doppel · sucht 1'), block(20, 21, 'belegt', '[Mitglied]')]),
+spalte('Platz 5', 'frei bis 17:00', t.greenInk, [block(11, 12, 'belegt', '[Mitglied]'), block(17, 19, 'belegt', '[Mitglied] · Doppel')]),
+spalte('Platz 6', 'ganztägig frei', t.greenInk, [block(15, 16, 'frei', '+ 15:00 buchen')]),
+spalte('Platz 7', 'frei bis 19:00', t.greenInk, [block(8, 10, 'belegt', '[Mitglied]'), block(19, 21, 'belegt', '[Mitglied] · Doppel')]),
+spalte('Platz 8', 'gesperrt', t.muted, [block(8, 21, 'gesperrt', 'Platzpflege bis Mi')])
+],
+legende: [
+{ name: 'Deine Buchung', stil: t.eigen },
+{ name: 'Belegt', stil: t.belegt },
+{ name: 'Mitspieler gesucht', stil: t.sucht },
+{ name: 'Training / Serie', stil: t.serie },
+{ name: 'Gesperrt', stil: t.gesperrt }
+]
+};
+}
+}
+</script>
+</body>
+</html>

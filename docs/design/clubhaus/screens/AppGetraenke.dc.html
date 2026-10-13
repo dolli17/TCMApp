@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>App – Getränke</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&amp;family=Barlow+Semi+Condensed:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 1180px; position: relative; overflow: hidden; box-sizing: border-box; background: {{t.bg}}; color: {{t.ink}}; font-family: 'Barlow', system-ui, sans-serif">
+
+<div style="padding: 60px 20px 0">
+<h1 style="margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -.6px; line-height: 1.05">Getränke</h1>
+</div>
+
+<div style="margin: 18px 20px 0; border-radius: 26px; background: #1466A8; color: #FFFFFF; padding: 20px; position: relative; overflow: hidden">
+<svg width="350" height="150" viewBox="0 0 350 150" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="2" style="position: absolute; right: 0; top: 0"><path d="M200 150 L250 0 M350 40 L260 150 M230 80 H350"></path></svg>
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; opacity: .85; position: relative">September · läuft noch</div>
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 44px; line-height: 1; margin-top: 8px; position: relative">[Summe]</div>
+<div style="font-size: 14px; opacity: .9; margin-top: 8px; position: relative">[n] Entnahmen · wird mit der Monatsabrechnung eingezogen</div>
+</div>
+
+<div style="padding: 28px 20px 0; display: flex; justify-content: space-between; align-items: baseline">
+<h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.2px">Was nimmst du?</h2>
+<span style="font-size: 13px; color: {{t.muted}}">Karte aus der Verwaltung</span>
+</div>
+<div style="padding: 12px 20px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<sc-for list="{{karte}}" as="g" hint-placeholder-count="6">
+<div style="height: 124px; box-sizing: border-box; border-radius: 22px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; {{g.stil}}">
+<div>
+<div style="font-size: 17px; font-weight: 700">{{g.name}}</div>
+<div style="font-size: 13.5px; color: {{t.muted}}; margin-top: 2px">{{g.info}}</div>
+</div>
+<div style="display: flex; justify-content: flex-end; align-items: center; gap: 4px">
+<sc-if value="{{g.gewaehlt}}" hint-placeholder-val="{{ false }}">
+<button type="button" aria-label="{{g.minus}}" style="width: 40px; height: 40px; border: 0; border-radius: 20px; background: {{t.surf2}}; color: {{t.ink}}; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+<span style="min-width: 28px; text-align: center; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 22px">{{g.anzahl}}</span>
+</sc-if>
+<button type="button" aria-label="{{g.plus}}" style="width: 40px; height: 40px; border: 0; border-radius: 20px; background: {{t.yellow}}; color: {{t.onYellow}}; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+</div>
+</div>
+</sc-for>
+</div>
+
+<div style="padding: 28px 20px 0"><h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.2px">Zuletzt</h2></div>
+<div style="margin: 12px 20px 0; border-radius: 22px; background: {{t.surf}}; border: 1px solid {{t.line}}; box-shadow: {{t.cardShadow}}; overflow: hidden">
+<sc-for list="{{zuletzt}}" as="z" hint-placeholder-count="3">
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid {{t.line}}">
+<div><div style="font-size: 15px; font-weight: 600">{{z.was}}</div><div style="font-size: 12.5px; color: {{t.muted}}; margin-top: 2px">{{z.wann}}</div></div>
+<span style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 17px">[Betrag]</span>
+</div>
+</sc-for>
+</div>
+
+<div style="position: absolute; left: 16px; right: 16px; bottom: 104px; height: 68px; box-sizing: border-box; border-radius: 24px; background: {{t.inv}}; color: {{t.onInv}}; padding: 0 8px 0 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: {{t.shadow}}">
+<div><div style="font-size: 15px; font-weight: 700">3 Getränke</div><div style="font-size: 13px; opacity: .7">[Betrag] · aufs Monatskonto</div></div>
+<button type="button" style="height: 52px; padding: 0 24px; border: 0; border-radius: 18px; background: {{t.yellow}}; color: {{t.onYellow}}; font-family: 'Barlow', sans-serif; font-size: 16px; font-weight: 800">Eintragen</button>
+</div>
+
+<nav aria-label="Hauptmenü" style="position: absolute; left: 16px; right: 92px; bottom: 26px; height: 64px; border-radius: 32px; background: {{t.glass}}; border: 1px solid {{t.glassLine}}; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: {{t.shadow}}; display: flex; align-items: center; padding: 0 6px; gap: 2px">
+<sc-for list="{{tabs}}" as="tab" hint-placeholder-count="4">
+<a href="{{tab.href}}" style="flex-grow: 1; flex-basis: 0; height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; font-size: 11px; font-weight: 600; background: {{tab.bg}}; color: {{tab.color}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{tab.d}}"></path></svg>{{tab.label}}</a>
+</sc-for>
+</nav>
+<a href="AppBuchen.dc.html" aria-label="Platz buchen" style="position: absolute; right: 16px; bottom: 26px; width: 64px; height: 64px; border-radius: 32px; background: {{t.yellow}}; color: {{t.onYellow}}; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 28px rgba(255,210,31,.35)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"modus":{"editor":"enum","options":["dunkel","hell"],"default":"dunkel"},"$preview":{"width":390,"height":1180}}'>
+class Component extends DCLogic {
+renderVals() {
+var T = {
+dunkel: { bg: '#07111D', surf: '#0E1A29', surf2: '#152538', line: 'rgba(255,255,255,.08)', ink: '#F3F7FB', ink2: '#B3C2D2', muted: '#8497AC', yellow: '#FFD21F', onYellow: '#0A1624', inv: '#F3F7FB', onInv: '#07111D', glass: 'rgba(22,36,54,.78)', glassLine: 'rgba(255,255,255,.12)', tabActive: 'rgba(255,210,31,.14)', tabInk: '#FFD21F', shadow: '0 16px 40px rgba(0,0,0,.5)', cardShadow: 'none', selBorder: '#FFD21F' },
+hell: { bg: '#F3F5F8', surf: '#FFFFFF', surf2: '#EEF2F6', line: '#E3E8EE', ink: '#0A1624', ink2: '#44566B', muted: '#5F7185', yellow: '#FFD21F', onYellow: '#0A1624', inv: '#0A1624', onInv: '#FFFFFF', glass: 'rgba(255,255,255,.82)', glassLine: 'rgba(10,22,36,.08)', tabActive: '#FFD21F', tabInk: '#0A1624', shadow: '0 16px 40px rgba(10,22,36,.18)', cardShadow: '0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06)', selBorder: '#E0B400' }
+};
+var t = T[this.props.modus] || T.dunkel;
+var I = {
+home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+platz: 'M4 4h16v16H4zM4 12h16M8 8h8v8H8zM12 8v8',
+getraenk: 'M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8',
+konto: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0'
+};
+var tabs = [['Home', 'home', 'AppHome.dc.html'], ['Plätze', 'platz', 'AppPlaetze.dc.html'], ['Getränke', 'getraenk', 'AppGetraenke.dc.html'], ['Konto', 'konto', 'AppKonto.dc.html']].map(function (x, i) {
+return { label: x[0], d: I[x[1]], href: x[2], bg: i === 2 ? t.tabActive : 'transparent', color: i === 2 ? t.tabInk : t.muted };
+});
+var karte = [['[Getränk 1]', 0], ['[Getränk 2]', 2], ['[Getränk 3]', 0], ['[Getränk 4]', 1], ['[Getränk 5]', 0], ['[Getränk 6]', 0]].map(function (g) {
+var an = g[1] > 0;
+return {
+name: g[0], info: '[Preis]', anzahl: g[1], gewaehlt: an,
+minus: g[0] + ' eins weniger', plus: g[0] + ' eins mehr',
+stil: an ? 'background: ' + t.surf + '; border: 2px solid ' + t.selBorder + '; box-shadow: ' + t.cardShadow : 'background: ' + t.surf + '; border: 1px solid ' + t.line + '; box-shadow: ' + t.cardShadow
+};
+});
+return {
+t: t,
+tabs: tabs,
+karte: karte,
+zuletzt: [
+{ was: '[Getränk 2] × 2', wann: 'Samstag, 26.09. · App' },
+{ was: '[Getränk 4] × 1', wann: 'Donnerstag, 24.09. · Theke' },
+{ was: '[Getränk 1] × 1', wann: 'Dienstag, 22.09. · Theke' }
+]
+};
+}
+}
+</script>
+</body>
+</html>

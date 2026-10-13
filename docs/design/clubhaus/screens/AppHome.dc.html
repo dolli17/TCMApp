@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>App – Home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&amp;family=Barlow+Semi+Condensed:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 1400px; position: relative; overflow: hidden; box-sizing: border-box; background: {{t.bg}}; color: {{t.ink}}; font-family: 'Barlow', system-ui, sans-serif">
+
+<div style="padding: 60px 20px 0; display: flex; justify-content: space-between; align-items: flex-end">
+<div>
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: {{t.muted}}">Montag, 28. September</div>
+<h1 style="margin: 4px 0 0; font-size: 34px; font-weight: 800; letter-spacing: -.6px; line-height: 1.05">Hallo, Lucas</h1>
+</div>
+<div style="display: flex; gap: 10px; align-items: center">
+<button type="button" aria-label="Benachrichtigungen, 2 neu" style="position: relative; width: 44px; height: 44px; border-radius: 22px; border: 1px solid {{t.line}}; background: {{t.surf2}}; color: {{t.ink}}; display: flex; align-items: center; justify-content: center">
+<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+<span style="position: absolute; top: 8px; right: 9px; width: 9px; height: 9px; border-radius: 5px; background: {{t.yellow}}; border: 2px solid {{t.surf2}}"></span>
+</button>
+<a href="AppKonto.dc.html" aria-label="Konto" style="width: 44px; height: 44px; border-radius: 22px; background: #1466A8; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; text-decoration: none">LD</a>
+</div>
+</div>
+
+<div style="padding: 24px 20px 0; display: flex; align-items: center; gap: 4px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.2px">Als Nächstes</h2>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{t.muted}}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+</div>
+<div style="padding: 12px 0 0 20px; display: flex; gap: 12px; overflow: hidden">
+<div style="width: 318px; flex-shrink: 0; height: 216px; box-sizing: border-box; border-radius: 26px; background: #1466A8; color: #FFFFFF; position: relative; overflow: hidden; padding: 20px; display: flex; flex-direction: column; box-shadow: 0 18px 40px rgba(20,102,168,.35)">
+<svg width="318" height="216" viewBox="0 0 318 216" fill="none" stroke="rgba(255,255,255,.13)" stroke-width="2" style="position: absolute; left: 0; top: 0"><path d="M150 216 L210 0 M318 60 L190 216 M180 100 H318 M200 40 H318"></path></svg>
+<div style="position: absolute; right: 20px; top: 20px; width: 26px; height: 26px; border-radius: 13px; background: #FFD21F"></div>
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; opacity: .85; position: relative">Heute · in 3 Stunden</div>
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 40px; line-height: 1; margin-top: 8px; font-variant-numeric: tabular-nums; position: relative">17:00 – 18:00</div>
+<div style="font-size: 16px; font-weight: 600; margin-top: 6px; opacity: .92; position: relative">Platz 1 · Einzel</div>
+<div style="margin-top: auto; display: flex; align-items: center; justify-content: space-between; position: relative">
+<div style="display: flex; align-items: center">
+<span style="width: 34px; height: 34px; border-radius: 17px; background: #FFD21F; color: #0A1624; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid #1466A8">LD</span>
+<span style="width: 34px; height: 34px; border-radius: 17px; background: #0F4C81; color: #FFFFFF; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid #1466A8; margin-left: -8px">[M]</span>
+<span style="font-size: 13px; margin-left: 10px; opacity: .9">mit [Mitspieler]</span>
+</div>
+<a href="AppSpiele.dc.html" style="height: 40px; padding: 0 16px; border-radius: 20px; background: rgba(255,255,255,.18); color: #FFFFFF; font-size: 14px; font-weight: 700; display: flex; align-items: center; text-decoration: none">Details</a>
+</div>
+</div>
+<div style="width: 318px; flex-shrink: 0; height: 216px; box-sizing: border-box; border-radius: 26px; background: {{t.surf}}; border: 1px solid {{t.line}}; padding: 20px; display: flex; flex-direction: column; box-shadow: {{t.cardShadow}}">
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: {{t.muted}}">Mittwoch · 30.09.</div>
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 40px; line-height: 1; margin-top: 8px">18:00 – 19:00</div>
+</div>
+</div>
+
+<div style="padding: 20px 20px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<a href="AppBuchen.dc.html" style="height: 96px; box-sizing: border-box; border-radius: 22px; background: {{t.yellow}}; color: {{t.onYellow}}; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; text-decoration: none">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM12 12v6M9 15h6"></path></svg>
+<span style="font-size: 15px; font-weight: 700; line-height: 1.15">Platz buchen</span>
+</a>
+<a href="AppGetraenke.dc.html" style="height: 96px; box-sizing: border-box; border-radius: 22px; background: {{t.surf}}; border: 1px solid {{t.line}}; color: {{t.ink}}; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; box-shadow: {{t.cardShadow}}">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8"></path></svg>
+<span style="font-size: 15px; font-weight: 700; line-height: 1.15">Getränk eintragen</span>
+</a>
+<a href="AppSpiele.dc.html" style="height: 96px; box-sizing: border-box; border-radius: 22px; background: {{t.surf}}; border: 1px solid {{t.line}}; color: {{t.ink}}; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; box-shadow: {{t.cardShadow}}">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6"></path></svg>
+<span style="font-size: 15px; font-weight: 700; line-height: 1.15">Mitspielen</span>
+</a>
+</div>
+
+<div style="padding: 30px 20px 0; display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.2px">Jetzt frei</h2>
+<a href="AppPlaetze.dc.html" style="font-size: 14px; font-weight: 600; color: {{t.blue}}; text-decoration: none">Alle Plätze</a>
+</div>
+<div style="padding: 12px 0 0 20px; display: flex; gap: 10px; overflow: hidden">
+<sc-for list="{{frei}}" as="p" hint-placeholder-count="3">
+<a href="AppBuchen.dc.html" style="width: 150px; flex-shrink: 0; box-sizing: border-box; border-radius: 22px; background: {{t.surf}}; border: 1px solid {{t.line}}; padding: 14px; display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: {{t.ink}}; box-shadow: {{t.cardShadow}}">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<span style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 20px">{{p.name}}</span>
+<span style="width: 8px; height: 8px; border-radius: 4px; background: {{t.green}}"></span>
+</div>
+<div style="font-size: 13px; color: {{t.ink2}}">{{p.info}}</div>
+<div style="position: relative; height: 8px; border-radius: 4px; background: {{t.surf2}}; overflow: hidden">
+<sc-for list="{{p.segs}}" as="s" hint-placeholder-count="2">
+<div style="position: absolute; top: 0; bottom: 0; border-radius: 4px; box-sizing: border-box; {{s.stil}}"></div>
+</sc-for>
+<div style="position: absolute; top: 0; bottom: 0; left: 46%; width: 2px; background: {{t.ink}}"></div>
+</div>
+</a>
+</sc-for>
+</div>
+
+<div style="padding: 30px 20px 0; display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.2px">Offene Spiele</h2>
+<a href="AppSpiele.dc.html" style="font-size: 14px; font-weight: 600; color: {{t.blue}}; text-decoration: none">Alle</a>
+</div>
+<div style="padding: 12px 20px 0; display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{offen}}" as="o" hint-placeholder-count="2">
+<div style="border-radius: 22px; background: {{t.surf}}; border: 1px solid {{t.line}}; padding: 14px; display: flex; align-items: center; gap: 14px; box-shadow: {{t.cardShadow}}">
+<div style="width: 56px; height: 60px; flex-shrink: 0; border-radius: 16px; background: {{t.yellowSoft}}; border: 1.5px dashed {{t.yellowLine}}; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box">
+<span style="font-size: 10.5px; font-weight: 700; letter-spacing: .08em; color: {{t.ink2}}">{{o.tag}}</span>
+<span style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 19px; line-height: 1.05">{{o.zeit}}</span>
+</div>
+<div style="flex-grow: 1; min-width: 0">
+<div style="font-size: 16px; font-weight: 700">{{o.titel}}</div>
+<div style="font-size: 13px; color: {{t.muted}}; margin-top: 2px">{{o.info}}</div>
+</div>
+<a href="AppSpiele.dc.html" style="height: 40px; padding: 0 14px; border-radius: 20px; background: {{t.yellow}}; color: {{t.onYellow}}; font-size: 14px; font-weight: 700; display: flex; align-items: center; text-decoration: none; flex-shrink: 0">Mitspielen</a>
+</div>
+</sc-for>
+</div>
+
+<div style="padding: 30px 20px 0">
+<h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.2px">Dein September</h2>
+</div>
+<div style="padding: 12px 20px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<a href="AppGetraenke.dc.html" style="border-radius: 22px; background: {{t.surf}}; border: 1px solid {{t.line}}; padding: 16px; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: {{t.ink}}; box-shadow: {{t.cardShadow}}">
+<span style="font-size: 13px; color: {{t.muted}}; font-weight: 600">Getränke</span>
+<span style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 28px">[Betrag]</span>
+<span style="font-size: 12.5px; color: {{t.muted}}">läuft noch</span>
+</a>
+<a href="AppKonto.dc.html" style="border-radius: 22px; background: {{t.surf}}; border: 1px solid {{t.line}}; padding: 16px; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: {{t.ink}}; box-shadow: {{t.cardShadow}}">
+<span style="font-size: 13px; color: {{t.muted}}; font-weight: 600">Arbeitsdienst</span>
+<span style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 28px">[Ist] / [Soll] h</span>
+<div style="height: 6px; border-radius: 3px; background: {{t.surf2}}; margin-top: 6px; overflow: hidden"><div style="width: 40%; height: 6px; border-radius: 3px; background: {{t.green}}"></div></div>
+</a>
+</div>
+
+<div style="padding: 30px 20px 0">
+<h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.2px">Neuigkeiten</h2>
+</div>
+<div style="margin: 12px 20px 0; border-radius: 22px; background: {{t.surf}}; border: 1px solid {{t.line}}; box-shadow: {{t.cardShadow}}; overflow: hidden">
+<sc-for list="{{news}}" as="n" hint-placeholder-count="3">
+<div style="display: flex; gap: 12px; padding: 14px 16px; border-bottom: 1px solid {{t.line}}">
+<div style="width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: {{n.bg}}; color: {{n.fg}}">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.d}}"></path></svg>
+</div>
+<div style="flex-grow: 1; min-width: 0">
+<div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-size: 15px; font-weight: 700">{{n.titel}}</span><span style="font-size: 12px; color: {{t.muted}}; flex-shrink: 0">{{n.wann}}</span></div>
+<div style="font-size: 13.5px; color: {{t.ink2}}; margin-top: 2px; line-height: 1.4">{{n.text}}</div>
+</div>
+</div>
+</sc-for>
+</div>
+
+<nav aria-label="Hauptmenü" style="position: absolute; left: 16px; right: 92px; bottom: 26px; height: 64px; border-radius: 32px; background: {{t.glass}}; border: 1px solid {{t.glassLine}}; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: {{t.shadow}}; display: flex; align-items: center; padding: 0 6px; gap: 2px">
+<sc-for list="{{tabs}}" as="tab" hint-placeholder-count="4">
+<a href="{{tab.href}}" style="flex-grow: 1; flex-basis: 0; height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; font-size: 11px; font-weight: 600; background: {{tab.bg}}; color: {{tab.color}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{tab.d}}"></path></svg>{{tab.label}}</a>
+</sc-for>
+</nav>
+<a href="AppBuchen.dc.html" aria-label="Platz buchen" style="position: absolute; right: 16px; bottom: 26px; width: 64px; height: 64px; border-radius: 32px; background: {{t.yellow}}; color: {{t.onYellow}}; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 28px rgba(255,210,31,.35)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"modus":{"editor":"enum","options":["dunkel","hell"],"default":"dunkel"},"$preview":{"width":390,"height":1400}}'>
+class Component extends DCLogic {
+renderVals() {
+var T = {
+dunkel: { bg: '#07111D', surf: '#0E1A29', surf2: '#152538', surf3: '#1E3249', line: 'rgba(255,255,255,.08)', ink: '#F3F7FB', ink2: '#B3C2D2', muted: '#8497AC', blue: '#3A9BE0', yellow: '#FFD21F', yellowSoft: 'rgba(255,210,31,.14)', yellowLine: '#FFD21F', onYellow: '#0A1624', green: '#3DD68C', red: '#FF6B61', glass: 'rgba(22,36,54,.78)', glassLine: 'rgba(255,255,255,.12)', tabActive: 'rgba(255,210,31,.14)', tabInk: '#FFD21F', shadow: '0 16px 40px rgba(0,0,0,.5)', cardShadow: 'none', hatch: 'repeating-linear-gradient(135deg, rgba(255,255,255,.18) 0 3px, transparent 3px 6px), #1E3249' },
+hell: { bg: '#F3F5F8', surf: '#FFFFFF', surf2: '#EEF2F6', surf3: '#E2E8EF', line: '#E3E8EE', ink: '#0A1624', ink2: '#44566B', muted: '#5F7185', blue: '#1A6FB0', yellow: '#FFD21F', yellowSoft: '#FFF6D1', yellowLine: '#E0B400', onYellow: '#0A1624', green: '#1E9E6A', red: '#D7544B', glass: 'rgba(255,255,255,.82)', glassLine: 'rgba(10,22,36,.08)', tabActive: '#FFD21F', tabInk: '#0A1624', shadow: '0 16px 40px rgba(10,22,36,.16)', cardShadow: '0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06)', hatch: 'repeating-linear-gradient(135deg, rgba(10,22,36,.14) 0 3px, transparent 3px 6px), #E2E8EF' }
+};
+var t = T[this.props.modus] || T.dunkel;
+var pos = function (von, bis) { return 'left: ' + ((von - 8) / 13 * 100).toFixed(2) + '%; width: ' + ((bis - von) / 13 * 100).toFixed(2) + '%; '; };
+var seg = function (von, bis, art) {
+var f = { belegt: 'background: ' + t.blue, eigen: 'background: ' + t.yellow, sucht: 'background: ' + t.yellowSoft + '; border: 1.5px dashed ' + t.yellowLine, serie: 'background: ' + t.hatch };
+return { stil: pos(von, bis) + f[art] };
+};
+var I = {
+home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+platz: 'M4 4h16v16H4zM4 12h16M8 8h8v8H8zM12 8v8',
+getraenk: 'M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8',
+konto: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0'
+};
+var aktiv = 0;
+var tabs = [['Home', 'home', 'AppHome.dc.html'], ['Plätze', 'platz', 'AppPlaetze.dc.html'], ['Getränke', 'getraenk', 'AppGetraenke.dc.html'], ['Konto', 'konto', 'AppKonto.dc.html']].map(function (x, i) {
+return { label: x[0], d: I[x[1]], href: x[2], bg: i === aktiv ? t.tabActive : 'transparent', color: i === aktiv ? t.tabInk : t.muted };
+});
+return {
+t: t,
+tabs: tabs,
+frei: [
+{ name: 'Platz 6', info: 'frei bis 21:00', segs: [] },
+{ name: 'Platz 3', info: 'frei bis 18:00', segs: [seg(9, 10, 'belegt'), seg(18, 19, 'sucht')] },
+{ name: 'Platz 7', info: 'frei bis 19:00', segs: [seg(8, 10, 'belegt'), seg(19, 21, 'belegt')] }
+],
+offen: [
+{ tag: 'HEUTE', zeit: '17:00', titel: 'Doppel · sucht 1', info: 'Platz 4 · 3 von 4 dabei' },
+{ tag: 'HEUTE', zeit: '18:00', titel: 'Doppel · sucht 2', info: 'Platz 3 · 2 von 4 dabei' }
+],
+news: [
+{ titel: 'Mitspieler dabei', wann: 'vor 1 Std.', text: '[Mitspieler] hat sich für heute 17:00 auf Platz 1 eingetragen.', d: 'M5 12l5 5L20 7', bg: t.yellowSoft, fg: t.ink },
+{ titel: 'Lastschrift angekündigt', wann: 'gestern', text: 'Dein Jahresbeitrag wird am [Datum] eingezogen: [Betrag].', d: 'M2 7h20v12H2zM2 11h20M6 15h4', bg: t.surf2, fg: t.ink2 },
+{ titel: 'Platz 8 gesperrt', wann: 'Sa', text: 'Platzpflege bis Mittwoch. Deine Buchungen sind nicht betroffen.', d: 'M6 11h12v10H6zM8 11V8a4 4 0 0 1 8 0v3', bg: t.surf2, fg: t.ink2 }
+]
+};
+}
+}
+</script>
+</body>
+</html>

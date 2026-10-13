@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Clubhaus – Designkonzept</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&amp;family=Barlow+Semi+Condensed:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1720px; box-sizing: border-box; padding: 72px 80px; background: #07111D; color: #F3F7FB; font-family: 'Barlow', system-ui, sans-serif; display: flex; flex-direction: column; gap: 48px">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 40px">
+<div style="display: flex; flex-direction: column; gap: 14px; max-width: 760px">
+<img src="/_blob/49d8207af8a37600cd37ff4a72865df3" alt="TC Muckensturm" style="height: 44px; width: auto; align-self: flex-start">
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .16em; text-transform: uppercase; color: #FFD21F">Designkonzept</div>
+<h1 style="margin: 0; font-size: 72px; font-weight: 800; letter-spacing: -1.6px; line-height: .95">Clubhaus</h1>
+<p style="margin: 0; font-size: 19px; line-height: 1.45; color: #B3C2D2">Ein System für die Mitglieder-App auf iOS und Android, das Mitglieder-Web, die Verwaltung und das Kiosk-Tablet an der Theke. Vereinsblau trägt die Marke, Ballgelb heißt: hier passiert etwas.</p>
+</div>
+<div style="width: 180px; height: 180px; border-radius: 42px; background: #1466A8; position: relative; overflow: hidden; box-shadow: 0 24px 60px rgba(20,102,168,.45); flex-shrink: 0">
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="3"><path d="M40 150 L62 30 H118 L140 150 Z"></path><path d="M51 90 H129"></path><path d="M56 62 H124 M46 118 H134 M90 62 V118"></path></svg>
+<div style="position: absolute; right: 26px; top: 22px; width: 40px; height: 40px; border-radius: 20px; background: #FFD21F; box-shadow: 0 6px 16px rgba(0,0,0,.25)"></div>
+<div style="position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .14em; color: rgba(255,255,255,.8)">APP-ICON</div>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px">
+<sc-for list="{{prinzipien}}" as="p" hint-placeholder-count="4">
+<div style="background: #0E1A29; border: 1px solid rgba(255,255,255,.08); border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; color: #FFD21F">{{p.nr}}</div>
+<div style="font-size: 21px; font-weight: 700; letter-spacing: -.2px">{{p.titel}}</div>
+<div style="font-size: 15px; line-height: 1.5; color: #B3C2D2">{{p.text}}</div>
+</div>
+</sc-for>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+<div style="background: #0E1A29; border: 1px solid rgba(255,255,255,.08); border-radius: 24px; padding: 26px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 22px; font-weight: 700">Farben · Dunkel</h2><span style="font-size: 13px; color: #8497AC">Standard in der App</span></div>
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px">
+<sc-for list="{{dunkel}}" as="f" hint-placeholder-count="12">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="height: 56px; border-radius: 14px; border: 1px solid rgba(255,255,255,.12); background: {{f.hex}}"></div>
+<div style="font-size: 12.5px; font-weight: 600">{{f.name}}</div>
+<div style="font-size: 11.5px; color: #8497AC">{{f.hex}}</div>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="background: #F3F5F8; border-radius: 24px; padding: 26px; display: flex; flex-direction: column; gap: 16px; color: #0A1624">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 22px; font-weight: 700">Farben · Hell</h2><span style="font-size: 13px; color: #5F7185">Standard in der Verwaltung</span></div>
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px">
+<sc-for list="{{hell}}" as="f" hint-placeholder-count="12">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="height: 56px; border-radius: 14px; border: 1px solid rgba(10,22,36,.10); background: {{f.hex}}"></div>
+<div style="font-size: 12.5px; font-weight: 600">{{f.name}}</div>
+<div style="font-size: 11.5px; color: #5F7185">{{f.hex}}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px">
+<div style="background: #0E1A29; border: 1px solid rgba(255,255,255,.08); border-radius: 24px; padding: 26px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0 0 4px; font-size: 22px; font-weight: 700">Schrift · Barlow</h2>
+<div style="font-size: 34px; font-weight: 800; letter-spacing: -.6px; line-height: 1.05">Großer Titel 34</div>
+<div style="font-size: 22px; font-weight: 700; letter-spacing: -.2px">Abschnitt 22 ›</div>
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 30px; font-variant-numeric: tabular-nums">17:00 – 18:00</div>
+<div style="font-size: 16px; font-weight: 500; line-height: 1.45; color: #B3C2D2">Fließtext 16 · gut lesbar auch in der Sonne am Platz.</div>
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: #8497AC">Kicker 12 · Semi Condensed</div>
+<p style="margin: 4px 0 0; font-size: 13px; color: #8497AC; line-height: 1.5">Beide Schnitte sind im Repo schon eingebunden (Fontsource, Expo). Neu ist nur Barlow 800 für große Titel.</p>
+</div>
+
+<div style="background: #0E1A29; border: 1px solid rgba(255,255,255,.08); border-radius: 24px; padding: 26px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 700">Status auf dem Platz</h2>
+<div style="position: relative; height: 12px; border-radius: 6px; background: #152538; overflow: hidden">
+<div style="position: absolute; top: 0; bottom: 0; left: 4%; width: 14%; background: #3A9BE0; border-radius: 6px"></div>
+<div style="position: absolute; top: 0; bottom: 0; left: 24%; width: 10%; background: #FFD21F; border-radius: 6px"></div>
+<div style="position: absolute; top: 0; bottom: 0; left: 40%; width: 10%; box-sizing: border-box; background: rgba(255,210,31,.16); border: 1.5px dashed #FFD21F; border-radius: 6px"></div>
+<div style="position: absolute; top: 0; bottom: 0; left: 56%; width: 22%; background: repeating-linear-gradient(135deg, rgba(255,255,255,.16) 0 4px, transparent 4px 8px), #1E3249; border-radius: 6px"></div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px">
+<sc-for list="{{status}}" as="s" hint-placeholder-count="6">
+<div style="display: flex; gap: 10px; align-items: center">
+<div style="width: 28px; height: 14px; border-radius: 5px; flex-shrink: 0; box-sizing: border-box; {{s.stil}}"></div>
+<div style="display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 600">{{s.name}}</span><span style="font-size: 12px; color: #8497AC">{{s.info}}</span></div>
+</div>
+</sc-for>
+</div>
+<p style="margin: 0; font-size: 13px; color: #8497AC; line-height: 1.5">Blau, Gelb und Grau unterscheiden sich auch in der Helligkeit. Serien bekommen zusätzlich ein Muster, gesuchte Spiele eine gestrichelte Kante.</p>
+</div>
+
+<div style="background: #0E1A29; border: 1px solid rgba(255,255,255,.08); border-radius: 24px; padding: 26px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 700">Knöpfe &amp; Auswahl</h2>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<button type="button" style="border: 0; height: 52px; padding: 0 22px; border-radius: 16px; background: #FFD21F; color: #0A1624; font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 16px; box-shadow: 0 8px 24px rgba(255,210,31,.28)">Platz buchen</button>
+<button type="button" style="height: 52px; padding: 0 22px; border-radius: 16px; background: #152538; color: #F3F7FB; border: 1px solid rgba(255,255,255,.12); font-family: 'Barlow', sans-serif; font-weight: 600; font-size: 16px">Details</button>
+<button type="button" style="height: 52px; padding: 0 18px; border-radius: 16px; background: transparent; color: #FF6B61; border: 1px solid rgba(255,107,97,.4); font-family: 'Barlow', sans-serif; font-weight: 600; font-size: 16px">Stornieren</button>
+</div>
+<div style="display: flex; gap: 8px">
+<sc-for list="{{tage}}" as="d" hint-placeholder-count="5">
+<button type="button" style="width: 58px; height: 70px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-family: 'Barlow', sans-serif; {{d.stil}}"><span style="font-size: 11px; font-weight: 700; letter-spacing: .08em">{{d.wt}}</span><span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 26px; font-weight: 700; line-height: 1">{{d.nr}}</span></button>
+</sc-for>
+</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<span style="height: 36px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 18px; background: #152538; color: #B3C2D2; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums">16:00</span>
+<span style="height: 36px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 18px; background: #F3F7FB; color: #07111D; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums">17:00</span>
+<span style="height: 36px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 18px; background: #152538; color: #B3C2D2; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums">18:00</span>
+<span style="height: 36px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border-radius: 18px; background: rgba(255,210,31,.16); color: #FFD21F; font-size: 13px; font-weight: 700">sucht 1</span>
+</div>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+<div style="background: #0E1A29; border: 1px solid rgba(255,255,255,.08); border-radius: 24px; padding: 26px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 22px; font-weight: 700">Schwebende Leiste</h2><span style="font-size: 13px; color: #8497AC">iOS &amp; Android</span></div>
+<div style="position: relative; height: 150px; border-radius: 20px; overflow: hidden; background: #1466A8">
+<svg width="100%" height="150" viewBox="0 0 600 150" preserveAspectRatio="none" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="2"><path d="M60 150 L140 0 M540 150 L460 0 M0 70 H600 M100 110 H500"></path></svg>
+<nav aria-label="Beispiel Hauptmenü" style="position: absolute; left: 20px; right: 100px; bottom: 20px; height: 64px; border-radius: 32px; background: rgba(22,36,54,.78); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: 0 16px 40px rgba(0,0,0,.5); display: flex; align-items: center; padding: 0 6px; gap: 2px">
+<sc-for list="{{tabs}}" as="tab" hint-placeholder-count="4">
+<a href="#" style="flex-grow: 1; flex-basis: 0; height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; font-size: 11px; font-weight: 600; background: {{tab.bg}}; color: {{tab.color}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{tab.d}}"></path></svg>{{tab.label}}</a>
+</sc-for>
+</nav>
+<a href="#" aria-label="Platz buchen" style="position: absolute; right: 20px; bottom: 20px; width: 64px; height: 64px; border-radius: 32px; background: #FFD21F; color: #0A1624; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 28px rgba(255,210,31,.35)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></a>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #B3C2D2">Vier Ziele plus ein runder Knopf fürs Buchen – immer im Daumenbereich. Die Glocke wandert nach oben rechts neben das Profilbild. Unter-Sichten (Belegung, Meine, Offene Spiele) sind ein Segment-Schalter oben im Screen, keine zweite Leiste.</p>
+</div>
+
+<div style="background: #0E1A29; border: 1px solid rgba(255,255,255,.08); border-radius: 24px; padding: 26px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 700">Eine Sprache, vier Oberflächen</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<sc-for list="{{plattformen}}" as="p" hint-placeholder-count="4">
+<div style="background: #152538; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: #FFD21F">{{p.kicker}}</div>
+<div style="font-size: 17px; font-weight: 700">{{p.titel}}</div>
+<div style="font-size: 13.5px; line-height: 1.5; color: #B3C2D2">{{p.text}}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1720}}'>
+class Component extends DCLogic {
+renderVals() {
+var pair = function (list) { return list.map(function (p) { return { name: p[0], hex: p[1] }; }); };
+var tabIcons = {
+home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+platz: 'M4 4h16v16H4zM4 12h16M8 8h8v8H8zM12 8v8',
+getraenk: 'M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8',
+konto: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0'
+};
+return {
+prinzipien: [
+{ nr: '01', titel: 'Ein Blick, eine Antwort', text: 'Die neue Startseite zeigt sofort, wann du das nächste Mal spielst, welcher Platz gerade frei ist und wer Mitspieler sucht.' },
+{ nr: '02', titel: 'Zeit zuerst', text: 'Gebucht wird ab der Uhrzeit, nicht ab dem Platz. Wähle 17 Uhr und alle acht Plätze zeigen, ob sie dann frei sind.' },
+{ nr: '03', titel: 'Alles im Daumenbereich', text: 'Schwebende Leiste unten, Buchen als Blatt von unten statt Fenster in der Mitte. Einhändig bedienbar am Zaun.' },
+{ nr: '04', titel: 'Gelb heißt handeln', text: 'Ballgelb nur für die eine Hauptaktion und deine eigenen Termine. Vereinsblau für Marke und belegte Zeiten.' }
+],
+dunkel: pair([['Grund','#07111D'],['Fläche','#0E1A29'],['Fläche 2','#152538'],['Fläche 3','#1E3249'],['Text','#F3F7FB'],['Text 2','#B3C2D2'],['Leise','#8497AC'],['Vereinsblau','#1466A8'],['Blau hell','#3A9BE0'],['Ballgelb','#FFD21F'],['Grün','#3DD68C'],['Rot','#FF6B61']]),
+hell: pair([['Grund','#F3F5F8'],['Fläche','#FFFFFF'],['Fläche 2','#EEF2F6'],['Linie','#E3E8EE'],['Text','#0A1624'],['Text 2','#44566B'],['Leise','#5F7185'],['Vereinsblau','#1466A8'],['Blau Text','#1A6FB0'],['Ballgelb','#FFD21F'],['Grün','#1E9E6A'],['Rot','#D7544B']]),
+status: [
+{ name: 'Frei', info: 'leere Spur', stil: 'background: #152538; border: 1px solid rgba(255,255,255,.16)' },
+{ name: 'Deine Buchung', info: 'Ballgelb', stil: 'background: #FFD21F' },
+{ name: 'Belegt', info: 'Blau', stil: 'background: #3A9BE0' },
+{ name: 'Mitspieler gesucht', info: 'gelb gestrichelt', stil: 'background: rgba(255,210,31,.16); border: 1.5px dashed #FFD21F' },
+{ name: 'Training / Serie', info: 'Muster', stil: 'background: repeating-linear-gradient(135deg, rgba(255,255,255,.2) 0 3px, transparent 3px 6px), #1E3249' },
+{ name: 'Gesperrt', info: 'mit Schloss', stil: 'background: #1E3249' }
+],
+tage: [
+{ wt: 'MO', nr: '28', stil: 'border: 0; background: #FFD21F; color: #0A1624' },
+{ wt: 'DI', nr: '29', stil: 'border: 1px solid rgba(255,255,255,.1); background: #152538; color: #B3C2D2' },
+{ wt: 'MI', nr: '30', stil: 'border: 1px solid rgba(255,255,255,.1); background: #152538; color: #B3C2D2' },
+{ wt: 'DO', nr: '1', stil: 'border: 1px solid rgba(255,255,255,.1); background: #152538; color: #B3C2D2' },
+{ wt: 'FR', nr: '2', stil: 'border: 1px solid rgba(255,255,255,.1); background: #152538; color: #B3C2D2' }
+],
+tabs: [['Home','home'],['Plätze','platz'],['Getränke','getraenk'],['Konto','konto']].map(function (x, i) {
+return { label: x[0], d: tabIcons[x[1]], bg: i === 0 ? 'rgba(255,210,31,.14)' : 'transparent', color: i === 0 ? '#FFD21F' : '#8497AC' };
+}),
+plattformen: [
+{ kicker: 'App', titel: 'iOS & Android', text: 'Dunkel als Standard, schwebende Leiste, Blätter von unten, große Titel.' },
+{ kicker: 'Web', titel: 'Mitglieder-Web', text: 'Dieselben Karten; ab 768 px Seitenleiste links und das volle Raster im Belegungsplan.' },
+{ kicker: 'Verwaltung', titel: 'Admin-Dashboard', text: 'Hell als Standard, dichter, Tabellen. Gelb markiert nur, was heute erledigt werden muss.' },
+{ kicker: 'Theke', titel: 'Kiosk-Tablet', text: 'Riesige Kacheln, drei Schritte: Wer? Was? Eintragen. Danach sofort zurück auf Anfang.' }
+]
+};
+}
+}
+</script>
+</body>
+</html>

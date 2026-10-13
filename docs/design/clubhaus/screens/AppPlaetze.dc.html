@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>App – Plätze</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&amp;family=Barlow+Semi+Condensed:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 1260px; position: relative; overflow: hidden; box-sizing: border-box; background: {{t.bg}}; color: {{t.ink}}; font-family: 'Barlow', system-ui, sans-serif">
+
+<div style="padding: 60px 20px 0; display: flex; justify-content: space-between; align-items: flex-end">
+<h1 style="margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -.6px; line-height: 1.05">Plätze</h1>
+<button type="button" aria-label="Datum im Kalender wählen" style="width: 44px; height: 44px; border-radius: 22px; border: 1px solid {{t.line}}; background: {{t.surf2}}; color: {{t.ink}}; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"></path></svg>
+</button>
+</div>
+
+<div style="margin: 16px 20px 0; padding: 4px; border-radius: 16px; background: {{t.surf2}}; display: flex; gap: 4px">
+<a href="AppPlaetze.dc.html" aria-current="page" style="flex-grow: 1; flex-basis: 0; height: 40px; border-radius: 12px; background: {{t.segActive}}; color: {{t.ink}}; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: {{t.cardShadow}}">Belegung</a>
+<a href="AppSpiele.dc.html" style="flex-grow: 1; flex-basis: 0; height: 40px; border-radius: 12px; color: {{t.muted}}; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none">Meine &amp; offene Spiele</a>
+</div>
+
+<div style="padding: 18px 0 0 20px; display: flex; gap: 8px; overflow: hidden">
+<sc-for list="{{tage}}" as="d" hint-placeholder-count="6">
+<button type="button" aria-pressed="{{d.aktiv}}" style="width: 58px; height: 70px; flex-shrink: 0; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-family: 'Barlow', sans-serif; {{d.stil}}"><span style="font-size: 11px; font-weight: 700; letter-spacing: .08em">{{d.wt}}</span><span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 26px; font-weight: 700; line-height: 1">{{d.nr}}</span></button>
+</sc-for>
+</div>
+
+<div style="padding: 18px 20px 0; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: {{t.muted}}">Wann willst du spielen?</div>
+<div style="padding: 10px 0 0 20px; display: flex; gap: 8px; overflow: hidden">
+<sc-for list="{{zeiten}}" as="z" hint-placeholder-count="6">
+<button type="button" aria-pressed="{{z.aktiv}}" style="height: 38px; padding: 0 15px; flex-shrink: 0; border: 0; border-radius: 19px; font-family: 'Barlow', sans-serif; font-size: 14.5px; font-variant-numeric: tabular-nums; {{z.stil}}">{{z.z}}</button>
+</sc-for>
+</div>
+
+<div style="margin: 18px 20px 0; border-radius: 24px; background: {{t.surf}}; border: 1px solid {{t.line}}; box-shadow: {{t.cardShadow}}; overflow: hidden">
+<div style="position: relative; height: 30px; margin: 0 16px; border-bottom: 1px solid {{t.line}}">
+<sc-for list="{{skala}}" as="s" hint-placeholder-count="5">
+<span style="position: absolute; top: 9px; font-size: 11px; font-weight: 600; color: {{t.muted}}; font-variant-numeric: tabular-nums; {{s.stil}}">{{s.l}}</span>
+</sc-for>
+</div>
+<sc-for list="{{reihen}}" as="r" hint-placeholder-count="8">
+<div style="padding: 13px 16px 14px; border-bottom: 1px solid {{t.line}}">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 40px">
+<div style="min-width: 0">
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 19px; line-height: 1.1">{{r.name}}</div>
+<div style="font-size: 13px; font-weight: 600; margin-top: 2px; color: {{r.farbe}}">{{r.sub}}</div>
+</div>
+<sc-if value="{{r.buchen}}" hint-placeholder-val="{{ true }}">
+<a href="AppBuchen.dc.html" style="height: 38px; padding: 0 16px; border-radius: 19px; background: {{t.yellow}}; color: {{t.onYellow}}; font-size: 14px; font-weight: 700; display: flex; align-items: center; text-decoration: none; flex-shrink: 0">Buchen</a>
+</sc-if>
+<sc-if value="{{r.mit}}" hint-placeholder-val="{{ false }}">
+<a href="AppSpiele.dc.html" style="height: 38px; padding: 0 14px; box-sizing: border-box; border-radius: 19px; border: 1.5px solid {{t.yellowLine}}; color: {{t.accentInk}}; font-size: 14px; font-weight: 700; display: flex; align-items: center; text-decoration: none; flex-shrink: 0">Mitspielen</a>
+</sc-if>
+<sc-if value="{{r.pfeil}}" hint-placeholder-val="{{ false }}">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{t.muted}}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</sc-if>
+<sc-if value="{{r.schloss}}" hint-placeholder-val="{{ false }}">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{t.muted}}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 11h12v10H6zM8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+</sc-if>
+</div>
+<div style="position: relative; height: 10px; margin-top: 10px; border-radius: 5px; background: {{t.surf2}}">
+<sc-for list="{{r.segs}}" as="s" hint-placeholder-count="2">
+<div style="position: absolute; top: 0; bottom: 0; border-radius: 5px; box-sizing: border-box; {{s.stil}}"></div>
+</sc-for>
+<div style="position: absolute; top: -4px; bottom: -4px; left: 69.23%; width: 2px; border-radius: 1px; background: {{t.ink}}"></div>
+</div>
+</div>
+</sc-for>
+</div>
+
+<div style="padding: 14px 20px 0; display: flex; flex-wrap: wrap; gap: 8px 16px">
+<sc-for list="{{legende}}" as="l" hint-placeholder-count="5">
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: {{t.ink2}}"><span style="width: 18px; height: 10px; border-radius: 4px; box-sizing: border-box; {{l.stil}}"></span>{{l.name}}</span>
+</sc-for>
+</div>
+
+<nav aria-label="Hauptmenü" style="position: absolute; left: 16px; right: 92px; bottom: 26px; height: 64px; border-radius: 32px; background: {{t.glass}}; border: 1px solid {{t.glassLine}}; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: {{t.shadow}}; display: flex; align-items: center; padding: 0 6px; gap: 2px">
+<sc-for list="{{tabs}}" as="tab" hint-placeholder-count="4">
+<a href="{{tab.href}}" style="flex-grow: 1; flex-basis: 0; height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; font-size: 11px; font-weight: 600; background: {{tab.bg}}; color: {{tab.color}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{tab.d}}"></path></svg>{{tab.label}}</a>
+</sc-for>
+</nav>
+<a href="AppBuchen.dc.html" aria-label="Platz buchen" style="position: absolute; right: 16px; bottom: 26px; width: 64px; height: 64px; border-radius: 32px; background: {{t.yellow}}; color: {{t.onYellow}}; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 28px rgba(255,210,31,.35)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"modus":{"editor":"enum","options":["dunkel","hell"],"default":"dunkel"},"$preview":{"width":390,"height":1260}}'>
+class Component extends DCLogic {
+renderVals() {
+var T = {
+dunkel: { bg: '#07111D', surf: '#0E1A29', surf2: '#152538', surf3: '#1E3249', segActive: '#1E3249', line: 'rgba(255,255,255,.08)', ink: '#F3F7FB', ink2: '#B3C2D2', muted: '#8497AC', blue: '#3A9BE0', yellow: '#FFD21F', yellowSoft: 'rgba(255,210,31,.16)', yellowLine: '#FFD21F', accentInk: '#FFD21F', onYellow: '#0A1624', greenInk: '#3DD68C', glass: 'rgba(22,36,54,.78)', glassLine: 'rgba(255,255,255,.12)', tabActive: 'rgba(255,210,31,.14)', tabInk: '#FFD21F', shadow: '0 16px 40px rgba(0,0,0,.5)', cardShadow: 'none', hatch: 'repeating-linear-gradient(135deg, rgba(255,255,255,.18) 0 3px, transparent 3px 6px), #1E3249', chip: 'background: #152538; color: #B3C2D2; border: 1px solid rgba(255,255,255,.08)', chipOn: 'background: #F3F7FB; color: #07111D; font-weight: 700', dayOff: 'border: 1px solid rgba(255,255,255,.08); background: #152538; color: #B3C2D2' },
+hell: { bg: '#F3F5F8', surf: '#FFFFFF', surf2: '#EEF2F6', surf3: '#E2E8EF', segActive: '#FFFFFF', line: '#E3E8EE', ink: '#0A1624', ink2: '#44566B', muted: '#5F7185', blue: '#1A6FB0', yellow: '#FFD21F', yellowSoft: '#FFF6D1', yellowLine: '#E0B400', accentInk: '#7A5C00', onYellow: '#0A1624', greenInk: '#167A52', glass: 'rgba(255,255,255,.82)', glassLine: 'rgba(10,22,36,.08)', tabActive: '#FFD21F', tabInk: '#0A1624', shadow: '0 16px 40px rgba(10,22,36,.16)', cardShadow: '0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06)', hatch: 'repeating-linear-gradient(135deg, rgba(10,22,36,.14) 0 3px, transparent 3px 6px), #E2E8EF', chip: 'background: #FFFFFF; color: #44566B; border: 1px solid #E3E8EE', chipOn: 'background: #0A1624; color: #FFFFFF; font-weight: 700', dayOff: 'border: 1px solid #E3E8EE; background: #FFFFFF; color: #44566B' }
+};
+var t = T[this.props.modus] || T.dunkel;
+var pos = function (von, bis) { return 'left: ' + ((von - 8) / 13 * 100).toFixed(2) + '%; width: ' + ((bis - von) / 13 * 100).toFixed(2) + '%; '; };
+var F = { belegt: 'background: ' + t.blue, eigen: 'background: ' + t.yellow, sucht: 'background: ' + t.yellowSoft + '; border: 1.5px dashed ' + t.yellowLine, serie: 'background: ' + t.hatch, gesperrt: 'background: ' + t.surf3 };
+var seg = function (von, bis, art) { return { stil: pos(von, bis) + F[art] }; };
+var reihe = function (name, sub, farbe, aktion, segs) {
+return { name: name, sub: sub, farbe: farbe, segs: segs, buchen: aktion === 'buchen', mit: aktion === 'mit', pfeil: aktion === 'pfeil', schloss: aktion === 'schloss' };
+};
+var I = {
+home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+platz: 'M4 4h16v16H4zM4 12h16M8 8h8v8H8zM12 8v8',
+getraenk: 'M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8',
+konto: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0'
+};
+var tabs = [['Home', 'home', 'AppHome.dc.html'], ['Plätze', 'platz', 'AppPlaetze.dc.html'], ['Getränke', 'getraenk', 'AppGetraenke.dc.html'], ['Konto', 'konto', 'AppKonto.dc.html']].map(function (x, i) {
+return { label: x[0], d: I[x[1]], href: x[2], bg: i === 1 ? t.tabActive : 'transparent', color: i === 1 ? t.tabInk : t.muted };
+});
+var tage = [['MO', '28'], ['DI', '29'], ['MI', '30'], ['DO', '1'], ['FR', '2'], ['SA', '3']].map(function (d, i) {
+return { wt: d[0], nr: d[1], aktiv: i === 0 ? 'true' : 'false', stil: i === 0 ? 'border: 0; background: ' + t.yellow + '; color: ' + t.onYellow : t.dayOff };
+});
+var zeiten = ['15:00', '16:00', '17:00', '17:30', '18:00', '19:00'].map(function (z) {
+return { z: z, aktiv: z === '17:00' ? 'true' : 'false', stil: z === '17:00' ? t.chipOn : t.chip };
+});
+var skala = [8, 11, 14, 17, 20].map(function (h) {
+return { l: (h < 10 ? '0' : '') + h, stil: 'left: calc(' + ((h - 8) / 13 * 100).toFixed(2) + '% - ' + (h === 8 ? 0 : 7) + 'px)' };
+});
+return {
+t: t,
+tabs: tabs,
+tage: tage,
+zeiten: zeiten,
+skala: skala,
+reihen: [
+reihe('Platz 1', 'Deine Buchung · 17:00', t.accentInk, 'pfeil', [seg(10, 11, 'belegt'), seg(17, 18, 'eigen')]),
+reihe('Platz 2', 'Training bis 19:00', t.muted, 'pfeil', [seg(16, 19, 'serie')]),
+reihe('Platz 3', 'frei 17:00 – 18:00', t.greenInk, 'buchen', [seg(9, 10, 'belegt'), seg(18, 19, 'sucht')]),
+reihe('Platz 4', 'Doppel sucht 1 · 17:00', t.accentInk, 'mit', [seg(17, 18, 'sucht'), seg(20, 21, 'belegt')]),
+reihe('Platz 5', 'belegt bis 19:00', t.muted, 'pfeil', [seg(11, 12, 'belegt'), seg(17, 19, 'belegt')]),
+reihe('Platz 6', 'frei bis 21:00', t.greenInk, 'buchen', []),
+reihe('Platz 7', 'frei 17:00 – 19:00', t.greenInk, 'buchen', [seg(8, 10, 'belegt'), seg(19, 21, 'belegt')]),
+reihe('Platz 8', 'gesperrt · Platzpflege', t.muted, 'schloss', [seg(8, 21, 'gesperrt')])
+],
+legende: [
+{ name: 'Deine', stil: F.eigen },
+{ name: 'Belegt', stil: F.belegt },
+{ name: 'Sucht Mitspieler', stil: F.sucht },
+{ name: 'Training', stil: F.serie },
+{ name: 'Gesperrt', stil: F.gesperrt }
+]
+};
+}
+}
+</script>
+</body>
+</html>
