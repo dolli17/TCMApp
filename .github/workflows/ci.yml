@@ -15,6 +15,11 @@ concurrency:
 permissions:
   contents: read
 
+# Die Buchungsregeln rechnen in Vereinszeit; im UTC-Runner scheitern sonst
+# die Tests zu Öffnungszeiten.
+env:
+  TZ: Europe/Berlin
+
 jobs:
   verify:
     runs-on: ubuntu-latest

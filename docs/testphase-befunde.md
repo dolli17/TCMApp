@@ -4,7 +4,7 @@ Sammelstelle für Fehler, Lücken und Auffälligkeiten aus der Testphase (Start:
 damit sie gebündelt abgearbeitet werden können. Neue Befunde unten in **Offen** ergänzen;
 Erledigtes mit Commit nach **Behoben** verschieben.
 
-Stand: 09.10.2026
+Stand: 13.10.2026
 
 Legende Priorität: **P1** blockiert Tester oder ist ein Sicherheitsthema · **P2** vor externen
 Testern bzw. App Store · **P3** Komfort, Aufräumen.
@@ -40,6 +40,12 @@ Testern bzw. App Store · **P3** Komfort, Aufräumen.
 |---|---|---|---|
 | O24 | P1 | **Abgelaufene Einladungen lassen sich aus der Verwaltung nicht neu senden, und Links gelten nur 1 Stunde.** Beobachtet am 11.10. bei Ladi: Er wurde am 09.10. eingeladen, beide Links waren abgelaufen. (1) In der Cloud gilt jeder Mail-Link (Einladung, „Passwort vergessen“) nur **1 Stunde** (`mailer_otp_exp = 3600`); möglich sind maximal 24 Stunden. (2) Beim Einladen wird der Login sofort mit dem Mitglied verknüpft. `member_login_state.hat_zugang` ist deshalb `true`, auch wenn die Einladung **nie angenommen** wurde. Die Verwaltung zeigt „App-Zugang aktiv“ und nur „Passwort zurücksetzen“, „Sperren“ und „Entfernen“. Der Knopf „Einladung verschicken“ erscheint nur ohne Login (`LoginKarte.tsx`, App `Zugang.tsx`), und `member-login/einladen` lehnt mit „hat bereits einen Zugang“ ab. | ~~`mailer_otp_exp` auf **86400**~~ (erledigt am 11.10.: Cloud per Management-API, lokal `otp_expiry` in `supabase/config.toml`). Hinweis „Der Link gilt 24 Stunden“ in `supabase/templates/einladung.html`. `member_login_state` um `angenommen` (bestätigt oder schon angemeldet) und `einladung_abgelaufen` erweitern. Neue Aktion `erneut_einladen` in `member-login`: `inviteUserByEmail` für den unbestätigten Login; bei Fehler löschen, neu einladen und neu verknüpfen, Admin-Rolle behalten. Web und App: Status **„Einladung ausstehend“** bzw. „abgelaufen“ statt „App-Zugang aktiv“, Knopf **„Einladung erneut senden“**, auch als Statusmarke in der Mitgliederübersicht. pgTAP-Tests für die neuen Felder. **Workaround bis dahin:** „Zugang entfernen“, dann „Einladung verschicken“ und gegebenenfalls die Admin-Rolle neu setzen, oder Neuversand über die Auth-Schnittstelle (so am 11.10. für Ladi gemacht). |
 | O23 | P2 | **Die Admin-Rolle ist nicht auffindbar.** In der Mitgliederübersicht (Verwaltung → Mitglieder → Mitglied) gibt es keine Zeile für die Rolle. Der Schalter „Verwaltungsrechte“ sitzt in der Karte „Rolle und Zahler“ auf der Unterseite `?teil=mitgliedschaft`, und die erreicht man nur über die Zeile **„Mannschaft“** (`apps/web/src/components/MitgliedUebersicht.tsx:147`). | Im Abschnitt **Mitgliedschaft** eine eigene Zeile **„Rolle“** mit Hinweis „Mitglied“ bzw. „Admin“, die direkt zum Schalter führt. Die Rolle gehört zur Mitgliedschaft, nicht zur Mannschaft. Die Zeile „Mannschaft“ führt dann nur noch zur Mannschaft. Rolle und Zahler eventuell auf eine eigene Unterseite (`?teil=rolle`) trennen. In der App (`Mitgliedschaft.tsx`, Karte „Rolle und Zahler“) gleich ziehen. |
+
+### Anmeldung und Konten
+
+| # | Prio | Befund | Was zu tun ist |
+|---|---|---|---|
+| O25 | P3 | **„Antrag stellen“ meldet ein angemeldetes Konto nicht ab.** Wer im Browser angemeldet ist, ein neues Fenster öffnet und auf der Anmeldeseite „Antrag stellen“ klickt, füllt den Antrag aus, während die Sitzung weiterläuft. Das andere Fenster bleibt angemeldet. Ursache: `/antrag` steht in `OEFFENTLICH` (`apps/web/src/middleware.ts`) und wird ohne Rücksicht auf eine bestehende Sitzung gerendert (`apps/web/src/app/antrag/page.tsx`). Abgemeldet wird nur, wenn sich ein anderes Konto anmeldet (`KontoWaechter`, `lib/konto-kanal.ts`). Der Antrag selbst nutzt die Sitzung nicht (`antrag/aktionen.ts`). | Beim Öffnen von `/antrag` mit bestehender Sitzung abmelden: `signOut({ scope: "local" })`, damit die App auf dem Telefon angemeldet bleibt, und danach `kontoGewechselt()`. Dann führen die `KontoWaechter` der anderen Fenster zur Anmeldeseite mit Grund „abgemeldet“. Am einfachsten serverseitig in der Middleware für `/antrag` (Cookies wie bei der Inaktivität auf die Antwort übernehmen) und clientseitig nur das Signal an die anderen Tabs. Wichtig ist der Weg über das Antragsformular selbst, nicht nur der Link auf der Anmeldeseite. E2E-Test: angemeldet, zweiter Tab auf `/antrag`, der erste Tab landet auf `/login?grund=abgemeldet`. |
 
 ### Buchen und Plätze
 
