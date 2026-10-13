@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatCents } from "@tcm/core";
+import { formatCents, rollenMarken } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 
@@ -29,7 +29,7 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
     await Promise.all([
       supabase
         .from("members")
-        .select("id, first_name, last_name, email, phone, mobile, status, auth_user_id, login_disabled_at, emergency_contact_name, billing_payer_id, teams(name)")
+        .select("id, first_name, last_name, email, phone, mobile, status, auth_user_id, login_disabled_at, emergency_contact_name, billing_payer_id, is_trainer, is_team_captain, teams(name), member_roles!member_roles_member_id_fkey(role)")
         .eq("id", id)
         .maybeSingle(),
       supabase
@@ -144,6 +144,17 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
           <Gruppenkopf titel="Mitgliedschaft" id={`h-ms-${id}`} />
           <nav className="liste-gruppe" aria-label="Mitgliedschaft">
             <Listenzeile href={teil("beitraege")} titel="Art" hinweis={arten.join(" + ") || "keine"} />
+            <Listenzeile
+              href={teil("mitgliedschaft")}
+              titel="Rollen"
+              hinweis={
+                rollenMarken({
+                  roles: m.member_roles.map((r) => r.role),
+                  is_trainer: m.is_trainer,
+                  is_team_captain: m.is_team_captain,
+                }).join(", ") || "Spieler"
+              }
+            />
             <Listenzeile href={teil("mitgliedschaft")} titel="Mannschaft" hinweis={m.teams?.name ?? "keine"} />
             <Listenzeile href={teil("merkmale")} titel="Merkmale" hinweis={String(sonstigeMerkmale)} />
           </nav>

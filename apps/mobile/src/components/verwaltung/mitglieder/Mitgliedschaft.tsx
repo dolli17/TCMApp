@@ -1,5 +1,5 @@
 /**
- * Bereich Mitgliedschaft: Rolle und Zahler, Mannschaft, Verlauf
+ * Bereich Mitgliedschaft: Rollen und Zahler, Mannschaft, Verlauf
  *
  * Nachbau von ZugehoerigkeitKarte und MannschaftKarte aus
  * apps/web/src/components. Rolle und Zahler gehoeren zusammen, weil beides
@@ -12,13 +12,14 @@ import { Text, View } from "react-native";
 import {
   FormAuswahl, FormGruppe, FormSchalter, Karte, Knopf, Meldung, bestaetige, useAktion,
 } from "@/components/verwaltung/Formular";
-import { Abschnitt, Gruppenkopf, ListenGruppe, Listenzeile, Statusmarke } from "@/components/verwaltung/Liste";
+import { Abschnitt, Gruppenkopf, ListenGruppe, Listenzeile } from "@/components/verwaltung/Liste";
 import { Personensuche } from "@/components/verwaltung/mitglieder/Personensuche";
 import { datum } from "@/components/verwaltung/mitglieder/optionen";
 import { useLaden } from "@/lib/laden";
 import { useTheme } from "@/lib/theme";
+import { ROLLEN, hatVolleRechte, type RollenInfo } from "@tcm/core";
 import {
-  ladeZugehoerigkeit, mannschaftSetzen, rolleSetzen, zahlerSetzen, type MitgliedDaten,
+  ladeZugehoerigkeit, mannschaftSetzen, rolleSetzen, trainerSetzen, zahlerSetzen, type MitgliedDaten,
 } from "@/lib/verwaltung/mitglieder";
 
 export function Mitgliedschaft({ d, onGeaendert }: { d: MitgliedDaten; onGeaendert: () => Promise<void> }) {
@@ -81,11 +82,25 @@ function RolleUndZahler({
   const { laeuft, meldung, ausfuehren } = useAktion();
   const m = d.m;
   const [zahlerWahl, setZahlerWahl] = useState<string | null>(m.billing_payer_id);
-  const rolleGesperrt = d.istAdmin && d.einzigerAdmin;
   const titel = { fontSize: 15.5, fontFamily: "Barlow_700Bold", color: farben.ink } as const;
 
-  function rolle(erteilen: boolean) {
-    void ausfuehren(() => rolleSetzen(m.id, erteilen), onGeaendert);
+  // Die letzte Rolle mit vollen Rechten im Verein bleibt gesperrt. Wer
+  // Vorstand und App Admin zugleich ist, darf eine davon abgeben.
+  const volleRollen = d.rollen.filter((r) => hatVolleRechte([r]));
+  const gesperrt = (r: RollenInfo) =>
+    r.vollRechte && d.einzigeVolleRechte && volleRollen.length === 1 && volleRollen[0] === r.rolle;
+
+  function rolle(r: RollenInfo, erteilen: boolean) {
+    const los = () => void ausfuehren(() => rolleSetzen(m.id, r.rolle, erteilen), onGeaendert);
+    // Volle Rechte zu entziehen sperrt womoeglich jemanden aus, deshalb mit Rueckfrage.
+    if (!erteilen && r.vollRechte) {
+      bestaetige(
+        `${r.label} entziehen?`,
+        `${m.first_name} ${m.last_name} kann danach nichts mehr verwalten, sofern keine andere Rolle volle Rechte gibt.`,
+        "Wirklich entziehen",
+        los,
+      );
+    } else los();
   }
 
   function zahler(id: string | null) {
@@ -96,48 +111,50 @@ function RolleUndZahler({
   }
 
   return (
-    <Karte titel="Rolle und Zahler">
+    <Karte titel="Rollen und Zahler">
       <Meldung meldung={meldung} />
 
       <View style={{ gap: 6 }}>
-        <Text style={titel}>Verwaltungsrechte</Text>
+        <Text style={titel}>Rollen</Text>
         <Text style={stil.leise}>
-          Ein Admin sieht und ändert alles: Mitglieder, Beiträge, Serien, Einstellungen und jede fremde
-          Buchung. Zwischenstufen gibt es bewusst nicht.
+          Jedes Mitglied ist Spieler: bucht Plätze und sieht seine eigenen Daten. Vorstand und App Admin
+          sehen und ändern alles. Platzwart und Trainer bekommen ihre eigenen Rechte später.
         </Text>
-        {rolleGesperrt ? (
-          <Text style={[stil.text, { fontSize: 14 }]}>
-            {d.selbst ? "Du bist" : "Diese Person ist"} derzeit der einzige Administrator. Bitte zuerst
-            jemand anderen dazu machen, sonst kann niemand mehr verwalten.
-          </Text>
-        ) : !m.auth_user_id && !d.istAdmin ? (
-          <Text style={[stil.text, { fontSize: 14 }]}>
-            Ohne Login kann niemand Administrator werden. Zuerst einen Zugang einrichten.
-          </Text>
-        ) : d.istAdmin ? (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <Statusmarke ton="gelb" text="Administrator" />
-            <Knopf
-              art="leise"
-              klein
-              text="Rechte entziehen"
-              laeuft={laeuft}
-              laeuftText="Wird entzogen…"
-              onPress={() =>
-                bestaetige(
-                  "Rechte entziehen?",
-                  `${m.first_name} ${m.last_name} kann danach nichts mehr verwalten.`,
-                  "Wirklich entziehen",
-                  () => rolle(false),
-                )
-              }
-            />
-          </View>
-        ) : (
-          <View style={{ alignSelf: "flex-start" }}>
-            <Knopf klein text="Zum Administrator machen" laeuft={laeuft} laeuftText="Wird erteilt…" onPress={() => rolle(true)} />
-          </View>
-        )}
+        <FormGruppe>
+          {ROLLEN.map((r) => {
+            const hat = d.rollen.includes(r.rolle);
+            const ohneLogin = r.brauchtLogin && !m.auth_user_id && !hat;
+            const sperre = gesperrt(r);
+            return (
+              <FormSchalter
+                key={r.rolle}
+                label={r.label}
+                beschreibung={
+                  sperre
+                    ? `${d.selbst ? "Du hast" : "Diese Person hat"} als einzige volle Rechte. Bitte zuerst jemand anderen zum Vorstand oder App Admin machen.`
+                    : ohneLogin
+                      ? "Braucht einen Login. Zuerst einen Zugang einrichten."
+                      : r.beschreibung
+                }
+                an={hat}
+                onWechsel={(an) => rolle(r, an)}
+                deaktiviert={laeuft || sperre || ohneLogin}
+              />
+            );
+          })}
+          <FormSchalter
+            label="Trainer"
+            beschreibung="Gibt Training. Eigene Rechte folgen."
+            an={m.is_trainer}
+            onWechsel={(an) => void ausfuehren(() => trainerSetzen(m.id, an), onGeaendert)}
+            deaktiviert={laeuft}
+          />
+        </FormGruppe>
+        <Text style={stil.leise}>
+          {m.is_team_captain && m.teams
+            ? `Mannschaftsführer von ${m.teams.name}. Gesetzt wird das in der Karte Mannschaft.`
+            : "Mannschaftsführer wird in der Karte Mannschaft gesetzt, höchstens einer je Mannschaft."}
+        </Text>
       </View>
 
       <View style={{ gap: 6, marginTop: 10 }}>

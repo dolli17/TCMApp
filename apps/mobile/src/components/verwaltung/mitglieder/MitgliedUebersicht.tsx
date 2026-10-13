@@ -10,7 +10,7 @@
 import { Linking, Pressable, Text, View } from "react-native";
 import { router, type Href } from "expo-router";
 import Svg, { Path } from "react-native-svg";
-import { formatCents } from "@tcm/core";
+import { formatCents, rollenMarken } from "@tcm/core";
 import { Abschnitt, Avatar, Gruppenkopf, ListenGruppe, Listenzeile, Statusmarke } from "@/components/verwaltung/Liste";
 import { useTheme } from "@/lib/theme";
 import type { MitgliedUebersichtDaten } from "@/lib/verwaltung/mitglieder";
@@ -86,6 +86,17 @@ export function MitgliedUebersicht({ d }: { d: MitgliedUebersichtDaten }) {
         <Gruppenkopf titel="Mitgliedschaft" />
         <ListenGruppe>
           <Listenzeile href={teil("beitraege")} titel="Art" hinweis={d.arten.join(" + ") || "keine"} />
+          <Listenzeile
+            href={teil("mitgliedschaft")}
+            titel="Rollen"
+            hinweis={
+              rollenMarken({
+                roles: m.member_roles.map((r) => r.role),
+                is_trainer: m.is_trainer,
+                is_team_captain: m.is_team_captain,
+              }).join(", ") || "Spieler"
+            }
+          />
           <Listenzeile href={teil("mitgliedschaft")} titel="Mannschaft" hinweis={m.teams?.name ?? "keine"} />
           <Listenzeile href={teil("merkmale")} titel="Merkmale" hinweis={String(d.sonstigeMerkmale)} />
         </ListenGruppe>
