@@ -1,0 +1,114 @@
+# Bringt einen Stand in eine Umgebung (siehe CONTRIBUTING.md):
+#
+#   push auf main        -> Environment "dev"
+#   push auf production  -> Environment "production" (wartet auf Freigabe),
+#                           danach Tag v<version> und GitHub-Release
+#   manuell (Rückweg)    -> "Run workflow" auf einem Tag v* starten: baut nur
+#                           das Web dieses Stands neu, Datenbank und Functions
+#                           bleiben, wie sie sind.
+#
+# Reihenfolge: Migrationen -> Edge Functions -> Web. Migrationen sind
+# abwärtskompatibel, der alte Web-Stand läuft also kurz gegen das neue Schema.
+#
+# Solange im Environment die Variable SUPABASE_PROJECT_REF fehlt, tut der Job
+# nichts (z. B. production, bevor es das Prod-Projekt gibt).
+
+name: Deploy
+
+on:
+  push:
+    branches: [main, production]
+  workflow_dispatch:
+    inputs:
+      umgebung:
+        description: Umgebung
+        type: choice
+        options: [dev, production]
+        required: true
+
+concurrency:
+  group: deploy-${{ inputs.umgebung || (github.ref_name == 'main' && 'dev' || 'production') }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: ${{ inputs.umgebung || (github.ref_name == 'main' && 'dev' || 'production') }}
+      url: ${{ vars.WEB_URL }}
+    permissions:
+      contents: write # Tag und Release nach dem Prod-Deploy
+    env:
+      UMGEBUNG: ${{ inputs.umgebung || (github.ref_name == 'main' && 'dev' || 'production') }}
+      NUR_WEB: ${{ github.event_name == 'workflow_dispatch' }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - name: Umgebung eingerichtet?
+        id: bereit
+        run: |
+          if [ -z "$SUPABASE_PROJECT_REF" ]; then
+            echo "::notice::Environment $UMGEBUNG ist noch nicht eingerichtet (SUPABASE_PROJECT_REF fehlt) - nichts deployt."
+            echo "ja=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ja=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.bereit.outputs.ja == 'true'
+
+      - uses: pnpm/action-setup@v4
+        if: steps.bereit.outputs.ja == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.bereit.outputs.ja == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+      - if: steps.bereit.outputs.ja == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Migrationen
+        if: steps.bereit.outputs.ja == 'true' && env.NUR_WEB != 'true'
+        run: |
+          pnpm exec supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          pnpm exec supabase migration list
+          pnpm exec supabase db push
+
+      - name: Edge Functions
+        if: steps.bereit.outputs.ja == 'true' && env.NUR_WEB != 'true'
+        run: pnpm exec supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF"
+
+      # Der Schlüssel darf auf dem Server nur deploy/web/server-deploy.sh
+      # aufrufen (Forced-Command in authorized_keys); übergeben werden nur
+      # Umgebung und Commit.
+      - name: Web
+        if: steps.bereit.outputs.ja == 'true'
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ZIEL=$([ "$UMGEBUNG" = production ] && echo prod || echo dev)
+          ssh -i ~/.ssh/deploy -o IdentitiesOnly=yes "$DEPLOY_HOST" "$ZIEL $GITHUB_SHA"
+
+      - name: Smoke-Test
+        if: steps.bereit.outputs.ja == 'true'
+        env:
+          WEB_URL: ${{ vars.WEB_URL }}
+        run: curl -fsS --retry 5 --retry-delay 5 -o /dev/null -w "$WEB_URL/login -> %{http_code}\n" "$WEB_URL/login"
+
+      - name: Tag und Release
+        if: steps.bereit.outputs.ja == 'true' && env.UMGEBUNG == 'production' && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(node -p 'require("./package.json").version')"
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" --generate-notes

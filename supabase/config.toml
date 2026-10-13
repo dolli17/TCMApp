@@ -456,6 +456,12 @@ verify_jwt = true
 [functions.notification-mails]
 verify_jwt = true
 
+# Benachrichtigungen als Push - gleiche Begruendung wie bei notification-mails.
+# Steht hier ausdruecklich, weil der Deploy-Workflow alle Functions mit dieser
+# Datei ausrollt (CONTRIBUTING.md).
+[functions.notification-pushes]
+verify_jwt = true
+
 # Kein [edge_runtime.secrets]-Block: steht dort ein env(...) auf eine Variable,
 # die es nicht gibt, startet die gesamte Edge-Runtime nicht mehr - und damit
 # auch member-login nicht, das mit dem Mailversand gar nichts zu tun hat.

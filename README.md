@@ -101,15 +101,13 @@ pnpm dev                  # Web-App
 
 Das Web läuft als Docker-Container auf dem eigenen Server (187.124.4.243)
 unter https://app.tennisclub-muckensturm.de, hinter dem dortigen Traefik.
-Ein Push allein geht **nicht** live – nach dem Push auf `main`:
-
-```bash
-./deploy/web/deploy.sh    # baut origin/main auf dem Server und startet neu
-```
+Gearbeitet wird über Pull Requests: ein Merge auf `main` deployt Dev, ein
+Merge auf `production` nach Freigabe Prod. Branches, Releases und Hotfixes
+beschreibt [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 Abbild: `apps/web/Dockerfile`, Dienst: `deploy/web/docker-compose.yml`. Die
 Werte (Domain, Supabase-URL und -Key) stehen auf dem Server in
-`/docker/tcm-web/.env`.
+`/docker/tcm-web*/.env`.
 
 Die App unter `apps/mobile` liest ihre Supabase-Werte aus `apps/mobile/.env`
 (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`) und startet mit

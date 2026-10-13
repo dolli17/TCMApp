@@ -11,7 +11,6 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
-    "db:seed": "pnpm --filter @tcm/db seed",
     "db:types": "supabase gen types typescript --local > packages/core/src/database.types.ts",
     "db:test": "supabase test db",
     "test": "pnpm -r test",
