@@ -2,11 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppState, Pressable, ScrollView, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import Svg, { Path } from "react-native-svg";
-import {
-  berlinTime, courtStatusAt, nextSlotMinute, timelinePosition, timelineSegments,
-  type CourtStatus, type TimelineKind,
-} from "@tcm/core";
-import { abstand, radius } from "@tcm/ui";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { berlinTime, occupancyKind } from "@tcm/core";
+import { abstand } from "@tcm/ui";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme";
 import {
@@ -20,7 +19,10 @@ import {
 } from "@/lib/plan";
 import { Bildschirm } from "@/components/Bildschirm";
 import { BuchungsFenster } from "@/components/BuchungsFenster";
-import { MiniZeitleiste, Schraffur } from "@/components/MiniZeitleiste";
+import { Segmente } from "@/components/Segmente";
+import { FreieZeiten, FreieZeitenLegende } from "@/components/plaetze/FreieZeiten";
+import { PlatzRaster, RasterLegende, type Auswahl } from "@/components/plaetze/PlatzRaster";
+import { LEISTE_ABSTAND_UNTEN, LEISTE_HOEHE, LEISTE_RAND } from "@/lib/masse";
 import { mitDeckkraft } from "@/lib/stil";
 
 const heuteInBerlin = () =>
@@ -39,6 +41,19 @@ function lesbar(datum: string): string {
     .format(new Date(j!, (m ?? 1) - 1, t));
 }
 
+/** Fuer die Tageszeile: "Heute, Dienstag 13.10." */
+function tageszeile(datum: string, heute: string): string {
+  const [j, m, t] = datum.split("-").map(Number);
+  const d = new Date(j!, (m ?? 1) - 1, t);
+  const wochentag = new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(d);
+  const kurz = `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.`;
+  const vorsatz = datum === heute ? "Heute, " : datum === verschiebe(heute, 1) ? "Morgen, " : "";
+  return `${vorsatz}${wochentag} ${kurz}`;
+}
+
+type Ansicht = "uebersicht" | "freie-zeiten";
+const ANSICHT_SPEICHER = "tcm-plaetze-ansicht";
+
 /** Fuer die Datums-Kachel: "MO" und "28" */
 function kachel(datum: string): { wochentag: string; tag: number } {
   const [j, m, t] = datum.split("-").map(Number);
@@ -50,12 +65,13 @@ function kachel(datum: string): { wochentag: string; tag: number } {
 type Platz = Awaited<ReturnType<typeof ladePlaetze>>[number];
 
 /**
- * Die Plaetze - Zeit zuerst (Entwurf AppPlaetze, docs/design/clubhaus).
+ * Die Plaetze (docs/design/clubhaus/plaetze, HANDOFF-PLAETZE).
  *
- * Oben der Tag (heute bis lead_days), darunter "Wann willst du spielen?" mit
- * den Startzeiten im Raster slot_minutes. Die Liste zeigt fuer alle Plaetze,
- * was zu dieser Zeit los ist - frei, belegt, eigene Buchung, Mitspieler
- * gesucht, Training, gesperrt -, darunter die Zeitleiste des ganzen Tages.
+ * Zwei Ansichten derselben Tagesbelegung, umschaltbar ueber das Segment
+ * "Übersicht | Freie Zeiten"; die Wahl bleibt in AsyncStorage. Die Übersicht
+ * ist ein Raster - Plaetze als Zeilen, Stunden zum Wischen -, in dem eine
+ * freie Flaeche Platz und Beginn auswaehlt; gebucht wird ueber die Leiste
+ * unten. Freie Zeiten listet die Startzeiten mit den freien Plaetzen.
  * Die Feinwahl :00/:30 und die Spielform passieren im Blatt.
  *
  * Ob gebucht werden kann, entscheidet canStartAt (@tcm/core); durchgesetzt
@@ -64,8 +80,11 @@ type Platz = Awaited<ReturnType<typeof ladePlaetze>>[number];
 export default function Plan() {
   const { stil, farben } = useTheme();
   const parameter = useLocalSearchParams<{ buchen?: string }>();
+  const rand = useSafeAreaInsets();
   const [datum, setDatum] = useState(heuteInBerlin());
-  const [zeit, setZeit] = useState<number | null>(null);
+  const [ansicht, setAnsicht] = useState<Ansicht>("uebersicht");
+  const [auswahl, setAuswahl] = useState<Auswahl | null>(null);
+  const [tagwahlOffen, setTagwahlOffen] = useState(false);
   const [plaetze, setPlaetze] = useState<Platz[]>([]);
   const [belegung, setBelegung] = useState<Belegung[]>([]);
   const [arten, setArten] = useState<Buchungsart[]>([]);
@@ -103,6 +122,23 @@ export default function Plan() {
     setGeladenFuer(tag);
     setLaedt(false);
   }, []);
+
+  useEffect(() => {
+    AsyncStorage.getItem(ANSICHT_SPEICHER).then((a) => {
+      if (a === "uebersicht" || a === "freie-zeiten") setAnsicht(a);
+    }).catch(() => {});
+  }, []);
+
+  function waehleAnsicht(a: Ansicht) {
+    setAnsicht(a);
+    setAuswahl(null);
+    void AsyncStorage.setItem(ANSICHT_SPEICHER, a);
+  }
+
+  function waehleTag(t: string) {
+    setDatum(t);
+    setAuswahl(null);
+  }
 
   useEffect(() => {
     laden(datum).catch((f: Error) => {
@@ -194,21 +230,6 @@ export default function Plan() {
     return Array.from({ length: vorlauf + 1 }, (_, i) => verschiebe(heute, i));
   }, [heute, einstellungen?.lead_days]);
 
-  /**
-   * Die waehlbaren Startzeiten des Tages. Heute ab der naechsten Startzeit im
-   * Raster; ist der Tag vorbei, bleibt die letzte, damit die Liste nicht
-   * leer steht und eigene Buchungen erreichbar bleiben.
-   */
-  const zeiten = useMemo(() => {
-    const ab = datum === heute ? nextSlotMinute({ openingMinutes: oeffnung, slotMinutes: raster }) : oeffnung;
-    const out: number[] = [];
-    for (let m = ab; m + dauer <= schluss; m += raster) out.push(m);
-    if (out.length === 0) {
-      out.push(oeffnung + Math.floor((schluss - dauer - oeffnung) / raster) * raster);
-    }
-    return out;
-  }, [datum, heute, oeffnung, schluss, raster, dauer]);
-
   /** Kann auf diesem Platz um genau diese Minute eine Buchung beginnen? */
   const startMoeglich = useCallback(
     (courtId: string, minute: number) =>
@@ -218,15 +239,6 @@ export default function Plan() {
       }),
     [belegung, datum, dauer, schluss],
   );
-
-  // Vorauswahl: die erste Zeit, zu der irgendein Platz frei ist.
-  useEffect(() => {
-    if (zeit !== null && zeiten.includes(zeit)) return;
-    const frei = zeiten.find((m) => plaetze.some((p) => startMoeglich(p.id, m)));
-    setZeit(frei ?? zeiten[0] ?? null);
-  }, [zeiten, plaetze, startMoeglich, zeit]);
-
-  const gewaehlt = zeit ?? zeiten[0] ?? oeffnung;
 
   const startzeitenIn = useCallback(
     (courtId: string, stunde: number) => {
@@ -279,7 +291,6 @@ export default function Plan() {
       setMeldung({ ok: false, text: "Heute ist gerade kein Platz mehr frei – wähle einen anderen Tag." });
       return;
     }
-    setZeit(erster.fromMinute);
     oeffneBuchen(platz, erster.fromMinute, heute);
   }, [
     buchenWartet, laedt, geladenFuer, datum, heute, kontingentAus, plaetze, oeffnung, schluss,
@@ -293,25 +304,24 @@ export default function Plan() {
    * muss antippbar sein - und fremde Buchungen zum Ansehen. Was darin
    * geaendert werden darf, entscheidet das Blatt. Sperrungen nur fuer Admins.
    */
-  function oeffnebar(st: CourtStatus<Belegung>): boolean {
-    if (!st.belegung) return false;
-    if (st.art === "gesperrt") return admin;
-    return st.art === "eigen" || st.art === "sucht" || st.art === "belegt" || st.art === "serie";
+  function oeffnebar(b: Belegung): boolean {
+    const art = occupancyKind(b);
+    if (art === "gesperrt") return admin;
+    return true;
   }
 
-  function tippen(platz: Platz, st: CourtStatus<Belegung>) {
-    if (st.art === "frei") {
-      if (kontingentAus) {
-        setMeldung({ ok: false, text: "Dein Kontingent ist ausgeschöpft." });
-        return;
-      }
-      oeffneBuchen(platz, gewaehlt, datum);
+  function oeffneBelegung(platz: Platz, b: Belegung) {
+    if (!oeffnebar(b)) return;
+    setFensterFehler(null);
+    setFenster({ modus: "verwalten", belegung: b, platzName: platz.name, tag: datum });
+  }
+
+  function buchenAuf(platz: Platz, minute: number) {
+    if (kontingentAus) {
+      setMeldung({ ok: false, text: "Dein Kontingent ist ausgeschöpft." });
       return;
     }
-    if (oeffnebar(st) && st.belegung) {
-      setFensterFehler(null);
-      setFenster({ modus: "verwalten", belegung: st.belegung, platzName: platz.name, tag: datum });
-    }
+    oeffneBuchen(platz, minute, datum);
   }
 
   /**
@@ -323,6 +333,7 @@ export default function Plan() {
     if (r.ok) {
       setMeldung({ ok: true, text: r.meldung });
       setFenster(null);
+      setAuswahl(null);
       setFensterFehler(null);
       await laden(datum, true);
     } else {
@@ -372,79 +383,89 @@ export default function Plan() {
     return r.kollisionen ?? null;
   }
 
-  // Beschriftung der Zeitleiste: alle drei Stunden ab der Oeffnung
-  const skala = useMemo(() => {
-    const out: { text: string; links: number }[] = [];
-    for (let m = Math.ceil(oeffnung / 60) * 60; m < schluss; m += 180) {
-      out.push({ text: alsUhrzeit(m).slice(0, 2), links: timelinePosition(m, oeffnung, schluss) });
-    }
-    return out;
-  }, [oeffnung, schluss]);
+  const gewaehlterPlatz = auswahl ? plaetze.find((p) => p.id === auswahl.courtId) : undefined;
+  const tagIndex = tage.indexOf(datum);
 
   return (
     <>
       <Bildschirm laedt={laedt} aktualisiert={aktualisiert} onAktualisieren={vonHand}>
-        {/* Datums-Kacheln, bis an den Rand wischbar */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginHorizontal: -abstand.rand }}
-          contentContainerStyle={{ gap: 8, paddingHorizontal: abstand.rand }}
-        >
-          {tage.map((t) => {
-            const aktiv = t === datum;
-            const k = kachel(t);
-            return (
-              <Pressable
-                key={t}
-                onPress={() => setDatum(t)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: aktiv }}
-                accessibilityLabel={lesbar(t)}
-                style={{
-                  width: 58, height: 70, borderRadius: 18, alignItems: "center", justifyContent: "center", gap: 2,
-                  backgroundColor: aktiv ? farben.gold : farben.surf2,
-                }}
-              >
-                <Text style={{ fontSize: 11, letterSpacing: 0.9, fontFamily: "Barlow_700Bold", color: aktiv ? farben.onGold : farben.ink2 }}>
-                  {k.wochentag}
-                </Text>
-                <Text style={{ fontSize: 26, lineHeight: 28, fontFamily: "BarlowSemiCondensed_700Bold", color: aktiv ? farben.onGold : farben.ink2 }}>
-                  {k.tag}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        <Segmente<Ansicht>
+          beschriftung="Darstellung"
+          wert={ansicht}
+          onWahl={waehleAnsicht}
+          optionen={[
+            { wert: "uebersicht", label: "Übersicht" },
+            { wert: "freie-zeiten", label: "Freie Zeiten" },
+          ]}
+        />
 
-        <Text style={[stil.kicker, { marginTop: 6 }]}>Wann willst du spielen?</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginHorizontal: -abstand.rand, marginTop: -2 }}
-          contentContainerStyle={{ gap: 8, paddingHorizontal: abstand.rand }}
-        >
-          {zeiten.map((m) => {
-            const aktiv = m === gewaehlt;
-            return (
-              <Pressable
-                key={m}
-                onPress={() => setZeit(m)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: aktiv }}
-                accessibilityLabel={`${alsUhrzeit(m)} Uhr`}
-                style={{
-                  height: 38, paddingHorizontal: 15, borderRadius: 19, justifyContent: "center",
-                  backgroundColor: aktiv ? farben.ink : farben.surf2,
-                }}
-              >
-                <Text style={{ fontSize: 14.5, fontFamily: aktiv ? "Barlow_700Bold" : "Barlow_500Medium", fontVariant: ["tabular-nums"], color: aktiv ? farben.bg : farben.ink2 }}>
-                  {alsUhrzeit(m)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        {ansicht === "uebersicht" ? (
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <Rundknopf
+              richtung="zurueck"
+              beschriftung="Vortag"
+              aus={tagIndex <= 0}
+              onPress={() => waehleTag(tage[tagIndex - 1]!)}
+            />
+            <Pressable
+              onPress={() => setTagwahlOffen((o) => !o)}
+              accessibilityRole="button"
+              accessibilityLabel={`${lesbar(datum)}, Tag wählen`}
+              accessibilityState={{ expanded: tagwahlOffen }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingHorizontal: 8 }}
+            >
+              <Text style={{ fontSize: 17, fontFamily: "Barlow_700Bold", color: farben.ink }}>
+                {tageszeile(datum, heute)}
+              </Text>
+              <Svg width={14} height={14} viewBox="0 0 24 24" style={{ transform: [{ rotate: tagwahlOffen ? "180deg" : "0deg" }] }}>
+                <Path d="M6 9l6 6 6-6" stroke={farben.muted} strokeWidth={2.4} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </Pressable>
+            <Rundknopf
+              richtung="vor"
+              beschriftung="Folgetag"
+              aus={tagIndex < 0 || tagIndex >= tage.length - 1}
+              onPress={() => waehleTag(tage[tagIndex + 1]!)}
+            />
+          </View>
+        ) : null}
+
+        {(ansicht === "freie-zeiten" || tagwahlOffen) && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginHorizontal: -abstand.rand, marginTop: ansicht === "uebersicht" ? -6 : 0 }}
+            contentContainerStyle={{ gap: 6, paddingHorizontal: abstand.rand }}
+          >
+            {tage.map((t) => {
+              const aktiv = t === datum;
+              const k = kachel(t);
+              return (
+                <Pressable
+                  key={t}
+                  onPress={() => {
+                    waehleTag(t);
+                    setTagwahlOffen(false);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: aktiv }}
+                  accessibilityLabel={lesbar(t)}
+                  style={{
+                    width: 50, height: 56, borderRadius: 16, alignItems: "center", justifyContent: "center", gap: 1,
+                    backgroundColor: aktiv ? farben.gold : farben.surf2,
+                  }}
+                >
+                  <Text style={{ fontSize: 10.5, letterSpacing: 0.6, fontFamily: "Barlow_700Bold", color: aktiv ? farben.onGold : farben.ink2 }}>
+                    {t === heute ? "HEUTE" : k.wochentag}
+                  </Text>
+                  <Text style={{ fontSize: 21, lineHeight: 23, fontFamily: "BarlowSemiCondensed_700Bold", color: aktiv ? farben.onGold : farben.ink2 }}>
+                    {k.tag}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
 
         {!unbegrenzt && (
           <Text style={stil.leise}>
@@ -459,51 +480,77 @@ export default function Plan() {
           </Text>
         )}
 
-        {/* Eine gruppierte Karte mit allen Plaetzen */}
+        {ansicht === "uebersicht" ? (
+          <>
+            <PlatzRaster
+              datum={datum}
+              istHeute={datum === heute}
+              plaetze={plaetze}
+              belegung={belegung}
+              oeffnung={oeffnung}
+              schluss={schluss}
+              raster={raster}
+              dauer={dauer}
+              auswahl={auswahl}
+              oeffnebar={oeffnebar}
+              onAuswahl={setAuswahl}
+              onOeffnen={oeffneBelegung}
+            />
+            <RasterLegende />
+            {/* Luft, damit die Leiste unten die Legende nicht verdeckt */}
+            {auswahl && <View style={{ height: 76 }} />}
+          </>
+        ) : (
+          <>
+            <FreieZeiten
+              datum={datum}
+              plaetze={plaetze}
+              belegung={belegung}
+              oeffnung={oeffnung}
+              schluss={schluss}
+              raster={raster}
+              dauer={dauer}
+              onBuchen={buchenAuf}
+              onOeffnen={oeffneBelegung}
+            />
+            <FreieZeitenLegende />
+          </>
+        )}
+      </Bildschirm>
+
+      {ansicht === "uebersicht" && auswahl && gewaehlterPlatz && !fenster && (
         <View
           style={{
-            backgroundColor: farben.surf, borderWidth: 1, borderColor: farben.line,
-            borderRadius: radius.karteGross - 2, overflow: "hidden", marginTop: 4,
+            position: "absolute", left: LEISTE_RAND, right: LEISTE_RAND,
+            bottom: LEISTE_ABSTAND_UNTEN + rand.bottom + LEISTE_HOEHE + 14,
+            height: 64, borderRadius: 22, paddingLeft: 18, paddingRight: 8,
+            flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+            backgroundColor: farben.ink,
+            shadowColor: "#000", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.35, shadowRadius: 20,
+            elevation: 8,
           }}
         >
-          <View style={{ height: 30, marginHorizontal: 16, borderBottomWidth: 1, borderBottomColor: farben.line }}>
-            {skala.map((s, i) => (
-              <Text
-                key={s.text}
-                style={{
-                  position: "absolute", top: 9, left: `${s.links}%`,
-                  transform: [{ translateX: i === 0 ? 0 : -7 }],
-                  fontSize: 11, fontFamily: "Barlow_600SemiBold", color: farben.muted,
-                  fontVariant: ["tabular-nums"],
-                }}
-              >
-                {s.text}
-              </Text>
-            ))}
+          <View style={{ flex: 1, minWidth: 0 }} accessible accessibilityLiveRegion="polite">
+            <Text numberOfLines={1} style={{ fontSize: 15, fontFamily: "Barlow_800ExtraBold", color: farben.bg }}>
+              {gewaehlterPlatz.name} · {alsUhrzeit(auswahl.minute)} – {alsUhrzeit(auswahl.minute + dauer)}
+            </Text>
+            <Text numberOfLines={1} style={{ fontSize: 12.5, fontFamily: "Barlow_500Medium", color: mitDeckkraft(farben.bg, 0.7) }}>
+              frei bis {alsUhrzeit(auswahl.bis)}
+            </Text>
           </View>
-
-          {plaetze.map((platz, i) => {
-            const st = courtStatusAt({
-              day: datum, courtId: platz.id, minute: gewaehlt, durationMinutes: dauer,
-              closingMinutes: schluss, occupied: belegung,
-            });
-            return (
-              <Platzzeile
-                key={platz.id}
-                platz={platz}
-                status={st}
-                letzte={i === plaetze.length - 1}
-                oeffnebar={st.art === "frei" || oeffnebar(st)}
-                segmente={timelineSegments(belegung.filter((b) => b.court_id === platz.id), oeffnung, schluss)}
-                markierung={timelinePosition(gewaehlt, oeffnung, schluss)}
-                onTippen={() => tippen(platz, st)}
-              />
-            );
-          })}
+          <Pressable
+            onPress={() => buchenAuf(gewaehlterPlatz, auswahl.minute)}
+            accessibilityRole="button"
+            accessibilityLabel={`${gewaehlterPlatz.name} um ${alsUhrzeit(auswahl.minute)} Uhr buchen`}
+            style={({ pressed }) => ({
+              height: 48, paddingHorizontal: 22, borderRadius: 16, justifyContent: "center",
+              backgroundColor: farben.gold, opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <Text style={{ fontSize: 15.5, fontFamily: "Barlow_800ExtraBold", color: farben.onGold }}>Buchen</Text>
+          </Pressable>
         </View>
-
-        <Legende />
-      </Bildschirm>
+      )}
 
       {fenster && (
         <BuchungsFenster
@@ -533,111 +580,35 @@ export default function Plan() {
   );
 }
 
-/* --- Eine Zeile der Platzliste -------------------------------------------- */
+/* --- Runder Knopf fuer Vortag und Folgetag ------------------------------- */
 
-function Platzzeile({
-  platz, status, letzte, oeffnebar, segmente, markierung, onTippen,
+function Rundknopf({
+  richtung, beschriftung, aus, onPress,
 }: {
-  platz: Platz;
-  status: CourtStatus<Belegung>;
-  letzte: boolean;
-  oeffnebar: boolean;
-  segmente: ReturnType<typeof timelineSegments>;
-  markierung: number;
-  onTippen: () => void;
+  richtung: "zurueck" | "vor";
+  beschriftung: string;
+  aus: boolean;
+  onPress: () => void;
 }) {
   const { farben } = useTheme();
-  const b = status.belegung;
-  const mitspielbar = status.art === "sucht" && b?.bin_dabei !== true;
-
-  const textfarbe =
-    status.art === "frei" ? farben.greenInk
-      : status.art === "eigen" || status.art === "sucht" ? farben.goldInk
-        : farben.muted;
-
-  const aktion = status.art === "frei" ? (
-    <View style={{ height: 38, paddingHorizontal: 16, borderRadius: 19, justifyContent: "center", backgroundColor: farben.gold }}>
-      <Text style={{ color: farben.onGold, fontSize: 14, fontFamily: "Barlow_700Bold" }}>Buchen</Text>
-    </View>
-  ) : mitspielbar ? (
-    <View style={{ height: 38, paddingHorizontal: 14, borderRadius: 19, justifyContent: "center", borderWidth: 1.5, borderColor: farben.goldLine }}>
-      <Text style={{ color: farben.goldInk, fontSize: 14, fontFamily: "Barlow_700Bold" }}>Mitspielen</Text>
-    </View>
-  ) : status.art === "gesperrt" ? (
-    <Svg width={18} height={18} viewBox="0 0 24 24">
-      <Path d="M6 11h12v10H6zM8 11V8a4 4 0 0 1 8 0v3" stroke={farben.muted} strokeWidth={1.9} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  ) : oeffnebar ? (
-    <Svg width={18} height={18} viewBox="0 0 24 24">
-      <Path d="M9 6l6 6-6 6" stroke={farben.muted} strokeWidth={2.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  ) : null;
-
-  const hinweis =
-    status.art === "frei" ? "Buchen"
-      : mitspielbar ? "Mitspielen"
-        : oeffnebar ? "Details" : undefined;
-
   return (
     <Pressable
-      onPress={onTippen}
-      disabled={!oeffnebar}
-      accessibilityRole={oeffnebar ? "button" : undefined}
-      accessibilityLabel={`${platz.name}, ${status.text}`}
-      accessibilityHint={hinweis}
-      style={({ pressed }) => ({
-        paddingTop: 13, paddingBottom: 14, paddingHorizontal: 16,
-        borderBottomWidth: letzte ? 0 : 1, borderBottomColor: farben.line,
-        backgroundColor: pressed && oeffnebar ? mitDeckkraft(farben.ink, 0.04) : "transparent",
-      })}
+      onPress={onPress}
+      disabled={aus}
+      accessibilityRole="button"
+      accessibilityLabel={beschriftung}
+      accessibilityState={{ disabled: aus }}
+      style={{
+        width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center",
+        backgroundColor: farben.surf2, opacity: aus ? 0.4 : 1,
+      }}
     >
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10, minHeight: 40 }}>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 19, lineHeight: 21, color: farben.ink }}>
-            {platz.name}
-          </Text>
-          <Text numberOfLines={1} style={{ fontSize: 13, fontFamily: "Barlow_600SemiBold", marginTop: 2, color: textfarbe }}>
-            {status.text}
-          </Text>
-        </View>
-        {aktion}
-      </View>
-      <View style={{ marginTop: 10 }}>
-        <MiniZeitleiste segmente={segmente} markierung={markierung} hoehe={10} ueberstand={4} />
-      </View>
+      <Svg width={18} height={18} viewBox="0 0 24 24">
+        <Path
+          d={richtung === "zurueck" ? "M15 6l-6 6 6 6" : "M9 6l6 6-6 6"}
+          stroke={farben.ink} strokeWidth={2.4} fill="none" strokeLinecap="round" strokeLinejoin="round"
+        />
+      </Svg>
     </Pressable>
-  );
-}
-
-/* --- Legende -------------------------------------------------------------- */
-
-function Legende() {
-  const { farben } = useTheme();
-  const eintraege: { name: string; art: TimelineKind }[] = [
-    { name: "Deine", art: "eigen" },
-    { name: "Belegt", art: "belegt" },
-    { name: "Sucht Mitspieler", art: "sucht" },
-    { name: "Training", art: "serie" },
-    { name: "Gesperrt", art: "gesperrt" },
-  ];
-  const flaeche: Record<TimelineKind, object> = {
-    eigen: { backgroundColor: farben.gold },
-    belegt: { backgroundColor: farben.blue },
-    sucht: { backgroundColor: farben.goldSoft, borderWidth: 1.5, borderStyle: "dashed", borderColor: farben.goldLine },
-    serie: { backgroundColor: farben.surf3 },
-    gesperrt: { backgroundColor: farben.surf3 },
-  };
-
-  return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 16, rowGap: 8, marginTop: 2 }}>
-      {eintraege.map((e) => (
-        <View key={e.art} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <View style={[{ width: 18, height: 10, borderRadius: 4, overflow: "hidden" }, flaeche[e.art]]}>
-            {e.art === "serie" && <Schraffur farbe={mitDeckkraft(farben.ink, 0.18)} />}
-          </View>
-          <Text style={{ fontSize: 12.5, color: farben.ink2, fontFamily: "Barlow_400Regular" }}>{e.name}</Text>
-        </View>
-      ))}
-    </View>
   );
 }

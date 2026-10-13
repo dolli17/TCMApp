@@ -3,15 +3,14 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   berlinTime, canStartAt, courtStatusAt, localMinutes, minutesOf, minutesToTime, nextSlotMinute,
-  occupancyKind, timeToMinutes, timelinePosition, timelineSegments,
-  type CourtStatus, type TimelineKind,
+  occupancyKind, timeToMinutes, type TimelineKind,
 } from "@tcm/core";
 import {
   buchen, mitspielen, mitspielerAendern, mitspielerSuchen, serienterminAbsagen,
   stornieren, stundeSperren,
 } from "@/app/plan/aktionen";
 import { BuchungsFenster } from "@/components/BuchungsFenster";
-import { MiniZeitleiste } from "@/components/MiniZeitleiste";
+import { PlanTelefon } from "@/components/PlanTelefon";
 
 export interface Platz { id: string; name: string; short_name: string }
 
@@ -105,9 +104,9 @@ const ART_KLASSE: Record<TimelineKind, string> = {
 /**
  * Der Belegungsplan (Entwurf WebPlan, docs/design/clubhaus).
  *
- * Zwei Darstellungen derselben Daten, die CSS entscheidet: unter 768 px die
- * Zeit-zuerst-Liste wie in der App, darueber das Raster mit Bloecken ueber
- * die ganze Dauer einer Belegung. Beides aus einer Komponente, damit die
+ * Zwei Darstellungen derselben Daten, die CSS entscheidet: unter 768 px
+ * Übersicht und Freie Zeiten wie in der App (PlanTelefon), darueber das
+ * Raster mit Bloecken ueber die ganze Dauer einer Belegung. Beides aus einer Komponente, damit die
  * Zustaende nicht auseinanderlaufen.
  *
  * Gebucht wird zur vollen oder halben Stunde, immer 60 Minuten. Ob eine Zeit
@@ -169,32 +168,6 @@ export function Belegungsplan(props: Props) {
     oeffnungMin + Math.floor((minute - oeffnungMin) / props.anzeigeMinuten) * props.anzeigeMinuten;
 
   const kontingentAus = props.kontingentFrei !== null && props.kontingentFrei <= 0;
-
-  /**
-   * Die waehlbaren Startzeiten (Liste am Telefon). Heute ab der naechsten
-   * Startzeit im Raster; ist der Tag vorbei, bleibt die letzte, damit eigene
-   * Buchungen erreichbar bleiben.
-   */
-  const zeiten = useMemo(() => {
-    const ab = istHeute
-      ? nextSlotMinute({ openingMinutes: oeffnungMin, slotMinutes: props.rasterMinuten, now: jetzt })
-      : oeffnungMin;
-    const out: number[] = [];
-    for (let m = ab; m + props.dauerMinuten <= schlussMin; m += props.rasterMinuten) out.push(m);
-    if (out.length === 0) {
-      out.push(
-        oeffnungMin +
-          Math.floor((schlussMin - props.dauerMinuten - oeffnungMin) / props.rasterMinuten) * props.rasterMinuten,
-      );
-    }
-    return out;
-  }, [istHeute, oeffnungMin, schlussMin, props.rasterMinuten, props.dauerMinuten, jetzt]);
-
-  // Vorauswahl: die erste Zeit, zu der irgendein Platz frei ist.
-  const [zeit, setZeit] = useState<number | null>(null);
-  const vorschlag =
-    zeiten.find((m) => props.plaetze.some((p) => startMoeglich(p.id, m))) ?? zeiten[0] ?? oeffnungMin;
-  const gewaehlt = zeit !== null && zeiten.includes(zeit) ? zeit : vorschlag;
 
   // Die Server Actions rufen bereits revalidatePath auf; ein zusaetzliches
   // router.refresh() wuerde die Rueckmeldung sofort wieder verschlucken.
@@ -294,55 +267,27 @@ export function Belegungsplan(props: Props) {
         </div>
       )}
 
-      {/* --- Telefon: Zeit zuerst, eine Liste aller Plaetze ------------------ */}
-      <div className="plan-listen">
-        <p className="kicker" id="zeitwahl-titel">Wann willst du spielen?</p>
-        <div className="zeit-chips" role="group" aria-labelledby="zeitwahl-titel">
-          {zeiten.map((m) => (
-            <button
-              key={m}
-              type="button"
-              className="zeit-chip tnum"
-              aria-pressed={m === gewaehlt}
-              onClick={() => setZeit(m)}
-            >
-              {alsUhrzeit(m)}
-            </button>
-          ))}
-        </div>
-
-        <div className="platzliste">
-          <div className="platzliste-skala" aria-hidden="true">
-            {skala(oeffnungMin, schlussMin).map((s, i) => (
-              <span key={s.text} style={{ left: `${s.links}%`, transform: i === 0 ? undefined : "translateX(-7px)" }}>
-                {s.text}
-              </span>
-            ))}
-          </div>
-          {props.plaetze.map((platz) => {
-            const st = courtStatusAt({
-              day: props.datum, courtId: platz.id, minute: gewaehlt, durationMinutes: props.dauerMinuten,
-              closingMinutes: schlussMin, occupied: props.belegungen, now: jetzt,
-            });
-            return (
-              <Platzzeile
-                key={platz.id}
-                platz={platz}
-                status={st}
-                buchbar={st.art === "frei" && !kontingentAus}
-                verwaltbar={Boolean(st.belegung && verwaltbar(st.belegung))}
-                segmente={timelineSegments(
-                  props.belegungen.filter((b) => b.court_id === platz.id), oeffnungMin, schlussMin,
-                )}
-                markierung={timelinePosition(gewaehlt, oeffnungMin, schlussMin)}
-                onBuchen={() => oeffneBuchen(platz.id, gewaehlt)}
-                onVerwalten={() => st.belegung && oeffneVerwalten(st.belegung)}
-              />
-            );
-          })}
-        </div>
-        {legende}
-      </div>
+      {/* --- Telefon: Übersicht und Freie Zeiten ----------------------------- */}
+      <PlanTelefon
+        datum={props.datum}
+        jetzt={jetzt}
+        istHeute={istHeute}
+        plaetze={props.plaetze}
+        belegungen={props.belegungen}
+        oeffnung={oeffnungMin}
+        schluss={schlussMin}
+        raster={props.rasterMinuten}
+        dauer={props.dauerMinuten}
+        verwaltbar={verwaltbar}
+        onBuchen={(courtId, minute) => {
+          if (kontingentAus) {
+            setMeldung({ ok: false, text: "Dein Kontingent ist ausgeschöpft." });
+            return;
+          }
+          oeffneBuchen(courtId, minute);
+        }}
+        onVerwalten={oeffneVerwalten}
+      />
 
       {/* --- Ab Tablet: Raster mit Bloecken ueber die ganze Dauer ------------ */}
       <div className="plan-raster">
@@ -516,80 +461,6 @@ function stundenmarken(oeffnung: number, schluss: number): number[] {
   const out: number[] = [];
   for (let m = Math.ceil(oeffnung / 60) * 60; m < schluss; m += 60) out.push(m);
   return out;
-}
-
-/** Beschriftung der Zeitleiste in der Liste: alle drei Stunden. */
-function skala(oeffnung: number, schluss: number): { text: string; links: number }[] {
-  const out: { text: string; links: number }[] = [];
-  for (let m = Math.ceil(oeffnung / 60) * 60; m < schluss; m += 180) {
-    out.push({ text: alsUhrzeit(m).slice(0, 2), links: timelinePosition(m, oeffnung, schluss) });
-  }
-  return out;
-}
-
-/* --- Eine Zeile der Liste am Telefon ------------------------------------- */
-
-function Platzzeile({
-  platz, status, buchbar, verwaltbar, segmente, markierung, onBuchen, onVerwalten,
-}: {
-  platz: Platz;
-  status: CourtStatus<Belegung>;
-  buchbar: boolean;
-  verwaltbar: boolean;
-  segmente: ReturnType<typeof timelineSegments>;
-  markierung: number;
-  onBuchen: () => void;
-  onVerwalten: () => void;
-}) {
-  const b = status.belegung;
-  const mitspielbar = status.art === "sucht" && verwaltbar && b !== undefined && !b.is_own && !b.bin_dabei;
-  const klickbar = buchbar || verwaltbar;
-
-  const aktion = buchbar ? (
-    <span className="zeilen-aktion gelb">Buchen</span>
-  ) : mitspielbar ? (
-    <span className="zeilen-aktion umrandet">Mitspielen</span>
-  ) : status.art === "gesperrt" ? (
-    <Pfad d="M6 11h12v10H6zM8 11V8a4 4 0 0 1 8 0v3" />
-  ) : verwaltbar ? (
-    <Pfad d="M9 6l6 6-6 6" />
-  ) : null;
-
-  const inhalt = (
-    <>
-      <span className="zeilen-kopf">
-        <span className="zeilen-text">
-          <b className="dpl">{platz.name}</b>
-          <small className={`status-${status.art}`}>{status.text}</small>
-        </span>
-        {aktion}
-      </span>
-      <MiniZeitleiste segmente={segmente} markierung={markierung} gross />
-    </>
-  );
-
-  return klickbar ? (
-    <button
-      type="button"
-      className="platzzeile"
-      onClick={buchbar ? onBuchen : onVerwalten}
-      aria-label={`${platz.name}, ${status.text}`}
-    >
-      {inhalt}
-    </button>
-  ) : (
-    <div className="platzzeile" aria-label={`${platz.name}, ${status.text}`} role="group">
-      {inhalt}
-    </div>
-  );
-}
-
-function Pfad({ d }: { d: string }) {
-  return (
-    <svg className="zeilen-symbol" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d={d} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
 }
 
 /* --- Legende --------------------------------------------------------------- */

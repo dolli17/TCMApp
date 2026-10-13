@@ -852,7 +852,7 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
    Plätze: Belegungsplan und Spiele (docs/design/clubhaus, WebPlan)
 
    Zwei Darstellungen derselben Daten, umgeschaltet über die Breite:
-     < 768px  Zeit zuerst - Zeit-Chips und eine Liste aller Plätze, wie in der App
+     < 768px  Übersicht (Raster zum Wischen) und Freie Zeiten, wie in der App
      >= 768px Raster mit Blöcken über die ganze Dauer einer Belegung
    --------------------------------------------------------------------------- */
 .plan-kopf {
@@ -890,56 +890,148 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 .plan-raster { display: none; }
 .plan-listen { display: flex; flex-direction: column; gap: 12px; }
 
-/* --- Zeit-Chips und Liste (Telefon) --------------------------------------- */
-.plan-listen > .kicker { margin: 4px 0 -2px; }
-.zeit-chips {
-  display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
-  margin: 0 calc(-1 * var(--space-rand)); padding: 2px var(--space-rand);
+/* --- Übersicht und Freie Zeiten (Telefon, docs/design/clubhaus/plaetze) ---- */
+.segtoggle.telefon-ansicht { margin: 0; }
+.segtoggle.telefon-ansicht button {
+  min-height: 40px; padding: 0 10px; font-family: var(--font-text); font-size: 15px; font-weight: 600;
 }
-.zeit-chips::-webkit-scrollbar { display: none; }
-.zeit-chip {
-  flex: 0 0 auto; height: 38px; padding: 0 15px; border: 0; border-radius: 19px;
-  font: inherit; font-size: 14.5px; cursor: pointer;
-  background: var(--surf-2); color: var(--ink-2);
+.segtoggle.telefon-ansicht button[aria-checked="true"] {
+  background: var(--seg-aktiv); color: var(--ink); font-weight: 700; box-shadow: var(--shadow-sm);
 }
-.zeit-chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); font-weight: 700; }
+.segtoggle.telefon-ansicht button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
 
-.platzliste {
-  background: var(--surf); border: 1px solid var(--line); border-radius: 24px;
-  box-shadow: var(--shadow); overflow: hidden;
+/* Raster: feste Platzspalte, Stunden waagerecht wischbar, 68 px je Stunde */
+.tr {
+  display: flex; background: var(--surf); border: 1px solid var(--line);
+  border-radius: 22px; overflow: hidden;
 }
-.platzliste-skala { position: relative; height: 30px; margin: 0 16px; border-bottom: 1px solid var(--line); }
-.platzliste-skala span {
-  position: absolute; top: 9px; font-size: 11px; font-weight: 600;
-  color: var(--muted); font-variant-numeric: tabular-nums;
+.tr-spalte { width: 46px; flex: 0 0 auto; border-right: 1px solid var(--line); }
+.tr-ecke { height: 34px; border-bottom: 1px solid var(--line); }
+.tr-platz {
+  height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
 }
-.platzzeile {
-  display: block; width: 100%; text-align: left; font: inherit; color: inherit;
-  padding: 13px 16px 14px; border: 0; border-bottom: 1px solid var(--line); background: transparent;
+.tr-platz small { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; color: var(--muted); }
+.tr-platz b { font-size: 20px; font-weight: 700; line-height: 1; }
+.tr-wisch { flex: 1 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.tr-wisch::-webkit-scrollbar { display: none; }
+.tr-wisch:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.tr-kopf { position: relative; height: 34px; border-bottom: 1px solid var(--line); }
+.tr-kopf span { position: absolute; top: 10px; font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.tr-koerper {
+  position: relative;
+  background: repeating-linear-gradient(to right, color-mix(in srgb, var(--ink) 7%, transparent) 0 1px, transparent 1px 68px);
 }
-.platzzeile:last-child { border-bottom: 0; }
-button.platzzeile { cursor: pointer; }
-button.platzzeile:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
-button.platzzeile:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
-.zeilen-kopf { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 40px; }
-.zeilen-text { display: grid; min-width: 0; }
-.zeilen-text b { font-size: 19px; line-height: 1.1; }
-.zeilen-text small {
-  font-size: 13px; font-weight: 600; margin-top: 2px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.tr-zeile {
+  position: absolute; left: 0; right: 0; height: 52px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
 }
+.tr-frei {
+  position: absolute; top: 0; bottom: 0; padding: 0; border: 0; background: transparent; cursor: pointer;
+}
+.tr-frei:focus-visible { outline: 2px solid var(--blue); outline-offset: -3px; border-radius: 10px; }
+.tr-block {
+  position: absolute; top: 5px; bottom: 5px; z-index: 1; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 4px 8px; border: 0; border-radius: 10px; text-align: left;
+  font: inherit; font-size: 12px; line-height: 1.25; white-space: nowrap;
+}
+.tr-block b, .tr-block span { overflow: hidden; text-overflow: ellipsis; }
+.tr-block span { opacity: .85; }
+button.tr-block { cursor: pointer; }
+button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; z-index: 3; }
+.tr-block.eigen { background: var(--gold); color: var(--on-gold); }
+.tr-block.belegt { background: var(--blue-soft); color: var(--blue-ink); }
+.tr-block.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); color: var(--gold-ink); }
+.tr-block.serie {
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 10%, transparent) 0 5px, transparent 5px 10px), var(--surf-3);
+  color: var(--ink-2);
+}
+.tr-block.gesperrt { background: var(--surf-3); color: var(--muted); }
+.tr-block.wahl {
+  z-index: 2; pointer-events: none; background: var(--gold-soft); color: var(--gold-ink);
+  border: 2px solid var(--gold);
+}
+.tr-jetzt { position: absolute; top: 0; bottom: 0; width: 2px; z-index: 4; background: var(--red); pointer-events: none; }
+
+.telefon-legende { gap: 6px 14px; }
+.telefon-legende i { width: 16px; height: 10px; border-radius: 3px; }
+.telefon-legende i.belegt { background: var(--blue-soft); }
+.telefon-legende.kaestchen { gap: 6px 16px; }
+.telefon-legende.kaestchen i { width: 10px; height: 14px; }
+.telefon-legende i.frei { background: var(--green); }
+.telefon-legende i.voll { background: var(--surf-3); }
+
+/* Die Leiste über der schwebenden Navigation, sobald eine Stelle gewählt ist */
+.auswahl-leiste {
+  position: fixed; z-index: 21; left: 16px; right: 16px;
+  bottom: calc(26px + 64px + 14px + env(safe-area-inset-bottom));
+  height: 64px; padding: 0 8px 0 18px; border-radius: 22px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--ink); color: var(--bg); box-shadow: var(--shadow-float);
+}
+.auswahl-leiste > div { display: grid; min-width: 0; }
+.auswahl-leiste b { font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.auswahl-leiste small { font-size: 12.5px; opacity: .7; }
+.auswahl-leiste button {
+  flex: 0 0 auto; height: 48px; padding: 0 22px; border: 0; border-radius: 16px; cursor: pointer;
+  background: var(--gold); color: var(--on-gold); font: inherit; font-size: 15.5px; font-weight: 800;
+}
+.auswahl-leiste button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+/* Luft unter der Legende, damit die Leiste sie nicht verdeckt */
+.plan-listen:has(.auswahl-leiste) { padding-bottom: 76px; }
+
+/* Freie Zeiten: eine Zeile je Startzeit, ein Kästchen je Platz */
+.fz { background: var(--surf); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; }
+.fz-kopf {
+  display: flex; align-items: center; height: 40px; padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--muted);
+}
+.fz-beginn { width: 64px; flex: 0 0 auto; }
+.fz-nummern { display: flex; gap: 4px; letter-spacing: 0; }
+.fz-nummern span { width: 18px; text-align: center; }
+.fz-platz { margin-left: auto; }
+.fz-zeile { border-bottom: 1px solid var(--line); }
+.fz-zeile:last-child { border-bottom: 0; }
+.fz-zeile.offen { background: var(--surf-2); }
+.fz-knopf {
+  display: flex; align-items: center; width: 100%; height: 60px; padding: 0 12px 0 16px;
+  border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer;
+}
+.fz-knopf:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.fz-zeit { width: 64px; flex: 0 0 auto; font-size: 22px; font-weight: 700; }
+.fz-kaestchen { display: flex; gap: 4px; }
+.fz-kaestchen i { width: 18px; height: 24px; border-radius: 5px; background: var(--surf-3); }
+.fz-kaestchen i.frei { background: var(--green); }
+.fz-kaestchen i.eigen { background: var(--gold); }
+.fz-kaestchen i.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); }
+.fz-zahl { margin-left: auto; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.fz-zahl.viele { color: var(--green-ink); }
+.fz-zahl.wenige { color: var(--ink); }
+.fz-zahl.keine { color: var(--muted); }
+.fz-pfeil { width: 16px; height: 16px; margin-left: 6px; flex: 0 0 auto; color: var(--muted); transition: transform .15s ease; }
+.fz-zeile.offen .fz-pfeil { transform: rotate(90deg); }
+.fz-auf { padding: 0 16px 16px; }
+.fz-auf > p { margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
+.fz-plaetze { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.fz-plaetze button {
+  height: 48px; border: 0; border-radius: 14px; cursor: pointer;
+  background: var(--green); color: var(--bg); font: inherit; font-size: 15px; font-weight: 800;
+}
+.fz-plaetze button:focus-visible, .fz-sucht:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.fz-sucht {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
+  margin-top: 8px; height: 48px; padding: 0 14px; border-radius: 14px; cursor: pointer;
+  border: 1.5px dashed var(--gold-line); background: var(--gold-soft); color: var(--gold-ink);
+  font: inherit; font-size: 14.5px; font-weight: 700; text-align: left;
+}
+.fz-eigen { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font-size: 13px; color: var(--ink-2); }
+.fz-eigen i { width: 10px; height: 10px; border-radius: 3px; background: var(--gold); }
+
 .status-frei { color: var(--green-ink); }
 .status-eigen, .status-sucht { color: var(--gold-ink); }
 .status-belegt, .status-serie, .status-gesperrt, .status-knapp, .status-vorbei, .status-schluss { color: var(--muted); }
-.zeilen-aktion {
-  flex: 0 0 auto; height: 38px; padding: 0 16px; border-radius: 19px;
-  display: inline-flex; align-items: center; font-size: 14px; font-weight: 700;
-}
-.zeilen-aktion.gelb { background: var(--gold); color: var(--on-gold); }
-.zeilen-aktion.umrandet { padding: 0 14px; border: 1.5px solid var(--gold-line); color: var(--gold-ink); }
-.zeilen-symbol { width: 18px; height: 18px; flex: 0 0 auto; color: var(--muted); }
-.platzzeile .mini-zeitleiste { margin-top: 10px; }
-
 .mini-zeitleiste.gross { height: 10px; border-radius: 5px; overflow: visible; }
 .mini-zeitleiste.gross i { border-radius: 5px; }
 .mini-zeitleiste.gross b { top: -4px; bottom: -4px; border-radius: 1px; }
