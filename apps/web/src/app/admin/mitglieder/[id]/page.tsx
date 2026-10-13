@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { formatCents, isoDateLabel } from "@tcm/core";
+import { formatCents, isoDateLabel, rollenMarken } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { BankUndMandatKarte, type FinanzZeile } from "@/components/BankUndMandatKarte";
 import { BeitragsartenKarte, type BeitragsZeile } from "@/components/BeitragsartenKarte";
@@ -199,7 +199,7 @@ export default async function MitgliedSeite({
       supabase.from("member_roles").select("role").eq("member_id", id),
       supabase.from("members").select("id, first_name, last_name").eq("billing_payer_id", id),
       supabase.rpc("member_directory", { p_query: "" }),
-      supabase.from("member_roles").select("member_id").eq("role", "admin"),
+      supabase.from("member_roles").select("member_id").in("role", ["admin", "board"]),
       supabase.from("teams").select("id, name, active").order("sort_order").order("name"),
     ]);
 
@@ -209,7 +209,10 @@ export default async function MitgliedSeite({
   const mitgliedschaften = mitgliedschaftenRes.data ?? [];
   const laufend = mitgliedschaften.find((s) => !s.ended_on) ?? null;
   const rollen = (rollenRes.data ?? []).map((r) => r.role as string);
-  const admins = (adminZahlRes.data ?? []).map((r) => r.member_id);
+  // Wer außer diesem Mitglied hat noch volle Rechte (Vorstand oder App Admin)?
+  const andereMitVollenRechten = new Set(
+    (adminZahlRes.data ?? []).map((r) => r.member_id).filter((mid) => mid !== id),
+  );
   const istSelbst = angemeldet?.member?.id === id;
 
   const stammfelder: Feld[] = [
@@ -241,7 +244,6 @@ export default async function MitgliedSeite({
   ];
 
   const sportfelder: Feld[] = [
-    { name: "is_trainer", label: "Trainer", art: "schalter", wert: m.is_trainer },
     { name: "tennis_lk", label: "Leistungsklasse", art: "text", wert: m.tennis_lk, hinweis: "z. B. LK12.3" },
     { name: "nuliga_id", label: "nuLiga-Id", art: "text", wert: m.nuliga_id },
     {
@@ -278,8 +280,12 @@ export default async function MitgliedSeite({
             {STATUS_TEXT[m.status] ?? m.status}
           </span>
           {laufend && <span className="statusmarke">Nr. {laufend.number}</span>}
-          {rollen.includes("admin") && <span className="statusmarke gelb">Administrator</span>}
-          {m.is_trainer && <span className="statusmarke gelb">Trainer</span>}
+          {rollenMarken({ roles: rollen, is_trainer: m.is_trainer })
+            .map((r) => (
+              <span key={r} className="statusmarke gelb">
+                {r}
+              </span>
+            ))}
           {m.teams && (
             <span className={`statusmarke${m.is_team_captain ? " gelb" : ""}`}>
               {m.teams.name}
@@ -306,7 +312,7 @@ export default async function MitgliedSeite({
           />
           <Stammdatenkarte
             titel="Sport"
-            text="Trainer, Leistungsklasse und Spielberechtigung für die Verbandsmeldung."
+            text="Leistungsklasse und Spielberechtigung für die Verbandsmeldung. Trainer steht unter Mitgliedschaft bei den Rollen."
             felder={sportfelder}
             versteckt={{ mitglied: id }}
             aktion={stammdatenSpeichern}
@@ -328,14 +334,16 @@ export default async function MitgliedSeite({
           <ZugehoerigkeitKarte
             mitgliedId={id}
             hatLogin={Boolean(m.auth_user_id)}
-            istAdmin={rollen.includes("admin")}
+            rollen={rollen}
+            istTrainer={m.is_trainer}
+            mannschaft={m.teams ? { name: m.teams.name, kapitaen: m.is_team_captain } : null}
             zahler={m.billing_payer_id}
             zahltFuer={(zahltFuerRes.data ?? []).map((z) => ({
               id: z.id,
               name: `${z.first_name} ${z.last_name}`,
             }))}
             verzeichnis={verzeichnisRes.data ?? []}
-            einzigerAdmin={admins.length <= 1}
+            einzigeVolleRechte={andereMitVollenRechten.size === 0}
             selbst={istSelbst}
           />
 

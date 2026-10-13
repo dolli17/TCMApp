@@ -162,12 +162,11 @@ test.describe("Mitgliederverwaltung", () => {
     await anmelden(page, NUTZER.admin);
     const adresse = await mitgliedAnlegen(page, nachname);
 
-    await page.goto(`${adresse.split("?")[0]}?teil=stammdaten`);
-    const sport = page.locator('section[aria-label="Sport"]');
-    await sport.getByLabel("Trainer").check();
-    await sport.getByLabel("Leistungsklasse").fill("LK12.3");
-    await sport.getByRole("button", { name: "Speichern" }).click();
-    await expect(sport.locator(".hinweis.erfolg")).toContainText("Gespeichert");
+    // Trainer steht bei den Rollen, nicht mehr in der Karte Sport.
+    await page.goto(`${adresse.split("?")[0]}?teil=mitgliedschaft`);
+    const rollen = page.locator('section[aria-label="Rollen und Zahler"]');
+    await rollen.getByLabel("Trainer").check();
+    await expect(rollen.locator(".hinweis.erfolg")).toContainText("Trainer vergeben");
 
     await page.reload();
     await expect(page.locator(".marken-reihe")).toContainText("Trainer");
@@ -178,15 +177,22 @@ test.describe("Mitgliederverwaltung", () => {
     await aufraeumen(page, adresse, nachname);
   });
 
-  test("Verwaltungsrechte lassen sich ohne Login nicht vergeben", async ({ page }) => {
+  test("Volle Rechte brauchen einen Login, Platzwart nicht", async ({ page }) => {
     const nachname = testName("Rolle");
     await anmelden(page, NUTZER.admin);
     const adresse = await mitgliedAnlegen(page, nachname);
 
     await page.goto(`${adresse.split("?")[0]}?teil=mitgliedschaft`);
-    const karte = page.locator('section[aria-label="Rolle und Zahler"]');
+    const karte = page.locator('section[aria-label="Rollen und Zahler"]');
     // Ein frisch angelegtes Mitglied hat noch keinen Zugang.
-    await expect(karte).toContainText("Ohne Login kann niemand Administrator werden");
+    await expect(karte.getByLabel("Vorstand")).toBeDisabled();
+    await expect(karte.getByLabel("App Admin")).toBeDisabled();
+    await expect(karte).toContainText("Braucht einen Login");
+
+    await karte.getByLabel("Platzwart").check();
+    await expect(karte.locator(".hinweis.erfolg")).toContainText("Platzwart vergeben");
+    await page.reload();
+    await expect(page.locator(".marken-reihe")).toContainText("Platzwart");
 
     await aufraeumen(page, adresse, nachname);
   });
@@ -200,7 +206,7 @@ test.describe("Mitgliederverwaltung", () => {
     const kindAdresse = await mitgliedAnlegen(page, kind);
 
     await page.goto(`${kindAdresse.split("?")[0]}?teil=mitgliedschaft`);
-    const karte = page.locator('section[aria-label="Rolle und Zahler"]');
+    const karte = page.locator('section[aria-label="Rollen und Zahler"]');
     await karte.getByLabel("Zahler").fill(eltern);
     await karte.locator(".trefferliste li button").first().click();
     await expect(karte.locator(".hinweis.erfolg")).toContainText("Zahler zugewiesen");

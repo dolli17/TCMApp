@@ -11,6 +11,7 @@
 import { useCallback, useRef } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Stack, router, useFocusEffect, useLocalSearchParams, type Href } from "expo-router";
+import { rollenMarken } from "@tcm/core";
 import { Bildschirm } from "@/components/Bildschirm";
 import { Statusmarke } from "@/components/verwaltung/Liste";
 import { Austritt } from "@/components/verwaltung/mitglieder/Austritt";
@@ -126,8 +127,9 @@ function BereichKopf({ d }: { d: MitgliedDaten }) {
           text={STATUS_TEXT[m.status] ?? m.status}
         />
         {d.laufend && <Statusmarke text={`Nr. ${d.laufend.number}`} />}
-        {d.istAdmin && <Statusmarke ton="gelb" text="Administrator" />}
-        {m.is_trainer && <Statusmarke ton="gelb" text="Trainer" />}
+        {rollenMarken({ roles: d.rollen, is_trainer: m.is_trainer }).map((r) => (
+          <Statusmarke key={r} ton="gelb" text={r} />
+        ))}
         {m.teams && (
           <Statusmarke
             ton={m.is_team_captain ? "gelb" : "grau"}
@@ -194,7 +196,6 @@ const NOTFALLFELDER: Feld[] = [
 ];
 
 const SPORTFELDER: Feld[] = [
-  { name: "is_trainer", label: "Trainer", art: "schalter" },
   { name: "tennis_lk", label: "Leistungsklasse", art: "text", hinweis: "z. B. LK12.3" },
   { name: "nuliga_id", label: "nuLiga-Id", art: "text" },
   { name: "playing_right", label: "Spielberechtigung", art: "auswahl", optionen: SPIELRECHT },
@@ -218,7 +219,7 @@ function Stammdaten({ d, onGeaendert }: { d: MitgliedDaten; onGeaendert: () => P
       />
       <StammdatenBlock
         titel="Sport"
-        text="Trainer, Leistungsklasse und Spielberechtigung für die Verbandsmeldung."
+        text="Leistungsklasse und Spielberechtigung für die Verbandsmeldung. Trainer steht unter Mitgliedschaft bei den Rollen."
         felder={SPORTFELDER}
         {...gemeinsam}
       />

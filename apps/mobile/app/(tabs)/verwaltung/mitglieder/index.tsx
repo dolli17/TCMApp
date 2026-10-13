@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Text, TextInput, View } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import Svg, { Path } from "react-native-svg";
+import { rollenMarken } from "@tcm/core";
 import { Bildschirm } from "@/components/Bildschirm";
 import { Chipwahl, Knopf } from "@/components/verwaltung/Formular";
 import { Abschnitt, LeereZeile, ListenGruppe, Listenzeile } from "@/components/verwaltung/Liste";
@@ -158,8 +159,7 @@ export default function MitgliederSeite() {
                           m.beitragsart,
                           m.mannschaft,
                           m.status === "archived" ? "archiviert" : m.status === "inactive" ? "inaktiv" : null,
-                          m.is_admin ? "Admin" : null,
-                          m.is_trainer ? "Trainer" : null,
+                          ...rollenMarken(m),
                           m.is_paid_by ? "fremdgezahlt" : null,
                         ].filter(Boolean).join(" · ") || "ohne Beitragsart"
                       }

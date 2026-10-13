@@ -2344,6 +2344,7 @@ export type Database = {
       }
       iban_is_valid: { Args: { p_iban: string }; Returns: boolean }
       iban_to_numeric: { Args: { p_text: string }; Returns: string }
+      ist_testadresse: { Args: { p_email: string }; Returns: boolean }
       join_booking: { Args: { p_booking_id: string }; Returns: undefined }
       leave_booking: { Args: { p_booking_id: string }; Returns: undefined }
       link_auth_user: {
@@ -2477,6 +2478,7 @@ export type Database = {
           is_trainer: boolean
           last_name: string
           number: string
+          roles: Database["public"]["Enums"]["app_role"][]
           started_on: string
           status: Database["public"]["Enums"]["member_status"]
         }[]
@@ -2982,7 +2984,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "member" | "admin"
+      app_role: "member" | "admin" | "board" | "groundskeeper"
       application_status: "new" | "accepted" | "declined" | "spam"
       attribute_kind: "list" | "text" | "date" | "boolean" | "number"
       billing_period_status: "open" | "closed" | "charged"
@@ -3138,7 +3140,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      app_role: ["member", "admin"],
+      app_role: ["member", "admin", "board", "groundskeeper"],
       application_status: ["new", "accepted", "declined", "spam"],
       attribute_kind: ["list", "text", "date", "boolean", "number"],
       billing_period_status: ["open", "closed", "charged"],

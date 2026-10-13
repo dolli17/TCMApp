@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { translateDbError } from "@tcm/core";
+import { rollenLabel, translateDbError, type AppRole } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export interface AktionsErgebnis {
@@ -95,7 +95,7 @@ export async function mitgliedschaftSpeichern(formData: FormData): Promise<Aktio
 
 export async function rolleSetzen(
   id: string,
-  rolle: "admin",
+  rolle: AppRole,
   erteilen: boolean,
 ): Promise<AktionsErgebnis> {
   const supabase = await createServerSupabase();
@@ -108,10 +108,22 @@ export async function rolleSetzen(
   if (error) return { ok: false, meldung: translateDbError(error) };
 
   neuLaden(id);
-  return {
-    ok: true,
-    meldung: erteilen ? "Verwaltungsrechte erteilt." : "Verwaltungsrechte entzogen.",
-  };
+  const label = rollenLabel(rolle);
+  return { ok: true, meldung: erteilen ? `${label} vergeben.` : `${label} entzogen.` };
+}
+
+/** Trainer ist eine Eigenschaft am Mitglied, keine Rolle in member_roles. */
+export async function trainerSetzen(id: string, trainer: boolean): Promise<AktionsErgebnis> {
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.rpc("update_member", {
+    p_member_id: id,
+    p_patch: { is_trainer: trainer },
+  });
+
+  if (error) return { ok: false, meldung: translateDbError(error) };
+
+  neuLaden(id);
+  return { ok: true, meldung: trainer ? "Trainer vergeben." : "Trainer entzogen." };
 }
 
 export async function zahlerSetzen(id: string, zahlerId: string | null): Promise<AktionsErgebnis> {

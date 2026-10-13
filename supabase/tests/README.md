@@ -46,6 +46,7 @@ sie danach zurück. Die Tests hinterlassen also keinen Zustand – auch nicht di
 | `15_arbeitsdienst.sql` | Soll-Regeln, Stunden erfassen, Jahresausgleich |
 | `16_benachrichtigungs_pushes.sql` | Push-Marken, Auswahl und Abhaken der Push-Benachrichtigungen |
 | `17_mannschaften.sql` | Mannschaften anlegen, Zuordnung und Mannschaftsführer, Archivierung |
+| `18_rollen.sql` | Vorstand und App Admin mit vollen Rechten, Platzwart ohne, letzte Person mit vollen Rechten, Rollenende bei Login-Entzug und Archiv |
 | `99_runtests.sql` | Führt die Suite aus |
 
 Die Dateien `01` bis `17` **definieren nur Funktionen**. Ausgeführt wird alles in

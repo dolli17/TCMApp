@@ -6,7 +6,7 @@
  * uebersetzt Fehler in verstaendliche Saetze.
  */
 
-import { memberProfileSchema, translateDbError } from "@tcm/core";
+import { hatVolleRechte, memberProfileSchema, translateDbError } from "@tcm/core";
 import { supabase } from "./supabase";
 
 export interface Ergebnis<T = void> {
@@ -157,7 +157,7 @@ export async function ladeBuchungsarten() {
  *
  * Beides in einem Zug, weil der Plan beides braucht: die Rolle fuers Verwalten
  * fremder Buchungen, die Id, um den Bucher aus der Mitspielerauswahl zu
- * streichen. Es gibt nur noch Admin und Mitglied.
+ * streichen. Admin heisst hier volle Rechte: App Admin oder Vorstand.
  */
 export async function ladeIchSelbst(): Promise<{ id: string | null; admin: boolean }> {
   const leer = { id: null, admin: false };
@@ -178,7 +178,7 @@ export async function ladeIchSelbst(): Promise<{ id: string | null; admin: boole
     .select("role")
     .eq("member_id", mitglied.id);
 
-  return { id: mitglied.id, admin: (rollen ?? []).some((r) => r.role === "admin") };
+  return { id: mitglied.id, admin: hatVolleRechte((rollen ?? []).map((r) => r.role)) };
 }
 
 /**

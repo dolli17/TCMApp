@@ -89,9 +89,14 @@ describe("stammdatenSpeichern", () => {
 });
 
 describe("Rolle, Zahler, Mannschaft", () => {
-  it("setzt die Adminrolle", async () => {
-    expect(await m.rolleSetzen("m-1", false)).toEqual({ ok: true, meldung: "Verwaltungsrechte entzogen." });
-    expect(rpc).toHaveBeenCalledWith("set_member_role", { p_member_id: "m-1", p_role: "admin", p_granted: false });
+  it("setzt eine Rolle", async () => {
+    expect(await m.rolleSetzen("m-1", "board", false)).toEqual({ ok: true, meldung: "Vorstand entzogen." });
+    expect(rpc).toHaveBeenCalledWith("set_member_role", { p_member_id: "m-1", p_role: "board", p_granted: false });
+  });
+
+  it("setzt den Trainer am Mitglied", async () => {
+    expect(await m.trainerSetzen("m-1", true)).toEqual({ ok: true, meldung: "Trainer vergeben." });
+    expect(rpc).toHaveBeenCalledWith("update_member", { p_member_id: "m-1", p_patch: { is_trainer: true } });
   });
 
   it("laesst den Zahler weg, wenn das Mitglied selbst zahlt", async () => {

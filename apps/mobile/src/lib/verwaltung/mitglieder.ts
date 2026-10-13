@@ -12,8 +12,8 @@
  */
 
 import {
-  formatCents, isValidIban, memberCategory, normalizeIban, translateDbError,
-  type Database, type MemberCategory,
+  formatCents, isValidIban, memberCategory, normalizeIban, rollenLabel, translateDbError,
+  type AppRole, type Database, type MemberCategory,
 } from "@tcm/core";
 import { supabase } from "@/lib/supabase";
 import { deutschZuIso, ergebnis, oderWirf, type Ergebnis } from "@/lib/verwaltung/gemeinsam";
@@ -53,7 +53,9 @@ export const BESTAND = [
   { wert: "aktiv", label: "Aktuelle Mitglieder" },
   { wert: "ohne-login", label: "Ohne Zugang" },
   { wert: "trainer", label: "Trainer" },
-  { wert: "admins", label: "Admins" },
+  { wert: "admins", label: "Volle Rechte" },
+  { wert: "vorstand", label: "Vorstand" },
+  { wert: "platzwart", label: "Platzwart" },
   { wert: "archiviert", label: "Archiviert" },
   { wert: "alle", label: "Alle Datensätze" },
 ] as const;
@@ -73,6 +75,7 @@ export type MitgliedZeile = Zeilen<"member_overview"> & {
   beitragsart: string | null;
   kategorie: MemberCategory | null;
   mannschaft: string | null;
+  is_team_captain: boolean;
   mandat: boolean;
   offenCents: number;
 };
@@ -89,7 +92,7 @@ export async function ladeMitgliederliste(bestand: Bestand, suche: string) {
   const [liste, beitraegeRes, zuordnungRes, mannschaftenRes, mandateRes, offenRes, antraegeRes] = await Promise.all([
     supabase.rpc("member_overview", { p_filter: bestand, p_query: q || undefined, p_limit: 1000 }),
     supabase.from("member_fees").select("member_id, fee_types(code, name, sort_order)").eq("year", jahr),
-    supabase.from("members").select("id, team_id, billing_payer_id"),
+    supabase.from("members").select("id, team_id, is_team_captain, billing_payer_id"),
     supabase.from("teams").select("id, name"),
     supabase.from("sepa_mandates").select("member_id").eq("status", "active"),
     supabase.from("charges").select("member_id, amount_cents").in("status", ["open", "notified", "returned"]),
@@ -123,6 +126,7 @@ export async function ladeMitgliederliste(bestand: Bestand, suche: string) {
       beitragsart: fees.map((f) => f.name).join(" + ") || null,
       kategorie: memberCategory(fees),
       mannschaft: z?.team_id ? (mannschaft.get(z.team_id) ?? null) : null,
+      is_team_captain: z?.is_team_captain ?? false,
       mandat: mitMandat.has(zahler),
       offenCents: offen.get(m.id) ?? 0,
     };
@@ -228,7 +232,7 @@ export async function ladeMitgliedUebersicht(id: string) {
     await Promise.all([
       supabase
         .from("members")
-        .select("id, first_name, last_name, email, phone, mobile, status, auth_user_id, login_disabled_at, emergency_contact_name, billing_payer_id, teams(name)")
+        .select("id, first_name, last_name, email, phone, mobile, status, auth_user_id, login_disabled_at, emergency_contact_name, billing_payer_id, is_trainer, is_team_captain, teams(name), member_roles!member_roles_member_id_fkey(role)")
         .eq("id", id)
         .maybeSingle(),
       supabase
@@ -321,21 +325,22 @@ export async function ladeMitglied(id: string) {
       .eq("member_id", id)
       .order("started_on", { ascending: false }),
     supabase.from("member_roles").select("role").eq("member_id", id),
-    supabase.from("member_roles").select("member_id").eq("role", "admin"),
+    supabase.from("member_roles").select("member_id").in("role", ["admin", "board"]),
   ]);
 
   const m = oderWirf(mitgliedRes);
   if (!m) throw new Error("Dieses Mitglied gibt es nicht.");
   const mitgliedschaften = oderWirf(mitgliedschaftenRes) ?? [];
   const rollen = (oderWirf(rollenRes) ?? []).map((r) => r.role as string);
-  const admins = (adminRes.data ?? []).map((r) => r.member_id);
+  // Wer ausser diesem Mitglied hat noch volle Rechte (Vorstand oder App Admin)?
+  const andere = (adminRes.data ?? []).map((r) => r.member_id).filter((mid) => mid !== id);
 
   return {
     m,
     mitgliedschaften,
     laufend: mitgliedschaften.find((s) => !s.ended_on) ?? null,
-    istAdmin: rollen.includes("admin"),
-    einzigerAdmin: admins.length <= 1,
+    rollen,
+    einzigeVolleRechte: andere.length === 0,
     selbst: Boolean(authId && m.auth_user_id === authId),
   };
 }
@@ -537,9 +542,16 @@ export async function stammdatenSpeichern(
   return ergebnis(error, "Gespeichert.");
 }
 
-export async function rolleSetzen(id: string, erteilen: boolean): Promise<Ergebnis> {
-  const { error } = await supabase.rpc("set_member_role", { p_member_id: id, p_role: "admin", p_granted: erteilen });
-  return ergebnis(error, erteilen ? "Verwaltungsrechte erteilt." : "Verwaltungsrechte entzogen.");
+export async function rolleSetzen(id: string, rolle: AppRole, erteilen: boolean): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("set_member_role", { p_member_id: id, p_role: rolle, p_granted: erteilen });
+  const label = rollenLabel(rolle);
+  return ergebnis(error, erteilen ? `${label} vergeben.` : `${label} entzogen.`);
+}
+
+/** Trainer ist eine Eigenschaft am Mitglied, keine Rolle in member_roles. */
+export async function trainerSetzen(id: string, trainer: boolean): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("update_member", { p_member_id: id, p_patch: { is_trainer: trainer } });
+  return ergebnis(error, trainer ? "Trainer vergeben." : "Trainer entzogen.");
 }
 
 export async function zahlerSetzen(id: string, zahlerId: string | null): Promise<Ergebnis> {

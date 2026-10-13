@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatCents, memberCategory, type MemberCategory } from "@tcm/core";
+import { formatCents, memberCategory, rollenMarken, type MemberCategory } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { MitgliederSegmente } from "@/components/MitgliederSegmente";
 import { Listenzeile, type HinweisTon } from "@/components/Listenzeile";
@@ -15,7 +15,9 @@ const BESTAND = [
   { wert: "aktiv", label: "Aktuelle Mitglieder" },
   { wert: "ohne-login", label: "Ohne Zugang" },
   { wert: "trainer", label: "Trainer" },
-  { wert: "admins", label: "Admins" },
+  { wert: "admins", label: "Volle Rechte" },
+  { wert: "vorstand", label: "Vorstand" },
+  { wert: "platzwart", label: "Platzwart" },
   { wert: "archiviert", label: "Archiviert" },
   { wert: "alle", label: "Alle Datensätze" },
 ];
@@ -68,7 +70,7 @@ export default async function MitgliederSeite({
         p_limit: 1000,
       }),
       supabase.from("member_fees").select("member_id, fee_types(code, name, sort_order)").eq("year", jahr),
-      supabase.from("members").select("id, team_id, billing_payer_id"),
+      supabase.from("members").select("id, team_id, is_team_captain, billing_payer_id"),
       supabase.from("teams").select("id, name"),
       supabase.from("sepa_mandates").select("member_id").eq("status", "active"),
       supabase
@@ -104,6 +106,7 @@ export default async function MitgliederSeite({
       beitragsart: fees.map((f) => f.name).join(" + ") || null,
       kategorie: memberCategory(fees),
       mannschaft: z?.team_id ? mannschaft.get(z.team_id) ?? null : null,
+      is_team_captain: z?.is_team_captain ?? false,
       mandat: mitMandat.has(zahler),
       offenCents: offen.get(m.id) ?? 0,
     };
@@ -195,8 +198,7 @@ export default async function MitgliederSeite({
                           m.beitragsart,
                           m.mannschaft,
                           m.status === "archived" ? "archiviert" : m.status === "inactive" ? "inaktiv" : null,
-                          m.is_admin ? "Admin" : null,
-                          m.is_trainer ? "Trainer" : null,
+                          ...rollenMarken(m),
                           m.is_paid_by ? "fremdgezahlt" : null,
                         ].filter(Boolean).join(" · ") || "ohne Beitragsart"}
                         {/* Die E-Mail macht Namensgleiche unterscheidbar, auch vorgelesen */}
