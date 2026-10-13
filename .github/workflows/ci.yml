@@ -26,6 +26,30 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Neue Migrationen müssen jünger sein als alles, was im Ziel-Branch schon
+      # liegt - sonst lehnt "supabase db push" sie in Dev/Prod ab, weil sie vor
+      # einer bereits eingespielten Migration einsortiert würden. Passiert,
+      # wenn zwei Branches parallel Migrationen anlegen.
+      # Ausnahme: die Hotfix-Rückführung production -> main. Deren Migrationen
+      # laufen schon in Prod und lassen sich nicht mehr umbenennen.
+      - name: Zeitstempel neuer Migrationen
+        if: github.head_ref != 'production'
+        env:
+          ZIEL: origin/${{ github.base_ref }}
+        run: |
+          LETZTE="$(git ls-tree --name-only "$ZIEL" supabase/migrations/ | sed 's#.*/##' | cut -d_ -f1 | sort | tail -1)"
+          FEHLER=0
+          for f in $(git diff --name-only --diff-filter=A "$ZIEL"...HEAD -- supabase/migrations/); do
+            V="$(basename "$f" | cut -d_ -f1)"
+            if [[ ! "$V" > "$LETZTE" ]]; then
+              echo "::error file=$f::$V ist nicht jünger als die neueste Migration in $ZIEL ($LETZTE). Datei mit aktuellem Zeitstempel umbenennen."
+              FEHLER=1
+            fi
+          done
+          exit $FEHLER
 
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7

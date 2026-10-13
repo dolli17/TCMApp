@@ -26,10 +26,30 @@ Ein eigenes Staging gibt es bewusst nicht: Dev mit den Testern ist die Abnahme, 
 
 Die CI (`.github/workflows/ci.yml`) läuft bei jedem PR auf `main` oder `production`:
 
-- **`verify`** führt `pnpm verify` aus (Typecheck, Lint, Vitest, pgTAP gegen einen lokalen Supabase-Stack im Runner) und baut danach das Web mit `next build`.
+- **`verify`** prüft zuerst, ob neue Migrationen jünger sind als die neueste im Ziel-Branch (siehe „Parallel arbeiten“). Dann führt er `pnpm verify` aus (Typecheck, Lint, Vitest, pgTAP gegen einen lokalen Supabase-Stack im Runner) und baut das Web mit `next build`.
 - **`release-check`** läuft nur bei PRs nach `production`. Er prüft zwei Dinge: Die Quelle ist `main` oder `hotfix/*`, und den Tag `v<version>` gibt es noch nicht.
 
 Playwright-E2E läuft nicht in der CI, sondern lokal mit `pnpm e2e` gegen den lokalen Stack.
+
+## Parallel arbeiten (Worktrees, z. B. mit herdr)
+
+Mehrere Features gleichzeitig gehen gut, jedes in einem eigenen Git-Worktree auf einem eigenen Branch:
+
+```bash
+herdr worktree create --branch feature/xyz --base main   # oder: git worktree add ../TCMApp-xyz -b feature/xyz origin/main
+scripts/worktree-einrichten.sh <pfad-zum-worktree>       # Env-Dateien kopieren, pnpm install
+```
+
+Die Env-Dateien (`.env`, `apps/web/.env.local`, `apps/mobile/.env`) sind gitignored. Ein neuer Worktree hat sie deshalb nicht, das Skript kopiert sie aus dem Haupt-Checkout.
+
+Worauf es dabei ankommt:
+
+- **Die lokale Supabase gibt es nur einmal** für alle Worktrees (Ports 54321–54327). `db reset`, pgTAP und E2E in einem Worktree stören jeden anderen, der gerade die Datenbank nutzt. Branches mit eigenen Migrationen überschreiben sich gegenseitig den lokalen Stand. Faustregel: **höchstens ein Feature mit Migrationen gleichzeitig**. UI, Web, Doku und Tests laufen gut daneben. Die vollständige Prüfung macht ohnehin die CI, mit frischer Datenbank pro PR.
+- **Zeitstempel von Migrationen:** Eine neue Migration muss jünger sein als die neueste schon gemergte. Sonst lehnt `supabase db push` sie in Dev oder Prod ab, weil sie vor einer bereits eingespielten Migration läge. Die CI prüft das. Schlägt die Prüfung fehl, die Datei vor dem Merge mit aktuellem Zeitstempel umbenennen (`date -u +%Y%m%d%H%M%S`).
+- **Ports:** Web (3000) und Expo (8081) gibt es je nur einmal. Für einen zweiten Server eigene Ports nehmen: `pnpm dev -- -p 3001` bzw. `expo start --port 8082`.
+- **Konfliktträchtige Dateien:** `pnpm-lock.yaml` und `packages/core/src/database.types.ts`. Neue Pakete und Typ-Generierung möglichst nicht in mehreren Branches gleichzeitig.
+- **Nacheinander mergen**, jeweils mit „Squash and merge“. Jeder Merge deployt Dev. Ein Branch, der danach Konflikte hat, holt sich `main` per `git merge origin/main`.
+- **Aufräumen:** Nach dem Merge den Worktree entfernen (`herdr worktree remove` bzw. `git worktree remove <pfad>`). Den Remote-Branch löscht GitHub automatisch.
 
 ## Release-Ablauf
 
@@ -63,6 +83,8 @@ Playwright-E2E läuft nicht in der CI, sondern lokal mit `pnpm e2e` gegen den lo
 2. Den Fehler beheben und die Patch-Version in `package.json` hochzählen, zum Beispiel 1.2.0 → 1.2.1.
 3. PR nach `production` und mit Merge-Commit mergen. Das Deploy läuft wie beim Release, mit Freigabe und Tag.
 4. **Sofort danach** einen PR `production` → `main` öffnen und mit Merge-Commit mergen, sonst ginge der Fix beim nächsten Release verloren.
+
+Ein Hotfix möglichst **ohne Migration**. Braucht er doch eine und liegen auf `main` schon jüngere, noch nicht releaste Migrationen, scheitert nach der Rückführung der Dev-Deploy: Dev hat die jüngeren Migrationen schon eingespielt und `db push` will keine ältere dazwischenschieben. Die CI prüft die Zeitstempel bei PRs aus `production` deshalb bewusst nicht, denn die Migration läuft schon in Prod und lässt sich nicht mehr umbenennen. Dann einmalig lokal gegen Dev `supabase db push --include-all` ausführen und den Deploy-Lauf wiederholen.
 
 ## Rückweg
 
