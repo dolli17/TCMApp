@@ -7,6 +7,7 @@ export * from "./errors";
 export * from "./booking";
 export * from "./home";
 export * from "./courtStatus";
+export * from "./freeSlots";
 export * from "./admin";
 export * from "./forderungen";
 export * from "./client";

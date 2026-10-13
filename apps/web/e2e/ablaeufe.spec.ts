@@ -70,8 +70,8 @@ test.describe("Anmeldung", () => {
     await expect(page.locator(".plan-raster .raster")).toBeVisible();
     // Acht Plaetze, jeder mit eigenem Spaltenkopf
     await expect(page.locator(".raster .spalten-kopf")).toHaveCount(8);
-    // Am Telefon zeigt dieselbe Seite die Liste statt des Rasters
-    await expect(page.locator(".plan-listen .platzzeile")).toHaveCount(8);
+    // Am Telefon zeigt dieselbe Seite die Übersicht mit wischbaren Stunden
+    await expect(page.locator(".plan-listen .tr-platz")).toHaveCount(8);
   });
 });
 

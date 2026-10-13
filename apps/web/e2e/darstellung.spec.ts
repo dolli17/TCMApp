@@ -10,6 +10,10 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { anmelden as anmeldenAls, NUTZER } from "./hilfen";
 
+/** Der Tag nach heute in Europe/Berlin, JJJJ-MM-TT. */
+const morgen = () =>
+  new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date(Date.now() + 86_400_000));
+
 const MITGLIED = NUTZER.mitglied;
 const ADMIN = NUTZER.admin;
 
@@ -92,14 +96,34 @@ test.describe("Layout", () => {
       await expect(page.locator(".seitenleiste")).toBeHidden();
     });
 
-    test("der Belegungsplan zeigt die Liste statt des Rasters", async ({ page }) => {
-      // Ein Raster mit acht Spalten waere auf 390 Pixel unbedienbar.
+    test("der Belegungsplan zeigt die Übersicht statt des Rasters", async ({ page }) => {
+      // Ein Raster mit acht Spalten waere auf 390 Pixel unbedienbar; am
+      // Telefon stehen die Plaetze als Zeilen, die Stunden zum Wischen.
       await anmelden(page);
       await page.goto("/plan");
 
       await expect(page.locator(".plan-listen")).toBeVisible();
       await expect(page.locator(".plan-raster")).toBeHidden();
-      await expect(page.locator(".plan-listen .platzzeile")).toHaveCount(8);
+      await expect(page.locator(".plan-listen .tr-platz")).toHaveCount(8);
+      await expect(page.getByRole("radio", { name: "Übersicht" })).toHaveAttribute("aria-checked", "true");
+    });
+
+    test("Freie Zeiten: Wahl bleibt, Zeile klappt auf und öffnet das Blatt", async ({ page }) => {
+      await anmelden(page);
+      // Morgen, damit der Test nicht von der Uhrzeit abhaengt.
+      await page.goto(`/plan?tag=${morgen()}`);
+      await page.getByRole("radio", { name: "Freie Zeiten" }).click();
+      await page.reload();
+      await expect(page.getByRole("radio", { name: "Freie Zeiten" })).toHaveAttribute("aria-checked", "true");
+
+      const zeile = page.locator(".fz-knopf").filter({ hasNot: page.locator(".fz-zahl.keine") }).first();
+      test.skip((await zeile.count()) === 0, "Morgen ist keine Stunde frei");
+      await expect(zeile).toHaveAttribute("aria-label", /Uhr, \d+ Pl(atz|ätze) frei/);
+      await zeile.click();
+      await expect(zeile).toHaveAttribute("aria-expanded", "true");
+
+      await page.locator(".fz-plaetze button").first().click();
+      await expect(page.locator("dialog.fenster")).toBeVisible();
     });
 
     for (const pfad of SEITEN) {
@@ -151,10 +175,15 @@ test.describe("Layout", () => {
       await anmelden(page);
       await page.goto("/plan");
 
-      // Eine freie Zeile der Liste - sie traegt den Knopf "Buchen".
-      const slot = page.locator(".plan-listen button.platzzeile", { hasText: "Buchen" }).first();
-      test.skip((await slot.count()) === 0, "Heute ist keine Stunde mehr frei");
+      // Eine freie Flaeche im Raster waehlt Platz und Beginn, die Leiste
+      // unten oeffnet das Blatt. Morgen, damit noch etwas frei ist.
+      await page.goto(`/plan?tag=${morgen()}`);
+      const slot = page.locator(".plan-listen button.tr-frei").first();
+      test.skip((await slot.count()) === 0, "Morgen ist keine Stunde frei");
       await slot.click();
+      const leiste = page.locator(".auswahl-leiste");
+      await expect(leiste).toContainText("frei bis");
+      await leiste.getByRole("button", { name: /buchen$/ }).click();
 
       const fenster = page.locator("dialog.fenster");
       await expect(fenster).toBeVisible();
