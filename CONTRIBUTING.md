@@ -89,8 +89,7 @@ Das Repo ist öffentlich. PRs aus Forks bekommen keine Secrets, und die CI brauc
 | `SUPABASE_PROJECT_REF` | Variable | Projekt-Ref. Fehlt sie, deployt der Workflow nichts. |
 | `WEB_URL` | Variable | `https://…` der Umgebung, für den Smoke-Test |
 | `DEPLOY_HOST` | Variable | `deploy@187.124.4.243` |
-| `SUPABASE_ACCESS_TOKEN` | Secret | Supabase-Personal-Access-Token (für `link`, `db push`, `functions deploy`) |
-| `SUPABASE_DB_PASSWORD` | Secret | DB-Passwort des Projekts |
+| `SUPABASE_ACCESS_TOKEN` | Secret | Supabase-Personal-Access-Token (für `link`, `db push`, `functions deploy`). Ein DB-Passwort ist nicht nötig: die CLI meldet sich damit über eine temporäre Login-Rolle an. |
 | `DEPLOY_SSH_KEY` | Secret | privater SSH-Schlüssel (ed25519), nur für den Forced-Command |
 | `DEPLOY_KNOWN_HOSTS` | Secret | Zeile aus `ssh-keyscan 187.124.4.243` |
 
