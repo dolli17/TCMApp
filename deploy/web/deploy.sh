@@ -1,47 +1,33 @@
 #!/bin/bash
-# Bringt den Stand von origin/main auf den Server und startet die Web-App neu.
+# Notfall-Weg ohne GitHub Actions: bringt einen Stand in eine Umgebung.
 #
-#   ./deploy/web/deploy.sh
+#   ./deploy/web/deploy.sh dev  [ref]   # Default: origin/main
+#   ./deploy/web/deploy.sh prod <ref>   # z. B. v1.2.0 oder origin/production
 #
-# Laeuft vom Mac aus (per SSH) oder direkt auf dem Server, etwa aus dem
-# Claude-Agenten dort (Benutzer in der Gruppe docker).
+# Normalerweise deployt der Workflow "Deploy" bei jedem Merge (CONTRIBUTING.md).
+# Dieses Skript baut nur das Web neu - Migrationen und Edge Functions nicht.
 #
-# Gebaut wird auf dem Server aus dem GitHub-Repo - was nicht gepusht ist,
-# kommt also nicht an. Deshalb bricht das Skript ab, wenn main lokal vor
-# origin/main liegt.
+# Gebaut wird auf dem Server aus dem GitHub-Repo; der Ref muss also gepusht
+# sein. Die eigentliche Arbeit macht deploy/web/server-deploy.sh, das auf dem
+# Server als /usr/local/bin/tcm-deploy liegt - ausgefuehrt als Benutzer deploy,
+# dem die Checkouts gehoeren (sonst verweigert git den Zugriff).
 set -euo pipefail
 
 SERVER="${TCM_SERVER:-root@187.124.4.243}"
-ZIEL=/docker/tcm-web
+UMGEBUNG="${1:-}"
 
-git fetch -q origin main
-if [ -n "$(git rev-list origin/main..main)" ]; then
-  echo "main enthaelt ungepushte Commits - erst pushen." >&2
-  exit 1
-fi
-echo "Deploye $(git rev-parse --short origin/main): $(git log -1 --format=%s origin/main)"
+case "$UMGEBUNG" in
+  dev)  REF="${2:-origin/main}" ;;
+  prod)
+    REF="${2:?Für prod einen Ref angeben, z. B. v1.2.0}"
+    read -r -p "Wirklich $REF nach PROD? Zum Bestätigen 'prod' eintippen: " OK
+    [ "$OK" = prod ] || { echo "Abgebrochen."; exit 1; }
+    ;;
+  *) echo "Aufruf: $0 dev|prod [ref]" >&2; exit 2 ;;
+esac
 
-# Auf dem Server selbst laeuft alles direkt, sonst per SSH.
-if [ "$SERVER" = local ] || [ -d "$ZIEL/src" ]; then
-  ausfuehren() { bash -s; }
-else
-  ausfuehren() { ssh "$SERVER" bash -s; }
-fi
+git fetch -q --tags origin
+SHA="$(git rev-parse --verify "$REF^{commit}")"
+echo "Deploye $REF ($(git log -1 --format='%h %s' "$SHA")) nach $UMGEBUNG"
 
-ausfuehren <<ENTFERNT
-set -euo pipefail
-cd $ZIEL/src
-git fetch -q origin main
-git reset -q --hard origin/main
-cd $ZIEL
-# Pfade in der Compose-Datei gelten relativ zu ihr selbst (Build-Kontext ist
-# der Checkout), die Werte kommen aus der .env daneben.
-docker compose --project-name tcm-web --env-file $ZIEL/.env \
-  -f src/deploy/web/docker-compose.yml up -d --build --wait
-docker image prune -f >/dev/null
-grep ^APP_DOMAIN= $ZIEL/.env | cut -d= -f2 > /tmp/tcm-web-domain
-ENTFERNT
-
-DOMAIN="$(echo 'cat /tmp/tcm-web-domain' | ausfuehren)"
-curl -fsS -o /dev/null -w "https://$DOMAIN/login -> %{http_code}\n" "https://$DOMAIN/login" \
-  || echo "Achtung: https://$DOMAIN/login antwortet nicht." >&2
+ssh "$SERVER" sudo -u deploy /usr/local/bin/tcm-deploy "$UMGEBUNG" "$SHA"

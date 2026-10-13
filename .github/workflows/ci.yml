@@ -1,0 +1,74 @@
+# Prüft jeden Pull Request, bevor er nach main oder production darf.
+# Die Jobnamen "verify" und "release-check" sind in den Rulesets als
+# Pflicht-Checks eingetragen - beim Umbenennen dort mitändern.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main, production]
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Lokaler Supabase-Stack im Runner: Migrationen + seed.sql, dagegen
+      # laufen die pgTAP-Tests. Dienste, die kein Test braucht, bleiben aus.
+      - name: Supabase starten
+        run: pnpm exec supabase start -x studio,imgproxy,logflare,vector,mailpit,supavisor,edge-runtime
+
+      - name: pnpm verify (Typecheck, Lint, Vitest, pgTAP)
+        run: pnpm verify
+
+      - name: Web bauen
+        run: |
+          eval "$(pnpm exec supabase status -o env | grep -E '^(API_URL|ANON_KEY)=')"
+          NEXT_PUBLIC_SUPABASE_URL="$API_URL" \
+          NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" \
+            pnpm --filter @tcm/web build
+
+  # Nach production dürfen nur main (Release) und hotfix/* (Hotfix), und die
+  # Version in package.json muss neu sein - sonst gäbe es den Tag schon.
+  release-check:
+    if: github.base_ref == 'production'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Quell-Branch prüfen
+        env:
+          QUELLE: ${{ github.head_ref }}
+        run: |
+          case "$QUELLE" in
+            main|hotfix/*) echo "Quelle $QUELLE ist erlaubt." ;;
+            *) echo "::error::Nach production nur aus main oder hotfix/*, nicht aus $QUELLE."; exit 1 ;;
+          esac
+
+      - name: Version prüfen
+        run: |
+          VERSION="$(node -p 'require("./package.json").version')"
+          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::Tag v$VERSION gibt es schon. Version in package.json hochzählen (chore/release-x.y.z bzw. im Hotfix-Branch)."
+            exit 1
+          fi
+          echo "Release wird v$VERSION."
