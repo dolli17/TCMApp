@@ -52,7 +52,10 @@ export default async function SpieleSeite() {
             Die offenen Spiele konnten nicht geladen werden. ({offenRes.error.message})
           </div>
         ) : (
-          <OffeneSpiele spiele={(offenRes.data ?? []) as OffenesSpiel[]} />
+          <OffeneSpiele
+            spiele={(offenRes.data ?? []) as OffenesSpiel[]}
+            eigene={(meineRes.data ?? []).filter((b) => b.bin_bucher).map((b) => b.booking_id)}
+          />
         )}
       </section>
     </>
