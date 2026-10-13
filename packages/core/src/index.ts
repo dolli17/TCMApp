@@ -8,6 +8,7 @@ export * from "./booking";
 export * from "./home";
 export * from "./courtStatus";
 export * from "./freeSlots";
+export * from "./offeneSpiele";
 export * from "./admin";
 export * from "./rollen";
 export * from "./forderungen";

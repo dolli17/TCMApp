@@ -2,8 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   bookingKicker, dayTag, formatCents, freeCourtsNow, localMinutes, minutesOf, minutesToTime,
-  relativeTimeLabel, sumOpenDrinks, timeToMinutes, timelinePosition, timelineSegments,
-  upcomingBookings,
+  offenesSpielText, relativeTimeLabel, sumOpenDrinks, timeToMinutes, timelinePosition,
+  timelineSegments, upcomingBookings,
 } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { MiniZeitleiste } from "@/components/MiniZeitleiste";
@@ -86,6 +86,7 @@ export default async function Start() {
       });
 
   const offen = (offenRes.data ?? []).slice(0, 3);
+  const eigene = new Set((meineRes.data ?? []).filter((b) => b.bin_bucher).map((b) => b.booking_id));
   const dienst = dienstRes.data?.[0] ?? null;
   const ist = Number(dienst?.completed_hours ?? 0);
   const soll = Number(dienst?.required_hours ?? 0);
@@ -211,23 +212,27 @@ export default async function Start() {
               <p className="leer-klein">Gerade sucht niemand Mitspieler.</p>
             ) : (
               <ul className="offen-liste">
-                {offen.map((o) => (
-                  <li key={o.booking_id} className="offen-karte">
-                    <span className="datum">
-                      <small>{dayTag(o.starts_at, jetzt)}</small>
-                      <b className="tnum">{uhr(o.starts_at)}</b>
-                    </span>
-                    <span className="text">
-                      <b>{o.type_name} · sucht {o.frei}</b>
-                      <small>{o.court_name} · {o.owner_name}</small>
-                    </span>
-                    {o.bin_dabei ? (
-                      <span className="dabei">Dabei</span>
-                    ) : (
-                      <Link href="/plan/spiele" className="mitspielen">Mitspielen</Link>
-                    )}
-                  </li>
-                ))}
+                {offen.map((o) => {
+                  const text = offenesSpielText(o, eigene.has(o.booking_id));
+                  return (
+                    <li key={o.booking_id} className="offen-karte">
+                      <span className="datum">
+                        <small>{dayTag(o.starts_at, jetzt)}</small>
+                        <b className="tnum">{uhr(o.starts_at)}</b>
+                      </span>
+                      <span className="text">
+                        <b>{text.kopf}</b>
+                        <small>{o.court_name} · {o.type_name}</small>
+                        {text.dabei && <small>{text.dabei}</small>}
+                      </span>
+                      {o.bin_dabei ? (
+                        <span className="dabei">Dabei</span>
+                      ) : (
+                        <Link href="/plan/spiele" className="mitspielen">Mitspielen</Link>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>

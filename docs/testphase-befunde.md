@@ -46,7 +46,6 @@ Testern bzw. App Store · **P3** Komfort, Aufräumen.
 | # | Prio | Befund | Was zu tun ist |
 |---|---|---|---|
 | O21 | P1 | **Eine Person kann zur selben Zeit auf zwei Plätzen eingetragen sein.** Beobachtet am 09.10.: Lucas steht heute um 14:00 auf Platz 2 (gebucht von Robin, Lucas als Mitspieler) **und** auf Platz 1 (gebucht von Lucas, mit Robin). Beide spielen damit doppelt zur selben Zeit. Ursache: Die Datenbank verhindert Überschneidungen nur **pro Platz** (Ausschlussregel `court_id, slot` in `20260803100400_bookings.sql`). Eine Prüfung **pro Person** fehlt in `create_booking`, beim Mitspieler-Hinzufügen und bei „Mitspielen“ (`20260807100300_mitspieler_gesucht.sql`). Die Grenze `booking.max_open_bookings` begrenzt nur die Anzahl, nicht die Zeit. | Beim Anlegen einer Buchung, beim Hinzufügen von Mitspielern, beim Mitspielen in offenen Spielen und beim Verschieben prüfen, ob Bucher oder Mitspieler im selben Zeitraum schon eine aktive Buchung haben. Dann abweisen mit „X spielt zu dieser Zeit schon auf Platz Y“. Am besten zentral in einer Funktion `private.spielt_schon(member_id, slot)`, dazu pgTAP-Tests. Offen ist noch, wie Serien bzw. Training mit Einzelbuchungen derselben Person zusammenspielen. |
-| O22 | P2 | **Bei „Offene Spiele“ ist nicht zu erkennen, wer sucht.** Die Karte zeigt nur das Kürzel „RH“ als Avatar. Man muss raten, mit wem man spielen würde. | Den Namen des Suchenden prominent zeigen, etwa „**Robin Heinzler** sucht 1 Mitspieler“ als Kopfzeile der Karte, plus Namen der schon Eingetragenen. In der App (`Meine & offene Spiele`) und im Web gleich. |
 
 ### Inhalte und Rechtliches
 
@@ -87,6 +86,7 @@ Testern bzw. App Store · **P3** Komfort, Aufräumen.
 
 | Befund | Ursache | Commit |
 |---|---|---|
+| Bei „Offene Spiele“ war nicht zu erkennen, wer sucht (O22). | Die Karte zeigte nur Kürzel-Avatare bzw. den Namen klein in der Unterzeile. Jetzt Kopfzeile „Robin Heinzler sucht einen Mitspieler“ (bei eigener Buchung „Du suchst …“) und „Schon dabei: …“, in Web und App aus `offenesSpielText` in `@tcm/core`. | dieser PR |
 | Die Glocke zeigte eine Zahl, die Liste war leer. | Admins sahen über RLS die ungelesenen Mitteilungen aller Mitglieder; Liste und „gelesen“ arbeiten nur mit den eigenen. Neue RPC `my_unread_notification_count`. | `c5a9950` |
 | Arbeitsdienst, Gastgebühr, Pfand und Sonstiges kamen nie in einen Lastschriftlauf. | Die Oberfläche konnte nur Beiträge und Getränke ankündigen. Jetzt „Zur Ankündigung bereit“ für jede Art. | `30b0bef` |
 | In der Kasse waren „Beitragslauf“ und Lastschriftlauf nicht zu unterscheiden, und die Art einer Forderung war unsichtbar. | Begriffe vermischt, keine Art-Marken. Neue Gliederung, Art-Marken, Art-Filter, Läufe nach Art. | `30b0bef` |
