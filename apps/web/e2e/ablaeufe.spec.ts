@@ -743,6 +743,8 @@ test.describe("Offene Spiele und Gäste", () => {
       .filter({ hasText: listendatum })
       .first();
     await expect(spiel).toBeVisible();
+    // Die Kopfzeile nennt, wer sucht (O22) - nicht "Du", das ist ein anderes Mitglied
+    await expect(spiel.locator("strong")).toHaveText(/^(?!Du ).+ sucht (einen|\d+) Mitspieler$/);
     await spiel.getByRole("button", { name: "Mitspielen" }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("eingetragen", { timeout: 15_000 });
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { offenesSpielText } from "@tcm/core";
 import { mitspielen } from "@/app/plan/aktionen";
 
 export interface OffenesSpiel {
@@ -38,7 +39,14 @@ const UHR = new Intl.DateTimeFormat("de-DE", {
  * Leute nichts voneinander wissen. Ein Klick traegt ein - keine Anfrage, keine
  * Zusage, kein Rundruf in der Gruppe.
  */
-export function OffeneSpiele({ spiele }: { spiele: OffenesSpiel[] }) {
+export function OffeneSpiele({
+  spiele,
+  eigene = [],
+}: {
+  spiele: OffenesSpiel[];
+  /** Buchungen, die das angemeldete Mitglied selbst gebucht hat */
+  eigene?: string[];
+}) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
 
@@ -70,6 +78,7 @@ export function OffeneSpiele({ spiele }: { spiele: OffenesSpiel[] }) {
         {spiele.map((s) => {
           const von = new Date(s.starts_at);
           const bis = new Date(s.ends_at);
+          const text = offenesSpielText(s, eigene.includes(s.booking_id));
 
           return (
             <li key={s.booking_id} className="mcard termin">
@@ -79,17 +88,15 @@ export function OffeneSpiele({ spiele }: { spiele: OffenesSpiel[] }) {
               </div>
 
               <div className="termin-text">
-                <strong>{s.court_name ?? "Platz"}</strong>{" "}
-                <span className="tnum">
-                  {UHR.format(von)}–{UHR.format(bis)}
-                </span>
+                <strong>{text.kopf}</strong>
                 <div className="mit">
-                  {s.type_name} · {s.owner_name ?? "unbekannt"}
-                  {s.players.length > 0 ? ` · mit ${s.players.join(", ")}` : ""}
+                  {s.court_name ?? "Platz"} ·{" "}
+                  <span className="tnum">
+                    {UHR.format(von)}–{UHR.format(bis)}
+                  </span>{" "}
+                  · {s.type_name}
                 </div>
-                <div className="mit">
-                  {s.frei === 1 ? "noch ein Platz frei" : `noch ${s.frei} Plätze frei`}
-                </div>
+                {text.dabei && <div className="mit">{text.dabei}</div>}
               </div>
 
               <div className="termin-tat">

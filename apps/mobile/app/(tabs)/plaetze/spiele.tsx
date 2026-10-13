@@ -14,7 +14,7 @@
 import { useCallback, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
-import { dayLabel, dayTag, upcomingBookings } from "@tcm/core";
+import { dayLabel, dayTag, offenesSpielText, upcomingBookings } from "@tcm/core";
 import { radius } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
 import {
@@ -68,6 +68,7 @@ export default function Spiele() {
   const meine = zustand.daten?.meine;
   const offen = zustand.daten?.offen;
   const termine = meine?.wert ? upcomingBookings(meine.wert) : [];
+  const eigene = new Set((meine?.wert ?? []).filter((b) => b.bin_bucher).map((b) => b.booking_id));
 
   return (
     <Bildschirm
@@ -188,8 +189,12 @@ export default function Spiele() {
         const dabei = 1 + o.players.length;
         const gesamt = dabei + o.frei;
         const leute = [o.owner_name, ...o.players];
+        const text = offenesSpielText(o, eigene.has(o.booking_id));
         return (
           <View key={o.booking_id} style={[stil.listenkarte, { borderRadius: radius.karte + 2, padding: 16, gap: 14 }]}>
+            <Text style={{ fontSize: 17, lineHeight: 22, fontFamily: "Barlow_700Bold", color: farben.ink }} accessibilityRole="header">
+              {text.kopf}
+            </Text>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
               <View style={{ flex: 1 }}>
                 <Text style={stil.kicker}>{dayLabel(o.starts_at)} · {o.court_name}</Text>
@@ -199,6 +204,11 @@ export default function Spiele() {
                 <Text style={{ fontSize: 14, color: farben.ink2, marginTop: 2, fontFamily: "Barlow_400Regular" }}>
                   {o.type_name} · {dabei} von {gesamt} dabei
                 </Text>
+                {text.dabei && (
+                  <Text style={{ fontSize: 14, color: farben.ink2, marginTop: 2, fontFamily: "Barlow_400Regular" }}>
+                    {text.dabei}
+                  </Text>
+                )}
               </View>
               <View style={{ height: 28, paddingHorizontal: 10, borderRadius: 14, justifyContent: "center", backgroundColor: farben.goldSoft }}>
                 <Text style={{ fontSize: 12.5, fontFamily: "Barlow_700Bold", color: farben.goldInk }}>sucht {o.frei}</Text>
