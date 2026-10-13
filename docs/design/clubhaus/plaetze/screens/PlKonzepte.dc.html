@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Platzbelegung – Konzepte</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&amp;family=Barlow+Semi+Condensed:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1000px; box-sizing: border-box; padding: 64px 72px; background: #07111D; color: #F3F7FB; font-family: 'Barlow', system-ui, sans-serif; display: flex; flex-direction: column; gap: 32px">
+<div style="max-width: 900px">
+<div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .16em; text-transform: uppercase; color: #FFD21F">Plätze in der App</div>
+<h1 style="margin: 10px 0 0; font-size: 56px; font-weight: 800; letter-spacing: -1.2px; line-height: 1">Belegung neu gedacht</h1>
+<p style="margin: 14px 0 0; font-size: 18px; line-height: 1.5; color: #B3C2D2">Die meisten öffnen den Plan mit einer Frage: „Wann kann ich heute spielen?“ Der jetzige Screen beantwortet sie erst, nachdem man Tag und Uhrzeit gewählt und acht Mini-Balken entziffert hat.</p>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 20px">
+<div style="grid-column: span 4; border-radius: 24px; background: #0E1A29; border: 1px solid rgba(255,255,255,.08); padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 700">Warum es heute schwer ist</h2>
+<sc-for list="{{probleme}}" as="p" hint-placeholder-count="5">
+<div style="display: flex; gap: 12px"><span style="width: 8px; height: 8px; border-radius: 4px; background: #FF6B61; margin-top: 7px; flex-shrink: 0"></span><div><div style="font-size: 15.5px; font-weight: 700">{{p.t}}</div><div style="font-size: 14px; line-height: 1.45; color: #B3C2D2; margin-top: 2px">{{p.d}}</div></div></div>
+</sc-for>
+</div>
+
+<div style="grid-column: span 8; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<sc-for list="{{konzepte}}" as="k" hint-placeholder-count="4">
+<div style="border-radius: 22px; padding: 20px 22px; display: flex; flex-direction: column; gap: 8px; {{k.rahmen}}">
+<div style="display: flex; justify-content: space-between; align-items: center"><span style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 800; font-size: 28px; line-height: 1; color: #FFD21F">{{k.nr}}</span><span style="height: 24px; padding: 0 10px; border-radius: 12px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; {{k.markeStil}}">{{k.marke}}</span></div>
+<div style="font-size: 19px; font-weight: 700">{{k.titel}}</div>
+<div style="font-size: 14px; line-height: 1.45; color: #B3C2D2">{{k.text}}</div>
+<div style="font-size: 13.5px; line-height: 1.4; color: #8BEBC0"><b>Stark:</b> {{k.plus}}</div>
+<div style="font-size: 13.5px; line-height: 1.4; color: #FFB1AA"><b>Schwach:</b> {{k.minus}}</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="border-radius: 24px; background: #1466A8; padding: 22px 26px; display: flex; gap: 20px; align-items: center">
+<div style="width: 44px; height: 44px; border-radius: 22px; background: #FFD21F; flex-shrink: 0"></div>
+<div style="font-size: 17px; line-height: 1.5"><b>Entscheidung:</b> A als Standard („Übersicht“) und B als zweite Ansicht („Freie Zeiten“), umschaltbar oben. Tippt man in A auf einen Platz, öffnet sich C als Tagesansicht dieses Platzes. D lohnt sich, wenn die echte Lage der Plätze feststeht – zum Beispiel als Tablet-Ansicht im Clubhaus.</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+var empf = 'background: rgba(255,210,31,.08); border: 1.5px solid rgba(255,210,31,.45)';
+var normal = 'background: #0E1A29; border: 1px solid rgba(255,255,255,.08)';
+return {
+probleme: [
+{ t: 'Zwei Fragen vor der Antwort', d: 'Erst Tag, dann Uhrzeit wählen – vorher sagen die Statuszeilen nichts.' },
+{ t: '13 Stunden auf 300 Pixeln', d: 'Eine Stunde ist rund 23 px breit, ohne Uhrzeiten an der Leiste. Wann genau frei ist, muss man schätzen.' },
+{ t: 'Fünf Farben plus Legende', d: 'Blau, Gelb, gestrichelt, Schraffur, Grau – zum Lesen braucht man die Legende unter der Liste.' },
+{ t: 'Die Leisten sind nicht tippbar', d: 'Man sieht eine Lücke, kann sie aber nicht antippen – gewählt wird oben über die Chips.' },
+{ t: 'Acht gleich aussehende Zeilen', d: 'Ob überhaupt etwas frei ist, sieht man erst nach dem Scrollen durch alle Plätze.' }
+],
+konzepte: [
+{ nr: 'A', titel: 'Übersicht als Raster', marke: 'Standard', markeStil: 'background: #FFD21F; color: #0A1624', rahmen: empf, text: 'Plätze als Zeilen, Stunden als Spalten zum Wischen – wie ein TV-Programm. Belegungen sind beschriftete Blöcke, eine freie Stelle antippen wählt sie aus.', plus: 'alles auf einen Blick, direkt tippbar', minus: 'nur 4–5 Stunden gleichzeitig sichtbar' },
+{ nr: 'B', titel: 'Freie Zeiten zuerst', marke: 'zweite Ansicht', markeStil: 'background: #152538; color: #B3C2D2', rahmen: normal, text: 'Eine Liste von Startzeiten: „17:00 – 3 Plätze frei“, darunter die Platznummern zum Antippen. Gesuchte Mitspieler gelb gestrichelt dabei.', plus: 'beantwortet die eigentliche Frage, keine Legende nötig', minus: 'zeigt nicht, wer wo spielt' },
+{ nr: 'C', titel: 'Ein Platz, ein Tag', marke: 'Detail', markeStil: 'background: #152538; color: #B3C2D2', rahmen: normal, text: 'Platz wählen, darunter der Tag als Kalender wie in iOS. Freie Lücken sind große Flächen mit „Tippen zum Buchen“.', plus: 'sehr klar für einen Platz, große Ziele', minus: 'Vergleich zwischen Plätzen nur durch Wischen' },
+{ nr: 'D', titel: 'Die Anlage als Karte', marke: 'später', markeStil: 'background: #152538; color: #B3C2D2', rahmen: normal, text: 'Die acht Plätze so angeordnet wie draußen, frei in Sandfarbe. Ein Schieberegler stellt die Uhrzeit.', plus: 'sofort verständlich, macht Spaß', minus: 'braucht die echte Lage, eine Zeit auf einmal' }
+]
+};
+}
+}
+</script>
+</body>
+</html>

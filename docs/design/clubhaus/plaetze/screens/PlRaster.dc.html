@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Plätze – Übersicht als Raster</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&amp;family=Barlow+Semi+Condensed:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 960px; position: relative; overflow: hidden; box-sizing: border-box; background: #07111D; color: #F3F7FB; font-family: 'Barlow', system-ui, sans-serif">
+
+<div style="padding: 60px 20px 0; display: flex; justify-content: space-between; align-items: flex-end">
+<h1 style="margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -.6px; line-height: 1.05">Plätze</h1>
+<span style="width: 44px; height: 44px; border-radius: 22px; background: #1466A8; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px">LD</span>
+</div>
+
+<div style="margin: 16px 20px 0; padding: 4px; border-radius: 16px; background: #152538; display: flex; gap: 4px">
+<a href="PlRaster.dc.html" aria-current="page" style="flex-grow: 1; flex-basis: 0; height: 40px; border-radius: 12px; background: #1E3249; color: #F3F7FB; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none">Übersicht</a>
+<a href="PlFreieZeiten.dc.html" style="flex-grow: 1; flex-basis: 0; height: 40px; border-radius: 12px; color: #879AAE; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none">Freie Zeiten</a>
+</div>
+
+<div style="padding: 14px 20px 0; display: flex; justify-content: space-between; align-items: center">
+<button type="button" aria-label="Vortag" style="width: 40px; height: 40px; border: 0; border-radius: 20px; background: #152538; color: #F3F7FB; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+<button type="button" style="border: 0; background: transparent; color: #F3F7FB; font-family: 'Barlow', sans-serif; font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 6px">Heute, Dienstag 13.10.<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#879AAE" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+<button type="button" aria-label="Folgetag" style="width: 40px; height: 40px; border: 0; border-radius: 20px; background: #152538; color: #F3F7FB; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></button>
+</div>
+
+<div style="margin: 14px 20px 0; border-radius: 22px; background: #0E1A29; border: 1px solid rgba(255,255,255,.08); overflow: hidden; display: flex">
+<div style="width: 46px; flex-shrink: 0; border-right: 1px solid rgba(255,255,255,.08)">
+<div style="height: 34px; border-bottom: 1px solid rgba(255,255,255,.08)"></div>
+<sc-for list="{{reihen}}" as="r" hint-placeholder-count="8">
+<div style="height: 52px; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,.06); display: flex; flex-direction: column; align-items: center; justify-content: center"><span style="font-size: 9.5px; font-weight: 700; letter-spacing: .08em; color: #879AAE">PLATZ</span><span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 20px; font-weight: 700; line-height: 1">{{r.nr}}</span></div>
+</sc-for>
+</div>
+<div style="flex-grow: 1; position: relative; overflow: hidden">
+<div style="height: 34px; position: relative; border-bottom: 1px solid rgba(255,255,255,.08)">
+<sc-for list="{{stunden}}" as="h" hint-placeholder-count="5">
+<span style="position: absolute; top: 10px; font-size: 12px; font-weight: 700; color: #B3C2D2; font-variant-numeric: tabular-nums; {{h.stil}}">{{h.l}}</span>
+</sc-for>
+</div>
+<div style="position: relative; height: 416px; background: repeating-linear-gradient(to right, rgba(255,255,255,.07) 0 1px, transparent 1px 68px)">
+<sc-for list="{{reihen}}" as="r" hint-placeholder-count="8">
+<div style="position: absolute; left: 0; right: 0; height: 52px; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,.06); {{r.top}}">
+<sc-for list="{{r.bloecke}}" as="b" hint-placeholder-count="1">
+<div style="position: absolute; top: 5px; bottom: 5px; box-sizing: border-box; border-radius: 10px; padding: 4px 8px; overflow: hidden; white-space: nowrap; font-size: 12px; line-height: 1.25; {{b.stil}}"><div style="font-weight: 700">{{b.t1}}</div><div style="opacity: .85">{{b.t2}}</div></div>
+</sc-for>
+</div>
+</sc-for>
+<div style="position: absolute; top: 0; bottom: 0; left: 13px; width: 2px; background: #FF6B61"></div>
+</div>
+</div>
+</div>
+
+<div style="padding: 10px 20px 0; display: flex; justify-content: space-between; font-size: 12.5px; color: #879AAE"><span>‹ früher wischen</span><span>später wischen ›</span></div>
+<div style="padding: 10px 20px 0; display: flex; flex-wrap: wrap; gap: 6px 14px">
+<sc-for list="{{legende}}" as="l" hint-placeholder-count="5">
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: #B3C2D2"><span style="width: 16px; height: 10px; border-radius: 3px; box-sizing: border-box; {{l.stil}}"></span>{{l.name}}</span>
+</sc-for>
+</div>
+
+<div style="position: absolute; left: 16px; right: 16px; bottom: 104px; height: 64px; box-sizing: border-box; border-radius: 22px; background: #F3F7FB; color: #07111D; padding: 0 8px 0 18px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 16px 40px rgba(0,0,0,.5)">
+<div><div style="font-size: 15px; font-weight: 800">Platz 6 · 15:00 – 16:00</div><div style="font-size: 12.5px; color: #44566B">frei bis 21:00</div></div>
+<a href="#" style="height: 48px; padding: 0 22px; border-radius: 16px; background: #FFD21F; color: #0A1624; font-size: 15.5px; font-weight: 800; display: flex; align-items: center; text-decoration: none">Buchen</a>
+</div>
+
+<nav aria-label="Hauptmenü" style="position: absolute; left: 16px; right: 92px; bottom: 26px; height: 64px; border-radius: 32px; background: rgba(22,36,54,.78); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: 0 16px 40px rgba(0,0,0,.5); display: flex; align-items: center; padding: 0 6px; gap: 2px">
+<sc-for list="{{tabs}}" as="tab" hint-placeholder-count="4">
+<a href="#" style="flex-grow: 1; flex-basis: 0; height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; font-size: 11px; font-weight: 600; {{tab.stil}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{tab.d}}"></path></svg>{{tab.label}}</a>
+</sc-for>
+</nav>
+<a href="#" aria-label="Platz buchen" style="position: absolute; right: 16px; bottom: 26px; width: 64px; height: 64px; border-radius: 32px; background: #FFD21F; color: #0A1624; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 28px rgba(255,210,31,.35)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":960}}'>
+class Component extends DCLogic {
+renderVals() {
+var H = 68, START = 14;
+var A = {
+eigen: 'background: #FFD21F; color: #0A1624',
+belegt: 'background: rgba(58,155,224,.28); color: #DCEEFB',
+sucht: 'background: rgba(255,210,31,.12); color: #FFD21F; border: 1.5px dashed #FFD21F',
+serie: 'background: repeating-linear-gradient(135deg, rgba(255,255,255,.10) 0 5px, transparent 5px 10px), #1A2C42; color: #B3C2D2',
+gesperrt: 'background: #16263A; color: #879AAE',
+wahl: 'background: rgba(255,210,31,.10); color: #FFD21F; border: 2px solid #FFD21F'
+};
+var b = function (von, bis, art, t1, t2) {
+return { t1: t1, t2: t2, stil: 'left: ' + ((von - START) * H + 3) + 'px; width: ' + ((bis - von) * H - 6) + 'px; ' + A[art] };
+};
+var bl = [
+[b(17, 18, 'eigen', 'Du', 'Einzel')],
+[b(16, 19, 'serie', 'Training', 'bis 19:00')],
+[b(18, 19, 'sucht', 'sucht 2', 'Doppel')],
+[b(17, 18, 'sucht', 'sucht 1', 'Doppel')],
+[b(17, 19, 'belegt', '[Mitglied]', 'Doppel')],
+[b(15, 16, 'wahl', '+ 15:00', 'ausgewählt')],
+[],
+[b(14, 19, 'gesperrt', 'gesperrt', 'Platzpflege bis Mi')]
+];
+var reihen = bl.map(function (x, i) { return { nr: String(i + 1), bloecke: x, top: 'top: ' + (i * 52) + 'px' }; });
+var stunden = [14, 15, 16, 17, 18].map(function (h) { return { l: h + ':00', stil: 'left: ' + ((h - START) * H + 6) + 'px' }; });
+var I = {
+home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+platz: 'M4 4h16v16H4zM4 12h16M8 8h8v8H8zM12 8v8',
+getraenk: 'M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8',
+konto: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0'
+};
+return {
+reihen: reihen,
+stunden: stunden,
+legende: [
+{ name: 'Du', stil: A.eigen },
+{ name: 'belegt', stil: A.belegt },
+{ name: 'sucht Mitspieler', stil: A.sucht },
+{ name: 'Training', stil: A.serie },
+{ name: 'gesperrt', stil: A.gesperrt }
+],
+tabs: [['Home', 'home'], ['Plätze', 'platz'], ['Getränke', 'getraenk'], ['Konto', 'konto']].map(function (x, i) {
+return { label: x[0], d: I[x[1]], stil: i === 1 ? 'background: rgba(255,210,31,.14); color: #FFD21F' : 'color: #879AAE' };
+})
+};
+}
+}
+</script>
+</body>
+</html>

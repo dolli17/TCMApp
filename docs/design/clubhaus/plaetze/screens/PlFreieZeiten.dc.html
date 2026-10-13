@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Plätze – Freie Zeiten</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&amp;family=Barlow+Semi+Condensed:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 1080px; position: relative; overflow: hidden; box-sizing: border-box; background: #07111D; color: #F3F7FB; font-family: 'Barlow', system-ui, sans-serif">
+
+<div style="padding: 60px 20px 0; display: flex; justify-content: space-between; align-items: flex-end">
+<h1 style="margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -.6px; line-height: 1.05">Plätze</h1>
+<span style="width: 44px; height: 44px; border-radius: 22px; background: #1466A8; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px">LD</span>
+</div>
+
+<div style="margin: 16px 20px 0; padding: 4px; border-radius: 16px; background: #152538; display: flex; gap: 4px">
+<a href="PlRaster.dc.html" style="flex-grow: 1; flex-basis: 0; height: 40px; border-radius: 12px; color: #879AAE; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none">Übersicht</a>
+<a href="PlFreieZeiten.dc.html" aria-current="page" style="flex-grow: 1; flex-basis: 0; height: 40px; border-radius: 12px; background: #1E3249; color: #F3F7FB; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none">Freie Zeiten</a>
+</div>
+
+<div style="padding: 14px 0 0 20px; display: flex; gap: 6px; overflow: hidden">
+<sc-for list="{{tage}}" as="d" hint-placeholder-count="7">
+<button type="button" aria-pressed="{{d.an}}" style="width: 50px; height: 56px; flex-shrink: 0; border: 0; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-family: 'Barlow', sans-serif; {{d.stil}}"><span style="font-size: 10.5px; font-weight: 700; letter-spacing: .06em">{{d.wt}}</span><span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 21px; font-weight: 700; line-height: 1">{{d.nr}}</span></button>
+</sc-for>
+</div>
+
+<div style="margin: 20px 20px 0; border-radius: 22px; background: #0E1A29; border: 1px solid rgba(255,255,255,.08); overflow: hidden">
+<div style="display: flex; align-items: center; height: 40px; padding: 0 16px; border-bottom: 1px solid rgba(255,255,255,.08)">
+<span style="width: 64px; font-size: 11px; font-weight: 700; letter-spacing: .1em; color: #879AAE">BEGINN</span>
+<div style="display: flex; gap: 4px">
+<sc-for list="{{nummern}}" as="n" hint-placeholder-count="8">
+<span style="width: 18px; text-align: center; font-size: 11px; font-weight: 700; color: #879AAE">{{n.l}}</span>
+</sc-for>
+</div>
+<span style="margin-left: auto; font-size: 11px; font-weight: 700; letter-spacing: .1em; color: #879AAE">PLATZ</span>
+</div>
+
+<sc-for list="{{zeiten}}" as="z" hint-placeholder-count="7">
+<div style="border-bottom: 1px solid rgba(255,255,255,.08); {{z.zeileStil}}">
+<a href="#" aria-expanded="{{z.offen}}" style="display: flex; align-items: center; height: 60px; padding: 0 12px 0 16px; text-decoration: none; color: #F3F7FB">
+<span style="width: 64px; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 22px; font-variant-numeric: tabular-nums">{{z.zeit}}</span>
+<span style="display: flex; gap: 4px" aria-hidden="true">
+<sc-for list="{{z.punkte}}" as="p" hint-placeholder-count="8">
+<span style="width: 18px; height: 24px; box-sizing: border-box; border-radius: 5px; {{p.stil}}"></span>
+</sc-for>
+</span>
+<span style="margin-left: auto; font-size: 14px; font-weight: 700; {{z.zahlStil}}">{{z.zahl}}</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#879AAE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left: 6px; {{z.pfeil}}"><path d="M9 6l6 6-6 6"></path></svg>
+</a>
+<sc-if value="{{z.offenBool}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 0 16px 16px">
+<div style="font-size: 13px; color: #B3C2D2; margin-bottom: 10px">17:00 – 18:00 · Welcher Platz?</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<a href="#" style="height: 48px; border-radius: 14px; background: #3DD68C; color: #07111D; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; text-decoration: none">Platz 3</a>
+<a href="#" style="height: 48px; border-radius: 14px; background: #3DD68C; color: #07111D; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; text-decoration: none">Platz 6</a>
+<a href="#" style="height: 48px; border-radius: 14px; background: #3DD68C; color: #07111D; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; text-decoration: none">Platz 7</a>
+</div>
+<a href="#" style="margin-top: 8px; height: 48px; box-sizing: border-box; border-radius: 14px; border: 1.5px dashed #FFD21F; background: rgba(255,210,31,.10); color: #FFD21F; font-size: 14.5px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; text-decoration: none"><span>Platz 4 · Doppel sucht noch 1</span><span>Mitspielen</span></a>
+<div style="margin-top: 10px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: #B3C2D2"><span style="width: 10px; height: 10px; border-radius: 3px; background: #FFD21F"></span>Du spielst um 17:00 auf Platz 1</div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+
+<div style="padding: 12px 20px 0; display: flex; gap: 16px; font-size: 12.5px; color: #B3C2D2">
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 14px; border-radius: 3px; background: #3DD68C"></span>frei</span>
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 14px; border-radius: 3px; background: #1E3249"></span>belegt</span>
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 14px; box-sizing: border-box; border-radius: 3px; border: 1.5px dashed #FFD21F"></span>sucht Mitspieler</span>
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 14px; border-radius: 3px; background: #FFD21F"></span>du</span>
+</div>
+
+<nav aria-label="Hauptmenü" style="position: absolute; left: 16px; right: 92px; bottom: 26px; height: 64px; border-radius: 32px; background: rgba(22,36,54,.78); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: 0 16px 40px rgba(0,0,0,.5); display: flex; align-items: center; padding: 0 6px; gap: 2px">
+<sc-for list="{{tabs}}" as="tab" hint-placeholder-count="4">
+<a href="#" style="flex-grow: 1; flex-basis: 0; height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; font-size: 11px; font-weight: 600; {{tab.stil}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{tab.d}}"></path></svg>{{tab.label}}</a>
+</sc-for>
+</nav>
+<a href="#" aria-label="Platz buchen" style="position: absolute; right: 16px; bottom: 26px; width: 64px; height: 64px; border-radius: 32px; background: #FFD21F; color: #0A1624; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 28px rgba(255,210,31,.35)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1080}}'>
+class Component extends DCLogic {
+renderVals() {
+var S = {
+f: 'background: #3DD68C',
+b: 'background: #1E3249',
+s: 'border: 1.5px dashed #FFD21F; background: rgba(255,210,31,.10)',
+d: 'background: #FFD21F'
+};
+var zeile = function (zeit, muster, offen) {
+var punkte = muster.split('').map(function (c) { return { stil: S[c] }; });
+var frei = muster.split('').filter(function (c) { return c === 'f'; }).length;
+return {
+zeit: zeit, punkte: punkte, offen: offen ? 'true' : 'false', offenBool: offen,
+zahl: frei === 0 ? 'voll' : frei + ' frei',
+zahlStil: frei >= 3 ? 'color: #3DD68C' : frei > 0 ? 'color: #F3F7FB' : 'color: #879AAE',
+zeileStil: offen ? 'background: #122236' : '',
+pfeil: offen ? 'transform: rotate(90deg)' : ''
+};
+};
+var I = {
+home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+platz: 'M4 4h16v16H4zM4 12h16M8 8h8v8H8zM12 8v8',
+getraenk: 'M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8',
+konto: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0'
+};
+return {
+tage: [['HEUTE', '13'], ['MI', '14'], ['DO', '15'], ['FR', '16'], ['SA', '17'], ['SO', '18'], ['MO', '19']].map(function (d, i) {
+return { wt: d[0], nr: d[1], an: i === 0 ? 'true' : 'false', stil: i === 0 ? 'background: #FFD21F; color: #0A1624' : 'background: #152538; color: #B3C2D2' };
+}),
+nummern: [1, 2, 3, 4, 5, 6, 7, 8].map(function (n) { return { l: String(n) }; }),
+zeiten: [
+zeile('14:30', 'fffffffb', false),
+zeile('15:00', 'fffffffb', false),
+zeile('16:00', 'fbfffffb', false),
+zeile('17:00', 'dbfsbffb', true),
+zeile('18:00', 'fbsfbffb', false),
+zeile('19:00', 'ffffffbb', false),
+zeile('20:00', 'fffbffbb', false)
+],
+tabs: [['Home', 'home'], ['Plätze', 'platz'], ['Getränke', 'getraenk'], ['Konto', 'konto']].map(function (x, i) {
+return { label: x[0], d: I[x[1]], stil: i === 1 ? 'background: rgba(255,210,31,.14); color: #FFD21F' : 'color: #879AAE' };
+})
+};
+}
+}
+</script>
+</body>
+</html>
