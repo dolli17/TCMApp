@@ -7,9 +7,11 @@
  */
 
 import {
-  berlinTime, hatPlatzRechte, hatVolleRechte, memberProfileSchema, translateDbError,
+  berlinTime, hatPlatzRechte, hatVolleRechte, isValidIban, memberProfileSchema, translateDbError,
+  type OnboardingSchrittKey, type OnboardingZustand,
 } from "@tcm/core";
 import { supabase } from "./supabase";
+import { deutschZuIso, heuteInBerlin } from "./verwaltung/gemeinsam";
 
 export interface Ergebnis<T = void> {
   ok: boolean;
@@ -162,13 +164,18 @@ export async function ladeBuchungsarten() {
  * zu streichen. admin heisst volle Rechte (App Admin oder Vorstand),
  * platzRechte haben zusaetzlich die Platzwarte (Sperren, Serien, fremde
  * Buchungen).
+ *
+ * onboardingErledigt entscheidet die Weiche (app/index.tsx) und der Schutz der
+ * Tabs: solange es false ist, geht es nach /onboarding. Ohne Mitglied gibt es
+ * kein Onboarding, dann ist es true - die Datenbank sperrt ohnehin selbst.
  */
 export async function ladeIchSelbst(): Promise<{
   id: string | null;
   admin: boolean;
   platzRechte: boolean;
+  onboardingErledigt: boolean;
 }> {
-  const leer = { id: null, admin: false, platzRechte: false };
+  const leer = { id: null, admin: false, platzRechte: false, onboardingErledigt: true };
 
   const { data: sitzung } = await supabase.auth.getUser();
   const authId = sitzung.user?.id;
@@ -176,7 +183,7 @@ export async function ladeIchSelbst(): Promise<{
 
   const { data: mitglied } = await supabase
     .from("members")
-    .select("id")
+    .select("id, onboarding_completed_at")
     .eq("auth_user_id", authId)
     .maybeSingle();
   if (!mitglied) return leer;
@@ -187,7 +194,12 @@ export async function ladeIchSelbst(): Promise<{
     .eq("member_id", mitglied.id);
 
   const r = (rollen ?? []).map((x) => x.role);
-  return { id: mitglied.id, admin: hatVolleRechte(r), platzRechte: hatPlatzRechte(r) };
+  return {
+    id: mitglied.id,
+    admin: hatVolleRechte(r),
+    platzRechte: hatPlatzRechte(r),
+    onboardingErledigt: mitglied.onboarding_completed_at != null,
+  };
 }
 
 /**
@@ -657,4 +669,167 @@ export async function zaehleUngelesen(): Promise<number> {
   const { data, error } = await supabase.rpc("my_unread_notification_count");
   if (error) return 0;
   return data ?? 0;
+}
+
+/* --- Onboarding ------------------------------------------------------------
+ *
+ * Dieselben RPCs wie im Web. Welche Schritte es gibt und welche Pflicht sind,
+ * steht in @tcm/core (onboardingSchritte), ob sie erledigt sind, sagt
+ * my_onboarding(). Geprueft wird in der Datenbank; hier steht nur, was sich
+ * vor dem Absenden in einem Satz sagen laesst, der das Feld nennt.
+ */
+
+/** Alles fuer den Assistenten in einem Zug; null, wenn kein Mitglied angemeldet ist. */
+export async function ladeOnboarding(): Promise<OnboardingZustand | null> {
+  const { data, error } = await supabase.rpc("my_onboarding");
+  if (error) throw new Error(translateDbError(error));
+  return (data as unknown as OnboardingZustand | null) ?? null;
+}
+
+export type Geschlecht = "female" | "male" | "diverse";
+
+export type OnboardingStammdaten = {
+  first_name: string;
+  last_name: string;
+  title: string;
+  /** Wie getippt: TT.MM.JJJJ */
+  birthday: string;
+  gender: Geschlecht | "";
+  street: string;
+  postcode: string;
+  city: string;
+  phone: string;
+  mobile: string;
+};
+
+export async function speichereOnboardingStammdaten(d: OnboardingStammdaten): Promise<Ergebnis> {
+  const geburtstag = deutschZuIso(d.birthday);
+  if (!geburtstag) {
+    return { ok: false, meldung: "Bitte das Geburtsdatum als TT.MM.JJJJ angeben." };
+  }
+  // deutschZuIso liest "85" als 2085 - bei einem Geburtsdatum nie gemeint.
+  if (geburtstag > heuteInBerlin()) {
+    return { ok: false, meldung: "Das Geburtsdatum liegt in der Zukunft. Bitte das Jahr vierstellig angeben." };
+  }
+  if (!d.gender) return { ok: false, meldung: "Bitte das Geschlecht wählen." };
+
+  const leerZuNull = (w: string) => w.trim() || undefined;
+  const { error } = await supabase.rpc("onboarding_save_stammdaten", {
+    p_first_name: d.first_name.trim(),
+    p_last_name: d.last_name.trim(),
+    p_birthday: geburtstag,
+    p_gender: d.gender,
+    p_street: d.street.trim(),
+    p_postcode: d.postcode.trim(),
+    p_city: d.city.trim(),
+    p_phone: leerZuNull(d.phone),
+    p_mobile: leerZuNull(d.mobile),
+    p_title: leerZuNull(d.title),
+  });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Deine Daten sind gespeichert." };
+}
+
+/** Stimmt der jeweils gueltigen Version der genannten Texte zu. */
+export async function akzeptiereDokumente(codes: string[]): Promise<Ergebnis> {
+  if (codes.length === 0) return { ok: true, meldung: "" };
+  const { error } = await supabase.rpc("onboarding_accept_documents", { p_codes: codes });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Zustimmung gespeichert." };
+}
+
+export type Erziehungsberechtigte = {
+  name: string;
+  email: string;
+  phone: string;
+  zustimmung: boolean;
+};
+
+export async function speichereErziehungsberechtigte(e: Erziehungsberechtigte): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("onboarding_save_guardian", {
+    p_name: e.name.trim(),
+    p_email: e.email.trim() || undefined,
+    p_phone: e.phone.trim() || undefined,
+    p_consent: e.zustimmung,
+  });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Erziehungsberechtigte gespeichert." };
+}
+
+/**
+ * Notfallkontakt im Onboarding. Ueber die RPC und nicht wie im Konto direkt
+ * auf members: nur sie weiss, dass er bei Minderjaehrigen Pflicht ist.
+ */
+export async function speichereOnboardingNotfallkontakt(k: {
+  name: string;
+  phone: string;
+  relation: string;
+}): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("onboarding_save_notfallkontakt", {
+    p_name: k.name.trim(),
+    p_phone: k.phone.trim(),
+    p_relation: k.relation.trim() || undefined,
+  });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Notfallkontakt gespeichert." };
+}
+
+/** Erteilt das SEPA-Mandat online und gibt die Mandatsreferenz zurueck. */
+export async function erteileMandat(m: {
+  iban: string;
+  kontoinhaber: string;
+  bestaetigt: boolean;
+}): Promise<Ergebnis<string>> {
+  if (!m.bestaetigt) return { ok: false, meldung: "Bitte bestätige das Mandat ausdrücklich." };
+  if (!isValidIban(m.iban)) {
+    return { ok: false, meldung: "Diese IBAN ist nicht gültig. Bitte die Ziffern prüfen." };
+  }
+
+  const { data, error } = await supabase.rpc("create_my_sepa_mandate", {
+    p_iban: m.iban,
+    p_holder: m.kontoinhaber.trim() || undefined,
+    p_accept: true,
+  });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Das Mandat ist erteilt.", daten: data };
+}
+
+export async function speichereTennis(t: {
+  lk: string;
+  nuligaId: string;
+  mannschaftInteresse: boolean;
+}): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("save_my_tennis", {
+    p_tennis_lk: t.lk.trim() || undefined,
+    p_nuliga_id: t.nuligaId.trim() || undefined,
+    p_mannschaft_interesse: t.mannschaftInteresse,
+  });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Gespeichert." };
+}
+
+const PFLICHT_KEYS: OnboardingSchrittKey[] = [
+  "passwort", "stammdaten", "rechtliches", "erziehungsberechtigte", "notfallkontakt", "sepa",
+];
+
+/**
+ * Schaltet das Konto frei. Fehlt noch etwas, nennt die Meldung es, und fehlt
+ * enthaelt die Schritte aus dem DETAIL der Datenbankmeldung - damit springt
+ * der Assistent zum ersten davon.
+ */
+export async function schliesseOnboardingAb(): Promise<
+  Ergebnis & { fehlt?: OnboardingSchrittKey[] }
+> {
+  const { error } = await supabase.rpc("complete_onboarding");
+  if (!error) return { ok: true, meldung: "Dein Konto ist freigeschaltet." };
+
+  const fehlt = (error.details ?? "")
+    .split(",")
+    .map((k) => k.trim())
+    .filter((k): k is OnboardingSchrittKey => PFLICHT_KEYS.includes(k as OnboardingSchrittKey));
+  return {
+    ok: false,
+    meldung: translateDbError(error),
+    ...(fehlt.length > 0 ? { fehlt } : {}),
+  };
 }
