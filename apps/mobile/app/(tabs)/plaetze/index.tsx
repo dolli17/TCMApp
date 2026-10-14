@@ -11,7 +11,8 @@ import { useTheme } from "@/lib/theme";
 import {
   aendereMitspieler, bucheplatz, ladeBuchungsarten, ladeBuchungseinstellungen,
   ladeIchSelbst, ladeKontingent, ladePlaetze, ladeTagesplan,
-  ladeVerzeichnis, sageSerienterminAb, sperreStunde, spieleMit, storniereBuchung, sucheMitspieler,
+  ladeVerzeichnis, sageSerienterminAb, setzeUm, sperreStunde, spieleMit, storniereBuchung,
+  sucheMitspieler,
 } from "@/lib/daten";
 import {
   alsUhrzeit, jetztFrei, startMoeglich as pruefeStart, zuMinuten,
@@ -372,6 +373,10 @@ export default function Plan() {
     mitLauf(async () => ergebnis(await storniereBuchung(id, grund)));
   const terminAbsagen = (id: string, grund?: string) =>
     mitLauf(async () => ergebnis(await sageSerienterminAb(id, grund)));
+  const umsetzen = (id: string, courtId: string, tag: string, minute: number, grund?: string) =>
+    mitLauf(async () =>
+      ergebnis(await setzeUm({ bookingId: id, platzId: courtId, tag, minute, grund })),
+    );
 
   async function sperren(
     courtId: string, von: number, bis: number, grund: string, verdraengen: boolean,
@@ -558,6 +563,11 @@ export default function Plan() {
       {fenster && (
         <BuchungsFenster
           fenster={fenster}
+          plaetze={plaetze}
+          tage={tage}
+          belegung={belegung}
+          oeffnungMinuten={oeffnung}
+          schlussMinuten={schluss}
           arten={arten}
           verzeichnis={verzeichnis}
           meineId={meineId}
@@ -571,6 +581,8 @@ export default function Plan() {
           onSpeichern={speichern}
           onStornieren={stornieren}
           onTerminAbsagen={terminAbsagen}
+          onUmsetzen={umsetzen}
+          onTagLaden={ladeTagesplan}
           onAusschreiben={ausschreiben}
           onBeitreten={beitreten}
           onSperren={sperren}

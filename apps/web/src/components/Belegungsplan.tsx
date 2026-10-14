@@ -6,8 +6,8 @@ import {
   occupancyKind, timeToMinutes, type TimelineKind,
 } from "@tcm/core";
 import {
-  buchen, mitspielen, mitspielerAendern, mitspielerSuchen, serienterminAbsagen,
-  stornieren, stundeSperren,
+  belegungAm, buchen, mitspielen, mitspielerAendern, mitspielerSuchen, serienterminAbsagen,
+  stornieren, stundeSperren, umsetzen,
 } from "@/app/plan/aktionen";
 import { BuchungsFenster } from "@/components/BuchungsFenster";
 import { PlanTelefon } from "@/components/PlanTelefon";
@@ -199,6 +199,10 @@ export function Belegungsplan(props: Props) {
 
   function terminAbsagen(bookingId: string, grund?: string) {
     starte(async () => ergebnis(await serienterminAbsagen(bookingId, grund)));
+  }
+
+  function setzeUm(bookingId: string, courtId: string, startsAt: string, grund?: string) {
+    starte(async () => ergebnis(await umsetzen(bookingId, courtId, startsAt, grund)));
   }
 
   /**
@@ -424,9 +428,13 @@ export function Belegungsplan(props: Props) {
           fenster={fenster}
           datum={props.datum}
           plaetze={props.plaetze}
+          belegungen={props.belegungen}
           arten={props.arten}
           verzeichnis={props.verzeichnis}
           meineId={props.meineId}
+          jetzt={jetzt}
+          oeffnungMinuten={oeffnungMin}
+          schlussMinuten={schlussMin}
           startzeiten={
             fenster.modus === "buchen"
               ? startzeitenIn(fenster.courtId, fenster.stunde)
@@ -442,6 +450,8 @@ export function Belegungsplan(props: Props) {
           onSpeichern={speichern}
           onStornieren={abbrechen}
           onTerminAbsagen={terminAbsagen}
+          onUmsetzen={setzeUm}
+          onTagLaden={belegungAm}
           onSperren={sperren}
           onAusschreiben={ausschreiben}
           onBeitreten={beitreten}

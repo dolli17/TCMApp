@@ -12,9 +12,10 @@
  * Das Blatt selbst (Fahrt, Abdunklung, Griff) steht in Blatt.tsx.
  */
 
-import { useMemo, useState, type ReactNode } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { useMemo, useRef, useState, type ReactNode } from "react";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
+import { umsetzZiele, type OccupiedSlot } from "@tcm/core";
 import { Blatt, BlattKopf } from "@/components/Blatt";
 import { Schalter, Segmente } from "@/components/Segmente";
 import { mitDeckkraft } from "@/lib/stil";
@@ -26,6 +27,14 @@ import {
 
 interface Props {
   fenster: Fenster;
+  /** Die aktiven Plaetze - Ziele beim Umsetzen. */
+  plaetze: { id: string; name: string; short_name: string }[];
+  /** Die Tage, die der Plan anbietet (JJJJ-MM-TT) - auch die fuers Umsetzen. */
+  tage: string[];
+  /** Belegung des Tages im Plan; fuer andere Tage laedt das Blatt selbst nach. */
+  belegung: Belegung[];
+  oeffnungMinuten: number;
+  schlussMinuten: number;
   arten: Buchungsart[];
   verzeichnis: Mitglied[];
   /** Eigene Mitglieds-Id, damit man sich nicht selbst als Mitspieler waehlt. */
@@ -47,12 +56,19 @@ interface Props {
   onStornieren: (bookingId: string, grund?: string) => void;
   /** Ein einzelner Serientermin faellt aus, die Serie bleibt. */
   onTerminAbsagen: (bookingId: string, grund?: string) => void;
+  /** Auf einen anderen Platz, Tag oder Beginn - nur mit Platzrechten. */
+  onUmsetzen: (bookingId: string, courtId: string, tag: string, minute: number, grund?: string) => void;
+  /** Belegung eines anderen Tages, fuer das Umsetzen dorthin. */
+  onTagLaden: (tag: string) => Promise<TagesBelegung[]>;
   onAusschreiben: (bookingId: string, gesucht: boolean) => void;
   onBeitreten: (bookingId: string) => void;
   /** Gibt die Zahl der Buchungen zurueck, die verdraengt wuerden - sonst null. */
   onSperren: (courtId: string, von: number, bis: number, grund: string, verdraengen: boolean) => Promise<number | null>;
   onSchliessen: () => void;
 }
+
+/** Was an einem Tag belegt ist - genug fuer umsetzZiele. */
+type TagesBelegung = OccupiedSlot & { booking_id: string };
 
 /**
  * Gaeste haben keinen Namen - es geht um die Gebuehr und um den belegten Platz,
@@ -366,6 +382,7 @@ function VerwaltenInhalt(
   const [mitglieder, setMitglieder] = useState<string[]>(b.player_member_ids ?? []);
   const [gaeste, setGaeste] = useState<string[]>(b.guest_names ?? []);
   const [stornoOffen, setStornoOffen] = useState(false);
+  const [umsetzOffen, setUmsetzOffen] = useState(false);
   const [grund, setGrund] = useState("");
 
   const art = props.arten.find((a) => a.code === b.type_code);
@@ -374,6 +391,11 @@ function VerwaltenInhalt(
   // Serientermine (Training) legt die Datenbank als Blockung an. Abgesagt
   // werden sie ueber cancel_series_occurrence - nicht per Storno.
   const serientermin = Boolean(b.series_id);
+  // Umsetzen nur fuer normale Buchungen, die noch nicht vorbei sind - so eng
+  // wie move_booking. Sperrungen und Serientermine haben eigene Wege.
+  const kannUmsetzen =
+    props.darfPlaetze && b.kind === "booking" && !serientermin &&
+    new Date(b.ends_at).getTime() > Date.now();
 
   // Drei Rollen an demselben Blatt: der Bucher verwaltet, wer
   // Platzrechte hat, verwaltet fremd, und wer nur eingeladen ist, kann ausschliesslich
@@ -465,7 +487,8 @@ function VerwaltenInhalt(
       )}
 
       <View style={{ gap: 10 }}>
-        <Fehlerzeile text={props.fehler} />
+        {/* Beim Umsetzen steht der Fehler dort, wo getippt wurde. */}
+        <Fehlerzeile text={umsetzOffen ? null : props.fehler} />
 
         {kannMitspielen && (
           <Hauptknopf
@@ -507,7 +530,10 @@ function VerwaltenInhalt(
                 : serientermin ? "Fällt diese Woche aus" : nurStorno ? "Sperrung aufheben" : "Buchung stornieren"
             }
             onPress={() => {
-              if (!stornoOffen) setStornoOffen(true);
+              if (!stornoOffen) {
+                setStornoOffen(true);
+                setUmsetzOffen(false);
+              }
               else if (serientermin) props.onTerminAbsagen(b.booking_id, grund);
               else props.onStornieren(b.booking_id, nurStorno ? undefined : grund);
             }}
@@ -516,6 +542,234 @@ function VerwaltenInhalt(
 
         {b.is_own === true && !nurStorno && <Fussnote>Stornieren geht bis Spielbeginn</Fussnote>}
       </View>
+
+      {/* Abgesetzt wie das Sperren: Umsetzen ist die Ausnahme, wenn ein Platz
+          ausfaellt - nicht das, was man an einer Buchung gewoehnlich tut. */}
+      {kannUmsetzen && (
+        <View style={{ borderTopWidth: 1, borderTopColor: farben.line, paddingTop: 16, gap: 10 }}>
+          {umsetzOffen ? (
+            <UmsetzBereich {...props} onZurueck={() => setUmsetzOffen(false)} />
+          ) : (
+            <Nebenknopf
+              klein
+              text="Umsetzen"
+              onPress={() => {
+                setUmsetzOffen(true);
+                setStornoOffen(false);
+              }}
+            />
+          )}
+        </View>
+      )}
+    </>
+  );
+}
+
+/* --- Umsetzen ------------------------------------------------------------- */
+
+const berlinTag = (d: Date) =>
+  new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(d);
+
+/** Fuer die Tageskachel: "MO" und "28" */
+function kachel(tag: string): { wochentag: string; zahl: number } {
+  const d = new Date(`${tag}T12:00:00Z`);
+  const wochentag = new Intl.DateTimeFormat("de-DE", { weekday: "short", timeZone: "UTC" }).format(d);
+  return { wochentag: wochentag.replace(".", "").toUpperCase(), zahl: d.getUTCDate() };
+}
+
+/**
+ * Wohin mit der Buchung? Platz, Tag und Beginn - wie im Web.
+ *
+ * Was waehlbar ist, rechnet umsetzZiele (@tcm/core) aus der Belegung des
+ * Zieltags; fuer einen anderen Tag als den im Plan wird day_schedule
+ * nachgeladen. Eine laufende Buchung wechselt nur den Platz - dann gibt es
+ * keinen Tag zu waehlen und als Beginn nur den, der schon gilt.
+ */
+function UmsetzBereich(
+  props: Props & { fenster: Extract<Fenster, { modus: "verwalten" }>; onZurueck: () => void },
+) {
+  const { stil, farben } = useTheme();
+  const b = props.fenster.belegung;
+  const planTag = props.fenster.tag;
+  // Einmal beim Aufklappen: die Uhr soll nicht unter dem Finger Ziele wegnehmen.
+  const [jetzt] = useState(() => new Date());
+  const laeuftSchon = new Date(b.starts_at).getTime() <= jetzt.getTime();
+
+  const [tag, setTag] = useState(planTag);
+  const [andererTag, setAndererTag] = useState<{ tag: string; belegung: TagesBelegung[] } | null>(null);
+  const [ladeFehler, setLadeFehler] = useState<string | null>(null);
+  const [platzWahl, setPlatzWahl] = useState<string | null>(null);
+  const [minuteWahl, setMinuteWahl] = useState<number | null>(null);
+  const [grund, setGrund] = useState("");
+  // Nur die letzte Anfrage zaehlt, wenn schnell durch die Tage getippt wird.
+  const angefragt = useRef(planTag);
+
+  async function tagWaehlen(neu: string) {
+    setTag(neu);
+    setLadeFehler(null);
+    angefragt.current = neu;
+    if (neu === planTag) return;
+    try {
+      const belegung = await props.onTagLaden(neu);
+      if (angefragt.current === neu) setAndererTag({ tag: neu, belegung });
+    } catch (f) {
+      if (angefragt.current === neu) setLadeFehler((f as Error).message);
+    }
+  }
+
+  const belegung: readonly TagesBelegung[] | null =
+    tag === planTag ? props.belegung : andererTag?.tag === tag ? andererTag.belegung : null;
+
+  const ziele = useMemo(
+    () =>
+      belegung
+        ? umsetzZiele({
+            booking: b,
+            day: tag,
+            courtIds: props.plaetze.map((p) => p.id),
+            openingMinutes: props.oeffnungMinuten,
+            closingMinutes: props.schlussMinuten,
+            slotMinutes: props.rasterMinuten,
+            occupied: belegung,
+            now: jetzt,
+          })
+        : [],
+    [b, belegung, tag, props.plaetze, props.oeffnungMinuten, props.schlussMinuten, props.rasterMinuten, jetzt],
+  );
+
+  // Die Wahl bleibt, solange sie noch ein Ziel ist; sonst rueckt die naechste
+  // nach. Vorgewaehlt wird ein anderer Platz zur selben Zeit - der Regelfall,
+  // wenn ein Platz unter Wasser steht.
+  const mitZiel = props.plaetze.filter((p) => ziele.some((z) => z.courtId === p.id));
+  const platz =
+    mitZiel.find((p) => p.id === platzWahl) ??
+    mitZiel.find((p) => p.id !== b.court_id) ??
+    mitZiel[0];
+  const zeiten = ziele.filter((z) => z.courtId === platz?.id).map((z) => z.minute);
+  const eigeneMinute = lokaleMinuten(b.starts_at);
+  const minute =
+    minuteWahl !== null && zeiten.includes(minuteWahl)
+      ? minuteWahl
+      : zeiten.includes(eigeneMinute) ? eigeneMinute : (zeiten[0] ?? null);
+  const dauer = lokaleMinuten(b.ends_at) - eigeneMinute;
+
+  const grundNoetig = b.is_own !== true;
+  const bereit = platz !== undefined && minute !== null && !(grundNoetig && grund.trim() === "");
+  // Der Tag der Buchung steht immer zur Wahl, auch wenn er vor heute laege.
+  const tage = [...new Set([planTag, ...props.tage])].filter((t) => t >= berlinTag(jetzt)).sort();
+
+  return (
+    <>
+      {laeuftSchon ? (
+        <Text style={stil.leise}>Die Buchung läuft schon – sie kann nur noch den Platz wechseln.</Text>
+      ) : (
+        <View>
+          <Feldname>Tag</Feldname>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+            {tage.map((t) => {
+              const aktiv = t === tag;
+              const k = kachel(t);
+              return (
+                <Pressable
+                  key={t}
+                  onPress={() => void tagWaehlen(t)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: aktiv }}
+                  accessibilityLabel={tagText(t)}
+                  style={{
+                    width: 50, height: 56, borderRadius: 16, alignItems: "center", justifyContent: "center", gap: 1,
+                    backgroundColor: aktiv ? farben.gold : farben.surf2,
+                  }}
+                >
+                  <Text style={{ fontSize: 10.5, letterSpacing: 0.6, fontFamily: "Barlow_700Bold", color: aktiv ? farben.onGold : farben.ink2 }}>
+                    {k.wochentag}
+                  </Text>
+                  <Text style={{ fontSize: 21, lineHeight: 23, fontFamily: "BarlowSemiCondensed_700Bold", color: aktiv ? farben.onGold : farben.ink2 }}>
+                    {k.zahl}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+
+      {ladeFehler ? (
+        <Text style={stil.hinweisFehler}>{ladeFehler}</Text>
+      ) : belegung === null ? (
+        <Text style={stil.leise}>Belegung wird geladen …</Text>
+      ) : ziele.length === 0 ? (
+        <Text style={stil.leise}>An diesem Tag ist kein Platz frei, auf den die Buchung passt.</Text>
+      ) : (
+        <>
+          <View>
+            <Feldname>Platz</Feldname>
+            <Segmente
+              beschriftung="Platz"
+              wert={platz?.id ?? ""}
+              onWahl={setPlatzWahl}
+              optionen={props.plaetze.map((p) => ({
+                wert: p.id, label: p.short_name || p.name, deaktiviert: !mitZiel.includes(p),
+              }))}
+            />
+          </View>
+          <View>
+            <Feldname>Beginn</Feldname>
+            <View accessibilityRole="radiogroup" accessibilityLabel="Beginn" style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {zeiten.map((m) => {
+                const aktiv = m === minute;
+                return (
+                  <Pressable
+                    key={m}
+                    onPress={() => setMinuteWahl(m)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: aktiv }}
+                    style={{
+                      height: 40, minWidth: 64, paddingHorizontal: 12, borderRadius: 20,
+                      alignItems: "center", justifyContent: "center",
+                      backgroundColor: aktiv ? farben.gold : farben.surf2,
+                    }}
+                  >
+                    <Text style={{ fontSize: 15, fontFamily: "Barlow_700Bold", color: aktiv ? farben.onGold : farben.ink }}>
+                      {alsUhrzeit(m)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </>
+      )}
+
+      <View>
+        <Feldname>{grundNoetig ? "Grund" : "Grund (freiwillig)"}</Feldname>
+        <TextInput
+          style={[stil.feld, { marginTop: -8 }]}
+          value={grund}
+          onChangeText={setGrund}
+          placeholder="z. B. Platz 3 steht unter Wasser"
+          placeholderTextColor={farben.muted}
+          accessibilityLabel="Grund fürs Umsetzen"
+        />
+      </View>
+
+      {platz && minute !== null && (
+        <Text style={stil.leise}>
+          Neu: {platz.name} · {tagText(tag)} · {alsUhrzeit(minute)}–{alsUhrzeit(minute + dauer)} Uhr.
+          Bucher und Mitspieler werden benachrichtigt.
+        </Text>
+      )}
+
+      <Fehlerzeile text={props.fehler} />
+      <Nebenknopf
+        text={props.laeuft ? "Wird umgesetzt …" : "Hierhin umsetzen"}
+        gesperrt={props.laeuft || !bereit}
+        onPress={() => {
+          if (!platz || minute === null) return;
+          props.onUmsetzen(b.booking_id, platz.id, tag, minute, grund);
+        }}
+      />
+      <Nebenknopf klein text="Doch nicht" onPress={props.onZurueck} />
     </>
   );
 }

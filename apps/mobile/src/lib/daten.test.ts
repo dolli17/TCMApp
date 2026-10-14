@@ -67,6 +67,7 @@ const {
   ladeKontingent,
   sageSerienterminAb,
   setzeMerkmal,
+  setzeUm,
   spieleMit,
   speichereNotfallkontakt,
   speichereStammdaten,
@@ -278,6 +279,51 @@ describe("sageSerienterminAb", () => {
     const r = await sageSerienterminAb("b-7");
     expect(r.ok).toBe(false);
     expect(r.meldung).not.toBe("");
+  });
+});
+
+describe("setzeUm", () => {
+  it("bildet die Startzeit in Berliner Zeit, im Sommer wie im Winter", async () => {
+    rpc.mockResolvedValue({ error: null });
+
+    // 15:00 Uhr in Berlin: im Sommer 13:00 UTC, im Winter 14:00 UTC.
+    const r = await setzeUm({ bookingId: "b1", platzId: "p2", tag: "2026-07-01", minute: 15 * 60 });
+    expect(rpc).toHaveBeenCalledWith("move_booking", {
+      p_booking_id: "b1",
+      p_court_id: "p2",
+      p_starts_at: "2026-07-01T13:00:00.000Z",
+      p_reason: undefined,
+    });
+    expect(r).toEqual({ ok: true, meldung: "Die Buchung ist umgesetzt." });
+
+    await setzeUm({ bookingId: "b1", platzId: "p2", tag: "2026-12-01", minute: 15 * 60 });
+    expect(rpc).toHaveBeenLastCalledWith(
+      "move_booking",
+      expect.objectContaining({ p_starts_at: "2026-12-01T14:00:00.000Z" }),
+    );
+  });
+
+  it("gibt den Grund getrimmt weiter und schickt keinen leeren", async () => {
+    rpc.mockResolvedValue({ error: null });
+    await setzeUm({ bookingId: "b1", platzId: "p2", tag: "2026-07-01", minute: 600, grund: "  Platz 3 nass " });
+    expect(rpc).toHaveBeenLastCalledWith(
+      "move_booking",
+      expect.objectContaining({ p_reason: "Platz 3 nass" }),
+    );
+
+    await setzeUm({ bookingId: "b1", platzId: "p2", tag: "2026-07-01", minute: 600, grund: "   " });
+    expect(rpc).toHaveBeenLastCalledWith(
+      "move_booking",
+      expect.objectContaining({ p_reason: undefined }),
+    );
+  });
+
+  it("meldet einen belegten Platz verstaendlich", async () => {
+    rpc.mockResolvedValue({
+      error: { code: "23P01", message: "Dieser Platz ist zu der Zeit bereits belegt." },
+    });
+    const r = await setzeUm({ bookingId: "b1", platzId: "p2", tag: "2026-07-01", minute: 600 });
+    expect(r).toEqual({ ok: false, meldung: "Dieser Platz ist zu der Zeit bereits belegt." });
   });
 });
 
