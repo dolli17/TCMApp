@@ -10,11 +10,14 @@ import { type Page } from "@playwright/test";
 
 export const PASSWORT = process.env.DEV_PASSWORD ?? "";
 
-// Es gibt nur noch drei Sorten von Konten: Admin, Mitglied und Kiosk-Geraet.
+// Admin, Mitglied und Kiosk-Geraet, dazu zwei Konten mit offenem Onboarding:
+// neu (erwachsen, ohne Mandat) und kind (minderjaehrig).
 export const NUTZER = {
   mitglied: process.env.DEV_USER_MEMBER ?? "",
   admin: process.env.DEV_USER_ADMIN ?? "",
   kiosk: process.env.DEV_USER_KIOSK ?? "",
+  neu: process.env.DEV_USER_NEU ?? "",
+  kind: process.env.DEV_USER_KIND ?? "",
 };
 
 export async function anmelden(page: Page, email: string) {

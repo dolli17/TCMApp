@@ -426,7 +426,8 @@ async function antragAnnehmen(
   const { data, error } = await alsAufrufer.rpc("accept_membership_application", {
     p_application_id: antrag.id,
     p_number: antrag.nummer || undefined,
-    p_fee_type_ids: antrag.beitragsart ? [antrag.beitragsart] : undefined,
+    // Ein leeres Array heißt „später festlegen“, ohne Angabe nähme die RPC den Wunsch aus dem Antrag.
+    p_fee_type_ids: antrag.beitragsart ? [antrag.beitragsart] : [],
     p_started_on: antrag.eintritt || undefined,
     p_auth_user_id: login.id,
   });

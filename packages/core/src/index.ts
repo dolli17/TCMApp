@@ -14,6 +14,7 @@ export * from "./rollen";
 export * from "./forderungen";
 export * from "./client";
 export * from "./schemas";
+export * from "./onboarding";
 export type { Database, Json } from "./database.types";
 export * from "./sepa/types";
 export * from "./sepa/validation";
