@@ -10,9 +10,11 @@ import {
   minutesToTime,
   slotsForDay,
   timeToMinutes,
+  umsetzZiele,
   type BookingRules,
   type BookingTypeInfo,
   type OccupiedSlot,
+  type UmsetzBuchung,
 } from "./booking";
 
 const REGELN: BookingRules = {
@@ -313,5 +315,88 @@ describe("canStartAt und freeCourtsNow", () => {
       });
       expect(frei.map((f) => f.courtId)).toEqual(["p2", "p4", "p3", "p1"]);
     });
+  });
+});
+
+describe("umsetzZiele", () => {
+  const TAG = "2026-06-15";
+  const um = (hhmm: string, tag = TAG) => berlinTime(tag, timeToMinutes(hhmm));
+  const belegt = (court: string, von: string, bis: string, id = "fremd") => ({
+    booking_id: id,
+    court_id: court,
+    starts_at: um(von).toISOString(),
+    ends_at: um(bis).toISOString(),
+  });
+  // Die Buchung, die umgesetzt wird: Platz 1, 14 bis 15 Uhr.
+  const BUCHUNG: UmsetzBuchung = belegt("p1", "14:00", "15:00", "meine");
+  const ziele = (opts: {
+    occupied?: ReturnType<typeof belegt>[];
+    jetzt?: string;
+    day?: string;
+    booking?: UmsetzBuchung;
+  }) =>
+    umsetzZiele({
+      booking: opts.booking ?? BUCHUNG,
+      day: opts.day ?? TAG,
+      courtIds: ["p1", "p2"],
+      openingMinutes: timeToMinutes("08:00"),
+      closingMinutes: timeToMinutes("21:00"),
+      slotMinutes: 30,
+      occupied: opts.occupied ?? [BUCHUNG],
+      now: um(opts.jetzt ?? "10:00"),
+    });
+  const hat = (liste: { courtId: string; minute: number }[], court: string, zeit: string) =>
+    liste.some((z) => z.courtId === court && z.minute === timeToMinutes(zeit));
+
+  it("bietet freie Plaetze und Zeiten, aber nicht die Lage, in der die Buchung schon liegt", () => {
+    const liste = ziele({});
+    expect(hat(liste, "p2", "14:00")).toBe(true);
+    expect(hat(liste, "p1", "16:00")).toBe(true);
+    expect(hat(liste, "p1", "14:00")).toBe(false);
+  });
+
+  it("zaehlt die eigene alte Lage nicht als belegt", () => {
+    const liste = ziele({});
+    expect(hat(liste, "p1", "14:30")).toBe(true);
+    expect(hat(liste, "p1", "13:30")).toBe(true);
+  });
+
+  it("laesst belegte Zeiten aus, ueber die volle Dauer", () => {
+    const liste = ziele({ occupied: [BUCHUNG, belegt("p2", "16:30", "17:30")] });
+    expect(hat(liste, "p2", "16:00")).toBe(false);
+    expect(hat(liste, "p2", "17:00")).toBe(false);
+    expect(hat(liste, "p2", "15:30")).toBe(true);
+    expect(hat(liste, "p2", "17:30")).toBe(true);
+  });
+
+  it("haelt Vergangenheit und Schluss ein und behaelt die Dauer", () => {
+    const liste = ziele({});
+    expect(hat(liste, "p2", "09:30")).toBe(false);
+    expect(hat(liste, "p2", "10:00")).toBe(true);
+    expect(hat(liste, "p2", "20:00")).toBe(true);
+    expect(hat(liste, "p2", "20:30")).toBe(false);
+  });
+
+  it("bietet auch andere Tage an, ohne Buchungsvorlauf", () => {
+    const liste = ziele({ day: "2026-07-20", occupied: [] });
+    expect(hat(liste, "p1", "08:00")).toBe(true);
+    expect(hat(liste, "p1", "14:00")).toBe(true);
+  });
+
+  it("setzt eine laufende Buchung nur auf andere Plaetze zur selben Zeit", () => {
+    const liste = ziele({ jetzt: "14:20" });
+    expect(liste).toEqual([{ courtId: "p2", minute: timeToMinutes("14:00") }]);
+  });
+
+  it("findet fuer eine laufende Buchung nichts, wenn der andere Platz belegt ist", () => {
+    expect(ziele({ jetzt: "14:20", occupied: [BUCHUNG, belegt("p2", "14:30", "15:30")] })).toEqual([]);
+  });
+
+  it("bietet eine laufende Buchung nicht an einem anderen Tag an", () => {
+    expect(ziele({ jetzt: "14:20", day: "2026-06-16", occupied: [] })).toEqual([]);
+  });
+
+  it("hat fuer eine vergangene Buchung keine Ziele", () => {
+    expect(ziele({ jetzt: "15:00" })).toEqual([]);
   });
 });
