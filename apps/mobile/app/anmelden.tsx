@@ -30,7 +30,8 @@ export default function Anmeldung() {
       setFehler(ergebnis.meldung);
       return;
     }
-    router.replace("/home");
+    // Ueber die Weiche: sie kennt das offene Onboarding.
+    router.replace("/");
   }
 
   return (

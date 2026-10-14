@@ -59,18 +59,26 @@ vi.mock("./supabase", () => ({
 
 const {
   aendereMitspieler,
+  akzeptiereDokumente,
   anmelden,
   bucheGetraenk,
   bucheplatz,
   entferneMerkmal,
+  erteileMandat,
   ladeIchSelbst,
   ladeKontingent,
+  ladeOnboarding,
   sageSerienterminAb,
+  schliesseOnboardingAb,
   setzeMerkmal,
   setzeUm,
   spieleMit,
+  speichereErziehungsberechtigte,
   speichereNotfallkontakt,
+  speichereOnboardingNotfallkontakt,
+  speichereOnboardingStammdaten,
   speichereStammdaten,
+  speichereTennis,
   storniereBuchung,
   storniereGetraenk,
   sucheMitspieler,
@@ -92,9 +100,12 @@ beforeEach(() => {
   listen = {};
   einzelne = {};
 
-  // Angemeldet als Mitglied m-1, ohne Adminrolle.
+  // Angemeldet als Mitglied m-1, ohne Adminrolle, Onboarding erledigt.
   getUser.mockResolvedValue({ data: { user: { id: "auth-1" } } });
-  einzelne.members = { data: { id: "m-1" }, error: null };
+  einzelne.members = {
+    data: { id: "m-1", onboarding_completed_at: "2026-01-01T10:00:00Z" },
+    error: null,
+  };
   listen.member_roles = { data: [], error: null };
 });
 
@@ -122,28 +133,39 @@ describe("anmelden", () => {
 
 describe("ladeIchSelbst", () => {
   it("liefert ohne Rolle weder volle noch Platzrechte", async () => {
-    expect(await ladeIchSelbst()).toEqual({ id: "m-1", admin: false, platzRechte: false });
+    expect(await ladeIchSelbst()).toEqual({
+      id: "m-1", admin: false, platzRechte: false, onboardingErledigt: true,
+    });
   });
 
   it("gibt dem Platzwart Platzrechte, aber keine vollen Rechte", async () => {
     listen.member_roles = { data: [{ role: "groundskeeper" }], error: null };
-    expect(await ladeIchSelbst()).toEqual({ id: "m-1", admin: false, platzRechte: true });
+    expect(await ladeIchSelbst()).toMatchObject({ id: "m-1", admin: false, platzRechte: true });
   });
 
   it.each(["admin", "board"])("gibt %s volle und Platzrechte", async (rolle) => {
     listen.member_roles = { data: [{ role: rolle }], error: null };
-    expect(await ladeIchSelbst()).toEqual({ id: "m-1", admin: true, platzRechte: true });
+    expect(await ladeIchSelbst()).toMatchObject({ id: "m-1", admin: true, platzRechte: true });
   });
 
   it("liefert ohne Anmeldung nichts", async () => {
     getUser.mockResolvedValue({ data: { user: null } });
-    expect(await ladeIchSelbst()).toEqual({ id: null, admin: false, platzRechte: false });
+    expect(await ladeIchSelbst()).toEqual({
+      id: null, admin: false, platzRechte: false, onboardingErledigt: true,
+    });
+  });
+
+  it("meldet ein offenes Onboarding", async () => {
+    einzelne.members = { data: { id: "m-1", onboarding_completed_at: null }, error: null };
+    expect(await ladeIchSelbst()).toMatchObject({ id: "m-1", onboardingErledigt: false });
   });
 
   it("liefert ohne Mitglied nichts, etwa am Kiosk", async () => {
     einzelne.members = { data: null, error: null };
     listen.member_roles = { data: [{ role: "admin" }], error: null };
-    expect(await ladeIchSelbst()).toEqual({ id: null, admin: false, platzRechte: false });
+    expect(await ladeIchSelbst()).toEqual({
+      id: null, admin: false, platzRechte: false, onboardingErledigt: true,
+    });
   });
 });
 
@@ -544,5 +566,161 @@ describe("Getränke", () => {
     const r = await storniereGetraenk("kauf-1");
     expect(r.ok).toBe(false);
     expect(r.meldung).toContain("Stornofenster");
+  });
+});
+
+describe("Onboarding", () => {
+  const STAMMDATEN = {
+    first_name: " Lena ", last_name: "Kurz", title: "", birthday: "03.04.2014",
+    gender: "female" as const, street: "Hauptstr. 1", postcode: "76456", city: "Kuppenheim",
+    phone: "", mobile: "0170 123",
+  };
+
+  it("lädt den Zustand aus my_onboarding", async () => {
+    rpc.mockResolvedValue({ data: { minderjaehrig: true }, error: null });
+    expect(await ladeOnboarding()).toEqual({ minderjaehrig: true });
+    expect(rpc).toHaveBeenCalledWith("my_onboarding");
+  });
+
+  it("liefert null ohne Mitglied", async () => {
+    rpc.mockResolvedValue({ data: null, error: null });
+    expect(await ladeOnboarding()).toBeNull();
+  });
+
+  it("wirft beim Laden einen Satz", async () => {
+    rpc.mockResolvedValue({ data: null, error: { message: "Nicht angemeldet." } });
+    await expect(ladeOnboarding()).rejects.toThrow("Nicht angemeldet.");
+  });
+
+  it("speichert Stammdaten mit ISO-Datum und ohne leere Felder", async () => {
+    rpc.mockResolvedValue({ error: null });
+    const r = await speichereOnboardingStammdaten(STAMMDATEN);
+    expect(r.ok).toBe(true);
+    expect(rpc).toHaveBeenCalledWith("onboarding_save_stammdaten", {
+      p_first_name: "Lena",
+      p_last_name: "Kurz",
+      p_birthday: "2014-04-03",
+      p_gender: "female",
+      p_street: "Hauptstr. 1",
+      p_postcode: "76456",
+      p_city: "Kuppenheim",
+      p_phone: undefined,
+      p_mobile: "0170 123",
+      p_title: undefined,
+    });
+  });
+
+  it("weist ein unlesbares Geburtsdatum ab, bevor es zur Datenbank geht", async () => {
+    const r = await speichereOnboardingStammdaten({ ...STAMMDATEN, birthday: "31.02.2014" });
+    expect(r).toEqual({ ok: false, meldung: "Bitte das Geburtsdatum als TT.MM.JJJJ angeben." });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("liest ein zweistelliges Jahr nicht als Zukunft", async () => {
+    const r = await speichereOnboardingStammdaten({ ...STAMMDATEN, birthday: "03.04.85" });
+    expect(r.ok).toBe(false);
+    expect(r.meldung).toContain("vierstellig");
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("verlangt ein Geschlecht", async () => {
+    const r = await speichereOnboardingStammdaten({ ...STAMMDATEN, gender: "" });
+    expect(r).toEqual({ ok: false, meldung: "Bitte das Geschlecht wählen." });
+  });
+
+  it("reicht die Meldung der Datenbank durch", async () => {
+    rpc.mockResolvedValue({ error: { code: "22023", message: "Pflichtangaben fehlen: Strasse." } });
+    const r = await speichereOnboardingStammdaten(STAMMDATEN);
+    expect(r).toEqual({ ok: false, meldung: "Pflichtangaben fehlen: Strasse." });
+  });
+
+  it("stimmt nur den genannten Texten zu", async () => {
+    rpc.mockResolvedValue({ error: null });
+    await akzeptiereDokumente(["satzung", "datenschutz"]);
+    expect(rpc).toHaveBeenCalledWith("onboarding_accept_documents", {
+      p_codes: ["satzung", "datenschutz"],
+    });
+  });
+
+  it("ruft ohne offene Texte nichts auf", async () => {
+    expect(await akzeptiereDokumente([])).toEqual({ ok: true, meldung: "" });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("speichert die Erziehungsberechtigten mit Zustimmung", async () => {
+    rpc.mockResolvedValue({ error: null });
+    await speichereErziehungsberechtigte({ name: " Eva Kurz ", email: "", phone: "0721 1", zustimmung: true });
+    expect(rpc).toHaveBeenCalledWith("onboarding_save_guardian", {
+      p_name: "Eva Kurz",
+      p_email: undefined,
+      p_phone: "0721 1",
+      p_consent: true,
+    });
+  });
+
+  it("speichert den Notfallkontakt über die RPC", async () => {
+    rpc.mockResolvedValue({ error: null });
+    await speichereOnboardingNotfallkontakt({ name: "Eva", phone: "0721 1", relation: "" });
+    expect(rpc).toHaveBeenCalledWith("onboarding_save_notfallkontakt", {
+      p_name: "Eva",
+      p_phone: "0721 1",
+      p_relation: undefined,
+    });
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("erteilt das Mandat und liefert die Referenz", async () => {
+    rpc.mockResolvedValue({ data: "TCM-0042-01", error: null });
+    const r = await erteileMandat({ iban: "DE89 3704 0044 0532 0130 00", kontoinhaber: "", bestaetigt: true });
+    expect(r).toEqual({ ok: true, meldung: "Das Mandat ist erteilt.", daten: "TCM-0042-01" });
+    expect(rpc).toHaveBeenCalledWith("create_my_sepa_mandate", {
+      p_iban: "DE89 3704 0044 0532 0130 00",
+      p_holder: undefined,
+      p_accept: true,
+    });
+  });
+
+  it("erteilt ohne Bestätigung oder mit falscher IBAN nichts", async () => {
+    expect((await erteileMandat({ iban: "DE89370400440532013000", kontoinhaber: "", bestaetigt: false })).ok).toBe(false);
+    const r = await erteileMandat({ iban: "DE00 1234", kontoinhaber: "", bestaetigt: true });
+    expect(r.meldung).toContain("IBAN");
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("speichert Tennisangaben", async () => {
+    rpc.mockResolvedValue({ error: null });
+    await speichereTennis({ lk: " 18,4 ", nuligaId: "", mannschaftInteresse: true });
+    expect(rpc).toHaveBeenCalledWith("save_my_tennis", {
+      p_tennis_lk: "18,4",
+      p_nuliga_id: undefined,
+      p_mannschaft_interesse: true,
+    });
+  });
+
+  it("schaltet das Konto frei", async () => {
+    rpc.mockResolvedValue({ data: "2026-10-14T10:00:00Z", error: null });
+    expect(await schliesseOnboardingAb()).toEqual({ ok: true, meldung: "Dein Konto ist freigeschaltet." });
+    expect(rpc).toHaveBeenCalledWith("complete_onboarding");
+  });
+
+  it("nennt beim Abschluss die fehlenden Schritte aus dem DETAIL", async () => {
+    rpc.mockResolvedValue({
+      data: null,
+      error: {
+        code: "23514",
+        message: "Es fehlt noch: Satzung, Beitragsordnung und Datenschutz, SEPA-Lastschriftmandat.",
+        details: "rechtliches,sepa",
+      },
+    });
+    const r = await schliesseOnboardingAb();
+    expect(r.ok).toBe(false);
+    expect(r.meldung).toContain("Es fehlt noch");
+    expect(r.fehlt).toEqual(["rechtliches", "sepa"]);
+  });
+
+  it("lässt fehlt weg, wenn das DETAIL nichts Bekanntes enthält", async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: "42501", message: "Nur Mitglieder haben ein Onboarding." } });
+    const r = await schliesseOnboardingAb();
+    expect(r).toEqual({ ok: false, meldung: "Nur Mitglieder haben ein Onboarding." });
   });
 });
