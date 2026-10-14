@@ -27,8 +27,8 @@ const TREFFER_MAX = 8;
  *
  * Die Einzelauswahl-Schwester von Mitspielersuche: dieselbe Bedienung, aber
  * genau ein Treffer statt einer Liste, und ohne Gäste. Gebraucht wird sie
- * überall dort, wo eine Person auf eine andere zeigt – Zahler zuweisen,
- * Login verknüpfen.
+ * überall dort, wo eine Person auf eine andere zeigt, etwa beim Login
+ * verknüpfen.
  *
  * Wie beim Vorbild wird das Verzeichnis vorgeladen und im Browser gefiltert:
  * bei rund 300 Mitgliedern ist jede Netzwerkrunde pro Tastendruck verschwendet.

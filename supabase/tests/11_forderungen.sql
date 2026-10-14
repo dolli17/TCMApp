@@ -77,23 +77,19 @@ begin
 end; $f$;
 
 /**
- * Der Zahler ist der Elternteil, nicht das Kind.
+ * Die Forderung geht immer an das Mitglied selbst, auch bei Kindern.
  *
- * Die Forderung gehoert fachlich zum Kind (member_id), abgebucht wird aber
- * beim Zahler. Steht das falsch herum, zieht der Verein von einem Konto ein,
- * fuer das kein Mandat vorliegt.
+ * Jeder zahlt fuer sich: payer_id ist gleich member_id. Bei einem Kind liegt
+ * am Kind ein eigenes Mandat, dessen Konto den Eltern gehoert.
  */
-create or replace function tests.test_beitragslauf_setzt_den_zahler()
+create or replace function tests.test_beitragsforderung_geht_an_das_mitglied()
 returns setof text language plpgsql as $f$
 -- "kind" waere als Variablenname mehrdeutig: charges hat eine Spalte kind.
-declare adm record; eltern record; sohn record; v_art uuid; v_payer uuid;
+declare adm record; sohn record; v_art uuid; v_payer uuid;
 begin
   select * into adm from tests.fixture_user('admin') limit 1;
-  select * into eltern from tests.fixture_user() limit 1;
   v_art := tests.fixture_beitragsart('ZZTest Jugend', 2032, 6000);
   select * into sohn from tests.fixture_beitragszahler(v_art, 2032) limit 1;
-
-  update public.members set billing_payer_id = eltern.member_id where id = sohn.member_id;
 
   perform tests.act_as(adm.auth_id);
   perform public.fee_run_execute(2032);
@@ -102,11 +98,7 @@ begin
   select c.payer_id into v_payer from public.charges c
    where c.member_id = sohn.member_id and c.kind = 'fee' and c.period_label = '2032';
 
-  return next is(v_payer, eltern.member_id, 'Der Zahler ist der Elternteil');
-  return next is(
-    (select c.member_id from public.charges c
-      where c.member_id = sohn.member_id and c.kind = 'fee' and c.period_label = '2032'),
-    sohn.member_id, 'Die Forderung gehoert weiterhin dem Kind');
+  return next is(v_payer, sohn.member_id, 'Der Zahler ist das Mitglied selbst');
 end; $f$;
 
 /**
@@ -370,8 +362,9 @@ end; $f$;
  * Mindestbetrag.
  *
  * Die Schwelle aus drinks.min_debit_cents wirkt erst beim Einzug und dort je
- * Zahler. Wuerde sie schon hier greifen, verschwaende eine Familie mit drei
- * Kindern zu je 3 Euro dauerhaft aus der Abrechnung.
+ * Mitglied ueber alle offenen Forderungen. Wuerde sie schon hier greifen,
+ * verschwaende ein Monat mit 3 Euro dauerhaft aus der Abrechnung, statt im
+ * Folgemonat mitzugehen.
  */
 create or replace function tests.test_getraenkeforderung_auch_unter_mindestbetrag()
 returns setof text language plpgsql as $f$
@@ -460,23 +453,21 @@ begin
   perform set_config('role', 'postgres', true);
 end; $f$;
 
-/** Eine Forderung von Hand: der Zahler wird mitgezogen. */
-create or replace function tests.test_manuelle_forderung_nimmt_den_zahler()
+/** Eine Forderung von Hand geht ebenfalls an das Mitglied selbst. */
+create or replace function tests.test_manuelle_forderung_geht_an_das_mitglied()
 returns setof text language plpgsql as $f$
-declare adm record; eltern record; sohn record; v_id uuid;
+declare adm record; sohn record; v_id uuid;
 begin
   select * into adm from tests.fixture_user('admin') limit 1;
-  select * into eltern from tests.fixture_user() limit 1;
   select * into sohn from tests.fixture_user() limit 1;
-  update public.members set billing_payer_id = eltern.member_id where id = sohn.member_id;
 
   perform tests.act_as(adm.auth_id);
   select public.create_manual_charge(sohn.member_id, 'misc', 1500, 'ZZTest Trikot') into v_id;
   perform set_config('role', 'postgres', true);
 
   return next is(
-    (select payer_id from public.charges where id = v_id), eltern.member_id,
-    'Auch eine Forderung von Hand geht an den Zahler');
+    (select payer_id from public.charges where id = v_id), sohn.member_id,
+    'Auch eine Forderung von Hand geht an das Mitglied selbst');
 end; $f$;
 
 /** Ohne Beschreibung keine Forderung. */

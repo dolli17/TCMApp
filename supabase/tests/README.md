@@ -30,7 +30,7 @@ sie danach zurück. Die Tests hinterlassen also keinen Zustand – auch nicht di
 | Datei | Inhalt |
 |---|---|
 | `01_constraints.sql` | Doppelbuchungsschutz, Intervallform, Mitspieler-Regeln, gesperrte Abrechnungsperioden, Preisbildung, Idempotenz des Beitragslaufs |
-| `02_rls.sql` | Rollentrennung, Zahler-Beziehung, Bankdaten, Kiosk-Abgrenzung, `anon`, Vollständigkeitsprüfung |
+| `02_rls.sql` | Rollentrennung, Eltern sehen das Kind nicht (jeder zahlt selbst), Bankdaten, Kiosk-Abgrenzung, `anon`, Vollständigkeitsprüfung |
 | `03_rpc_bookings.sql` | Das Regelwerk über `create_booking`: Kontingent, Vorlauf, Öffnungszeiten, Zeitraster, Storno |
 | `04_mitglieder.sql` | Selbstpflege-Erlaubnisliste, Änderungsprotokoll, Mitglieder-RPCs |
 | `05_meine_buchungen.sql` | `my_bookings`, `leave_booking`, Benachrichtigungen |
@@ -39,9 +39,9 @@ sie danach zurück. Die Tests hinterlassen also keinen Zustand – auch nicht di
 | `08_serien_aendern.sql` | `update_series`, `cancel_series_occurrence`, `series_id` im Tagesplan |
 | `09_benachrichtigungs_mails.sql` | Auswahl, Bündelung und Abhaken der Mailbenachrichtigungen |
 | `10_getraenkekarte.sql` | Preise, Preishistorie, Karte pflegen |
-| `11_forderungen.sql` | Beitragslauf, Getränkemonat, Beitragsarten, Forderungen |
-| `12_vorabankuendigung.sql` | Frist, Bündelung je Zahler, Idempotenz der Ankündigung |
-| `13_lastschrift.sql` | Auswahl, Mandat, Bündelung, Datei und Einreichung |
+| `11_forderungen.sql` | Beitragslauf, Getränkemonat, Beitragsarten, Forderungen (immer an das Mitglied selbst) |
+| `12_vorabankuendigung.sql` | Frist, Bündelung je Mitglied, Idempotenz der Ankündigung |
+| `13_lastschrift.sql` | Auswahl, Mandat, Bündelung, drei Kinder mit derselben IBAN ergeben drei Lastschriften, Kontoinhaber als Schuldner, Datei und Einreichung |
 | `14_ruecklaeufer.sql` | Rücklastschrift, Wiedervorlage, Abschluss eines Laufs |
 | `15_arbeitsdienst.sql` | Soll-Regeln, Stunden erfassen, Jahresausgleich |
 | `16_benachrichtigungs_pushes.sql` | Push-Marken, Auswahl und Abhaken der Push-Benachrichtigungen |
@@ -66,7 +66,7 @@ Löschen einer Testfunktion deshalb `pnpm db:reset`.
 **Ein Admin kommt an `public.members` nicht per direktem `UPDATE`.** Die Policy
 `members_admin_all` erlaubt ihm jede Zeile, aber `authenticated` hat auf der Tabelle
 nur einen *Spalten*-Grant. Alles außerhalb dieser Liste – `is_trainer`, `status`,
-`billing_payer_id`, `email` – geht ausschließlich über eine `security definer`-RPC.
+`email` – geht ausschließlich über eine `security definer`-RPC.
 Ein Test, der einen Admin direkt schreiben lässt, prüft die falsche Sache.
 
 ## Zwei Tests, die besonders wichtig sind

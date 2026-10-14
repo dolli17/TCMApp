@@ -273,15 +273,13 @@ begin
     null, 'und ohne Forderung');
 end; $f$;
 
-/** Die Forderung geht an den Zahler und traegt die richtige Art. */
-create or replace function tests.test_dienstforderung_geht_an_den_zahler()
+/** Die Forderung geht an das Mitglied selbst und traegt die richtige Art. */
+create or replace function tests.test_dienstforderung_geht_an_das_mitglied()
 returns setof text language plpgsql as $f$
-declare adm record; eltern record; f record; c record;
+declare adm record; f record; c record;
 begin
   select * into adm from tests.fixture_user('admin') limit 1;
-  select * into eltern from tests.fixture_user() limit 1;
   select * into f from tests.fixture_dienstpflichtig(2023, 6) limit 1;
-  update public.members set billing_payer_id = eltern.member_id where id = f.mitglied;
 
   perform tests.act_as(adm.auth_id);
   perform public.work_duty_settle_year(2023);
@@ -290,7 +288,7 @@ begin
   select * into c from public.charges
    where member_id = f.mitglied and kind = 'work_duty' and period_label = '2023';
 
-  return next is(c.payer_id, eltern.member_id, 'Die Forderung geht an den Zahler');
+  return next is(c.payer_id, f.mitglied, 'Die Forderung geht an das Mitglied selbst');
   return next is(c.amount_cents, 9000, 'sechs Stunden zu 15,00 Euro');
   return next ok(c.description like '%Arbeitsdienst 2023%',
     'und die Beschreibung nennt Jahr und Stunden');

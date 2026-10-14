@@ -45,7 +45,7 @@ export function AnkuendigungNachArt({
     <section className="karte" style={{ marginBottom: 18 }} aria-labelledby="h-ankuendigen">
       <h2 className="dpl" id="h-ankuendigen">Zur Ankündigung bereit</h2>
       <p className="unterzeile">
-        Eingezogen wird nur, was angekündigt ist. Jeder Zahler bekommt eine Nachricht mit
+        Eingezogen wird nur, was angekündigt ist. Jedes Mitglied bekommt eine Nachricht mit
         Betrag und Fälligkeit; erst {fristTage} Tage danach darf der Lastschriftlauf sie
         mitnehmen.
       </p>
@@ -71,7 +71,7 @@ export function AnkuendigungNachArt({
           <li key={z.art}>
             <Listenzeile
               titel={<ArtMarke art={z.art} />}
-              kontext={`${z.anzahl} ${z.anzahl === 1 ? "Forderung" : "Forderungen"} · ${z.zahler} Zahler`}
+              kontext={`${z.anzahl} ${z.anzahl === 1 ? "Forderung" : "Forderungen"} · ${z.zahler} ${z.zahler === 1 ? "Mitglied" : "Mitglieder"}`}
               neben={
                 <span className="neben">
                   <span className="betrag tnum">{formatCents(z.summe_cents)}</span>

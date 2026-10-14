@@ -302,6 +302,7 @@ export function BankUndMandatKarte({
             <label>
               <span>Kontoinhaber</span>
               <input name="holder" placeholder="wie das Mitglied" autoComplete="off" />
+              <span className="beschreibung">Bei Kindern: Name des Elternteils.</span>
             </label>
             <label>
               <span>Bank</span>

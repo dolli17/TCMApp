@@ -7,9 +7,11 @@
 --      ein direkter Insert prallt am Trigger ab. Die Frist ist damit nicht
 --      "verboten", sondern nicht konstruierbar.
 --   2. Ein Mandat traegt jede Forderungsart - Beitrag und Getraenke zusammen.
---   3. Ein Zahler mit mehreren Kindern ergibt EINE Lastschrift. Zwei Posten
---      mit derselben Mandatsreferenz wuerde validateBatch abweisen, und die
---      Bank koennte eine Rueckgabe nicht zuordnen.
+--   3. Ein Mitglied mit mehreren Forderungen ergibt EINE Lastschrift. Zwei
+--      Posten mit derselben Mandatsreferenz wuerde validateBatch abweisen, und
+--      die Bank koennte eine Rueckgabe nicht zuordnen. Drei Kinder einer
+--      Familie dagegen ergeben drei Lastschriften auf dieselbe IBAN, jede mit
+--      eigenem Mandat - jedes Mitglied zahlt selbst.
 --
 -- Wie in den anderen Dateien werden hier nur Funktionen definiert; ausgefuehrt
 -- werden sie in 99_runtests.sql.
@@ -335,34 +337,28 @@ end; $f$;
 -- ---------------------------------------------------------------------------
 
 /**
- * Ein Zahler, drei Kinder, EINE Lastschrift.
+ * Ein Mitglied, drei Forderungen, EINE Lastschrift.
  *
  * validateBatch weist zwei Posten mit derselben Mandatsreferenz ab - zu Recht,
  * denn die Bank koennte eine Rueckgabe nicht zuordnen. Deshalb teilen sich
- * alle Posten eines Zahlers eine end_to_end_id.
+ * alle Posten eines Mitglieds eine end_to_end_id.
  */
-create or replace function tests.test_familie_ergibt_eine_lastschrift()
+create or replace function tests.test_mehrere_posten_ergeben_eine_lastschrift()
 returns setof text language plpgsql as $f$
-declare adm record; eltern record; k1 record; k2 record; k3 record;
+declare adm record; u record;
         v_batch uuid; v_tag date; v record; v_anzahl integer;
 begin
   select * into adm from tests.fixture_user('admin') limit 1;
-  select * into eltern from tests.fixture_user() limit 1;
-  select * into k1 from tests.fixture_user() limit 1;
-  select * into k2 from tests.fixture_user() limit 1;
-  select * into k3 from tests.fixture_user() limit 1;
+  select * into u from tests.fixture_user() limit 1;
 
-  update public.members set billing_payer_id = eltern.member_id
-   where id in (k1.member_id, k2.member_id, k3.member_id);
-
-  perform tests.fixture_mandat(eltern.member_id);
-  perform tests.fixture_angekuendigt(k1.member_id, 9000);
-  perform tests.fixture_angekuendigt(k2.member_id, 9000);
-  perform tests.fixture_angekuendigt(k3.member_id, 9000);
+  perform tests.fixture_mandat(u.member_id);
+  perform tests.fixture_angekuendigt(u.member_id, 9000, 'fee');
+  perform tests.fixture_angekuendigt(u.member_id, 9000, 'drinks');
+  perform tests.fixture_angekuendigt(u.member_id, 9000, 'misc');
   v_tag := tests.fixture_einzugstag();
 
   perform tests.act_as(adm.auth_id);
-  select public.create_debit_batch('ZZTest Familie', v_tag) into v_batch;
+  select public.create_debit_batch('ZZTest Buendel', v_tag) into v_batch;
   select * into v from public.add_charges_to_debit_batch(v_batch);
   perform set_config('role', 'postgres', true);
 
@@ -380,7 +376,59 @@ begin
 end; $f$;
 
 /**
- * Die Kennung bleibt unter 35 Zeichen und unterscheidet die Zahler.
+ * Drei Kinder, dieselbe IBAN, DREI Lastschriften.
+ *
+ * Jedes Kind zahlt selbst: Am Kind liegt ein eigenes Mandat auf das Konto der
+ * Eltern. In der Datei stehen drei Lastschriften auf dieselbe IBAN, jede mit
+ * eigener Mandatsreferenz, und als Schuldner jeweils der Elternteil. Das ist
+ * SEPA-konform.
+ */
+create or replace function tests.test_drei_kinder_gleiche_iban_ergeben_drei_lastschriften()
+returns setof text language plpgsql as $f$
+declare adm record; k record; v_kinder uuid[] := '{}'; v_konto uuid;
+        v_batch uuid; v_tag date; v_kennungen integer; v_refs integer;
+        v_ibans integer; v_schuldner text[];
+begin
+  select * into adm from tests.fixture_user('admin') limit 1;
+  for i in 1..3 loop
+    select * into k from tests.fixture_user(null, 'Kind ' || i) limit 1;
+    v_kinder := v_kinder || k.member_id;
+  end loop;
+
+  perform tests.act_as(adm.auth_id);
+  for i in 1..3 loop
+    select public.add_bank_account(v_kinder[i], 'DE02120300000000202051', 'Erika Elternteil')
+      into v_konto;
+    perform public.create_sepa_mandate(v_kinder[i], v_konto, null, current_date - 30);
+  end loop;
+  perform set_config('role', 'postgres', true);
+
+  for i in 1..3 loop
+    perform tests.fixture_angekuendigt(v_kinder[i], 9000);
+  end loop;
+  v_tag := tests.fixture_einzugstag();
+
+  perform tests.act_as(adm.auth_id);
+  select public.create_debit_batch('ZZTest Familie', v_tag) into v_batch;
+  perform public.add_charges_to_debit_batch(v_batch);
+  select count(distinct p.end_to_end_id)::integer, count(distinct p.mandate_reference)::integer,
+         count(distinct p.debtor_iban)::integer, array_agg(distinct p.debtor_name)
+    into v_kennungen, v_refs, v_ibans, v_schuldner
+  from public.debit_batch_payload(v_batch) p;
+  perform set_config('role', 'postgres', true);
+
+  return next is(v_kennungen, 3, 'Drei Kinder ergeben drei Lastschriften');
+  return next is(v_refs, 3, 'jede mit eigener Mandatsreferenz');
+  return next is(v_ibans, 1, 'alle auf dieselbe IBAN');
+  return next is(v_schuldner, array['Erika Elternteil'],
+    'und als Schuldner steht der Elternteil, dem das Konto gehoert');
+  return next is(
+    (select item_count from public.debit_batches where id = v_batch),
+    3, 'Der Lauf zaehlt drei Lastschriften');
+end; $f$;
+
+/**
+ * Die Kennung bleibt unter 35 Zeichen und unterscheidet die Mitglieder.
  *
  * Gefunden im ersten echten Durchstich: die Kennung war 45 Zeichen lang und
  * wurde beim Schreiben der Datei gekuerzt - am Ende, wo der Zahler steht. Aus
@@ -414,16 +462,16 @@ begin
   return next cmp_ok(v_laenge, '<=', 35,
     'Die Kennung passt in die 35 Zeichen der Datei');
   return next is(v_verschieden, 2,
-    'Zwei Zahler bekommen zwei verschiedene Kennungen');
+    'Zwei Mitglieder bekommen zwei verschiedene Kennungen');
 end; $f$;
 
 /**
  * Zwei kleine Monate ueberschreiten den Mindestbetrag zusammen.
  *
- * Die Schwelle wirkt je Zahler ueber alle offenen Forderungen, nicht je
+ * Die Schwelle wirkt je Mitglied ueber alle offenen Forderungen, nicht je
  * Forderung - sonst bliebe ein Getraenkekonto mit 3 Euro im Monat ewig liegen.
  */
-create or replace function tests.test_mindestbetrag_gilt_je_zahler()
+create or replace function tests.test_mindestbetrag_gilt_je_mitglied()
 returns setof text language plpgsql as $f$
 declare adm record; u record; v_tag date; v_erst boolean; v_dann boolean;
 begin
@@ -496,6 +544,8 @@ begin
 
   return next is(p.debtor_iban, 'DE02120300000000202051',
     'Die IBAN kommt im Klartext - ohne sie laesst sich keine Datei bauen');
+  return next is(p.debtor_name, 'ZZTest Kontoinhaber',
+    'Schuldner ist der Kontoinhaber, nicht das Mitglied');
   return next is(p.amount_cents, 19000, 'mit dem Betrag');
   return next ok(p.end_to_end_id is not null, 'und einer Kennung');
   return next ok(p.mandate_reference is not null, 'und der Mandatsreferenz');

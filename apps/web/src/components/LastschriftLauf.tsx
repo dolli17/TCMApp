@@ -56,11 +56,11 @@ export interface LaufKopf {
  * (Entwurf AdminKasse, docs/design/clubhaus)
  *
  * Oben der naechste Schritt auf brand, darunter der Weg des Geldes
- * (am Telefon senkrecht), dann je Zahler eine Zeile - eine Lastschrift je
- * Zahler, wie sie auf seinem Kontoauszug steht (docs/design/clubhaus/
+ * (am Telefon senkrecht), dann je Mitglied eine Zeile - eine Lastschrift je
+ * Mitglied, wie sie auf dem Kontoauszug steht (docs/design/clubhaus/
  * verwaltung, VwLauf).
  *
- * Ob ein Zahler mitgehen darf, sagt allein die Datenbank
+ * Ob ein Mitglied mitgehen darf, sagt allein die Datenbank
  * (debit_batch_candidates, guard_prenotification). Die Seite zeigt ihren
  * Grund woertlich an und rechnet keine Frist nach. Solange nichts im Lauf ist,
  * gibt es auch keine Datei - der Knopf bleibt mit Schloss gesperrt, daneben
@@ -101,7 +101,7 @@ export function LastschriftLauf({
 
   const weg = debitFlow({
     charges: {
-      payers: posten.length + kandidaten.length,
+      members: posten.length + kandidaten.length,
       totalCents: summeAlle,
       unannounced: 0,
       dueDate: faelligAb,
@@ -110,7 +110,7 @@ export function LastschriftLauf({
       status: lauf.status,
       collectionDate: lauf.collection_date,
       itemCount: lauf.item_count,
-      readyPayers: moeglich.length,
+      readyMembers: moeglich.length,
       returned: zurueckgebucht,
     },
     today: heute,
@@ -137,7 +137,7 @@ export function LastschriftLauf({
 
   const [nurOhneMandat, setNurOhneMandat] = useState(false);
   const ohneMandat = kandidaten.filter((k) => !k.mandate_id);
-  // Ein Lauf hat schnell einige hundert Zahler; die Seite zeigt erst einen
+  // Ein Lauf hat schnell einige hundert Mitglieder; die Seite zeigt erst einen
   // Ausschnitt, der Rest kommt auf Wunsch dazu.
   const [alle, setAlle] = useState(false);
   const zeigePosten = nurOhneMandat ? [] : posten;
@@ -182,7 +182,7 @@ export function LastschriftLauf({
           <>
             <b className="titel">
               {moeglich.length > 0
-                ? "Zahler in den Lauf aufnehmen"
+                ? "Mitglieder in den Lauf aufnehmen"
                 : faelligAb
                   ? `Lastschriftlauf ab ${isoDateLabel(faelligAb)}`
                   : "Noch nichts einzugsfähig"}
@@ -230,7 +230,7 @@ export function LastschriftLauf({
                 disabled={laeuft}
                 onClick={() => starte(async () => melde(await postenAufnehmen(lauf.id, null)))}
               >
-                Noch {moeglich.length} Zahler aufnehmen
+                Noch {moeglich.length} {moeglich.length === 1 ? "Mitglied" : "Mitglieder"} aufnehmen
               </button>
             )}
           </>
@@ -296,14 +296,14 @@ export function LastschriftLauf({
       <div className="verwaltung-raster">
         <section className="je-zahler" aria-labelledby="h-zahler">
           <Gruppenkopf
-            titel="Je Zahler"
+            titel="Je Mitglied"
             id="h-zahler"
             neben={`${posten.length + kandidaten.length} · ${formatCents(summeAlle)}`}
           />
-          <p className="unterzeile">Ein Elternteil mit zwei Kindern = eine Zeile, eine Buchung.</p>
+          <p className="unterzeile">Alle Forderungen eines Mitglieds = eine Zeile, eine Buchung. Geschwister auf demselben Konto ergeben je eine eigene Lastschrift.</p>
 
           {kandidaten.length > 0 && (
-            <div className="filterchips" role="group" aria-label="Zahler filtern">
+            <div className="filterchips" role="group" aria-label="Mitglieder filtern">
               <button type="button" aria-pressed={!nurOhneMandat} onClick={() => setNurOhneMandat(false)}>Alle</button>
               <button type="button" aria-pressed={nurOhneMandat} onClick={() => setNurOhneMandat(true)}>
                 Ohne Mandat · {ohneMandat.length}
@@ -314,7 +314,7 @@ export function LastschriftLauf({
           {posten.length + kandidaten.length === 0 ? (
             <p className="leer-klein">Für diesen Fälligkeitstag liegt keine angekündigte Forderung vor.</p>
           ) : (
-            <ul className="liste-gruppe" aria-label="Je Zahler">
+            <ul className="liste-gruppe" aria-label="Je Mitglied">
               {sichtbarePosten.map((p) => {
                 // Erst nach dem Einreichen: vorher ist noch nichts unterwegs,
                 // das zurückkommen könnte.
@@ -388,7 +388,7 @@ export function LastschriftLauf({
 
         <dl className="karte gross zusammenfassung">
           <div>
-            <dt>Zahler</dt>
+            <dt>Mitglieder</dt>
             <dd className="dpl tnum">{posten.length + kandidaten.length}</dd>
           </div>
           <div>
@@ -425,7 +425,7 @@ export function LastschriftLauf({
           onSchliessen={() => setZurueck(null)}
         >
           <p className="unterzeile">
-            Der Grund geht unverändert an den Zahler – „Konto nicht gedeckt" und
+            Der Grund geht unverändert an das Mitglied – „Konto nicht gedeckt" und
             „Widerspruch" führen zu ganz verschiedenen nächsten Schritten.
           </p>
           <div className="formraster">

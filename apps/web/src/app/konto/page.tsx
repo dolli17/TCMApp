@@ -106,7 +106,6 @@ export default async function KontoSeite() {
                     <b>
                       {CHARGE_KIND_LABEL[f.kind as ChargeKind] ?? f.kind}
                       {f.period_label ? ` ${f.period_label}` : ""}
-                      {f.is_for_other ? ` · für ${f.member_name}` : ""}
                     </b>
                     {f.description && <small>{f.description}</small>}
                     <Statusmarke status={f.status} faellig={f.due_date} />
@@ -146,7 +145,6 @@ export default async function KontoSeite() {
                         </b>
                         <small>
                           {f.description}
-                          {f.is_for_other ? ` · für ${f.member_name}` : ""}
                         </small>
                         <span className="marke-klein grau">{STATUS_TEXT[f.status] ?? f.status}</span>
                       </span>

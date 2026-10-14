@@ -126,21 +126,6 @@ export async function trainerSetzen(id: string, trainer: boolean): Promise<Aktio
   return { ok: true, meldung: trainer ? "Trainer vergeben." : "Trainer entzogen." };
 }
 
-export async function zahlerSetzen(id: string, zahlerId: string | null): Promise<AktionsErgebnis> {
-  const supabase = await createServerSupabase();
-  // Kein Zahler heißt: den Parameter weglassen. Die Datenbank setzt dann ihren
-  // Standardwert null, was genau "zahlt selbst" bedeutet.
-  const { error } = await supabase.rpc("set_billing_payer", {
-    p_member_id: id,
-    p_payer_id: zahlerId ?? undefined,
-  });
-
-  if (error) return { ok: false, meldung: translateDbError(error) };
-
-  neuLaden(id);
-  return { ok: true, meldung: zahlerId ? "Zahler zugewiesen." : "Zahlt jetzt selbst." };
-}
-
 /**
  * Mitgliedschaft beenden.
  *
@@ -208,7 +193,6 @@ export async function mitgliedArchivieren(
   const z = data?.[0];
   const teile = ["Mitglied archiviert."];
   if (z?.cancelled_bookings) teile.push(`${z.cancelled_bookings} künftige Buchungen abgesagt.`);
-  if (z?.released_payees) teile.push(`${z.released_payees} Personen zahlen jetzt selbst.`);
   if (z?.open_charges) teile.push(`${z.open_charges} Forderungen bleiben bestehen.`);
   return { ok: true, meldung: teile.join(" ") };
 }

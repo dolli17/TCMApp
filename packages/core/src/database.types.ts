@@ -2710,10 +2710,6 @@ export type Database = {
           weekday: number
         }[]
       }
-      set_billing_payer: {
-        Args: { p_member_id: string; p_payer_id?: string }
-        Returns: undefined
-      }
       set_court_active: {
         Args: { p_active: boolean; p_id: string }
         Returns: number

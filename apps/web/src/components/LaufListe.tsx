@@ -66,7 +66,7 @@ export async function LaufListe({ laeufe }: { laeufe: LaufZeile[] }) {
       {laeufe.map((l) => {
         const weg = debitFlow({
           charges: {
-            payers: kandidaten.get(l.id)?.alle ?? 0,
+            members: kandidaten.get(l.id)?.alle ?? 0,
             totalCents: 0,
             unannounced: 0,
             dueDate: kandidaten.has(l.id) ? faelligAb : null,
@@ -75,7 +75,7 @@ export async function LaufListe({ laeufe }: { laeufe: LaufZeile[] }) {
             status: l.status as DebitBatchStatus,
             collectionDate: l.collection_date,
             itemCount: l.item_count,
-            readyPayers: kandidaten.get(l.id)?.bereit ?? 0,
+            readyMembers: kandidaten.get(l.id)?.bereit ?? 0,
             returned: l.zurueck,
           },
           today: heute,

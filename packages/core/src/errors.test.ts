@@ -28,7 +28,6 @@ describe("translateDbError", () => {
 
   it("kennt die Constraints der Mitgliederverwaltung", () => {
     expect(translateDbError({ message: "members_nuliga_id_key" })).toContain("nuLiga-Id");
-    expect(translateDbError({ message: "members_no_self_payer" })).toContain("eigener Zahler");
     expect(translateDbError({ message: "members_emergency_contact_paarweise" })).toContain(
       "auch ein Name",
     );

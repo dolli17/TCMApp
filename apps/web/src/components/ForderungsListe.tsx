@@ -79,7 +79,8 @@ export function ForderungsListe({ forderungen }: { forderungen: ForderungZeile[]
                     <ArtMarke art={f.kind} />{" "}
                     {[
                       f.description,
-                      f.payer_id === f.member_id ? null : `Zahler ${f.payer_name}`,
+                      // Nur noch bei alten Forderungen aus der Zeit, als Eltern für Kinder zahlten.
+                      f.payer_id === f.member_id ? null : `bezahlt von ${f.payer_name}`,
                       f.due_date ? `fällig ${DATUM.format(new Date(f.due_date))}` : null,
                     ].filter(Boolean).join(" · ")}
                   </>
@@ -108,7 +109,9 @@ export function ForderungsListe({ forderungen }: { forderungen: ForderungZeile[]
             <div><dt>Betrag</dt><dd className="tnum">{formatCents(gewaehlt.amount_cents)}</dd></div>
             <div><dt>Art</dt><dd>{CHARGE_KIND_LABEL[gewaehlt.kind]}</dd></div>
             <div><dt>Zeitraum</dt><dd>{gewaehlt.period_label ?? "—"}</dd></div>
-            <div><dt>Zahler</dt><dd>{gewaehlt.payer_id === gewaehlt.member_id ? "selbst" : gewaehlt.payer_name}</dd></div>
+            {gewaehlt.payer_id !== gewaehlt.member_id && (
+              <div><dt>Bezahlt von</dt><dd>{gewaehlt.payer_name}</dd></div>
+            )}
             <div><dt>Mandat</dt><dd>{gewaehlt.hat_mandat ? "liegt vor" : "fehlt"}</dd></div>
             <div><dt>Stand</dt><dd>{STAND[gewaehlt.status]}</dd></div>
           </dl>

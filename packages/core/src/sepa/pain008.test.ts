@@ -234,7 +234,7 @@ describe("Abbruchbedingungen", () => {
 
   it("bricht bei zu langer Kennung ab, statt sie zu kuerzen", () => {
     // Gefunden im ersten echten Durchstich: die Kennung war 45 Zeichen lang,
-    // wurde beim Schreiben auf 35 gekuerzt - und zwar am Ende, wo der Zahler
+    // wurde beim Schreiben auf 35 gekuerzt - und zwar am Ende, wo das Mitglied
     // steht. Aus 300 unterscheidbaren Lastschriften wurden 300 mit derselben
     // Kennung, ohne dass irgendetwas fehlgeschlagen waere.
     expect(() =>

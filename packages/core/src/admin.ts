@@ -26,7 +26,7 @@ export interface DebitStep {
 export interface DebitFlowInput {
   /** Die Forderungen, um die es geht - im Lauf oder auf dem Weg dorthin. */
   charges: {
-    payers: number;
+    members: number;
     totalCents: number;
     /** Offen und noch nicht angekuendigt */
     unannounced: number;
@@ -38,8 +38,8 @@ export interface DebitFlowInput {
     status: DebitBatchStatus;
     collectionDate: string;
     itemCount: number;
-    /** Zahler, die die Datenbank fuer diesen Lauf als einzugsfaehig meldet */
-    readyPayers: number;
+    /** Mitglieder, die die Datenbank fuer diesen Lauf als einzugsfaehig meldet */
+    readyMembers: number;
     returned: number;
   } | null;
   /** Heute in Berlin, ISO (YYYY-MM-DD) */
@@ -82,11 +82,11 @@ export function debitFlow(input: DebitFlowInput): DebitFlow {
   const fristLaeuft = frist !== null && frist > today;
 
   const erledigt: Record<DebitStepKey, boolean> = {
-    forderung: charges.payers > 0 || imLauf || weiter,
-    // Ist ein Zahler einzugsfaehig oder schon im Lauf, hat die Datenbank die
+    forderung: charges.members > 0 || imLauf || weiter,
+    // Ist ein Mitglied einzugsfaehig oder schon im Lauf, hat die Datenbank die
     // Frist fuer ihn bestaetigt. Ohne Lauf zaehlt der angekuendigte Tag.
     ankuendigung:
-      imLauf || weiter || (batch?.readyPayers ?? 0) > 0 ||
+      imLauf || weiter || (batch?.readyMembers ?? 0) > 0 ||
       (batch === null && charges.unannounced === 0 && frist !== null && !fristLaeuft),
     lauf: imLauf || weiter,
     datei: weiter,
@@ -101,21 +101,21 @@ export function debitFlow(input: DebitFlowInput): DebitFlow {
 
   const info: Record<DebitStepKey, string> = {
     forderung:
-      charges.payers > 0
-        ? `${charges.payers} Zahler, ${formatCents(charges.totalCents)}`
+      charges.members > 0
+        ? `${charges.members} ${charges.members === 1 ? "Mitglied" : "Mitglieder"}, ${formatCents(charges.totalCents)}`
         : erledigt.forderung ? "erzeugt" : "Noch keine offene Forderung",
     ankuendigung:
       stand("ankuendigung") === "erledigt"
         ? frist ? `angekündigt zum ${isoDateLabel(frist)}` : "angekündigt"
         : charges.unannounced > 0
           ? `${charges.unannounced} noch nicht angekündigt`
-          : frist ? `Frist läuft bis ${isoDateLabel(frist)}` : "Vorabankündigung je Zahler",
+          : frist ? `Frist läuft bis ${isoDateLabel(frist)}` : "Vorabankündigung je Mitglied",
     lauf: !batch
       ? frist ? `ab ${isoDateLabel(frist)} möglich` : "Noch kein Lauf angelegt"
       : imLauf || weiter
         ? `${batch.itemCount} Posten zum ${isoDateLabel(batch.collectionDate)}`
-        : batch.readyPayers > 0
-          ? `${batch.readyPayers} Zahler einzugsfähig`
+        : batch.readyMembers > 0
+          ? `${batch.readyMembers} ${batch.readyMembers === 1 ? "Mitglied" : "Mitglieder"} einzugsfähig`
           : `Einzug am ${isoDateLabel(batch.collectionDate)}`,
     datei:
       batch?.status === "generated" ? "erzeugt, noch nicht eingereicht"

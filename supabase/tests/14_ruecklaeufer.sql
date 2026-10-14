@@ -4,10 +4,10 @@
 -- Zwei Tests tragen die Datei:
 --
 --   1. Ein Ruecklaeufer trifft ALLE Forderungen seiner Kennung. Fuer die
---      Familienlastschrift ueber 270 Euro kam kein Geld - also fuer keines der
---      drei Kinder. Wuerde nur eine Forderung zurueckfallen, stuenden die
---      anderen beiden als bezahlt da, und der Verein haette 180 Euro
---      verbucht, die nie ankamen.
+--      Lastschrift ueber 270 Euro kam kein Geld - also fuer keine der drei
+--      Forderungen darin. Wuerde nur eine zurueckfallen, stuenden die anderen
+--      beiden als bezahlt da, und der Verein haette 180 Euro verbucht, die nie
+--      ankamen.
 --   2. Danach ist die Forderung wieder aufnehmbar. Der Teilindex deckt nur
 --      'pending' und 'settled' ab und gibt sie mit dem Ruecklaeufer frei.
 --
@@ -15,23 +15,21 @@
 -- werden sie in 99_runtests.sql.
 -- ===========================================================================
 
-/** Ein eingereichter Lauf mit einem Zahler und zwei Kindern. */
-create or replace function tests.fixture_eingereicht(p_kinder integer default 1)
-returns table (lauf uuid, zahler uuid, kennung text, summe integer)
+/** Ein eingereichter Lauf mit einem Mitglied und p_posten Forderungen. */
+create or replace function tests.fixture_eingereicht(p_posten integer default 1)
+returns table (lauf uuid, mitglied uuid, kennung text, summe integer)
 language plpgsql as $f$
 declare
-  adm record; eltern record; k record; v_batch uuid; v_tag date;
+  adm record; u record; v_batch uuid; v_tag date;
   v_summe integer; v_kennung text; i integer;
 begin
   select * into adm from tests.fixture_user('admin') limit 1;
-  select * into eltern from tests.fixture_user() limit 1;
-  perform tests.fixture_mandat(eltern.member_id);
+  select * into u from tests.fixture_user() limit 1;
+  perform tests.fixture_mandat(u.member_id);
   v_tag := tests.fixture_einzugstag();
 
-  for i in 1..p_kinder loop
-    select * into k from tests.fixture_user() limit 1;
-    update public.members set billing_payer_id = eltern.member_id where id = k.member_id;
-    perform tests.fixture_angekuendigt(k.member_id, 9000);
+  for i in 1..p_posten loop
+    perform tests.fixture_angekuendigt(u.member_id, 9000);
   end loop;
 
   perform tests.act_as(adm.auth_id);
@@ -45,7 +43,7 @@ begin
   select i.end_to_end_id into v_kennung
   from public.debit_items i where i.batch_id = v_batch limit 1;
 
-  return query select v_batch, eltern.member_id, v_kennung, v_summe;
+  return query select v_batch, u.member_id, v_kennung, v_summe;
 end; $f$;
 
 /**
@@ -110,8 +108,8 @@ begin
     'Die zurueckgebuchte Forderung geht in den naechsten Lauf');
 end; $f$;
 
-/** Der Zahler bekommt genau eine Nachricht, mit dem Grund. */
-create or replace function tests.test_ruecklaeufer_benachrichtigt_den_zahler()
+/** Das Mitglied bekommt genau eine Nachricht, mit dem Grund. */
+create or replace function tests.test_ruecklaeufer_benachrichtigt_das_mitglied()
 returns setof text language plpgsql as $f$
 declare adm record; f record; v_anzahl integer; v_text text;
 begin
@@ -124,9 +122,9 @@ begin
 
   select count(*)::integer, max(body) into v_anzahl, v_text
   from public.notifications
-  where member_id = f.zahler and kind = 'charge_returned';
+  where member_id = f.mitglied and kind = 'charge_returned';
 
-  return next is(v_anzahl, 1, 'Eine Nachricht, nicht eine je Kind');
+  return next is(v_anzahl, 1, 'Eine Nachricht, nicht eine je Forderung');
   return next ok(v_text like '%Konto erloschen%',
     'Der Grund steht drin - er entscheidet ueber den naechsten Schritt');
   return next ok(v_text like '%180,00 Euro%', 'und der Betrag, der zurueckkam');
@@ -197,7 +195,7 @@ begin
   select * into adm from tests.fixture_user('admin') limit 1;
   v_tag := tests.fixture_einzugstag();
 
-  -- Zwei Zahler in einem Lauf, damit einer zurueckkommen kann.
+  -- Zwei Mitglieder in einem Lauf, damit eines zurueckkommen kann.
   select * into eltern from tests.fixture_user() limit 1;
   perform tests.fixture_mandat(eltern.member_id);
   perform tests.fixture_angekuendigt(eltern.member_id, 9000);

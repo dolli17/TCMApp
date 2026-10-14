@@ -70,7 +70,7 @@ export default async function MitgliederSeite({
         p_limit: 1000,
       }),
       supabase.from("member_fees").select("member_id, fee_types(code, name, sort_order)").eq("year", jahr),
-      supabase.from("members").select("id, team_id, is_team_captain, billing_payer_id"),
+      supabase.from("members").select("id, team_id, is_team_captain"),
       supabase.from("teams").select("id, name"),
       supabase.from("sepa_mandates").select("member_id").eq("status", "active"),
       supabase
@@ -98,16 +98,13 @@ export default async function MitgliederSeite({
   const zeilen = (data ?? []).map((m) => {
     const fees = (beitrag.get(m.id) ?? []).sort((a, b) => a.sort_order - b.sort_order);
     const z = zuordnung.get(m.id);
-    // Das Mandat haengt am Zahler: ein Kind, das die Eltern bezahlen, hat
-    // eines, wenn die Eltern eines haben.
-    const zahler = z?.billing_payer_id ?? m.id;
     return {
       ...m,
       beitragsart: fees.map((f) => f.name).join(" + ") || null,
       kategorie: memberCategory(fees),
       mannschaft: z?.team_id ? mannschaft.get(z.team_id) ?? null : null,
       is_team_captain: z?.is_team_captain ?? false,
-      mandat: mitMandat.has(zahler),
+      mandat: mitMandat.has(m.id),
       offenCents: offen.get(m.id) ?? 0,
     };
   });
@@ -199,7 +196,6 @@ export default async function MitgliederSeite({
                           m.mannschaft,
                           m.status === "archived" ? "archiviert" : m.status === "inactive" ? "inaktiv" : null,
                           ...rollenMarken(m),
-                          m.is_paid_by ? "fremdgezahlt" : null,
                         ].filter(Boolean).join(" · ") || "ohne Beitragsart"}
                         {/* Die E-Mail macht Namensgleiche unterscheidbar, auch vorgelesen */}
                         {m.email && <span className="sr-only"> · {m.email}</span>}

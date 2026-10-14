@@ -59,7 +59,7 @@ export async function getCurrentMember() {
 
   const { data: member } = await supabase
     .from("members")
-    .select("id, first_name, last_name, email, billing_payer_id")
+    .select("id, first_name, last_name, email")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
