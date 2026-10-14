@@ -9,7 +9,7 @@ const DATUM = new Intl.DateTimeFormat("de-DE");
 /**
  * Die Vorabankündigung.
  *
- * Vor jedem SEPA-Einzug muss der Zahler wissen, wie viel wann von seinem Konto
+ * Vor jedem SEPA-Einzug muss das Mitglied wissen, wie viel wann von seinem Konto
  * abgeht. Praktisch gesehen ist die unangekündigte Abbuchung der häufigste
  * Grund für eine Rücklastschrift — und die kostet den Verein Gebühren.
  *
@@ -42,8 +42,8 @@ export function AnkuendigungsKarte({
     <section className="karte" style={{ marginBottom: 18 }}>
       <h2 className="dpl">Vorabankündigung</h2>
       <p className="unterzeile">
-        Jeder Zahler bekommt eine Nachricht mit Gesamtbetrag und Fälligkeit – eine je Zahler,
-        nicht eine je Kind. Erst {fristTage} Tage danach darf eingezogen werden.
+        Jedes Mitglied bekommt eine Nachricht mit Gesamtbetrag und Fälligkeit – eine je Mitglied,
+        nicht eine je Forderung. Erst {fristTage} Tage danach darf eingezogen werden.
       </p>
 
       {meldung && (

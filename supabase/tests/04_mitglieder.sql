@@ -424,65 +424,31 @@ begin
 end; $f$;
 
 -- ---------------------------------------------------------------------------
--- Zahlerbeziehung
+-- Keine Zahlerbeziehung mehr: jedes Mitglied zahlt selbst
 -- ---------------------------------------------------------------------------
 
-create or replace function tests.test_zahler_zyklus_wird_verhindert()
+create or replace function tests.test_create_member_weist_zahler_ab()
 returns setof text language plpgsql as $f$
-declare a record; b record; c record;
+declare a record; b record;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
   select * into b from tests.fixture_user() limit 1;
-  select * into c from tests.fixture_user() limit 1;
   perform tests.act_as(a.auth_id);
 
-  perform public.set_billing_payer(b.member_id, c.member_id);
-
   return next throws_ok(
-    format($q$select public.set_billing_payer(%L, %L)$q$, c.member_id, b.member_id),
-    '23514', null, 'B zahlt fuer C, also darf C nicht fuer B zahlen');
-
-  return next throws_ok(
-    format($q$select public.set_billing_payer(%L, %L)$q$, b.member_id, b.member_id),
-    '23514', null, 'Niemand ist sein eigener Zahler');
+    format($q$select public.create_member('Paul', 'Kind', p_billing_payer_id => %L)$q$, b.member_id),
+    '22023', null, 'create_member weist einen Zahler ab');
 
   perform set_config('role', 'postgres', true);
 end; $f$;
 
-create or replace function tests.test_zahler_kette_max_zwei_stufen()
+create or replace function tests.test_zahler_zuweisen_gibt_es_nicht_mehr()
 returns setof text language plpgsql as $f$
-declare a record; b record; c record; d record;
 begin
-  select * into a from tests.fixture_user('admin') limit 1;
-  select * into b from tests.fixture_user() limit 1;
-  select * into c from tests.fixture_user() limit 1;
-  select * into d from tests.fixture_user() limit 1;
-  perform tests.act_as(a.auth_id);
-
-  perform public.set_billing_payer(b.member_id, c.member_id);
-
-  return next throws_ok(
-    format($q$select public.set_billing_payer(%L, %L)$q$, c.member_id, d.member_id),
-    '23514', null, 'Eine dritte Stufe in der Zahlerkette wird abgewiesen');
-
-  perform set_config('role', 'postgres', true);
-end; $f$;
-
-create or replace function tests.test_zahler_trigger_greift_auch_ohne_rpc()
-returns setof text language plpgsql as $f$
-declare b record; c record;
-begin
-  select * into b from tests.fixture_user() limit 1;
-  select * into c from tests.fixture_user() limit 1;
-
-  -- Als Eigentuemer, also ohne jede Policy und ohne RPC: der Trigger ist die
-  -- letzte Schranke und muss auch hier greifen.
-  update public.members set billing_payer_id = c.member_id where id = b.member_id;
-
-  return next throws_ok(
-    format('update public.members set billing_payer_id = %L where id = %L',
-           b.member_id, c.member_id),
-    '23514', null, 'Auch ein direktes Update kann keinen Kreis anlegen');
+  return next hasnt_function('public', 'set_billing_payer', array['uuid', 'uuid'],
+    'set_billing_payer ist entfernt');
+  return next hasnt_trigger('public', 'members', 'members_guard_payer_cycle',
+    'Der Trigger zur Zahlerkette ist entfernt');
 end; $f$;
 
 -- ---------------------------------------------------------------------------
@@ -585,20 +551,19 @@ begin
   return next is(v_nachher, v_vorher, 'Die Forderung besteht nach dem Archivieren weiter');
 end; $f$;
 
-create or replace function tests.test_archivieren_loest_zahlerbeziehungen()
+create or replace function tests.test_archivieren_meldet_keine_zahler()
 returns setof text language plpgsql as $f$
-declare a record; v_eltern uuid; v_kind uuid;
+declare a record; v_neu uuid; v_geloest integer; v_payees integer;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
   perform tests.act_as(a.auth_id);
-  v_eltern := public.create_member('Petra', 'Zahler');
-  v_kind   := public.create_member('Paul', 'Zahler');
-  perform public.set_billing_payer(v_kind, v_eltern);
-  perform public.archive_member(v_eltern);
+  v_neu := public.create_member('Petra', 'Selbstzahler');
+  select payees into v_payees from public.member_delete_impact(v_neu);
+  select released_payees into v_geloest from public.archive_member(v_neu);
   perform set_config('role', 'postgres', true);
 
-  return next is((select billing_payer_id from public.members where id = v_kind), null,
-    'Wer vom Archivierten bezahlt wurde, zahlt danach selbst');
+  return next is(v_payees, 0, 'member_delete_impact meldet keine bezahlten Mitglieder');
+  return next is(v_geloest, 0, 'archive_member loest keine Zahlerbeziehungen');
 end; $f$;
 
 create or replace function tests.test_admin_kann_sich_nicht_selbst_archivieren()
@@ -764,9 +729,6 @@ begin
     format($q$select public.set_member_role(%L, 'admin', true)$q$, a.member_id),
     '42501', null, 'set_member_role ist Admins vorbehalten');
   return next throws_ok(
-    format($q$select public.set_billing_payer(%L, %L)$q$, a.member_id, b.member_id),
-    '42501', null, 'set_billing_payer ist Admins vorbehalten');
-  return next throws_ok(
     format($q$select * from public.archive_member(%L)$q$, b.member_id),
     '42501', null, 'archive_member ist Admins vorbehalten');
   return next throws_ok(
@@ -890,19 +852,20 @@ begin
   return next is(v_da, 0, 'Nach dem Widerruf ist die Zeile weg');
 end; $f$;
 
-create or replace function tests.test_zahler_darf_merkmal_fuers_kind_setzen()
+-- Jeder zahlt selbst: ein Elternteil hat keinen Zugriff mehr auf das Kind.
+-- Das Kind setzt die Einwilligung ueber seinen eigenen Login.
+create or replace function tests.test_eltern_duerfen_merkmal_fuers_kind_nicht_setzen()
 returns setof text language plpgsql as $f$
 declare eltern record; kind uuid;
 begin
   select * into eltern from tests.fixture_user() limit 1;
   kind := tests.fixture_member('Kind');
-  update public.members set billing_payer_id = eltern.member_id where id = kind;
   perform tests.fixture_merkmal('t_foto2', 'boolean', true);
   perform tests.act_as(eltern.auth_id);
 
-  return next lives_ok(
+  return next throws_ok(
     format($q$select public.set_member_attribute(%L, 't_foto2')$q$, kind),
-    'Ein Elternteil erteilt die Einwilligung fuer das Kind');
+    '42501', null, 'Ein Elternteil setzt kein Merkmal fuer das Kind');
 
   perform set_config('role', 'postgres', true);
 end; $f$;

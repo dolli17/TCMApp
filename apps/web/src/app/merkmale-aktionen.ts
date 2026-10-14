@@ -15,7 +15,7 @@ export interface AktionsErgebnis {
  * Liegt bewusst nicht bei einer der beiden Routen: dieselben Aktionen tragen
  * die Adminansicht auf der Mitglieder-Detailseite und die Einwilligungen im
  * Konto. Wer darf was, entscheidet ohnehin die Datenbank – `self_editable`
- * am Merkmal plus die Zahler-Beziehung.
+ * am Merkmal, und jedes Mitglied sieht nur sich selbst.
  */
 
 function neuLaden(mitgliedId: string) {

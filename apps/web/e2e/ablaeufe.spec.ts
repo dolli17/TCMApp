@@ -1167,7 +1167,7 @@ test.describe("Verwaltung", () => {
     const karte = page
       .locator("section.karte")
       .filter({ has: page.getByRole("heading", { name: "Vorabankündigung" }) });
-    await expect(karte).toContainText("eine je Zahler");
+    await expect(karte).toContainText("eine je Mitglied");
 
     // Steht etwas an, nimmt das Feld gar kein zu frühes Datum an — die Frist
     // wird nicht erst beim Absenden geprüft. Ob gerade etwas ansteht, hängt

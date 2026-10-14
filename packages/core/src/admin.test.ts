@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { adminTodos, debitFlow, isoDateLabel, memberCategory, type DebitFlowInput } from "./admin";
 
 const HEUTE = "2026-09-28";
-const keineForderung = { payers: 0, totalCents: 0, unannounced: 0, dueDate: null };
+const keineForderung = { members: 0, totalCents: 0, unannounced: 0, dueDate: null };
 const lauf = (b: Partial<NonNullable<DebitFlowInput["batch"]>> = {}) => ({
-  status: "draft" as const, collectionDate: "2026-10-15", itemCount: 0, readyPayers: 0, returned: 0, ...b,
+  status: "draft" as const, collectionDate: "2026-10-15", itemCount: 0, readyMembers: 0, returned: 0, ...b,
 });
 const staende = (input: DebitFlowInput) => debitFlow(input).steps.map((s) => s.state);
 
@@ -25,17 +25,17 @@ describe("debitFlow", () => {
 
   it("nicht angekuendigte Forderungen: Ankuendigung ist dran", () => {
     const f = debitFlow({
-      charges: { payers: 3, totalCents: 36000, unannounced: 4, dueDate: null }, batch: null, today: HEUTE,
+      charges: { members: 3, totalCents: 36000, unannounced: 4, dueDate: null }, batch: null, today: HEUTE,
     });
     expect(f.current).toBe("ankuendigung");
-    expect(f.steps[0]!.info).toMatch(/^3 Zahler, 360,00/);
+    expect(f.steps[0]!.info).toMatch(/^3 Mitglieder, 360,00/);
     expect(f.steps[1]!.info).toBe("4 noch nicht angekündigt");
     expect(f.label).toBe("Ankündigung offen");
   });
 
   it("die Frist laeuft: gelb mit Datum, der Lauf erst ab dann", () => {
     const f = debitFlow({
-      charges: { payers: 3, totalCents: 36000, unannounced: 0, dueDate: "2026-10-12" }, batch: null, today: HEUTE,
+      charges: { members: 3, totalCents: 36000, unannounced: 0, dueDate: "2026-10-12" }, batch: null, today: HEUTE,
     });
     expect(f.current).toBe("ankuendigung");
     expect(f.steps[1]!.info).toBe("Frist läuft bis 12.10.2026");
@@ -43,24 +43,24 @@ describe("debitFlow", () => {
     expect(f.label).toBe("Vorabankündigung läuft");
   });
 
-  it("ein Lauf ohne einzugsfaehige Zahler bleibt bei der Ankuendigung", () => {
+  it("ein Lauf ohne einzugsfaehige Mitglieder bleibt bei der Ankuendigung", () => {
     const f = debitFlow({
-      charges: { payers: 2, totalCents: 1000, unannounced: 0, dueDate: "2026-10-12" },
-      batch: lauf({ readyPayers: 0 }),
+      charges: { members: 2, totalCents: 1000, unannounced: 0, dueDate: "2026-10-12" },
+      batch: lauf({ readyMembers: 0 }),
       today: HEUTE,
     });
     expect(f.current).toBe("ankuendigung");
   });
 
-  it("meldet die Datenbank Zahler als einzugsfaehig, ist die Auswahl dran", () => {
+  it("meldet die Datenbank Mitglieder als einzugsfaehig, ist die Auswahl dran", () => {
     const f = debitFlow({
-      charges: { payers: 2, totalCents: 1000, unannounced: 0, dueDate: "2026-10-12" },
-      batch: lauf({ readyPayers: 2 }),
+      charges: { members: 2, totalCents: 1000, unannounced: 0, dueDate: "2026-10-12" },
+      batch: lauf({ readyMembers: 2 }),
       today: HEUTE,
     });
-    expect(staende({ charges: { payers: 2, totalCents: 1000, unannounced: 0, dueDate: null }, batch: lauf({ readyPayers: 2 }), today: HEUTE }))
+    expect(staende({ charges: { members: 2, totalCents: 1000, unannounced: 0, dueDate: null }, batch: lauf({ readyMembers: 2 }), today: HEUTE }))
       .toEqual(["erledigt", "erledigt", "aktuell", "offen", "offen"]);
-    expect(f.steps[2]!.info).toBe("2 Zahler einzugsfähig");
+    expect(f.steps[2]!.info).toBe("2 Mitglieder einzugsfähig");
     expect(f.label).toBe("Auswahl offen");
   });
 
@@ -90,8 +90,8 @@ describe("debitFlow", () => {
 
   it("es gibt immer hoechstens einen aktuellen Schritt, davor nur erledigte", () => {
     const f = debitFlow({
-      charges: { payers: 1, totalCents: 100, unannounced: 1, dueDate: "2026-10-01" },
-      batch: lauf({ readyPayers: 1 }),
+      charges: { members: 1, totalCents: 100, unannounced: 1, dueDate: "2026-10-01" },
+      batch: lauf({ readyMembers: 1 }),
       today: HEUTE,
     });
     const s = f.steps.map((x) => x.state);

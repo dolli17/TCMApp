@@ -227,13 +227,13 @@ export async function forderungenAnkuendigen(daten: {
   }
 
   // Die Zahl der Empfänger steht bewusst daneben: sie ist kleiner als die der
-  // Forderungen, sobald Familien dabei sind, und genau das soll der Vorstand
-  // sehen — je Zahler geht eine Nachricht raus, nicht je Kind.
+  // Forderungen, sobald jemand mehrere offen hat, und genau das soll der
+  // Vorstand sehen — je Mitglied geht eine Nachricht raus, nicht je Forderung.
   return {
     ok: true,
     meldung: `${anzahl} ${anzahl === 1 ? "Forderung" : "Forderungen"} angekündigt, ${
       z?.empfaenger ?? 0
-    } ${(z?.empfaenger ?? 0) === 1 ? "Zahler wurde" : "Zahler wurden"} benachrichtigt.`,
+    } ${(z?.empfaenger ?? 0) === 1 ? "Mitglied wurde" : "Mitglieder wurden"} benachrichtigt.`,
   };
 }
 

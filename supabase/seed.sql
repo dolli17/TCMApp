@@ -323,6 +323,7 @@ with kandidaten as (
          lpad(floor(random() * 9999999999)::text, 10, '0') as konto
   from public.members m
   where random() < 0.94
+    and m.email is not null   -- Kinder: siehe Kinderkonten unten
 ), erzeugt as (
   select
     member_id, first_name, last_name,
@@ -343,6 +344,36 @@ select
   (array['Volksbank Stuttgart','Kreissparkasse Waiblingen','LBBW',
          'comdirect','ING','DKB'])[1 + floor(random() * 6)::int]
 from erzeugt;
+
+-- Kinderkonten
+--
+-- Jedes Mitglied zahlt fuer sich, auch ein Kind. Minderjaehrige ohne eigene
+-- E-Mail bekommen deshalb ein eigenes Konto mit der IBAN eines Erwachsenen,
+-- der als Kontoinhaber eingetragen ist. Das bildet die 36 paidByInfo-Faelle
+-- aus eBuSy ab: drei Kinder einer Familie ergeben drei Lastschriften auf
+-- dieselbe IBAN, jede mit eigener Mandatsreferenz.
+with kinder as (
+  select id, row_number() over (order by id) as rn
+  from public.members
+  where email is null
+), eltern as (
+  select id, first_name, last_name, row_number() over (order by id) as rn
+  from public.members
+  where email is not null
+    and extract(year from age(birthday)) between 30 and 60
+)
+insert into public.bank_accounts
+  (member_id, iban_encrypted, iban_fingerprint, iban_last4, holder, bank_name)
+select
+  k.id,
+  private.encrypt_iban(private.decrypt_iban(ba.iban_encrypted)),
+  ba.iban_fingerprint,
+  ba.iban_last4,
+  e.first_name || ' ' || e.last_name,
+  ba.bank_name
+from kinder k
+join eltern e on e.rn = ((k.rn - 1) % (select count(*) from eltern)) + 1
+join public.bank_accounts ba on ba.member_id = e.id;
 
 -- last_used_on wird aus signed_on abgeleitet, nicht unabhaengig gewuerfelt:
 -- ein Mandat kann nicht benutzt worden sein, bevor es unterschrieben wurde.
@@ -371,29 +402,6 @@ select
        else null end,
   'RCUR'
 from basis;
-
--- ---------------------------------------------------------------------------
--- Zahler-Beziehungen
---
--- Minderjaehrige ohne eigene E-Mail bekommen einen erwachsenen Zahler. Das
--- bildet die 36 paidByInfo-Faelle aus eBuSy ab und ist die Voraussetzung
--- dafuer, dass Eltern die Abrechnung ihrer Kinder sehen.
--- ---------------------------------------------------------------------------
-with kinder as (
-  select id, row_number() over (order by id) as rn
-  from public.members
-  where email is null
-), zahler as (
-  select id, row_number() over (order by id) as rn
-  from public.members
-  where email is not null
-    and extract(year from age(birthday)) between 30 and 60
-)
-update public.members m
-   set billing_payer_id = z.id
-  from kinder k
-  join zahler z on z.rn = ((k.rn - 1) % (select count(*) from zahler)) + 1
- where m.id = k.id;
 
 -- ---------------------------------------------------------------------------
 -- Rollen

@@ -16,7 +16,6 @@ export interface Loeschfolgen {
   work_duty_entries: number;
   mandates: number;
   bank_accounts: number;
-  payees: number;
   can_delete: boolean;
   reason: string | null;
 }

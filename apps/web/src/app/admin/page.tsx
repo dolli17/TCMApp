@@ -96,7 +96,7 @@ export default async function VerwaltungSeite() {
 
   const weg = debitFlow({
     charges: {
-      payers: new Set(unterwegs.map((f) => f.payer_id)).size,
+      members: new Set(unterwegs.map((f) => f.payer_id)).size,
       totalCents: unterwegs.reduce((s, f) => s + f.amount_cents, 0),
       unannounced: unterwegs.filter((f) => f.status === "open").length,
       dueDate: faellig,
@@ -106,7 +106,7 @@ export default async function VerwaltungSeite() {
           status: lauf.status as DebitBatchStatus,
           collectionDate: lauf.collection_date,
           itemCount: lauf.item_count,
-          readyPayers: (kandidatenRes?.data ?? []).filter((k) => k.einzugsfaehig).length,
+          readyMembers: (kandidatenRes?.data ?? []).filter((k) => k.einzugsfaehig).length,
           returned: lauf.zurueck,
         }
       : null,

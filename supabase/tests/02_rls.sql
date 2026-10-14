@@ -86,15 +86,35 @@ begin
   perform set_config('role', 'postgres', true);
 end; $f$;
 
-create or replace function tests.test_rls_zahler_sieht_kind() returns setof text language plpgsql as $f$
-declare eltern record; kind_id uuid; v_count integer;
+-- Jeder zahlt selbst: Eltern sehen die Daten ihres Kindes nicht mehr, auch
+-- keine alte Forderung, die noch auf sie als Zahler laeuft. Das Kind sieht sie
+-- ueber seinen eigenen Login.
+create or replace function tests.test_rls_eltern_sehen_kind_nicht() returns setof text language plpgsql as $f$
+declare eltern record; kind record; v_count integer;
 begin
-  select * into eltern from tests.fixture_user() limit 1;
-  insert into public.members (first_name, last_name, billing_payer_id)
-  values ('Kind', 'Tester', eltern.member_id) returning id into kind_id;
+  select * into eltern from tests.fixture_user(null, 'Eltern') limit 1;
+  select * into kind from tests.fixture_user(null, 'Kind') limit 1;
+  insert into public.bank_accounts (member_id, iban_encrypted, iban_last4, holder)
+  values (kind.member_id, '\x00'::bytea, '1234', 'Eltern Tester');
+  insert into public.charges (member_id, payer_id, kind, period_label, amount_cents, description, status)
+  values (kind.member_id, eltern.member_id, 'fee', '2019', 1000, 'Alter Beitrag', 'settled');
+
   perform tests.act_as(eltern.auth_id);
-  select count(*) into v_count from public.members where id = kind_id;
-  return next is(v_count, 1, 'Zahler sieht die Daten des Kindes');
+  select count(*) into v_count from public.members where id = kind.member_id;
+  return next is(v_count, 0, 'Eltern sehen das Kind nicht in members');
+  select count(*) into v_count from public.bank_accounts where member_id = kind.member_id;
+  return next is(v_count, 0, 'Eltern sehen das Konto des Kindes nicht');
+  select count(*) into v_count from public.charges where member_id = kind.member_id;
+  return next is(v_count, 0, 'Eltern sehen die Forderung des Kindes nicht, auch nicht als alter Zahler');
+  select count(*) into v_count from public.my_charges();
+  return next is(v_count, 0, 'my_charges zeigt den Eltern nichts vom Kind');
+  perform set_config('role', 'postgres', true);
+
+  perform tests.act_as(kind.auth_id);
+  select count(*) into v_count from public.charges where member_id = kind.member_id;
+  return next is(v_count, 1, 'Das Kind sieht seine Forderung selbst');
+  select count(*) into v_count from public.my_charges() where not is_for_other;
+  return next is(v_count, 1, 'my_charges zeigt sie dem Kind, nicht als fremd markiert');
   perform set_config('role', 'postgres', true);
 end; $f$;
 

@@ -162,7 +162,6 @@ export default function Konto() {
                 <Text style={{ fontSize: 15.5, fontFamily: "Barlow_600SemiBold", color: farben.ink }} numberOfLines={1}>
                   {CHARGE_KIND_LABEL[f.kind as ChargeKind] ?? f.kind}
                   {f.period_label ? ` ${f.period_label}` : ""}
-                  {f.is_for_other ? ` · für ${f.member_name}` : ""}
                 </Text>
                 {f.description ? (
                   <Text style={[stil.leise, { fontSize: 12.5, marginTop: 2 }]} numberOfLines={2}>{f.description}</Text>

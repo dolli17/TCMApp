@@ -316,16 +316,18 @@ $$;
 -- ---------------------------------------------------------------------------
 -- Weitere fachliche Constraints
 -- ---------------------------------------------------------------------------
-create or replace function tests.test_mitglied_kann_nicht_sein_eigener_zahler_sein()
+-- Jeder zahlt selbst: billing_payer_id ist nur noch fuer die Abwaerts-
+-- kompatibilitaet da und bleibt leer.
+create or replace function tests.test_mitglied_bekommt_keinen_zahler()
 returns setof text
 language plpgsql
 as $$
-declare v_mem uuid := tests.fixture_member();
+declare v_mem uuid := tests.fixture_member(); v_anderes uuid := tests.fixture_member('Anderes');
 begin
   return next throws_ok(
-    format($q$update public.members set billing_payer_id = %L where id = %L$q$, v_mem, v_mem),
+    format($q$update public.members set billing_payer_id = %L where id = %L$q$, v_anderes, v_mem),
     '23514', null,
-    'Ein Mitglied kann nicht sein eigener Zahler sein'
+    'Ein Mitglied bekommt keinen Zahler mehr'
   );
 end;
 $$;

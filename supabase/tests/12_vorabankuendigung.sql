@@ -1,11 +1,11 @@
 -- ===========================================================================
 -- Die Vorabankuendigung
 --
--- Der wichtigste Test steht ganz oben: ein Zahler mit drei Kindern bekommt
--- EINE Nachricht ueber den Gesamtbetrag, nicht drei ueber Teilbetraege. Genau
--- so wird spaeter auch eingezogen - eine Lastschrift je Zahler -, und wer
--- vorher drei Ankuendigungen ueber je 90 Euro liest, rechnet mit drei
--- Abbuchungen und ruft beim Kassenwart an.
+-- Der wichtigste Test steht ganz oben: ein Mitglied mit drei Forderungen
+-- bekommt EINE Nachricht ueber den Gesamtbetrag, nicht drei ueber
+-- Teilbetraege. Genau so wird spaeter auch eingezogen - eine Lastschrift je
+-- Mitglied -, und wer vorher drei Ankuendigungen ueber je 90 Euro liest,
+-- rechnet mit drei Abbuchungen und ruft beim Kassenwart an.
 --
 -- Wie in den anderen Dateien werden hier nur Funktionen definiert; ausgefuehrt
 -- werden sie in 99_runtests.sql.
@@ -39,26 +39,20 @@ returns date language sql stable as $f$
 $f$;
 
 /**
- * Der Kern: eine Nachricht je Zahler, nicht je Forderung.
+ * Der Kern: eine Nachricht je Mitglied, nicht je Forderung.
  */
-create or replace function tests.test_ankuendigung_buendelt_je_zahler()
+create or replace function tests.test_ankuendigung_buendelt_je_mitglied()
 returns setof text language plpgsql as $f$
-declare adm record; eltern record; k1 record; k2 record; k3 record;
+declare adm record; u record;
         v record; v_anzahl integer; v_text text; v_faellig date;
 begin
   v_faellig := tests.fixture_faellig();
   select * into adm from tests.fixture_user('admin') limit 1;
-  select * into eltern from tests.fixture_user() limit 1;
-  select * into k1 from tests.fixture_user() limit 1;
-  select * into k2 from tests.fixture_user() limit 1;
-  select * into k3 from tests.fixture_user() limit 1;
+  select * into u from tests.fixture_user() limit 1;
 
-  update public.members set billing_payer_id = eltern.member_id
-   where id in (k1.member_id, k2.member_id, k3.member_id);
-
-  perform tests.fixture_forderung(k1.member_id, 9000, 'ZZTest Beitrag Kind 1');
-  perform tests.fixture_forderung(k2.member_id, 9000, 'ZZTest Beitrag Kind 2');
-  perform tests.fixture_forderung(k3.member_id, 9000, 'ZZTest Beitrag Kind 3');
+  perform tests.fixture_forderung(u.member_id, 9000, 'ZZTest Beitrag');
+  perform tests.fixture_forderung(u.member_id, 9000, 'ZZTest Getraenke');
+  perform tests.fixture_forderung(u.member_id, 9000, 'ZZTest Gastgebuehr');
 
   perform tests.act_as(adm.auth_id);
   select * into v from public.announce_charges(v_faellig, 'misc');
@@ -66,10 +60,10 @@ begin
 
   select count(*)::integer, max(body) into v_anzahl, v_text
   from public.notifications
-  where member_id = eltern.member_id and kind = 'charge_announced';
+  where member_id = u.member_id and kind = 'charge_announced';
 
   return next is(v.angekuendigt, 3, 'Alle drei Forderungen sind angekuendigt');
-  return next is(v_anzahl, 1, 'Der Zahler bekommt genau eine Nachricht');
+  return next is(v_anzahl, 1, 'Das Mitglied bekommt genau eine Nachricht');
   return next ok(v_text like '%270,00 Euro%',
     'und darin den Gesamtbetrag, nicht den Teilbetrag');
   return next is(v.empfaenger, 1, 'Die Funktion nennt einen Empfaenger');

@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
         if (!mitglied.email) {
           return antwort(
             false,
-            "Dieses Mitglied hat keine E-Mail-Adresse. Ohne sie ist keine Einladung möglich; bei Kindern übernimmt das der Zahler.",
+            "Dieses Mitglied hat keine E-Mail-Adresse. Ohne sie ist keine Einladung möglich.",
             400,
           );
         }

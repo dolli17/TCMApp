@@ -64,7 +64,7 @@ export async function postenAufnehmen(
     meldung: `${auf} ${auf === 1 ? "Forderung" : "Forderungen"} aufgenommen${
       (z?.uebersprungen ?? 0) > 0
         ? `, ${z!.uebersprungen} ${
-            z!.uebersprungen === 1 ? "Zahler bleibt" : "Zahler bleiben"
+            z!.uebersprungen === 1 ? "Mitglied bleibt" : "Mitglieder bleiben"
           } außen vor`
         : ""
     }.`,
@@ -96,7 +96,7 @@ export async function postenEntfernen(
  * die die Bank bekommen hat.
  *
  * Die Posten werden nach `end_to_end_id` gebündelt: alle Forderungen eines
- * Zahlers ergeben eine Lastschrift. Anders ginge es auch nicht — `validateBatch`
+ * Mitglieds ergeben eine Lastschrift. Anders ginge es auch nicht — `validateBatch`
  * weist zwei Posten mit derselben Mandatsreferenz ab, weil die Bank eine
  * Rückgabe sonst nicht zuordnen könnte.
  */
@@ -116,7 +116,7 @@ export async function dateiErzeugen(batchId: string): Promise<AktionsErgebnis> {
 
   const kopf = zeilen[0]!;
 
-  // Nach Kennung bündeln: ein Posten je Zahler, Beträge addiert, die
+  // Nach Kennung bündeln: ein Posten je Mitglied, Beträge addiert, die
   // Einzelforderungen im Verwendungszweck.
   const gebuendelt = new Map<string, DebtorItem>();
   for (const z of zeilen) {
@@ -229,7 +229,7 @@ export async function ruecklaeuferErfassen(daten: {
     ok: true,
     meldung: `Zurückgebucht: ${anzahl} ${
       anzahl === 1 ? "Forderung steht" : "Forderungen stehen"
-    } wieder offen. ${z?.payer_name ?? "Der Zahler"} wurde benachrichtigt.`,
+    } wieder offen. ${z?.payer_name ?? "Das Mitglied"} wurde benachrichtigt.`,
   };
 }
 

@@ -112,6 +112,11 @@ async function main() {
     (m) => !konten.some((k) => k.ebusy_person_id === m.ebusy_person_id),
   );
   const minderjaehrig = mitglieder.filter((m) => istMinderjaehrig(m.birthday));
+  // Jedes Mitglied zahlt selbst. Wer in eBuSy von jemand anderem bezahlt wurde
+  // und kein eigenes Konto hat, bekaeme sonst keine Lastschrift.
+  const fremdbezahltOhneKonto = personen.filter(
+    (p) => p.paidByInfo?.id && !konten.some((k) => k.ebusy_person_id === p.id),
+  );
 
   const betroffeneVonMailKonflikt = [...mailKonflikte.values()].flat();
   const volljaehrigeInKonflikt = betroffeneVonMailKonflikt.filter(
@@ -138,6 +143,7 @@ async function main() {
   console.warn(`  Personen ohne E-Mail               ${ohneMail.length}  (Kinder brauchen keine)`);
   console.warn(`  Personen ohne Geburtsdatum         ${ohneGeburtstag.length}`);
   console.warn(`  Personen ohne Bankverbindung       ${ohneKonto.length}  (zahlen per Ueberweisung)`);
+  console.warn(`  Von anderen bezahlt, ohne Konto     ${fremdbezahltOhneKonto.length}  <- brauchen ein eigenes Konto mit IBAN und Inhaber der Eltern`);
   console.warn(`  Doppelte Mandatsreferenzen         ${referenzKonflikte.size}`);
   console.warn(
     `    betroffene Mandate               ${

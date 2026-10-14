@@ -130,9 +130,11 @@ describe("mapPerson", () => {
     expect(fake.import_notes).toContain("Platzhalter");
   });
 
-  it("merkt sich den Zahler zur spaeteren Aufloesung", () => {
+  it("weist auf das eigene Konto hin, wenn jemand anderes bezahlt hat", () => {
     const kind = mapPerson({ ...PERSON, paidByInfo: { id: 999 } });
-    expect(kind.ebusy_payer_id).toBe(999);
+    expect(kind).not.toHaveProperty("ebusy_payer_id");
+    expect(kind.import_notes).toContain("Person 999");
+    expect(kind.import_notes).toContain("Inhaber der Eltern");
   });
 });
 

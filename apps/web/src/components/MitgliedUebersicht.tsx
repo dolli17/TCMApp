@@ -29,7 +29,7 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
     await Promise.all([
       supabase
         .from("members")
-        .select("id, first_name, last_name, email, phone, mobile, status, auth_user_id, login_disabled_at, emergency_contact_name, billing_payer_id, is_trainer, is_team_captain, teams(name), member_roles!member_roles_member_id_fkey(role)")
+        .select("id, first_name, last_name, email, phone, mobile, status, auth_user_id, login_disabled_at, emergency_contact_name, is_trainer, is_team_captain, teams(name), member_roles!member_roles_member_id_fkey(role)")
         .eq("id", id)
         .maybeSingle(),
       supabase
@@ -43,7 +43,7 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
       supabase
         .from("charges")
         .select("amount_cents, status")
-        .or(`member_id.eq.${id},payer_id.eq.${id}`)
+        .eq("member_id", id)
         .in("status", OFFEN),
       supabase.rpc("member_finances", { p_member_id: id }),
       supabase.rpc("member_attributes", { p_member_id: id }),
@@ -60,21 +60,14 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
   const m = mitgliedRes.data;
   if (!m) return <div className="hinweis fehler">Dieses Mitglied gibt es nicht.</div>;
 
-  // Das Mandat haengt am Zahler; wer fremdgezahlt wird, sieht das des Zahlers.
-  const zahlerId = m.billing_payer_id ?? m.id;
-  const { data: zahlerMandate } = m.billing_payer_id
-    ? await supabase.from("sepa_mandates").select("id").eq("member_id", zahlerId).eq("status", "active")
-    : { data: null };
-
   const s = mitgliedschaftRes.data;
   const arten = (beitraegeRes.data ?? []).map((b) => b.fee_types?.name).filter(Boolean) as string[];
   const offen = forderungenRes.data ?? [];
   const offenSumme = offen.reduce((x, f) => x + f.amount_cents, 0);
   const finanzen = finanzenRes.data ?? [];
   const konto = finanzen.find((f) => f.konto_aktiv) ?? null;
-  const mandatDa = m.billing_payer_id
-    ? (zahlerMandate ?? []).length > 0
-    : finanzen.some((f) => f.mandat_status === "active");
+  // Jedes Mitglied zahlt selbst, auch ein Kind: das Mandat liegt am Mitglied.
+  const mandatDa = finanzen.some((f) => f.mandat_status === "active");
   const merkmale = merkmaleRes.data ?? [];
   const einwilligungen = merkmale.filter((x) => x.value_kind === "boolean");
   const erteilt = einwilligungen.filter((x) => x.set_at && x.option_value !== "false").length;
@@ -176,7 +169,7 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
             <Listenzeile
               href={teil("bank")}
               titel="SEPA-Mandat"
-              hinweis={mandatDa ? (m.billing_payer_id ? "beim Zahler" : "liegt vor") : "fehlt"}
+              hinweis={mandatDa ? "liegt vor" : "fehlt"}
               hinweisTon={mandatDa ? "gruen" : "rot"}
             />
             <Listenzeile href={teil("bank")} titel="Konto" hinweis={konto ? `•• ${konto.iban_last4}` : "keins"} />

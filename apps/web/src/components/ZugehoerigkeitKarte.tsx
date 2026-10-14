@@ -2,8 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { ROLLEN, hatVolleRechte, type AppRole, type RollenInfo } from "@tcm/core";
-import { rolleSetzen, trainerSetzen, zahlerSetzen } from "@/app/admin/mitglieder/[id]/aktionen";
-import { Personensuche, type Person } from "@/components/Personensuche";
+import { rolleSetzen, trainerSetzen } from "@/app/admin/mitglieder/[id]/aktionen";
 
 interface Props {
   mitgliedId: string;
@@ -13,22 +12,13 @@ interface Props {
   istTrainer: boolean;
   /** Mannschaft und ob dieses Mitglied dort Mannschaftsführer ist */
   mannschaft: { name: string; kapitaen: boolean } | null;
-  /** Zahlt jemand anderes für dieses Mitglied? */
-  zahler: string | null;
-  /** Für wen zahlt dieses Mitglied? */
-  zahltFuer: { id: string; name: string }[];
-  verzeichnis: Person[];
   /** Hat außer diesem Mitglied niemand volle Rechte? Dann bleibt die letzte Rolle gesperrt. */
   einzigeVolleRechte: boolean;
   selbst: boolean;
 }
 
 /**
- * Rollen und Zahlerbeziehung.
- *
- * Beides gehört zusammen, weil beides beschreibt, wie dieses Mitglied zum
- * Rest des Vereins steht – und weil beides eine Beziehung ist, die man leicht
- * versehentlich falsch setzt.
+ * Rollen.
  *
  * Alle Rollen stehen an einer Stelle, auch wenn sie unterschiedlich
  * gespeichert sind: Vorstand, App Admin und Platzwart in member_roles,
@@ -38,7 +28,6 @@ export function ZugehoerigkeitKarte(props: Props) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
   const [entziehenOffen, setEntziehenOffen] = useState<AppRole | null>(null);
-  const [zahlerWahl, setZahlerWahl] = useState<string | null>(props.zahler);
   // Die Schalter springen sofort um und gehen bei einem Fehler zurück.
   const [rollen, setRollen] = useState<string[]>(props.rollen);
   const [istTrainer, setIstTrainer] = useState(props.istTrainer);
@@ -60,15 +49,6 @@ export function ZugehoerigkeitKarte(props: Props) {
       const e = await trainerSetzen(props.mitgliedId, ja);
       setMeldung({ ok: e.ok, text: e.meldung });
       if (!e.ok) setIstTrainer(!ja);
-    });
-  }
-
-  function zahler(id: string | null) {
-    setZahlerWahl(id);
-    starte(async () => {
-      const e = await zahlerSetzen(props.mitgliedId, id);
-      setMeldung({ ok: e.ok, text: e.meldung });
-      if (!e.ok) setZahlerWahl(props.zahler);
     });
   }
 
@@ -122,8 +102,8 @@ export function ZugehoerigkeitKarte(props: Props) {
   }
 
   return (
-    <section className="karte einstellungen" aria-label="Rollen und Zahler">
-      <h2 className="dpl">Rollen und Zahler</h2>
+    <section className="karte einstellungen" aria-label="Rollen">
+      <h2 className="dpl">Rollen</h2>
 
       {meldung && (
         <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">
@@ -164,29 +144,6 @@ export function ZugehoerigkeitKarte(props: Props) {
         {props.mannschaft?.kapitaen && <span className="marke-klein gold">{props.mannschaft.name}</span>}
       </div>
 
-      <div className="einstellung">
-        <span className="titel">Wer bezahlt für dieses Mitglied?</span>
-        <span className="beschreibung">
-          Leer bedeutet: zahlt selbst. Bei Kindern steht hier der Elternteil – Beiträge und
-          Getränke werden dann dort eingezogen.
-        </span>
-
-        {props.zahltFuer.length > 0 ? (
-          <p className="hinweis">
-            Dieses Mitglied zahlt selbst für {props.zahltFuer.map((z) => z.name).join(", ")} und kann
-            deshalb keinen eigenen Zahler bekommen.
-          </p>
-        ) : (
-          <Personensuche
-            verzeichnis={props.verzeichnis}
-            gewaehlt={zahlerWahl}
-            onWahl={zahler}
-            label="Zahler"
-            ausschluss={[props.mitgliedId]}
-            disabled={laeuft}
-          />
-        )}
-      </div>
     </section>
   );
 }

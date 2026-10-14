@@ -30,7 +30,6 @@ const CONSTRAINT_TEXTE: Record<string, string> = {
   memberships_number_key: "Diese Mitgliedsnummer ist bereits vergeben.",
   memberships_one_open_per_member:
     "Dieses Mitglied hat bereits eine laufende Mitgliedschaft.",
-  members_no_self_payer: "Ein Mitglied kann nicht sein eigener Zahler sein.",
   drink_items_name_unique: "Ein Artikel mit diesem Namen existiert bereits.",
   sepa_mandates_used_after_signed:
     "Ein Mandat kann nicht vor seiner Unterschrift benutzt worden sein.",

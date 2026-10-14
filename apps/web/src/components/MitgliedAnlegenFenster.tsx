@@ -27,7 +27,7 @@ export function MitgliedAnlegenFenster({ onSchliessen }: { onSchliessen: () => v
       const e = await mitgliedAnlegen(fd);
       setMeldung({ ok: e.ok, text: e.meldung });
       // Direkt auf die Detailseite: nach dem Anlegen fehlen fast immer noch
-      // Beitragsart, Zahler oder Notfallkontakt.
+      // Beitragsart, Bankverbindung oder Notfallkontakt.
       if (e.ok && e.id) router.push(`/admin/mitglieder/${e.id}`);
     });
   }

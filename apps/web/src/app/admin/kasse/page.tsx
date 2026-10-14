@@ -417,7 +417,7 @@ function Jahresbeitraege({
             <li key={z.member_id}>
               <Listenzeile
                 titel={z.member_name}
-                kontext={`${z.fee_types} · ${z.payer_name ? `Zahler ${z.payer_name}` : "zahlt selbst"} · ${
+                kontext={`${z.fee_types} · ${
                   z.has_mandate ? "Mandat" : "kein Mandat"
                 }`}
                 neben={

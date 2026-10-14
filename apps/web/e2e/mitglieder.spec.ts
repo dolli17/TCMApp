@@ -164,7 +164,7 @@ test.describe("Mitgliederverwaltung", () => {
 
     // Trainer steht bei den Rollen, nicht mehr in der Karte Sport.
     await page.goto(`${adresse.split("?")[0]}?teil=mitgliedschaft`);
-    const rollen = page.locator('section[aria-label="Rollen und Zahler"]');
+    const rollen = page.locator('section[aria-label="Rollen"]');
     await rollen.getByLabel("Trainer").check();
     await expect(rollen.locator(".hinweis.erfolg")).toContainText("Trainer vergeben");
 
@@ -183,7 +183,7 @@ test.describe("Mitgliederverwaltung", () => {
     const adresse = await mitgliedAnlegen(page, nachname);
 
     await page.goto(`${adresse.split("?")[0]}?teil=mitgliedschaft`);
-    const karte = page.locator('section[aria-label="Rollen und Zahler"]');
+    const karte = page.locator('section[aria-label="Rollen"]');
     // Ein frisch angelegtes Mitglied hat noch keinen Zugang.
     await expect(karte.getByLabel("Vorstand")).toBeDisabled();
     await expect(karte.getByLabel("App Admin")).toBeDisabled();
@@ -197,29 +197,18 @@ test.describe("Mitgliederverwaltung", () => {
     await aufraeumen(page, adresse, nachname);
   });
 
-  test("Zahler zuweisen und wieder entfernen", async ({ page }) => {
-    const kind = testName("Kind");
-    const eltern = testName("Eltern");
+  test("jedes Mitglied zahlt selbst: kein Zahler mehr zuzuweisen", async ({ page }) => {
+    const nachname = testName("Selbstzahler");
     await anmelden(page, NUTZER.admin);
+    const adresse = await mitgliedAnlegen(page, nachname);
 
-    const elternAdresse = await mitgliedAnlegen(page, eltern);
-    const kindAdresse = await mitgliedAnlegen(page, kind);
+    await page.goto(`${adresse.split("?")[0]}?teil=mitgliedschaft`);
+    const karte = page.locator('section[aria-label="Rollen"]');
+    await expect(karte.getByRole("heading", { name: "Rollen" })).toBeVisible();
+    await expect(karte.getByLabel("Zahler")).toHaveCount(0);
+    await expect(karte).not.toContainText("Wer bezahlt");
 
-    await page.goto(`${kindAdresse.split("?")[0]}?teil=mitgliedschaft`);
-    const karte = page.locator('section[aria-label="Rollen und Zahler"]');
-    await karte.getByLabel("Zahler").fill(eltern);
-    await karte.locator(".trefferliste li button").first().click();
-    await expect(karte.locator(".hinweis.erfolg")).toContainText("Zahler zugewiesen");
-
-    await page.reload();
-    await expect(karte.locator(".marken li")).toContainText(eltern);
-
-    // Wieder lösen
-    await karte.locator(".marken li button").click();
-    await expect(karte.locator(".hinweis.erfolg")).toContainText("Zahlt jetzt selbst");
-
-    await aufraeumen(page, kindAdresse, kind);
-    await aufraeumen(page, elternAdresse, eltern);
+    await aufraeumen(page, adresse, nachname);
   });
 
   test("Mitgliedschaft beenden und wieder aufnehmen", async ({ page }) => {

@@ -90,8 +90,6 @@ export interface MappedMember {
   status: "active" | "inactive" | "archived";
   source: "ebusy_import";
   legacy_data: Record<string, unknown>;
-  /** Wird in einem zweiten Durchgang aufgeloest, wenn alle Ids bekannt sind. */
-  ebusy_payer_id: number | null;
   import_notes: string | null;
 }
 
@@ -158,6 +156,14 @@ export function mapPerson(p: EbusyPerson): MappedMember {
     hinweise.push(`Platzhalter-Adresse "${p.contact.email}" verworfen`);
   }
   if (!p.birthday) hinweise.push("kein Geburtsdatum");
+  // Eine Zahler-Beziehung gibt es nicht mehr: jedes Mitglied zahlt selbst. Wer
+  // in eBuSy von jemand anderem bezahlt wurde (meist ein Kind), braucht ein
+  // eigenes Konto mit der IBAN und dem Namen des Elternteils als Inhaber.
+  if (p.paidByInfo?.id) {
+    hinweise.push(
+      `wurde in eBuSy von Person ${p.paidByInfo.id} bezahlt: eigenes Konto mit IBAN und Inhaber der Eltern anlegen`,
+    );
+  }
 
   // Felder ohne eigene Spalte gehen nicht verloren, sondern nach legacy_data.
   // Sonst waere der Import verlustbehaftet und nicht wiederholbar.
@@ -195,7 +201,6 @@ export function mapPerson(p: EbusyPerson): MappedMember {
     status: p.archived ? "archived" : "active",
     source: "ebusy_import",
     legacy_data: legacy,
-    ebusy_payer_id: p.paidByInfo?.id ?? null,
     import_notes: hinweise.length > 0 ? hinweise.join("; ") : null,
   };
 }

@@ -172,14 +172,12 @@ export default async function MitgliedSeite({
   const angemeldet = await getCurrentMember();
   const supabase = await createServerSupabase();
 
-  // Sechs unabhängige Abfragen statt einer gebündelten RPC: sie sind über
+  // Fünf unabhängige Abfragen statt einer gebündelten RPC: sie sind über
   // database.types.ts typisiert, und RLS gilt für jede einzeln.
   const [
     mitgliedRes,
     mitgliedschaftenRes,
     rollenRes,
-    zahltFuerRes,
-    verzeichnisRes,
     adminZahlRes,
     mannschaftenRes,
   ] =
@@ -187,7 +185,7 @@ export default async function MitgliedSeite({
       supabase
         .from("members")
         .select(
-          "id, first_name, last_name, title, gender, salutation, birthday, email, phone, mobile, street, postcode, city, country_code, notes, status, is_trainer, nationality_code, tennis_lk, nuliga_id, playing_right, playing_right_since, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, billing_payer_id, auth_user_id, invited_at, login_disabled_at, source, team_id, is_team_captain, teams(name)",
+          "id, first_name, last_name, title, gender, salutation, birthday, email, phone, mobile, street, postcode, city, country_code, notes, status, is_trainer, nationality_code, tennis_lk, nuliga_id, playing_right, playing_right_since, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, auth_user_id, invited_at, login_disabled_at, source, team_id, is_team_captain, teams(name)",
         )
         .eq("id", id)
         .maybeSingle(),
@@ -197,8 +195,6 @@ export default async function MitgliedSeite({
         .eq("member_id", id)
         .order("started_on", { ascending: false }),
       supabase.from("member_roles").select("role").eq("member_id", id),
-      supabase.from("members").select("id, first_name, last_name").eq("billing_payer_id", id),
-      supabase.rpc("member_directory", { p_query: "" }),
       supabase.from("member_roles").select("member_id").in("role", ["admin", "board"]),
       supabase.from("teams").select("id, name, active").order("sort_order").order("name"),
     ]);
@@ -337,12 +333,6 @@ export default async function MitgliedSeite({
             rollen={rollen}
             istTrainer={m.is_trainer}
             mannschaft={m.teams ? { name: m.teams.name, kapitaen: m.is_team_captain } : null}
-            zahler={m.billing_payer_id}
-            zahltFuer={(zahltFuerRes.data ?? []).map((z) => ({
-              id: z.id,
-              name: `${z.first_name} ${z.last_name}`,
-            }))}
-            verzeichnis={verzeichnisRes.data ?? []}
             einzigeVolleRechte={andereMitVollenRechten.size === 0}
             selbst={istSelbst}
           />
@@ -429,10 +419,6 @@ async function BankUndMandat({ id }: { id: string }) {
   return <BankUndMandatKarte mitgliedId={id} zeilen={(data ?? []) as FinanzZeile[]} />;
 }
 
-/**
- * Die Beitragsarten des Jahres und darunter, was daraus an Forderungen
- * entstanden ist - fuer dieses Mitglied oder als Zahler fuer andere.
- */
 /** Die Beitragsarten des Jahres */
 async function Beitraege({ id, jahr }: { id: string; jahr: number }) {
   const supabase = await createServerSupabase();
@@ -441,13 +427,13 @@ async function Beitraege({ id, jahr }: { id: string; jahr: number }) {
   return <BeitragsartenKarte mitgliedId={id} jahr={jahr} zeilen={(data ?? []) as BeitragsZeile[]} />;
 }
 
-/** Was an Forderungen entstanden ist - für dieses Mitglied oder als Zahler für andere. */
+/** Was an Forderungen für dieses Mitglied entstanden ist. Jedes Mitglied zahlt selbst. */
 async function Forderungen({ id }: { id: string }) {
   const supabase = await createServerSupabase();
   const forderungenRes = await supabase
     .from("charges")
-    .select("id, description, amount_cents, status, due_date, created_at, member_id, members!charges_member_id_fkey(first_name, last_name)")
-    .or(`member_id.eq.${id},payer_id.eq.${id}`)
+    .select("id, description, amount_cents, status, due_date, created_at")
+    .eq("member_id", id)
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -467,10 +453,7 @@ async function Forderungen({ id }: { id: string }) {
                 <li key={f.id}>
                   <Listenzeile
                     titel={f.description}
-                    kontext={[
-                      f.member_id === id ? null : `für ${f.members?.first_name ?? ""} ${f.members?.last_name ?? ""}`,
-                      f.due_date ? `fällig ${isoDateLabel(f.due_date)}` : null,
-                    ].filter(Boolean).join(" · ") || undefined}
+                    kontext={f.due_date ? `fällig ${isoDateLabel(f.due_date)}` : undefined}
                     neben={
                       <span className="neben">
                         <span className="betrag tnum">{formatCents(f.amount_cents)}</span>
@@ -528,7 +511,6 @@ async function Gefahrenzone(props: {
     work_duty_entries: 0,
     mandates: 0,
     bank_accounts: 0,
-    payees: 0,
     can_delete: true,
     reason: null,
   }) as Loeschfolgen;
