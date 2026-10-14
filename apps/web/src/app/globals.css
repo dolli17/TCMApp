@@ -1185,6 +1185,10 @@ fieldset.segmente legend { padding: 0; margin-bottom: 8px; font-size: 13px; font
 .segment:has(input:disabled) { opacity: .4; cursor: not-allowed; }
 .segment:has(input:disabled) input { cursor: not-allowed; }
 .segment:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 1px; }
+/* Beim Umsetzen koennen es zwanzig Startzeiten sein: sie brechen um, statt
+   in eine Leiste gequetscht zu werden. */
+.umsetz-zeiten .segment-leiste { flex-wrap: wrap; }
+.umsetz-zeiten .segment { flex: 0 0 auto; min-width: 64px; }
 
 .mitspieler .feldname { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
 .chips, .marken { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }

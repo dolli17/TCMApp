@@ -6,7 +6,9 @@
  * uebersetzt Fehler in verstaendliche Saetze.
  */
 
-import { hatPlatzRechte, hatVolleRechte, memberProfileSchema, translateDbError } from "@tcm/core";
+import {
+  berlinTime, hatPlatzRechte, hatVolleRechte, memberProfileSchema, translateDbError,
+} from "@tcm/core";
 import { supabase } from "./supabase";
 
 export interface Ergebnis<T = void> {
@@ -249,6 +251,34 @@ export async function sageSerienterminAb(bookingId: string, grund?: string): Pro
   });
   if (error) return { ok: false, meldung: translateDbError(error) };
   return { ok: true, meldung: "Der Termin ist abgesagt." };
+}
+
+/**
+ * Eine Buchung auf einen anderen Platz oder eine andere Zeit legen - wie
+ * umsetzen im Web, nur mit Platzrechten.
+ *
+ * Die Startzeit wird hier aus Tag und Minute in Europe/Berlin gebildet, nicht
+ * in der Zeitzone des Telefons - aus demselben Grund wie bei sperreStunde.
+ * Welche Ziele es gibt, rechnet umsetzZiele; durchgesetzt wird alles in
+ * move_booking. Der Grund geht an Bucher und Mitspieler.
+ */
+export async function setzeUm(daten: {
+  bookingId: string;
+  platzId: string;
+  /** JJJJ-MM-TT */
+  tag: string;
+  /** Minuten seit Mitternacht, Berliner Zeit */
+  minute: number;
+  grund?: string;
+}): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("move_booking", {
+    p_booking_id: daten.bookingId,
+    p_court_id: daten.platzId,
+    p_starts_at: berlinTime(daten.tag, daten.minute).toISOString(),
+    p_reason: daten.grund?.trim() || undefined,
+  });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Die Buchung ist umgesetzt." };
 }
 
 /** Vor- und Nachname fuer den Avatar im Kopf - nicht mehr als das. */

@@ -231,3 +231,73 @@ export async function mitspielen(bookingId: string): Promise<AktionsErgebnis> {
   revalidatePath("/plan/spiele");
   return { ok: true, meldung: "Du bist eingetragen. Viel Spaß!" };
 }
+
+/**
+ * Eine Buchung auf einen anderen Platz oder eine andere Zeit legen.
+ *
+ * Nur mit Platzrechten; welche Ziele das Blatt anbietet, rechnet umsetzZiele
+ * (@tcm/core), durchgesetzt wird alles in move_booking. Der Grund steht in der
+ * Nachricht an Bucher und Mitspieler - bei einer fremden Buchung verlangt ihn
+ * die Oberflaeche, wie beim Storno.
+ */
+export async function umsetzen(
+  bookingId: string,
+  courtId: string,
+  startsAt: string,
+  grund?: string,
+): Promise<AktionsErgebnis> {
+  const supabase = await createServerSupabase();
+
+  const { error } = await supabase.rpc("move_booking", {
+    p_booking_id: bookingId,
+    p_court_id: courtId,
+    p_starts_at: startsAt,
+    p_reason: grund?.trim() || undefined,
+  });
+
+  if (error) return { ok: false, meldung: translateDbError(error) };
+
+  // Die Buchung taucht womoeglich an einem anderen Tag wieder auf - und bei
+  // Bucher und Mitspielern in deren Listen.
+  revalidatePath("/plan");
+  revalidatePath("/plan/spiele");
+  revalidatePath("/plan/meine");
+  revalidatePath("/plan/offen");
+  return { ok: true, meldung: "Die Buchung ist umgesetzt." };
+}
+
+/** Was an einem Tag belegt ist - fuer das Umsetzen auf einen anderen Tag. */
+export interface TagesBelegung {
+  booking_id: string;
+  court_id: string;
+  starts_at: string;
+  ends_at: string;
+}
+
+/**
+ * Die Belegung eines anderen Tages nachladen.
+ *
+ * Der Plan kennt nur den Tag, der gerade zu sehen ist. Wer eine Buchung auf
+ * Donnerstag legen will, braucht dessen Belegung, sonst boete das Blatt Zeiten
+ * an, die die Datenbank abweist.
+ */
+export async function belegungAm(
+  tag: string,
+): Promise<AktionsErgebnis & { belegung?: TagesBelegung[] }> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(tag)) return { ok: false, meldung: "Ungültiger Tag." };
+
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.rpc("day_schedule", { p_date: tag });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+
+  return {
+    ok: true,
+    meldung: "",
+    belegung: (data ?? []).map((b) => ({
+      booking_id: b.booking_id,
+      court_id: b.court_id,
+      starts_at: b.starts_at,
+      ends_at: b.ends_at,
+    })),
+  };
+}

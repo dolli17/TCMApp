@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
-import { berlinTime } from "@tcm/core";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { berlinTime, umsetzZiele } from "@tcm/core";
+import type { AktionsErgebnis, TagesBelegung } from "@/app/plan/aktionen";
 import {
   alsUhrzeit, lokaleMinuten,
-  type Buchungsart, type Fenster, type Mitglied, type Platz,
+  type Belegung, type Buchungsart, type Fenster, type Mitglied, type Platz,
 } from "@/components/Belegungsplan";
 import { initialen, Mitspielersuche } from "@/components/Mitspielersuche";
 
@@ -12,10 +13,16 @@ interface Props {
   fenster: Fenster;
   datum: string;
   plaetze: Platz[];
+  /** Belegung des Tages, der im Plan zu sehen ist - fuer die Ziele beim Umsetzen. */
+  belegungen: Belegung[];
   arten: Buchungsart[];
   verzeichnis: Mitglied[];
   /** Eigene Mitglieds-Id, damit man sich nicht selbst als Mitspieler waehlt. */
   meineId: string | null;
+  /** Jetzt, mit der Uhr des Plans - entscheidet, ob eine Buchung schon laeuft. */
+  jetzt: Date;
+  oeffnungMinuten: number;
+  schlussMinuten: number;
   /** Nur im Buchen-Modus: die in diesem Anzeigeblock noch freien Startzeiten. */
   startzeiten: number[];
   rasterMinuten: number;
@@ -31,6 +38,10 @@ interface Props {
   onSpeichern: (bookingId: string, mitgliedIds: string[], gaeste: string[]) => void;
   onStornieren: (bookingId: string, grund?: string) => void;
   onTerminAbsagen: (bookingId: string, grund?: string) => void;
+  /** startsAt als ISO-Zeitstempel, schon in Berliner Zeit gebildet. */
+  onUmsetzen: (bookingId: string, courtId: string, startsAt: string, grund?: string) => void;
+  /** Belegung eines anderen Tages, fuer das Umsetzen dorthin. */
+  onTagLaden: (tag: string) => Promise<AktionsErgebnis & { belegung?: TagesBelegung[] }>;
   /** Gibt die Zahl der Kollisionen zurueck, wenn ohne Verdraengen abgebrochen wurde. */
   onSperren: (
     courtId: string, minute: number, grund: string, verdraengen: boolean,
@@ -342,6 +353,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
   const [mitglieder, setMitglieder] = useState<string[]>(b.player_member_ids ?? []);
   const [gaeste, setGaeste] = useState<string[]>(b.guest_names ?? []);
   const [stornoOffen, setStornoOffen] = useState(false);
+  const [umsetzOffen, setUmsetzOffen] = useState(false);
   const [grund, setGrund] = useState("");
 
   const art = props.arten.find((a) => a.code === b.type_code);
@@ -363,6 +375,11 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
   // beim Storno einer fremden Buchung ist ein Grund Pflicht: dort sitzt jemand,
   // der eine Erklaerung verdient. Hinter einer Blockung sitzt niemand.
   const istSerientermin = b.series_id !== null;
+  // Umsetzen nur fuer normale Buchungen, die noch nicht vorbei sind - so
+  // eng wie move_booking. Sperrungen und Serientermine haben eigene Wege.
+  const kannUmsetzen =
+    props.darfPlaetze && b.kind === "booking" && !istSerientermin &&
+    new Date(b.ends_at).getTime() > props.jetzt.getTime();
   const grundNoetig = props.darfPlaetze && !b.is_own && b.kind === "booking";
   const geaendert =
     JSON.stringify([...mitglieder].sort()) !== JSON.stringify([...(b.player_member_ids ?? [])].sort()) ||
@@ -469,7 +486,8 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
         )}
 
         <div className="blatt-fuss">
-          <Fehler text={props.fehler} />
+          {/* Beim Umsetzen steht der Fehler dort, wo geklickt wurde. */}
+          <Fehler text={umsetzOffen ? null : props.fehler} />
 
           {kannMitspielen && (
             <button
@@ -511,7 +529,10 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
               type="button"
               className="knopf gefahr-leise block"
               disabled={props.laeuft}
-              onClick={() => setStornoOffen(true)}
+              onClick={() => {
+                setStornoOffen(true);
+                setUmsetzOffen(false);
+              }}
             >
               {istSerientermin
                 ? "Fällt diese Woche aus"
@@ -523,6 +544,212 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
 
           {b.is_own && !nurStorno && <p className="fussnote">Stornieren geht bis Spielbeginn</p>}
         </div>
+      </div>
+
+      {/* Abgesetzt wie das Sperren: Umsetzen ist die Ausnahme, wenn ein Platz
+          ausfaellt - nicht das, was man an einer Buchung gewoehnlich tut. */}
+      {kannUmsetzen && (
+        <div className="fenster-inhalt sperrbereich">
+          {umsetzOffen ? (
+            <UmsetzBereich {...props} belegung={b} onZu={() => setUmsetzOffen(false)} />
+          ) : (
+            <button
+              type="button"
+              className="knopf leise klein"
+              onClick={() => {
+                setUmsetzOffen(true);
+                setStornoOffen(false);
+              }}
+            >
+              Umsetzen
+            </button>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+const KURZTAG = new Intl.DateTimeFormat("de-DE", {
+  weekday: "short", day: "2-digit", month: "2-digit", timeZone: "UTC",
+});
+const berlinTag = (d: Date) =>
+  new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(d);
+
+/**
+ * Wohin mit der Buchung? Platz, Tag und Beginn.
+ *
+ * Was waehlbar ist, rechnet umsetzZiele (@tcm/core) aus der Belegung des
+ * Zieltags; fuer einen anderen Tag als den im Plan wird day_schedule
+ * nachgeladen. Eine laufende Buchung wechselt nur den Platz - dann gibt es
+ * keinen Tag zu waehlen und als Beginn nur den, der schon gilt.
+ */
+function UmsetzBereich(props: Props & { belegung: Belegung; onZu: () => void }) {
+  const b = props.belegung;
+  const kennung = useId();
+  const laeuftSchon = new Date(b.starts_at).getTime() <= props.jetzt.getTime();
+  const heute = berlinTag(props.jetzt);
+
+  const [tag, setTag] = useState(props.datum);
+  const [andererTag, setAndererTag] = useState<{ tag: string; belegung: TagesBelegung[] } | null>(null);
+  const [ladeFehler, setLadeFehler] = useState<string | null>(null);
+  const [platzWahl, setPlatzWahl] = useState<string | null>(null);
+  const [minuteWahl, setMinuteWahl] = useState<number | null>(null);
+  const [grund, setGrund] = useState("");
+  // Nur die letzte Anfrage zaehlt: wer schnell durch die Tage klickt, soll
+  // nicht die Belegung von Mittwoch unter dem Donnerstag sehen.
+  const angefragt = useRef(props.datum);
+
+  async function tagWaehlen(neu: string) {
+    setTag(neu);
+    setLadeFehler(null);
+    angefragt.current = neu;
+    if (neu === props.datum || !neu) return;
+    const r = await props.onTagLaden(neu);
+    if (angefragt.current !== neu) return;
+    if (r.ok) setAndererTag({ tag: neu, belegung: r.belegung ?? [] });
+    else setLadeFehler(r.meldung);
+  }
+
+  const belegung: readonly TagesBelegung[] | null =
+    tag === props.datum ? props.belegungen : andererTag?.tag === tag ? andererTag.belegung : null;
+
+  const ziele = useMemo(
+    () =>
+      belegung
+        ? umsetzZiele({
+            booking: b,
+            day: tag,
+            courtIds: props.plaetze.map((p) => p.id),
+            openingMinutes: props.oeffnungMinuten,
+            closingMinutes: props.schlussMinuten,
+            slotMinutes: props.rasterMinuten,
+            occupied: belegung,
+            now: props.jetzt,
+          })
+        : [],
+    [b, belegung, tag, props.plaetze, props.oeffnungMinuten, props.schlussMinuten, props.rasterMinuten, props.jetzt],
+  );
+
+  // Die Wahl bleibt, solange sie noch ein Ziel ist; sonst rueckt die naechste
+  // nach. Vorgewaehlt wird ein anderer Platz zur selben Zeit - der Regelfall,
+  // wenn ein Platz unter Wasser steht.
+  const mitZiel = props.plaetze.filter((p) => ziele.some((z) => z.courtId === p.id));
+  const platz =
+    mitZiel.find((p) => p.id === platzWahl) ??
+    mitZiel.find((p) => p.id !== b.court_id) ??
+    mitZiel[0];
+  const zeiten = ziele.filter((z) => z.courtId === platz?.id).map((z) => z.minute);
+  const eigeneMinute = lokaleMinuten(b.starts_at);
+  const minute =
+    minuteWahl !== null && zeiten.includes(minuteWahl)
+      ? minuteWahl
+      : zeiten.includes(eigeneMinute) ? eigeneMinute : (zeiten[0] ?? null);
+  const dauer = lokaleMinuten(b.ends_at) - eigeneMinute;
+
+  const grundNoetig = !b.is_own;
+  const bereit = platz !== undefined && minute !== null && !(grundNoetig && grund.trim() === "");
+
+  return (
+    <>
+      {laeuftSchon ? (
+        <p className="mit">Die Buchung läuft schon – sie kann nur noch den Platz wechseln.</p>
+      ) : (
+        <label>
+          <span>Tag</span>
+          <input
+            type="date"
+            value={tag}
+            min={heute}
+            onChange={(e) => void tagWaehlen(e.target.value)}
+          />
+        </label>
+      )}
+
+      {ladeFehler ? (
+        <div className="hinweis fehler" role="alert">{ladeFehler}</div>
+      ) : belegung === null ? (
+        <p className="mit">Belegung wird geladen…</p>
+      ) : ziele.length === 0 ? (
+        <p className="mit">An diesem Tag ist kein Platz frei, auf den die Buchung passt.</p>
+      ) : (
+        <>
+          <fieldset className="segmente umsetz-plaetze">
+            <legend>Platz</legend>
+            <div className="segment-leiste">
+              {props.plaetze.map((p) => {
+                const frei = mitZiel.includes(p);
+                return (
+                  <label key={p.id} className="segment" title={frei ? p.name : `${p.name} ist zu keiner passenden Zeit frei`}>
+                    <input
+                      type="radio"
+                      name={`${kennung}-platz`}
+                      value={p.id}
+                      checked={platz?.id === p.id}
+                      disabled={!frei}
+                      aria-label={p.name}
+                      onChange={() => setPlatzWahl(p.id)}
+                    />
+                    <span>{p.short_name || p.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          <fieldset className="segmente umsetz-zeiten">
+            <legend>Beginn</legend>
+            <div className="segment-leiste">
+              {zeiten.map((m) => (
+                <label key={m} className="segment">
+                  <input
+                    type="radio"
+                    name={`${kennung}-beginn`}
+                    value={m}
+                    checked={minute === m}
+                    onChange={() => setMinuteWahl(m)}
+                  />
+                  <span className="tnum">{alsUhrzeit(m)}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </>
+      )}
+
+      <label>
+        <span>Grund{grundNoetig ? "" : " (freiwillig)"}</span>
+        <input
+          type="text"
+          value={grund}
+          placeholder="z. B. Platz 3 steht unter Wasser"
+          onChange={(e) => setGrund(e.target.value)}
+        />
+      </label>
+
+      {platz && minute !== null && (
+        <p className="mit tnum">
+          Neu: {platz.name} · {KURZTAG.format(new Date(`${tag}T12:00:00Z`))} ·{" "}
+          {alsUhrzeit(minute)}–{alsUhrzeit(minute + dauer)} Uhr. Bucher und Mitspieler werden benachrichtigt.
+        </p>
+      )}
+
+      <Fehler text={props.fehler} />
+      <div className="fenster-fuss">
+        <button
+          type="button"
+          className="knopf gold"
+          disabled={props.laeuft || !bereit}
+          onClick={() => {
+            if (!platz || minute === null) return;
+            props.onUmsetzen(b.booking_id, platz.id, berlinTime(tag, minute).toISOString(), grund);
+          }}
+        >
+          {props.laeuft ? "Wird umgesetzt…" : "Hierhin umsetzen"}
+        </button>
+        <button type="button" className="knopf leise" onClick={props.onZu}>
+          Doch nicht
+        </button>
       </div>
     </>
   );
