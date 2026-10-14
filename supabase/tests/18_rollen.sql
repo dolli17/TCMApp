@@ -1,9 +1,10 @@
 -- ===========================================================================
--- Rollen: Vorstand und App Admin haben volle Rechte, Platzwart vorerst keine
+-- Rollen: Vorstand und App Admin haben volle Rechte, Platzwart nicht
 --
 -- Alle Policies pruefen ueber private.is_admin(). Hier wird geprueft, dass der
 -- Vorstand dort mitzaehlt, der Platzwart nicht, und dass die Regeln fuer die
--- letzte Person mit vollen Rechten beide Rollen zusammen betrachten.
+-- letzte Person mit vollen Rechten beide Rollen zusammen betrachten. Was der
+-- Platzwart an den Plaetzen darf, steht in 20_platzwart.sql.
 -- ===========================================================================
 
 create or replace function tests.test_rollen_vorstand_darf_alles()
@@ -31,7 +32,7 @@ begin
   perform set_config('role', 'postgres', true);
 end; $f$;
 
-create or replace function tests.test_rollen_platzwart_hat_keine_verwaltungsrechte()
+create or replace function tests.test_rollen_platzwart_hat_keine_vollen_rechte()
 returns setof text language plpgsql as $f$
 declare p record; x record;
 begin
