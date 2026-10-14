@@ -18,9 +18,9 @@ export interface AnlegeErgebnis {
  * zurückbleibt, wenn ein Schritt scheitert.
  *
  * Dazu gehört der Login: Es gibt keine Mitglieder ohne Login. Deshalb läuft
- * das Anlegen über die Edge Function `member-login`. Sie ruft create_member
- * mit dem Token des Admins auf und lädt danach sofort ein. Scheitert die
- * Einladung, nimmt sie das Mitglied wieder zurück.
+ * das Anlegen über die Edge Function `member-login`. Sie lädt zuerst ein und
+ * ruft dann create_member mit dem Token des Admins und dem neuen Login auf.
+ * Scheitert das Anlegen, löscht sie den Login wieder.
  */
 export async function mitgliedAnlegen(formData: FormData): Promise<AnlegeErgebnis> {
   const text = (name: string): string | undefined => {

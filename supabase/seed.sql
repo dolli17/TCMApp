@@ -195,7 +195,19 @@ from public.drink_items;
 --
 -- 400 Personen, Alter 6 bis 92 mit Schwerpunkt um 35, davon rund 19 Prozent
 -- minderjaehrig. Jedes Mitglied hat eine eigene, eindeutige Adresse und einen
--- Login, auch ein Kind (Logins siehe ganz unten).
+-- Login, auch ein Kind (CHECK members_login_pflicht). Login und Mitglied
+-- entstehen deshalb im selben Statement: zuerst das Konto in auth.users, dann
+-- das Mitglied mit auth_user_id.
+--
+-- An die @example.org-Adressen geht nie eine Mail (ist_testadresse). Das
+-- Passwort ist dasselbe wie bei den Testkonten unten; der Hash wird einmal
+-- berechnet, sonst kostet bcrypt fuer 400 Konten spuerbar Zeit.
+--
+-- Die Token-Spalten in auth.users muessen leere Zeichenketten enthalten,
+-- nicht null: GoTrue liest sie in Go-Strings ein und quittiert null mit
+-- "converting NULL to string is unsupported" - einem Fehler 500 beim
+-- Anmelden, der nichts ueber seine Ursache verraet. Ohne Identitaet lehnt
+-- GoTrue die Anmeldung mit Passwort ab.
 -- ---------------------------------------------------------------------------
 with vornamen as (
   select array[
@@ -230,13 +242,48 @@ with vornamen as (
     end as age,
     random() as r_gender,
     random() as r_bank,
-    random() as r_phone
+    random() as r_phone,
+    extensions.gen_random_uuid() as member_id,
+    extensions.gen_random_uuid() as auth_id
   from generate_series(1, 400) i
+), passwort as (
+  select extensions.crypt('tcm-lokal-2026', extensions.gen_salt('bf')) as hash
+), konten as (
+  insert into auth.users (
+    id, instance_id, aud, role, email, encrypted_password,
+    email_confirmed_at, created_at, updated_at,
+    raw_app_meta_data, raw_user_meta_data,
+    confirmation_token, recovery_token,
+    email_change, email_change_token_new, email_change_token_current,
+    phone_change, phone_change_token, reauthentication_token
+  )
+  select
+    g.auth_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+    lower(g.first_name) || '.' || lower(g.last_name) || g.i::text || '@example.org',
+    (select hash from passwort),
+    now(), now(), now(),
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    jsonb_build_object('member_id', g.member_id),
+    '', '', '', '', '', '', '', ''
+  from gen g
+  returning id, email
+), identitaeten as (
+  insert into auth.identities (
+    id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at
+  )
+  select
+    extensions.gen_random_uuid(), k.id, k.id::text, 'email',
+    jsonb_build_object('sub', k.id::text, 'email', k.email, 'email_verified', true),
+    null, now(), now()
+  from konten k
 )
 insert into public.members
-  (first_name, last_name, gender, salutation, birthday, email, mobile,
+  (id, auth_user_id, invited_at, first_name, last_name, gender, salutation, birthday, email, mobile,
    street, postcode, city, country_code, status)
 select
+  member_id,
+  auth_id,
+  now(),
   first_name,
   last_name,
   case when r_gender < 0.48 then 'female'::public.gender
@@ -631,9 +678,8 @@ end $$;
 -- ===========================================================================
 -- Anmeldbare Testkonten fuer die lokale Entwicklung
 --
--- Der Seed legte bisher nur Mitglieder an, aber keine Logins - lokal konnte
--- sich also niemand anmelden, und die E2E-Tests liefen zwangslaeufig gegen die
--- Cloud. Diese drei Konten schliessen die Luecke.
+-- Drei Konten mit bekannter Adresse: Admin und Mitglied uebernehmen den Login
+-- je eines Mitglieds aus dem Bestand, der Kiosk ist ein eigenes Geraetekonto.
 --
 -- Die Adressen enden auf .local und sind damit weder erreichbar noch mit
 -- echten Adressen zu verwechseln. Das Passwort steht bewusst im Klartext hier:
@@ -653,53 +699,54 @@ declare
   v_member uuid;
 begin
   foreach v_zeile slice 1 in array v_konten loop
-    v_auth := extensions.gen_random_uuid();
-
-    -- Die Token-Spalten muessen leere Zeichenketten enthalten, nicht null:
-    -- GoTrue liest sie in Go-Strings ein und quittiert null mit
-    -- "converting NULL to string is unsupported" - einem Fehler 500 beim
-    -- Anmelden, der nichts ueber seine Ursache verraet.
-    insert into auth.users (
-      id, instance_id, aud, role, email, encrypted_password,
-      email_confirmed_at, created_at, updated_at,
-      raw_app_meta_data, raw_user_meta_data,
-      confirmation_token, recovery_token,
-      email_change, email_change_token_new, email_change_token_current,
-      phone_change, phone_change_token, reauthentication_token
-    ) values (
-      v_auth, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-      v_zeile[1], extensions.crypt(v_passwort, extensions.gen_salt('bf')),
-      now(), now(), now(),
-      '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb,
-      '', '', '', '', '', '', '', ''
-    );
-
-    -- Ohne Identitaet lehnt GoTrue die Anmeldung mit Passwort ab.
-    insert into auth.identities (
-      id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at
-    ) values (
-      extensions.gen_random_uuid(), v_auth, v_auth::text, 'email',
-      jsonb_build_object('sub', v_auth::text, 'email', v_zeile[1], 'email_verified', true),
-      now(), now(), now()
-    );
-
     if v_zeile[2] = 'kiosk' then
       -- Das Tablet an der Theke ist kein Mitglied, sondern ein Geraetekonto.
+      v_auth := extensions.gen_random_uuid();
+
+      -- Leere Token-Spalten und eine Identitaet: siehe oben bei den Mitgliedern.
+      insert into auth.users (
+        id, instance_id, aud, role, email, encrypted_password,
+        email_confirmed_at, created_at, updated_at,
+        raw_app_meta_data, raw_user_meta_data,
+        confirmation_token, recovery_token,
+        email_change, email_change_token_new, email_change_token_current,
+        phone_change, phone_change_token, reauthentication_token
+      ) values (
+        v_auth, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+        v_zeile[1], extensions.crypt(v_passwort, extensions.gen_salt('bf')),
+        now(), now(), now(),
+        '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb,
+        '', '', '', '', '', '', '', ''
+      );
+
+      insert into auth.identities (
+        id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at
+      ) values (
+        extensions.gen_random_uuid(), v_auth, v_auth::text, 'email',
+        jsonb_build_object('sub', v_auth::text, 'email', v_zeile[1], 'email_verified', true),
+        now(), now(), now()
+      );
+
       insert into public.kiosk_devices (auth_user_id, name, location)
       values (v_auth, 'Kiosk Clubheim', 'Theke');
     else
-      -- An ein bestehendes Mitglied haengen, damit die Konten echte Historie
-      -- haben: Buchungen, Getraenke, Forderungen.
-      select m.id into v_member
+      -- Ein bestehendes Mitglied bekommt die bekannte Adresse, damit die
+      -- Konten echte Historie haben: Buchungen, Getraenke, Forderungen. Sein
+      -- Login zieht mit um.
+      select m.id, m.auth_user_id into v_member, v_auth
       from public.members m
-      where m.auth_user_id is null and m.status = 'active'
+      where m.status = 'active'
+        and m.email::text like '%@example.org'
         and m.birthday is not null and m.birthday <= current_date - interval '18 years'
-      order by m.last_name
+      order by m.last_name, m.id
       limit 1;
 
-      update public.members
-         set auth_user_id = v_auth, email = v_zeile[1]
-       where id = v_member;
+      update auth.users set email = v_zeile[1] where id = v_auth;
+      update auth.identities
+         set identity_data = identity_data || jsonb_build_object('email', v_zeile[1]),
+             last_sign_in_at = now()
+       where user_id = v_auth;
+      update public.members set email = v_zeile[1] where id = v_member;
 
       insert into public.member_roles (member_id, role)
       values (v_member, 'member')
@@ -722,57 +769,5 @@ begin
          where id = v_member;
       end if;
     end if;
-  end loop;
-end $$;
-
--- ===========================================================================
--- Ein Login fuer jedes Mitglied
---
--- Jedes Mitglied hat einen Login, auch im Testbestand. Die Konten entstehen
--- wie die drei oben, nur fuer alle uebrigen Mitglieder und mit ihrer
--- @example.org-Adresse. Dorthin geht nie eine Mail (ist_testadresse). Das
--- Passwort ist dasselbe wie oben; der Hash wird einmal berechnet, sonst kostet
--- bcrypt fuer 400 Konten spuerbar Zeit.
--- ===========================================================================
-
-do $$
-declare
-  v_hash   constant text := extensions.crypt('tcm-lokal-2026', extensions.gen_salt('bf'));
-  v_member record;
-  v_auth   uuid;
-begin
-  for v_member in
-    select m.id, lower(m.email::text) as email
-    from public.members m
-    where m.auth_user_id is null and m.email is not null
-    order by m.created_at, m.id
-  loop
-    v_auth := extensions.gen_random_uuid();
-
-    insert into auth.users (
-      id, instance_id, aud, role, email, encrypted_password,
-      email_confirmed_at, created_at, updated_at,
-      raw_app_meta_data, raw_user_meta_data,
-      confirmation_token, recovery_token,
-      email_change, email_change_token_new, email_change_token_current,
-      phone_change, phone_change_token, reauthentication_token
-    ) values (
-      v_auth, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-      v_member.email, v_hash,
-      now(), now(), now(),
-      '{"provider":"email","providers":["email"]}'::jsonb,
-      jsonb_build_object('member_id', v_member.id),
-      '', '', '', '', '', '', '', ''
-    );
-
-    insert into auth.identities (
-      id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at
-    ) values (
-      extensions.gen_random_uuid(), v_auth, v_auth::text, 'email',
-      jsonb_build_object('sub', v_auth::text, 'email', v_member.email, 'email_verified', true),
-      null, now(), now()
-    );
-
-    update public.members set auth_user_id = v_auth where id = v_member.id;
   end loop;
 end $$;

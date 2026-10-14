@@ -254,10 +254,11 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid; v_nummer text; v_rollen integer;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('max.mustermann@example.org', 'c8fd0a49-76d6-5ff2-ab66-f6ba321f7986');
   perform tests.act_as(a.auth_id);
 
   v_neu := public.create_member('Max', 'Mustermann', 'max.mustermann@example.org',
-                                '1990-05-17'::date);
+                                '1990-05-17'::date, p_auth_user_id => 'c8fd0a49-76d6-5ff2-ab66-f6ba321f7986');
 
   perform set_config('role', 'postgres', true);
 
@@ -275,10 +276,12 @@ returns setof text language plpgsql as $f$
 declare a record; v_a uuid; v_b uuid; v_na text; v_nb text;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('anna.erste.2@example.org', 'e0ae2cfd-1fa8-50df-a59a-0115bb733054');
+  perform tests.fixture_login('bert.zweiter.3@example.org', '38ecdb31-f1cf-574d-b6a3-0fdbe8637349');
   perform tests.act_as(a.auth_id);
 
-  v_a := public.create_member('Anna', 'Erste', gen_random_uuid()::text || '@example.org');
-  v_b := public.create_member('Bert', 'Zweiter', gen_random_uuid()::text || '@example.org');
+  v_a := public.create_member('Anna', 'Erste', 'anna.erste.2@example.org', p_auth_user_id => 'e0ae2cfd-1fa8-50df-a59a-0115bb733054');
+  v_b := public.create_member('Bert', 'Zweiter', 'bert.zweiter.3@example.org', p_auth_user_id => '38ecdb31-f1cf-574d-b6a3-0fdbe8637349');
 
   perform set_config('role', 'postgres', true);
 
@@ -398,7 +401,9 @@ returns setof text language plpgsql as $f$
 declare a record; v_ohne uuid;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
-  v_ohne := tests.fixture_member('Kind ohne Login');
+  -- Ohne Login sind nur Archivierte.
+  insert into public.members (first_name, last_name, status)
+  values ('Ohne', 'Login', 'archived') returning id into v_ohne;
   perform tests.act_as(a.auth_id);
 
   return next throws_ok(
@@ -427,21 +432,6 @@ end; $f$;
 -- Keine Zahlerbeziehung mehr: jedes Mitglied zahlt selbst
 -- ---------------------------------------------------------------------------
 
-create or replace function tests.test_create_member_weist_zahler_ab()
-returns setof text language plpgsql as $f$
-declare a record; b record;
-begin
-  select * into a from tests.fixture_user('admin') limit 1;
-  select * into b from tests.fixture_user() limit 1;
-  perform tests.act_as(a.auth_id);
-
-  return next throws_ok(
-    format($q$select public.create_member('Paul', 'Kind', 'paul.kind@example.org', p_billing_payer_id => %L)$q$, b.member_id),
-    '22023', null, 'create_member weist einen Zahler ab');
-
-  perform set_config('role', 'postgres', true);
-end; $f$;
-
 create or replace function tests.test_zahler_zuweisen_gibt_es_nicht_mehr()
 returns setof text language plpgsql as $f$
 begin
@@ -460,9 +450,10 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid; v_nummer text; v_offen integer;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('rita.rueckkehr.4@example.org', 'f963df7d-cfed-5987-a3af-bbd96fd3694b');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Rita', 'Rueckkehr', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Rita', 'Rueckkehr', 'rita.rueckkehr.4@example.org', p_auth_user_id => 'f963df7d-cfed-5987-a3af-bbd96fd3694b');
   perform public.end_membership(v_neu, current_date, current_date, 'Umzug');
 
   perform set_config('role', 'postgres', true);
@@ -486,8 +477,9 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('doppel.mitglied.5@example.org', '82c3b98f-4cdf-5213-94d6-42bb8b9d982e');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Doppel', 'Mitglied', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Doppel', 'Mitglied', 'doppel.mitglied.5@example.org', p_auth_user_id => '82c3b98f-4cdf-5213-94d6-42bb8b9d982e');
 
   return next throws_ok(
     format('select public.reactivate_membership(%L)', v_neu),
@@ -501,8 +493,9 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid; v_konto uuid;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('alfred.archiv.6@example.org', '01c5654f-0bbd-595e-b0c9-25506c90f607');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Alfred', 'Archiv', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Alfred', 'Archiv', 'alfred.archiv.6@example.org', p_auth_user_id => '01c5654f-0bbd-595e-b0c9-25506c90f607');
   perform set_config('role', 'postgres', true);
 
   insert into public.bank_accounts (member_id, iban_encrypted, iban_last4, holder)
@@ -531,8 +524,9 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid; v_vorher integer; v_nachher integer;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('sonja.schuldig.7@example.org', 'acef2163-e200-51d7-80b0-57ea0000aa49');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Sonja', 'Schuldig', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Sonja', 'Schuldig', 'sonja.schuldig.7@example.org', p_auth_user_id => 'acef2163-e200-51d7-80b0-57ea0000aa49');
   perform set_config('role', 'postgres', true);
 
   insert into public.charges (member_id, payer_id, kind, period_label, amount_cents, description)
@@ -549,21 +543,6 @@ begin
 
   select count(*)::integer into v_nachher from public.charges where member_id = v_neu;
   return next is(v_nachher, v_vorher, 'Die Forderung besteht nach dem Archivieren weiter');
-end; $f$;
-
-create or replace function tests.test_archivieren_meldet_keine_zahler()
-returns setof text language plpgsql as $f$
-declare a record; v_neu uuid; v_geloest integer; v_payees integer;
-begin
-  select * into a from tests.fixture_user('admin') limit 1;
-  perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Petra', 'Selbstzahler', gen_random_uuid()::text || '@example.org');
-  select payees into v_payees from public.member_delete_impact(v_neu);
-  select released_payees into v_geloest from public.archive_member(v_neu);
-  perform set_config('role', 'postgres', true);
-
-  return next is(v_payees, 0, 'member_delete_impact meldet keine bezahlten Mitglieder');
-  return next is(v_geloest, 0, 'archive_member loest keine Zahlerbeziehungen');
 end; $f$;
 
 create or replace function tests.test_admin_kann_sich_nicht_selbst_archivieren()
@@ -589,8 +568,9 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid; v_da integer;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('tipp.fehler.9@example.org', '18552c14-4084-5650-9232-4aa477c63344');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Tipp', 'Fehler', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Tipp', 'Fehler', 'tipp.fehler.9@example.org', p_auth_user_id => '18552c14-4084-5650-9232-4aa477c63344');
   perform public.delete_member(v_neu, 'Fehler');
   perform set_config('role', 'postgres', true);
 
@@ -607,8 +587,9 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('vor.sicht.10@example.org', '87728f59-5e07-53b2-b0c3-07330ee1ad3c');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Vor', 'Sicht', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Vor', 'Sicht', 'vor.sicht.10@example.org', p_auth_user_id => '87728f59-5e07-53b2-b0c3-07330ee1ad3c');
 
   return next throws_ok(
     format($q$select public.delete_member(%L, 'Falsch')$q$, v_neu),
@@ -624,8 +605,9 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('bleibt.bestehen.11@example.org', 'cdae48a0-f7c0-5e5b-90b1-752b7b486a66');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Bleibt', 'Bestehen', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Bleibt', 'Bestehen', 'bleibt.bestehen.11@example.org', p_auth_user_id => 'cdae48a0-f7c0-5e5b-90b1-752b7b486a66');
   perform set_config('role', 'postgres', true);
 
   insert into public.charges (member_id, payer_id, kind, period_label, amount_cents, description)
@@ -663,8 +645,9 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid; v_eintrag record;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('spur.nachweis.12@example.org', '78881895-1ed4-5887-ab14-19bf83976dff');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Spur', 'Nachweis', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Spur', 'Nachweis', 'spur.nachweis.12@example.org', p_auth_user_id => '78881895-1ed4-5887-ab14-19bf83976dff');
   perform public.delete_member(v_neu, 'Nachweis');
   perform set_config('role', 'postgres', true);
 
@@ -685,8 +668,9 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid; v_m public.members;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('klara@example.org', '303f7a96-e34e-575c-bf29-e03aecf409eb');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Klara', 'Klarname', 'klara@example.org', '1980-01-01'::date);
+  v_neu := public.create_member('Klara', 'Klarname', 'klara@example.org', '1980-01-01'::date, p_auth_user_id => '303f7a96-e34e-575c-bf29-e03aecf409eb');
   perform set_config('role', 'postgres', true);
 
   insert into public.charges (member_id, payer_id, kind, period_label, amount_cents, description)
@@ -990,9 +974,10 @@ declare a record; v_neu uuid; v_da integer;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
   perform tests.fixture_merkmal('t_anon', 'boolean', false);
+  perform tests.fixture_login('merkmal.traeger.14@example.org', 'd4dd3a26-4b85-5f03-b58e-417598495eec');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Merkmal', 'Traeger', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Merkmal', 'Traeger', 'merkmal.traeger.14@example.org', p_auth_user_id => 'd4dd3a26-4b85-5f03-b58e-417598495eec');
   perform public.set_member_attribute(v_neu, 't_anon');
   perform public.anonymize_member(v_neu, 'Test');
   perform set_config('role', 'postgres', true);
@@ -1014,9 +999,10 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid; v_konto uuid; v_k public.bank_accounts;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('konto.inhaber.15@example.org', 'd2b4d5cf-6fc0-5ce8-884d-6100eb32005f');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Konto', 'Inhaber', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Konto', 'Inhaber', 'konto.inhaber.15@example.org', p_auth_user_id => 'd2b4d5cf-6fc0-5ce8-884d-6100eb32005f');
   v_konto := public.add_bank_account(v_neu, 'DE89 3704 0044 0532 0130 00');
   perform set_config('role', 'postgres', true);
 
@@ -1035,8 +1021,9 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('falsche.ziffern.16@example.org', '032cd240-41bd-5fb4-bea2-98f9cdde62b8');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Falsche', 'Ziffern', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Falsche', 'Ziffern', 'falsche.ziffern.16@example.org', p_auth_user_id => '032cd240-41bd-5fb4-bea2-98f9cdde62b8');
 
   return next throws_ok(
     format($q$select public.add_bank_account(%L, 'DE89370400440532013001')$q$, v_neu),
@@ -1054,8 +1041,9 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('doppelt.erfasst.17@example.org', 'e0f6ec51-42d6-5769-ad53-93c910035419');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Doppelt', 'Erfasst', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Doppelt', 'Erfasst', 'doppelt.erfasst.17@example.org', p_auth_user_id => 'e0f6ec51-42d6-5769-ad53-93c910035419');
   perform public.add_bank_account(v_neu, 'DE89370400440532013000');
 
   -- Der Chiffretext ist jedes Mal ein anderer; ohne Fingerabdruck fiele die
@@ -1072,9 +1060,11 @@ returns setof text language plpgsql as $f$
 declare a record; v_eins uuid; v_zwei uuid;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('familie.eins.18@example.org', 'd759fa45-1188-59a9-b28f-944a1bc7cecb');
+  perform tests.fixture_login('familie.zwei.19@example.org', '23224ea4-00ab-550b-b94c-e3a239b2e986');
   perform tests.act_as(a.auth_id);
-  v_eins := public.create_member('Familie', 'Eins', gen_random_uuid()::text || '@example.org');
-  v_zwei := public.create_member('Familie', 'Zwei', gen_random_uuid()::text || '@example.org');
+  v_eins := public.create_member('Familie', 'Eins', 'familie.eins.18@example.org', p_auth_user_id => 'd759fa45-1188-59a9-b28f-944a1bc7cecb');
+  v_zwei := public.create_member('Familie', 'Zwei', 'familie.zwei.19@example.org', p_auth_user_id => '23224ea4-00ab-550b-b94c-e3a239b2e986');
   perform public.add_bank_account(v_eins, 'DE89370400440532013000');
 
   return next lives_ok(
@@ -1089,9 +1079,10 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid; v_konto uuid; v_ref text; v_m public.sepa_mandates;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('mandat.traeger.20@example.org', '370118ee-b070-5159-9d1a-995ef470ca40');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Mandat', 'Traeger', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Mandat', 'Traeger', 'mandat.traeger.20@example.org', p_auth_user_id => '370118ee-b070-5159-9d1a-995ef470ca40');
   v_konto := public.add_bank_account(v_neu, 'DE89370400440532013000');
   v_ref := public.create_sepa_mandate(v_neu, v_konto);
   perform set_config('role', 'postgres', true);
@@ -1117,9 +1108,10 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid; v_konto uuid; v_erstes uuid;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('zwei.mandate.21@example.org', '0f8b66a3-d84a-5d75-803b-20da27455a55');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Zwei', 'Mandate', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Zwei', 'Mandate', 'zwei.mandate.21@example.org', p_auth_user_id => '0f8b66a3-d84a-5d75-803b-20da27455a55');
   v_konto := public.add_bank_account(v_neu, 'DE89370400440532013000');
   perform public.create_sepa_mandate(v_neu, v_konto);
 
@@ -1160,10 +1152,12 @@ returns setof text language plpgsql as $f$
 declare a record; v_eins uuid; v_zwei uuid; v_konto uuid;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('konto.besitzer.22@example.org', '4d9ca82e-6cda-5a4e-9055-6a9f319d9fba');
+  perform tests.fixture_login('fremder.dritter.23@example.org', 'c277449a-2964-5916-8bbc-78446254862a');
   perform tests.act_as(a.auth_id);
 
-  v_eins := public.create_member('Konto', 'Besitzer', gen_random_uuid()::text || '@example.org');
-  v_zwei := public.create_member('Fremder', 'Dritter', gen_random_uuid()::text || '@example.org');
+  v_eins := public.create_member('Konto', 'Besitzer', 'konto.besitzer.22@example.org', p_auth_user_id => '4d9ca82e-6cda-5a4e-9055-6a9f319d9fba');
+  v_zwei := public.create_member('Fremder', 'Dritter', 'fremder.dritter.23@example.org', p_auth_user_id => 'c277449a-2964-5916-8bbc-78446254862a');
   v_konto := public.add_bank_account(v_eins, 'DE89370400440532013000');
 
   return next throws_ok(
@@ -1178,9 +1172,10 @@ returns setof text language plpgsql as $f$
 declare a record; v_neu uuid; v_konto uuid;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('stilllegen.versuch.24@example.org', '7cc3eb30-b0ea-524c-99fa-2a49fff85aa0');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Stilllegen', 'Versuch', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Stilllegen', 'Versuch', 'stilllegen.versuch.24@example.org', p_auth_user_id => '7cc3eb30-b0ea-524c-99fa-2a49fff85aa0');
   v_konto := public.add_bank_account(v_neu, 'DE89370400440532013000');
   perform public.create_sepa_mandate(v_neu, v_konto);
 
@@ -1247,9 +1242,10 @@ declare a record; v_neu uuid; v_typ uuid; v_zeile record;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
   select id into v_typ from public.fee_types where code = 'erwachsener';
+  perform tests.fixture_login('beitrag.zahler.25@example.org', 'dd662798-87a5-591b-9b28-9cbdeec7e4b0');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Beitrag', 'Zahler', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Beitrag', 'Zahler', 'beitrag.zahler.25@example.org', p_auth_user_id => 'dd662798-87a5-591b-9b28-9cbdeec7e4b0');
   perform public.set_member_fee(v_neu, v_typ, 2026);
 
   select * into v_zeile from public.member_fee_overview(v_neu, 2026)
@@ -1267,9 +1263,10 @@ declare a record; v_neu uuid; v_typ uuid; v_zeile record;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
   select id into v_typ from public.fee_types where code = 'erwachsener';
+  perform tests.fixture_login('ehren.mitglied.26@example.org', '1f694517-2560-5430-b678-1f6e3e78c150');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Ehren', 'Mitglied', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Ehren', 'Mitglied', 'ehren.mitglied.26@example.org', p_auth_user_id => '1f694517-2560-5430-b678-1f6e3e78c150');
   perform public.set_member_fee(v_neu, v_typ, 2026, 0, 'Ehrenmitglied');
 
   select * into v_zeile from public.member_fee_overview(v_neu, 2026)
@@ -1286,9 +1283,10 @@ declare a record; v_neu uuid; v_typ uuid; v_zeile record;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
   select id into v_typ from public.fee_types where code = 'jugend';
+  perform tests.fixture_login('weg.damit.27@example.org', 'ca41526c-b1a3-54bc-bb46-90025c89dd4a');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Weg', 'Damit', gen_random_uuid()::text || '@example.org');
+  v_neu := public.create_member('Weg', 'Damit', 'weg.damit.27@example.org', p_auth_user_id => 'ca41526c-b1a3-54bc-bb46-90025c89dd4a');
   perform public.set_member_fee(v_neu, v_typ, 2026);
   perform public.remove_member_fee(v_neu, v_typ, 2026);
 
@@ -1306,52 +1304,40 @@ end; $f$;
 -- mitgeprueft: als Eigentuemer ist auth.uid() ebenfalls null.
 -- ---------------------------------------------------------------------------
 
-create or replace function tests.test_zugang_verbinden_und_loesen()
+create or replace function tests.test_zugang_verbinden()
 returns setof text language plpgsql as $f$
-declare admin record; v_neu uuid; v_auth uuid := extensions.gen_random_uuid();
+declare v_arch uuid; v_auth uuid := tests.fixture_login('zugang.traeger@example.org');
 begin
-  select * into admin from tests.fixture_user('admin') limit 1;
-  perform tests.act_as(admin.auth_id);
-  v_neu := public.create_member('Zugang', 'Traeger', 'zugang.traeger@example.org');
-  perform set_config('role', 'postgres', true);
-
-  insert into auth.users (id, email, aud, role)
-  values (v_auth, 'zugang.traeger@example.org', 'authenticated', 'authenticated');
+  -- Ohne Login sind nur Archivierte; verknuepfen laesst sich trotzdem.
+  insert into public.members (first_name, last_name, status)
+  values ('Zugang', 'Traeger', 'archived') returning id into v_arch;
 
   -- So ruft die Edge Function auf: ohne angemeldeten Nutzer.
-  perform public.link_auth_user(v_neu, v_auth);
+  perform public.link_auth_user(v_arch, v_auth);
 
-  return next is((select auth_user_id from public.members where id = v_neu), v_auth,
+  return next is((select auth_user_id from public.members where id = v_arch), v_auth,
     'Der Zugang ist mit dem Mitglied verbunden');
-  return next isnt((select invited_at from public.members where id = v_neu), null,
+  return next isnt((select invited_at from public.members where id = v_arch), null,
     'Der Zeitpunkt der Einladung steht fest');
-
-  return next is(public.unlink_auth_user(v_neu), v_auth,
-    'Beim Loesen kommt die bisherige Kennung zurueck');
-  return next is((select auth_user_id from public.members where id = v_neu), null,
-    'Danach hat das Mitglied keinen Zugang mehr');
 end; $f$;
 
 create or replace function tests.test_zugang_nicht_zweimal_vergeben()
 returns setof text language plpgsql as $f$
-declare admin record; v_eins uuid; v_zwei uuid; v_auth uuid := extensions.gen_random_uuid();
+declare v_eins uuid := tests.fixture_member('Erster'); v_zwei uuid; v_auth uuid;
 begin
-  select * into admin from tests.fixture_user('admin') limit 1;
-  perform tests.act_as(admin.auth_id);
-  v_eins := public.create_member('Erster', 'Nutzer', gen_random_uuid()::text || '@example.org');
-  v_zwei := public.create_member('Zweiter', 'Nutzer', gen_random_uuid()::text || '@example.org');
-  perform set_config('role', 'postgres', true);
-
-  insert into auth.users (id, email, aud, role)
-  values (v_auth, 'geteilt@example.org', 'authenticated', 'authenticated');
-  perform public.link_auth_user(v_eins, v_auth);
+  insert into public.members (first_name, last_name, status)
+  values ('Zweiter', 'Nutzer', 'archived') returning id into v_zwei;
+  select auth_user_id into v_auth from public.members where id = v_eins;
 
   return next throws_ok(
     format('select public.link_auth_user(%L, %L)', v_zwei, v_auth),
     '23514', null, 'Ein Zugang gehoert immer genau einer Person');
+  return next throws_ok(
+    format('select public.link_auth_user(%L, %L)', v_eins, tests.fixture_login()),
+    '23514', null, 'Und ein Mitglied hat genau einen Zugang');
 end; $f$;
 
-create or replace function tests.test_zugang_nicht_selbst_entziehen()
+create or replace function tests.test_zugang_nicht_selbst_sperren()
 returns setof text language plpgsql as $f$
 declare admin record;
 begin
@@ -1359,28 +1345,10 @@ begin
   perform tests.act_as(admin.auth_id);
 
   return next throws_ok(
-    format('select public.unlink_auth_user(%L)', admin.member_id),
-    '23514', null, 'Niemand entzieht sich selbst den Zugang');
-  return next throws_ok(
     format('select public.set_login_disabled(%L, true)', admin.member_id),
-    '23514', null, 'Und sperrt sich auch nicht selbst aus');
+    '23514', null, 'Niemand sperrt sich selbst aus');
 
   perform set_config('role', 'postgres', true);
-end; $f$;
-
-create or replace function tests.test_zugang_entfernen_nimmt_adminrolle()
-returns setof text language plpgsql as $f$
-declare a record; b record; v_rollen integer;
-begin
-  select * into a from tests.fixture_user('admin') limit 1;
-  select * into b from tests.fixture_user('admin') limit 1;
-
-  perform public.unlink_auth_user(b.member_id);
-
-  select count(*)::integer into v_rollen
-  from public.member_roles where member_id = b.member_id and role = 'admin';
-
-  return next is(v_rollen, 0, 'Mit dem Zugang enden auch die Verwaltungsrechte');
 end; $f$;
 
 create or replace function tests.test_login_verwaltung_nur_fuer_admins()
@@ -1394,9 +1362,6 @@ begin
   return next throws_ok(
     format('select public.link_auth_user(%L, %L)', b.member_id, a.auth_id),
     '42501', null, 'Ein Mitglied verbindet keine Zugaenge');
-  return next throws_ok(
-    format('select public.unlink_auth_user(%L)', b.member_id),
-    '42501', null, 'Und loest auch keine');
   return next throws_ok(
     format('select public.set_login_disabled(%L, true)', b.member_id),
     '42501', null, 'Und sperrt niemanden aus');
@@ -1412,14 +1377,15 @@ returns setof text language plpgsql as $f$
 declare admin record; v_ohne uuid; v_zeile record;
 begin
   select * into admin from tests.fixture_user('admin') limit 1;
-  v_ohne := tests.fixture_altbestand('Ohne Mail');
+  insert into public.members (first_name, last_name, status)
+  values ('Ohne', 'Login', 'archived') returning id into v_ohne;
   perform tests.act_as(admin.auth_id);
 
   select * into v_zeile from public.member_login_state(v_ohne);
   perform set_config('role', 'postgres', true);
 
-  return next ok(not v_zeile.einladbar, 'Ohne E-Mail ist niemand einladbar');
-  return next matches(v_zeile.grund, 'Altbestand: E-Mail fehlt',
+  return next ok(not v_zeile.hat_zugang, 'Ohne Login sind nur Archivierte');
+  return next is(v_zeile.grund, 'Archivierte Mitglieder bekommen keinen Zugang.',
     'Und die Oberflaeche bekommt den Grund gleich mitgeliefert');
 end; $f$;
 
@@ -1487,8 +1453,9 @@ returns setof text language plpgsql as $f$
 declare admin record; v_neu uuid;
 begin
   select * into admin from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login('schon.mitglied@example.org', 'a8230f75-56a7-505e-b762-6171b3f850e6');
   perform tests.act_as(admin.auth_id);
-  v_neu := public.create_member('Schon', 'Mitglied', 'schon.mitglied@example.org');
+  v_neu := public.create_member('Schon', 'Mitglied', 'schon.mitglied@example.org', p_auth_user_id => 'a8230f75-56a7-505e-b762-6171b3f850e6');
   perform set_config('role', 'postgres', true);
 
   perform tests.act_as_anon();
@@ -1638,8 +1605,9 @@ begin
   select id into v_a from public.membership_applications where email = 'anna.aufnahme@example.org';
 
   select * into admin from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login((select email::text from public.membership_applications where id = v_a), '1cbe874d-4e49-5291-bb8f-4247b27e703e');
   perform tests.act_as(admin.auth_id);
-  select * into v_e from public.accept_membership_application(v_a);
+  select * into v_e from public.accept_membership_application(v_a, p_auth_user_id => '1cbe874d-4e49-5291-bb8f-4247b27e703e');
   perform set_config('role', 'postgres', true);
 
   select * into v_m from public.members where id = v_e.member_id;
@@ -1648,7 +1616,7 @@ begin
   return next is(v_m.emergency_contact_name, 'Otto Aufnahme',
     'Der Notfallkontakt aus dem Antrag steht dabei');
   return next isnt(v_e.membership_number, null, 'Es gibt eine Mitgliedsnummer');
-  return next ok(v_e.needs_invite, 'Und eine Adresse, an die sich einladen laesst');
+  return next isnt(v_m.auth_user_id, null, 'Und einen Login');
   return next is((select status::text from public.membership_applications where id = v_a),
     'accepted', 'Der Antrag gilt als angenommen');
 end; $f$;
@@ -1667,8 +1635,9 @@ begin
   select id into v_a from public.membership_applications where email = 'ein.williger@example.org';
 
   select * into admin from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login((select email::text from public.membership_applications where id = v_a), '9b2d3a51-aafb-5ad5-952e-0efaa8d558a6');
   perform tests.act_as(admin.auth_id);
-  select * into v_e from public.accept_membership_application(v_a);
+  select * into v_e from public.accept_membership_application(v_a, p_auth_user_id => '9b2d3a51-aafb-5ad5-952e-0efaa8d558a6');
   perform set_config('role', 'postgres', true);
 
   select count(*)::integer into v_anzahl
@@ -1687,8 +1656,9 @@ begin
   select id into v_a from public.membership_applications where email = 'einmal@example.org';
 
   select * into admin from tests.fixture_user('admin') limit 1;
+  perform tests.fixture_login((select email::text from public.membership_applications where id = v_a), '2c70243b-9f98-52c7-905a-d720f2d36684');
   perform tests.act_as(admin.auth_id);
-  perform public.accept_membership_application(v_a);
+  perform public.accept_membership_application(v_a, p_auth_user_id => '2c70243b-9f98-52c7-905a-d720f2d36684');
 
   return next throws_ok(
     format('select * from public.accept_membership_application(%L)', v_a),

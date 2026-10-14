@@ -13,18 +13,20 @@
 import { translateDbError } from "@tcm/core";
 import { createServerSupabase } from "./server";
 
-/** Was die Oberfläche am Zugang auslösen darf. Entfernen gibt es nicht mehr. */
-export type LoginAktion =
-  | "einladen"
-  | "passwort_zuruecksetzen"
-  | "login_deaktivieren"
-  | "login_aktivieren"
-  | "login_verknuepfen";
+/**
+ * Was die Oberfläche am Zugang auslösen darf. Einladen und Entfernen gibt es
+ * nicht: Der Login entsteht mit dem Mitglied und geht mit ihm.
+ */
+export type LoginAktion = "passwort_zuruecksetzen" | "login_deaktivieren" | "login_aktivieren";
 
 /** Der Anfragekörper, so wie die Function ihn erwartet. */
 export type LoginAnfrage =
   | { aktion: LoginAktion; memberId: string }
   | { aktion: "anlegen"; daten: Record<string, unknown> }
+  | {
+      aktion: "antrag_annehmen";
+      antrag: { id: string; nummer?: string; beitragsart?: string; eintritt?: string };
+    }
   | { aktion: "email_aendern"; memberId: string; email: string }
   | { aktion: "loeschen"; memberId: string; art: "loeschen"; nachname: string }
   | { aktion: "loeschen"; memberId: string; art: "anonymisieren"; grund?: string };
@@ -32,7 +34,7 @@ export type LoginAnfrage =
 export interface LoginErgebnis {
   ok: boolean;
   meldung: string;
-  /** Beim Anlegen die Id des neuen Mitglieds. */
+  /** Beim Anlegen und Annehmen die Id des neuen Mitglieds. */
   id?: string;
 }
 

@@ -15,21 +15,11 @@ import type { AktionsErgebnis } from "./aktionen";
 export async function loginVerwalten(
   mitgliedId: string,
   aktion: LoginAktion,
-  /**
-   * Soll die Anzeige danach aufgefrischt werden?
-   *
-   * Aus der Antragsannahme heraus: nein. Ein revalidatePath ersetzt dort den
-   * Teilbaum mit dem offenen <dialog>, und das Fenster schließt sich samt der
-   * Meldung, die gerade erst entstanden ist.
-   */
-  neuLaden = true,
 ): Promise<AktionsErgebnis> {
   const e = await memberLogin({ aktion, memberId: mitgliedId });
 
-  if (neuLaden) {
-    revalidatePath(`/admin/mitglieder/${mitgliedId}`);
-    revalidatePath("/admin/mitglieder");
-  }
+  revalidatePath(`/admin/mitglieder/${mitgliedId}`);
+  revalidatePath("/admin/mitglieder");
 
   return { ok: e.ok, meldung: e.meldung };
 }

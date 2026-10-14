@@ -58,19 +58,15 @@ returns setof text language plpgsql as $f$
 declare a record; v_ohne uuid;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
-  -- Noch nicht eingeladen: Adresse ja, Login (noch) nicht.
-  insert into public.members (first_name, last_name, email)
-  values ('Ohne', 'Login', 'ohne.login-' || gen_random_uuid()::text || '@example.org')
+  -- Ohne Login sind nur Archivierte (anonymisiert).
+  insert into public.members (first_name, last_name, status)
+  values ('Ohne', 'Login', 'archived')
   returning id into v_ohne;
   perform tests.act_as(a.auth_id);
 
   return next throws_ok(
     format($q$select public.set_member_role(%L, 'board', true)$q$, v_ohne),
     '22023', null, 'Ohne Login wird niemand Vorstand');
-
-  return next lives_ok(
-    format($q$select public.set_member_role(%L, 'groundskeeper', true)$q$, v_ohne),
-    'Platzwart geht auch ohne Login');
 
   perform set_config('role', 'postgres', true);
 end; $f$;
@@ -110,15 +106,12 @@ returns setof text language plpgsql as $f$
 declare v record; p record;
 begin
   select * into v from tests.fixture_user('board', 'Vorstand') limit 1;
-  insert into public.member_roles (member_id, role) values (v.member_id, 'groundskeeper');
   select * into p from tests.fixture_user('groundskeeper', 'Platzwart') limit 1;
 
-  update public.members set auth_user_id = null where id = v.member_id;
-
-  return next is(
-    (select array_agg(role::text order by role) from public.member_roles where member_id = v.member_id),
-    array['member', 'groundskeeper'],
-    'Ohne Login endet der Vorstand, der Platzwart bleibt');
+  -- Den Login verliert nur, wer archiviert ist (CHECK members_login_pflicht).
+  return next throws_ok(
+    format('update public.members set auth_user_id = null where id = %L', v.member_id),
+    '23514', null, 'Einem aktiven Vorstand laesst sich der Login nicht nehmen');
 
   update public.members set status = 'archived' where id = p.member_id;
 

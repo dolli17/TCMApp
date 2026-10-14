@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { translateDbError } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { loginVerwalten } from "../[id]/login-aktionen";
+import { memberLogin } from "@/lib/supabase/member-login";
 
 export interface AntragsErgebnis {
   ok: boolean;
@@ -20,13 +20,14 @@ function neuLaden() {
 /**
  * Einen Antrag annehmen.
  *
- * Legt Mitglied, Mitgliedschaft und Rolle an und überträgt die Einwilligungen.
- * Danach geht immer die Einladung hinterher: Es gibt keine Mitglieder ohne
- * Login.
+ * Legt Login, Mitglied, Mitgliedschaft und Rolle an und überträgt die
+ * Einwilligungen. Es gibt keine Mitglieder ohne Login, deshalb läuft das über
+ * die Edge Function `member-login`: Sie lädt zuerst ein und nimmt dann den
+ * Antrag mit dem neuen Login an.
  *
- * Scheitert die Einladung, gilt die Aufnahme trotzdem: das Mitglied ist
- * angelegt, und die Einladung lässt sich auf der Detailseite nachholen. Die
- * Meldung sagt beides.
+ * Alles oder nichts: Scheitert die Einladung oder die Annahme, bleibt der
+ * Antrag offen, es entsteht kein Mitglied, und ein schon angelegter Login wird
+ * wieder gelöscht. Die Meldung sagt, woran es lag.
  */
 export async function antragAnnehmen(formData: FormData): Promise<AntragsErgebnis> {
   const id = String(formData.get("antrag") ?? "");
@@ -34,30 +35,22 @@ export async function antragAnnehmen(formData: FormData): Promise<AntragsErgebni
   const eintritt = String(formData.get("started_on") ?? "").trim();
   const beitragsart = String(formData.get("fee_type") ?? "").trim();
 
-  const supabase = await createServerSupabase();
-  const { data, error } = await supabase.rpc("accept_membership_application", {
-    p_application_id: id,
-    p_number: nummer || undefined,
-    p_fee_type_ids: beitragsart ? [beitragsart] : undefined,
-    p_started_on: eintritt || undefined,
+  const e = await memberLogin({
+    aktion: "antrag_annehmen",
+    antrag: {
+      id,
+      nummer: nummer || undefined,
+      beitragsart: beitragsart || undefined,
+      eintritt: eintritt || undefined,
+    },
   });
-
-  if (error) return { ok: false, meldung: translateDbError(error) };
-
-  const ergebnis = data?.[0];
 
   // Bewusst ohne neuLaden(): ein revalidatePath ersetzt hier den Teilbaum mit
   // dem nativen <dialog>, und das Fenster schließt sich mitsamt der Meldung,
   // in der die Mitgliedsnummer steht. Die Liste frischt die Komponente auf,
   // wenn der Vorstand das Fenster schließt.
-  const teile = [`Aufgenommen unter der Nummer ${ergebnis?.membership_number ?? "—"}.`];
-
-  if (ergebnis?.needs_invite && ergebnis.member_id) {
-    const e = await loginVerwalten(ergebnis.member_id, "einladen", false);
-    teile.push(e.ok ? e.meldung : `Die Einladung ging nicht raus: ${e.meldung}`);
-  }
-
-  return { ok: true, meldung: teile.join(" "), memberId: ergebnis?.member_id ?? undefined };
+  if (!e.ok) return { ok: false, meldung: e.meldung };
+  return { ok: true, meldung: e.meldung, memberId: e.id };
 }
 
 export async function antragAblehnen(id: string, grund: string): Promise<AntragsErgebnis> {

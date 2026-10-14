@@ -6,6 +6,12 @@
  * der Import erst zum Cutover laeuft und bis dahin kein echter Datensatz in
  * die Datenbank gehoert.
  *
+ * Fuer den Schreibmodus: Jedes Mitglied braucht einen Login (CHECK
+ * members_login_pflicht). Also je Person zuerst den Login anlegen, dann
+ * create_member mit p_auth_user_id - genau so, wie es die Edge Function
+ * member-login beim Anlegen tut. Ein Mitglied ohne Login nimmt die Datenbank
+ * nicht an.
+ *
  * Aufruf:
  *   pnpm --filter @tcm/import dry-run
  *

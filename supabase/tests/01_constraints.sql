@@ -21,35 +21,33 @@ begin
 end;
 $$;
 
-create or replace function tests.fixture_member(p_name text default 'Test')
+-- Ein Login in auth.users, so wie ihn die Edge Function member-login vor dem
+-- Mitglied anlegt.
+create or replace function tests.fixture_login(p_email text default null, p_id uuid default null)
 returns uuid
 language plpgsql
 as $$
-declare v_id uuid;
+declare v_id uuid := coalesce(p_id, gen_random_uuid());
 begin
-  -- Jedes Mitglied braucht eine eigene Adresse (Trigger members_email_pflicht).
-  insert into public.members (first_name, last_name, email)
-  values (p_name, 'Person ' || substr(gen_random_uuid()::text, 1, 8),
-          'fixture-' || gen_random_uuid()::text || '@example.org')
-  returning id into v_id;
+  insert into auth.users (id, email, aud, role)
+  values (v_id, lower(coalesce(p_email, 'login-' || v_id::text || '@example.org')),
+          'authenticated', 'authenticated');
   return v_id;
 end;
 $$;
 
--- Ein Mitglied aus dem Altbestand: ohne E-Mail und ohne Login. Neu anlegen
--- laesst sich so eines nicht mehr, deshalb ist der Trigger kurz aus. Die
--- Transaktion des Tests wird zurueckgerollt, der Trigger also auch.
-create or replace function tests.fixture_altbestand(p_name text default 'Alt')
+create or replace function tests.fixture_member(p_name text default 'Test')
 returns uuid
 language plpgsql
 as $$
-declare v_id uuid;
+declare v_id uuid; v_email text := 'fixture-' || gen_random_uuid()::text || '@example.org';
 begin
-  alter table public.members disable trigger members_email_pflicht;
-  insert into public.members (first_name, last_name)
-  values (p_name, 'Bestand ' || substr(gen_random_uuid()::text, 1, 8))
+  -- Jedes Mitglied braucht eine eigene Adresse und einen Login
+  -- (CHECK members_email_pflicht und members_login_pflicht).
+  insert into public.members (first_name, last_name, email, auth_user_id)
+  values (p_name, 'Person ' || substr(gen_random_uuid()::text, 1, 8),
+          v_email, tests.fixture_login(v_email))
   returning id into v_id;
-  alter table public.members enable trigger members_email_pflicht;
   return v_id;
 end;
 $$;
@@ -336,19 +334,14 @@ $$;
 -- ---------------------------------------------------------------------------
 -- Weitere fachliche Constraints
 -- ---------------------------------------------------------------------------
--- Jeder zahlt selbst: billing_payer_id ist nur noch fuer die Abwaerts-
--- kompatibilitaet da und bleibt leer.
-create or replace function tests.test_mitglied_bekommt_keinen_zahler()
+-- Jeder zahlt selbst: die Spalte billing_payer_id gibt es nicht mehr.
+create or replace function tests.test_mitglied_hat_keinen_zahler()
 returns setof text
 language plpgsql
 as $$
-declare v_mem uuid := tests.fixture_member(); v_anderes uuid := tests.fixture_member('Anderes');
 begin
-  return next throws_ok(
-    format($q$update public.members set billing_payer_id = %L where id = %L$q$, v_anderes, v_mem),
-    '23514', null,
-    'Ein Mitglied bekommt keinen Zahler mehr'
-  );
+  return next hasnt_column('public', 'members', 'billing_payer_id',
+    'members.billing_payer_id ist entfernt');
 end;
 $$;
 
