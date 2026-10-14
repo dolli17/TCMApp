@@ -70,6 +70,32 @@ async function waehleBeitragsart(karte: Locator, teil: string) {
   await auswahl.selectOption(wert!);
 }
 
+/**
+ * Die Links aus den Einladungsmails an eine Adresse, der jüngste zuerst.
+ * Lokal fängt Mailpit jede Mail ab (supabase/config.toml, [inbucket]).
+ */
+async function einladungsLinks(email: string, anzahl: number): Promise<string[]> {
+  const mailpit = (process.env.MAILPIT_URL ?? "http://127.0.0.1:54324").replace(/\/$/, "");
+  let links: string[] = [];
+  await expect
+    .poll(
+      async () => {
+        const suche = await (await fetch(`${mailpit}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`)).json();
+        const ids: string[] = (suche.messages ?? []).map((m: { ID: string }) => m.ID);
+        links = [];
+        for (const id of ids) {
+          const mail = await (await fetch(`${mailpit}/api/v1/message/${id}`)).json();
+          const treffer = /href="([^"]*\/verify[^"]*)"/.exec(mail.HTML ?? "");
+          if (treffer?.[1]) links.push(treffer[1].replace(/&amp;/g, "&"));
+        }
+        return links.length;
+      },
+      { timeout: 20_000 },
+    )
+    .toBeGreaterThanOrEqual(anzahl);
+  return links;
+}
+
 /** Räumt ein Testmitglied wieder ab. Fehler hier sollen den Test nicht kippen. */
 async function aufraeumen(page: Page, adresse: string, nachname: string) {
   try {
@@ -634,6 +660,50 @@ test.describe("Mitgliederverwaltung", () => {
     await aufraeumen(page, adresse, nachname);
     await page.goto("/admin/mitglieder?filter=alle&q=" + encodeURIComponent(nachname));
     await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"] li')).toHaveCount(0);
+  });
+
+  test("Einladung erneut senden: neuer Link, der alte verfällt, der neue führt ins Onboarding", async ({
+    page,
+  }) => {
+    const nachname = testName("Einladung");
+    // Keine Testadresse: die Einladung geht wirklich raus, lokal in Mailpit.
+    const email = `${nachname}@beispiel-verein.de`.toLowerCase();
+    await anmelden(page, NUTZER.admin);
+    const fenster = await anlegeFenster(page, nachname);
+    await fenster.getByLabel("E-Mail").fill(email);
+    await pflichtfelderFuellen(fenster);
+    await fenster.getByRole("button", { name: "Anlegen" }).click();
+    await page.waitForURL(/\/admin\/mitglieder\/[0-9a-f-]{36}/, { timeout: 20_000 });
+    const adresse = page.url();
+
+    // Die Liste zeigt den Stand, auch über den Filter „Onboarding offen“.
+    await page.goto("/admin/mitglieder?art=onboarding&q=" + encodeURIComponent(nachname));
+    const zeile = page.locator('.liste-gruppe[aria-label="Mitglieder"] li');
+    await expect(zeile).toHaveCount(1);
+    await expect(zeile).toContainText("Einladung ausstehend");
+
+    await page.goto(`${adresse.split("?")[0]}?teil=zugang`);
+    const karte = page.locator('section[aria-label="Zugang"]');
+    await expect(karte).toContainText("Einladung ausstehend");
+    await karte.getByRole("button", { name: "Einladung erneut senden" }).click();
+    await expect(karte.locator(".hinweis.erfolg")).toContainText("neuer Einladungslink", { timeout: 20_000 });
+
+    // Zwei Einladungen in Mailpit; nur der jüngste Link gilt.
+    const links = await einladungsLinks(email, 2);
+    const alt = await fetch(links[links.length - 1]!, { redirect: "manual" });
+    expect(alt.headers.get("location") ?? "").toContain("error");
+
+    await page.goto(links[0]!);
+    await page.waitForURL(/\/passwort-setzen/);
+    await page.getByLabel("Neues Passwort").fill("Einladung-2026!");
+    await page.getByLabel("Noch einmal").fill("Einladung-2026!");
+    await page.getByRole("button", { name: "Passwort speichern" }).click();
+    // Die Weiche greift: vom Passwort direkt ins Onboarding.
+    await page.waitForURL(/\/onboarding/, { timeout: 20_000 });
+
+    // Aufräumen als Admin (Login geht mit dem Mitglied).
+    await anmelden(page, NUTZER.admin);
+    await aufraeumen(page, adresse, nachname);
   });
 
   test("ohne E-Mail kein Anlegen", async ({ page }) => {

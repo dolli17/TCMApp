@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { einladungsStatus, spaetererZeitpunkt } from "./einladung";
+import { einladungsStatus } from "./einladung";
 
 const JETZT = new Date("2026-10-14T12:00:00Z");
 
@@ -32,7 +32,7 @@ describe("einladungsStatus", () => {
     ).toBe("ausstehend");
   });
 
-  it("nie angemeldet, Link älter als 24 Stunden oder unbekannt: abgelaufen", () => {
+  it("nie angemeldet, Link älter als 24 Stunden: abgelaufen", () => {
     expect(
       einladungsStatus({
         onboardingAbgeschlossen: false,
@@ -41,17 +41,11 @@ describe("einladungsStatus", () => {
         jetzt: JETZT,
       }),
     ).toBe("abgelaufen");
+  });
+
+  it("nie ein Link verschickt (Testadresse): nur Onboarding offen", () => {
     expect(
       einladungsStatus({ onboardingAbgeschlossen: false, angemeldetAm: null, gesendetAm: null, jetzt: JETZT }),
-    ).toBe("abgelaufen");
-  });
-});
-
-describe("spaetererZeitpunkt", () => {
-  it("nimmt den jüngeren und verträgt null", () => {
-    expect(spaetererZeitpunkt("2026-10-01T00:00:00Z", "2026-10-02T00:00:00Z")).toBe("2026-10-02T00:00:00Z");
-    expect(spaetererZeitpunkt(null, "2026-10-02T00:00:00Z")).toBe("2026-10-02T00:00:00Z");
-    expect(spaetererZeitpunkt("2026-10-01T00:00:00Z", undefined)).toBe("2026-10-01T00:00:00Z");
-    expect(spaetererZeitpunkt(null, null)).toBeNull();
+    ).toBe("onboarding_offen");
   });
 });

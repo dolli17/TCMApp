@@ -8,7 +8,10 @@
  *
  *   - ausstehend:      noch nie angemeldet, der letzte Link ist noch gültig
  *   - abgelaufen:      noch nie angemeldet, der letzte Link ist verfallen
- *   - onboarding_offen: angemeldet, aber die Pflichtschritte fehlen noch
+ *   - onboarding_offen: angemeldet, aber die Pflichtschritte fehlen noch -
+ *                       oder es ging nie ein Link raus (Testadressen wie
+ *                       @example.org bekommen keine Mail), dann gibt es
+ *                       auch nichts, was ablaufen könnte
  *
  * Wer das Onboarding abgeschlossen hat (auch der ganze Bestand), hat keinen
  * Einladungsstatus mehr.
@@ -44,14 +47,7 @@ export function einladungsStatus({
 }): EinladungsStatus | null {
   if (onboardingAbgeschlossen) return null;
   if (angemeldetAm) return "onboarding_offen";
-  if (!gesendetAm) return "abgelaufen";
+  if (!gesendetAm) return "onboarding_offen";
   const alter = jetzt.getTime() - new Date(gesendetAm).getTime();
   return alter > EINLADUNG_GUELTIG_STUNDEN * 3_600_000 ? "abgelaufen" : "ausstehend";
-}
-
-/** Der jüngere von zwei Zeitpunkten (Einladung, Recovery), null-tolerant. */
-export function spaetererZeitpunkt(a: string | null | undefined, b: string | null | undefined): string | null {
-  if (!a) return b ?? null;
-  if (!b) return a;
-  return new Date(a).getTime() >= new Date(b).getTime() ? a : b;
 }
