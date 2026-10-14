@@ -31,6 +31,7 @@ export async function mitgliedAnlegen(formData: FormData): Promise<AnlegeErgebni
   const vorname = text("first_name");
   const nachname = text("last_name");
   const email = text("email");
+  const beitragsart = text("fee_type");
 
   // Billige Vorprüfung ohne Datenbankrunde. Die eigentliche Regel steht
   // trotzdem in create_member – hier geht es nur um schnelle Rückmeldung.
@@ -49,14 +50,13 @@ export async function mitgliedAnlegen(formData: FormData): Promise<AnlegeErgebni
       p_email: email,
       p_birthday: text("birthday"),
       p_gender: text("gender"),
-      p_salutation: text("salutation"),
-      p_phone: text("phone"),
       p_mobile: text("mobile"),
       p_street: text("street"),
       p_postcode: text("postcode"),
       p_city: text("city"),
       p_number: text("number"),
       p_started_on: text("started_on"),
+      p_fee_type_ids: beitragsart ? [beitragsart] : undefined,
     },
   });
 

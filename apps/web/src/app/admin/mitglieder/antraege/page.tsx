@@ -3,7 +3,8 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { MitgliederSegmente } from "@/components/MitgliederSegmente";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { AntragsListe } from "@/components/AntragsListe";
-import type { Antrag, Beitragsart } from "@/components/AntragsFenster";
+import type { Antrag } from "@/components/AntragsFenster";
+import { ladeBeitragsarten } from "@/lib/beitragsarten";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export default async function AntraegeSeite({
   let abfrage = supabase
     .from("membership_applications")
     .select(
-      "id, first_name, last_name, salutation, birthday, email, phone, mobile, street, postcode, city, emergency_contact_name, emergency_contact_phone, guardian_name, guardian_email, desired_fee_type_id, attribute_choices, message, status, possible_duplicate, submitted_at",
+      "id, first_name, last_name, salutation, gender, birthday, email, phone, mobile, street, postcode, city, emergency_contact_name, emergency_contact_phone, guardian_name, guardian_email, desired_fee_type_id, attribute_choices, message, status, possible_duplicate, submitted_at",
     )
     .order("submitted_at", { ascending: false })
     .limit(200);
@@ -35,25 +36,11 @@ export default async function AntraegeSeite({
   if (gewaehlt === "offen") abfrage = abfrage.eq("status", "new");
   if (gewaehlt === "erledigt") abfrage = abfrage.neq("status", "new");
 
-  const [antraegeRes, artenRes] = await Promise.all([
-    abfrage,
-    supabase.from("fee_types").select("id, name, fee_prices(amount_cents)").eq("active", true).order("sort_order"),
-  ]);
+  const [antraegeRes, beitragsarten] = await Promise.all([abfrage, ladeBeitragsarten(supabase)]);
 
   if (antraegeRes.error) {
     return <div className="hinweis fehler">{antraegeRes.error.message}</div>;
   }
-
-  const beitragsarten: Beitragsart[] = (artenRes.data ?? []).map((a) => ({
-    id: a.id,
-    name: a.name,
-    // Der jüngste hinterlegte Preis genügt für die Anzeige im Fenster; für die
-    // Abrechnung rechnet ohnehin die Datenbank.
-    preis_cents:
-      (Array.isArray(a.fee_prices) ? a.fee_prices : [])
-        .map((p) => p.amount_cents)
-        .sort((x, y) => y - x)[0] ?? null,
-  }));
 
   const antraege = (antraegeRes.data ?? []) as unknown as Antrag[];
   const offene = antraege.filter((a) => a.status === "new").length;

@@ -18,6 +18,20 @@ function testEmail(nachname: string, vorname = "Test"): string {
   return `${vorname}.${nachname}@example.org`.toLowerCase();
 }
 
+/**
+ * Die übrigen Pflichtfelder, die Antrag und Anlegen gleichermaßen verlangen:
+ * Geburtstag, Geschlecht, Telefon und Anschrift. Vorname, Nachname und E-Mail
+ * füllt jeder Test selbst, weil er sie wiederfinden will.
+ */
+async function pflichtfelderFuellen(bereich: Page | Locator, geburtstag = "1990-05-17") {
+  await bereich.getByLabel("Geburtstag").fill(geburtstag);
+  await bereich.getByLabel("Geschlecht").selectOption("diverse");
+  await bereich.getByLabel("Telefon").fill("07223 12345");
+  await bereich.getByLabel("Straße und Hausnummer").fill("Hauptstraße 1");
+  await bereich.getByLabel("PLZ").fill("77815");
+  await bereich.getByLabel("Ort", { exact: true }).fill("Muckensturm");
+}
+
 /** Öffnet das Fenster „Mitglied anlegen“ und füllt Vor- und Nachnamen. */
 async function anlegeFenster(page: Page, nachname: string, vorname = "Test"): Promise<Locator> {
   await page.goto("/admin/mitglieder");
@@ -35,6 +49,7 @@ async function mitgliedAnlegen(page: Page, nachname: string, vorname = "Test"): 
   const fenster = await anlegeFenster(page, nachname, vorname);
   // Ohne E-Mail kein Mitglied: Jedes Mitglied bekommt beim Anlegen einen Login.
   await fenster.getByLabel("E-Mail").fill(testEmail(nachname, vorname));
+  await pflichtfelderFuellen(fenster);
   await fenster.getByRole("button", { name: "Anlegen" }).click();
 
   // Nach dem Anlegen führt die Oberfläche direkt auf die Detailseite.
@@ -656,6 +671,7 @@ test.describe("Mitgliederverwaltung", () => {
     // Edge Function muss das Mitglied wieder entfernen.
     await fenster.locator("form").evaluate((f) => ((f as HTMLFormElement).noValidate = true));
     await fenster.getByLabel("E-Mail").fill(`${testEmail(nachname)}.`);
+    await pflichtfelderFuellen(fenster);
     await fenster.getByRole("button", { name: "Anlegen" }).click();
     await expect(fenster.locator(".hinweis.fehler")).toContainText("nicht angelegt", {
       timeout: 20_000,
@@ -705,9 +721,8 @@ test.describe("Mitgliederverwaltung", () => {
 
     await page.getByLabel("Vorname").fill("Neue");
     await page.getByLabel("Nachname").fill(nachname);
-    await page.getByLabel("Geburtstag").fill("1994-07-21");
     await page.getByLabel("E-Mail", { exact: true }).fill(email);
-    await page.getByLabel("Ort").fill("Muckensturm");
+    await pflichtfelderFuellen(page, "1994-07-21");
 
     await page.getByRole("button", { name: "Antrag absenden" }).click();
     // Auf die Überschrift warten statt auf die Adresse: Next wechselt die
@@ -720,8 +735,8 @@ test.describe("Mitgliederverwaltung", () => {
     await page.goto("/antrag");
     await page.getByLabel("Vorname").fill("Nochmal");
     await page.getByLabel("Nachname").fill(nachname);
-    await page.getByLabel("Geburtstag").fill("1994-07-21");
     await page.getByLabel("E-Mail", { exact: true }).fill(email);
+    await pflichtfelderFuellen(page, "1994-07-21");
     await page.getByRole("button", { name: "Antrag absenden" }).click();
     await expect(page.getByRole("heading", { name: "Danke!" })).toBeVisible({ timeout: 20_000 });
 
@@ -735,6 +750,8 @@ test.describe("Mitgliederverwaltung", () => {
     await zeilen.locator("button.listenzeile").click();
     const fenster = page.locator("dialog.fenster");
     await expect(fenster).toContainText(email);
+    await expect(fenster).toContainText("divers");
+    await expect(fenster).toContainText("Hauptstraße 1");
     await expect(fenster.getByRole("checkbox", { name: /Einladung/ })).toHaveCount(0);
     await expect(fenster).toContainText("bekommt sofort eine Einladung");
     await fenster.getByRole("button", { name: "Aufnehmen" }).click();
@@ -774,8 +791,8 @@ test.describe("Mitgliederverwaltung", () => {
     await page.goto("/antrag");
     await page.getByLabel("Vorname").fill("Ohne");
     await page.getByLabel("Nachname").fill(nachname);
-    await page.getByLabel("Geburtstag").fill("1991-03-03");
     await page.getByLabel("E-Mail", { exact: true }).fill(email);
+    await pflichtfelderFuellen(page, "1991-03-03");
     await page.locator("form").first().evaluate((f) => ((f as HTMLFormElement).noValidate = true));
     await page.getByRole("button", { name: "Antrag absenden" }).click();
     await expect(page.getByRole("heading", { name: "Danke!" })).toBeVisible({ timeout: 20_000 });
@@ -811,8 +828,8 @@ test.describe("Mitgliederverwaltung", () => {
     await page.goto("/antrag");
     await page.getByLabel("Vorname").fill("Leider");
     await page.getByLabel("Nachname").fill(nachname);
-    await page.getByLabel("Geburtstag").fill("1990-01-01");
     await page.getByLabel("E-Mail", { exact: true }).fill(email);
+    await pflichtfelderFuellen(page, "1990-01-01");
     await page.getByRole("button", { name: "Antrag absenden" }).click();
     await expect(page.getByRole("heading", { name: "Danke!" })).toBeVisible({ timeout: 20_000 });
 
