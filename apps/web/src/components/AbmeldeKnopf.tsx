@@ -8,9 +8,13 @@ import { createClient } from "@/lib/supabase/client";
 
 /**
  * Abmelden. Als Symbol in der Nutzerkarte der Seitenleiste; mit alsZeile als
- * rote Zeile in der letzten Gruppe der Konto-Seite (Entwurf AppKonto).
+ * rote Zeile in der letzten Gruppe der Konto-Seite (Entwurf AppKonto); mit
+ * alsText als kleiner Knopf, etwa im Rahmen des Onboardings.
  */
-export function AbmeldeKnopf({ alsZeile = false }: { alsZeile?: boolean } = {}) {
+export function AbmeldeKnopf({
+  alsZeile = false,
+  alsText = false,
+}: { alsZeile?: boolean; alsText?: boolean } = {}) {
   const router = useRouter();
   const [laeuft, setLaeuft] = useState(false);
 
@@ -27,6 +31,14 @@ export function AbmeldeKnopf({ alsZeile = false }: { alsZeile?: boolean } = {}) 
   if (alsZeile) {
     return (
       <button type="button" className="gruppen-zeile rot" onClick={abmelden} disabled={laeuft}>
+        {laeuft ? "Wird abgemeldet…" : "Abmelden"}
+      </button>
+    );
+  }
+
+  if (alsText) {
+    return (
+      <button type="button" className="knopf leise klein" onClick={abmelden} disabled={laeuft}>
         {laeuft ? "Wird abgemeldet…" : "Abmelden"}
       </button>
     );

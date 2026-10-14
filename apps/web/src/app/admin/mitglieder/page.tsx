@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { formatCents, memberCategory, rollenMarken, type MemberCategory } from "@tcm/core";
+import { EINLADUNGS_STATUS_TEXT, formatCents, memberCategory, rollenMarken, type MemberCategory } from "@tcm/core";
+import { ladeEinladungsstatus } from "@/lib/einladungen";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { MitgliederSegmente } from "@/components/MitgliederSegmente";
 import { Listenzeile, type HinweisTon } from "@/components/Listenzeile";
@@ -22,13 +23,14 @@ const BESTAND = [
   { wert: "alle", label: "Alle Datensätze" },
 ];
 
-/** Die Chips des Entwurfs: nach Mitgliedschaft und Mandat */
-const ARTEN: { wert: MemberCategory | "ohne-mandat" | ""; label: string }[] = [
+/** Die Chips des Entwurfs: nach Mitgliedschaft und Mandat, dazu neue Mitglieder im Onboarding */
+const ARTEN: { wert: MemberCategory | "ohne-mandat" | "onboarding" | ""; label: string }[] = [
   { wert: "", label: "Alle" },
   { wert: "aktiv", label: "Aktiv" },
   { wert: "jugend", label: "Jugend" },
   { wert: "passiv", label: "Passiv" },
   { wert: "ohne-mandat", label: "Ohne Mandat" },
+  { wert: "onboarding", label: "Onboarding offen" },
 ];
 
 const JE_SEITE = 50;
@@ -70,7 +72,7 @@ export default async function MitgliederSeite({
         p_limit: 1000,
       }),
       supabase.from("member_fees").select("member_id, fee_types(code, name, sort_order)").eq("year", jahr),
-      supabase.from("members").select("id, team_id, is_team_captain"),
+      supabase.from("members").select("id, team_id, is_team_captain, onboarding_completed_at"),
       supabase.from("teams").select("id, name"),
       supabase.from("sepa_mandates").select("member_id").eq("status", "active"),
       supabase
@@ -96,6 +98,12 @@ export default async function MitgliederSeite({
   for (const c of offenRes.data ?? []) offen.set(c.member_id, (offen.get(c.member_id) ?? 0) + c.amount_cents);
   const nebenFehler = beitraegeRes.error ?? zuordnungRes.error ?? mannschaftenRes.error ?? mandateRes.error ?? offenRes.error;
 
+  // Neue Mitglieder, deren Onboarding offen ist: Stand der Einladung (O24).
+  const offeneIds = (data ?? [])
+    .filter((m) => { const z = zuordnung.get(m.id); return z && !z.onboarding_completed_at; })
+    .map((m) => m.id);
+  const einladungen = await ladeEinladungsstatus(offeneIds);
+
   const zeilen = (data ?? []).map((m) => {
     const fees = (beitrag.get(m.id) ?? []).sort((a, b) => a.sort_order - b.sort_order);
     const z = zuordnung.get(m.id);
@@ -107,11 +115,18 @@ export default async function MitgliederSeite({
       is_team_captain: z?.is_team_captain ?? false,
       mandat: mitMandat.has(m.id),
       offenCents: offen.get(m.id) ?? 0,
+      einladung: einladungen.get(m.id) ?? null,
     };
   });
 
   const gefiltert = zeilen.filter((z) =>
-    artWahl === "" ? true : artWahl === "ohne-mandat" ? !z.mandat : z.kategorie === artWahl,
+    artWahl === ""
+      ? true
+      : artWahl === "ohne-mandat"
+        ? !z.mandat
+        : artWahl === "onboarding"
+          ? z.einladung !== null
+          : z.kategorie === artWahl,
   );
   const seiten = Math.max(1, Math.ceil(gefiltert.length / JE_SEITE));
   const seiteNr = Math.min(seiten, Math.max(1, Number(seite) || 1));
@@ -253,10 +268,13 @@ export default async function MitgliederSeite({
 
   /**
    * Genau ein Hinweis je Zeile (Regel 3): was die gewaehlte Ansicht sucht,
-   * sonst das Dringendste - fehlendes Mandat vor offenem Betrag vor fehlendem
-   * Zugang.
+   * sonst das Dringendste - offenes Onboarding (es erklaert auch das fehlende
+   * Mandat) vor fehlendem Mandat vor offenem Betrag vor fehlendem Zugang.
    */
   function hinweis(m: (typeof zeilen)[number]): { text: string; ton: HinweisTon } | null {
+    if (m.einladung) {
+      return { text: EINLADUNGS_STATUS_TEXT[m.einladung], ton: m.einladung === "abgelaufen" ? "rot" : "gold" };
+    }
     if (!m.mandat) return { text: "kein Mandat", ton: "rot" };
     if (m.offenCents > 0) return { text: formatCents(m.offenCents), ton: "gold" };
     if (!m.has_login) return { text: "kein Zugang", ton: "leise" };

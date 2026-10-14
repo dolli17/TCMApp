@@ -33,7 +33,9 @@ type Aktion =
   | "login_deaktivieren"
   | "login_aktivieren"
   | "email_aendern"
-  | "loeschen";
+  | "loeschen"
+  | "einladung_erneut"
+  | "einladung_status";
 
 interface Anfrage {
   aktion: Aktion;
@@ -56,6 +58,8 @@ interface Anfrage {
   nachname?: string;
   /** `loeschen` mit art `anonymisieren`: der Grund fürs Protokoll. */
   grund?: string;
+  /** `einladung_status`: die Mitglieder, deren Einladung interessiert. */
+  memberIds?: string[];
 }
 
 /**
@@ -155,6 +159,14 @@ Deno.serve(async (req) => {
     auth: { persistSession: false },
   });
 
+  if (aktion === "einladung_status") {
+    try {
+      return await einladungStatus(alsDienst, anfrage.memberIds ?? []);
+    } catch (fehler) {
+      return antwort(false, fehler instanceof Error ? fehler.message : String(fehler), 400);
+    }
+  }
+
   // Anlegen und Annehmen haben noch kein Mitglied, das sich nachlesen ließe.
   if (aktion === "anlegen" || aktion === "antrag_annehmen") {
     try {
@@ -201,6 +213,63 @@ Deno.serve(async (req) => {
         if (error) return antwort(false, error.message, 400);
 
         return antwort(true, `Der Link zum Zurücksetzen ging an ${mitglied.email}.`);
+      }
+
+      case "einladung_erneut": {
+        if (!mitglied.auth_user_id || !mitglied.email) {
+          return antwort(false, "Dieses Mitglied hat keinen Zugang.", 400);
+        }
+        if (await istTestadresse(alsDienst, mitglied.email)) {
+          return antwort(false, TESTADRESSE, 400);
+        }
+
+        // Nur, solange das Onboarding offen ist. Danach ist das ein ganz
+        // normales Konto, und für ein vergessenes Passwort gibt es
+        // "Passwort zurücksetzen". Gelesen mit dem Token des Aufrufers: der
+        // Service-Schlüssel hat auf members kein SELECT.
+        const { data: zeile, error: leseFehler } = await alsAufrufer
+          .from("members")
+          .select("onboarding_completed_at")
+          .eq("id", mitglied.id)
+          .maybeSingle();
+        if (leseFehler) return dbFehler(leseFehler);
+        if ((zeile as { onboarding_completed_at: string | null } | null)?.onboarding_completed_at) {
+          return antwort(
+            false,
+            "Dieses Mitglied hat sein Konto schon eingerichtet. Für ein neues Passwort gibt es „Passwort zurücksetzen lassen“.",
+            400,
+          );
+        }
+
+        const { data: konto, error: kontoFehler } = await alsDienst.auth.admin.getUserById(
+          mitglied.auth_user_id,
+        );
+        if (kontoFehler || !konto?.user) {
+          return antwort(false, kontoFehler?.message ?? "Den Login gibt es nicht mehr.", 400);
+        }
+
+        // Der Login bleibt, wie er ist (Login-Pflicht): kein Löschen und neu
+        // Anlegen. Lokal mit Mailpit geprüft:
+        //  - Unbestätigt (Link nie geöffnet): inviteUserByEmail schickt für
+        //    den bestehenden Login eine neue Einladung. Der alte Link verfällt.
+        //  - Bestätigt, aber nicht fertig (Link geöffnet, kein Passwort oder
+        //    Onboarding abgebrochen): eine zweite Einladung lehnt Supabase ab
+        //    ("already been registered"). Dann ein Recovery-Link, der auf
+        //    dieselbe Seite /passwort-setzen führt.
+        const bestaetigt = Boolean(konto.user.email_confirmed_at);
+        const { error } = bestaetigt
+          ? await alsDienst.auth.resetPasswordForEmail(mitglied.email, {
+              redirectTo: `${SITE_URL}/passwort-setzen`,
+            })
+          : await alsDienst.auth.admin.inviteUserByEmail(mitglied.email, {
+              redirectTo: `${SITE_URL}/passwort-setzen`,
+            });
+        if (error) return antwort(false, error.message, 400);
+
+        return antwort(
+          true,
+          `Ein neuer Einladungslink ging an ${mitglied.email}. Der bisherige Link gilt nicht mehr.`,
+        );
       }
 
       case "login_deaktivieren":
@@ -444,6 +513,46 @@ async function antragAnnehmen(
     200,
     { id: zeile.member_id },
   );
+}
+
+/**
+ * Wo die Einladung der genannten Mitglieder steht: bestätigt, letzte
+ * Anmeldung und wann der letzte Link (Einladung oder Recovery) rausging.
+ * Das steht nur in auth.users, und dorthin kommt nur der Service-Schlüssel.
+ * Die Verwaltung fragt das nur für Mitglieder mit offenem Onboarding ab -
+ * im Alltag eine Handvoll.
+ */
+async function einladungStatus(
+  alsDienst: ReturnType<typeof createClient>,
+  memberIds: string[],
+): Promise<Response> {
+  if (!Array.isArray(memberIds) || memberIds.length > 200) {
+    return antwort(false, "Die Anfrage ist unvollständig.", 400);
+  }
+  const status: Record<
+    string,
+    { bestaetigt: boolean; angemeldet_am: string | null; gesendet_am: string | null }
+  > = {};
+
+  await Promise.all(
+    memberIds.map(async (id) => {
+      const mitglied = await mitgliedLesen(alsDienst, id);
+      if (!mitglied?.auth_user_id) return;
+      const { data } = await alsDienst.auth.admin.getUserById(mitglied.auth_user_id);
+      const u = data?.user;
+      if (!u) return;
+      const zeiten = [u.invited_at, u.recovery_sent_at, u.confirmation_sent_at].filter(
+        (z): z is string => Boolean(z),
+      );
+      status[id] = {
+        bestaetigt: Boolean(u.email_confirmed_at),
+        angemeldet_am: u.last_sign_in_at ?? null,
+        gesendet_am: zeiten.sort().at(-1) ?? null,
+      };
+    }),
+  );
+
+  return antwort(true, "Erledigt.", 200, { status });
 }
 
 interface Login {

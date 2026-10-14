@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { formatCents, rollenMarken } from "@tcm/core";
+import { EINLADUNGS_STATUS_TEXT, formatCents, rollenMarken } from "@tcm/core";
+import { ladeEinladungsstatus } from "@/lib/einladungen";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 
@@ -29,7 +30,7 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
     await Promise.all([
       supabase
         .from("members")
-        .select("id, first_name, last_name, email, phone, mobile, status, auth_user_id, login_disabled_at, emergency_contact_name, is_trainer, is_team_captain, teams(name), member_roles!member_roles_member_id_fkey(role)")
+        .select("id, first_name, last_name, email, phone, mobile, status, auth_user_id, login_disabled_at, onboarding_completed_at, emergency_contact_name, is_trainer, is_team_captain, teams(name), member_roles!member_roles_member_id_fkey(role)")
         .eq("id", id)
         .maybeSingle(),
       supabase
@@ -76,6 +77,8 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
   // Jedes Mitglied hat einen Login. Ohne sind nur Archivierte (anonymisiert).
   const hatLogin = Boolean(m.auth_user_id);
   const gesperrt = hatLogin && Boolean(m.login_disabled_at);
+  // Neue Mitglieder: wo hängt die Einladung bzw. das Onboarding? (O24)
+  const einladung = m.onboarding_completed_at ? null : (await ladeEinladungsstatus([id])).get(id) ?? null;
   const telefon = m.mobile ?? m.phone;
   const name = `${m.first_name} ${m.last_name}`;
   const kurz = (m.first_name[0] ?? "") + (m.last_name[0] ?? "");
@@ -107,6 +110,11 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
             <span className={`statusmarke ${hatLogin && !gesperrt ? "gruen" : gesperrt ? "rot" : ""}`}>
               {gesperrt ? "App-Zugang gesperrt" : hatLogin ? "App-Zugang aktiv" : "kein Zugang"}
             </span>
+            {einladung && (
+              <span className={`statusmarke ${einladung === "abgelaufen" ? "rot" : "gelb"}`}>
+                {EINLADUNGS_STATUS_TEXT[einladung]}
+              </span>
+            )}
           </div>
         </div>
         <div className="schnell">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { EINLADUNGS_STATUS_TEXT, type EinladungsStatus } from "@tcm/core";
 import { loginVerwalten } from "@/app/admin/mitglieder/[id]/login-aktionen";
 import type { LoginAktion } from "@/lib/supabase/member-login";
 
@@ -37,10 +38,13 @@ export function LoginKarte({
   mitgliedId,
   zustand,
   selbst,
+  einladung = null,
 }: {
   mitgliedId: string;
   zustand: LoginZustand;
   selbst: boolean;
+  /** Nur bei offenem Onboarding: wo die Einladung steht. */
+  einladung?: EinladungsStatus | null;
 }) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
@@ -79,6 +83,11 @@ export function LoginKarte({
             )
           ) : (
             <span className="marke-klein grau">kein Zugang</span>
+          )}{" "}
+          {einladung && (
+            <span className={`marke-klein ${einladung === "abgelaufen" ? "rot" : "gold"}`}>
+              {EINLADUNGS_STATUS_TEXT[einladung]}
+            </span>
           )}
         </span>
 
@@ -105,6 +114,11 @@ export function LoginKarte({
 
       {zustand.hat_zugang && (
         <div className="detailkopf aktionen">
+          {einladung && !gesperrt && (
+            <button className="knopf" disabled={laeuft} onClick={() => fuehreAus("einladung_erneut")}>
+              Einladung erneut senden
+            </button>
+          )}
           <button
             className="knopf leise"
             disabled={laeuft}
@@ -125,6 +139,14 @@ export function LoginKarte({
             </button>
           )}
         </div>
+      )}
+
+      {einladung && (
+        <p className="beschreibung">
+          {einladung === "onboarding_offen"
+            ? "Das Mitglied hat sich angemeldet, die Einrichtung des Kontos aber noch nicht abgeschlossen. Eine neue Einladung führt wieder zum Passwort und dann ins Onboarding."
+            : "Ein Einladungslink gilt 24 Stunden. Eine neue Einladung macht den bisherigen Link ungültig."}
+        </p>
       )}
 
       {zustand.hat_zugang && !selbst && (

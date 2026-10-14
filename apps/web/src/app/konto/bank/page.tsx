@@ -17,7 +17,7 @@ export default async function BankSeite() {
   const { data: mandat } = meineId
     ? await supabase
         .from("sepa_mandates")
-        .select("reference, signed_on, status, bank_accounts(holder, bank_name, iban_last4)")
+        .select("reference, signed_on, status, granted_online_at, bank_accounts(holder, bank_name, iban_last4)")
         .eq("member_id", meineId)
         .eq("status", "active")
         .order("signed_on", { ascending: false })
@@ -31,8 +31,7 @@ export default async function BankSeite() {
     <KontoUnterseite titel="Bankverbindung & Mandat">
       {!mandat ? (
         <p className="karte">
-          Es liegt kein SEPA-Mandat vor. Beiträge zahlst du per Überweisung. Wenn du am
-          Lastschriftverfahren teilnehmen möchtest, wende dich an den Vorstand.
+          Es liegt noch kein SEPA-Mandat vor. Bitte wende dich an den Vorstand.
         </p>
       ) : (
         <dl className="gruppe angaben">
@@ -40,7 +39,10 @@ export default async function BankSeite() {
           <div><dt>IBAN</dt><dd className="tnum">{konto?.iban_last4 ? `•••• ${konto.iban_last4}` : "–"}</dd></div>
           <div><dt>Bank</dt><dd>{konto?.bank_name ?? "–"}</dd></div>
           <div><dt>Mandatsreferenz</dt><dd className="tnum">{mandat.reference}</dd></div>
-          <div><dt>Unterschrieben am</dt><dd className="tnum">{DATUM.format(new Date(mandat.signed_on))}</dd></div>
+          <div>
+            <dt>{mandat.granted_online_at ? "Online erteilt am" : "Unterschrieben am"}</dt>
+            <dd className="tnum">{DATUM.format(new Date(mandat.signed_on))}</dd>
+          </div>
         </dl>
       )}
       <p className="beschreibung">Die Bankverbindung ändert der Vorstand – schreib ihm, wenn sich etwas geändert hat.</p>

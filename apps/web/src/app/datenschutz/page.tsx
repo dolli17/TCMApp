@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { AnmeldeBuehne } from "@/components/AnmeldeBuehne";
+import { fassung, ladeRechtstext } from "@/components/Rechtstext";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Datenschutz – TC Muckensturm",
@@ -10,18 +13,22 @@ export const metadata = {
  * Datenschutzerklärung, ohne Anmeldung erreichbar.
  *
  * Die Adresse dieser Seite steht in App Store Connect als Privacy-Policy-URL
- * und wird aus dem Konto-Tab der App verlinkt. Statisch, keine Datenbank.
+ * und wird aus dem Konto-Tab der App verlinkt. Der Text steht hier im Code;
+ * nur die Version kommt aus legal_documents. Ihr stimmen Mitglieder im
+ * Onboarding zu - aendert sich der Text, wird dort eine neue Version
+ * angelegt.
  *
  * Die Stellen in [[doppelten Klammern]] muss der Vorstand ausfüllen; der Text
  * ist ein Entwurf des Entwicklers und keine Rechtsberatung. Was hier steht,
  * folgt dem, was die App tatsächlich tut – wer eine neue Verarbeitung
  * einbaut (weiterer Dienst, neue Datenart), trägt sie hier nach.
  */
-export default function DatenschutzSeite() {
+export default async function DatenschutzSeite() {
+  const dokument = await ladeRechtstext("datenschutz");
   return (
     <AnmeldeBuehne titel="Datenschutz." unterzeile="Was die Vereins-App über dich speichert – und was nicht." breit klasse="rechtstext">
       <p className="unterzeile">
-        Stand: [[Datum]]. Diese Erklärung gilt für die Web-App und die iOS-/Android-App des
+        {dokument ? `${fassung(dokument)}. ` : "Stand: [[Datum]]. "}Diese Erklärung gilt für die Web-App und die iOS-/Android-App des
         TC Muckensturm.
       </p>
 
@@ -141,7 +148,7 @@ export default function DatenschutzSeite() {
       <h2>8. Minderjährige</h2>
       <p>
         Für Mitglieder unter 16 Jahren erfolgt die Aufnahme und die Verarbeitung ihrer Daten
-        mit Einwilligung der Erziehungsberechtigten, die im Mitgliedsantrag erklärt wird.
+        mit Einwilligung der Erziehungsberechtigten, die bei der Einrichtung des Kontos erklärt wird.
       </p>
 
       <p className="beschreibung" style={{ marginTop: 24 }}>

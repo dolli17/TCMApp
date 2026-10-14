@@ -558,8 +558,7 @@ function MandatAnsicht({ mandat }: { mandat: Awaited<ReturnType<typeof ladeMeinM
   if (!mandat) {
     return (
       <Text style={stil.text}>
-        Es liegt kein SEPA-Mandat vor. Beiträge zahlst du per Überweisung. Wenn du am
-        Lastschriftverfahren teilnehmen möchtest, wende dich an den Vorstand.
+        Es liegt noch kein SEPA-Mandat vor. Bitte wende dich an den Vorstand.
       </Text>
     );
   }

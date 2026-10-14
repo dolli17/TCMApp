@@ -6,6 +6,7 @@ import { BankUndMandatKarte, type FinanzZeile } from "@/components/BankUndMandat
 import { BeitragsartenKarte, type BeitragsZeile } from "@/components/BeitragsartenKarte";
 import { GefahrenzoneKarte, type Loeschfolgen } from "@/components/GefahrenzoneKarte";
 import { LoginKarte, type LoginZustand } from "@/components/LoginKarte";
+import { ladeEinladungsstatus } from "@/lib/einladungen";
 import { MerkmaleKarte, type MerkmalZeile } from "@/components/MerkmaleKarte";
 import { MitgliedschaftsKarte } from "@/components/MitgliedschaftsKarte";
 import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
@@ -406,11 +407,16 @@ async function Zugang({ id, selbst }: { id: string; selbst: boolean }) {
   const zustand = data?.[0];
   if (!zustand) return null;
 
+  // Offenes Onboarding: Stand der Einladung, und erneut senden geht (O24).
+  const { data: ob } = await supabase.from("members").select("onboarding_completed_at").eq("id", id).maybeSingle();
+  const einladung = ob && !ob.onboarding_completed_at ? (await ladeEinladungsstatus([id])).get(id) ?? null : null;
+
   return (
     <LoginKarte
       mitgliedId={id}
       zustand={zustand as LoginZustand}
       selbst={selbst}
+      einladung={einladung}
     />
   );
 }
