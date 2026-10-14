@@ -21,6 +21,7 @@ import { abschnitt, useLaden } from "@/lib/laden";
 import { istAngemeldet, meldeGeraetAb, registriereGeraet } from "@/lib/push";
 import { mitDeckkraft } from "@/lib/stil";
 import { useTheme, type ThemeWahl } from "@/lib/theme";
+import { webLink } from "@/lib/web";
 
 const DATUM = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
 const MONAT = new Intl.DateTimeFormat("de-DE", { month: "long", timeZone: "Europe/Berlin" });
@@ -247,14 +248,14 @@ export default function Konto() {
 
         {/* --- Rechtliches und Abmelden ----------------------------------- */}
         <Gruppe>
-          {SITE_URL !== "" && (
+          {DATENSCHUTZ && IMPRESSUM && (
             <>
-              <Verweis erste titel="Datenschutz" onPress={() => Linking.openURL(`${SITE_URL}/datenschutz`)} />
-              <Verweis titel="Impressum" onPress={() => Linking.openURL(`${SITE_URL}/impressum`)} />
+              <Verweis erste titel="Datenschutz" onPress={() => Linking.openURL(DATENSCHUTZ)} />
+              <Verweis titel="Impressum" onPress={() => Linking.openURL(IMPRESSUM)} />
             </>
           )}
           <Verweis
-            erste={SITE_URL === ""}
+            erste={!DATENSCHUTZ}
             titel="Abmelden"
             rot
             onPress={async () => {
@@ -360,11 +361,11 @@ export default function Konto() {
 
 /**
  * Datenschutz und Impressum liegen im Web, nicht in der App: ein Text, den
- * der Vorstand pflegt, ohne dass ein neuer Build in den Store muss. Die
- * Basisadresse kommt aus EXPO_PUBLIC_SITE_URL (eas.json); solange sie fehlt -
- * lokal, ohne Domain - bleiben die Zeilen weg, statt ins Leere zu zeigen.
+ * der Vorstand pflegt, ohne dass ein neuer Build in den Store muss. Ohne
+ * Basisadresse (lib/web.ts) bleiben die Zeilen weg.
  */
-const SITE_URL = (process.env.EXPO_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+const DATENSCHUTZ = webLink("/datenschutz");
+const IMPRESSUM = webLink("/impressum");
 
 const SYMBOL = {
   person: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",

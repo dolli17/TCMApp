@@ -14,8 +14,7 @@ vi.mock("@/lib/supabase", () => ({
 }));
 
 const {
-  aendereSerie, beendeSerie, legeSerieAn, normZeit, pruefeSerie, schaltePlatz, sortierePlaetze,
-  speichereBuchungsart, speicherePlatz, sperre, verschoben, vorschauSerie, zustandJetzt,
+  aendereSerie, beendeSerie, legeSerieAn, normZeit, pruefeSerie, sperre, vorschauSerie, zustandJetzt,
 } = await import("./plaetze");
 
 const PLATZ = "11111111-1111-4111-8111-111111111111";
@@ -49,15 +48,6 @@ describe("normZeit", () => {
   });
 });
 
-describe("verschoben", () => {
-  it("tauscht mit dem Nachbarn und bleibt an den Raendern stehen", () => {
-    expect(verschoben(["a", "b", "c"], 1, -1)).toEqual(["b", "a", "c"]);
-    expect(verschoben(["a", "b", "c"], 1, 1)).toEqual(["a", "c", "b"]);
-    expect(verschoben(["a", "b"], 0, -1)).toBeNull();
-    expect(verschoben(["a", "b"], 1, 1)).toBeNull();
-  });
-});
-
 describe("zustandJetzt", () => {
   it("nennt laufende Sperrung und Serie, nicht aber Buchungen", () => {
     const jetzt = Date.parse("2026-09-29T10:00:00Z");
@@ -76,59 +66,33 @@ describe("zustandJetzt", () => {
       b: { art: "serie", text: "Serie bis 13:00" },
     });
   });
-});
 
-describe("Plaetze", () => {
-  it("legt an mit null als Id", async () => {
-    const e = await speicherePlatz({ id: null, name: "Platz 7", kurzname: "P7", zusatz: "" });
-    expect(rpc).toHaveBeenCalledWith("upsert_court", {
-      p_id: null, p_name: "Platz 7", p_short_name: "P7", p_subline: "", p_position: undefined,
+  it("zaehlt den Beginn mit, das Ende nicht", () => {
+    const sperrung = {
+      court_id: "a", kind: "blocking" as const, series_id: null,
+      starts_at: "2026-09-29T09:00:00Z", ends_at: "2026-09-29T10:00:00Z",
+    };
+    expect(zustandJetzt([sperrung], Date.parse("2026-09-29T09:00:00Z"))).toEqual({
+      a: { art: "gesperrt", text: "gesperrt bis 12:00" },
     });
-    expect(e).toEqual({ ok: true, meldung: "Platz angelegt." });
+    expect(zustandJetzt([sperrung], Date.parse("2026-09-29T10:00:00Z"))).toEqual({});
   });
 
-  it("warnt beim Stilllegen vor offenen Buchungen", async () => {
-    rpc.mockResolvedValue({ data: 3, error: null });
-    const e = await schaltePlatz(PLATZ, false);
-    expect(rpc).toHaveBeenCalledWith("set_court_active", { p_id: PLATZ, p_active: false });
-    expect(e.meldung).toBe(
-      "Platz stillgelegt. Achtung: 3 künftige Buchungen liegen noch darauf – bitte sperren und die Betroffenen informieren.",
+  it("nimmt je Platz den ersten laufenden Eintrag", () => {
+    const jetzt = Date.parse("2026-12-01T10:00:00Z");
+    const z = zustandJetzt(
+      [
+        { court_id: "a", kind: "blocking", series_id: "s", starts_at: "2026-12-01T09:00:00Z", ends_at: "2026-12-01T11:00:00Z" },
+        { court_id: "a", kind: "blocking", series_id: null, starts_at: "2026-12-01T09:30:00Z", ends_at: "2026-12-01T15:00:00Z" },
+      ],
+      jetzt,
     );
+    // Im Winter liegt Berlin nur eine Stunde vor UTC
+    expect(z).toEqual({ a: { art: "serie", text: "Serie bis 12:00" } });
   });
 
-  it("sortiert", async () => {
-    const e = await sortierePlaetze(["b", "a"]);
-    expect(rpc).toHaveBeenCalledWith("reorder_courts", { p_ids: ["b", "a"] });
-    expect(e.meldung).toBe("Reihenfolge gespeichert.");
-  });
-
-  it("uebersetzt Fehler", async () => {
-    rpc.mockResolvedValue({ data: null, error: { message: "Nur für Admins.", code: "42501" } });
-    const e = await sortierePlaetze([]);
-    expect(e.ok).toBe(false);
-    expect(e.meldung).not.toBe("");
-  });
-});
-
-describe("speichereBuchungsart", () => {
-  const ART = {
-    code: " doppel ", name: "Doppel", art: "booking" as const, dauer: "90", minSpieler: "4", maxSpieler: "4",
-    brauchtPartner: true, zaehltAufKontingent: false, aktiv: true,
-  };
-
-  it("wandelt die getippten Zahlen", async () => {
-    await speichereBuchungsart(ART);
-    expect(rpc).toHaveBeenCalledWith("upsert_booking_type", {
-      p_code: "doppel", p_name: "Doppel", p_applies_to: "booking", p_duration_minutes: 90,
-      p_min_players: 4, p_max_players: 4, p_requires_partner: true, p_counts_towards_quota: false,
-      p_active: true, p_sort_order: undefined,
-    });
-  });
-
-  it("weist unsinnige Dauer ab, ohne zu senden", async () => {
-    expect((await speichereBuchungsart({ ...ART, dauer: "10" })).ok).toBe(false);
-    expect((await speichereBuchungsart({ ...ART, minSpieler: "zwei" })).ok).toBe(false);
-    expect(rpc).not.toHaveBeenCalled();
+  it("ist ohne Eintraege leer", () => {
+    expect(zustandJetzt([])).toEqual({});
   });
 });
 

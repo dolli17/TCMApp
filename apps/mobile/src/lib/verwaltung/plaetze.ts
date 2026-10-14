@@ -1,6 +1,8 @@
 /**
  * Plaetze & Serien der Verwaltung - dieselben RPCs und Meldungen wie
- * apps/web/src/app/admin/plaetze (page.tsx, aktionen.ts).
+ * apps/web/src/app/admin/plaetze (page.tsx, aktionen.ts). Die App sperrt und
+ * pflegt Serien; Plaetze anlegen, sortieren und die Buchungsarten gibt es nur
+ * im Web.
  *
  * Auf courts und booking_types gibt es nur "grant select" - auch fuer
  * Admins. Alles Schreibende laeuft deshalb ueber SECURITY-DEFINER-RPCs.
@@ -16,7 +18,7 @@ import {
 } from "@tcm/core";
 import { supabase } from "@/lib/supabase";
 import {
-  deutschZuIso, heuteInBerlin, ladeEinstellungen, oderWirf, type Einstellung, type Ergebnis,
+  deutschZuIso, heuteInBerlin, ladeEinstellungen, oderWirf, type Ergebnis,
 } from "@/lib/verwaltung/gemeinsam";
 
 // ---------------------------------------------------------------------------
@@ -33,15 +35,10 @@ export interface PlatzZeile {
   offene_buchungen: number;
 }
 
-export interface ArtZeile {
+interface ArtZeile {
   code: string;
   name: string;
   applies_to: "booking" | "blocking";
-  duration_minutes: number;
-  min_players: number;
-  max_players: number;
-  requires_partner: boolean;
-  counts_towards_quota: boolean;
   active: boolean;
 }
 
@@ -71,12 +68,10 @@ export type PlatzZustand = Record<string, { text: string; art: "gesperrt" | "ser
 
 export interface PlaetzeDaten {
   plaetze: PlatzZeile[];
-  arten: ArtZeile[];
   /** Aktive Blockungsarten fuer Sperren und Serien, nach sort_order */
   blockungsarten: { code: string; name: string }[];
   serien: SerienZeile[];
   zustand: PlatzZustand;
-  einstellungen: Einstellung[];
   /** Oeffnungs- und Schliesszeit aus den Einstellungen, als "HH:MM" */
   oeffnung: string;
   schluss: string;
@@ -128,10 +123,7 @@ export async function ladePlaetze(): Promise<PlaetzeDaten> {
     supabase.rpc("court_overview"),
     supabase
       .from("booking_types")
-      .select(
-        "code, name, applies_to, duration_minutes, min_players, max_players, " +
-          "requires_partner, counts_towards_quota, active",
-      )
+      .select("code, name, applies_to, active")
       .order("sort_order"),
     supabase.rpc("series_overview"),
     supabase.rpc("day_schedule", { p_date: heuteInBerlin() }),
@@ -153,121 +145,15 @@ export async function ladePlaetze(): Promise<PlaetzeDaten> {
 
   return {
     plaetze,
-    arten,
     blockungsarten: arten
       .filter((a) => a.applies_to === "blocking" && a.active)
       .map((a) => ({ code: a.code, name: a.name })),
     serien,
     // Faellt nur der Tagesplan aus, fehlt bloss der Zustand "gesperrt bis ..."
     zustand: planRes.error ? {} : zustandJetzt(planRes.data ?? []),
-    einstellungen,
     oeffnung: zeit("booking.opening_time", "08:00"),
     schluss: zeit("booking.closing_time", "21:00"),
   };
-}
-
-// ---------------------------------------------------------------------------
-// Plaetze
-// ---------------------------------------------------------------------------
-
-export async function speicherePlatz(daten: {
-  id: string | null;
-  name: string;
-  kurzname: string;
-  zusatz: string;
-}): Promise<Ergebnis> {
-  const { error } = await supabase.rpc("upsert_court", {
-    // Beim Anlegen gibt es noch keine Id; die Funktion nimmt null als
-    // "neu anlegen", der generierte Typ kennt aber nur string.
-    p_id: daten.id as string,
-    p_name: daten.name,
-    p_short_name: daten.kurzname,
-    p_subline: daten.zusatz,
-    p_position: undefined,
-  });
-  if (error) return { ok: false, meldung: translateDbError(error) };
-  return { ok: true, meldung: daten.id ? "Platz gespeichert." : "Platz angelegt." };
-}
-
-export async function schaltePlatz(id: string, aktiv: boolean): Promise<Ergebnis> {
-  const { data, error } = await supabase.rpc("set_court_active", { p_id: id, p_active: aktiv });
-  if (error) return { ok: false, meldung: translateDbError(error) };
-
-  // Die RPC gibt zurueck, wie viele kuenftige Buchungen auf dem Platz haengen.
-  // Sie werden bewusst nicht mitstorniert - der Vorstand soll sie sehen.
-  const offen = typeof data === "number" ? data : 0;
-  if (!aktiv && offen > 0) {
-    return {
-      ok: true,
-      meldung: `Platz stillgelegt. Achtung: ${offen} künftige ${
-        offen === 1 ? "Buchung liegt" : "Buchungen liegen"
-      } noch darauf – bitte sperren und die Betroffenen informieren.`,
-    };
-  }
-  return { ok: true, meldung: aktiv ? "Platz ist wieder im Plan." : "Platz stillgelegt." };
-}
-
-/** Tauscht einen Eintrag mit seinem Nachbarn; null, wenn es nicht weitergeht. */
-export function verschoben<T>(liste: T[], index: number, richtung: -1 | 1): T[] | null {
-  const ziel = index + richtung;
-  if (index < 0 || ziel < 0 || ziel >= liste.length) return null;
-  const neu = [...liste];
-  [neu[index], neu[ziel]] = [neu[ziel]!, neu[index]!];
-  return neu;
-}
-
-export async function sortierePlaetze(ids: string[]): Promise<Ergebnis> {
-  const { error } = await supabase.rpc("reorder_courts", { p_ids: ids });
-  if (error) return { ok: false, meldung: translateDbError(error) };
-  return { ok: true, meldung: "Reihenfolge gespeichert." };
-}
-
-// ---------------------------------------------------------------------------
-// Buchungsarten
-// ---------------------------------------------------------------------------
-
-export interface ArtFormular {
-  code: string;
-  name: string;
-  art: "booking" | "blocking";
-  /** Getippt, deshalb Text */
-  dauer: string;
-  minSpieler: string;
-  maxSpieler: string;
-  brauchtPartner: boolean;
-  zaehltAufKontingent: boolean;
-  aktiv: boolean;
-}
-
-function ganzzahl(text: string): number | null {
-  return /^\d+$/.test(text.trim()) ? Number(text.trim()) : null;
-}
-
-export async function speichereBuchungsart(daten: ArtFormular): Promise<Ergebnis> {
-  const dauer = ganzzahl(daten.dauer);
-  const min = ganzzahl(daten.minSpieler);
-  const max = ganzzahl(daten.maxSpieler);
-  if (dauer === null || dauer < 15 || dauer > 1440) {
-    return { ok: false, meldung: "Die Dauer bitte in Minuten angeben (15 bis 1440)." };
-  }
-  if (min === null || max === null) {
-    return { ok: false, meldung: "Die Spielerzahl bitte als ganze Zahl angeben." };
-  }
-
-  const { error } = await supabase.rpc("upsert_booking_type", {
-    p_code: daten.code.trim(),
-    p_name: daten.name,
-    p_applies_to: daten.art,
-    p_duration_minutes: dauer,
-    p_min_players: min,
-    p_max_players: max,
-    p_requires_partner: daten.brauchtPartner,
-    p_counts_towards_quota: daten.zaehltAufKontingent,
-    p_active: daten.aktiv,
-    p_sort_order: undefined,
-  });
-  if (error) return { ok: false, meldung: translateDbError(error) };
-  return { ok: true, meldung: "Buchungsart gespeichert." };
 }
 
 // ---------------------------------------------------------------------------
