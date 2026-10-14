@@ -4,7 +4,7 @@ Sammelstelle für Fehler, Lücken und Auffälligkeiten aus der Testphase (Start:
 damit sie gebündelt abgearbeitet werden können. Neue Befunde unten in **Offen** ergänzen;
 Erledigtes mit Commit nach **Behoben** verschieben.
 
-Stand: 09.10.2026
+Stand: 14.10.2026
 
 Legende Priorität: **P1** blockiert Tester oder ist ein Sicherheitsthema · **P2** vor externen
 Testern bzw. App Store · **P3** Komfort, Aufräumen.
@@ -19,8 +19,6 @@ Testern bzw. App Store · **P3** Komfort, Aufräumen.
 |---|---|---|---|
 | O1 | P1 | Der **Resend-API-Key** und der **legacy Service-Role-Key** standen im Klartext im Chatverlauf. | Vor dem Echtbetrieb rotieren: in Resend einen neuen Key erzeugen, in den Supabase-Secrets (`RESEND_API_KEY`) und im Auth-SMTP-Passwort ersetzen. Supabase auf die neuen `sb_secret_…`-Keys umstellen, den Vault-Eintrag `notification_mails_key` ersetzen und den legacy JWT-Key deaktivieren. |
 | O2 | P2 | Die **Supabase-Cloud läuft im Free-Tier** und schläft nach Inaktivität ein (HTTP 521). | Vor externen TestFlight-Testern und der Beta-Prüfung von Apple auf **Supabase Pro** umstellen, sonst scheitert die Prüfung. |
-| O3 | P3 | Wird die E-Mail eines Mitglieds geändert, bleibt die Adresse in `auth.users` die alte. Es gibt keine Synchronisierung. | Bei Adressänderung auch den Login nachziehen (Admin-API `updateUserById`), oder zumindest in der Verwaltung darauf hinweisen. |
-| O4 | P3 | `delete_member` und `anonymize_member` lösen nur die Verknüpfung; das Konto in `auth.users` bleibt verwaist bestehen. | Beim Löschen bzw. Anonymisieren den Login über `member-login` mitlöschen. |
 
 ### iOS-App und TestFlight
 
@@ -39,6 +37,7 @@ Testern bzw. App Store · **P3** Komfort, Aufräumen.
 | # | Prio | Befund | Was zu tun ist |
 |---|---|---|---|
 | O24 | P1 | **Abgelaufene Einladungen lassen sich aus der Verwaltung nicht neu senden, und Links gelten nur 1 Stunde.** Beobachtet am 11.10. bei Ladi: Er wurde am 09.10. eingeladen, beide Links waren abgelaufen. (1) In der Cloud gilt jeder Mail-Link (Einladung, „Passwort vergessen“) nur **1 Stunde** (`mailer_otp_exp = 3600`); möglich sind maximal 24 Stunden. (2) Beim Einladen wird der Login sofort mit dem Mitglied verknüpft. `member_login_state.hat_zugang` ist deshalb `true`, auch wenn die Einladung **nie angenommen** wurde. Die Verwaltung zeigt „App-Zugang aktiv“ und nur „Passwort zurücksetzen“, „Sperren“ und „Entfernen“. Der Knopf „Einladung verschicken“ erscheint nur ohne Login (`LoginKarte.tsx`, App `Zugang.tsx`), und `member-login/einladen` lehnt mit „hat bereits einen Zugang“ ab. | ~~`mailer_otp_exp` auf **86400**~~ (erledigt am 11.10.: Cloud per Management-API, lokal `otp_expiry` in `supabase/config.toml`). Hinweis „Der Link gilt 24 Stunden“ in `supabase/templates/einladung.html`. `member_login_state` um `angenommen` (bestätigt oder schon angemeldet) und `einladung_abgelaufen` erweitern. Neue Aktion `erneut_einladen` in `member-login`: `inviteUserByEmail` für den unbestätigten Login; bei Fehler löschen, neu einladen und neu verknüpfen, Admin-Rolle behalten. Web und App: Status **„Einladung ausstehend“** bzw. „abgelaufen“ statt „App-Zugang aktiv“, Knopf **„Einladung erneut senden“**, auch als Statusmarke in der Mitgliederübersicht. pgTAP-Tests für die neuen Felder. **Workaround bis dahin:** „Zugang entfernen“, dann „Einladung verschicken“ und gegebenenfalls die Admin-Rolle neu setzen, oder Neuversand über die Auth-Schnittstelle (so am 11.10. für Ladi gemacht). |
+| O25 | P3 | **Ein fremdes Konto lässt sich verknüpfen.** Scheitert beim Anlegen oder Einladen die Einladung, weil es zur Adresse schon ein Konto gibt, verknüpft `member-login` dieses Konto mit dem Mitglied. Das ist für verwaiste Konten aus eBuSy oder von früher gelöschten Mitgliedern gewollt. `link_auth_user` prüft aber nur `members`, nicht `kiosk_devices`: Ein Admin, der ein Mitglied mit der Adresse des Kiosk-Geräts anlegt, hängt das Kiosk-Konto an dieses Mitglied. Das Verhalten gab es schon vor dem Anlegen mit Login beim Einladen. | In einer Migration `link_auth_user` Konten aus `kiosk_devices` abweisen lassen. |
 | O23 | P2 | ~~**Die Admin-Rolle ist nicht auffindbar.**~~ **Erledigt:** Zeile „Rollen“ in der Übersicht (Web und App), alle Rollen in der Karte „Rollen und Zahler“. In der Mitgliederübersicht (Verwaltung → Mitglieder → Mitglied) gibt es keine Zeile für die Rolle. Der Schalter „Verwaltungsrechte“ sitzt in der Karte „Rolle und Zahler“ auf der Unterseite `?teil=mitgliedschaft`, und die erreicht man nur über die Zeile **„Mannschaft“** (`apps/web/src/components/MitgliedUebersicht.tsx:147`). | Im Abschnitt **Mitgliedschaft** eine eigene Zeile **„Rolle“** mit Hinweis „Mitglied“ bzw. „Admin“, die direkt zum Schalter führt. Die Rolle gehört zur Mitgliedschaft, nicht zur Mannschaft. Die Zeile „Mannschaft“ führt dann nur noch zur Mannschaft. Rolle und Zahler eventuell auf eine eigene Unterseite (`?teil=rolle`) trennen. In der App (`Mitgliedschaft.tsx`, Karte „Rolle und Zahler“) gleich ziehen. |
 
 ### Inhalte und Rechtliches
@@ -61,7 +60,6 @@ Testern bzw. App Store · **P3** Komfort, Aufräumen.
 
 | # | Prio | Befund | Was zu tun ist |
 |---|---|---|---|
-| O18 | P3 | Zwei E2E-Tests in `mitglieder.spec.ts` (Einladung, Mitgliedsantrag annehmen) scheitern lokal, weil der Edge-Functions-Container nicht läuft (`member-login` → 503). | Lokal `supabase functions serve` mitstarten oder die Tests überspringen, wenn die Funktion fehlt. |
 | O19 | P3 | **Testlauf-Rückstände:** Ein früherer E2E-Lauf hat dem lokalen Testmitglied die Admin-Rolle gegeben. Danach schlugen Berechtigungstests fehl, bis `db:reset` lief. | Die betroffenen Verwaltungstests sollen vergebene Rollen wieder entziehen; oder vor jedem Lauf `db:reset`. |
 | O20 | P3 | Die Abläufe „Einladung über den Server“ und „Passwort-vergessen-Link in Tab 2“ sind nur einmalig mit dem lokalen Mail-Postfach (Mailpit) geprüft, nicht als dauerhafte E2E-Tests. | Hilfsfunktion für Mailpit in `apps/web/e2e/hilfen.ts` und dauerhafte Tests daraus machen. |
 
@@ -72,7 +70,7 @@ Testern bzw. App Store · **P3** Komfort, Aufräumen.
 | L1 | **Benachrichtigungs-Mail** über Resend an einen echten Empfänger, ausgelöst durch den Zeitplan. | Ein Testkonto als Mitspieler buchen. Innerhalb von 5 Minuten sollte eine Mail kommen, und Resend zeigt „Delivered“. |
 | L2 | **„Passwort vergessen“** live mit einem Testkonto. | Auf der Anmeldeseite anfordern, Link öffnen, Passwort setzen. |
 | L3 | **Admin setzt das Passwort zurück** über die Verwaltung (`member-login` → `passwort_zuruecksetzen`, impliziter Link). | Verwaltung → Mitglied → Zugang → Passwort zurücksetzen. |
-| L4 | **Sperre für Testadressen** bei Einladung und Passwort-Reset in der Verwaltung. | Bei einem `@example.org`-Mitglied „Einladung verschicken“. Erwartet ist die Meldung „Das ist eine Testadresse“. |
+| L4 | **Testadressen** in der Verwaltung: Passwort-Reset wird gesperrt, Anlegen und Einladen legen den Login still an (`createUser`, keine Mail). | Bei einem `@example.org`-Mitglied „Passwort zurücksetzen lassen“: Erwartet ist die Meldung „Das ist eine Testadresse“. Ein Mitglied mit `@example.org` anlegen: Erwartet ist „Zugang … eingerichtet“, und in Resend erscheint keine Mail. |
 | L5 | **Buchung umsetzen** (`move_booking`, Mail und Push `booking_moved`). Bisher nur per pgTAP geprüft, die Oberfläche kommt mit einem eigenen PR. | Als Platzwart eine fremde Buchung auf einen freien Platz setzen. Bucher und Mitspieler bekommen „Deine Platzbuchung wurde verlegt“ mit altem und neuem Ort. |
 
 ---
@@ -81,6 +79,9 @@ Testern bzw. App Store · **P3** Komfort, Aufräumen.
 
 | Befund | Ursache | Commit |
 |---|---|---|
+| O3: Eine geänderte E-Mail blieb in `auth.users` die alte. | Die Verwaltung änderte nur `members.email`. Neu: Aktion `email_aendern` in `member-login`. Sie ändert zuerst das Mitglied über `update_member` mit dem Token des Admins, danach den Login (`updateUserById`). Lehnt der Login ab, setzt sie das Mitglied auf die alte Adresse zurück. | dieser PR |
+| O4: Löschen und Anonymisieren ließen das Konto in `auth.users` verwaist zurück. | Beide liefen als RPC direkt aus dem Web. Neu: Aktion `loeschen` (Art `loeschen` oder `anonymisieren`) in `member-login`. Erst die RPC mit dem Token des Admins, dann `deleteUser`. | dieser PR |
+| O18: E2E-Tests mit Einladung scheiterten lokal (`member-login` → 503). | Der Container `supabase_edge_runtime` fehlte. Ein beendetes `supabase functions serve` entfernt ihn, und `supabase start` legt ihn bei laufendem Stack nicht neu an. Außerdem bindet er die Functions des Checkouts ein, der ihn gestartet hat. Neu: `apps/web/e2e/edge-functions.ts` als zweites `globalSetup`. Läuft die Runtime nicht oder mit den Functions eines anderen Checkouts, startet es `supabase functions serve` für die Dauer des Laufs und beendet es danach. Das gilt nur gegen den lokalen Stack. | dieser PR |
 | O21: Eine Person konnte zur selben Zeit auf zwei Plätzen eingetragen sein. | Der Ausschluss `bookings_no_overlap` gilt nur pro Platz. Neu: `private.spielt_schon` prüft pro Person (Bucher oder Mitspieler, aktive Buchungen, halboffene Zeiträume). Aufgerufen in `create_booking` (Bucher und Mitspieler), `update_booking_players` (neu hinzukommende Mitspieler), `join_booking` und per Trigger beim Verschieben. Meldung „X spielt zu dieser Zeit schon auf Platz Y“. Entscheidung Serien/Training: Das sind Blockungen ohne Person (kein Bucher, keine Mitspieler). Sie werden nicht geprüft und `create_series`/`update_series` bleiben unverändert. Ein Training blockiert also keine Person, und Admin-Serien brechen nicht. Bestehende Doppelungen und der Import bleiben unberührt, geprüft wird nur, was neu dazukommt. | dieser PR |
 | Bei „Offene Spiele“ war nicht zu erkennen, wer sucht (O22). | Die Karte zeigte nur Kürzel-Avatare bzw. den Namen klein in der Unterzeile. Jetzt Kopfzeile „Robin Heinzler sucht einen Mitspieler“ (bei eigener Buchung „Du suchst …“) und „Schon dabei: …“, in Web und App aus `offenesSpielText` in `@tcm/core`. | `fb5ee2a` (#16) |
 | Die Glocke zeigte eine Zahl, die Liste war leer. | Admins sahen über RLS die ungelesenen Mitteilungen aller Mitglieder; Liste und „gelesen“ arbeiten nur mit den eigenen. Neue RPC `my_unread_notification_count`. | `c5a9950` |

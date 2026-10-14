@@ -1,6 +1,10 @@
 /**
  * Login-Verwaltung für Mitglieder.
  *
+ * Jedes Mitglied hat einen Login. Deshalb läuft hier auch das Anlegen
+ * (Mitglied und Login in einem Zug), das Ändern der E-Mail (Mitglied und
+ * Login gleich halten) und das Löschen bzw. Anonymisieren (der Login geht mit).
+ *
  * Alles, was diese Funktion tut, könnte auch eine Server Action tun — bis auf
  * eines: Konten in `auth.users` anlegen, einladen, sperren und löschen geht nur
  * mit dem Service-Schlüssel. Und der darf die Serverseite nie verlassen, schon
@@ -22,17 +26,56 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 type Aktion =
+  | "anlegen"
   | "einladen"
   | "passwort_zuruecksetzen"
   | "login_deaktivieren"
   | "login_aktivieren"
   | "login_verknuepfen"
-  | "login_entfernen";
+  | "login_entfernen"
+  | "email_aendern"
+  | "loeschen";
 
 interface Anfrage {
   aktion: Aktion;
-  memberId: string;
+  /** Bei allen Aktionen außer `anlegen`. */
+  memberId?: string;
+  /** `anlegen`: die Parameter für create_member. */
+  daten?: Record<string, unknown>;
+  /** `email_aendern`: die neue Adresse. */
+  email?: string;
+  /** `loeschen`: endgültig löschen oder anonymisieren. */
+  art?: "loeschen" | "anonymisieren";
+  /** `loeschen` mit art `loeschen`: der Nachname als Bestätigung. */
+  nachname?: string;
+  /** `loeschen` mit art `anonymisieren`: der Grund fürs Protokoll. */
+  grund?: string;
 }
+
+/**
+ * Was beim Anlegen an create_member durchgereicht wird. Alles andere im
+ * Anfragekörper fällt weg – insbesondere p_billing_payer_id, den es nicht
+ * mehr gibt.
+ */
+const ANLEGE_PARAMETER = [
+  "p_first_name",
+  "p_last_name",
+  "p_email",
+  "p_birthday",
+  "p_gender",
+  "p_salutation",
+  "p_title",
+  "p_phone",
+  "p_mobile",
+  "p_street",
+  "p_postcode",
+  "p_city",
+  "p_country_code",
+  "p_notes",
+  "p_number",
+  "p_started_on",
+  "p_fee_type_ids",
+] as const;
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -42,11 +85,25 @@ const SITE_URL = Deno.env.get("SITE_URL") ?? "http://localhost:3000";
 /** Ein Bann, der praktisch nie abläuft – gesperrt bleibt gesperrt, bis jemand aufhebt. */
 const BANN_DAUER = "876000h";
 
-function antwort(ok: boolean, meldung: string, status = 200): Response {
-  return new Response(JSON.stringify({ ok, meldung }), {
+function antwort(
+  ok: boolean,
+  meldung: string,
+  status = 200,
+  zusatz: Record<string, unknown> = {},
+): Response {
+  return new Response(JSON.stringify({ ok, meldung, ...zusatz }), {
     status,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+/**
+ * Ein Fehler aus einer RPC, die mit dem Token des Aufrufers lief. Code und
+ * Details gehen mit, damit das Web sie wie einen direkten RPC-Fehler
+ * übersetzen kann (translateDbError).
+ */
+function dbFehler(error: { message: string; code?: string; details?: string | null }): Response {
+  return antwort(false, error.message, 400, { code: error.code, details: error.details });
 }
 
 Deno.serve(async (req) => {
@@ -83,7 +140,7 @@ Deno.serve(async (req) => {
   }
 
   const { aktion, memberId } = anfrage;
-  if (!aktion || !memberId) {
+  if (!aktion) {
     return antwort(false, "Die Anfrage ist unvollständig.", 400);
   }
 
@@ -92,73 +149,41 @@ Deno.serve(async (req) => {
     auth: { persistSession: false },
   });
 
+  // Anlegen hat noch kein Mitglied, das sich nachlesen ließe.
+  if (aktion === "anlegen") {
+    try {
+      return await anlegen(alsAufrufer, alsDienst, anfrage.daten ?? {});
+    } catch (fehler) {
+      return antwort(false, fehler instanceof Error ? fehler.message : String(fehler), 400);
+    }
+  }
+
+  if (!memberId) {
+    return antwort(false, "Die Anfrage ist unvollständig.", 400);
+  }
+
   // Die E-Mail kommt aus der Datenbank, nie aus dem Anfragekörper: sonst
   // könnte ein Admin eine Einladung an eine beliebige Adresse schicken und
-  // hätte damit einen Zugang zu einem fremden Mitgliedsdatensatz.
+  // hätte damit einen Zugang zu einem fremden Mitgliedsdatensatz. (Beim
+  // Ändern der Adresse schreibt die Funktion sie zuerst über update_member in
+  // die Datenbank, mit den Rechten des Aufrufers.)
   //
   // Gelesen wird über eine RPC statt über die Tabelle: der Service-Schlüssel
   // hat auf `members` bewusst kein SELECT – die Rechtehärtung des Projekts
   // gibt neuen Tabellen erst einmal gar nichts frei. Die Funktion liefert
   // genau die vier Felder, die hier gebraucht werden.
-  const { data: gelesen, error: leseFehler } = await alsDienst.rpc("member_for_login_admin", {
-    p_member_id: memberId,
-  });
-
-  const mitglied = Array.isArray(gelesen) ? gelesen[0] : null;
-
-  if (leseFehler || !mitglied) {
+  const mitglied = await mitgliedLesen(alsDienst, memberId);
+  if (!mitglied) {
     return antwort(false, "Dieses Mitglied gibt es nicht.", 404);
   }
 
   try {
     switch (aktion) {
       case "einladen": {
-        if (!mitglied.email) {
-          return antwort(
-            false,
-            "Dieses Mitglied hat keine E-Mail-Adresse. Ohne sie ist keine Einladung möglich.",
-            400,
-          );
-        }
-        if (mitglied.auth_user_id) {
-          return antwort(false, "Dieses Mitglied hat bereits einen Zugang.", 400);
-        }
-        if (mitglied.status === "archived") {
-          return antwort(false, "Archivierte Mitglieder bekommen keinen Zugang.", 400);
-        }
-        if (await istTestadresse(alsDienst, mitglied.email)) {
-          return antwort(false, TESTADRESSE, 400);
-        }
-
-        const { data, error } = await alsDienst.auth.admin.inviteUserByEmail(mitglied.email, {
-          redirectTo: `${SITE_URL}/passwort-setzen`,
-          data: { member_id: mitglied.id },
-        });
-
-        if (error) {
-          // Gibt es das Konto schon, aber ohne Verknüpfung? Dann verbinden
-          // statt neu einzuladen – das ist der häufigste Stolperstein beim
-          // Umzug von eBuSy.
-          const vorhanden = await findeBenutzer(alsDienst, mitglied.email);
-          if (vorhanden) {
-            await rpc(alsDienst, "link_auth_user", {
-              p_member_id: mitglied.id,
-              p_auth_user_id: vorhanden,
-            });
-            return antwort(
-              true,
-              "Zu dieser Adresse gab es bereits einen Zugang – er ist jetzt mit dem Mitglied verbunden.",
-            );
-          }
-          return antwort(false, `Die Einladung konnte nicht verschickt werden: ${error.message}`, 400);
-        }
-
-        await rpc(alsDienst, "link_auth_user", {
-          p_member_id: mitglied.id,
-          p_auth_user_id: data.user.id,
-        });
-
-        return antwort(true, `Einladung an ${mitglied.email} verschickt.`);
+        // Heute nur noch für Altbestand ohne Login; neue Mitglieder bekommen
+        // ihn schon beim Anlegen.
+        const z = await zugangEinrichten(alsDienst, mitglied);
+        return antwort(true, z.meldung);
       }
 
       case "passwort_zuruecksetzen": {
@@ -241,6 +266,84 @@ Deno.serve(async (req) => {
         return antwort(true, "Zugang entfernt.");
       }
 
+      case "email_aendern": {
+        const neu = (anfrage.email ?? "").trim().toLowerCase();
+        if (!neu) {
+          return antwort(false, "Ohne E-Mail-Adresse geht es nicht.", 400);
+        }
+        if (neu === (mitglied.email ?? "").toLowerCase()) {
+          return antwort(true, "Die E-Mail-Adresse ist unverändert.");
+        }
+
+        // Erst die Datenbank: dort sitzen Rechte, Eindeutigkeit und die
+        // E-Mail-Pflicht. Was sie ablehnt, erreicht den Login gar nicht.
+        const { error: dbError } = await alsAufrufer.rpc("update_member", {
+          p_member_id: mitglied.id,
+          p_patch: { email: neu },
+        });
+        if (dbError) return dbFehler(dbError);
+
+        // Altbestand ohne Login: nichts nachzuziehen.
+        if (!mitglied.auth_user_id) {
+          return antwort(true, "E-Mail-Adresse gespeichert.");
+        }
+
+        const { error } = await alsDienst.auth.admin.updateUserById(mitglied.auth_user_id, {
+          email: neu,
+          email_confirm: true,
+        });
+
+        if (error) {
+          // Zurück auf die alte Adresse, damit Mitglied und Login nicht
+          // auseinanderlaufen – genau das soll diese Aktion verhindern.
+          await alsAufrufer.rpc("update_member", {
+            p_member_id: mitglied.id,
+            p_patch: { email: mitglied.email },
+          });
+          return antwort(
+            false,
+            `Die Adresse ließ sich im Login nicht ändern, deshalb bleibt die alte: ${error.message}`,
+            400,
+          );
+        }
+
+        return antwort(true, "E-Mail-Adresse gespeichert, auch für die Anmeldung.");
+      }
+
+      case "loeschen": {
+        const anonymisieren = anfrage.art === "anonymisieren";
+
+        // Die Datenbank entscheidet, ob das geht: Rechte, Bestätigung über den
+        // Nachnamen, Buchhaltung. Erst danach geht der Login.
+        const { error: dbError } = anonymisieren
+          ? await alsAufrufer.rpc("anonymize_member", {
+              p_member_id: mitglied.id,
+              p_reason: anfrage.grund || undefined,
+            })
+          : await alsAufrufer.rpc("delete_member", {
+              p_member_id: mitglied.id,
+              p_confirm_name: anfrage.nachname ?? "",
+            });
+        if (dbError) return dbFehler(dbError);
+
+        const erledigt = anonymisieren
+          ? "Mitglied anonymisiert. Die Buchhaltung bleibt vollständig."
+          : "Mitglied gelöscht.";
+
+        if (mitglied.auth_user_id) {
+          const { error } = await alsDienst.auth.admin.deleteUser(mitglied.auth_user_id);
+          if (error) {
+            return antwort(
+              false,
+              `${erledigt} Der Login ließ sich aber nicht löschen: ${error.message}`,
+              400,
+            );
+          }
+        }
+
+        return antwort(true, erledigt);
+      }
+
       default:
         return antwort(false, "Unbekannte Aktion.", 400);
     }
@@ -249,6 +352,154 @@ Deno.serve(async (req) => {
     return antwort(false, meldung, 400);
   }
 });
+
+interface Mitglied {
+  id: string;
+  email: string | null;
+  auth_user_id: string | null;
+  status: string;
+  name: string;
+}
+
+async function mitgliedLesen(
+  client: ReturnType<typeof createClient>,
+  memberId: string,
+): Promise<Mitglied | null> {
+  const { data, error } = await client.rpc("member_for_login_admin", { p_member_id: memberId });
+  if (error || !Array.isArray(data) || !data[0]) return null;
+  return data[0] as Mitglied;
+}
+
+/**
+ * Mitglied anlegen, und zwar nur zusammen mit seinem Login.
+ *
+ * create_member läuft mit dem Token des Aufrufers: Rechte und Prüfungen
+ * (Pflichtfelder, E-Mail, Eindeutigkeit) bleiben in der Datenbank. Scheitert
+ * danach der Login, wird das Mitglied wieder gelöscht – auch das mit dem Token
+ * des Aufrufers, denn delete_member verlangt einen Administrator. Ein
+ * Mitglied ohne Login entsteht so nie.
+ */
+async function anlegen(
+  alsAufrufer: ReturnType<typeof createClient>,
+  alsDienst: ReturnType<typeof createClient>,
+  daten: Record<string, unknown>,
+): Promise<Response> {
+  const parameter: Record<string, unknown> = {};
+  for (const name of ANLEGE_PARAMETER) {
+    if (daten[name] !== undefined && daten[name] !== null && daten[name] !== "") {
+      parameter[name] = daten[name];
+    }
+  }
+
+  const { data: id, error } = await alsAufrufer.rpc("create_member", parameter);
+  if (error) return dbFehler(error);
+  if (typeof id !== "string") {
+    return antwort(false, "Das Mitglied wurde nicht angelegt.", 400);
+  }
+
+  const mitglied = await mitgliedLesen(alsDienst, id);
+
+  try {
+    if (!mitglied) throw new Error("Das neue Mitglied ließ sich nicht lesen.");
+    const z = await zugangEinrichten(alsDienst, mitglied);
+    return antwort(true, z.meldung, 200, { id });
+  } catch (fehler) {
+    const grund = fehler instanceof Error ? fehler.message : String(fehler);
+
+    const { error: rueckFehler } = await alsAufrufer.rpc("delete_member", {
+      p_member_id: id,
+      p_confirm_name: String(parameter.p_last_name ?? ""),
+    });
+
+    if (rueckFehler) {
+      return antwort(
+        false,
+        `Der Login ließ sich nicht einrichten (${grund}), und das Mitglied ließ sich nicht wieder ` +
+          `entfernen (${rueckFehler.message}). Bitte das Mitglied von Hand löschen.`,
+        500,
+        { id },
+      );
+    }
+
+    return antwort(
+      false,
+      `Das Mitglied wurde nicht angelegt, weil der Login nicht eingerichtet werden konnte: ${grund}`,
+      400,
+    );
+  }
+}
+
+/**
+ * Login für ein Mitglied einrichten und verknüpfen.
+ *
+ * Echte Adressen bekommen eine Einladung. An Testadressen (z. B.
+ * @example.org) geht keine Mail: dort entsteht das Konto still und bestätigt,
+ * ohne Passwort. So lässt sich auch lokal und mit dem Seed jedes Mitglied
+ * anlegen, ohne dass die Rücklaufquote beim Mailversand leidet.
+ *
+ * Wirft, wenn es nicht klappt. Ein Konto, das hier neu entstand und sich
+ * danach nicht verknüpfen ließ, wird wieder gelöscht.
+ */
+async function zugangEinrichten(
+  alsDienst: ReturnType<typeof createClient>,
+  mitglied: Mitglied,
+): Promise<{ meldung: string }> {
+  if (!mitglied.email) {
+    throw new Error("Dieses Mitglied hat keine E-Mail-Adresse. Ohne sie ist keine Einladung möglich.");
+  }
+  if (mitglied.auth_user_id) {
+    throw new Error("Dieses Mitglied hat bereits einen Zugang.");
+  }
+  if (mitglied.status === "archived") {
+    throw new Error("Archivierte Mitglieder bekommen keinen Zugang.");
+  }
+
+  const test = await istTestadresse(alsDienst, mitglied.email);
+
+  const { data, error } = test
+    ? await alsDienst.auth.admin.createUser({
+        email: mitglied.email,
+        email_confirm: true,
+        user_metadata: { member_id: mitglied.id },
+      })
+    : await alsDienst.auth.admin.inviteUserByEmail(mitglied.email, {
+        redirectTo: `${SITE_URL}/passwort-setzen`,
+        data: { member_id: mitglied.id },
+      });
+
+  if (error || !data?.user) {
+    // Gibt es das Konto schon, aber ohne Verknüpfung? Dann verbinden
+    // statt neu einzuladen – das ist der häufigste Stolperstein beim
+    // Umzug von eBuSy.
+    const vorhanden = await findeBenutzer(alsDienst, mitglied.email);
+    if (vorhanden) {
+      await rpc(alsDienst, "link_auth_user", {
+        p_member_id: mitglied.id,
+        p_auth_user_id: vorhanden,
+      });
+      return {
+        meldung: "Zu dieser Adresse gab es bereits einen Zugang – er ist jetzt mit dem Mitglied verbunden.",
+      };
+    }
+    throw new Error(`Die Einladung konnte nicht verschickt werden: ${error?.message ?? "unbekannt"}`);
+  }
+
+  try {
+    await rpc(alsDienst, "link_auth_user", {
+      p_member_id: mitglied.id,
+      p_auth_user_id: data.user.id,
+    });
+  } catch (fehler) {
+    await alsDienst.auth.admin.deleteUser(data.user.id);
+    throw fehler;
+  }
+
+  return {
+    meldung: test
+      ? `Zugang für ${mitglied.email} eingerichtet. Das ist eine Testadresse, deshalb ging keine Einladung raus.`
+      : `Einladung an ${mitglied.email} verschickt.`,
+  };
+}
 
 const TESTADRESSE =
   "Das ist eine Testadresse (z. B. @example.org) – dorthin wird keine Mail verschickt. " +

@@ -10,8 +10,16 @@ import { anmelden, NUTZER, testName } from "./hilfen";
  * nicht in die Quere kommen.
  */
 
-/** Legt ein Mitglied an und gibt dessen Detailseiten-Adresse zurück. */
-async function mitgliedAnlegen(page: Page, nachname: string, vorname = "Test"): Promise<string> {
+/**
+ * Eindeutige Adresse für ein Testmitglied. example.org ist eine Testadresse:
+ * Die Edge Function legt den Login still an, es geht keine Mail raus.
+ */
+function testEmail(nachname: string, vorname = "Test"): string {
+  return `${vorname}.${nachname}@example.org`.toLowerCase();
+}
+
+/** Öffnet das Fenster „Mitglied anlegen“ und füllt Vor- und Nachnamen. */
+async function anlegeFenster(page: Page, nachname: string, vorname = "Test"): Promise<Locator> {
   await page.goto("/admin/mitglieder");
   await page.getByRole("button", { name: "Mitglied anlegen" }).click();
 
@@ -19,8 +27,14 @@ async function mitgliedAnlegen(page: Page, nachname: string, vorname = "Test"): 
   await expect(fenster).toBeVisible();
   await fenster.getByLabel("Vorname").fill(vorname);
   await fenster.getByLabel("Nachname").fill(nachname);
-  // Ohne E-Mail legt die Datenbank kein Mitglied mehr an. example.org: dorthin geht nie eine Mail.
-  await fenster.getByLabel("E-Mail").fill(`${vorname}.${nachname}@example.org`.toLowerCase());
+  return fenster;
+}
+
+/** Legt ein Mitglied an und gibt dessen Detailseiten-Adresse zurück. */
+async function mitgliedAnlegen(page: Page, nachname: string, vorname = "Test"): Promise<string> {
+  const fenster = await anlegeFenster(page, nachname, vorname);
+  // Ohne E-Mail kein Mitglied: Jedes Mitglied bekommt beim Anlegen einen Login.
+  await fenster.getByLabel("E-Mail").fill(testEmail(nachname, vorname));
   await fenster.getByRole("button", { name: "Anlegen" }).click();
 
   // Nach dem Anlegen führt die Oberfläche direkt auf die Detailseite.
@@ -65,9 +79,9 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(page.getByRole("heading", { name: "Mitglieder" })).toBeVisible();
     await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"] li').first()).toBeVisible();
 
-    // Der Filter "Ohne Zugang" darf niemanden mit Login zeigen - der eine
-    // Hinweis je Zeile sagt es dann. Im Seed hat jedes Mitglied einen Login,
-    // die Liste darf also auch leer sein.
+    // Der Filter "Ohne Zugang" zeigt nur noch Altbestand, also niemanden mit
+    // Login - der eine Hinweis je Zeile sagt es dann. Im Seed hat jedes
+    // Mitglied einen Login, die Liste darf also auch leer sein.
     await page.getByRole("link", { name: "Ohne Zugang", exact: true }).click();
     await expect(page).toHaveURL(/filter=ohne-login/);
     const hinweise = page.locator('.liste-gruppe[aria-label="Mitglieder"] li .hinweis-rechts');
@@ -125,6 +139,10 @@ test.describe("Mitgliederverwaltung", () => {
     // Aktive Mitglieder tragen keine Statusmarke, nur inaktive und archivierte
     await expect(page.locator(".mitglied-profil .marken-reihe")).not.toContainText(/inaktiv|archiviert/);
 
+    // Der Login entsteht mit dem Mitglied - im Filter "Ohne Zugang" steht es nicht.
+    await page.goto("/admin/mitglieder?filter=ohne-login&q=" + encodeURIComponent(nachname));
+    await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"] li')).toHaveCount(0);
+
     // Ändern - die Stammdaten sind eine Unterseite des Mitglieds
     await page.goto(`${adresse.split("?")[0]}?teil=stammdaten`);
     const karte = page.locator('section[aria-label="Person und Kontakt"]');
@@ -179,17 +197,19 @@ test.describe("Mitgliederverwaltung", () => {
     await aufraeumen(page, adresse, nachname);
   });
 
-  test("Volle Rechte brauchen einen Login, Platzwart nicht", async ({ page }) => {
+  test("ein neues Mitglied hat sofort einen Login, volle Rechte sind wählbar", async ({ page }) => {
     const nachname = testName("Rolle");
     await anmelden(page, NUTZER.admin);
     const adresse = await mitgliedAnlegen(page, nachname);
 
     await page.goto(`${adresse.split("?")[0]}?teil=mitgliedschaft`);
     const karte = page.locator('section[aria-label="Rollen"]');
-    // Ein frisch angelegtes Mitglied hat noch keinen Zugang.
-    await expect(karte.getByLabel("Vorstand")).toBeDisabled();
-    await expect(karte.getByLabel("App Admin")).toBeDisabled();
-    await expect(karte).toContainText("Braucht einen Login");
+    // Den Login gibt es ab dem Anlegen, die Sperre für volle Rechte greift nicht.
+    // Gesetzt werden sie hier nicht: liegengebliebene Admin-Rechte stören
+    // spätere Läufe (O19).
+    await expect(karte.getByLabel("Vorstand")).toBeEnabled();
+    await expect(karte.getByLabel("App Admin")).toBeEnabled();
+    await expect(karte).not.toContainText("Braucht einen Login");
 
     await karte.getByLabel("Platzwart").check();
     await expect(karte.locator(".hinweis.erfolg")).toContainText("Platzwart vergeben");
@@ -578,7 +598,7 @@ test.describe("Mitgliederverwaltung", () => {
     await aufraeumen(page, adresse, nachname);
   });
 
-  test("Zugang: mit E-Mail lässt sich einladen", async ({ page }) => {
+  test("Anlegen richtet den Zugang sofort ein, Entfernen gibt es nicht", async ({ page }) => {
     const nachname = testName("Zugang");
     await anmelden(page, NUTZER.admin);
     const adresse = await mitgliedAnlegen(page, nachname);
@@ -587,24 +607,68 @@ test.describe("Mitgliederverwaltung", () => {
     const karte = page.locator('section[aria-label="Zugang"]');
     await expect(karte).toBeVisible();
 
-    // Die Adresse kommt schon beim Anlegen mit, die Einladung ist sofort möglich.
-    const email = `test.${nachname}@example.org`.toLowerCase();
-    await expect(karte).toContainText(email);
-    await expect(karte.getByRole("button", { name: "Einladung verschicken" })).toBeEnabled();
-
-    await karte.getByRole("button", { name: "Einladung verschicken" }).click();
-    await expect(karte.locator(".hinweis")).toContainText(email, { timeout: 20_000 });
-
-    await page.reload();
+    await expect(karte).toContainText(testEmail(nachname));
     await expect(karte.locator(".marke-klein.gruen")).toContainText("aktiv");
     await expect(karte).toContainText("Eingeladen:");
+    await expect(karte.getByRole("button", { name: "Einladen" })).toHaveCount(0);
+    await expect(karte.getByRole("button", { name: "Zugang entfernen" })).toHaveCount(0);
 
-    // Zugang wieder entfernen, damit das Mitglied löschbar bleibt
-    await karte.getByRole("button", { name: "Zugang entfernen" }).click();
-    await karte.getByRole("button", { name: "Wirklich entfernen" }).click();
-    await expect(karte.locator(".hinweis.erfolg")).toContainText("entfernt", { timeout: 20_000 });
+    // Sperren bleibt, und ist umkehrbar.
+    await karte.getByRole("button", { name: "Zugang sperren" }).click();
+    await expect(karte.locator(".hinweis.erfolg")).toContainText("gesperrt", { timeout: 20_000 });
+    await page.reload();
+    await expect(karte.locator(".marke-klein.rot")).toContainText("gesperrt");
+    await karte.getByRole("button", { name: "Sperre aufheben" }).click();
+    await expect(karte.locator(".hinweis.erfolg")).toContainText("freigegeben", { timeout: 20_000 });
 
+    // Löschen nimmt den Login mit (über die Edge Function).
     await aufraeumen(page, adresse, nachname);
+    await page.goto("/admin/mitglieder?filter=alle&q=" + encodeURIComponent(nachname));
+    await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"] li')).toHaveCount(0);
+  });
+
+  test("ohne E-Mail kein Anlegen", async ({ page }) => {
+    const nachname = testName("OhneMail");
+    await anmelden(page, NUTZER.admin);
+    const fenster = await anlegeFenster(page, nachname);
+
+    // Das Formular verlangt die Adresse schon im Browser ...
+    const email = fenster.getByLabel("E-Mail");
+    await expect(email).toHaveAttribute("required", "");
+    await expect(fenster).toContainText("Bekommt sofort eine Einladung");
+    await fenster.getByRole("button", { name: "Anlegen" }).click();
+    await expect(fenster).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/mitglieder$/);
+
+    // ... und der Server auch, wenn die Browserprüfung fehlt.
+    await fenster.locator("form").evaluate((f) => ((f as HTMLFormElement).noValidate = true));
+    await fenster.getByRole("button", { name: "Anlegen" }).click();
+    await expect(fenster.locator(".hinweis.fehler")).toContainText(
+      "Ohne E-Mail-Adresse kann kein Mitglied angelegt werden",
+      { timeout: 20_000 },
+    );
+
+    await page.goto("/admin/mitglieder?filter=alle&q=" + encodeURIComponent(nachname));
+    await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"] li')).toHaveCount(0);
+  });
+
+  test("scheitert der Login, entsteht auch kein Mitglied", async ({ page }) => {
+    const nachname = testName("OhneLogin");
+    await anmelden(page, NUTZER.admin);
+    const fenster = await anlegeFenster(page, nachname);
+
+    // Der Punkt am Ende: Die Datenbank nimmt die Adresse an, der Login-Dienst
+    // nicht. create_member gelingt also, die Einladung scheitert - und die
+    // Edge Function muss das Mitglied wieder entfernen.
+    await fenster.locator("form").evaluate((f) => ((f as HTMLFormElement).noValidate = true));
+    await fenster.getByLabel("E-Mail").fill(`${testEmail(nachname)}.`);
+    await fenster.getByRole("button", { name: "Anlegen" }).click();
+    await expect(fenster.locator(".hinweis.fehler")).toContainText("nicht angelegt", {
+      timeout: 20_000,
+    });
+
+    await page.goto("/admin/mitglieder?filter=alle&q=" + encodeURIComponent(nachname));
+    await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"] li')).toHaveCount(0);
   });
 
   test("den eigenen Zugang kann ein Admin nicht sperren", async ({ page }) => {
@@ -673,17 +737,22 @@ test.describe("Mitgliederverwaltung", () => {
     const zeilen = page.locator('.liste-gruppe[aria-label="Anträge"] li').filter({ hasText: nachname });
     await expect(zeilen).toHaveCount(1);
 
-    // Annehmen, mit Einladung
+    // Annehmen - eingeladen wird immer, eine Wahl gibt es nicht mehr
     await zeilen.locator("button.listenzeile").click();
     const fenster = page.locator("dialog.fenster");
     await expect(fenster).toContainText(email);
+    await expect(fenster.getByRole("checkbox", { name: /Einladung/ })).toHaveCount(0);
+    await expect(fenster).toContainText("bekommt sofort eine Einladung");
     await fenster.getByRole("button", { name: "Aufnehmen" }).click();
     // Auf irgendeine Rückmeldung warten und sie dann prüfen: schlägt die
     // Aufnahme fehl, steht der Grund im Fehlerhinweis - und der gehört in die
     // Testausgabe, sonst rätselt man über einen Zeitablauf.
     const rueckmeldung = fenster.locator(".hinweis");
     await expect(rueckmeldung).toBeVisible({ timeout: 25_000 });
-    expect(await rueckmeldung.innerText()).toContain("Aufgenommen unter der Nummer");
+    const text = await rueckmeldung.innerText();
+    expect(text).toContain("Aufgenommen unter der Nummer");
+    // Testadresse: Login ja, Mail nein
+    expect(text).toContain(`Zugang für ${email} eingerichtet`);
 
     // Erst auf Klick geht es weiter – die Meldung mit der Mitgliedsnummer soll
     // stehen bleiben, bis der Vorstand sie gelesen hat.
@@ -696,12 +765,7 @@ test.describe("Mitgliederverwaltung", () => {
     await page.goto(`${adresse.split("?")[0]}?teil=zugang`);
     await expect(page.locator('section[aria-label="Zugang"]')).toContainText("Eingeladen:");
 
-    // Aufräumen: erst den Zugang, dann das Mitglied
-    const zugang = page.locator('section[aria-label="Zugang"]');
-    await zugang.getByRole("button", { name: "Zugang entfernen" }).click();
-    await zugang.getByRole("button", { name: "Wirklich entfernen" }).click();
-    await expect(zugang.locator(".hinweis.erfolg")).toContainText("entfernt", { timeout: 20_000 });
-
+    // Aufräumen: Löschen nimmt den Login mit
     await aufraeumen(page, adresse, nachname);
   });
 

@@ -64,7 +64,7 @@ export default function PasswortVergessenSeite() {
             </button>
 
             <p className="beschreibung" style={{ marginTop: 12 }}>
-              Kein Zugang, aber Mitglied? Dann meldet dich der Vorstand an – frag einfach nach.
+              Jedes Mitglied hat einen Zugang mit seiner E-Mail-Adresse, auch Kinder. Kam keine Einladung an oder kennst du die hinterlegte Adresse nicht? Dann frag den Vorstand.
             </p>
           </form>
         )}

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { loginVerwalten, type LoginAktion } from "@/app/admin/mitglieder/[id]/login-aktionen";
+import { loginVerwalten } from "@/app/admin/mitglieder/[id]/login-aktionen";
+import type { LoginAktion } from "@/lib/supabase/member-login";
 
 export interface LoginZustand {
   hat_zugang: boolean;
@@ -28,25 +29,30 @@ function zeitpunkt(wert: string | null): string {
  * wird per E-Mail, das Passwort setzt das Mitglied danach selbst. Deshalb gibt
  * es hier kein Feld dafür – und das ist kein fehlendes Bedienelement, sondern
  * der Punkt.
+ *
+ * Jedes Mitglied hat einen Login, er entsteht beim Anlegen. Ohne Login gibt
+ * es nur noch Altbestand; für ihn steht hier „Einladen“. Einen Zugang
+ * entfernen geht nicht mehr – sperren ja, und mit dem Mitglied geht beim
+ * Löschen auch der Login.
  */
 export function LoginKarte({
   mitgliedId,
   zustand,
   selbst,
+  archiviert,
 }: {
   mitgliedId: string;
   zustand: LoginZustand;
   selbst: boolean;
+  archiviert: boolean;
 }) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
-  const [entfernenOffen, setEntfernenOffen] = useState(false);
 
   function fuehreAus(aktion: LoginAktion) {
     starte(async () => {
       const e = await loginVerwalten(mitgliedId, aktion);
       setMeldung({ ok: e.ok, text: e.meldung });
-      setEntfernenOffen(false);
     });
   }
 
@@ -76,7 +82,7 @@ export function LoginKarte({
               <span className="marke-klein gruen">aktiv</span>
             )
           ) : (
-            <span className="marke-klein grau">kein Zugang</span>
+            <span className="marke-klein grau">{archiviert ? "kein Zugang" : "Altbestand"}</span>
           )}
         </span>
 
@@ -101,6 +107,13 @@ export function LoginKarte({
         {zustand.grund && <p className="hinweis">{zustand.grund}</p>}
       </div>
 
+      {!zustand.hat_zugang && !archiviert && (
+        <p className="beschreibung">
+          Altbestand: Dieses Mitglied stammt aus der Zeit, als es Mitglieder ohne Login gab. Heute
+          bekommt jedes Mitglied schon beim Anlegen eine Einladung.
+        </p>
+      )}
+
       {!zustand.hat_zugang ? (
         <div className="detailkopf aktionen">
           <button
@@ -108,7 +121,7 @@ export function LoginKarte({
             disabled={laeuft || !zustand.einladbar}
             onClick={() => fuehreAus("einladen")}
           >
-            {laeuft ? "Wird verschickt…" : "Einladung verschicken"}
+            {laeuft ? "Wird verschickt…" : "Einladen"}
           </button>
           <button
             className="knopf leise"
@@ -129,55 +142,24 @@ export function LoginKarte({
           </button>
 
           {selbst ? (
-            <span className="beschreibung">
-              Den eigenen Zugang kannst du hier nicht sperren oder entfernen.
-            </span>
+            <span className="beschreibung">Den eigenen Zugang kannst du hier nicht sperren.</span>
           ) : (
-            <>
-              <button
-                className="knopf leise"
-                disabled={laeuft}
-                onClick={() => fuehreAus(gesperrt ? "login_aktivieren" : "login_deaktivieren")}
-              >
-                {gesperrt ? "Sperre aufheben" : "Zugang sperren"}
-              </button>
-
-              {entfernenOffen ? (
-                <>
-                  <button
-                    className="knopf leise"
-                    disabled={laeuft}
-                    onClick={() => setEntfernenOffen(false)}
-                  >
-                    Abbrechen
-                  </button>
-                  <button
-                    className="knopf gefahr"
-                    disabled={laeuft}
-                    onClick={() => fuehreAus("login_entfernen")}
-                  >
-                    Wirklich entfernen
-                  </button>
-                </>
-              ) : (
-                <button
-                  className="knopf leise"
-                  disabled={laeuft}
-                  onClick={() => setEntfernenOffen(true)}
-                >
-                  Zugang entfernen
-                </button>
-              )}
-            </>
+            <button
+              className="knopf leise"
+              disabled={laeuft}
+              onClick={() => fuehreAus(gesperrt ? "login_aktivieren" : "login_deaktivieren")}
+            >
+              {gesperrt ? "Sperre aufheben" : "Zugang sperren"}
+            </button>
           )}
         </div>
       )}
 
       {zustand.hat_zugang && !selbst && (
         <p className="beschreibung">
-          Sperren ist umkehrbar und lässt die Daten unberührt – das ist fast immer der richtige Weg.
-          Entfernen löscht das Konto endgültig; das Mitglied selbst bleibt bestehen.
-          {zustand.ist_admin && " Mit dem Zugang enden auch die Verwaltungsrechte."}
+          Sperren ist umkehrbar und lässt die Daten unberührt. Den Login ganz entfernen gibt es
+          nicht mehr: Er gehört zum Mitglied und geht erst mit ihm, beim Löschen oder
+          Anonymisieren.
         </p>
       )}
     </section>

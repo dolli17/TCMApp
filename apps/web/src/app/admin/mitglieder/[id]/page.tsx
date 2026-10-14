@@ -390,14 +390,22 @@ export default async function MitgliedSeite({
 
       {teil === "merkmale" && <Merkmale id={id} />}
 
-      {teil === "zugang" && <Zugang id={id} selbst={istSelbst} />}
+      {teil === "zugang" && <Zugang id={id} selbst={istSelbst} archiviert={m.status === "archived"} />}
 
       {teil === "protokoll" && <Protokoll id={id} />}
     </div>
   );
 }
 
-async function Zugang({ id, selbst }: { id: string; selbst: boolean }) {
+async function Zugang({
+  id,
+  selbst,
+  archiviert,
+}: {
+  id: string;
+  selbst: boolean;
+  archiviert: boolean;
+}) {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.rpc("member_login_state", { p_member_id: id });
 
@@ -406,7 +414,14 @@ async function Zugang({ id, selbst }: { id: string; selbst: boolean }) {
   const zustand = data?.[0];
   if (!zustand) return null;
 
-  return <LoginKarte mitgliedId={id} zustand={zustand as LoginZustand} selbst={selbst} />;
+  return (
+    <LoginKarte
+      mitgliedId={id}
+      zustand={zustand as LoginZustand}
+      selbst={selbst}
+      archiviert={archiviert}
+    />
+  );
 }
 
 /** Bankverbindung und SEPA-Mandat: ohne Bankverbindung kein Mandat. */
