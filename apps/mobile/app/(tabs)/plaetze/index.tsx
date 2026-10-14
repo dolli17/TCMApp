@@ -11,7 +11,7 @@ import { useTheme } from "@/lib/theme";
 import {
   aendereMitspieler, bucheplatz, ladeBuchungsarten, ladeBuchungseinstellungen,
   ladeIchSelbst, ladeKontingent, ladePlaetze, ladeTagesplan,
-  ladeVerzeichnis, sperreStunde, spieleMit, storniereBuchung, sucheMitspieler,
+  ladeVerzeichnis, sageSerienterminAb, sperreStunde, spieleMit, storniereBuchung, sucheMitspieler,
 } from "@/lib/daten";
 import {
   alsUhrzeit, jetztFrei, startMoeglich as pruefeStart, zuMinuten,
@@ -368,7 +368,10 @@ export default function Plan() {
   const beitreten = (id: string) => mitLauf(async () => ergebnis(await spieleMit(id)));
   const speichern = (id: string, mitglieder: string[], gaeste: string[]) =>
     mitLauf(async () => ergebnis(await aendereMitspieler(id, mitglieder, gaeste)));
-  const stornieren = (id: string) => mitLauf(async () => ergebnis(await storniereBuchung(id)));
+  const stornieren = (id: string, grund?: string) =>
+    mitLauf(async () => ergebnis(await storniereBuchung(id, grund)));
+  const terminAbsagen = (id: string, grund?: string) =>
+    mitLauf(async () => ergebnis(await sageSerienterminAb(id, grund)));
 
   async function sperren(
     courtId: string, von: number, bis: number, grund: string, verdraengen: boolean,
@@ -567,6 +570,7 @@ export default function Plan() {
           onBuchen={buchen}
           onSpeichern={speichern}
           onStornieren={stornieren}
+          onTerminAbsagen={terminAbsagen}
           onAusschreiben={ausschreiben}
           onBeitreten={beitreten}
           onSperren={sperren}

@@ -214,10 +214,34 @@ export async function sperreStunde(daten: {
   return { ok: true, meldung: "Die Stunde ist gesperrt." };
 }
 
-export async function storniereBuchung(bookingId: string): Promise<Ergebnis> {
-  const { error } = await supabase.rpc("cancel_booking", { p_booking_id: bookingId });
+/**
+ * Eine Buchung stornieren, wahlweise mit Grund - wie stornieren im Web.
+ *
+ * Der Grund landet in der Nachricht an die Betroffenen. Bei einer fremden
+ * Buchung verlangt ihn die Oberflaeche, die Datenbank nicht.
+ */
+export async function storniereBuchung(bookingId: string, grund?: string): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("cancel_booking", {
+    p_booking_id: bookingId,
+    p_reason: grund?.trim() || undefined,
+  });
   if (error) return { ok: false, meldung: translateDbError(error) };
   return { ok: true, meldung: "Buchung storniert." };
+}
+
+/**
+ * Ein einzelner Serientermin faellt aus - wie serienterminAbsagen im Web.
+ *
+ * Nicht ueber storniereBuchung: cancel_series_occurrence verlangt, dass der
+ * Termin wirklich zu einer Serie gehoert. Die Serie selbst bleibt stehen.
+ */
+export async function sageSerienterminAb(bookingId: string, grund?: string): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("cancel_series_occurrence", {
+    p_booking_id: bookingId,
+    p_reason: grund?.trim() || undefined,
+  });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Der Termin ist abgesagt." };
 }
 
 /** Vor- und Nachname fuer den Avatar im Kopf - nicht mehr als das. */

@@ -43,7 +43,9 @@ interface Props {
     sucheMitspieler: boolean,
   ) => void;
   onSpeichern: (bookingId: string, mitglieder: string[], gaeste: string[]) => void;
-  onStornieren: (bookingId: string) => void;
+  onStornieren: (bookingId: string, grund?: string) => void;
+  /** Ein einzelner Serientermin faellt aus, die Serie bleibt. */
+  onTerminAbsagen: (bookingId: string, grund?: string) => void;
   onAusschreiben: (bookingId: string, gesucht: boolean) => void;
   onBeitreten: (bookingId: string) => void;
   /** Gibt die Zahl der Buchungen zurueck, die verdraengt wuerden - sonst null. */
@@ -363,12 +365,13 @@ function VerwaltenInhalt(
   const [mitglieder, setMitglieder] = useState<string[]>(b.player_member_ids ?? []);
   const [gaeste, setGaeste] = useState<string[]>(b.guest_names ?? []);
   const [stornoOffen, setStornoOffen] = useState(false);
+  const [grund, setGrund] = useState("");
 
   const art = props.arten.find((a) => a.code === b.type_code);
   const maxWeitere = Math.max((art?.max_players ?? 4) - 1, 0);
   const nurStorno = b.kind === "blocking";
   // Serientermine (Training) legt die Datenbank als Blockung an. Abgesagt
-  // werden sie im Web ueber cancel_series_occurrence - nicht per Storno.
+  // werden sie ueber cancel_series_occurrence - nicht per Storno.
   const serientermin = Boolean(b.series_id);
 
   // Drei Rollen an demselben Blatt: der Bucher verwaltet, ein Admin
@@ -376,6 +379,12 @@ function VerwaltenInhalt(
   // mitspielen. Ohne diese Trennung koennte ein Fremder ueber die
   // Mitspielersuche die Besetzung des Buchers umwerfen.
   const darfVerwalten = b.is_own === true || props.istAdmin;
+  // Ein Serientermin faellt aus, eine Blockung wird aufgehoben, eine fremde
+  // Buchung wird storniert - wie im Web. Nur beim Storno einer fremden Buchung
+  // ist ein Grund Pflicht: dort sitzt jemand, der eine Erklaerung verdient.
+  // Hinter einer Blockung sitzt niemand.
+  const grundNoetig = props.istAdmin && b.is_own !== true && b.kind === "booking";
+  const grundFeld = darfVerwalten && stornoOffen && (serientermin || !nurStorno);
   const kannMitspielen =
     b.is_own !== true && b.bin_dabei !== true && b.partner_wanted === true && b.frei > 0;
   const geaendert =
@@ -473,23 +482,34 @@ function VerwaltenInhalt(
           />
         )}
 
-        {serientermin && props.istAdmin && (
-          <Text style={stil.leise}>
-            Einen einzelnen Trainingstermin sagst du im Web ab: Belegungsplan, Termin anklicken,
-            „Fällt diese Woche aus“.
-          </Text>
+        {grundFeld && (
+          <View>
+            <Feldname>{grundNoetig ? "Grund" : "Grund (freiwillig)"}</Feldname>
+            <TextInput
+              style={[stil.feld, { marginTop: -8 }]}
+              value={grund}
+              onChangeText={setGrund}
+              placeholder={serientermin ? "z. B. Ferien" : "Steht in der Nachricht an die Betroffenen"}
+              placeholderTextColor={farben.muted}
+              accessibilityLabel="Grund"
+            />
+          </View>
         )}
 
-        {darfVerwalten && !serientermin && (
+        {darfVerwalten && (
           <Nebenknopf
             gefahr
-            gesperrt={props.laeuft}
+            gesperrt={props.laeuft || (stornoOffen && grundNoetig && grund.trim() === "")}
             text={
               stornoOffen
-                ? nurStorno ? "Wirklich aufheben" : "Wirklich stornieren"
-                : nurStorno ? "Sperrung aufheben" : "Buchung stornieren"
+                ? serientermin ? "Termin wirklich absagen" : nurStorno ? "Wirklich aufheben" : "Wirklich stornieren"
+                : serientermin ? "Fällt diese Woche aus" : nurStorno ? "Sperrung aufheben" : "Buchung stornieren"
             }
-            onPress={() => (stornoOffen ? props.onStornieren(b.booking_id) : setStornoOffen(true))}
+            onPress={() => {
+              if (!stornoOffen) setStornoOffen(true);
+              else if (serientermin) props.onTerminAbsagen(b.booking_id, grund);
+              else props.onStornieren(b.booking_id, nurStorno ? undefined : grund);
+            }}
           />
         )}
 
