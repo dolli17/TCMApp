@@ -22,7 +22,8 @@ interface Props {
   anzeigeMinuten: number;
   /** Gastgebuehr je Gast in Cent. */
   gastgebuehrCents: number;
-  istAdmin: boolean;
+  /** Vorstand, App Admin oder Platzwart: sperren und fremde Buchungen verwalten. */
+  darfPlaetze: boolean;
   laeuft: boolean;
   /** Rueckmeldung der Datenbank, steht ueber dem Hauptknopf. */
   fehler: string | null;
@@ -269,7 +270,7 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
 
       {/* Sperren steht ausserhalb des Formulars: es ist keine Buchung, und ein
           Knopf darin wuerde beim Enter im Suchfeld mitfeuern. */}
-      {props.istAdmin && (
+      {props.darfPlaetze && (
         <div className="fenster-inhalt sperrbereich">
           {sperrgrund === null ? (
             <button
@@ -350,11 +351,11 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
   // Eine Blockung hat keine Mitspieler - dort bleibt nur das Aufheben.
   const nurStorno = b.kind === "blocking";
 
-  // Drei Rollen an demselben Fenster: der Bucher verwaltet, ein Admin
-  // verwaltet fremd, und wer nur eingeladen ist, kann ausschliesslich
+  // Drei Rollen an demselben Fenster: der Bucher verwaltet, wer
+  // Platzrechte hat, verwaltet fremd, und wer nur eingeladen ist, kann ausschliesslich
   // mitspielen. Ohne diese Trennung koennte ein Fremder ueber die
   // Mitspielersuche die Besetzung des Buchers umwerfen.
-  const darfVerwalten = b.is_own || props.istAdmin;
+  const darfVerwalten = b.is_own || props.darfPlaetze;
   const kannMitspielen = !b.is_own && !b.bin_dabei && b.partner_wanted && b.frei > 0;
 
   // Ein Serientermin faellt aus, eine Blockung wird aufgehoben, eine fremde
@@ -362,7 +363,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
   // beim Storno einer fremden Buchung ist ein Grund Pflicht: dort sitzt jemand,
   // der eine Erklaerung verdient. Hinter einer Blockung sitzt niemand.
   const istSerientermin = b.series_id !== null;
-  const grundNoetig = props.istAdmin && !b.is_own && b.kind === "booking";
+  const grundNoetig = props.darfPlaetze && !b.is_own && b.kind === "booking";
   const geaendert =
     JSON.stringify([...mitglieder].sort()) !== JSON.stringify([...(b.player_member_ids ?? [])].sort()) ||
     JSON.stringify([...gaeste].sort()) !== JSON.stringify([...(b.guest_names ?? [])].sort());
@@ -391,11 +392,11 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
               : `${b.type_name} · gebucht von ${b.is_own ? "dir" : (b.owner_name ?? "unbekannt")}`}
         </p>
 
-        {props.istAdmin && !b.is_own && (
-          <p className="hinweis">Du bearbeitest eine fremde Buchung als Administrator.</p>
+        {props.darfPlaetze && !b.is_own && (
+          <p className="hinweis">Du bearbeitest eine fremde Buchung mit Platzrechten.</p>
         )}
         {laeuftSchon && (
-          <p className="hinweis">Die Spielzeit läuft bereits – Änderungen sind Admin-Sache.</p>
+          <p className="hinweis">Die Spielzeit läuft bereits – Änderungen nur mit Platzrechten.</p>
         )}
 
         {b.partner_wanted && b.frei > 0 && (

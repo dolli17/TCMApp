@@ -1,13 +1,14 @@
 /**
- * Die Verwaltung (nur Admins)
+ * Die Verwaltung (nur mit Platzrechten)
  *
  * Ein Stack im Tab mit nur noch einem Bildschirm, den Plaetzen & Serien
  * (index.tsx). Er traegt den grossen Kopf wie die anderen Tabs. Der Rest der
- * Verwaltung liegt im Web unter /admin.
+ * Verwaltung liegt im Web unter /admin. Platzrechte haben Vorstand, App
+ * Admin und Platzwart.
  *
  * Das Rollenschloss hier ist wie im Web nur die Oberflaeche - wer den Tab
  * nicht sehen darf, landet zurueck auf Home. Die eigentliche Absicherung
- * sitzt in den RPCs, die selbst private.is_admin() pruefen.
+ * sitzt in den RPCs, die selbst private.darf_plaetze() pruefen.
  */
 
 import { useEffect, useState } from "react";
@@ -18,26 +19,26 @@ import { useTheme } from "@/lib/theme";
 
 export default function VerwaltungLayout() {
   const { farben } = useTheme();
-  const [admin, setAdmin] = useState<boolean | null>(null);
+  const [platzRechte, setPlatzRechte] = useState<boolean | null>(null);
 
   useEffect(() => {
     let aktiv = true;
     ladeIchSelbst()
-      .then((ich) => aktiv && setAdmin(ich.admin))
-      .catch(() => aktiv && setAdmin(false));
+      .then((ich) => aktiv && setPlatzRechte(ich.platzRechte))
+      .catch(() => aktiv && setPlatzRechte(false));
     return () => {
       aktiv = false;
     };
   }, []);
 
-  if (admin === null) {
+  if (platzRechte === null) {
     return (
       <View style={{ flex: 1, justifyContent: "center", backgroundColor: farben.bg }}>
         <ActivityIndicator color={farben.blue} />
       </View>
     );
   }
-  if (!admin) return <Redirect href="/home" />;
+  if (!platzRechte) return <Redirect href="/home" />;
 
   return (
     <Stack

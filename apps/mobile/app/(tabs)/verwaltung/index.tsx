@@ -6,10 +6,11 @@
  * Zwei Segmente wie im Web; der gelbe Knopf passt zum Segment (Plaetze
  * sperren / Serie anlegen). Die Plaetze selbst stehen hier nur zum Lesen,
  * mit dem, was gerade auf ihnen liegt. Alles andere verweist die Fusskarte
- * ins Web.
+ * ins Web: Admins auf /admin, den Platzwart, der dort nur die Plaetze sieht,
+ * auf /admin/plaetze.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Linking, Pressable, Text } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Bildschirm } from "@/components/Bildschirm";
@@ -21,6 +22,7 @@ import { PlatzSperren } from "@/components/verwaltung/plaetze/PlatzSperren";
 import { SerienFormular } from "@/components/verwaltung/plaetze/SerienFormular";
 import { SerienListe } from "@/components/verwaltung/plaetze/SerienListe";
 import { VerwaltungsKopf } from "@/components/verwaltung/VerwaltungsKopf";
+import { ladeIchSelbst } from "@/lib/daten";
 import { useLaden } from "@/lib/laden";
 import { useTheme } from "@/lib/theme";
 import type { Ergebnis } from "@/lib/verwaltung/gemeinsam";
@@ -30,6 +32,7 @@ import { webLink } from "@/lib/web";
 type Ansicht = "plaetze" | "serien";
 
 const ADMIN = webLink("/admin");
+const PLAETZE = webLink("/admin/plaetze");
 
 export default function PlaetzeVerwaltung() {
   const params = useLocalSearchParams<{ ansicht?: string }>();
@@ -37,7 +40,19 @@ export default function PlaetzeVerwaltung() {
   const [blatt, setBlatt] = useState<"sperren" | "serie" | null>(null);
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const zustand = useLaden(ladePlaetze);
+  // Volle Rechte oder nur Platzrechte? Bis es feststeht, bleibt der Hinweis weg.
+  const [admin, setAdmin] = useState<boolean | null>(null);
   const d = zustand.daten;
+
+  useEffect(() => {
+    let aktiv = true;
+    ladeIchSelbst()
+      .then((ich) => aktiv && setAdmin(ich.admin))
+      .catch(() => aktiv && setAdmin(false));
+    return () => {
+      aktiv = false;
+    };
+  }, []);
 
   const melde = (e: Ergebnis) => setMeldung({ ok: e.ok, text: e.meldung });
   const neuLaden = zustand.erneutHolen;
@@ -105,7 +120,7 @@ export default function PlaetzeVerwaltung() {
         </Abschnitt>
       )}
 
-      <WebHinweis />
+      {admin !== null && <WebHinweis admin={admin} />}
 
       {blatt === "sperren" && (
         <FormBlatt
@@ -148,23 +163,30 @@ export default function PlaetzeVerwaltung() {
   );
 }
 
-/** Mitglieder, Kasse, Getraenke, System und die Plaetze selbst gibt es nur im Web. */
-function WebHinweis() {
+/**
+ * Mitglieder, Kasse, Getraenke, System und die Plaetze selbst gibt es nur im
+ * Web. Der Platzwart sieht dort nur Plaetze & Serien und wird direkt dorthin
+ * geschickt.
+ */
+function WebHinweis({ admin }: { admin: boolean }) {
   const { farben, stil } = useTheme();
-  const adresse = ADMIN ? ADMIN.replace(/^https?:\/\//, "") : "/admin";
+  const link = admin ? ADMIN : PLAETZE;
+  const adresse = link ? link.replace(/^https?:\/\//, "") : admin ? "/admin" : "/admin/plaetze";
   return (
     <Pressable
-      disabled={!ADMIN}
-      onPress={() => ADMIN && void Linking.openURL(ADMIN)}
-      accessibilityRole={ADMIN ? "link" : undefined}
+      disabled={!link}
+      onPress={() => link && void Linking.openURL(link)}
+      accessibilityRole={link ? "link" : undefined}
       style={({ pressed }) => [stil.karte, { gap: 4 }, pressed && { borderColor: farben.line2 }]}
     >
       <Text style={{ fontSize: 15, fontFamily: "Barlow_700Bold", color: farben.ink }}>
-        Weitere Verwaltung am PC
+        {admin ? "Weitere Verwaltung am PC" : "Plätze & Serien am PC"}
       </Text>
       <Text style={{ fontSize: 14, lineHeight: 19.5, color: farben.ink2, fontFamily: "Barlow_400Regular" }}>
-        Mitglieder, Kasse, Getränke, Plätze und Buchungsregeln pflegst du im Web unter{" "}
-        <Text style={{ fontFamily: "Barlow_600SemiBold", color: ADMIN ? farben.blueInk : farben.ink2 }}>{adresse}</Text>.
+        {admin
+          ? "Mitglieder, Kasse, Getränke, Plätze und Buchungsregeln pflegst du im Web unter "
+          : "Sperren und Serien pflegst du bequemer im Web unter "}
+        <Text style={{ fontFamily: "Barlow_600SemiBold", color: link ? farben.blueInk : farben.ink2 }}>{adresse}</Text>.
       </Text>
     </Pressable>
   );

@@ -79,10 +79,10 @@ export async function mitspielerAendern(
 /**
  * Eine Buchung stornieren, wahlweise mit Grund.
  *
- * Der Grund landet in der Benachrichtigung an die Betroffenen. Storniert ein
- * Admin eine fremde Buchung, ist er praktisch Pflicht: "Die Buchung wurde
- * storniert." ohne jede Erklaerung ist genau die Nachricht, die einen Anruf
- * beim Vorstand ausloest.
+ * Der Grund landet in der Benachrichtigung an die Betroffenen. Storniert
+ * jemand mit Platzrechten eine fremde Buchung, ist er praktisch Pflicht:
+ * "Die Buchung wurde storniert." ohne jede Erklaerung ist genau die
+ * Nachricht, die einen Anruf beim Vorstand ausloest.
  */
 export async function stornieren(
   bookingId: string,
