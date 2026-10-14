@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import logo from "@tcm/ui/logo.png";
 import logoWeiss from "@tcm/ui/logo-weiss.png";
-import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
+import { createServerSupabase, darfPlaetze, getCurrentMember, isAdmin } from "@/lib/supabase/server";
 import { OHNE_RAHMEN, PFAD_KOPF } from "@/lib/pfad";
 import { AbmeldeKnopf } from "@/components/AbmeldeKnopf";
 import { Benachrichtigungen } from "@/components/Benachrichtigungen";
@@ -56,8 +56,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Die Bereiche der Vorstandsverwaltung (docs/design/clubhaus/verwaltung,
   // Regel 1): in der Seitenleiste einzeln, am Telefon ein fuenfter Tab
   // "Admin", der auf die Uebersicht fuehrt. Bei den Mitgliedern steht die
-  // Zahl der offenen Antraege.
+  // Zahl der offenen Antraege. Der Platzwart (nur Platzrechte) sieht allein
+  // "Plaetze & Serien", sein Admin-Tab fuehrt direkt dorthin.
   const admin = isAdmin(rollen);
+  const platzwart = !admin && darfPlaetze(rollen);
   let offeneAntraege = 0;
   if (admin) {
     const supabase = await createServerSupabase();
@@ -80,10 +82,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         { href: "/admin/getraenke", label: "Getränke", kurz: "Getränke", symbol: "getraenk" },
         { href: "/admin/system", label: "System", kurz: "System", symbol: "system" },
       ]
-    : [];
+    : platzwart
+      ? [{ href: "/admin/plaetze", label: "Plätze & Serien", kurz: "Plätze", symbol: "serie" }]
+      : [];
   const telefon: NavEintrag[] = admin
     ? [...eintraege, { href: "/admin", label: "Admin", kurz: "Admin", symbol: "admin", bereich: true }]
-    : eintraege;
+    : platzwart
+      ? [...eintraege, { href: "/admin/plaetze", label: "Admin", kurz: "Admin", symbol: "admin", bereich: true }]
+      : eintraege;
 
   const vorname = angemeldet?.member?.first_name ?? "";
   const nachname = angemeldet?.member?.last_name ?? "";
@@ -122,7 +128,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <span className="name">
                     {vorname} {nachname}
                   </span>
-                  <span className="rolle">{admin ? "Admin" : "Mitglied"}</span>
+                  <span className="rolle">{admin ? "Admin" : platzwart ? "Platzwart" : "Mitglied"}</span>
                 </span>
                 <AbmeldeKnopf />
               </div>

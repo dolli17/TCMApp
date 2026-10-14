@@ -1,12 +1,12 @@
 import { minutesOf, minutesToTime, occupancyKind } from "@tcm/core";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
 import { FensterKnopf } from "@/components/FensterKnopf";
 import {
   PlatzSperren, PlatzVerwaltung, type ArtZeile, type PlatzZeile,
 } from "@/components/PlatzVerwaltung";
 import { BereichSegmente } from "@/components/BereichSegmente";
-import { Gruppenkopf } from "@/components/Listenzeile";
+import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { SerienFormular } from "@/components/SerienFormular";
 import { SerienListe, type SerienZeile } from "@/components/SerienListe";
@@ -23,6 +23,10 @@ export const dynamic = "force-dynamic";
  *
  * Die Reihenfolge folgt der Häufigkeit: sperren tut der Vorstand oft, Plätze
  * anlegen einmal im Jahrzehnt.
+ *
+ * Der Platzwart (nur Platzrechte, lib/supabase/rollen.ts) sperrt und pflegt
+ * Serien wie der Vorstand. Die Plätze selbst und die Buchungsregeln sieht er
+ * nur lesend - anlegen, sortieren und Einstellungen bleiben bei vollen Rechten.
  */
 export default async function PlaetzeSeite({
   searchParams,
@@ -31,6 +35,7 @@ export default async function PlaetzeSeite({
 }) {
   const serienAnsicht = (await searchParams).ansicht === "serien";
   const supabase = await createServerSupabase();
+  const vollRechte = isAdmin((await getCurrentMember())?.roles ?? []);
 
   const heute = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
   const [plaetzeRes, artenRes, serienRes, aktivePlaetzeRes, einstellungRes, planRes] = await Promise.all([
@@ -87,7 +92,13 @@ export default async function PlaetzeSeite({
     <div className="verwaltung">
       <VerwaltungsKopf
         titel="Plätze & Serien"
-        unterzeile="Sperrungen, Serien, die Plätze selbst und die Regeln, nach denen gebucht wird."
+        unterzeile={
+          vollRechte
+            ? "Sperrungen, Serien, die Plätze selbst und die Regeln, nach denen gebucht wird."
+            : "Sperrungen und Serien. Plätze und Buchungsregeln pflegt der Vorstand."
+        }
+        // Die Übersicht unter /admin gibt es nur mit vollen Rechten.
+        ohneZurueck={!vollRechte}
       >
         {/* Ein gelber Knopf je Seite (Regel 4): passend zum Segment */}
         {serienAnsicht ? (
@@ -125,7 +136,7 @@ export default async function PlaetzeSeite({
         />
         <SerienListe serien={(serienRes.data ?? []) as SerienZeile[]} />
       </section>
-      ) : (
+      ) : vollRechte ? (
         <>
           <PlatzVerwaltung plaetze={plaetze} arten={arten} zustand={zustand} />
 
@@ -135,7 +146,40 @@ export default async function PlaetzeSeite({
             eintraege={einstellungen}
           />
         </>
+      ) : (
+        <PlatzListe plaetze={plaetze} zustand={zustand} />
       )}
     </div>
+  );
+}
+
+/** Die Plätze nur zum Lesen, mit dem, was gerade auf ihnen liegt - für den Platzwart. */
+function PlatzListe({
+  plaetze,
+  zustand,
+}: {
+  plaetze: PlatzZeile[];
+  zustand: Record<string, { text: string; art: "gesperrt" | "serie" }>;
+}) {
+  return (
+    <section className="liste-abschnitt" aria-labelledby="h-plaetze">
+      <Gruppenkopf titel="Jetzt" id="h-plaetze" />
+      <ul className="liste-gruppe" aria-label="Plätze">
+        {plaetze.map((p) => {
+          const jetzt = zustand[p.id];
+          return (
+            <li key={p.id}>
+              <Listenzeile
+                symbol={p.short_name}
+                titel={p.name}
+                kontext={p.subline ?? undefined}
+                hinweis={!p.active ? "stillgelegt" : jetzt ? jetzt.text : "frei"}
+                hinweisTon={!p.active ? "leise" : jetzt ? (jetzt.art === "gesperrt" ? "rot" : "gold") : "gruen"}
+              />
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

@@ -497,7 +497,7 @@ test.describe("Berechtigungen", () => {
     await fremde.click();
     const fenster = page.locator("dialog.fenster");
     await expect(fenster).toBeVisible();
-    await expect(fenster).toContainText("als Administrator");
+    await expect(fenster).toContainText("mit Platzrechten");
     await page.keyboard.press("Escape");
   });
 

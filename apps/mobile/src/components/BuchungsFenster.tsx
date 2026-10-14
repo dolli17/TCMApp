@@ -4,7 +4,7 @@
  * Bottom-Sheet nach dem Entwurf AppBuchen (docs/design/clubhaus, Abschnitt
  * 4): oben rund (radius.blatt), Griff, dahinter abgedunkelt. Dasselbe Blatt
  * fuer Buchen, Bearbeiten, Mitspielen, Stornieren und - abgesetzt unten -
- * fuer das Sperren durch Admins.
+ * fuer das Sperren mit Platzrechten.
  *
  * Nur Darstellung. Ob gebucht werden darf, entscheidet create_booking; die
  * Startzeiten, die hier waehlbar sind, kommen aus canStartAt.
@@ -32,7 +32,8 @@ interface Props {
   meineId: string | null;
   rasterMinuten: number;
   anzeigeMinuten: number;
-  istAdmin: boolean;
+  /** Vorstand, App Admin oder Platzwart: sperren und fremde Buchungen verwalten. */
+  darfPlaetze: boolean;
   laeuft: boolean;
   /** Gastgebuehr je Gast in Cent. */
   gastgebuehrCents: number;
@@ -293,7 +294,7 @@ function BuchenInhalt(
         </Fussnote>
       </View>
 
-      {props.istAdmin && <SperrBereich {...props} />}
+      {props.darfPlaetze && <SperrBereich {...props} />}
     </>
   );
 }
@@ -374,16 +375,16 @@ function VerwaltenInhalt(
   // werden sie ueber cancel_series_occurrence - nicht per Storno.
   const serientermin = Boolean(b.series_id);
 
-  // Drei Rollen an demselben Blatt: der Bucher verwaltet, ein Admin
-  // verwaltet fremd, und wer nur eingeladen ist, kann ausschliesslich
+  // Drei Rollen an demselben Blatt: der Bucher verwaltet, wer
+  // Platzrechte hat, verwaltet fremd, und wer nur eingeladen ist, kann ausschliesslich
   // mitspielen. Ohne diese Trennung koennte ein Fremder ueber die
   // Mitspielersuche die Besetzung des Buchers umwerfen.
-  const darfVerwalten = b.is_own === true || props.istAdmin;
+  const darfVerwalten = b.is_own === true || props.darfPlaetze;
   // Ein Serientermin faellt aus, eine Blockung wird aufgehoben, eine fremde
   // Buchung wird storniert - wie im Web. Nur beim Storno einer fremden Buchung
   // ist ein Grund Pflicht: dort sitzt jemand, der eine Erklaerung verdient.
   // Hinter einer Blockung sitzt niemand.
-  const grundNoetig = props.istAdmin && b.is_own !== true && b.kind === "booking";
+  const grundNoetig = props.darfPlaetze && b.is_own !== true && b.kind === "booking";
   const grundFeld = darfVerwalten && stornoOffen && (serientermin || !nurStorno);
   const kannMitspielen =
     b.is_own !== true && b.bin_dabei !== true && b.partner_wanted === true && b.frei > 0;
@@ -415,8 +416,8 @@ function VerwaltenInhalt(
               ? `Gesperrt · ${b.title?.trim() || "ohne Grund"}`
               : `${b.type_name} · gebucht von ${b.is_own ? "dir" : (b.owner_name ?? "unbekannt")}`}
         </Text>
-        {props.istAdmin && !b.is_own && !nurStorno && (
-          <Text style={stil.leise}>Du bearbeitest eine fremde Buchung als Administrator.</Text>
+        {props.darfPlaetze && !b.is_own && !nurStorno && (
+          <Text style={stil.leise}>Du bearbeitest eine fremde Buchung mit Platzrechten.</Text>
         )}
         {b.partner_wanted === true && b.frei > 0 && (
           <Text style={[stil.leise, { color: farben.goldInk, fontFamily: "Barlow_700Bold" }]}>

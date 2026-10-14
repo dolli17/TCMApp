@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
+import { createServerSupabase, darfPlaetze, getCurrentMember } from "@/lib/supabase/server";
 import { Belegungsplan } from "@/components/Belegungsplan";
 import { PlanAbo } from "@/components/PlanAbo";
 import { PlanSegmente } from "@/components/PlanSegmente";
@@ -166,7 +166,7 @@ export default async function PlanSeite({
         dauerMinuten={artenRes.data?.[0]?.duration_minutes ?? 60}
         kontingentFrei={unbegrenzt ? null : Math.max(erlaubt - belegt, 0)}
         gastgebuehrCents={einstellungen.guest_fee_cents ?? 0}
-        istAdmin={isAdmin(angemeldet?.roles ?? [])}
+        darfPlaetze={darfPlaetze(angemeldet?.roles ?? [])}
       />
     </>
   );

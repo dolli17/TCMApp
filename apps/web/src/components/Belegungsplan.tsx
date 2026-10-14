@@ -72,7 +72,8 @@ interface Props {
   kontingentFrei: number | null;
   /** Gastgebuehr je Gast in Cent. */
   gastgebuehrCents: number;
-  istAdmin: boolean;
+  /** Vorstand, App Admin oder Platzwart: sperren und fremde Buchungen verwalten. */
+  darfPlaetze: boolean;
 }
 
 // Die Zeitrechnung kommt aus @tcm/core: dieselben Funktionen benutzt die
@@ -241,12 +242,12 @@ export function Belegungsplan(props: Props) {
   /**
    * Wer darf eine bestehende Buchung anfassen?
    *
-   * Neben Bucher und Admin auch jeder, dem sie offensteht: eine
+   * Neben Bucher und Platzrechten auch jeder, dem sie offensteht: eine
    * ausgeschriebene Buchung ist eine Einladung, und die muss anklickbar sein.
    * Fremde Buchungen bleiben fuer Mitglieder reine Anzeige.
    */
   function verwaltbar(b: Belegung): boolean {
-    if (props.istAdmin) return true;
+    if (props.darfPlaetze) return true;
     if (vergangen(lokaleMinuten(b.starts_at)) || b.kind !== "booking") return false;
     return b.is_own || (b.partner_wanted && b.frei > 0 && !b.bin_dabei);
   }
@@ -434,7 +435,7 @@ export function Belegungsplan(props: Props) {
           rasterMinuten={props.rasterMinuten}
           anzeigeMinuten={props.anzeigeMinuten}
           gastgebuehrCents={props.gastgebuehrCents}
-          istAdmin={props.istAdmin}
+          darfPlaetze={props.darfPlaetze}
           laeuft={laeuft}
           fehler={fensterFehler}
           onBuchen={abschicken}

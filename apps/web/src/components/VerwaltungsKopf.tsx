@@ -12,6 +12,7 @@ export function VerwaltungsKopf({
   unterzeile,
   zurueck,
   marke,
+  ohneZurueck,
   children,
 }: {
   kicker?: string;
@@ -20,12 +21,14 @@ export function VerwaltungsKopf({
   zurueck?: { href: string; text: string };
   /** Statusmarke neben dem Titel */
   marke?: ReactNode;
+  /** Kein Rueckweg, etwa fuer den Platzwart, der die Uebersicht nicht sehen darf */
+  ohneZurueck?: boolean;
   children?: ReactNode;
 }) {
   return (
     <header className="verwaltung-kopf">
       <div>
-        {zurueck ? (
+        {ohneZurueck ? null : zurueck ? (
           <Link href={zurueck.href} className="zurueck">
             ‹ {zurueck.text}
           </Link>

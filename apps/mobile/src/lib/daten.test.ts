@@ -63,6 +63,7 @@ const {
   bucheGetraenk,
   bucheplatz,
   entferneMerkmal,
+  ladeIchSelbst,
   ladeKontingent,
   sageSerienterminAb,
   setzeMerkmal,
@@ -115,6 +116,33 @@ describe("anmelden", () => {
     signIn.mockResolvedValue({ error: null });
     await anmelden("  a@b.de  ", "geheim");
     expect(signIn).toHaveBeenCalledWith({ email: "a@b.de", password: "geheim" });
+  });
+});
+
+describe("ladeIchSelbst", () => {
+  it("liefert ohne Rolle weder volle noch Platzrechte", async () => {
+    expect(await ladeIchSelbst()).toEqual({ id: "m-1", admin: false, platzRechte: false });
+  });
+
+  it("gibt dem Platzwart Platzrechte, aber keine vollen Rechte", async () => {
+    listen.member_roles = { data: [{ role: "groundskeeper" }], error: null };
+    expect(await ladeIchSelbst()).toEqual({ id: "m-1", admin: false, platzRechte: true });
+  });
+
+  it.each(["admin", "board"])("gibt %s volle und Platzrechte", async (rolle) => {
+    listen.member_roles = { data: [{ role: rolle }], error: null };
+    expect(await ladeIchSelbst()).toEqual({ id: "m-1", admin: true, platzRechte: true });
+  });
+
+  it("liefert ohne Anmeldung nichts", async () => {
+    getUser.mockResolvedValue({ data: { user: null } });
+    expect(await ladeIchSelbst()).toEqual({ id: null, admin: false, platzRechte: false });
+  });
+
+  it("liefert ohne Mitglied nichts, etwa am Kiosk", async () => {
+    einzelne.members = { data: null, error: null };
+    listen.member_roles = { data: [{ role: "admin" }], error: null };
+    expect(await ladeIchSelbst()).toEqual({ id: null, admin: false, platzRechte: false });
   });
 });
 

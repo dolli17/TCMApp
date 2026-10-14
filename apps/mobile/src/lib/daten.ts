@@ -6,7 +6,7 @@
  * uebersetzt Fehler in verstaendliche Saetze.
  */
 
-import { hatVolleRechte, memberProfileSchema, translateDbError } from "@tcm/core";
+import { hatPlatzRechte, hatVolleRechte, memberProfileSchema, translateDbError } from "@tcm/core";
 import { supabase } from "./supabase";
 
 export interface Ergebnis<T = void> {
@@ -153,14 +153,20 @@ export async function ladeBuchungsarten() {
 }
 
 /**
- * Wer ist angemeldet, und ist er Admin?
+ * Wer ist angemeldet, und welche Rechte hat er?
  *
- * Beides in einem Zug, weil der Plan beides braucht: die Rolle fuers Verwalten
- * fremder Buchungen, die Id, um den Bucher aus der Mitspielerauswahl zu
- * streichen. Admin heisst hier volle Rechte: App Admin oder Vorstand.
+ * Alles in einem Zug, weil der Plan es zusammen braucht: die Rechte fuers
+ * Verwalten fremder Buchungen, die Id, um den Bucher aus der Mitspielerauswahl
+ * zu streichen. admin heisst volle Rechte (App Admin oder Vorstand),
+ * platzRechte haben zusaetzlich die Platzwarte (Sperren, Serien, fremde
+ * Buchungen).
  */
-export async function ladeIchSelbst(): Promise<{ id: string | null; admin: boolean }> {
-  const leer = { id: null, admin: false };
+export async function ladeIchSelbst(): Promise<{
+  id: string | null;
+  admin: boolean;
+  platzRechte: boolean;
+}> {
+  const leer = { id: null, admin: false, platzRechte: false };
 
   const { data: sitzung } = await supabase.auth.getUser();
   const authId = sitzung.user?.id;
@@ -178,11 +184,12 @@ export async function ladeIchSelbst(): Promise<{ id: string | null; admin: boole
     .select("role")
     .eq("member_id", mitglied.id);
 
-  return { id: mitglied.id, admin: hatVolleRechte((rollen ?? []).map((r) => r.role)) };
+  const r = (rollen ?? []).map((x) => x.role);
+  return { id: mitglied.id, admin: hatVolleRechte(r), platzRechte: hatPlatzRechte(r) };
 }
 
 /**
- * Eine Stunde auf einem Platz sperren (nur Admins).
+ * Eine Stunde auf einem Platz sperren (nur mit Platzrechten).
  *
  * Dieselbe RPC und dieselben Werte wie stundeSperren im Web. Liegen dort
  * Buchungen, weist die Datenbank ab und nennt die Zahl; mit verdraengen=true

@@ -10,7 +10,7 @@
  * Die Eintraege kommen aus den Tabs.Screen-Angaben (title, tabBarLabel,
  * tabBarIcon), nicht aus einer eigenen Liste: ein weiterer Tab braucht nur
  * einen weiteren Tabs.Screen, die Leiste teilt die Breite von selbst auf.
- * Tabs mit href: null (die Verwaltung fuer Nicht-Admins) laesst sie aus -
+ * Tabs mit href: null (die Verwaltung ohne Platzrechte) laesst sie aus -
  * expo-router uebersetzt das in tabBarItemStyle { display: "none" }, und
  * eine eigene Leiste muss das selbst beachten.
  *

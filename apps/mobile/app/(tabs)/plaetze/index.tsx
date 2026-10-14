@@ -92,7 +92,7 @@ export default function Plan() {
   const [kontingent, setKontingent] = useState({ used: 0, allowed: 0 });
   const [einstellungen, setEinstellungen] =
     useState<Awaited<ReturnType<typeof ladeBuchungseinstellungen>>>(null);
-  const [admin, setAdmin] = useState(false);
+  const [darfPlaetze, setDarfPlaetze] = useState(false);
   const [meineId, setMeineId] = useState<string | null>(null);
   const [fenster, setFenster] = useState<Fenster | null>(null);
   const [fensterFehler, setFensterFehler] = useState<string | null>(null);
@@ -118,7 +118,7 @@ export default function Plan() {
       ladeBuchungsarten(), ladeVerzeichnis(""), ladeIchSelbst(),
     ]);
     setPlaetze(p); setBelegung(b); setKontingent(k); setEinstellungen(e);
-    setArten(a); setVerzeichnis(v); setAdmin(ich.admin); setMeineId(ich.id);
+    setArten(a); setVerzeichnis(v); setDarfPlaetze(ich.platzRechte); setMeineId(ich.id);
     setGeladenFuer(tag);
     setLaedt(false);
   }, []);
@@ -302,11 +302,11 @@ export default function Plan() {
    *
    * Neben eigener Buchung auch jede, die Mitspieler sucht - eine Einladung
    * muss antippbar sein - und fremde Buchungen zum Ansehen. Was darin
-   * geaendert werden darf, entscheidet das Blatt. Sperrungen nur fuer Admins.
+   * geaendert werden darf, entscheidet das Blatt. Sperrungen nur mit Platzrechten.
    */
   function oeffnebar(b: Belegung): boolean {
     const art = occupancyKind(b);
-    if (art === "gesperrt") return admin;
+    if (art === "gesperrt") return darfPlaetze;
     return true;
   }
 
@@ -564,7 +564,7 @@ export default function Plan() {
           rasterMinuten={raster}
           anzeigeMinuten={anzeige}
           gastgebuehrCents={einstellungen?.guest_fee_cents ?? 0}
-          istAdmin={admin}
+          darfPlaetze={darfPlaetze}
           laeuft={laeuft}
           fehler={fensterFehler}
           onBuchen={buchen}

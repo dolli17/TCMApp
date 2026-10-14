@@ -9,8 +9,9 @@
  * Den Kopf setzt jeder Bildschirm selbst (GrosserKopf), weil nur er weiss, was
  * darunter noch dazugehoert - bei den Plaetzen die Reiterleiste.
  *
- * Admins bekommen einen fuenften Tab "Verwaltung", wie im Web der Tab
- * "Admin". Fuer alle anderen steht er mit href: null in der Liste, und die
+ * Wer Platzrechte hat (Vorstand, App Admin, Platzwart), bekommt einen
+ * fuenften Tab "Verwaltung", wie im Web der Tab "Admin". Fuer alle anderen
+ * steht er mit href: null in der Liste, und die
  * Leiste laesst ihn aus. Die Rolle wird einmal beim Aufbau der Tabs gelesen;
  * wer sich abmeldet, verlaesst die Tabs ohnehin.
  */
@@ -24,13 +25,13 @@ import { useTheme } from "@/lib/theme";
 
 export default function TabLayout() {
   const { farben } = useTheme();
-  const [admin, setAdmin] = useState(false);
+  const [platzRechte, setPlatzRechte] = useState(false);
 
   useEffect(() => {
     let aktiv = true;
     ladeIchSelbst()
       .then((ich) => {
-        if (aktiv) setAdmin(ich.admin);
+        if (aktiv) setPlatzRechte(ich.platzRechte);
       })
       .catch(() => undefined);
     return () => {
@@ -82,7 +83,7 @@ export default function TabLayout() {
           // Fuenf Tabs neben dem Buchen-Knopf: "Verwaltung" passt nicht, im
           // Web heisst der Tab ebenso kurz "Admin".
           tabBarLabel: "Admin",
-          href: admin ? undefined : null,
+          href: platzRechte ? undefined : null,
           tabBarIcon: ({ color }) => <Symbol name="admin" farbe={color} groesse={22} />,
         }}
       />
