@@ -1,10 +1,9 @@
 /**
  * Die Verwaltung (nur Admins)
  *
- * Ein Stack im Tab: die Uebersicht traegt den grossen Kopf wie die anderen
- * Tabs, die Bereiche darunter oeffnen sich mit nativem Kopf und
- * Zurueck-Pfeil. Der Baum folgt apps/web/src/app/admin, damit die
- * Sprungziele aus @tcm/core (adminTodos) nur ihr Praefix tauschen muessen.
+ * Ein Stack im Tab mit nur noch einem Bildschirm, den Plaetzen & Serien
+ * (index.tsx). Er traegt den grossen Kopf wie die anderen Tabs. Der Rest der
+ * Verwaltung liegt im Web unter /admin.
  *
  * Das Rollenschloss hier ist wie im Web nur die Oberflaeche - wer den Tab
  * nicht sehen darf, landet zurueck auf Home. Die eigentliche Absicherung
@@ -50,18 +49,7 @@ export default function VerwaltungLayout() {
         contentStyle: { backgroundColor: farben.bg },
       }}
     >
-      <Stack.Screen name="index" options={{ headerShown: false, title: "Verwaltung" }} />
-      <Stack.Screen name="mitglieder/index" options={{ title: "Mitglieder" }} />
-      <Stack.Screen name="mitglieder/[id]" options={{ title: "Mitglied" }} />
-      <Stack.Screen name="mitglieder/antraege" options={{ title: "Anträge" }} />
-      <Stack.Screen name="mitglieder/mannschaften" options={{ title: "Mannschaften" }} />
-      <Stack.Screen name="arbeitsdienst" options={{ title: "Arbeitsdienst" }} />
-      <Stack.Screen name="kasse/index" options={{ title: "Kasse" }} />
-      <Stack.Screen name="kasse/lastschriften/[id]" options={{ title: "Lastschriftlauf" }} />
-      <Stack.Screen name="plaetze" options={{ title: "Plätze & Serien" }} />
-      <Stack.Screen name="getraenke" options={{ title: "Getränke" }} />
-      <Stack.Screen name="system/index" options={{ title: "System" }} />
-      <Stack.Screen name="system/merkmale" options={{ title: "Merkmale" }} />
+      <Stack.Screen name="index" options={{ headerShown: false, title: "Plätze" }} />
     </Stack>
   );
 }

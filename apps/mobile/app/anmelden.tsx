@@ -13,6 +13,7 @@ import {
   AnmeldeFeld, AnmeldeFusszeile, AnmeldeHinweis, AnmeldeSeite, GelberKnopf, LeiserVerweis,
 } from "@/components/AnmeldeSeite";
 import { anmelden } from "@/lib/daten";
+import { webLink } from "@/lib/web";
 
 export default function Anmeldung() {
   const [email, setEmail] = useState("");
@@ -60,11 +61,11 @@ export default function Anmeldung() {
 
       <View style={{ marginTop: "auto", gap: 14 }}>
         <GelberKnopf text={laeuft ? "Anmelden…" : "Anmelden"} onPress={absenden} gesperrt={laeuft} />
-        {SITE_URL !== "" && (
+        {ANTRAG && (
           <AnmeldeFusszeile
             text="Noch kein Mitglied?"
             verweis="Antrag stellen"
-            onPress={() => Linking.openURL(`${SITE_URL}/antrag`)}
+            onPress={() => Linking.openURL(ANTRAG)}
           />
         )}
       </View>
@@ -73,4 +74,4 @@ export default function Anmeldung() {
 }
 
 /** Der Mitgliedsantrag liegt im Web; ohne Adresse (lokal) bleibt die Zeile weg. */
-const SITE_URL = (process.env.EXPO_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+const ANTRAG = webLink("/antrag");
