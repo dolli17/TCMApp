@@ -19,6 +19,8 @@ async function mitgliedAnlegen(page: Page, nachname: string, vorname = "Test"): 
   await expect(fenster).toBeVisible();
   await fenster.getByLabel("Vorname").fill(vorname);
   await fenster.getByLabel("Nachname").fill(nachname);
+  // Ohne E-Mail legt die Datenbank kein Mitglied mehr an. example.org: dorthin geht nie eine Mail.
+  await fenster.getByLabel("E-Mail").fill(`${vorname}.${nachname}@example.org`.toLowerCase());
   await fenster.getByRole("button", { name: "Anlegen" }).click();
 
   // Nach dem Anlegen führt die Oberfläche direkt auf die Detailseite.
@@ -64,12 +66,12 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"] li').first()).toBeVisible();
 
     // Der Filter "Ohne Zugang" darf niemanden mit Login zeigen - der eine
-    // Hinweis je Zeile sagt es dann.
+    // Hinweis je Zeile sagt es dann. Im Seed hat jedes Mitglied einen Login,
+    // die Liste darf also auch leer sein.
     await page.getByRole("link", { name: "Ohne Zugang", exact: true }).click();
     await expect(page).toHaveURL(/filter=ohne-login/);
     const hinweise = page.locator('.liste-gruppe[aria-label="Mitglieder"] li .hinweis-rechts');
     const anzahl = Math.min(await hinweise.count(), 10);
-    expect(anzahl).toBeGreaterThan(0);
     for (let i = 0; i < anzahl; i++) {
       await expect(hinweise.nth(i)).toHaveText("kein Zugang");
     }
@@ -576,7 +578,7 @@ test.describe("Mitgliederverwaltung", () => {
     await aufraeumen(page, adresse, nachname);
   });
 
-  test("Zugang: ohne E-Mail keine Einladung, mit E-Mail schon", async ({ page }) => {
+  test("Zugang: mit E-Mail lässt sich einladen", async ({ page }) => {
     const nachname = testName("Zugang");
     await anmelden(page, NUTZER.admin);
     const adresse = await mitgliedAnlegen(page, nachname);
@@ -585,21 +587,8 @@ test.describe("Mitgliederverwaltung", () => {
     const karte = page.locator('section[aria-label="Zugang"]');
     await expect(karte).toBeVisible();
 
-    // Frisch angelegt, ohne E-Mail: die Karte erklärt, warum nichts geht.
-    await expect(karte).toContainText("Keine E-Mail-Adresse hinterlegt");
-    await expect(karte).toContainText("Ohne E-Mail-Adresse ist keine Einladung");
-    await expect(karte.getByRole("button", { name: "Einladung verschicken" })).toBeDisabled();
-
-    // E-Mail nachtragen
-    const email = `${nachname.toLowerCase()}@example.org`;
-    await page.goto(`${adresse.split("?")[0]}?teil=stammdaten`);
-    const stamm = page.locator('section[aria-label="Person und Kontakt"]');
-    await stamm.getByLabel("E-Mail").fill(email);
-    await stamm.getByRole("button", { name: "Speichern" }).click();
-    await expect(stamm.locator(".hinweis.erfolg")).toContainText("Gespeichert");
-
-    // Jetzt ist die Einladung möglich
-    await page.goto(`${adresse.split("?")[0]}?teil=zugang`);
+    // Die Adresse kommt schon beim Anlegen mit, die Einladung ist sofort möglich.
+    const email = `test.${nachname}@example.org`.toLowerCase();
     await expect(karte).toContainText(email);
     await expect(karte.getByRole("button", { name: "Einladung verschicken" })).toBeEnabled();
 

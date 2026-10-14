@@ -2483,6 +2483,18 @@ export type Database = {
           status: Database["public"]["Enums"]["member_status"]
         }[]
       }
+      members_ohne_login: {
+        Args: never
+        Returns: {
+          email: string
+          first_name: string
+          id: string
+          ist_testadresse: boolean
+          konto_id: string
+          konto_mitglied: string
+          last_name: string
+        }[]
+      }
       mod97: { Args: { p_digits: string }; Returns: number }
       move_booking: {
         Args: {

@@ -58,7 +58,9 @@ returns setof text language plpgsql as $f$
 declare a record; v_ohne uuid;
 begin
   select * into a from tests.fixture_user('admin') limit 1;
-  insert into public.members (first_name, last_name) values ('Ohne', 'Login')
+  -- Noch nicht eingeladen: Adresse ja, Login (noch) nicht.
+  insert into public.members (first_name, last_name, email)
+  values ('Ohne', 'Login', 'ohne.login-' || gen_random_uuid()::text || '@example.org')
   returning id into v_ohne;
   perform tests.act_as(a.auth_id);
 

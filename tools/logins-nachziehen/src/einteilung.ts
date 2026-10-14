@@ -1,33 +1,30 @@
 /**
  * Einteilung der Mitglieder ohne Login
  *
- * Reine Logik ohne Netz und Datenbank, damit sie sich testen laesst. Das
- * Skript sammelt vorher drei Dinge ein: die Mitglieder ohne Login (mit dem
- * Urteil von public.ist_testadresse), alle Konten aus auth.users und die schon
- * vergebenen Verknuepfungen. Hier wird daraus fuer jedes Mitglied genau eine
- * Massnahme.
+ * Reine Logik ohne Netz und Datenbank, damit sie sich testen laesst. Die RPC
+ * members_ohne_login liefert die Mitglieder ohne Login schon samt Urteil von
+ * public.ist_testadresse und Abgleich mit auth.users (gibt es zur Adresse ein
+ * Konto, und gehoert es schon einem anderen Mitglied?). Hier wird daraus fuer
+ * jedes Mitglied genau eine Massnahme.
  */
 
-/** Ein nicht archiviertes Mitglied ohne Login, so wie es die Datenbank liefert. */
+/** Ein nicht archiviertes Mitglied ohne Login, so wie es members_ohne_login liefert. */
 export interface MitgliedOhneLogin {
   id: string;
   name: string;
   email: string | null;
   /** Urteil von public.ist_testadresse – dieselbe Regel wie in member-login. */
   istTestadresse: boolean;
+  /** Konto in auth.users mit derselben Adresse (ohne Gross/klein), sonst null. */
+  kontoId: string | null;
+  /** Name des Mitglieds, dem dieses Konto schon gehoert, sonst null. */
+  kontoMitglied: string | null;
 }
 
 /** Ein Konto aus auth.users. */
 export interface AuthKonto {
   id: string;
   email: string | null;
-}
-
-/** Ein Mitglied, das schon mit einem Konto verbunden ist. */
-export interface Verknuepfung {
-  memberId: string;
-  name: string;
-  authUserId: string;
 }
 
 export type Massnahme =
@@ -50,29 +47,15 @@ export function normalisiereEmail(email: string | null | undefined): string | nu
   return bereinigt === "" ? null : bereinigt;
 }
 
-export function teileEin(
-  mitglieder: MitgliedOhneLogin[],
-  konten: AuthKonto[],
-  verknuepfungen: Verknuepfung[],
-): Massnahme[] {
-  const kontoNachEmail = new Map<string, string>();
-  for (const konto of konten) {
-    const email = normalisiereEmail(konto.email);
-    if (email) kontoNachEmail.set(email, konto.id);
-  }
-
-  const besitzer = new Map(verknuepfungen.map((v) => [v.authUserId, v.name]));
-
+export function teileEin(mitglieder: MitgliedOhneLogin[]): Massnahme[] {
   return mitglieder.map((mitglied): Massnahme => {
     const email = normalisiereEmail(mitglied.email);
     if (!email) return { art: "ohne_email", mitglied };
 
-    const authUserId = kontoNachEmail.get(email);
-    if (authUserId) {
-      const anderesMitglied = besitzer.get(authUserId);
-      return anderesMitglied
-        ? { art: "vergeben", mitglied, email, anderesMitglied }
-        : { art: "verknuepfen", mitglied, email, authUserId };
+    if (mitglied.kontoId) {
+      return mitglied.kontoMitglied
+        ? { art: "vergeben", mitglied, email, anderesMitglied: mitglied.kontoMitglied }
+        : { art: "verknuepfen", mitglied, email, authUserId: mitglied.kontoId };
     }
 
     return mitglied.istTestadresse

@@ -10,8 +10,8 @@
 --
 -- Die Verteilungen bilden den eBuSy-Ist-Stand nach, damit die App an
 -- realistischen Groessenordnungen entwickelt wird und die Randfaelle - zwei
--- Beitragsarten, fehlende Bankverbindung, Minderjaehrige ohne Login - schon
--- hier auftreten und nicht erst beim Cutover.
+-- Beitragsarten, fehlende Bankverbindung, Kinder mit dem Konto der Eltern -
+-- schon hier auftreten und nicht erst beim Cutover.
 -- ===========================================================================
 
 select setseed(0.4711);   -- reproduzierbar: gleicher Lauf, gleicher Bestand
@@ -194,8 +194,8 @@ from public.drink_items;
 -- Mitglieder
 --
 -- 400 Personen, Alter 6 bis 92 mit Schwerpunkt um 35, davon rund 19 Prozent
--- minderjaehrig. Minderjaehrige unter 14 bekommen bewusst keine E-Mail und
--- damit keinen Login - genau die Konstellation, die es im echten Bestand gibt.
+-- minderjaehrig. Jedes Mitglied hat eine eigene, eindeutige Adresse und einen
+-- Login, auch ein Kind (Logins siehe ganz unten).
 -- ---------------------------------------------------------------------------
 with vornamen as (
   select array[
@@ -246,10 +246,7 @@ select
        when r_gender < 0.98 then 'male'::public.salutation
        else 'none'::public.salutation end,
   (current_date - make_interval(years => age) - make_interval(days => floor(random() * 365)::int))::date,
-  -- Kinder unter 14 bekommen keinen eigenen Zugang
-  case when age < 14 then null
-       else lower(first_name) || '.' || lower(last_name) || i::text || '@example.org'
-  end,
+  lower(first_name) || '.' || lower(last_name) || i::text || '@example.org',
   case when r_phone < 0.86
        then '0170 ' || lpad(floor(random() * 9999999)::text, 7, '0')
        else null end,
@@ -323,7 +320,7 @@ with kandidaten as (
          lpad(floor(random() * 9999999999)::text, 10, '0') as konto
   from public.members m
   where random() < 0.94
-    and m.email is not null   -- Kinder: siehe Kinderkonten unten
+    and m.birthday <= current_date - interval '14 years'   -- Kinder: siehe Kinderkonten unten
 ), erzeugt as (
   select
     member_id, first_name, last_name,
@@ -347,20 +344,19 @@ from erzeugt;
 
 -- Kinderkonten
 --
--- Jedes Mitglied zahlt fuer sich, auch ein Kind. Minderjaehrige ohne eigene
--- E-Mail bekommen deshalb ein eigenes Konto mit der IBAN eines Erwachsenen,
+-- Jedes Mitglied zahlt fuer sich, auch ein Kind. Kinder unter 14 bekommen
+-- deshalb ein eigenes Konto mit der IBAN eines Erwachsenen,
 -- der als Kontoinhaber eingetragen ist. Das bildet die 36 paidByInfo-Faelle
 -- aus eBuSy ab: drei Kinder einer Familie ergeben drei Lastschriften auf
 -- dieselbe IBAN, jede mit eigener Mandatsreferenz.
 with kinder as (
   select id, row_number() over (order by id) as rn
   from public.members
-  where email is null
+  where birthday > current_date - interval '14 years'
 ), eltern as (
   select id, first_name, last_name, row_number() over (order by id) as rn
   from public.members
-  where email is not null
-    and extract(year from age(birthday)) between 30 and 60
+  where extract(year from age(birthday)) between 30 and 60
 )
 insert into public.bank_accounts
   (member_id, iban_encrypted, iban_fingerprint, iban_last4, holder, bank_name)
@@ -726,5 +722,57 @@ begin
          where id = v_member;
       end if;
     end if;
+  end loop;
+end $$;
+
+-- ===========================================================================
+-- Ein Login fuer jedes Mitglied
+--
+-- Jedes Mitglied hat einen Login, auch im Testbestand. Die Konten entstehen
+-- wie die drei oben, nur fuer alle uebrigen Mitglieder und mit ihrer
+-- @example.org-Adresse. Dorthin geht nie eine Mail (ist_testadresse). Das
+-- Passwort ist dasselbe wie oben; der Hash wird einmal berechnet, sonst kostet
+-- bcrypt fuer 400 Konten spuerbar Zeit.
+-- ===========================================================================
+
+do $$
+declare
+  v_hash   constant text := extensions.crypt('tcm-lokal-2026', extensions.gen_salt('bf'));
+  v_member record;
+  v_auth   uuid;
+begin
+  for v_member in
+    select m.id, lower(m.email::text) as email
+    from public.members m
+    where m.auth_user_id is null and m.email is not null
+    order by m.created_at, m.id
+  loop
+    v_auth := extensions.gen_random_uuid();
+
+    insert into auth.users (
+      id, instance_id, aud, role, email, encrypted_password,
+      email_confirmed_at, created_at, updated_at,
+      raw_app_meta_data, raw_user_meta_data,
+      confirmation_token, recovery_token,
+      email_change, email_change_token_new, email_change_token_current,
+      phone_change, phone_change_token, reauthentication_token
+    ) values (
+      v_auth, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+      v_member.email, v_hash,
+      now(), now(), now(),
+      '{"provider":"email","providers":["email"]}'::jsonb,
+      jsonb_build_object('member_id', v_member.id),
+      '', '', '', '', '', '', '', ''
+    );
+
+    insert into auth.identities (
+      id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at
+    ) values (
+      extensions.gen_random_uuid(), v_auth, v_auth::text, 'email',
+      jsonb_build_object('sub', v_auth::text, 'email', v_member.email, 'email_verified', true),
+      null, now(), now()
+    );
+
+    update public.members set auth_user_id = v_auth where id = v_member.id;
   end loop;
 end $$;
