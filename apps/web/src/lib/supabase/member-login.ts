@@ -15,9 +15,21 @@ import { createServerSupabase } from "./server";
 
 /**
  * Was die Oberfläche am Zugang auslösen darf. Einladen und Entfernen gibt es
- * nicht: Der Login entsteht mit dem Mitglied und geht mit ihm.
+ * nicht: Der Login entsteht mit dem Mitglied und geht mit ihm. Eine Einladung
+ * erneut senden geht, solange das Onboarding offen ist (O24).
  */
-export type LoginAktion = "passwort_zuruecksetzen" | "login_deaktivieren" | "login_aktivieren";
+export type LoginAktion =
+  | "passwort_zuruecksetzen"
+  | "login_deaktivieren"
+  | "login_aktivieren"
+  | "einladung_erneut";
+
+/** Was einladung_status je Mitglied aus auth.users liefert. */
+export interface EinladungRoh {
+  bestaetigt: boolean;
+  angemeldet_am: string | null;
+  gesendet_am: string | null;
+}
 
 /** Der Anfragekörper, so wie die Function ihn erwartet. */
 export type LoginAnfrage =
@@ -28,6 +40,7 @@ export type LoginAnfrage =
       antrag: { id: string; nummer?: string; beitragsart?: string; eintritt?: string };
     }
   | { aktion: "email_aendern"; memberId: string; email: string }
+  | { aktion: "einladung_status"; memberIds: string[] }
   | { aktion: "loeschen"; memberId: string; art: "loeschen"; nachname: string }
   | { aktion: "loeschen"; memberId: string; art: "anonymisieren"; grund?: string };
 
@@ -36,6 +49,8 @@ export interface LoginErgebnis {
   meldung: string;
   /** Beim Anlegen und Annehmen die Id des neuen Mitglieds. */
   id?: string;
+  /** Bei einladung_status: je Mitglied der Stand aus auth.users. */
+  status?: Record<string, EinladungRoh>;
 }
 
 function funktionsAdresse(): string | null {
@@ -83,7 +98,14 @@ export async function memberLogin(anfrage: LoginAnfrage): Promise<LoginErgebnis>
     return { ok: false, meldung: `Die Zugangsverwaltung ist nicht erreichbar: ${text}` };
   }
 
-  let ergebnis: { ok?: boolean; meldung?: string; id?: string; code?: string; details?: string };
+  let ergebnis: {
+    ok?: boolean;
+    meldung?: string;
+    id?: string;
+    code?: string;
+    details?: string;
+    status?: Record<string, EinladungRoh>;
+  };
   try {
     ergebnis = await antwort.json();
   } catch {
@@ -100,5 +122,6 @@ export async function memberLogin(anfrage: LoginAnfrage): Promise<LoginErgebnis>
       ? meldung
       : translateDbError({ message: meldung, code: ergebnis.code, details: ergebnis.details }),
     id: ergebnis.id,
+    status: ergebnis.status,
   };
 }

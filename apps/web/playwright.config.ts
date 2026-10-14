@@ -58,7 +58,9 @@ export default defineConfig({
   // Danach die Edge Functions: ohne member-login kein Anlegen (O18). Ihr
   // Setup gibt einen Teardown zurück, der ein selbst gestartetes
   // "supabase functions serve" wieder beendet.
-  globalSetup: ["./e2e/aufraeumen.ts", "./e2e/edge-functions.ts"],
+  // Zuletzt die beiden Onboarding-Konten des Seeds (neu@, kind@) in ihren
+  // Ausgangszustand, egal was ein früherer Lauf oder die App mit ihnen tat.
+  globalSetup: ["./e2e/aufraeumen.ts", "./e2e/edge-functions.ts", "./e2e/onboarding-zuruecksetzen.ts"],
   globalTeardown: "./e2e/aufraeumen.ts",
   fullyParallel: false, // die Tests buchen echte Plaetze und wuerden sich sonst behindern
   workers: 1,

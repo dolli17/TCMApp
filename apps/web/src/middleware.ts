@@ -4,12 +4,15 @@
  * Supabase-Tokens laufen nach einer Stunde ab. Ohne diese Middleware wuerde ein
  * Mitglied mitten im Buchen abgemeldet. Hier wird das Token erneuert und die
  * Cookies werden weitergereicht.
+ *
+ * Ausserdem zwei Weichen: ohne Anmeldung zur Loginseite, und solange das
+ * Onboarding offen ist, auf /onboarding.
  */
 
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { AKTIV_COOKIE, istAbgelaufen } from "@/lib/inaktivitaet";
-import { PFAD_KOPF } from "@/lib/pfad";
+import { ONBOARDING, PFAD_KOPF } from "@/lib/pfad";
 
 /**
  * Seiten, die ohne Anmeldung erreichbar sind.
@@ -30,6 +33,10 @@ const OEFFENTLICH = [
   // App - sie muessen fuer jeden lesbar sein, auch fuer Apples Pruefer.
   "/datenschutz",
   "/impressum",
+  // Satzung und Beitragsordnung: der Antrag und das Onboarding verweisen
+  // darauf, und die App verlinkt sie ebenfalls.
+  "/satzung",
+  "/beitragsordnung",
 ];
 
 /** Der Pfad fuer das Layout (lib/pfad.ts): Anmeldeseiten ohne Menue. */
@@ -96,6 +103,28 @@ export async function middleware(request: NextRequest) {
     for (const c of response.cookies.getAll()) umleitung.cookies.set(c);
     umleitung.cookies.delete(AKTIV_COOKIE);
     return umleitung;
+  }
+
+  // Die Sperre bis zum Ende des Onboardings: alles ausser den oeffentlichen
+  // Seiten und dem Onboarding selbst fuehrt dorthin. Die Datenbank sperrt
+  // ohnehin (is_member() ist bis dahin false); das hier erspart leere Seiten
+  // und Fehlermeldungen. Kiosk-Konten haben kein Mitglied und bleiben frei.
+  const imOnboarding = pfad === ONBOARDING || pfad.startsWith(ONBOARDING + "/");
+  if (!oeffentlich && !imOnboarding) {
+    const { data: mitglied } = await supabase
+      .from("members")
+      .select("onboarding_completed_at")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+    if (mitglied && !mitglied.onboarding_completed_at) {
+      const ziel = request.nextUrl.clone();
+      ziel.pathname = ONBOARDING;
+      ziel.search = "";
+      const umleitung = NextResponse.redirect(ziel);
+      // Ein erneuertes Token muss mit auf die Umleitung.
+      for (const c of response.cookies.getAll()) umleitung.cookies.set(c);
+      return umleitung;
+    }
   }
 
   return response;

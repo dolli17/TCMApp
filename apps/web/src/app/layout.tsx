@@ -6,7 +6,7 @@ import Link from "next/link";
 import logo from "@tcm/ui/logo.png";
 import logoWeiss from "@tcm/ui/logo-weiss.png";
 import { createServerSupabase, darfPlaetze, getCurrentMember, isAdmin } from "@/lib/supabase/server";
-import { OHNE_RAHMEN, PFAD_KOPF } from "@/lib/pfad";
+import { ANMELDESEITEN, OHNE_RAHMEN, PFAD_KOPF } from "@/lib/pfad";
 import { AbmeldeKnopf } from "@/components/AbmeldeKnopf";
 import { Benachrichtigungen } from "@/components/Benachrichtigungen";
 import { Inaktivitaet } from "@/components/Inaktivitaet";
@@ -104,7 +104,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         {/* Ein Konto pro Browser (lib/konto-kanal.ts) - auch am Kiosk. Nicht
             auf den Anmeldeseiten: dort findet der Wechsel gerade statt. */}
-        {angemeldet && !OHNE_RAHMEN.includes(pfad) && <KontoWaechter kontoId={angemeldet.user.id} />}
+        {angemeldet && !ANMELDESEITEN.includes(pfad) && <KontoWaechter kontoId={angemeldet.user.id} />}
         {mitRahmen ? (
           <div className="huelle">
             <aside className="seitenleiste">
