@@ -73,6 +73,7 @@ Testern bzw. App Store · **P3** Komfort, Aufräumen.
 | L2 | **„Passwort vergessen“** live mit einem Testkonto. | Auf der Anmeldeseite anfordern, Link öffnen, Passwort setzen. |
 | L3 | **Admin setzt das Passwort zurück** über die Verwaltung (`member-login` → `passwort_zuruecksetzen`, impliziter Link). | Verwaltung → Mitglied → Zugang → Passwort zurücksetzen. |
 | L4 | **Sperre für Testadressen** bei Einladung und Passwort-Reset in der Verwaltung. | Bei einem `@example.org`-Mitglied „Einladung verschicken“. Erwartet ist die Meldung „Das ist eine Testadresse“. |
+| L5 | **Buchung umsetzen** (`move_booking`, Mail und Push `booking_moved`). Bisher nur per pgTAP geprüft, die Oberfläche kommt mit einem eigenen PR. | Als Platzwart eine fremde Buchung auf einen freien Platz setzen. Bucher und Mitspieler bekommen „Deine Platzbuchung wurde verlegt“ mit altem und neuem Ort. |
 
 ---
 

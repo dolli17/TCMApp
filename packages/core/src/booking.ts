@@ -321,3 +321,95 @@ export function freeCourtsNow(opts: {
     .sort((a, b) => b.f.untilMinute - a.f.untilMinute || a.i - b.i)
     .map(({ f }) => f);
 }
+
+/** Eine Buchung, die umgesetzt werden soll - wie day_schedule sie liefert. */
+export interface UmsetzBuchung extends OccupiedSlot {
+  booking_id: string;
+}
+
+export interface UmsetzZiel {
+  courtId: string;
+  /** Startzeit in Minuten seit Mitternacht (Berlin) */
+  minute: number;
+}
+
+const berlinTag = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" });
+
+/**
+ * Wohin laesst sich eine Buchung umsetzen?
+ *
+ * Dieselbe Frei-Regel wie canStartAt, nur ohne die Buchung selbst: wer eine
+ * halbe Stunde nach hinten rutscht, ueberschneidet sich allein mit der eigenen
+ * alten Lage. Die Dauer bleibt. Die Lage, in der die Buchung schon liegt,
+ * zaehlt nicht als Ziel.
+ *
+ * Eine laufende Buchung darf nur den Platz wechseln: dann kommen nur andere
+ * Plaetze zur selben Zeit in Frage, und nur am Tag der Buchung. Eine
+ * vergangene Buchung hat keine Ziele. Den Buchungsvorlauf gibt es beim
+ * Umsetzen nicht.
+ *
+ * Wie bei canStartAt: occupied ist die Belegung des Zieltags, courtIds sind
+ * die aktiven Plaetze. Durchgesetzt wird alles in public.move_booking.
+ */
+export function umsetzZiele(opts: {
+  booking: UmsetzBuchung;
+  day: string;
+  courtIds: readonly string[];
+  openingMinutes: number;
+  closingMinutes: number;
+  slotMinutes: number;
+  occupied: readonly (OccupiedSlot & { booking_id?: string | null })[];
+  now?: Date;
+}): UmsetzZiel[] {
+  const jetzt = opts.now ?? new Date();
+  const beginn = new Date(opts.booking.starts_at);
+  const ende = new Date(opts.booking.ends_at);
+  if (ende.getTime() <= jetzt.getTime()) return [];
+
+  const dauer = Math.round((ende.getTime() - beginn.getTime()) / 60_000);
+  const andere = opts.occupied.filter((b) => b.booking_id !== opts.booking.booking_id);
+  const out: UmsetzZiel[] = [];
+
+  if (beginn.getTime() <= jetzt.getTime()) {
+    if (opts.day !== berlinTag.format(beginn)) return [];
+    const minute = minutesOf(opts.booking.starts_at);
+    for (const courtId of opts.courtIds) {
+      if (courtId === opts.booking.court_id) continue;
+      // Die Zeit steht schon fest: weder Vergangenheit noch Schluss sind hier
+      // eine Frage, nur ob der Platz frei ist.
+      const frei = canStartAt({
+        day: opts.day,
+        courtId,
+        minute,
+        durationMinutes: dauer,
+        closingMinutes: Number.POSITIVE_INFINITY,
+        occupied: andere,
+        now: beginn,
+      });
+      if (frei) out.push({ courtId, minute });
+    }
+    return out;
+  }
+
+  // Das Raster zaehlt wie in der Datenbank ab Mitternacht, nicht ab Oeffnung.
+  const erste = Math.ceil(opts.openingMinutes / opts.slotMinutes) * opts.slotMinutes;
+  for (const courtId of opts.courtIds) {
+    for (let minute = erste; minute + dauer <= opts.closingMinutes; minute += opts.slotMinutes) {
+      const dortSchon =
+        courtId === opts.booking.court_id &&
+        berlinTime(opts.day, minute).getTime() === beginn.getTime();
+      if (dortSchon) continue;
+      const frei = canStartAt({
+        day: opts.day,
+        courtId,
+        minute,
+        durationMinutes: dauer,
+        closingMinutes: opts.closingMinutes,
+        occupied: andere,
+        now: jetzt,
+      });
+      if (frei) out.push({ courtId, minute });
+    }
+  }
+  return out;
+}

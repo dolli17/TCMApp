@@ -2484,6 +2484,15 @@ export type Database = {
         }[]
       }
       mod97: { Args: { p_digits: string }; Returns: number }
+      move_booking: {
+        Args: {
+          p_booking_id: string
+          p_court_id: string
+          p_reason?: string
+          p_starts_at: string
+        }
+        Returns: undefined
+      }
       my_booking_quota: {
         Args: never
         Returns: {
