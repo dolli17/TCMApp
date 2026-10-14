@@ -258,7 +258,7 @@ begin
   perform tests.act_as(a.auth_id);
 
   v_neu := public.create_member('Max', 'Mustermann', 'max.mustermann@example.org',
-                                '1990-05-17'::date, p_auth_user_id => 'c8fd0a49-76d6-5ff2-ab66-f6ba321f7986');
+                                '1990-05-17'::date, p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => 'c8fd0a49-76d6-5ff2-ab66-f6ba321f7986');
 
   perform set_config('role', 'postgres', true);
 
@@ -280,8 +280,8 @@ begin
   perform tests.fixture_login('bert.zweiter.3@example.org', '38ecdb31-f1cf-574d-b6a3-0fdbe8637349');
   perform tests.act_as(a.auth_id);
 
-  v_a := public.create_member('Anna', 'Erste', 'anna.erste.2@example.org', p_auth_user_id => 'e0ae2cfd-1fa8-50df-a59a-0115bb733054');
-  v_b := public.create_member('Bert', 'Zweiter', 'bert.zweiter.3@example.org', p_auth_user_id => '38ecdb31-f1cf-574d-b6a3-0fdbe8637349');
+  v_a := public.create_member('Anna', 'Erste', 'anna.erste.2@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => 'e0ae2cfd-1fa8-50df-a59a-0115bb733054');
+  v_b := public.create_member('Bert', 'Zweiter', 'bert.zweiter.3@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => '38ecdb31-f1cf-574d-b6a3-0fdbe8637349');
 
   perform set_config('role', 'postgres', true);
 
@@ -453,7 +453,7 @@ begin
   perform tests.fixture_login('rita.rueckkehr.4@example.org', 'f963df7d-cfed-5987-a3af-bbd96fd3694b');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Rita', 'Rueckkehr', 'rita.rueckkehr.4@example.org', p_auth_user_id => 'f963df7d-cfed-5987-a3af-bbd96fd3694b');
+  v_neu := public.create_member('Rita', 'Rueckkehr', 'rita.rueckkehr.4@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => 'f963df7d-cfed-5987-a3af-bbd96fd3694b');
   perform public.end_membership(v_neu, current_date, current_date, 'Umzug');
 
   perform set_config('role', 'postgres', true);
@@ -479,7 +479,7 @@ begin
   select * into a from tests.fixture_user('admin') limit 1;
   perform tests.fixture_login('doppel.mitglied.5@example.org', '82c3b98f-4cdf-5213-94d6-42bb8b9d982e');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Doppel', 'Mitglied', 'doppel.mitglied.5@example.org', p_auth_user_id => '82c3b98f-4cdf-5213-94d6-42bb8b9d982e');
+  v_neu := public.create_member('Doppel', 'Mitglied', 'doppel.mitglied.5@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => '82c3b98f-4cdf-5213-94d6-42bb8b9d982e');
 
   return next throws_ok(
     format('select public.reactivate_membership(%L)', v_neu),
@@ -495,7 +495,7 @@ begin
   select * into a from tests.fixture_user('admin') limit 1;
   perform tests.fixture_login('alfred.archiv.6@example.org', '01c5654f-0bbd-595e-b0c9-25506c90f607');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Alfred', 'Archiv', 'alfred.archiv.6@example.org', p_auth_user_id => '01c5654f-0bbd-595e-b0c9-25506c90f607');
+  v_neu := public.create_member('Alfred', 'Archiv', 'alfred.archiv.6@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => '01c5654f-0bbd-595e-b0c9-25506c90f607');
   perform set_config('role', 'postgres', true);
 
   insert into public.bank_accounts (member_id, iban_encrypted, iban_last4, holder)
@@ -526,7 +526,7 @@ begin
   select * into a from tests.fixture_user('admin') limit 1;
   perform tests.fixture_login('sonja.schuldig.7@example.org', 'acef2163-e200-51d7-80b0-57ea0000aa49');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Sonja', 'Schuldig', 'sonja.schuldig.7@example.org', p_auth_user_id => 'acef2163-e200-51d7-80b0-57ea0000aa49');
+  v_neu := public.create_member('Sonja', 'Schuldig', 'sonja.schuldig.7@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => 'acef2163-e200-51d7-80b0-57ea0000aa49');
   perform set_config('role', 'postgres', true);
 
   insert into public.charges (member_id, payer_id, kind, period_label, amount_cents, description)
@@ -570,7 +570,7 @@ begin
   select * into a from tests.fixture_user('admin') limit 1;
   perform tests.fixture_login('tipp.fehler.9@example.org', '18552c14-4084-5650-9232-4aa477c63344');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Tipp', 'Fehler', 'tipp.fehler.9@example.org', p_auth_user_id => '18552c14-4084-5650-9232-4aa477c63344');
+  v_neu := public.create_member('Tipp', 'Fehler', 'tipp.fehler.9@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => '18552c14-4084-5650-9232-4aa477c63344');
   perform public.delete_member(v_neu, 'Fehler');
   perform set_config('role', 'postgres', true);
 
@@ -589,7 +589,7 @@ begin
   select * into a from tests.fixture_user('admin') limit 1;
   perform tests.fixture_login('vor.sicht.10@example.org', '87728f59-5e07-53b2-b0c3-07330ee1ad3c');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Vor', 'Sicht', 'vor.sicht.10@example.org', p_auth_user_id => '87728f59-5e07-53b2-b0c3-07330ee1ad3c');
+  v_neu := public.create_member('Vor', 'Sicht', 'vor.sicht.10@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => '87728f59-5e07-53b2-b0c3-07330ee1ad3c');
 
   return next throws_ok(
     format($q$select public.delete_member(%L, 'Falsch')$q$, v_neu),
@@ -607,7 +607,7 @@ begin
   select * into a from tests.fixture_user('admin') limit 1;
   perform tests.fixture_login('bleibt.bestehen.11@example.org', 'cdae48a0-f7c0-5e5b-90b1-752b7b486a66');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Bleibt', 'Bestehen', 'bleibt.bestehen.11@example.org', p_auth_user_id => 'cdae48a0-f7c0-5e5b-90b1-752b7b486a66');
+  v_neu := public.create_member('Bleibt', 'Bestehen', 'bleibt.bestehen.11@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => 'cdae48a0-f7c0-5e5b-90b1-752b7b486a66');
   perform set_config('role', 'postgres', true);
 
   insert into public.charges (member_id, payer_id, kind, period_label, amount_cents, description)
@@ -647,7 +647,7 @@ begin
   select * into a from tests.fixture_user('admin') limit 1;
   perform tests.fixture_login('spur.nachweis.12@example.org', '78881895-1ed4-5887-ab14-19bf83976dff');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Spur', 'Nachweis', 'spur.nachweis.12@example.org', p_auth_user_id => '78881895-1ed4-5887-ab14-19bf83976dff');
+  v_neu := public.create_member('Spur', 'Nachweis', 'spur.nachweis.12@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => '78881895-1ed4-5887-ab14-19bf83976dff');
   perform public.delete_member(v_neu, 'Nachweis');
   perform set_config('role', 'postgres', true);
 
@@ -670,7 +670,7 @@ begin
   select * into a from tests.fixture_user('admin') limit 1;
   perform tests.fixture_login('klara@example.org', '303f7a96-e34e-575c-bf29-e03aecf409eb');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Klara', 'Klarname', 'klara@example.org', '1980-01-01'::date, p_auth_user_id => '303f7a96-e34e-575c-bf29-e03aecf409eb');
+  v_neu := public.create_member('Klara', 'Klarname', 'klara@example.org', '1980-01-01'::date, p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => '303f7a96-e34e-575c-bf29-e03aecf409eb');
   perform set_config('role', 'postgres', true);
 
   insert into public.charges (member_id, payer_id, kind, period_label, amount_cents, description)
@@ -977,7 +977,7 @@ begin
   perform tests.fixture_login('merkmal.traeger.14@example.org', 'd4dd3a26-4b85-5f03-b58e-417598495eec');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Merkmal', 'Traeger', 'merkmal.traeger.14@example.org', p_auth_user_id => 'd4dd3a26-4b85-5f03-b58e-417598495eec');
+  v_neu := public.create_member('Merkmal', 'Traeger', 'merkmal.traeger.14@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => 'd4dd3a26-4b85-5f03-b58e-417598495eec');
   perform public.set_member_attribute(v_neu, 't_anon');
   perform public.anonymize_member(v_neu, 'Test');
   perform set_config('role', 'postgres', true);
@@ -1002,7 +1002,7 @@ begin
   perform tests.fixture_login('konto.inhaber.15@example.org', 'd2b4d5cf-6fc0-5ce8-884d-6100eb32005f');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Konto', 'Inhaber', 'konto.inhaber.15@example.org', p_auth_user_id => 'd2b4d5cf-6fc0-5ce8-884d-6100eb32005f');
+  v_neu := public.create_member('Konto', 'Inhaber', 'konto.inhaber.15@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => 'd2b4d5cf-6fc0-5ce8-884d-6100eb32005f');
   v_konto := public.add_bank_account(v_neu, 'DE89 3704 0044 0532 0130 00');
   perform set_config('role', 'postgres', true);
 
@@ -1023,7 +1023,7 @@ begin
   select * into a from tests.fixture_user('admin') limit 1;
   perform tests.fixture_login('falsche.ziffern.16@example.org', '032cd240-41bd-5fb4-bea2-98f9cdde62b8');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Falsche', 'Ziffern', 'falsche.ziffern.16@example.org', p_auth_user_id => '032cd240-41bd-5fb4-bea2-98f9cdde62b8');
+  v_neu := public.create_member('Falsche', 'Ziffern', 'falsche.ziffern.16@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => '032cd240-41bd-5fb4-bea2-98f9cdde62b8');
 
   return next throws_ok(
     format($q$select public.add_bank_account(%L, 'DE89370400440532013001')$q$, v_neu),
@@ -1043,7 +1043,7 @@ begin
   select * into a from tests.fixture_user('admin') limit 1;
   perform tests.fixture_login('doppelt.erfasst.17@example.org', 'e0f6ec51-42d6-5769-ad53-93c910035419');
   perform tests.act_as(a.auth_id);
-  v_neu := public.create_member('Doppelt', 'Erfasst', 'doppelt.erfasst.17@example.org', p_auth_user_id => 'e0f6ec51-42d6-5769-ad53-93c910035419');
+  v_neu := public.create_member('Doppelt', 'Erfasst', 'doppelt.erfasst.17@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => 'e0f6ec51-42d6-5769-ad53-93c910035419');
   perform public.add_bank_account(v_neu, 'DE89370400440532013000');
 
   -- Der Chiffretext ist jedes Mal ein anderer; ohne Fingerabdruck fiele die
@@ -1063,8 +1063,8 @@ begin
   perform tests.fixture_login('familie.eins.18@example.org', 'd759fa45-1188-59a9-b28f-944a1bc7cecb');
   perform tests.fixture_login('familie.zwei.19@example.org', '23224ea4-00ab-550b-b94c-e3a239b2e986');
   perform tests.act_as(a.auth_id);
-  v_eins := public.create_member('Familie', 'Eins', 'familie.eins.18@example.org', p_auth_user_id => 'd759fa45-1188-59a9-b28f-944a1bc7cecb');
-  v_zwei := public.create_member('Familie', 'Zwei', 'familie.zwei.19@example.org', p_auth_user_id => '23224ea4-00ab-550b-b94c-e3a239b2e986');
+  v_eins := public.create_member('Familie', 'Eins', 'familie.eins.18@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => 'd759fa45-1188-59a9-b28f-944a1bc7cecb');
+  v_zwei := public.create_member('Familie', 'Zwei', 'familie.zwei.19@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => '23224ea4-00ab-550b-b94c-e3a239b2e986');
   perform public.add_bank_account(v_eins, 'DE89370400440532013000');
 
   return next lives_ok(
@@ -1082,7 +1082,7 @@ begin
   perform tests.fixture_login('mandat.traeger.20@example.org', '370118ee-b070-5159-9d1a-995ef470ca40');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Mandat', 'Traeger', 'mandat.traeger.20@example.org', p_auth_user_id => '370118ee-b070-5159-9d1a-995ef470ca40');
+  v_neu := public.create_member('Mandat', 'Traeger', 'mandat.traeger.20@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => '370118ee-b070-5159-9d1a-995ef470ca40');
   v_konto := public.add_bank_account(v_neu, 'DE89370400440532013000');
   v_ref := public.create_sepa_mandate(v_neu, v_konto);
   perform set_config('role', 'postgres', true);
@@ -1111,7 +1111,7 @@ begin
   perform tests.fixture_login('zwei.mandate.21@example.org', '0f8b66a3-d84a-5d75-803b-20da27455a55');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Zwei', 'Mandate', 'zwei.mandate.21@example.org', p_auth_user_id => '0f8b66a3-d84a-5d75-803b-20da27455a55');
+  v_neu := public.create_member('Zwei', 'Mandate', 'zwei.mandate.21@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => '0f8b66a3-d84a-5d75-803b-20da27455a55');
   v_konto := public.add_bank_account(v_neu, 'DE89370400440532013000');
   perform public.create_sepa_mandate(v_neu, v_konto);
 
@@ -1156,8 +1156,8 @@ begin
   perform tests.fixture_login('fremder.dritter.23@example.org', 'c277449a-2964-5916-8bbc-78446254862a');
   perform tests.act_as(a.auth_id);
 
-  v_eins := public.create_member('Konto', 'Besitzer', 'konto.besitzer.22@example.org', p_auth_user_id => '4d9ca82e-6cda-5a4e-9055-6a9f319d9fba');
-  v_zwei := public.create_member('Fremder', 'Dritter', 'fremder.dritter.23@example.org', p_auth_user_id => 'c277449a-2964-5916-8bbc-78446254862a');
+  v_eins := public.create_member('Konto', 'Besitzer', 'konto.besitzer.22@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => '4d9ca82e-6cda-5a4e-9055-6a9f319d9fba');
+  v_zwei := public.create_member('Fremder', 'Dritter', 'fremder.dritter.23@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => 'c277449a-2964-5916-8bbc-78446254862a');
   v_konto := public.add_bank_account(v_eins, 'DE89370400440532013000');
 
   return next throws_ok(
@@ -1175,7 +1175,7 @@ begin
   perform tests.fixture_login('stilllegen.versuch.24@example.org', '7cc3eb30-b0ea-524c-99fa-2a49fff85aa0');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Stilllegen', 'Versuch', 'stilllegen.versuch.24@example.org', p_auth_user_id => '7cc3eb30-b0ea-524c-99fa-2a49fff85aa0');
+  v_neu := public.create_member('Stilllegen', 'Versuch', 'stilllegen.versuch.24@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => '7cc3eb30-b0ea-524c-99fa-2a49fff85aa0');
   v_konto := public.add_bank_account(v_neu, 'DE89370400440532013000');
   perform public.create_sepa_mandate(v_neu, v_konto);
 
@@ -1245,7 +1245,7 @@ begin
   perform tests.fixture_login('beitrag.zahler.25@example.org', 'dd662798-87a5-591b-9b28-9cbdeec7e4b0');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Beitrag', 'Zahler', 'beitrag.zahler.25@example.org', p_auth_user_id => 'dd662798-87a5-591b-9b28-9cbdeec7e4b0');
+  v_neu := public.create_member('Beitrag', 'Zahler', 'beitrag.zahler.25@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => 'dd662798-87a5-591b-9b28-9cbdeec7e4b0');
   perform public.set_member_fee(v_neu, v_typ, 2026);
 
   select * into v_zeile from public.member_fee_overview(v_neu, 2026)
@@ -1266,7 +1266,7 @@ begin
   perform tests.fixture_login('ehren.mitglied.26@example.org', '1f694517-2560-5430-b678-1f6e3e78c150');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Ehren', 'Mitglied', 'ehren.mitglied.26@example.org', p_auth_user_id => '1f694517-2560-5430-b678-1f6e3e78c150');
+  v_neu := public.create_member('Ehren', 'Mitglied', 'ehren.mitglied.26@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => '1f694517-2560-5430-b678-1f6e3e78c150');
   perform public.set_member_fee(v_neu, v_typ, 2026, 0, 'Ehrenmitglied');
 
   select * into v_zeile from public.member_fee_overview(v_neu, 2026)
@@ -1286,7 +1286,7 @@ begin
   perform tests.fixture_login('weg.damit.27@example.org', 'ca41526c-b1a3-54bc-bb46-90025c89dd4a');
   perform tests.act_as(a.auth_id);
 
-  v_neu := public.create_member('Weg', 'Damit', 'weg.damit.27@example.org', p_auth_user_id => 'ca41526c-b1a3-54bc-bb46-90025c89dd4a');
+  v_neu := public.create_member('Weg', 'Damit', 'weg.damit.27@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => 'ca41526c-b1a3-54bc-bb46-90025c89dd4a');
   perform public.set_member_fee(v_neu, v_typ, 2026);
   perform public.remove_member_fee(v_neu, v_typ, 2026);
 
@@ -1401,7 +1401,9 @@ create or replace function tests.antrag_daten(p_email text, p_name text default 
 returns jsonb language sql immutable as $f$
   select jsonb_build_object(
     'first_name', p_name, 'last_name', 'Interessent',
-    'email', p_email, 'birthday', '1990-06-15');
+    'email', p_email, 'birthday', '1990-06-15',
+    'gender', 'female', 'street', 'Teststr. 1', 'postcode', '70372', 'city', 'Stuttgart',
+    'mobile', '0170 1234567');
 $f$;
 
 create or replace function tests.test_anon_kann_antrag_stellen()
@@ -1413,7 +1415,8 @@ begin
   return next lives_ok(
     $q$select public.submit_membership_application(
         jsonb_build_object('first_name','Nina','last_name','Neu',
-                           'email','nina.neu@example.org','birthday','1995-03-02'))$q$,
+                           'email','nina.neu@example.org','birthday','1995-03-02',
+                           'gender','female','street','Teststr. 1','postcode','70372','city','Stuttgart','mobile','0170 1234567'))$q$,
     'Ein Antrag laesst sich ohne Anmeldung stellen');
 
   perform set_config('role', 'postgres', true);
@@ -1455,7 +1458,7 @@ begin
   select * into admin from tests.fixture_user('admin') limit 1;
   perform tests.fixture_login('schon.mitglied@example.org', 'a8230f75-56a7-505e-b762-6171b3f850e6');
   perform tests.act_as(admin.auth_id);
-  v_neu := public.create_member('Schon', 'Mitglied', 'schon.mitglied@example.org', p_auth_user_id => 'a8230f75-56a7-505e-b762-6171b3f850e6');
+  v_neu := public.create_member('Schon', 'Mitglied', 'schon.mitglied@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => 'a8230f75-56a7-505e-b762-6171b3f850e6');
   perform set_config('role', 'postgres', true);
 
   perform tests.act_as_anon();
@@ -1465,7 +1468,8 @@ begin
   return next lives_ok(
     $q$select public.submit_membership_application(
         jsonb_build_object('first_name','Schon','last_name','Mitglied',
-                           'email','schon.mitglied@example.org','birthday','1990-01-01'))$q$,
+                           'email','schon.mitglied@example.org','birthday','1990-01-01',
+                           'gender','female','street','Teststr. 1','postcode','70372','city','Stuttgart','mobile','0170 1234567'))$q$,
     'Eine Adresse, die schon Mitglied ist, wird nicht verraten');
 
   perform set_config('role', 'postgres', true);
@@ -1488,7 +1492,8 @@ begin
   return next lives_ok(
     $q$select public.submit_membership_application(
         jsonb_build_object('first_name','Doppelt','last_name','Interessent',
-                           'email','doppelt@example.org','birthday','1990-06-15'))$q$,
+                           'email','doppelt@example.org','birthday','1990-06-15',
+                           'gender','female','street','Teststr. 1','postcode','70372','city','Stuttgart','mobile','0170 1234567'))$q$,
     'Ein zweiter Antrag derselben Adresse laeuft ohne Fehler durch');
 
   perform set_config('role', 'postgres', true);
@@ -1559,13 +1564,15 @@ begin
   return next throws_ok(
     $q$select public.submit_membership_application(
         jsonb_build_object('first_name','','last_name','Ohne','email','a@example.org',
-                           'birthday','1990-01-01'))$q$,
+                           'birthday','1990-01-01',
+                           'gender','female','street','Teststr. 1','postcode','70372','city','Stuttgart','mobile','0170 1234567'))$q$,
     '22023', null, 'Ohne Vornamen geht es nicht');
 
   return next throws_ok(
     $q$select public.submit_membership_application(
         jsonb_build_object('first_name','Ohne','last_name','Mail','email','keine-mail',
-                           'birthday','1990-01-01'))$q$,
+                           'birthday','1990-01-01',
+                           'gender','female','street','Teststr. 1','postcode','70372','city','Stuttgart','mobile','0170 1234567'))$q$,
     '22023', null, 'Und ohne gueltige Adresse auch nicht');
 
   perform set_config('role', 'postgres', true);
@@ -1583,6 +1590,7 @@ begin
     $q$select public.submit_membership_application(
         jsonb_build_object('first_name','Schlau','last_name','Versuch',
                            'email','schlau@example.org','birthday','1990-01-01',
+                           'gender','female','street','Teststr. 1','postcode','70372','city','Stuttgart','mobile','0170 1234567',
                            'status','accepted','possible_duplicate',false))$q$,
     'Unbekannte Felder fuehren nicht zu einer Fehlermeldung');
 
@@ -1599,6 +1607,7 @@ begin
   perform public.submit_membership_application(
     jsonb_build_object('first_name','Anna','last_name','Aufnahme',
                        'email','anna.aufnahme@example.org','birthday','1988-04-11',
+                           'gender','female','street','Teststr. 1','postcode','70372','city','Stuttgart','mobile','0170 1234567',
                        'emergency_contact_name','Otto Aufnahme',
                        'emergency_contact_phone','0170 1234567'));
 
@@ -1613,29 +1622,53 @@ begin
   select * into v_m from public.members where id = v_e.member_id;
 
   return next is(v_m.first_name, 'Anna', 'Das Mitglied ist angelegt');
-  return next is(v_m.emergency_contact_name, 'Otto Aufnahme',
-    'Der Notfallkontakt aus dem Antrag steht dabei');
+  return next is(v_m.emergency_contact_name, null,
+    'Den Notfallkontakt nimmt der Antrag nicht mehr an, er kommt im Onboarding');
+  return next is(v_m.onboarding_completed_at, null, 'Das neue Mitglied hat ein offenes Onboarding');
+  return next is(v_m.salutation::text, 'female', 'Die Anrede folgt aus dem Geschlecht');
   return next isnt(v_e.membership_number, null, 'Es gibt eine Mitgliedsnummer');
   return next isnt(v_m.auth_user_id, null, 'Und einen Login');
   return next is((select status::text from public.membership_applications where id = v_a),
     'accepted', 'Der Antrag gilt als angenommen');
 end; $f$;
 
-create or replace function tests.test_antrag_uebertraegt_einwilligungen()
+create or replace function tests.test_antrag_nimmt_einwilligungen_nicht_mehr_an()
 returns setof text language plpgsql as $f$
-declare admin record; v_a uuid; v_e record; v_anzahl integer;
+declare v_a public.membership_applications;
 begin
   perform tests.fixture_merkmal('t_antrag_foto', 'boolean', true);
 
   perform public.submit_membership_application(
-    jsonb_build_object('first_name','Ein','last_name','Williger',
-                       'email','ein.williger@example.org','birthday','1992-02-02',
-                       'attribute_choices', jsonb_build_object('t_antrag_foto', true)));
+    tests.antrag_daten('ein.williger@example.org', 'Ein')
+    || jsonb_build_object('attribute_choices', jsonb_build_object('t_antrag_foto', true),
+                          'guardian_name', 'Mama Williger',
+                          'emergency_contact_name', 'Papa Williger'));
 
-  select id into v_a from public.membership_applications where email = 'ein.williger@example.org';
+  select * into v_a from public.membership_applications where email = 'ein.williger@example.org';
+  return next is(v_a.attribute_choices, '{}'::jsonb, 'Einwilligungen nimmt der Antrag nicht mehr an');
+  return next is(v_a.guardian_name, null, 'Erziehungsberechtigte auch nicht');
+  return next is(v_a.emergency_contact_name, null, 'Und keinen Notfallkontakt');
+end; $f$;
+
+-- Aeltere Antraege haben die Angaben noch. Beim Annehmen gehen sie nicht
+-- verloren.
+create or replace function tests.test_alter_antrag_uebertraegt_alles()
+returns setof text language plpgsql as $f$
+declare admin record; v_a uuid; v_e record; v_anzahl integer; v_m public.members;
+begin
+  perform tests.fixture_merkmal('t_antrag_foto', 'boolean', true);
+
+  insert into public.membership_applications (
+    first_name, last_name, gender, birthday, email, mobile, street, postcode, city,
+    guardian_name, guardian_email, emergency_contact_name, emergency_contact_phone,
+    attribute_choices)
+  values ('Alt', 'Antrag', 'male', '2014-02-02', 'alt.antrag@example.org', '0170 1',
+          'Weg 1', '70372', 'Stuttgart', 'Mama Antrag', 'mama.antrag@example.org',
+          'Oma Antrag', '0711 1', jsonb_build_object('t_antrag_foto', true))
+  returning id into v_a;
 
   select * into admin from tests.fixture_user('admin') limit 1;
-  perform tests.fixture_login((select email::text from public.membership_applications where id = v_a), '9b2d3a51-aafb-5ad5-952e-0efaa8d558a6');
+  perform tests.fixture_login('alt.antrag@example.org', '9b2d3a51-aafb-5ad5-952e-0efaa8d558a6');
   perform tests.act_as(admin.auth_id);
   select * into v_e from public.accept_membership_application(v_a, p_auth_user_id => '9b2d3a51-aafb-5ad5-952e-0efaa8d558a6');
   perform set_config('role', 'postgres', true);
@@ -1644,8 +1677,12 @@ begin
   from public.member_attribute_values v
   join public.member_attribute_types t on t.id = v.attribute_type_id
   where v.member_id = v_e.member_id and t.code = 't_antrag_foto';
+  select * into v_m from public.members where id = v_e.member_id;
 
-  return next is(v_anzahl, 1, 'Die im Antrag erteilte Einwilligung ist uebernommen');
+  return next is(v_anzahl, 1, 'Die im alten Antrag erteilte Einwilligung ist uebernommen');
+  return next is(v_m.guardian_name, 'Mama Antrag', 'Die Erziehungsberechtigten auch');
+  return next is(v_m.guardian_email::text, 'mama.antrag@example.org', 'Samt Adresse');
+  return next is(v_m.emergency_contact_name, 'Oma Antrag', 'Und der Notfallkontakt');
 end; $f$;
 
 create or replace function tests.test_antrag_zweimal_annehmen_wird_abgewiesen()

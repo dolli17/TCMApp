@@ -916,6 +916,39 @@ export type Database = {
           },
         ]
       }
+      legal_documents: {
+        Row: {
+          active: boolean
+          body_md: string
+          code: string
+          created_at: string
+          id: string
+          title: string
+          valid_from: string
+          version: number
+        }
+        Insert: {
+          active?: boolean
+          body_md: string
+          code: string
+          created_at?: string
+          id?: string
+          title: string
+          valid_from?: string
+          version: number
+        }
+        Update: {
+          active?: boolean
+          body_md?: string
+          code?: string
+          created_at?: string
+          id?: string
+          title?: string
+          valid_from?: string
+          version?: number
+        }
+        Relationships: []
+      }
       member_attribute_options: {
         Row: {
           active: boolean
@@ -1055,6 +1088,45 @@ export type Database = {
           },
         ]
       }
+      member_consents: {
+        Row: {
+          accepted_at: string
+          document_code: string
+          id: string
+          member_id: string
+          version: number
+        }
+        Insert: {
+          accepted_at?: string
+          document_code: string
+          id?: string
+          member_id: string
+          version: number
+        }
+        Update: {
+          accepted_at?: string
+          document_code?: string
+          id?: string
+          member_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_consents_document_code_version_fkey"
+            columns: ["document_code", "version"]
+            isOneToOne: false
+            referencedRelation: "legal_documents"
+            referencedColumns: ["code", "version"]
+          },
+          {
+            foreignKeyName: "member_consents_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_fees: {
         Row: {
           created_at: string
@@ -1147,6 +1219,10 @@ export type Database = {
           emergency_contact_relation: string | null
           first_name: string
           gender: Database["public"]["Enums"]["gender"] | null
+          guardian_consent_at: string | null
+          guardian_email: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
           id: string
           import_notes: string | null
           imported_at: string | null
@@ -1160,6 +1236,8 @@ export type Database = {
           nationality_code: string | null
           notes: string | null
           nuliga_id: string | null
+          onboarding_completed_at: string | null
+          onboarding_stammdaten_at: string | null
           phone: string | null
           playing_right: Database["public"]["Enums"]["playing_right"]
           playing_right_since: string | null
@@ -1186,6 +1264,10 @@ export type Database = {
           emergency_contact_relation?: string | null
           first_name: string
           gender?: Database["public"]["Enums"]["gender"] | null
+          guardian_consent_at?: string | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
           id?: string
           import_notes?: string | null
           imported_at?: string | null
@@ -1199,6 +1281,8 @@ export type Database = {
           nationality_code?: string | null
           notes?: string | null
           nuliga_id?: string | null
+          onboarding_completed_at?: string | null
+          onboarding_stammdaten_at?: string | null
           phone?: string | null
           playing_right?: Database["public"]["Enums"]["playing_right"]
           playing_right_since?: string | null
@@ -1225,6 +1309,10 @@ export type Database = {
           emergency_contact_relation?: string | null
           first_name?: string
           gender?: Database["public"]["Enums"]["gender"] | null
+          guardian_consent_at?: string | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
           id?: string
           import_notes?: string | null
           imported_at?: string | null
@@ -1238,6 +1326,8 @@ export type Database = {
           nationality_code?: string | null
           notes?: string | null
           nuliga_id?: string | null
+          onboarding_completed_at?: string | null
+          onboarding_stammdaten_at?: string | null
           phone?: string | null
           playing_right?: Database["public"]["Enums"]["playing_right"]
           playing_right_since?: string | null
@@ -1537,11 +1627,14 @@ export type Database = {
       }
       sepa_mandates: {
         Row: {
+          accepted_holder: string | null
           bank_account_id: string
           created_at: string
           ebusy_id: number | null
+          granted_online_at: string | null
           id: string
           last_used_on: string | null
+          mandate_text: string | null
           member_id: string
           reference: string
           reference_conflict: boolean
@@ -1553,11 +1646,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accepted_holder?: string | null
           bank_account_id: string
           created_at?: string
           ebusy_id?: number | null
+          granted_online_at?: string | null
           id?: string
           last_used_on?: string | null
+          mandate_text?: string | null
           member_id: string
           reference: string
           reference_conflict?: boolean
@@ -1569,11 +1665,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accepted_holder?: string | null
           bank_account_id?: string
           created_at?: string
           ebusy_id?: number | null
+          granted_online_at?: string | null
           id?: string
           last_used_on?: string | null
+          mandate_text?: string | null
           member_id?: string
           reference?: string
           reference_conflict?: boolean
@@ -2005,6 +2104,7 @@ export type Database = {
           zurueck: number
         }[]
       }
+      complete_onboarding: { Args: never; Returns: string }
       court_overview: {
         Args: never
         Returns: {
@@ -2082,6 +2182,10 @@ export type Database = {
           p_street?: string
           p_title?: string
         }
+        Returns: string
+      }
+      create_my_sepa_mandate: {
+        Args: { p_accept?: boolean; p_holder?: string; p_iban: string }
         Returns: string
       }
       create_sepa_mandate: {
@@ -2547,6 +2651,7 @@ export type Database = {
           title: string
         }[]
       }
+      my_onboarding: { Args: never; Returns: Json }
       my_unread_notification_count: { Args: never; Returns: number }
       my_work_duty: {
         Args: { p_year?: number }
@@ -2568,6 +2673,41 @@ export type Database = {
           id: string
           worked_on: string
         }[]
+      }
+      onboarding_accept_documents: {
+        Args: { p_codes: string[] }
+        Returns: undefined
+      }
+      onboarding_save_guardian: {
+        Args: {
+          p_consent?: boolean
+          p_email?: string
+          p_name: string
+          p_phone?: string
+        }
+        Returns: undefined
+      }
+      onboarding_save_notfallkontakt: {
+        Args: { p_name: string; p_phone: string; p_relation?: string }
+        Returns: undefined
+      }
+      onboarding_save_stammdaten: {
+        Args: {
+          p_birthday: string
+          p_city: string
+          p_country_code?: string
+          p_first_name: string
+          p_gender: Database["public"]["Enums"]["gender"]
+          p_last_name: string
+          p_mobile?: string
+          p_nationality_code?: string
+          p_phone?: string
+          p_postcode: string
+          p_salutation?: Database["public"]["Enums"]["salutation"]
+          p_street: string
+          p_title?: string
+        }
+        Returns: undefined
       }
       open_matches: {
         Args: { p_bis?: string; p_von?: string }
@@ -2678,6 +2818,14 @@ export type Database = {
       reorder_drink_items: { Args: { p_ids: string[] }; Returns: number }
       revoke_sepa_mandate: {
         Args: { p_mandate_id: string; p_revoked_on?: string }
+        Returns: undefined
+      }
+      save_my_tennis: {
+        Args: {
+          p_mannschaft_interesse?: boolean
+          p_nuliga_id?: string
+          p_tennis_lk?: string
+        }
         Returns: undefined
       }
       series_overview: {

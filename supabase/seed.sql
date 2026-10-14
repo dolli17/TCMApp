@@ -771,3 +771,83 @@ begin
     end if;
   end loop;
 end $$;
+
+-- ===========================================================================
+-- Onboarding
+--
+-- Der ganze Bestand gilt als fertig eingerichtet (Default der Spalte,
+-- hier nur ausdruecklich). Dazu zwei Konten mit offenem Onboarding:
+--   neu@tcm.local   erwachsen, ohne Mandat
+--   kind@tcm.local  minderjaehrig, ohne Erziehungsberechtigte und Mandat
+-- Beide sehen so aus, wie create_member sie anlegt: Pflicht-Stammdaten da,
+-- Mitgliedschaft und Rolle da, alles Weitere fehlt.
+--
+-- Die Glaeubiger-Id ist die Test-Id der Bundesbank. Ohne sie laesst sich
+-- kein Mandat online erteilen.
+-- ===========================================================================
+
+update public.members set onboarding_completed_at = now() where onboarding_completed_at is null;
+
+update public.settings set value = '"DE98ZZZ09999999999"'::jsonb
+ where key = 'sepa.creditor_id' and value = '""'::jsonb;
+
+do $$
+declare
+  v_passwort constant text := 'tcm-lokal-2026';
+  v_konten constant text[][] := array[
+    -- E-Mail, Vorname, Nachname, Geschlecht, Alter in Jahren
+    array['neu@tcm.local',  'Nora', 'Neumitglied', 'female', '34'],
+    array['kind@tcm.local', 'Kian', 'Neumitglied', 'male',   '12']
+  ];
+  v_zeile  text[];
+  v_auth   uuid;
+  v_member uuid;
+begin
+  foreach v_zeile slice 1 in array v_konten loop
+    v_auth := extensions.gen_random_uuid();
+
+    insert into auth.users (
+      id, instance_id, aud, role, email, encrypted_password,
+      email_confirmed_at, created_at, updated_at,
+      raw_app_meta_data, raw_user_meta_data,
+      confirmation_token, recovery_token,
+      email_change, email_change_token_new, email_change_token_current,
+      phone_change, phone_change_token, reauthentication_token
+    ) values (
+      v_auth, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+      v_zeile[1], extensions.crypt(v_passwort, extensions.gen_salt('bf')),
+      now(), now(), now(),
+      '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb,
+      '', '', '', '', '', '', '', ''
+    );
+
+    insert into auth.identities (
+      id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at
+    ) values (
+      extensions.gen_random_uuid(), v_auth, v_auth::text, 'email',
+      jsonb_build_object('sub', v_auth::text, 'email', v_zeile[1], 'email_verified', true),
+      null, now(), now()
+    );
+
+    insert into public.members (
+      auth_user_id, invited_at, onboarding_completed_at, first_name, last_name,
+      gender, salutation, birthday, email, mobile, street, postcode, city, country_code
+    ) values (
+      v_auth, now(), null, v_zeile[2], v_zeile[3],
+      v_zeile[4]::public.gender, v_zeile[4]::public.salutation,
+      (current_date - make_interval(years => v_zeile[5]::int) - interval '40 days')::date,
+      v_zeile[1], '0170 1234567', 'Hauptstr. 1', '70372', 'Stuttgart', 'DE'
+    )
+    returning id into v_member;
+
+    insert into public.memberships (member_id, number, started_on, status)
+    values (v_member, private.next_membership_number(), current_date, 'active');
+
+    insert into public.member_roles (member_id, role) values (v_member, 'member');
+
+    insert into public.member_fees (member_id, fee_type_id, year)
+    select v_member, t.id, extract(year from current_date)::integer
+    from public.fee_types t
+    where t.code = case when v_zeile[5]::int < 18 then 'jugend' else 'erwachsener' end;
+  end loop;
+end $$;

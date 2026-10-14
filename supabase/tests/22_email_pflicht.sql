@@ -29,7 +29,7 @@ begin
     'Eine leere Adresse zaehlt nicht');
   return next lives_ok(
     format($q$select public.create_member('Mit', 'Adresse', '  Mit.Adresse@Example.org ',
-                                          p_auth_user_id => %L)$q$, v_login),
+                                          p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => %L)$q$, v_login),
     'Mit Adresse und Login geht es');
 
   perform set_config('role', 'postgres', true);
@@ -151,29 +151,31 @@ begin
   perform tests.act_as(a.auth_id);
 
   return next throws_ok(
-    $q$select public.create_member('Ohne', 'Login', 'ohne.login@example.org')$q$,
+    $q$select public.create_member('Ohne', 'Login', 'ohne.login@example.org',
+        p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1',
+        p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567')$q$,
     '22023', 'Ohne Login kann kein Mitglied angelegt werden.',
     'create_member ohne Login wird abgewiesen');
   return next throws_ok(
     format($q$select public.create_member('Kiosk', 'Konto', 'kiosk-test@example.org',
-                                          p_auth_user_id => %L)$q$, v_kiosk),
+                                          p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => %L)$q$, v_kiosk),
     '23514', null, 'Ein Kiosk-Konto wird kein Mitglied');
   return next throws_ok(
     format($q$select public.create_member('Fremde', 'Adresse', 'andere@example.org',
-                                          p_auth_user_id => %L)$q$, v_fremd),
+                                          p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => %L)$q$, v_fremd),
     '22023', 'Der Login gehoert zu einer anderen E-Mail-Adresse als das Mitglied.',
     'Login und Mitglied muessen dieselbe Adresse haben');
   return next throws_ok(
     format($q$select public.create_member('Doppelt', 'Login', 'doppelt@example.org',
-                                          p_auth_user_id => %L)$q$, b.auth_id),
+                                          p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => %L)$q$, b.auth_id),
     '23514', 'Dieser Zugang gehoert bereits zu einem anderen Mitglied.',
     'Ein vergebener Login wird nicht noch einmal vergeben');
   return next throws_ok(
     format($q$select public.create_member('Kein', 'Konto', 'kein.konto@example.org',
-                                          p_auth_user_id => %L)$q$, gen_random_uuid()),
+                                          p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => %L)$q$, gen_random_uuid()),
     'P0002', null, 'Ein Login, den es nicht gibt, wird abgewiesen');
 
-  v_id := public.create_member('Neu', 'Mit Login', 'Neu.Login@example.org', p_auth_user_id => v_login);
+  v_id := public.create_member('Neu', 'Mit Login', 'Neu.Login@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => v_login);
   perform set_config('role', 'postgres', true);
 
   return next is((select auth_user_id from public.members where id = v_id), v_login,
