@@ -27,6 +27,9 @@ const CONSTRAINT_TEXTE: Record<string, string> = {
   debit_items_one_active_per_charge:
     "Diese Forderung ist bereits in einem Lastschriftlauf enthalten.",
   members_email_key: "Diese E-Mail-Adresse wird bereits verwendet.",
+  members_email_pflicht: "Jedes Mitglied braucht eine E-Mail-Adresse.",
+  members_login_pflicht:
+    "Jedes Mitglied braucht einen Login. Ohne Login sind nur archivierte Mitglieder.",
   memberships_number_key: "Diese Mitgliedsnummer ist bereits vergeben.",
   memberships_one_open_per_member:
     "Dieses Mitglied hat bereits eine laufende Mitgliedschaft.",

@@ -1,4 +1,15 @@
 -- ===========================================================================
+-- VERALTET seit der Login-Pflicht (Migration 20261014105338)
+--
+-- Jedes nicht archivierte Mitglied braucht E-Mail und Login (CHECK
+-- members_email_pflicht und members_login_pflicht). Schritt 1 (alle Logins
+-- loeschen) und die Schritte, die Mitglieder ohne Login anlegen oder suchen,
+-- scheitern damit. Vor dem naechsten Einsatz umbauen: Logins nicht loeschen,
+-- sondern Adresse und Passwort vorhandener Konten aendern (wie in seed.sql),
+-- und neue Mitglieder nur zusammen mit ihrem Login anlegen.
+-- ===========================================================================
+
+-- ===========================================================================
 -- Testkonten in der Cloud neu aufsetzen (vor dem Ausrollen an Tester)
 --
 -- Von Hand im SQL-Editor bzw. per MCP ausfuehren, NICHT als Migration: die

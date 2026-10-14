@@ -73,11 +73,9 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
   const erteilt = einwilligungen.filter((x) => x.set_at && x.option_value !== "false").length;
   const sonstigeMerkmale = merkmale.filter((x) => x.value_kind !== "boolean" && x.set_at).length;
   const dienst = (dienstRes.data ?? []).find((d) => d.member_id === id) ?? null;
-  // Jedes Mitglied hat einen Login. Ohne ist es Altbestand (oder archiviert),
-  // und nur dann gibt es etwas einzuladen.
+  // Jedes Mitglied hat einen Login. Ohne sind nur Archivierte (anonymisiert).
   const hatLogin = Boolean(m.auth_user_id);
   const gesperrt = hatLogin && Boolean(m.login_disabled_at);
-  const altbestand = !hatLogin && m.status !== "archived";
   const telefon = m.mobile ?? m.phone;
   const name = `${m.first_name} ${m.last_name}`;
   const kurz = (m.first_name[0] ?? "") + (m.last_name[0] ?? "");
@@ -87,7 +85,6 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
   const schnell = [
     { name: "Anrufen", href: telefon ? `tel:${telefon.replace(/\s/g, "")}` : null, d: TELEFON },
     { name: kompakt ? "E-Mail schreiben" : "E-Mail", href: m.email ? `mailto:${m.email}` : null, d: POST },
-    { name: kompakt ? "Einladung senden" : "Einladen", href: altbestand ? teil("zugang") : null, d: SENDEN },
   ];
 
   return (
@@ -108,7 +105,7 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
             {arten[0] && <span className="statusmarke">{arten[0]}</span>}
             {m.teams?.name && <span className="statusmarke">{m.teams.name}</span>}
             <span className={`statusmarke ${hatLogin && !gesperrt ? "gruen" : gesperrt ? "rot" : ""}`}>
-              {gesperrt ? "App-Zugang gesperrt" : hatLogin ? "App-Zugang aktiv" : altbestand ? "Altbestand: kein Zugang" : "kein Zugang"}
+              {gesperrt ? "App-Zugang gesperrt" : hatLogin ? "App-Zugang aktiv" : "kein Zugang"}
             </span>
           </div>
         </div>
@@ -236,7 +233,7 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
         <Listenzeile href={teil("protokoll")} titel="Änderungsprotokoll" pfeil={false} />
         <Listenzeile
           href={teil("zugang")}
-          titel={gesperrt ? "Sperre aufheben" : hatLogin ? "Zugang sperren" : altbestand ? "Altbestand: einladen" : "Zugang"}
+          titel={gesperrt ? "Sperre aufheben" : hatLogin ? "Zugang sperren" : "Zugang"}
           pfeil={false}
         />
         <Listenzeile href={teil("austritt")} titel="Austritt eintragen" gefahr pfeil={false} />
@@ -248,4 +245,3 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
 const TELEFON =
   "M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z";
 const POST = "M3 5h18v14H3zM3 6l9 7 9-7";
-const SENDEN = "M22 2 11 13M22 2l-7 20-4-9-9-4z";

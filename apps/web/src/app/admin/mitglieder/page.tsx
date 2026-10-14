@@ -13,7 +13,6 @@ export const dynamic = "force-dynamic";
 /** Welche Datensaetze die Datenbank liefert (member_overview) */
 const BESTAND = [
   { wert: "aktiv", label: "Aktuelle Mitglieder" },
-  { wert: "ohne-login", label: "Ohne Zugang" },
   { wert: "trainer", label: "Trainer" },
   { wert: "admins", label: "Volle Rechte" },
   { wert: "vorstand", label: "Vorstand" },
@@ -256,7 +255,6 @@ export default async function MitgliederSeite({
    * Zugang.
    */
   function hinweis(m: (typeof zeilen)[number]): { text: string; ton: HinweisTon } | null {
-    if (gewaehlt === "ohne-login" && !m.has_login) return { text: "kein Zugang", ton: "leise" };
     if (!m.mandat) return { text: "kein Mandat", ton: "rot" };
     if (m.offenCents > 0) return { text: formatCents(m.offenCents), ton: "gold" };
     if (!m.has_login) return { text: "kein Zugang", ton: "leise" };

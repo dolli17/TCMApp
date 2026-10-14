@@ -1136,7 +1136,6 @@ export type Database = {
       members: {
         Row: {
           auth_user_id: string | null
-          billing_payer_id: string | null
           birthday: string | null
           city: string | null
           country_code: string | null
@@ -1176,7 +1175,6 @@ export type Database = {
         }
         Insert: {
           auth_user_id?: string | null
-          billing_payer_id?: string | null
           birthday?: string | null
           city?: string | null
           country_code?: string | null
@@ -1216,7 +1214,6 @@ export type Database = {
         }
         Update: {
           auth_user_id?: string | null
-          billing_payer_id?: string | null
           birthday?: string | null
           city?: string | null
           country_code?: string | null
@@ -1255,13 +1252,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "members_billing_payer_id_fkey"
-            columns: ["billing_payer_id"]
-            isOneToOne: false
-            referencedRelation: "members"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "members_team_id_fkey"
             columns: ["team_id"]
@@ -1838,7 +1828,7 @@ export type Database = {
       accept_membership_application: {
         Args: {
           p_application_id: string
-          p_billing_payer_id?: string
+          p_auth_user_id?: string
           p_fee_type_ids?: string[]
           p_number?: string
           p_started_on?: string
@@ -1846,7 +1836,6 @@ export type Database = {
         Returns: {
           member_id: string
           membership_number: string
-          needs_invite: boolean
         }[]
       }
       add_bank_account: {
@@ -1912,7 +1901,6 @@ export type Database = {
           cancelled_bookings: number
           open_amount_cents: number
           open_charges: number
-          released_payees: number
         }[]
       }
       billing_period_overview: {
@@ -2075,7 +2063,7 @@ export type Database = {
       }
       create_member: {
         Args: {
-          p_billing_payer_id?: string
+          p_auth_user_id?: string
           p_birthday?: string
           p_city?: string
           p_country_code?: string
@@ -2396,7 +2384,6 @@ export type Database = {
           charges: number
           drink_purchases: number
           mandates: number
-          payees: number
           reason: string
           work_duty_entries: number
         }[]
@@ -2455,7 +2442,6 @@ export type Database = {
         Args: { p_member_id: string }
         Returns: {
           disabled_at: string
-          einladbar: boolean
           email: string
           grund: string
           hat_zugang: boolean
@@ -2474,25 +2460,12 @@ export type Database = {
           has_login: boolean
           id: string
           is_admin: boolean
-          is_paid_by: boolean
           is_trainer: boolean
           last_name: string
           number: string
           roles: Database["public"]["Enums"]["app_role"][]
           started_on: string
           status: Database["public"]["Enums"]["member_status"]
-        }[]
-      }
-      members_ohne_login: {
-        Args: never
-        Returns: {
-          email: string
-          first_name: string
-          id: string
-          ist_testadresse: boolean
-          konto_id: string
-          konto_mitglied: string
-          last_name: string
         }[]
       }
       mod97: { Args: { p_digits: string }; Returns: number }
@@ -2834,7 +2807,6 @@ export type Database = {
           member_id: string
         }[]
       }
-      unlink_auth_user: { Args: { p_member_id: string }; Returns: string }
       update_booking_players: {
         Args: {
           p_booking_id: string

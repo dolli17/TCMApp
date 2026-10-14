@@ -79,16 +79,11 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(page.getByRole("heading", { name: "Mitglieder" })).toBeVisible();
     await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"] li').first()).toBeVisible();
 
-    // Der Filter "Ohne Zugang" zeigt nur noch Altbestand, also niemanden mit
-    // Login - der eine Hinweis je Zeile sagt es dann. Im Seed hat jedes
-    // Mitglied einen Login, die Liste darf also auch leer sein.
-    await page.getByRole("link", { name: "Ohne Zugang", exact: true }).click();
-    await expect(page).toHaveURL(/filter=ohne-login/);
-    const hinweise = page.locator('.liste-gruppe[aria-label="Mitglieder"] li .hinweis-rechts');
-    const anzahl = Math.min(await hinweise.count(), 10);
-    for (let i = 0; i < anzahl; i++) {
-      await expect(hinweise.nth(i)).toHaveText("kein Zugang");
-    }
+    // Jedes Mitglied hat einen Login - einen Filter "Ohne Zugang" gibt es
+    // nicht mehr.
+    await page.getByRole("link", { name: "Trainer", exact: true }).click();
+    await expect(page).toHaveURL(/filter=trainer/);
+    await expect(page.getByRole("link", { name: "Ohne Zugang", exact: true })).toHaveCount(0);
   });
 
   test("am Desktop stehen Liste und Mitglied nebeneinander", async ({ page }) => {
@@ -139,9 +134,8 @@ test.describe("Mitgliederverwaltung", () => {
     // Aktive Mitglieder tragen keine Statusmarke, nur inaktive und archivierte
     await expect(page.locator(".mitglied-profil .marken-reihe")).not.toContainText(/inaktiv|archiviert/);
 
-    // Der Login entsteht mit dem Mitglied - im Filter "Ohne Zugang" steht es nicht.
-    await page.goto("/admin/mitglieder?filter=ohne-login&q=" + encodeURIComponent(nachname));
-    await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"] li')).toHaveCount(0);
+    // Der Login entsteht mit dem Mitglied.
+    await expect(page.locator(".mitglied-profil .marken-reihe")).toContainText("App-Zugang aktiv");
 
     // Ändern - die Stammdaten sind eine Unterseite des Mitglieds
     await page.goto(`${adresse.split("?")[0]}?teil=stammdaten`);
@@ -767,6 +761,47 @@ test.describe("Mitgliederverwaltung", () => {
 
     // Aufräumen: Löschen nimmt den Login mit
     await aufraeumen(page, adresse, nachname);
+  });
+
+  test("Antrag: scheitert der Login, bleibt der Antrag offen und es entsteht kein Mitglied", async ({
+    page,
+  }) => {
+    const nachname = testName("AntragOhneLogin");
+    // Der Punkt am Ende: Die Datenbank nimmt die Adresse an, der Login-Dienst
+    // nicht. Der Login scheitert also, und die Annahme muss ganz ausbleiben.
+    const email = `${nachname.toLowerCase()}@example.org.`;
+
+    await page.goto("/antrag");
+    await page.getByLabel("Vorname").fill("Ohne");
+    await page.getByLabel("Nachname").fill(nachname);
+    await page.getByLabel("Geburtstag").fill("1991-03-03");
+    await page.getByLabel("E-Mail", { exact: true }).fill(email);
+    await page.locator("form").first().evaluate((f) => ((f as HTMLFormElement).noValidate = true));
+    await page.getByRole("button", { name: "Antrag absenden" }).click();
+    await expect(page.getByRole("heading", { name: "Danke!" })).toBeVisible({ timeout: 20_000 });
+
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/mitglieder/antraege");
+    const zeile = page.locator('.liste-gruppe[aria-label="Anträge"] li').filter({ hasText: nachname });
+    await zeile.locator("button.listenzeile").click();
+
+    const fenster = page.locator("dialog.fenster");
+    await fenster.getByRole("button", { name: "Aufnehmen" }).click();
+    await expect(fenster.locator(".hinweis.fehler")).toContainText("nicht angenommen", {
+      timeout: 25_000,
+    });
+    await expect(fenster.getByRole("button", { name: "Zum neuen Mitglied" })).toHaveCount(0);
+
+    // Kein Mitglied, und der Antrag ist weiter offen.
+    await page.goto("/admin/mitglieder?filter=alle&q=" + encodeURIComponent(nachname));
+    await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"] li')).toHaveCount(0);
+    await page.goto("/admin/mitglieder/antraege");
+    await expect(zeile).toHaveCount(1);
+
+    // Aufräumen: als Spam kennzeichnen, dann ist er erledigt.
+    await zeile.locator("button.listenzeile").click();
+    await fenster.getByRole("button", { name: "Spam" }).click();
+    await expect(fenster).toBeHidden({ timeout: 20_000 });
   });
 
   test("Antrag ablehnen und als Spam kennzeichnen", async ({ page }) => {

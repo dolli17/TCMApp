@@ -70,7 +70,7 @@ export function ZugehoerigkeitKarte(props: Props) {
           {sperre
             ? `${props.selbst ? "Du hast" : "Diese Person hat"} als einzige volle Rechte. Bitte zuerst jemand anderen zum Vorstand oder App Admin machen.`
             : ohneLogin
-              ? "Braucht einen Login. Altbestand: zuerst unter Zugang einladen."
+              ? "Braucht einen Login. Archivierte Mitglieder haben keinen."
               : r.beschreibung}
         </span>
         {entziehenOffen === r.rolle ? (

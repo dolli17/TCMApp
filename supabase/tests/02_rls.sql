@@ -249,15 +249,14 @@ begin
   perform set_config('role', 'postgres', true);
 end; $f$;
 
-create or replace function tests.test_mitglied_kann_zahler_nicht_aendern() returns setof text language plpgsql as $f$
-declare a record; b record;
+create or replace function tests.test_mitglied_kann_login_nicht_loesen() returns setof text language plpgsql as $f$
+declare a record;
 begin
   select * into a from tests.fixture_user() limit 1;
-  select * into b from tests.fixture_user() limit 1;
   perform tests.act_as(a.auth_id);
   return next throws_ok(
-    format('update public.members set billing_payer_id = %L where id = %L', b.member_id, a.member_id),
-    null, null, 'Mitglied kann sich keinen fremden Zahler zuweisen');
+    format('update public.members set auth_user_id = null where id = %L', a.member_id),
+    null, null, 'Mitglied kann seinen Login nicht vom Datensatz loesen');
   perform set_config('role', 'postgres', true);
 end; $f$;
 

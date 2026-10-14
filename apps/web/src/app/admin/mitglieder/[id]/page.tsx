@@ -390,22 +390,14 @@ export default async function MitgliedSeite({
 
       {teil === "merkmale" && <Merkmale id={id} />}
 
-      {teil === "zugang" && <Zugang id={id} selbst={istSelbst} archiviert={m.status === "archived"} />}
+      {teil === "zugang" && <Zugang id={id} selbst={istSelbst} />}
 
       {teil === "protokoll" && <Protokoll id={id} />}
     </div>
   );
 }
 
-async function Zugang({
-  id,
-  selbst,
-  archiviert,
-}: {
-  id: string;
-  selbst: boolean;
-  archiviert: boolean;
-}) {
+async function Zugang({ id, selbst }: { id: string; selbst: boolean }) {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.rpc("member_login_state", { p_member_id: id });
 
@@ -419,7 +411,6 @@ async function Zugang({
       mitgliedId={id}
       zustand={zustand as LoginZustand}
       selbst={selbst}
-      archiviert={archiviert}
     />
   );
 }

@@ -1,9 +1,10 @@
 /**
  * Login-Verwaltung für Mitglieder.
  *
- * Jedes Mitglied hat einen Login. Deshalb läuft hier auch das Anlegen
- * (Mitglied und Login in einem Zug), das Ändern der E-Mail (Mitglied und
- * Login gleich halten) und das Löschen bzw. Anonymisieren (der Login geht mit).
+ * Jedes Mitglied hat einen Login (CHECK members_login_pflicht). Deshalb läuft
+ * hier auch das Anlegen und das Annehmen eines Antrags (zuerst der Login, dann
+ * das Mitglied), das Ändern der E-Mail (Mitglied und Login gleich halten) und
+ * das Löschen bzw. Anonymisieren (der Login geht mit).
  *
  * Alles, was diese Funktion tut, könnte auch eine Server Action tun — bis auf
  * eines: Konten in `auth.users` anlegen, einladen, sperren und löschen geht nur
@@ -27,21 +28,26 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 type Aktion =
   | "anlegen"
-  | "einladen"
+  | "antrag_annehmen"
   | "passwort_zuruecksetzen"
   | "login_deaktivieren"
   | "login_aktivieren"
-  | "login_verknuepfen"
-  | "login_entfernen"
   | "email_aendern"
   | "loeschen";
 
 interface Anfrage {
   aktion: Aktion;
-  /** Bei allen Aktionen außer `anlegen`. */
+  /** Bei allen Aktionen außer `anlegen` und `antrag_annehmen`. */
   memberId?: string;
   /** `anlegen`: die Parameter für create_member. */
   daten?: Record<string, unknown>;
+  /** `antrag_annehmen`: der Antrag und die Wahl des Vorstands. */
+  antrag?: {
+    id: string;
+    nummer?: string;
+    beitragsart?: string;
+    eintritt?: string;
+  };
   /** `email_aendern`: die neue Adresse. */
   email?: string;
   /** `loeschen`: endgültig löschen oder anonymisieren. */
@@ -54,8 +60,8 @@ interface Anfrage {
 
 /**
  * Was beim Anlegen an create_member durchgereicht wird. Alles andere im
- * Anfragekörper fällt weg – insbesondere p_billing_payer_id, den es nicht
- * mehr gibt.
+ * Anfragekörper fällt weg, insbesondere p_auth_user_id: den Login legt diese
+ * Funktion selbst an.
  */
 const ANLEGE_PARAMETER = [
   "p_first_name",
@@ -149,10 +155,12 @@ Deno.serve(async (req) => {
     auth: { persistSession: false },
   });
 
-  // Anlegen hat noch kein Mitglied, das sich nachlesen ließe.
-  if (aktion === "anlegen") {
+  // Anlegen und Annehmen haben noch kein Mitglied, das sich nachlesen ließe.
+  if (aktion === "anlegen" || aktion === "antrag_annehmen") {
     try {
-      return await anlegen(alsAufrufer, alsDienst, anfrage.daten ?? {});
+      return aktion === "anlegen"
+        ? await anlegen(alsAufrufer, alsDienst, anfrage.daten ?? {})
+        : await antragAnnehmen(alsAufrufer, alsDienst, anfrage.antrag);
     } catch (fehler) {
       return antwort(false, fehler instanceof Error ? fehler.message : String(fehler), 400);
     }
@@ -179,13 +187,6 @@ Deno.serve(async (req) => {
 
   try {
     switch (aktion) {
-      case "einladen": {
-        // Heute nur noch für Altbestand ohne Login; neue Mitglieder bekommen
-        // ihn schon beim Anlegen.
-        const z = await zugangEinrichten(alsDienst, mitglied);
-        return antwort(true, z.meldung);
-      }
-
       case "passwort_zuruecksetzen": {
         if (!mitglied.auth_user_id || !mitglied.email) {
           return antwort(false, "Dieses Mitglied hat keinen Zugang.", 400);
@@ -225,47 +226,6 @@ Deno.serve(async (req) => {
         return antwort(true, sperren ? "Zugang gesperrt." : "Zugang wieder freigegeben.");
       }
 
-      case "login_verknuepfen": {
-        if (!mitglied.email) {
-          return antwort(false, "Ohne E-Mail-Adresse lässt sich kein Zugang zuordnen.", 400);
-        }
-
-        const gefunden = await findeBenutzer(alsDienst, mitglied.email);
-        if (!gefunden) {
-          return antwort(false, "Zu dieser Adresse gibt es keinen Zugang.", 404);
-        }
-
-        await rpc(alsDienst, "link_auth_user", {
-          p_member_id: mitglied.id,
-          p_auth_user_id: gefunden,
-        });
-
-        return antwort(true, "Zugang verbunden.");
-      }
-
-      case "login_entfernen": {
-        if (!mitglied.auth_user_id) {
-          return antwort(false, "Dieses Mitglied hat keinen Zugang.", 400);
-        }
-
-        const alt = await rpc<string>(alsDienst, "unlink_auth_user", {
-          p_member_id: mitglied.id,
-        });
-
-        if (alt) {
-          const { error } = await alsDienst.auth.admin.deleteUser(alt);
-          if (error) {
-            return antwort(
-              false,
-              `Die Verknüpfung ist gelöst, das Konto ließ sich aber nicht löschen: ${error.message}`,
-              400,
-            );
-          }
-        }
-
-        return antwort(true, "Zugang entfernt.");
-      }
-
       case "email_aendern": {
         const neu = (anfrage.email ?? "").trim().toLowerCase();
         if (!neu) {
@@ -283,7 +243,7 @@ Deno.serve(async (req) => {
         });
         if (dbError) return dbFehler(dbError);
 
-        // Altbestand ohne Login: nichts nachzuziehen.
+        // Ohne Login sind nur Archivierte: nichts nachzuziehen.
         if (!mitglied.auth_user_id) {
           return antwort(true, "E-Mail-Adresse gespeichert.");
         }
@@ -373,11 +333,11 @@ async function mitgliedLesen(
 /**
  * Mitglied anlegen, und zwar nur zusammen mit seinem Login.
  *
- * create_member läuft mit dem Token des Aufrufers: Rechte und Prüfungen
- * (Pflichtfelder, E-Mail, Eindeutigkeit) bleiben in der Datenbank. Scheitert
- * danach der Login, wird das Mitglied wieder gelöscht – auch das mit dem Token
- * des Aufrufers, denn delete_member verlangt einen Administrator. Ein
- * Mitglied ohne Login entsteht so nie.
+ * Zuerst entsteht der Login, dann ruft die Funktion create_member mit dem
+ * Token des Aufrufers und gibt den Login als p_auth_user_id mit. Rechte und
+ * Prüfungen (Pflichtfelder, Eindeutigkeit, Login-Pflicht) bleiben so in der
+ * Datenbank, und ein Mitglied ohne Login entsteht nie. Scheitert
+ * create_member, wird ein hier neu angelegter Login wieder gelöscht.
  */
 async function anlegen(
   alsAufrufer: ReturnType<typeof createClient>,
@@ -391,114 +351,184 @@ async function anlegen(
     }
   }
 
-  const { data: id, error } = await alsAufrufer.rpc("create_member", parameter);
-  if (error) return dbFehler(error);
-  if (typeof id !== "string") {
-    return antwort(false, "Das Mitglied wurde nicht angelegt.", 400);
+  // Was die Datenbank ohnehin ablehnen würde, prüfen wir vor der Einladung:
+  // sonst ginge eine Mail für ein Mitglied raus, das es nie gibt.
+  const email = String(parameter.p_email ?? "").trim().toLowerCase();
+  if (!email) return antwort(false, "Ohne E-Mail-Adresse kann kein Mitglied angelegt werden.", 400);
+  if (!String(parameter.p_first_name ?? "").trim() || !String(parameter.p_last_name ?? "").trim()) {
+    return antwort(false, "Vor- und Nachname sind Pflicht.", 400);
   }
+  parameter.p_email = email;
 
-  const mitglied = await mitgliedLesen(alsDienst, id);
-
+  let login: Login;
   try {
-    if (!mitglied) throw new Error("Das neue Mitglied ließ sich nicht lesen.");
-    const z = await zugangEinrichten(alsDienst, mitglied);
-    return antwort(true, z.meldung, 200, { id });
+    login = await loginAnlegen(alsAufrufer, alsDienst, email);
   } catch (fehler) {
     const grund = fehler instanceof Error ? fehler.message : String(fehler);
-
-    const { error: rueckFehler } = await alsAufrufer.rpc("delete_member", {
-      p_member_id: id,
-      p_confirm_name: String(parameter.p_last_name ?? ""),
-    });
-
-    if (rueckFehler) {
-      return antwort(
-        false,
-        `Der Login ließ sich nicht einrichten (${grund}), und das Mitglied ließ sich nicht wieder ` +
-          `entfernen (${rueckFehler.message}). Bitte das Mitglied von Hand löschen.`,
-        500,
-        { id },
-      );
-    }
-
-    return antwort(
-      false,
-      `Das Mitglied wurde nicht angelegt, weil der Login nicht eingerichtet werden konnte: ${grund}`,
-      400,
-    );
+    return antwort(false, `Das Mitglied wurde nicht angelegt, weil der Login nicht eingerichtet werden konnte: ${grund}`, 400);
   }
+
+  const { data: id, error } = await alsAufrufer.rpc("create_member", {
+    ...parameter,
+    p_auth_user_id: login.id,
+  });
+
+  if (error || typeof id !== "string") {
+    await loginVerwerfen(alsDienst, login);
+    return error ? dbFehler(error) : antwort(false, "Das Mitglied wurde nicht angelegt.", 400);
+  }
+
+  return antwort(true, login.meldung, 200, { id });
 }
 
 /**
- * Login für ein Mitglied einrichten und verknüpfen.
+ * Einen Mitgliedsantrag annehmen, samt Login.
+ *
+ * Dieselbe Reihenfolge wie beim Anlegen: zuerst der Login, dann
+ * accept_membership_application mit p_auth_user_id. Die RPC läuft in einer
+ * Transaktion. Scheitert sie, bleibt der Antrag offen, es gibt kein Mitglied
+ * und keine übertragenen Einwilligungen, und der Login wird wieder gelöscht.
+ */
+async function antragAnnehmen(
+  alsAufrufer: ReturnType<typeof createClient>,
+  alsDienst: ReturnType<typeof createClient>,
+  antrag: Anfrage["antrag"],
+): Promise<Response> {
+  if (!antrag?.id) return antwort(false, "Die Anfrage ist unvollständig.", 400);
+
+  // Die Adresse kommt aus dem Antrag in der Datenbank, nicht aus der Anfrage.
+  // Gelesen mit dem Token des Aufrufers (RLS: nur Administratoren). Ein schon
+  // bearbeiteter Antrag fällt hier auf, bevor irgendeine Mail rausgeht.
+  const { data: gelesen, error: leseFehler } = await alsAufrufer
+    .from("membership_applications")
+    .select("email, status")
+    .eq("id", antrag.id)
+    .maybeSingle();
+  if (leseFehler) return dbFehler(leseFehler);
+  const offen = gelesen as { email: string | null; status: string } | null;
+  if (!offen) return antwort(false, "Diesen Antrag gibt es nicht.", 404);
+  if (offen.status !== "new") return antwort(false, "Dieser Antrag wurde bereits bearbeitet.", 400);
+  const email = String(offen.email ?? "").trim().toLowerCase();
+  if (!email) return antwort(false, "Der Antrag hat keine E-Mail-Adresse.", 400);
+
+  let login: Login;
+  try {
+    login = await loginAnlegen(alsAufrufer, alsDienst, email);
+  } catch (fehler) {
+    const grund = fehler instanceof Error ? fehler.message : String(fehler);
+    return antwort(
+      false,
+      `Der Antrag wurde nicht angenommen, weil der Login nicht eingerichtet werden konnte: ${grund}. Der Antrag bleibt offen.`,
+      400,
+    );
+  }
+
+  const { data, error } = await alsAufrufer.rpc("accept_membership_application", {
+    p_application_id: antrag.id,
+    p_number: antrag.nummer || undefined,
+    p_fee_type_ids: antrag.beitragsart ? [antrag.beitragsart] : undefined,
+    p_started_on: antrag.eintritt || undefined,
+    p_auth_user_id: login.id,
+  });
+
+  const zeile = Array.isArray(data) ? data[0] : null;
+  if (error || !zeile?.member_id) {
+    await loginVerwerfen(alsDienst, login);
+    return error ? dbFehler(error) : antwort(false, "Der Antrag wurde nicht angenommen.", 400);
+  }
+
+  return antwort(
+    true,
+    `Aufgenommen unter der Nummer ${zeile.membership_number ?? "—"}. ${login.meldung}`,
+    200,
+    { id: zeile.member_id },
+  );
+}
+
+interface Login {
+  id: string;
+  /** Neu angelegt (und damit beim Scheitern wieder zu löschen)? */
+  neu: boolean;
+  meldung: string;
+}
+
+/**
+ * Den Login zu einer Adresse anlegen.
  *
  * Echte Adressen bekommen eine Einladung. An Testadressen (z. B.
  * @example.org) geht keine Mail: dort entsteht das Konto still und bestätigt,
  * ohne Passwort. So lässt sich auch lokal und mit dem Seed jedes Mitglied
  * anlegen, ohne dass die Rücklaufquote beim Mailversand leidet.
  *
- * Wirft, wenn es nicht klappt. Ein Konto, das hier neu entstand und sich
- * danach nicht verknüpfen ließ, wird wieder gelöscht.
+ * Gibt es zur Adresse schon ein Konto, wird es übernommen, sofern es kein
+ * Kiosk-Gerät ist (O25). Ob es schon einem anderen Mitglied gehört, prüft
+ * create_member. Wirft, wenn kein Login zustande kommt.
  */
-async function zugangEinrichten(
+async function loginAnlegen(
+  alsAufrufer: ReturnType<typeof createClient>,
   alsDienst: ReturnType<typeof createClient>,
-  mitglied: Mitglied,
-): Promise<{ meldung: string }> {
-  if (!mitglied.email) {
-    throw new Error("Dieses Mitglied hat keine E-Mail-Adresse. Ohne sie ist keine Einladung möglich.");
-  }
-  if (mitglied.auth_user_id) {
-    throw new Error("Dieses Mitglied hat bereits einen Zugang.");
-  }
-  if (mitglied.status === "archived") {
-    throw new Error("Archivierte Mitglieder bekommen keinen Zugang.");
-  }
-
-  const test = await istTestadresse(alsDienst, mitglied.email);
+  email: string,
+): Promise<Login> {
+  const test = await istTestadresse(alsDienst, email);
 
   const { data, error } = test
-    ? await alsDienst.auth.admin.createUser({
-        email: mitglied.email,
-        email_confirm: true,
-        user_metadata: { member_id: mitglied.id },
-      })
-    : await alsDienst.auth.admin.inviteUserByEmail(mitglied.email, {
+    ? await alsDienst.auth.admin.createUser({ email, email_confirm: true })
+    : await alsDienst.auth.admin.inviteUserByEmail(email, {
         redirectTo: `${SITE_URL}/passwort-setzen`,
-        data: { member_id: mitglied.id },
       });
 
-  if (error || !data?.user) {
-    // Gibt es das Konto schon, aber ohne Verknüpfung? Dann verbinden
-    // statt neu einzuladen – das ist der häufigste Stolperstein beim
-    // Umzug von eBuSy.
-    const vorhanden = await findeBenutzer(alsDienst, mitglied.email);
-    if (vorhanden) {
-      await rpc(alsDienst, "link_auth_user", {
-        p_member_id: mitglied.id,
-        p_auth_user_id: vorhanden,
-      });
-      return {
-        meldung: "Zu dieser Adresse gab es bereits einen Zugang – er ist jetzt mit dem Mitglied verbunden.",
-      };
+  if (!error && data?.user) {
+    return {
+      id: data.user.id,
+      neu: true,
+      meldung: test
+        ? `Zugang für ${email} eingerichtet. Das ist eine Testadresse, deshalb ging keine Einladung raus.`
+        : `Einladung an ${email} verschickt.`,
+    };
+  }
+
+  // Gibt es das Konto schon, aber ohne Mitglied? Dann übernehmen statt neu
+  // einzuladen – das ist der häufigste Stolperstein beim Umzug von eBuSy.
+  const vorhanden = await findeBenutzer(alsDienst, email);
+  if (vorhanden) {
+    if (await istKiosk(alsAufrufer, vorhanden)) {
+      throw new Error("Zu dieser Adresse gibt es ein Kiosk-Konto. Es lässt sich keinem Mitglied zuordnen.");
     }
-    throw new Error(`Die Einladung konnte nicht verschickt werden: ${error?.message ?? "unbekannt"}`);
+    return {
+      id: vorhanden,
+      neu: false,
+      meldung: "Zu dieser Adresse gab es bereits einen Zugang – er ist jetzt mit dem Mitglied verbunden.",
+    };
   }
 
-  try {
-    await rpc(alsDienst, "link_auth_user", {
-      p_member_id: mitglied.id,
-      p_auth_user_id: data.user.id,
-    });
-  } catch (fehler) {
-    await alsDienst.auth.admin.deleteUser(data.user.id);
-    throw fehler;
-  }
+  throw new Error(`Die Einladung konnte nicht verschickt werden: ${error?.message ?? "unbekannt"}`);
+}
 
-  return {
-    meldung: test
-      ? `Zugang für ${mitglied.email} eingerichtet. Das ist eine Testadresse, deshalb ging keine Einladung raus.`
-      : `Einladung an ${mitglied.email} verschickt.`,
-  };
+/** Einen Login wieder löschen, aber nur, wenn er eben erst entstanden ist. */
+async function loginVerwerfen(
+  alsDienst: ReturnType<typeof createClient>,
+  login: Login,
+): Promise<void> {
+  if (login.neu) await alsDienst.auth.admin.deleteUser(login.id);
+}
+
+/**
+ * Gehört das Konto einem Kiosk-Gerät? (O25) Gelesen mit dem Token des
+ * Aufrufers: Administratoren sehen die Geräte, der Service-Schlüssel hat auf
+ * public-Tabellen bewusst kein SELECT. link_auth_user und create_member
+ * weisen Kiosk-Konten zusätzlich selbst ab.
+ */
+async function istKiosk(
+  alsAufrufer: ReturnType<typeof createClient>,
+  authUserId: string,
+): Promise<boolean> {
+  const { data, error } = await alsAufrufer
+    .from("kiosk_devices")
+    .select("id")
+    .eq("auth_user_id", authUserId)
+    .limit(1);
+  if (error) throw new Error(error.message);
+  return (data ?? []).length > 0;
 }
 
 const TESTADRESSE =
@@ -534,7 +564,7 @@ async function rpc<T = unknown>(
  *
  * Die Admin-API hat keinen direkten Filter dafür; sie liefert Seiten. Bei
  * dreihundert Mitgliedern reichen wenige davon, und der Aufruf passiert nur,
- * wenn ein Admin ausdrücklich verknüpft.
+ * wenn das Anlegen eines Logins scheitert.
  */
 async function findeBenutzer(
   client: ReturnType<typeof createClient>,

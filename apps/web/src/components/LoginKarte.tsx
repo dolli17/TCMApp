@@ -11,7 +11,6 @@ export interface LoginZustand {
   disabled_at: string | null;
   last_sign_in: string | null;
   ist_admin: boolean;
-  einladbar: boolean;
   grund: string | null;
 }
 
@@ -30,21 +29,18 @@ function zeitpunkt(wert: string | null): string {
  * es hier kein Feld dafür – und das ist kein fehlendes Bedienelement, sondern
  * der Punkt.
  *
- * Jedes Mitglied hat einen Login, er entsteht beim Anlegen. Ohne Login gibt
- * es nur noch Altbestand; für ihn steht hier „Einladen“. Einen Zugang
- * entfernen geht nicht mehr – sperren ja, und mit dem Mitglied geht beim
- * Löschen auch der Login.
+ * Jedes Mitglied hat einen Login, er entsteht beim Anlegen (die Datenbank
+ * erzwingt das). Ohne Login sind nur Archivierte. Einen Zugang entfernen geht
+ * nicht – sperren ja, und mit dem Mitglied geht beim Löschen auch der Login.
  */
 export function LoginKarte({
   mitgliedId,
   zustand,
   selbst,
-  archiviert,
 }: {
   mitgliedId: string;
   zustand: LoginZustand;
   selbst: boolean;
-  archiviert: boolean;
 }) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
@@ -82,7 +78,7 @@ export function LoginKarte({
               <span className="marke-klein gruen">aktiv</span>
             )
           ) : (
-            <span className="marke-klein grau">{archiviert ? "kein Zugang" : "Altbestand"}</span>
+            <span className="marke-klein grau">kein Zugang</span>
           )}
         </span>
 
@@ -107,31 +103,7 @@ export function LoginKarte({
         {zustand.grund && <p className="hinweis">{zustand.grund}</p>}
       </div>
 
-      {!zustand.hat_zugang && !archiviert && (
-        <p className="beschreibung">
-          Altbestand: Dieses Mitglied stammt aus der Zeit, als es Mitglieder ohne Login gab. Heute
-          bekommt jedes Mitglied schon beim Anlegen eine Einladung.
-        </p>
-      )}
-
-      {!zustand.hat_zugang ? (
-        <div className="detailkopf aktionen">
-          <button
-            className="knopf"
-            disabled={laeuft || !zustand.einladbar}
-            onClick={() => fuehreAus("einladen")}
-          >
-            {laeuft ? "Wird verschickt…" : "Einladen"}
-          </button>
-          <button
-            className="knopf leise"
-            disabled={laeuft || !zustand.email}
-            onClick={() => fuehreAus("login_verknuepfen")}
-          >
-            Vorhandenen Zugang verbinden
-          </button>
-        </div>
-      ) : (
+      {zustand.hat_zugang && (
         <div className="detailkopf aktionen">
           <button
             className="knopf leise"

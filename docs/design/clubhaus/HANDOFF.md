@@ -331,7 +331,7 @@ Stand: 28.09.2026, nach Phase 7. Jede Phase ist ein eigener PR auf `main`
 - **Verwaltung hell:** gilt, solange niemand ein Theme gewählt hat. Wer
   einmal ausdrücklich wählt – auch „System“ –, dessen Wahl gilt überall.
 - **Mitgliederliste:** neben den Chips des Entwurfs bleibt eine leise Zeile
-  mit den bisherigen Bestandsfiltern (Ohne Zugang, Trainer, Admins,
+  mit den bisherigen Bestandsfiltern (Trainer, Admins,
   Archiviert, Alle Datensätze). Einen Export gibt es nicht, deshalb auch
   keinen Knopf.
 - **Lastschriftlauf:** „pain.008 erzeugen“ ist gesperrt, solange nichts im
