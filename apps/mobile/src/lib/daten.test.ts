@@ -64,6 +64,7 @@ const {
   bucheplatz,
   entferneMerkmal,
   ladeKontingent,
+  sageSerienterminAb,
   setzeMerkmal,
   spieleMit,
   speichereNotfallkontakt,
@@ -201,6 +202,54 @@ describe("storniereBuchung", () => {
     const r = await storniereBuchung("b1");
     expect(r.ok).toBe(false);
     expect(r.meldung).toContain("eigenen Buchungen");
+  });
+
+  it("gibt den Grund getrimmt an die RPC weiter", async () => {
+    rpc.mockResolvedValue({ error: null });
+    const r = await storniereBuchung("b1", "  Platz unter Wasser ");
+
+    expect(rpc).toHaveBeenCalledWith("cancel_booking", {
+      p_booking_id: "b1",
+      p_reason: "Platz unter Wasser",
+    });
+    expect(r).toEqual({ ok: true, meldung: "Buchung storniert." });
+  });
+
+  it("schickt ohne Grund keinen leeren Text", async () => {
+    rpc.mockResolvedValue({ error: null });
+    await storniereBuchung("b1", "   ");
+    expect(rpc).toHaveBeenCalledWith("cancel_booking", { p_booking_id: "b1", p_reason: undefined });
+  });
+});
+
+describe("sageSerienterminAb", () => {
+  it("ruft cancel_series_occurrence mit Grund auf", async () => {
+    rpc.mockResolvedValue({ error: null });
+    const r = await sageSerienterminAb("b-7", " Ferien ");
+
+    expect(rpc).toHaveBeenCalledWith("cancel_series_occurrence", {
+      p_booking_id: "b-7",
+      p_reason: "Ferien",
+    });
+    expect(r).toEqual({ ok: true, meldung: "Der Termin ist abgesagt." });
+  });
+
+  it("laesst den Grund weg, wenn keiner da ist", async () => {
+    rpc.mockResolvedValue({ error: null });
+    await sageSerienterminAb("b-7");
+    expect(rpc).toHaveBeenCalledWith("cancel_series_occurrence", {
+      p_booking_id: "b-7",
+      p_reason: undefined,
+    });
+  });
+
+  it("meldet einen Fehler der Datenbank", async () => {
+    rpc.mockResolvedValue({
+      error: { code: "42501", message: "Nur Administratoren duerfen Serientermine absagen." },
+    });
+    const r = await sageSerienterminAb("b-7");
+    expect(r.ok).toBe(false);
+    expect(r.meldung).not.toBe("");
   });
 });
 
