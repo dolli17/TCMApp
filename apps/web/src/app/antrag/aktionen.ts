@@ -57,13 +57,10 @@ export async function antragEinreichen(formData: FormData): Promise<AntragsErgeb
   if (!text("birthday")) {
     return { ok: false, meldung: "Bitte das Geburtsdatum angeben." };
   }
-
-  // Die Einwilligungen aus dem Formular: {"foto": true, …}
-  const einwilligungen: Record<string, boolean> = {};
-  for (const [name] of formData.entries()) {
-    if (name.startsWith("merkmal:")) {
-      einwilligungen[name.slice("merkmal:".length)] = true;
-    }
+  // Die übrigen Pflichtfelder prüft die Datenbank. Hier nur eine schnelle
+  // Rückmeldung, falls das Formular ohne Browserprüfung abgeschickt wurde.
+  if (["gender", "mobile", "street", "postcode", "city"].some((f) => !text(f))) {
+    return { ok: false, meldung: "Bitte alle Pflichtfelder ausfüllen." };
   }
 
   const kopf = await headers();
@@ -76,20 +73,14 @@ export async function antragEinreichen(formData: FormData): Promise<AntragsErgeb
     p_data: {
       first_name: text("first_name"),
       last_name: text("last_name"),
-      salutation: text("salutation") || null,
       birthday: text("birthday"),
+      gender: text("gender"),
       email: text("email"),
-      phone: text("phone") || null,
-      mobile: text("mobile") || null,
-      street: text("street") || null,
-      postcode: text("postcode") || null,
-      city: text("city") || null,
-      emergency_contact_name: text("emergency_contact_name") || null,
-      emergency_contact_phone: text("emergency_contact_phone") || null,
-      guardian_name: text("guardian_name") || null,
-      guardian_email: text("guardian_email") || null,
+      mobile: text("mobile"),
+      street: text("street"),
+      postcode: text("postcode"),
+      city: text("city"),
       desired_fee_type_id: text("desired_fee_type_id") || null,
-      attribute_choices: einwilligungen,
       message: text("message") || null,
     },
     p_ip: ip ?? undefined,

@@ -7,6 +7,7 @@ import { MitgliederKopf } from "@/components/MitgliederKopf";
 import { MitgliederWahl } from "@/components/MitgliederWahl";
 import { MitgliedUebersicht } from "@/components/MitgliedUebersicht";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
+import { ladeBeitragsarten } from "@/lib/beitragsarten";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +62,7 @@ export default async function MitgliederSeite({
   // und begrenzt in der Datenbank. Der Suchbegriff geht als Parameter hinein
   // und nicht in einen Filterausdruck - ein Komma im Namen kann ihn deshalb
   // nicht zerlegen.
-  const [{ data, error }, beitraegeRes, zuordnungRes, mannschaftenRes, mandateRes, offenRes] =
+  const [{ data, error }, beitraegeRes, zuordnungRes, mannschaftenRes, mandateRes, offenRes, beitragsarten] =
     await Promise.all([
       supabase.rpc("member_overview", {
         p_filter: gewaehlt,
@@ -76,6 +77,7 @@ export default async function MitgliederSeite({
         .from("charges")
         .select("member_id, amount_cents")
         .in("status", ["open", "notified", "returned"]),
+      ladeBeitragsarten(supabase),
     ]);
 
   if (error) {
@@ -131,7 +133,7 @@ export default async function MitgliederSeite({
   return (
     <div className="verwaltung mitglieder">
       <VerwaltungsKopf titel="Mitglieder">
-        <MitgliederKopf />
+        <MitgliederKopf beitragsarten={beitragsarten} />
       </VerwaltungsKopf>
 
       <MitgliederSegmente aktiv="/admin/mitglieder" />

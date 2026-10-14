@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MitgliedAnlegenFenster } from "@/components/MitgliedAnlegenFenster";
+import type { Beitragsart } from "@/lib/beitragsarten";
 
 /**
  * Der Knopf, der das Anlegefenster öffnet.
@@ -9,7 +10,7 @@ import { MitgliedAnlegenFenster } from "@/components/MitgliedAnlegenFenster";
  * Eigene Komponente, damit die Mitgliederliste eine Server-Komponente bleiben
  * kann – nur dieser Knopf braucht Zustand.
  */
-export function MitgliederKopf() {
+export function MitgliederKopf({ beitragsarten }: { beitragsarten: Beitragsart[] }) {
   const [offen, setOffen] = useState(false);
 
   return (
@@ -22,7 +23,9 @@ export function MitgliederKopf() {
         <span className="text-lang">Mitglied anlegen</span>
         <span className="text-kurz">Anlegen</span>
       </button>
-      {offen && <MitgliedAnlegenFenster onSchliessen={() => setOffen(false)} />}
+      {offen && (
+        <MitgliedAnlegenFenster beitragsarten={beitragsarten} onSchliessen={() => setOffen(false)} />
+      )}
     </>
   );
 }

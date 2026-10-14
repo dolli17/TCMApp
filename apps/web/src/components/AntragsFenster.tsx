@@ -8,12 +8,16 @@ import {
   antragAlsSpam,
   antragAnnehmen,
 } from "@/app/admin/mitglieder/antraege/aktionen";
+import type { Beitragsart } from "@/lib/beitragsarten";
+
+export type { Beitragsart };
 
 export interface Antrag {
   id: string;
   first_name: string;
   last_name: string;
   salutation: string | null;
+  gender: string | null;
   birthday: string;
   email: string;
   phone: string | null;
@@ -33,15 +37,15 @@ export interface Antrag {
   submitted_at: string;
 }
 
-export interface Beitragsart {
-  id: string;
-  name: string;
-  preis_cents: number | null;
-}
-
 function datum(wert: string | null): string {
   return wert ? new Intl.DateTimeFormat("de-DE").format(new Date(wert)) : "—";
 }
+
+const GESCHLECHT: Record<string, string> = {
+  female: "weiblich",
+  male: "männlich",
+  diverse: "divers",
+};
 
 function alter(geburtstag: string): number {
   return Math.floor((Date.now() - new Date(geburtstag).getTime()) / 31_557_600_000);
@@ -175,6 +179,10 @@ export function AntragsFenster({
             <dd>{datum(antrag.birthday)}</dd>
           </div>
           <div>
+            <dt>Geschlecht</dt>
+            <dd>{antrag.gender ? (GESCHLECHT[antrag.gender] ?? antrag.gender) : "—"}</dd>
+          </div>
+          <div>
             <dt>Anschrift</dt>
             <dd>
               {antrag.street ?? "—"}
@@ -186,6 +194,9 @@ export function AntragsFenster({
               ) : null}
             </dd>
           </div>
+          {/* Erziehungsberechtigte, Notfallkontakt und Einwilligungen fragt der
+              Antrag nicht mehr ab, sie kommen im Onboarding. Alte Anträge
+              zeigen sie weiter, falls vorhanden. */}
           {(antrag.guardian_name || antrag.guardian_email) && (
             <div>
               <dt>Erziehungsberechtigte</dt>
@@ -203,10 +214,12 @@ export function AntragsFenster({
               </dd>
             </div>
           )}
-          <div>
-            <dt>Einwilligungen</dt>
-            <dd>{einwilligungen.length > 0 ? einwilligungen.join(", ") : "keine"}</dd>
-          </div>
+          {einwilligungen.length > 0 && (
+            <div>
+              <dt>Einwilligungen</dt>
+              <dd>{einwilligungen.join(", ")}</dd>
+            </div>
+          )}
           {antrag.message && (
             <div>
               <dt>Nachricht</dt>

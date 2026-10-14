@@ -2,7 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { formatCents } from "@tcm/core";
 import { mitgliedAnlegen } from "@/app/admin/mitglieder/aktionen";
+import type { Beitragsart } from "@/lib/beitragsarten";
 
 /**
  * Neues Mitglied anlegen.
@@ -10,8 +12,17 @@ import { mitgliedAnlegen } from "@/app/admin/mitglieder/aktionen";
  * Natives <dialog> wie im Buchungsfenster: es bringt Fokusfalle, Escape zum
  * Schließen und Inertheit des Hintergrunds mit. Breiter als das Standardfenster,
  * weil hier zwei Spalten Formular stehen statt einer.
+ *
+ * Dieselben Pflichtfelder wie der Aufnahmeantrag. Alles Weitere (Rechtliches,
+ * Erziehungsberechtigte, Mandat) ergänzt das Mitglied selbst im Onboarding.
  */
-export function MitgliedAnlegenFenster({ onSchliessen }: { onSchliessen: () => void }) {
+export function MitgliedAnlegenFenster({
+  beitragsarten,
+  onSchliessen,
+}: {
+  beitragsarten: Beitragsart[];
+  onSchliessen: () => void;
+}) {
   const dialog = useRef<HTMLDialogElement>(null);
   const router = useRouter();
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
@@ -26,8 +37,7 @@ export function MitgliedAnlegenFenster({ onSchliessen }: { onSchliessen: () => v
     starte(async () => {
       const e = await mitgliedAnlegen(fd);
       setMeldung({ ok: e.ok, text: e.meldung });
-      // Direkt auf die Detailseite: nach dem Anlegen fehlen fast immer noch
-      // Beitragsart, Bankverbindung oder Notfallkontakt.
+      // Direkt auf die Detailseite, um das neue Mitglied gleich zu sehen.
       if (e.ok && e.id) router.push(`/admin/mitglieder/${e.id}`);
     });
   }
@@ -77,18 +87,11 @@ export function MitgliedAnlegenFenster({ onSchliessen }: { onSchliessen: () => v
               <input name="last_name" required autoComplete="off" />
             </label>
             <label>
-              <span>Anrede</span>
-              <select name="salutation" defaultValue="">
-                <option value="">—</option>
-                <option value="female">Frau</option>
-                <option value="male">Herr</option>
-                <option value="none">keine</option>
-              </select>
-            </label>
-            <label>
               <span>Geschlecht</span>
-              <select name="gender" defaultValue="">
-                <option value="">—</option>
+              <select name="gender" required defaultValue="">
+                <option value="" disabled>
+                  Bitte wählen
+                </option>
                 <option value="female">weiblich</option>
                 <option value="male">männlich</option>
                 <option value="diverse">divers</option>
@@ -96,7 +99,7 @@ export function MitgliedAnlegenFenster({ onSchliessen }: { onSchliessen: () => v
             </label>
             <label>
               <span>Geburtstag</span>
-              <input type="date" name="birthday" />
+              <input type="date" name="birthday" required max={heute} />
             </label>
             <label>
               <span>E-Mail</span>
@@ -105,23 +108,19 @@ export function MitgliedAnlegenFenster({ onSchliessen }: { onSchliessen: () => v
             </label>
             <label>
               <span>Telefon</span>
-              <input type="tel" name="phone" autoComplete="off" />
-            </label>
-            <label>
-              <span>Mobil</span>
-              <input type="tel" name="mobile" autoComplete="off" />
+              <input type="tel" name="mobile" required autoComplete="off" />
             </label>
             <label className="breit">
               <span>Straße und Hausnummer</span>
-              <input name="street" autoComplete="off" />
+              <input name="street" required autoComplete="off" />
             </label>
             <label>
               <span>PLZ</span>
-              <input name="postcode" autoComplete="off" />
+              <input name="postcode" required autoComplete="off" inputMode="numeric" />
             </label>
             <label>
               <span>Ort</span>
-              <input name="city" autoComplete="off" />
+              <input name="city" required autoComplete="off" />
             </label>
             <label>
               <span>Mitgliedsnummer</span>
@@ -130,6 +129,18 @@ export function MitgliedAnlegenFenster({ onSchliessen }: { onSchliessen: () => v
             <label>
               <span>Eintritt</span>
               <input type="date" name="started_on" defaultValue={heute} />
+            </label>
+            <label>
+              <span>Beitragsart</span>
+              <select name="fee_type" defaultValue="">
+                <option value="">später festlegen</option>
+                {beitragsarten.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                    {b.preis_cents !== null ? ` – ${formatCents(b.preis_cents)}` : ""}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
         </div>
