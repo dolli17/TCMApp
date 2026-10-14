@@ -18,7 +18,7 @@ Das Skript teilt jedes Mitglied ohne Login in genau eine Gruppe ein:
 | Testadresse, still anlegen | `public.ist_testadresse` trifft zu, kein Konto | `createUser` ohne Mail und ohne Passwort, danach `link_auth_user` |
 | Konto schon vorhanden | ein Konto mit derselben Adresse, keinem Mitglied zugeordnet (z. B. verwaist nach O4) | nur `link_auth_user` |
 | Adresse vergeben | das Konto zur Adresse gehört schon einem anderen Mitglied | nichts, steht im Bericht |
-| ohne E-Mail | keine Adresse eingetragen | nichts, steht im Bericht |
+| ohne E-Mail | keine Adresse eingetragen (Altbestand) | nichts, steht im Bericht |
 
 Die Regeln sind dieselben wie in der Edge Function `member-login`: Testadressen
 erkennt `public.ist_testadresse`, Adressen werden ohne Rücksicht auf
@@ -40,15 +40,15 @@ Danach das Skript erneut laufen lassen.
 | Variable | Wofür |
 | --- | --- |
 | `SUPABASE_URL` | Projekt-URL (lokal `http://127.0.0.1:54321`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Dienstschlüssel für die Admin-API und `link_auth_user` |
-| `SUPABASE_DB_URL` | Postgres-Verbindung zum Lesen der Mitglieder |
+| `SUPABASE_SERVICE_ROLE_KEY` | Dienstschlüssel für die Admin-API, `members_ohne_login` und `link_auth_user` |
 | `SITE_URL` | Nur bei Einladungen. Basis für den Link `…/passwort-setzen`, dieselbe wie `NEXT_PUBLIC_SITE_URL` der Web-App |
 
-Die Datenbankverbindung braucht das Skript, weil der Dienstschlüssel auf
-`public.members` bewusst kein `SELECT` hat (siehe `member_for_login_admin`).
-Gelesen wird darüber, geschrieben wird nur über Admin-API und RPC. Vor jedem Lauf
-prüft das Skript, ob `SUPABASE_URL` und `SUPABASE_DB_URL` zum selben Projekt
-gehören.
+Eine direkte Datenbankverbindung braucht das Skript nicht. Der Dienstschlüssel
+hat auf `public.members` bewusst kein `SELECT` (siehe `member_for_login_admin`).
+Gelesen wird deshalb über die RPC `members_ohne_login`, die nur der Dienstschlüssel
+aufrufen darf. Sie liefert die nicht archivierten Mitglieder ohne Login samt
+Testadressen-Urteil und dem Abgleich mit `auth.users`. Geschrieben wird über
+Admin-API und `link_auth_user`.
 
 Die Schlüssel kommen aus dem Passwortmanager in die Shell und nie in eine Datei im
 Repo.
@@ -57,8 +57,8 @@ Repo.
 
 ```bash
 # Lokal: Werte aus dem laufenden Stack
-eval "$(supabase status -o env | grep -E 'API_URL|SERVICE_ROLE_KEY|DB_URL')"
-export SUPABASE_URL=$API_URL SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY SUPABASE_DB_URL=$DB_URL
+eval "$(supabase status -o env | grep -E 'API_URL|SERVICE_ROLE_KEY')"
+export SUPABASE_URL=$API_URL SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY
 
 pnpm --filter @tcm/logins-nachziehen start                # Probelauf
 pnpm --filter @tcm/logins-nachziehen start --ausfuehren   # anlegen und einladen

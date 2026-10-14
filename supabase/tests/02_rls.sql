@@ -18,8 +18,9 @@ begin
   insert into auth.users (id, email, aud, role)
   values (v_auth, 'rls-' || substr(v_auth::text, 1, 8) || '@example.org',
           'authenticated', 'authenticated');
-  insert into public.members (first_name, last_name, auth_user_id)
-  values (p_first, 'Tester ' || substr(v_auth::text, 1, 8), v_auth)
+  insert into public.members (first_name, last_name, auth_user_id, email)
+  values (p_first, 'Tester ' || substr(v_auth::text, 1, 8), v_auth,
+          'rls-' || substr(v_auth::text, 1, 8) || '@example.org')
   returning id into v_mem;
   insert into public.member_roles (member_id, role) values (v_mem, 'member');
   if p_role is not null then

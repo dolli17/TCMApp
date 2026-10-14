@@ -27,9 +27,29 @@ language plpgsql
 as $$
 declare v_id uuid;
 begin
-  insert into public.members (first_name, last_name)
-  values (p_name, 'Person ' || substr(gen_random_uuid()::text, 1, 8))
+  -- Jedes Mitglied braucht eine eigene Adresse (Trigger members_email_pflicht).
+  insert into public.members (first_name, last_name, email)
+  values (p_name, 'Person ' || substr(gen_random_uuid()::text, 1, 8),
+          'fixture-' || gen_random_uuid()::text || '@example.org')
   returning id into v_id;
+  return v_id;
+end;
+$$;
+
+-- Ein Mitglied aus dem Altbestand: ohne E-Mail und ohne Login. Neu anlegen
+-- laesst sich so eines nicht mehr, deshalb ist der Trigger kurz aus. Die
+-- Transaktion des Tests wird zurueckgerollt, der Trigger also auch.
+create or replace function tests.fixture_altbestand(p_name text default 'Alt')
+returns uuid
+language plpgsql
+as $$
+declare v_id uuid;
+begin
+  alter table public.members disable trigger members_email_pflicht;
+  insert into public.members (first_name, last_name)
+  values (p_name, 'Bestand ' || substr(gen_random_uuid()::text, 1, 8))
+  returning id into v_id;
+  alter table public.members enable trigger members_email_pflicht;
   return v_id;
 end;
 $$;

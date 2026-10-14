@@ -12,16 +12,15 @@
  *   pnpm --filter @tcm/logins-nachziehen start               # Probelauf
  *   pnpm --filter @tcm/logins-nachziehen start --ausfuehren  # echt
  *
- * Lesen geht ueber die Datenbankverbindung (SUPABASE_DB_URL), weil der
- * Service-Schluessel auf public.members bewusst kein SELECT hat. Geschrieben
- * wird wie in der Edge Function member-login: Konto ueber die Admin-API,
- * Verknuepfung ueber die RPC link_auth_user.
+ * Gelesen wird ueber die RPC members_ohne_login, weil der Service-Schluessel
+ * auf public.members bewusst kein SELECT hat. Geschrieben wird wie in der Edge
+ * Function member-login: Konto ueber die Admin-API, Verknuepfung ueber die RPC
+ * link_auth_user. Es reichen also SUPABASE_URL und der Dienstschluessel.
  */
 
 import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import postgres from "postgres";
 import {
   BESCHRIFTUNG,
   REIHENFOLGE,
@@ -30,9 +29,8 @@ import {
   type AuthKonto,
   type Massnahme,
   type MitgliedOhneLogin,
-  type Verknuepfung,
 } from "./einteilung";
-import { gleichesProjekt, istLokal } from "./ziel";
+import { istLokal } from "./ziel";
 
 const { values: optionen } = parseArgs({
   options: {
@@ -61,6 +59,17 @@ function umgebung(name: string): string {
     );
   }
   return wert;
+}
+
+/** Eine Zeile aus der RPC members_ohne_login. */
+interface Zeile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  ist_testadresse: boolean;
+  konto_id: string | null;
+  konto_mitglied: string | null;
 }
 
 const warte = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -167,14 +176,8 @@ async function bestaetigt(ziel: string): Promise<boolean> {
 async function main() {
   const supabaseUrl = umgebung("SUPABASE_URL");
   const dienstSchluessel = umgebung("SUPABASE_SERVICE_ROLE_KEY");
-  const dbUrl = umgebung("SUPABASE_DB_URL");
   const ziel = new URL(supabaseUrl).host;
 
-  if (!gleichesProjekt(supabaseUrl, dbUrl)) {
-    throw new Error(
-      "SUPABASE_URL und SUPABASE_DB_URL zeigen auf verschiedene Projekte. Abbruch, es wurde nichts geschrieben.",
-    );
-  }
   if (!Number.isFinite(PAUSE_MAIL_MS) || PAUSE_MAIL_MS < 0) throw new Error("--pause braucht Millisekunden.");
   if (Number.isNaN(MAX_MAILS) || MAX_MAILS < 0) throw new Error("--max braucht eine Anzahl.");
 
@@ -184,40 +187,26 @@ async function main() {
       : `Logins nachziehen gegen ${ziel}. Probelauf, es wird nichts geschrieben.\n`,
   );
 
-  const sql = postgres(dbUrl, { max: 1, onnotice: () => {} });
-  let mitglieder: MitgliedOhneLogin[];
-  let verknuepfungen: Verknuepfung[];
-  try {
-    // Archivierte bleiben aussen vor – sie bekommen keinen Zugang (wie in member-login).
-    mitglieder = await sql<MitgliedOhneLogin[]>`
-      select m.id,
-             m.first_name || ' ' || m.last_name as name,
-             m.email::text as email,
-             coalesce(public.ist_testadresse(m.email::text), false) as "istTestadresse"
-        from public.members m
-       where m.auth_user_id is null
-         and m.status <> 'archived'
-       order by m.last_name, m.first_name`;
-    verknuepfungen = await sql<Verknuepfung[]>`
-      select m.id as "memberId",
-             m.first_name || ' ' || m.last_name as name,
-             m.auth_user_id as "authUserId"
-        from public.members m
-       where m.auth_user_id is not null`;
-  } finally {
-    await sql.end();
-  }
-
   const dienst = createClient(supabaseUrl, dienstSchluessel, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const konten = await alleKonten(dienst);
 
-  const massnahmen = teileEin(mitglieder, konten, verknuepfungen);
+  // Archivierte liefert die RPC nicht – sie bekommen keinen Zugang (wie in member-login).
+  const { data: zeilen, error: lesefehler } = await dienst.rpc("members_ohne_login");
+  if (lesefehler) throw new Error(`members_ohne_login: ${lesefehler.message}`);
+  const mitglieder: MitgliedOhneLogin[] = ((zeilen ?? []) as Zeile[]).map((z) => ({
+    id: z.id,
+    name: `${z.first_name} ${z.last_name}`,
+    email: z.email,
+    istTestadresse: z.ist_testadresse,
+    kontoId: z.konto_id,
+    kontoMitglied: z.konto_mitglied,
+  }));
+
+  const massnahmen = teileEin(mitglieder);
   const gruppen = gruppiere(massnahmen);
 
-  console.warn(`Mitglieder ohne Login (nicht archiviert): ${mitglieder.length}`);
-  console.warn(`Konten in auth.users:                     ${konten.length}\n`);
+  console.warn(`Mitglieder ohne Login (nicht archiviert): ${mitglieder.length}\n`);
   for (const art of REIHENFOLGE) {
     console.warn(`  ${BESCHRIFTUNG[art].padEnd(44)} ${gruppen[art].length}`);
   }
