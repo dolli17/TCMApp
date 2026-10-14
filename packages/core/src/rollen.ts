@@ -7,7 +7,7 @@
  * an seiner Mannschaft und wird dort gesetzt, nicht hier.
  *
  * Reine Darstellung. Was eine Rolle darf, entscheidet die Datenbank
- * (private.is_admin).
+ * (private.is_admin fuer volle Rechte, private.darf_plaetze fuer die Plaetze).
  */
 
 import type { Database } from "./database.types";
@@ -20,6 +20,8 @@ export interface RollenInfo {
   beschreibung: string;
   /** Sieht und aendert alles. */
   vollRechte: boolean;
+  /** Sperren, Serien und fremde Buchungen verwalten. */
+  platzRechte: boolean;
   /** Ohne Login sinnlos, die Datenbank lehnt es ab. */
   brauchtLogin: boolean;
 }
@@ -31,6 +33,7 @@ export const ROLLEN: readonly RollenInfo[] = [
     label: "Vorstand",
     beschreibung: "Volle Rechte: Mitglieder, Beiträge, Serien, Einstellungen und jede fremde Buchung.",
     vollRechte: true,
+    platzRechte: true,
     brauchtLogin: true,
   },
   {
@@ -38,22 +41,32 @@ export const ROLLEN: readonly RollenInfo[] = [
     label: "App Admin",
     beschreibung: "Volle Rechte wie der Vorstand, für die technische Betreuung der App.",
     vollRechte: true,
+    platzRechte: true,
     brauchtLogin: true,
   },
   {
     rolle: "groundskeeper",
     label: "Platzwart",
-    beschreibung: "Kümmert sich um die Plätze. Eigene Rechte folgen.",
+    beschreibung:
+      "Kümmert sich um die Plätze: Sperren, Serien und fremde Buchungen. Keine Mitglieder, Kasse oder Einstellungen.",
     vollRechte: false,
+    platzRechte: true,
     brauchtLogin: false,
   },
 ];
 
 const VOLL: readonly AppRole[] = ROLLEN.filter((r) => r.vollRechte).map((r) => r.rolle);
 
+const PLATZ: readonly AppRole[] = ROLLEN.filter((r) => r.platzRechte).map((r) => r.rolle);
+
 /** Vorstand oder App Admin: darf alles. */
 export function hatVolleRechte(roles: readonly string[]): boolean {
   return roles.some((r) => (VOLL as readonly string[]).includes(r));
+}
+
+/** Vorstand, App Admin oder Platzwart: darf Sperren, Serien und fremde Buchungen verwalten. */
+export function hatPlatzRechte(roles: readonly string[]): boolean {
+  return roles.some((r) => (PLATZ as readonly string[]).includes(r));
 }
 
 export function rollenLabel(rolle: string): string {

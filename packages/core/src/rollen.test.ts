@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hatVolleRechte, rollenLabel, rollenMarken } from "./rollen";
+import { hatPlatzRechte, hatVolleRechte, rollenLabel, rollenMarken } from "./rollen";
 
 describe("hatVolleRechte", () => {
   it("Vorstand und App Admin dürfen alles", () => {
@@ -11,6 +11,19 @@ describe("hatVolleRechte", () => {
     expect(hatVolleRechte(["member", "groundskeeper"])).toBe(false);
     expect(hatVolleRechte(["member"])).toBe(false);
     expect(hatVolleRechte([])).toBe(false);
+  });
+});
+
+describe("hatPlatzRechte", () => {
+  it("Vorstand, App Admin und Platzwart verwalten die Plätze", () => {
+    expect(hatPlatzRechte(["member", "admin"])).toBe(true);
+    expect(hatPlatzRechte(["member", "board"])).toBe(true);
+    expect(hatPlatzRechte(["member", "groundskeeper"])).toBe(true);
+  });
+
+  it("ein Spieler nicht", () => {
+    expect(hatPlatzRechte(["member"])).toBe(false);
+    expect(hatPlatzRechte([])).toBe(false);
   });
 });
 
