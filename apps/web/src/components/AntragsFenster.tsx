@@ -248,15 +248,9 @@ export function AntragsFenster({
               </label>
             </div>
 
-            <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input
-                type="checkbox"
-                name="einladen"
-                defaultChecked
-                style={{ width: "auto" }}
-              />
-              <span style={{ marginBottom: 0 }}>Einladung zur App gleich mitschicken</span>
-            </label>
+            <p className="beschreibung">
+              Das neue Mitglied bekommt sofort eine Einladung zur App an {antrag.email}.
+            </p>
           </>
         ) : (
           <>

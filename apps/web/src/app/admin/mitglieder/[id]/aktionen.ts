@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { rollenLabel, translateDbError, type AppRole } from "@tcm/core";
+import { memberLogin } from "@/lib/supabase/member-login";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export interface AktionsErgebnis {
@@ -52,13 +53,27 @@ export async function stammdatenSpeichern(formData: FormData): Promise<AktionsEr
     return { ok: false, meldung: "Nichts geändert." };
   }
 
-  const supabase = await createServerSupabase();
-  const { error } = await supabase.rpc("update_member", {
-    p_member_id: id,
-    p_patch: patch,
-  });
+  // Die E-Mail ist zugleich die Anmeldung. Sie geht über die Edge Function,
+  // die Mitglied und Login gemeinsam ändert – zuerst, damit bei einem Fehler
+  // gar nichts gespeichert ist und die Meldung eindeutig bleibt.
+  if (typeof patch.email === "string") {
+    const e = await memberLogin({ aktion: "email_aendern", memberId: id, email: patch.email });
+    if (!e.ok) return { ok: false, meldung: e.meldung };
+    delete patch.email;
+  }
 
-  if (error) return { ok: false, meldung: translateDbError(error) };
+  if (Object.keys(patch).length > 0) {
+    const supabase = await createServerSupabase();
+    const { error } = await supabase.rpc("update_member", {
+      p_member_id: id,
+      p_patch: patch,
+    });
+
+    if (error) {
+      neuLaden(id);
+      return { ok: false, meldung: translateDbError(error) };
+    }
+  }
 
   neuLaden(id);
   return { ok: true, meldung: "Gespeichert." };
@@ -197,36 +212,28 @@ export async function mitgliedArchivieren(
   return { ok: true, meldung: teile.join(" ") };
 }
 
+/**
+ * Anonymisieren. Läuft über die Edge Function, damit der Login mitgeht –
+ * ein anonymisiertes Mitglied soll sich nicht mehr anmelden können.
+ */
 export async function mitgliedAnonymisieren(id: string, grund: string): Promise<AktionsErgebnis> {
-  const supabase = await createServerSupabase();
-  const { error } = await supabase.rpc("anonymize_member", {
-    p_member_id: id,
-    p_reason: grund || undefined,
-  });
-
-  if (error) return { ok: false, meldung: translateDbError(error) };
+  const e = await memberLogin({ aktion: "loeschen", art: "anonymisieren", memberId: id, grund });
 
   neuLaden(id);
-  return { ok: true, meldung: "Mitglied anonymisiert. Die Buchhaltung bleibt vollständig." };
+  return { ok: e.ok, meldung: e.meldung };
 }
 
 /**
- * Endgültig löschen.
+ * Endgültig löschen, samt Login.
  *
  * Der Nachname ist die Bestätigung – die Prüfung passiert in der Datenbank,
  * nicht hier, damit sie auch für jeden anderen Aufrufweg gilt.
  */
 export async function mitgliedLoeschen(id: string, nachname: string): Promise<AktionsErgebnis> {
-  const supabase = await createServerSupabase();
-  const { error } = await supabase.rpc("delete_member", {
-    p_member_id: id,
-    p_confirm_name: nachname,
-  });
-
-  if (error) return { ok: false, meldung: translateDbError(error) };
+  const e = await memberLogin({ aktion: "loeschen", art: "loeschen", memberId: id, nachname });
 
   revalidatePath("/admin/mitglieder");
-  return { ok: true, meldung: "Mitglied gelöscht." };
+  return { ok: e.ok, meldung: e.meldung };
 }
 
 export async function beitragsartSetzen(

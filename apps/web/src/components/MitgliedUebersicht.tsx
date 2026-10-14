@@ -73,7 +73,11 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
   const erteilt = einwilligungen.filter((x) => x.set_at && x.option_value !== "false").length;
   const sonstigeMerkmale = merkmale.filter((x) => x.value_kind !== "boolean" && x.set_at).length;
   const dienst = (dienstRes.data ?? []).find((d) => d.member_id === id) ?? null;
-  const zugang = Boolean(m.auth_user_id) && !m.login_disabled_at;
+  // Jedes Mitglied hat einen Login. Ohne ist es Altbestand (oder archiviert),
+  // und nur dann gibt es etwas einzuladen.
+  const hatLogin = Boolean(m.auth_user_id);
+  const gesperrt = hatLogin && Boolean(m.login_disabled_at);
+  const altbestand = !hatLogin && m.status !== "archived";
   const telefon = m.mobile ?? m.phone;
   const name = `${m.first_name} ${m.last_name}`;
   const kurz = (m.first_name[0] ?? "") + (m.last_name[0] ?? "");
@@ -83,7 +87,7 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
   const schnell = [
     { name: "Anrufen", href: telefon ? `tel:${telefon.replace(/\s/g, "")}` : null, d: TELEFON },
     { name: kompakt ? "E-Mail schreiben" : "E-Mail", href: m.email ? `mailto:${m.email}` : null, d: POST },
-    { name: kompakt ? "Einladung senden" : "Einladen", href: zugang ? null : teil("zugang"), d: SENDEN },
+    { name: kompakt ? "Einladung senden" : "Einladen", href: altbestand ? teil("zugang") : null, d: SENDEN },
   ];
 
   return (
@@ -103,7 +107,9 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
             )}
             {arten[0] && <span className="statusmarke">{arten[0]}</span>}
             {m.teams?.name && <span className="statusmarke">{m.teams.name}</span>}
-            <span className={`statusmarke ${zugang ? "gruen" : ""}`}>{zugang ? "App-Zugang aktiv" : "kein Zugang"}</span>
+            <span className={`statusmarke ${hatLogin && !gesperrt ? "gruen" : gesperrt ? "rot" : ""}`}>
+              {gesperrt ? "App-Zugang gesperrt" : hatLogin ? "App-Zugang aktiv" : altbestand ? "Altbestand: kein Zugang" : "kein Zugang"}
+            </span>
           </div>
         </div>
         <div className="schnell">
@@ -228,7 +234,11 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
 
       <nav className="liste-gruppe mitglied-ende" aria-label="Weiteres">
         <Listenzeile href={teil("protokoll")} titel="Änderungsprotokoll" pfeil={false} />
-        <Listenzeile href={teil("zugang")} titel={zugang ? "Zugang sperren" : "Zugang"} pfeil={false} />
+        <Listenzeile
+          href={teil("zugang")}
+          titel={gesperrt ? "Sperre aufheben" : hatLogin ? "Zugang sperren" : altbestand ? "Altbestand: einladen" : "Zugang"}
+          pfeil={false}
+        />
         <Listenzeile href={teil("austritt")} titel="Austritt eintragen" gefahr pfeil={false} />
       </nav>
     </div>

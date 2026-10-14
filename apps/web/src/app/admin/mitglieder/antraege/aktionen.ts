@@ -21,8 +21,8 @@ function neuLaden() {
  * Einen Antrag annehmen.
  *
  * Legt Mitglied, Mitgliedschaft und Rolle an und überträgt die Einwilligungen.
- * Auf Wunsch geht direkt die Einladung hinterher – das ist der Regelfall, denn
- * ohne Zugang bringt die Aufnahme dem neuen Mitglied wenig.
+ * Danach geht immer die Einladung hinterher: Es gibt keine Mitglieder ohne
+ * Login.
  *
  * Scheitert die Einladung, gilt die Aufnahme trotzdem: das Mitglied ist
  * angelegt, und die Einladung lässt sich auf der Detailseite nachholen. Die
@@ -33,7 +33,6 @@ export async function antragAnnehmen(formData: FormData): Promise<AntragsErgebni
   const nummer = String(formData.get("number") ?? "").trim();
   const eintritt = String(formData.get("started_on") ?? "").trim();
   const beitragsart = String(formData.get("fee_type") ?? "").trim();
-  const einladen = formData.get("einladen") === "on";
 
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.rpc("accept_membership_application", {
@@ -53,7 +52,7 @@ export async function antragAnnehmen(formData: FormData): Promise<AntragsErgebni
   // wenn der Vorstand das Fenster schließt.
   const teile = [`Aufgenommen unter der Nummer ${ergebnis?.membership_number ?? "—"}.`];
 
-  if (einladen && ergebnis?.needs_invite && ergebnis.member_id) {
+  if (ergebnis?.needs_invite && ergebnis.member_id) {
     const e = await loginVerwalten(ergebnis.member_id, "einladen", false);
     teile.push(e.ok ? e.meldung : `Die Einladung ging nicht raus: ${e.meldung}`);
   }

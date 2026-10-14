@@ -49,7 +49,10 @@ export function MitgliedAnlegenFenster({ onSchliessen }: { onSchliessen: () => v
       <div className="fenster-kopf">
         <div>
           <h2 className="dpl">Mitglied anlegen</h2>
-          <p>Mitgliedsnummer und Eintritt werden gesetzt, wenn du nichts angibst.</p>
+          <p>
+            Mitgliedsnummer und Eintritt werden gesetzt, wenn du nichts angibst. Jedes Mitglied
+            braucht eine eigene E-Mail-Adresse, auch Kinder.
+          </p>
         </div>
         <button className="fenster-zu" aria-label="Schließen" onClick={() => dialog.current?.close()}>
           ×
@@ -97,7 +100,8 @@ export function MitgliedAnlegenFenster({ onSchliessen }: { onSchliessen: () => v
             </label>
             <label>
               <span>E-Mail</span>
-              <input type="email" name="email" autoComplete="off" />
+              <input type="email" name="email" required autoComplete="off" />
+              <span className="beschreibung">Bekommt sofort eine Einladung zur App.</span>
             </label>
             <label>
               <span>Telefon</span>

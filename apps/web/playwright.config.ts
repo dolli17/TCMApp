@@ -55,7 +55,10 @@ export default defineConfig({
   // Räumt die Testanträge weg – vorher wie nachher. Sie zählen auf die Sperren
   // des öffentlichen Formulars; ohne das Aufräumen davor beginnt ein Lauf
   // womöglich schon am Limit.
-  globalSetup: "./e2e/aufraeumen.ts",
+  // Danach die Edge Functions: ohne member-login kein Anlegen (O18). Ihr
+  // Setup gibt einen Teardown zurück, der ein selbst gestartetes
+  // "supabase functions serve" wieder beendet.
+  globalSetup: ["./e2e/aufraeumen.ts", "./e2e/edge-functions.ts"],
   globalTeardown: "./e2e/aufraeumen.ts",
   fullyParallel: false, // die Tests buchen echte Plaetze und wuerden sich sonst behindern
   workers: 1,
