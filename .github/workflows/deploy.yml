@@ -78,9 +78,12 @@ jobs:
           pnpm exec supabase migration list
           pnpm exec supabase db push
 
+      # --use-api: Supabase buendelt serverseitig. Sonst zieht die CLI das
+      # Docker-Image edge-runtime aus der ECR, und deren Datenlimit hat den
+      # Deploy schon abbrechen lassen ("toomanyrequests: Data limit exceeded").
       - name: Edge Functions
         if: steps.bereit.outputs.ja == 'true' && env.NUR_WEB != 'true'
-        run: pnpm exec supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF"
+        run: pnpm exec supabase functions deploy --use-api --project-ref "$SUPABASE_PROJECT_REF"
 
       # Der Schlüssel darf auf dem Server nur deploy/web/server-deploy.sh
       # aufrufen (Forced-Command in authorized_keys); übergeben werden nur
