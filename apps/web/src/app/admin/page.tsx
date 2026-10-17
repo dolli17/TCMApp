@@ -62,7 +62,7 @@ export default async function VerwaltungSeite() {
     supabase.rpc("booking_settings"),
     supabase
       .from("charges")
-      .select("payer_id, amount_cents, status, due_date")
+      .select("payer_id, amount_cents, status, due_date, debit_items(result)")
       .in("status", ["open", "notified", "returned"]),
     supabase.rpc("debit_batch_overview", { p_limit: 6 }),
     supabase.from("billing_periods").select("year, month").eq("status", "open"),
@@ -115,15 +115,31 @@ export default async function VerwaltungSeite() {
       : null,
     today: heute,
   });
-  const laufHref = lauf ? `/admin/kasse/lastschriften/${lauf.id}` : "/admin/kasse?abschnitt=lastschrift";
+  const laufHref = lauf ? `/admin/kasse/lastschriften/${lauf.id}` : "/admin/kasse?abschnitt=einzuege";
+
+  // Fuer "Heute zu tun" zaehlt der Einzug, bei dem etwas zu tun ist - nicht
+  // der juengste. Und angekuendigt ohne Einzug ist nur, was in keinem
+  // aktiven Posten steckt.
+  const offeneLaeufe = (laeufeRes.data ?? []).filter((l) => l.status !== "completed");
+  const dran =
+    offeneLaeufe.find((l) => l.status === "draft" && l.item_count > 0) ??
+    offeneLaeufe.find((l) => l.status === "generated") ??
+    null;
+  const ohneEinzug = angekuendigt.filter(
+    (f) => !(f.debit_items ?? []).some((i) => i.result === "pending" || i.result === "settled"),
+  );
+  const faelligOhneEinzug = ohneEinzug.reduce<string | null>(
+    (max, f) => (f.due_date && (!max || f.due_date > max) ? f.due_date : max),
+    null,
+  );
 
   // --- Heute zu tun --------------------------------------------------------
   const aufgaben = adminTodos({
     today: heute,
     openApplications: offeneAntraege,
-    noticeDueDate: faellig,
-    batchStatus: (lauf?.status as DebitBatchStatus | undefined) ?? null,
-    batchHref: laufHref,
+    noticeDueDate: faelligOhneEinzug,
+    batchStatus: (dran?.status as DebitBatchStatus | undefined) ?? null,
+    batchHref: dran ? `/admin/kasse/lastschriften/${dran.id}` : laufHref,
     returnedCharges: forderungen.filter((f) => f.status === "returned").length,
     openDrinkMonths: monateRes.data ?? [],
   });

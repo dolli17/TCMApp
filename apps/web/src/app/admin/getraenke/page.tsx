@@ -25,7 +25,7 @@ function naechsterSchritt(monate: MonatZeile[], heute: string): { titel: string;
       return { titel: `${name(m)} abrechnen`, text: "Die Summe steht fest. Das Abrechnen macht daraus Forderungen je Mitglied." };
     }
     if (m.status === "charged" && m.offen > 0) {
-      return { titel: `${name(m)} ankündigen`, text: `${m.offen} Forderungen warten auf die Vorabankündigung. Ohne sie darf nicht eingezogen werden.` };
+      return { titel: `${name(m)} einziehen`, text: `${m.offen} Forderungen sind noch nicht eingezogen. Als Nächstes: Einzug vorbereiten – er kündigt an und legt die Lastschrift an.` };
     }
   }
   return { titel: "Alles abgerechnet", text: "Der laufende Monat wird nach seinem Ende geschlossen und abgerechnet." };
@@ -43,7 +43,7 @@ export const dynamic = "force-dynamic";
 export default async function GetraenkeSeite() {
   const supabase = await createServerSupabase();
 
-  const [karteRes, einstellungRes, monateRes, fristRes] = await Promise.all([
+  const [karteRes, einstellungRes, monateRes] = await Promise.all([
     supabase.rpc("drink_item_overview"),
     supabase
       .from("settings")
@@ -51,7 +51,6 @@ export default async function GetraenkeSeite() {
       .like("key", "drinks.%")
       .order("key"),
     supabase.rpc("billing_period_overview", { p_limit: 12 }),
-    supabase.from("settings").select("value").eq("key", "sepa.prenotification_days").maybeSingle(),
   ]);
 
   const monate = (monateRes.data ?? []) as unknown as MonatZeile[];
@@ -91,7 +90,7 @@ export default async function GetraenkeSeite() {
       {monateRes.error ? (
         <div className="hinweis fehler">Die Getränkemonate konnten nicht geladen werden.</div>
       ) : (
-        <GetraenkemonatKarte monate={monate} fristTage={Number(fristRes.data?.value ?? 14)} />
+        <GetraenkemonatKarte monate={monate} />
       )}
 
       <EinstellungsGruppe

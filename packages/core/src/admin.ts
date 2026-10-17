@@ -240,9 +240,9 @@ export function adminTodos(input: AdminTodoInput): AdminTodo[] {
   if (input.batchStatus === "draft") {
     liste.push({
       key: "lauf-datei",
-      title: "Lastschriftlauf fertigstellen",
-      text: "Mitglieder aufnehmen und die Datei erzeugen. Abgebucht wird erst am Fälligkeitstag.",
-      action: "Zum Lauf",
+      title: "Einzug: Datei erzeugen",
+      text: "Die Datei kannst du schon jetzt erzeugen und einreichen. Abgebucht wird erst am Abbuchungstag.",
+      action: "Zum Einzug",
       href: input.batchHref,
       urgent: true,
     });
@@ -250,8 +250,8 @@ export function adminTodos(input: AdminTodoInput): AdminTodo[] {
     liste.push({
       key: "lauf-einreichen",
       title: "Lastschriftdatei einreichen",
-      text: "Die Datei im Onlinebanking hochladen und danach im Lauf vermerken.",
-      action: "Zum Lauf",
+      text: "Die Datei im Onlinebanking hochladen und danach im Einzug vermerken.",
+      action: "Zum Einzug",
       href: input.batchHref,
       urgent: true,
     });
@@ -259,9 +259,9 @@ export function adminTodos(input: AdminTodoInput): AdminTodo[] {
     liste.push({
       key: "ankuendigung",
       title: "Angekündigte Forderungen einziehen",
-      text: `Lastschriftlauf anlegen und die Datei erzeugen – schon jetzt möglich. Abgebucht wird frühestens am ${isoDateLabel(input.noticeDueDate)}.`,
-      action: "Lauf anlegen",
-      href: "/admin/kasse?abschnitt=lastschrift",
+      text: `Sie stecken in keinem Einzug. Ein neuer Einzug kündigt sie mit dem neuen Abbuchungstag an (zuletzt angekündigt zum ${isoDateLabel(input.noticeDueDate)}).`,
+      action: "Einzug vorbereiten",
+      href: "/admin/kasse/einzug",
       urgent: true,
     });
   }

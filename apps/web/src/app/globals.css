@@ -1552,6 +1552,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   list-style: none; margin: 0; padding: 0;
   display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px;
 }
+.geldweg.vier { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .geldweg li { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .geldweg li > i { height: 6px; border-radius: 3px; background: var(--surf-2); }
 .geldweg li.erledigt > i { background: var(--green); }
@@ -1570,7 +1571,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .geldweg small { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
 @media (max-width: 767px) {
   /* Am Telefon untereinander: die fuenf Spalten waeren zu schmal */
-  .geldweg { grid-template-columns: 1fr; gap: 14px; }
+  .geldweg, .geldweg.vier { grid-template-columns: 1fr; gap: 14px; }
   .geldweg li { display: grid; grid-template-columns: 26px minmax(0, 1fr); column-gap: 10px; row-gap: 2px; }
   .geldweg li > i { display: none; }
   .geldweg .kopf { display: contents; }
@@ -2209,3 +2210,74 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   background: var(--surf-2); border: 1px solid var(--line); color: var(--ink-2);
 }
 .fehlertext { color: var(--red); }
+
+/* ---------------------------------------------------------------------------
+   Kasse: Einzug vorbereiten, Stand eines Einzugs, Start (Entwurf „Kasse neu“)
+   --------------------------------------------------------------------------- */
+.segtoggle.bereich-segmente.viele { overflow-x: auto; scrollbar-width: none; }
+.segtoggle.bereich-segmente.viele a { flex: 1 0 auto; white-space: nowrap; }
+@media (min-width: 768px) {
+  .segtoggle.bereich-segmente.viele { min-width: 560px; }
+}
+
+.einzug-vorbereiten { display: grid; gap: 20px; }
+.einzug-schritt { display: grid; gap: 14px; }
+.einzug-schritt .unterzeile { margin: 0; }
+.einzug-kopf { display: flex; align-items: center; gap: 12px; }
+.einzug-kopf h2 { margin: 0; }
+.einzug-kopf .nr {
+  flex: none; width: 32px; height: 32px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--brand); color: #fff; font-weight: 700;
+}
+.einzug-gruppen { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; }
+.einzug-gruppe {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin: 0;
+  border: 1px solid var(--line-2); border-radius: var(--radius-knopf); cursor: pointer;
+}
+.einzug-gruppe.an { border-color: var(--brand); background: var(--blue-soft); }
+.einzug-gruppe > input { width: 20px; height: 20px; flex: none; margin: 0; accent-color: var(--brand); }
+.einzug-gruppe .text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.einzug-gruppe .zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.einzug-gruppe small { color: var(--muted); font-size: 13.5px; }
+.einzug-gruppe .betrag { font-size: 19px; white-space: nowrap; }
+.einzug-wann { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.einzug-wer { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.einzug-wer .kachel { display: grid; gap: 2px; padding: 16px; border-radius: var(--radius-knopf); background: var(--surf-2); }
+.einzug-wer .kachel b { font-size: 30px; line-height: 1.1; }
+.einzug-wer .kachel span { font-weight: 600; }
+.einzug-wer .kachel small { color: var(--muted); font-size: 13px; }
+.einzug-wer .kachel.gruen { background: color-mix(in srgb, var(--green) 14%, transparent); }
+.einzug-wer .kachel.gruen b { color: var(--green-ink); }
+.einzug-wer .kachel.gelb { background: var(--gold-soft); }
+.einzug-wer .kachel.gelb b { color: var(--gold-ink); }
+.einzug-beispiel { border: 1px solid var(--line); border-radius: var(--radius-knopf); padding: 12px 16px; }
+.einzug-beispiel summary { font-weight: 600; cursor: pointer; }
+.einzug-beispiel .nachricht { margin-top: 12px; padding: 14px 16px; border-radius: 10px; background: var(--surf-2); font-size: 14.5px; }
+.einzug-beispiel .nachricht p { margin: 4px 0 0; line-height: 1.5; }
+
+.naechster-schritt .knopfreihe { display: flex; flex-wrap: wrap; gap: 10px; }
+.einzug-termine {
+  margin: 18px 0 0; padding: 14px 0 0; border-top: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; gap: 10px 28px;
+}
+.einzug-termine div { display: flex; gap: 8px; align-items: baseline; }
+.einzug-termine dt { color: var(--muted); font-size: 14px; }
+.einzug-termine dd { margin: 0; font-weight: 700; }
+.statusmarke.blau { background: var(--blue-soft); color: var(--blue-ink); }
+.statusmarke.grau { background: var(--surf-2); color: var(--ink-2); }
+.kennzahl .wert.rot { color: var(--red); }
+
+.geld-erklaerung ol {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;
+}
+.geld-erklaerung li { display: grid; gap: 4px; padding: 14px; border-radius: var(--radius-knopf); background: var(--surf-2); }
+.geld-erklaerung li span { color: var(--ink-2); font-size: 14px; line-height: 1.45; }
+.marke-klein.gelb { background: var(--gold-soft); color: var(--gold-ink); }
+/* „Zu tun“: der Titel ist die Aufgabe und darf umbrechen; am Telefon fuehrt
+   die ganze Zeile weiter, der Text rechts entfaellt. */
+.liste-gruppe.zu-tun .listenzeile .titel { white-space: normal; }
+@media (max-width: 599px) {
+  .liste-gruppe.zu-tun .hinweis-rechts { display: none; }
+}

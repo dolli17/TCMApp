@@ -3,37 +3,44 @@ import { formatCents } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 /**
- * Die drei Kennzahlen der Kasse (Baustein aus AdminUebersicht): offene
- * Forderungen, laufende Lastschriftlaeufe, offene Ruecklaeufer. Nur Lesen.
+ * Die drei Kennzahlen der Kasse: was noch nicht eingezogen ist, was in
+ * laufenden Einzügen steckt, welche Rückläufer offen sind. Nur Lesen.
  */
 export async function KassenKennzahlen() {
   const supabase = await createServerSupabase();
-  const [forderungenRes, laeufeRes] = await Promise.all([
-    supabase.from("charges").select("amount_cents, status").in("status", ["open", "notified", "returned"]),
-    supabase.from("debit_batches").select("id", { count: "exact", head: true }).neq("status", "completed"),
+  const [gruppenRes, laeufeRes] = await Promise.all([
+    supabase.rpc("einzug_gruppen"),
+    // Ein leerer Einzug (alle herausgenommen) laeuft nicht.
+    supabase.from("debit_batches").select("total_cents").neq("status", "completed").gt("item_count", 0),
   ]);
 
-  const forderungen = forderungenRes.data ?? [];
-  const offen = forderungen.reduce((s, f) => s + f.amount_cents, 0);
-  const zurueck = forderungen.filter((f) => f.status === "returned").length;
-  const laufend = laeufeRes.count ?? 0;
+  const gruppen = gruppenRes.data ?? [];
+  const offen = gruppen.filter((g) => !g.ruecklaeufer);
+  const zurueck = gruppen.filter((g) => g.ruecklaeufer);
+  const summe = (zeilen: { summe_cents: number }[]) => zeilen.reduce((s, z) => s + z.summe_cents, 0);
+  const anzahl = (zeilen: { anzahl: number }[]) => zeilen.reduce((s, z) => s + z.anzahl, 0);
+  const laeufe = laeufeRes.data ?? [];
+  const n = anzahl(offen);
+  const r = anzahl(zurueck);
 
   return (
     <div className="kennzahlen drei">
-      <Link href="/admin/kasse?abschnitt=forderungen" className="kennzahl">
-        <span className="label">Offene Forderungen</span>
-        <span className="wert dpl tnum">{forderungenRes.error ? "–" : formatCents(offen)}</span>
-        <span className="info">{forderungen.length} Posten, alle Arten</span>
+      <Link href="/admin/kasse?abschnitt=forderungen&stand=open" className="kennzahl">
+        <span className="label">Noch nicht eingezogen</span>
+        <span className="wert dpl tnum">{gruppenRes.error ? "–" : formatCents(summe(offen))}</span>
+        <span className="info">{n} {n === 1 ? "Forderung" : "Forderungen"}</span>
       </Link>
-      <Link href="/admin/kasse?abschnitt=lastschrift" className="kennzahl">
-        <span className="label">Laufende Läufe</span>
-        <span className="wert dpl tnum">{laeufeRes.error ? "–" : laufend}</span>
-        <span className="info">noch nicht abgeschlossen</span>
+      <Link href="/admin/kasse?abschnitt=einzuege" className="kennzahl">
+        <span className="label">In laufenden Einzügen</span>
+        <span className="wert dpl tnum">
+          {laeufeRes.error ? "–" : formatCents(laeufe.reduce((s, l) => s + l.total_cents, 0))}
+        </span>
+        <span className="info">{laeufe.length} {laeufe.length === 1 ? "Einzug" : "Einzüge"}</span>
       </Link>
       <Link href="/admin/kasse?abschnitt=forderungen&stand=returned" className="kennzahl">
         <span className="label">Rückläufer offen</span>
-        <span className="wert dpl tnum">{forderungenRes.error ? "–" : zurueck}</span>
-        <span className="info">{zurueck === 0 ? "nichts zu klären" : "zurückgebucht, noch offen"}</span>
+        <span className={`wert dpl tnum${r > 0 ? " rot" : ""}`}>{gruppenRes.error ? "–" : r}</span>
+        <span className="info">{r === 0 ? "nichts zu klären" : formatCents(summe(zurueck))}</span>
       </Link>
     </div>
   );

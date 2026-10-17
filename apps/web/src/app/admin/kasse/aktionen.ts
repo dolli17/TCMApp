@@ -201,46 +201,6 @@ export async function monatAbrechnen(
 // Vorabankündigung
 // ---------------------------------------------------------------------------
 
-export async function forderungenAnkuendigen(daten: {
-  faelligAm: string;
-  art: "fee" | "drinks" | "deposit" | "work_duty" | "misc" | "guest" | null;
-  zeitraum: string | null;
-}): Promise<AktionsErgebnis> {
-  const supabase = await createServerSupabase();
-
-  const { data, error } = await supabase.rpc("announce_charges", {
-    p_due_date: daten.faelligAm,
-    p_kind: daten.art ?? undefined,
-    p_period_label: daten.zeitraum ?? undefined,
-    p_charge_ids: undefined,
-  });
-
-  if (error) return { ok: false, meldung: translateDbError(error) };
-
-  frisch();
-
-  const z = data?.[0];
-  const anzahl = z?.angekuendigt ?? 0;
-
-  if (anzahl === 0) {
-    return { ok: true, meldung: "Es gab nichts anzukündigen." };
-  }
-
-  // Die Zahl der Empfänger steht bewusst daneben: sie ist kleiner als die der
-  // Forderungen, sobald jemand mehrere offen hat, und genau das soll der
-  // Vorstand sehen — je Mitglied geht eine Nachricht raus, nicht je Forderung.
-  return {
-    ok: true,
-    meldung: `${anzahl} ${anzahl === 1 ? "Forderung" : "Forderungen"} angekündigt, ${
-      z?.empfaenger ?? 0
-    } ${(z?.empfaenger ?? 0) === 1 ? "Mitglied wurde" : "Mitglieder wurden"} benachrichtigt.`,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Forderungen einzeln
-// ---------------------------------------------------------------------------
-
 export async function forderungErlassen(
   id: string,
   grund: string,

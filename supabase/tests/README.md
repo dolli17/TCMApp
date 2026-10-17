@@ -50,6 +50,7 @@ sie danach zurück. Die Tests hinterlassen also keinen Zustand – auch nicht di
 | `19_doppelbelegung.sql` | Niemand steht zur selben Zeit in zwei Buchungen |
 | `20_platzwart.sql` | Platzrechte (`private.darf_plaetze`): Sperren und Aufheben, Serien, fremde Buchungen; keine Plätze, Arten, Einstellungen, Rollen; Gastgebühr beim Verdrängen durch `create_series` |
 | `23_onboarding.sql` | Pflichtfelder bei Anlage und Antrag, Beitragswahl beim Annehmen, Onboarding-Schritte und ihre Minderjährigen-Regeln, SEPA-Mandat online mit Nachweis, `complete_onboarding`, Sperre über `is_member()` (Admin und Kiosk unberührt), Bestand freigeschaltet |
+| `24_einzug.sql` | Einzug vorbereiten: genau die gewählten Forderungen, angekündigt und im Lauf zum selben Tag; ohne gültiges Mandat keine Ankündigung (Ausnahme); Frist und Rechte; Rückläufer neu angekündigt; Mitglied herausnehmen nur vor der Datei |
 | `99_runtests.sql` | Führt die Suite aus |
 
 Die Dateien `01` bis `23` **definieren nur Funktionen**. Ausgeführt wird alles in

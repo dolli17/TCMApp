@@ -2,14 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import {
-  LastschriftLauf, type ArtSumme, type KandidatZeile, type LaufKopf, type PostenZeile,
+  LastschriftLauf, type ArtSumme, type LaufKopf, type PostenZeile,
 } from "@/components/LastschriftLauf";
 
 export const dynamic = "force-dynamic";
 
-function heuteInBerlin(): string {
-  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
-}
+const BERLIN = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" });
 
 export default async function LaufSeite({
   params,
@@ -27,49 +25,36 @@ export default async function LaufSeite({
 
   if (!lauf) notFound();
 
-  // Die Kandidaten nur solange der Lauf ein Entwurf ist: danach ist die
-  // Auswahl entschieden, und eine Liste, die sich noch bewegt, wäre irreführend.
-  const [kandidatenRes, postenRes, jeArtRes] = await Promise.all([
-    lauf.status === "draft"
-      ? supabase.rpc("debit_batch_candidates", {
-          p_collection_date: lauf.collection_date,
-          // Nur die Arten, auf die der Lauf eingeschränkt ist
-          p_kinds: lauf.kinds ?? undefined,
-        })
-      : Promise.resolve({ data: null }),
+  const [postenRes, jeArtRes, ankuendigungRes, fristRes] = await Promise.all([
     supabase.rpc("debit_batch_items", { p_batch_id: id }),
     supabase.rpc("debit_batch_kinds", { p_batch_id: id }),
+    // Wann die Mitglieder informiert wurden. Ein Einzug kündigt alles in
+    // einem Zug an; bei alten Läufen zählt die früheste Ankündigung.
+    supabase
+      .from("debit_items")
+      .select("charges(notified_at)")
+      .eq("batch_id", id),
+    supabase.from("settings").select("value").eq("key", "sepa.prenotification_days").maybeSingle(),
   ]);
-  const kandidaten = (kandidatenRes.data ?? []) as unknown as KandidatZeile[];
 
-  // Der angekuendigte Faelligkeitstag steht an jeder Forderung. Gelesen, nicht
-  // gerechnet: ab wann eingezogen werden darf, prueft die Datenbank.
-  // Nur die Arten, die dieser Lauf einzieht - sonst bestimmte etwa eine
-  // Getraenke-Ankuendigung den Tag eines reinen Beitragslaufs.
-  let abfrage = supabase
-    .from("charges")
-    .select("due_date")
-    .eq("status", "notified")
-    .not("due_date", "is", null);
-  if (lauf.kinds) abfrage = abfrage.in("kind", lauf.kinds);
-  const { data: spaetester } = kandidaten.length
-    ? await abfrage.order("due_date", { ascending: false }).limit(1).maybeSingle()
-    : { data: null };
-  const faelligAb = spaetester?.due_date ?? null;
+  const angekuendigt = (ankuendigungRes.data ?? [])
+    .map((z) => (z.charges as { notified_at: string | null } | null)?.notified_at)
+    .filter((t): t is string => Boolean(t))
+    .sort()[0];
 
   return (
     <>
-      <Link href="/admin/kasse?abschnitt=lastschrift" className="zurueck">
-        ‹ Kasse
+      <Link href="/admin/kasse?abschnitt=einzuege" className="zurueck">
+        ‹ Einzüge
       </Link>
 
       <LastschriftLauf
         lauf={lauf as unknown as LaufKopf}
-        kandidaten={kandidaten}
         posten={(postenRes.data ?? []) as unknown as PostenZeile[]}
         jeArt={(jeArtRes.data ?? []) as unknown as ArtSumme[]}
-        faelligAb={faelligAb}
-        heute={heuteInBerlin()}
+        angekuendigtAm={angekuendigt ? BERLIN.format(new Date(angekuendigt)) : null}
+        fristTage={Number(fristRes.data?.value ?? 14)}
+        heute={BERLIN.format(new Date())}
       />
     </>
   );

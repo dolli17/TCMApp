@@ -1,16 +1,16 @@
 import Link from "next/link";
-import { CHARGE_KINDS, CHARGE_KIND_LABEL, formatCents, type ChargeKind } from "@tcm/core";
+import {
+  CHARGE_KINDS, CHARGE_KIND_LABEL, einzugGruppeSchluessel, formatCents, kasseTodos,
+  type ChargeKind, type DebitBatchStatus,
+} from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
 import { FensterKnopf } from "@/components/FensterKnopf";
 import { KassenKennzahlen } from "@/components/KassenKennzahlen";
-import { LaufAnlegen } from "@/components/LaufAnlegen";
 import { LaufListe, type LaufZeile } from "@/components/LaufListe";
 import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 import { BereichSegmente } from "@/components/BereichSegmente";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
-import { AnkuendigungsKarte } from "@/components/AnkuendigungsKarte";
-import { AnkuendigungNachArt, type AnkuendbarZeile } from "@/components/AnkuendigungNachArt";
 import { ForderungAnlegen } from "@/components/ForderungAnlegen";
 import { BeitragslaufKarte } from "@/components/BeitragslaufKarte";
 import { BeitragsartenPflege, type BeitragsartZeile } from "@/components/BeitragsartenPflege";
@@ -20,42 +20,42 @@ import { GetraenkemonatKarte, type MonatZeile } from "@/components/Getraenkemona
 export const dynamic = "force-dynamic";
 
 const ABSCHNITTE = [
+  { wert: "start", label: "Start" },
+  { wert: "einzuege", label: "Einzüge" },
   { wert: "forderungen", label: "Forderungen" },
   { wert: "abrechnen", label: "Abrechnen" },
-  { wert: "lastschrift", label: "Lastschriften" },
+  { wert: "einstellungen", label: "Einstellungen" },
   { wert: "beitraege", label: "Jahresbeiträge" },
   { wert: "arten", label: "Beitragsarten" },
   { wert: "regeln", label: "Regeln" },
 ] as const;
 
 /**
- * Die drei Teile des Segment-Schalters (Regel 1); der Rest sind Unterseiten.
+ * Die Teile des Segment-Schalters; der Rest sind Unterseiten.
  *
- * Sie folgen dem Weg des Geldes: abrechnen (Forderungen entstehen), in den
- * Forderungen ankündigen, mit einem Lastschriftlauf einziehen. Das Wort
- * „Lauf“ steht nur noch für den Lastschriftlauf - früher hieß auch das
- * Erzeugen der Beitragsforderungen „Beitragslauf“, und niemand wusste, was
- * ein Lauf eigentlich einzieht.
+ * Neu gegliedert nach dem Entwurf „Kasse neu“: Start sagt, was zu tun ist.
+ * Unter „Abrechnen“ entstehen Forderungen, ein Einzug kündigt sie an und
+ * zieht sie ein. Früher waren Ankündigung und Lastschriftlauf zwei Vorgänge
+ * mit je einem eigenen Datum, und ein Lauf entstand leer.
  */
-const SEGMENTE = ["forderungen", "abrechnen", "lastschrift"];
+const SEGMENTE = ["start", "einzuege", "forderungen", "abrechnen", "einstellungen"];
 
 /** Alte Adressen aus Lesezeichen und Links. */
-const ALIAS: Record<string, string> = { lauf: "beitraege", getraenke: "abrechnen" };
+const ALIAS: Record<string, string> = { lauf: "beitraege", getraenke: "abrechnen", lastschrift: "einzuege" };
 
 /** Unterseiten führen dorthin zurück, wo sie verlinkt sind. */
-const ZURUECK: Record<string, string> = { beitraege: "abrechnen", arten: "abrechnen", regeln: "abrechnen" };
+const ZURUECK: Record<string, string> = { beitraege: "abrechnen", arten: "einstellungen", regeln: "einstellungen" };
+
+function heuteInBerlin(): string {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
+}
+
+const KEINE = Promise.resolve({ data: null, error: null });
 
 /**
- * Alles, was Geld betrifft, an einem Ort.
- *
- * Vorher hieß der Bereich „Beiträge" und konnte nur eine Vorschau zeigen. Der
- * Getränkemonat wurde nirgends geschlossen, Forderungen entstanden gar nicht,
- * und die Beitragspreise ließen sich nur direkt in der Datenbank ändern.
- *
- * Die Abschnitte folgen dem Weg des Geldes: unter „Abrechnen“ entstehen die
- * Forderungen (Jahresbeiträge, Getränkemonate, Arbeitsdienst, von Hand), unter
- * „Forderungen“ werden sie angekündigt und beantworten „wer schuldet uns noch
- * was“, unter „Lastschriften“ werden sie eingezogen.
+ * Alles, was Geld betrifft, an einem Ort: Start (zu tun), Einzüge,
+ * Forderungen (nachschlagen), Abrechnen (Forderungen entstehen) und
+ * Einstellungen.
  */
 export default async function KasseSeite({
   searchParams,
@@ -64,44 +64,36 @@ export default async function KasseSeite({
 }) {
   const { abschnitt: roh, jahr: jahrParam, stand, art: artParam } = await searchParams;
   const abschnitt = roh ? (ALIAS[roh] ?? roh) : undefined;
-  const gewaehlt = ABSCHNITTE.some((a) => a.wert === abschnitt) ? abschnitt! : "forderungen";
+  const gewaehlt = ABSCHNITTE.some((a) => a.wert === abschnitt) ? abschnitt! : "start";
   const art = CHARGE_KINDS.includes(artParam as ChargeKind) ? (artParam as ChargeKind) : null;
   const unterseite = SEGMENTE.includes(gewaehlt) ? null : ABSCHNITTE.find((a) => a.wert === gewaehlt)!;
   const jahr = Number(jahrParam) || new Date().getFullYear();
+  const heute = heuteInBerlin();
 
   const supabase = await createServerSupabase();
 
   const [
-    vorschauRes, einstellungRes, monateRes, forderungenRes, artenRes, offenRes, laeufeRes,
-    mitgliederRes, ...ankuendbarRes
+    vorschauRes, einstellungRes, monateRes, forderungenRes, artenRes, laeufeRes,
+    mitgliederRes, gastRes, gruppenRes, getraenkeRes,
   ] = await Promise.all([
-    gewaehlt === "beitraege"
-      ? supabase.rpc("fee_run_preview", { p_year: jahr })
-      : Promise.resolve({ data: null, error: null }),
+    gewaehlt === "beitraege" ? supabase.rpc("fee_run_preview", { p_year: jahr }) : KEINE,
     supabase
       .from("settings")
       .select("key, value, value_type, label, description, updated_at")
       .or("key.like.sepa.%,key.like.fees.%")
       .order("key"),
-    gewaehlt === "abrechnen"
-      ? supabase.rpc("billing_period_overview", { p_limit: 18 })
-      : Promise.resolve({ data: null, error: null }),
+    gewaehlt === "abrechnen" ? supabase.rpc("billing_period_overview", { p_limit: 18 }) : KEINE,
     gewaehlt === "forderungen"
       ? supabase.rpc("charge_overview", {
           p_status: (stand ?? undefined) as never,
           p_kind: art ?? undefined,
           p_limit: 500,
         })
-      : Promise.resolve({ data: null, error: null }),
-    gewaehlt === "arten"
-      ? supabase.rpc("fee_type_overview", { p_year: jahr })
-      : Promise.resolve({ data: null, error: null }),
-    gewaehlt === "beitraege"
-      ? supabase.rpc("announceable_charges", { p_kind: "fee", p_period_label: String(jahr) })
-      : Promise.resolve({ data: null, error: null }),
-    gewaehlt === "lastschrift"
+      : KEINE,
+    gewaehlt === "arten" ? supabase.rpc("fee_type_overview", { p_year: jahr }) : KEINE,
+    gewaehlt === "einzuege" || gewaehlt === "start"
       ? supabase.rpc("debit_batch_overview", { p_limit: 24 })
-      : Promise.resolve({ data: null, error: null }),
+      : KEINE,
     gewaehlt === "abrechnen"
       ? supabase
           .from("members")
@@ -109,33 +101,39 @@ export default async function KasseSeite({
           .eq("status", "active")
           .order("last_name")
           .order("first_name")
-      : Promise.resolve({ data: null, error: null }),
-    // Was je Art noch angekündigt werden muss - in den Forderungen für die
-    // Karte, beim Abrechnen für den Stand der Gastgebühren.
-    ...CHARGE_KINDS.map((k) =>
-      gewaehlt === "forderungen" || gewaehlt === "abrechnen"
-        ? supabase.rpc("announceable_charges", { p_kind: k })
-        : Promise.resolve({ data: null, error: null }),
-    ),
+      : KEINE,
+    gewaehlt === "abrechnen" ? supabase.rpc("announceable_charges", { p_kind: "guest" }) : KEINE,
+    gewaehlt === "start" || gewaehlt === "beitraege" ? supabase.rpc("einzug_gruppen") : KEINE,
+    gewaehlt === "start"
+      ? supabase.from("billing_periods").select("year, month, status").in("status", ["open", "closed"])
+      : KEINE,
   ]);
-
-  const ankuendbar: AnkuendbarZeile[] = CHARGE_KINDS.map((k, i) => {
-    const z = (ankuendbarRes[i]?.data as { anzahl: number; summe_cents: number; zahler: number }[] | null)?.[0];
-    return { art: k, anzahl: z?.anzahl ?? 0, summe_cents: z?.summe_cents ?? 0, zahler: z?.zahler ?? 0 };
-  });
 
   const einstellungen = einstellungRes.data ?? [];
   const glaeubigerId = String(
     einstellungen.find((s) => s.key === "sepa.creditor_id")?.value ?? "",
   ).replace(/"/g, "");
-  const frist = Number(
-    einstellungen.find((s) => s.key === "sepa.prenotification_days")?.value ?? 14,
-  );
   const wert = (k: string) => String(einstellungen.find((e) => e.key === k)?.value ?? "").replace(/"/g, "");
   const fehlend = [
     wert("sepa.creditor_id") === "" ? "die Gläubiger-Identifikationsnummer" : null,
     wert("sepa.creditor_iban") === "" ? "die IBAN des Vereinskontos" : null,
   ].filter(Boolean);
+  const fehltHinweis = fehlend.length > 0 && (
+    <div className="hinweis fehler">
+      Es fehlt noch {fehlend.join(" und ")}. Ohne diese Angaben lässt sich keine
+      Lastschriftdatei erzeugen – sie stehen unter{" "}
+      <Link href="/admin/kasse?abschnitt=regeln">Kasse → Einstellungen → Regeln</Link>.
+    </div>
+  );
+
+  const laeufe = (laeufeRes.data ?? []) as LaufZeile[];
+  const gruppen = gruppenRes.data ?? [];
+  const gast = (gastRes.data as { anzahl: number; summe_cents: number }[] | null)?.[0];
+  const einzugKnopf = (
+    <Link className="knopf gold" href="/admin/kasse/einzug">
+      Einzug vorbereiten
+    </Link>
+  );
 
   return (
     <div className="verwaltung">
@@ -155,6 +153,7 @@ export default async function KasseSeite({
             unterzeile="Abrechnen, ankündigen, einziehen – Beiträge, Getränke, Arbeitsdienst und Gastgebühren."
           >
             {/* Ein gelber Knopf je Seite (Regel 4), passend zum Segment */}
+            {(gewaehlt === "start" || gewaehlt === "einzuege") && einzugKnopf}
             {gewaehlt === "abrechnen" && (
               <FensterKnopf titel="Forderung von Hand" knopf="Forderung anlegen" knopfKurz="Forderung">
                 <ForderungAnlegen
@@ -165,17 +164,11 @@ export default async function KasseSeite({
                 />
               </FensterKnopf>
             )}
-            {gewaehlt === "lastschrift" && (
-              <FensterKnopf titel="Neuer Lastschriftlauf" knopf="Lauf anlegen" knopfKurz="Lauf">
-                <LaufAnlegen fristTage={frist} />
-              </FensterKnopf>
-            )}
           </VerwaltungsKopf>
-
-          <KassenKennzahlen />
 
           <BereichSegmente
             label="Kasse"
+            viele
             aktiv={`/admin/kasse?abschnitt=${gewaehlt}`}
             eintraege={SEGMENTE.map((wert) => ({
               href: `/admin/kasse?abschnitt=${wert}`,
@@ -185,21 +178,64 @@ export default async function KasseSeite({
         </>
       )}
 
+      {gewaehlt === "start" && (
+        <>
+          <ZuTun
+            heute={heute}
+            gruppen={gruppen}
+            laeufe={laeufe}
+            getraenkemonate={(getraenkeRes.data ?? []) as { year: number; month: number; status: "open" | "closed" }[]}
+          />
+          <KassenKennzahlen />
+          <GeldErklaerung />
+        </>
+      )}
+
+      {gewaehlt === "einzuege" && (
+        <>
+          {fehltHinweis}
+          <p className="unterzeile">
+            Ein Einzug fasst angekündigte Forderungen zu einer Datei für die Bank zusammen. Jeder
+            Einzug hat einen Abbuchungstag und läuft durch vier Stände: angekündigt → Datei erzeugt →
+            eingereicht → abgeschlossen.
+          </p>
+          <section className="liste-abschnitt" aria-labelledby="h-laufend">
+            <Gruppenkopf titel="Laufend" id="h-laufend" />
+            <LaufListe
+              laeufe={laeufe.filter((l) => l.status !== "completed")}
+              heute={heute}
+              leer="Gerade läuft kein Einzug."
+            />
+          </section>
+          <section className="liste-abschnitt" aria-labelledby="h-abgeschlossen">
+            <Gruppenkopf titel="Abgeschlossen" id="h-abgeschlossen" />
+            <LaufListe
+              laeufe={laeufe.filter((l) => l.status === "completed")}
+              heute={heute}
+              leer="Noch kein Einzug abgeschlossen."
+            />
+          </section>
+        </>
+      )}
+
       {gewaehlt === "beitraege" && (
         <Jahresbeitraege
           jahr={jahr}
           zeilen={(vorschauRes.data ?? []) as VorschauZeile[]}
           glaeubigerId={glaeubigerId}
           einstellungen={einstellungen}
-          frist={frist}
-          anzukuendigen={
-            (offenRes.data ?? [])[0] ?? { anzahl: 0, summe_cents: 0, zahler: 0 }
+          offen={
+            gruppen.find((g) => g.kind === "fee" && g.period_label === String(jahr) && !g.ruecklaeufer) ?? null
           }
         />
       )}
 
       {gewaehlt === "abrechnen" && (
         <>
+          <p className="unterzeile">
+            Hier entstehen Forderungen. Abgebucht wird hier noch nichts – das geschieht danach über
+            einen Einzug.
+          </p>
           <section className="liste-abschnitt" aria-labelledby="h-quellen">
             <Gruppenkopf titel="Woraus Forderungen entstehen" id="h-quellen" />
             <ul className="liste-gruppe" aria-label="Abrechnungen">
@@ -207,7 +243,7 @@ export default async function KasseSeite({
                 <Listenzeile
                   href="/admin/kasse?abschnitt=beitraege"
                   titel={`Jahresbeiträge ${jahr}`}
-                  kontext="Einmal im Jahr · Vorschau, Forderungen erzeugen, ankündigen"
+                  kontext="Einmal im Jahr · Vorschau prüfen, Forderungen erzeugen"
                 />
               </li>
               <li>
@@ -221,37 +257,26 @@ export default async function KasseSeite({
                 <Listenzeile
                   href="/admin/kasse?abschnitt=forderungen&art=guest"
                   titel="Gastgebühren"
-                  kontext={(() => {
-                    const g = ankuendbar.find((z) => z.art === "guest");
-                    return g && g.anzahl > 0
-                      ? `Entstehen beim Buchen mit Gast · ${g.anzahl} offen über ${formatCents(g.summe_cents)}`
-                      : "Entstehen beim Buchen mit Gast · nichts offen";
-                  })()}
+                  kontext={
+                    gast && gast.anzahl > 0
+                      ? `Entstehen beim Buchen mit Gast · ${gast.anzahl} offen über ${formatCents(gast.summe_cents)}`
+                      : "Entstehen beim Buchen mit Gast · nichts offen"
+                  }
                 />
               </li>
             </ul>
           </section>
 
-          <GetraenkemonatKarte
-            monate={(monateRes.data ?? []) as unknown as MonatZeile[]}
-            fristTage={frist}
-          />
-
-          {/* Was man seltener braucht, steht als Unterseite darunter */}
-          <nav className="gruppe" aria-label="Einrichtung der Kasse">
-            {(["arten", "regeln"] as const).map((wert) => (
-              <Link key={wert} href={`/admin/kasse?abschnitt=${wert}`} className="gruppen-zeile">
-                <span className="titel">{ABSCHNITTE.find((a) => a.wert === wert)!.label}</span>
-                <span className="pfeil" aria-hidden="true">›</span>
-              </Link>
-            ))}
-          </nav>
+          <GetraenkemonatKarte monate={(monateRes.data ?? []) as unknown as MonatZeile[]} />
         </>
       )}
 
       {gewaehlt === "forderungen" && (
         <>
-          <AnkuendigungNachArt zeilen={ankuendbar} fristTage={frist} />
+          <p className="unterzeile">
+            Wer schuldet dem Verein was? Hier wird nur nachgeschlagen – eingezogen wird über{" "}
+            <Link href="/admin/kasse/einzug">Einzug vorbereiten</Link>.
+          </p>
           <ArtFilter aktiv={art} stand={stand ?? ""} />
           <StandFilter aktiv={stand ?? ""} art={art} />
           <ForderungsListe
@@ -260,18 +285,17 @@ export default async function KasseSeite({
         </>
       )}
 
-      {gewaehlt === "lastschrift" && (
+      {gewaehlt === "einstellungen" && (
         <>
-          {/* Ohne Gläubiger-ID und Vereins-IBAN lässt sich keine Datei bauen.
-              Das steht hier, nicht erst beim Klick auf "erzeugen". */}
-          {fehlend.length > 0 && (
-            <div className="hinweis fehler">
-              Es fehlt noch {fehlend.join(" und ")}. Ohne diese Angaben lässt sich keine
-              Lastschriftdatei erzeugen – sie stehen unter{" "}
-              <Link href="/admin/kasse?abschnitt=regeln">Kasse → Regeln</Link>.
-            </div>
-          )}
-          <Lastschriftband laeufe={laeufeRes.data ?? []} />
+          {fehltHinweis}
+          <nav className="gruppe" aria-label="Einrichtung der Kasse">
+            {(["arten", "regeln"] as const).map((w) => (
+              <Link key={w} href={`/admin/kasse?abschnitt=${w}`} className="gruppen-zeile">
+                <span className="titel">{ABSCHNITTE.find((a) => a.wert === w)!.label}</span>
+                <span className="pfeil" aria-hidden="true">›</span>
+              </Link>
+            ))}
+          </nav>
         </>
       )}
 
@@ -300,6 +324,68 @@ export default async function KasseSeite({
   );
 }
 
+/** Was gerade auf den Vorstand wartet, über alle Arten (kasseTodos). */
+function ZuTun({
+  heute, gruppen, laeufe, getraenkemonate,
+}: {
+  heute: string;
+  gruppen: { kind: string; period_label: string | null; ruecklaeufer: boolean; anzahl: number; mitglieder: number; summe_cents: number }[];
+  laeufe: LaufZeile[];
+  getraenkemonate: { year: number; month: number; status: "open" | "closed" }[];
+}) {
+  const todos = kasseTodos({
+    today: heute,
+    gruppen: gruppen.map((g) => ({ ...g, kind: g.kind as ChargeKind })),
+    einzuege: laeufe
+      .filter((l) => l.status !== "completed")
+      .map((l) => ({ ...l, status: l.status as DebitBatchStatus })),
+    getraenkemonate,
+  });
+
+  return (
+    <section className="liste-abschnitt" aria-labelledby="h-zutun">
+      <Gruppenkopf titel="Zu tun" id="h-zutun" neben="Alles, was gerade wartet – über alle Arten" />
+      {todos.length === 0 ? (
+        <p className="leer-klein">Alles erledigt. Gerade wartet nichts in der Kasse.</p>
+      ) : (
+        <ul className="liste-gruppe zu-tun" aria-label="Zu tun">
+          {todos.map((t) => (
+            <li key={t.key}>
+              <Listenzeile
+                href={t.href}
+                punkt={t.urgent ? "dringend" : "info"}
+                titel={
+                  <>
+                    <span className={`marke-klein ${t.marke.ton}`}>{t.marke.text}</span> {t.title}
+                  </>
+                }
+                kontext={t.text}
+                hinweis={t.action}
+                hinweisTon={t.urgent ? "gold" : "leise"}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/** Die vier Schritte als Erklärung für alle, die die Kasse nicht kennen. */
+function GeldErklaerung() {
+  return (
+    <section className="karte gross geld-erklaerung" aria-labelledby="h-geld">
+      <h2 className="dpl" id="h-geld">So läuft das Geld</h2>
+      <ol>
+        <li><b>1 · Forderung</b><span>Entsteht beim Abrechnen: Beitrag, Getränke, Arbeitsdienst, Gast oder von Hand.</span></li>
+        <li><b>2 · Einzug vorbereiten</b><span>Forderungen wählen, Abbuchungstag festlegen. Die Mitglieder bekommen die Ankündigung.</span></li>
+        <li><b>3 · Datei einreichen</b><span>Sofort möglich. Die Bank bucht erst am festgelegten Tag ab.</span></li>
+        <li><b>4 · Rückläufer</b><span>Bis zu acht Wochen danach. Dann ist der Einzug abgeschlossen.</span></li>
+      </ol>
+    </section>
+  );
+}
+
 interface VorschauZeile {
   member_id: string;
   member_name: string;
@@ -311,14 +397,14 @@ interface VorschauZeile {
 }
 
 function Jahresbeitraege({
-  jahr, zeilen, glaeubigerId, einstellungen, frist, anzukuendigen,
+  jahr, zeilen, glaeubigerId, einstellungen, offen,
 }: {
   jahr: number;
   zeilen: VorschauZeile[];
   glaeubigerId: string;
   einstellungen: { key: string; value: unknown }[];
-  frist: number;
-  anzukuendigen: { anzahl: number; summe_cents: number; zahler: number };
+  /** Was von diesem Jahr noch eingezogen werden kann (einzug_gruppen) */
+  offen: { kind: string; period_label: string | null; ruecklaeufer: boolean; anzahl: number; summe_cents: number } | null;
 }) {
   const summe = zeilen.reduce((s, z) => s + (z.amount_cents ?? 0), 0);
   const ohneMandat = zeilen.filter((z) => !z.has_mandate);
@@ -398,17 +484,27 @@ function Jahresbeitraege({
         faelligAm={faellig}
       />
 
-      {/* Der zweite Schritt steht direkt darunter, nicht auf einer eigenen
-          Seite: wer gerade Forderungen erzeugt hat, muss als Nächstes
-          ankündigen — sonst darf gar nicht eingezogen werden. */}
-      <AnkuendigungsKarte
-        art="fee"
-        zeitraum={String(jahr)}
-        offen={anzukuendigen.anzahl}
-        summeCents={anzukuendigen.summe_cents}
-        fristTage={frist}
-        faelligVorschlag={faellig}
-      />
+      {/* Der naechste Schritt steht direkt darunter: wer gerade Forderungen
+          erzeugt hat, zieht sie als Naechstes ein - mit Ankuendigung. */}
+      {offen && offen.anzahl > 0 && (
+        <section className="naechster-schritt quer" aria-label="Einziehen">
+          <div>
+            <b className="titel">
+              {offen.anzahl} {offen.anzahl === 1 ? "Forderung" : "Forderungen"} über{" "}
+              {formatCents(offen.summe_cents)} noch nicht eingezogen
+            </b>
+            <p>Als Nächstes: Einzug vorbereiten. Dort legst du den Abbuchungstag fest, und die Mitglieder bekommen ihre Ankündigung.</p>
+          </div>
+          <Link
+            className="knopf gold"
+            href={`/admin/kasse/einzug?gruppe=${encodeURIComponent(
+              einzugGruppeSchluessel({ kind: "fee", period_label: String(jahr), ruecklaeufer: false }),
+            )}`}
+          >
+            Einzug vorbereiten
+          </Link>
+        </section>
+      )}
 
       <section className="liste-abschnitt" aria-labelledby="h-positionen">
         <Gruppenkopf titel="Positionen" id="h-positionen" neben={`${zeilen.length} · ${formatCents(summe)}`} />
@@ -439,26 +535,10 @@ function Jahresbeitraege({
       </section>
 
       <p className="mit">
-        Nach dem Erzeugen der Forderungen geht zuerst die Vorabankündigung mit Betrag und
-        Fälligkeit an die Mitglieder; erst nach Ablauf der Frist darf eingezogen werden.
+        Nach dem Erzeugen der Forderungen folgt der Einzug: Er schickt jedem Mitglied die
+        Vorabankündigung mit Betrag und Abbuchungstag und legt die Lastschriftdatei an.
       </p>
     </>
-  );
-}
-
-/**
- * Der Einstieg in die Lastschriftläufe.
- *
- * Bewusst nur ein Ausschnitt mit Weg dorthin: ein Lauf ist ein Vorgang über
- * mehrere Tage und braucht eine eigene Adresse, die man verlinken kann.
- */
-function Lastschriftband({ laeufe }: { laeufe: LaufZeile[] }) {
-  return (
-    <section className="liste-abschnitt" aria-labelledby="h-lastschrift">
-      <Gruppenkopf titel="Lastschriftläufe" id="h-lastschrift" />
-      <p className="unterzeile">Aus angekündigten Forderungen wird eine Datei fürs Onlinebanking.</p>
-      <LaufListe laeufe={laeufe} />
-    </section>
   );
 }
 

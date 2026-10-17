@@ -30,7 +30,6 @@ Testern bzw. App Store · **P3** Komfort, Aufräumen.
 | O8 | P2 | **App-Icon** ist ein Platzhalter (`apps/mobile/assets/icon.svg`). | Echtes Logo in hoher Auflösung beschaffen. |
 | O9 | P2 | **Apple-Regel 5.1.1(v):** In der App gibt es keinen Weg, das Löschen des Kontos zu beantragen. | „Konto löschen beantragen“ im Konto-Tab ergänzen, etwa als Mitteilung an den Vorstand. |
 | O10 | P2 | **Store-Eintrag** fehlt: Screenshots, Beschreibung, Altersfreigabe, App-Datenschutzangaben. | Vor der externen Beta bzw. dem App Store anlegen; Alternative: „Nicht gelistet“. |
-| O11 | P3 | Die App-Kasse (neue Gliederung, Art-Marken, Ankündigen nach Art) ist **nur per Typecheck und Unit-Tests** geprüft, nicht auf einem Gerät angesehen. | In TestFlight durchklicken. |
 
 ### Verwaltung
 
@@ -78,6 +77,8 @@ Testern bzw. App Store · **P3** Komfort, Aufräumen.
 
 | Befund | Ursache | Commit |
 |---|---|---|
+| Nach der Ankündigung stand die Kasse bis zum Fälligkeitstag auf „Vorabankündigung läuft – bis dahin ist nichts zu tun“, obwohl Lauf und Datei sofort erzeugt werden durften. Wie Läufe aufgebaut sind, war unklar. | Die 14 Tage galten in der Anzeige als eigener Schritt; sie sind nur eine Bedingung an den Abbuchungstag. Ankündigung und Lauf waren zwei Vorgänge mit je eigenem Datum, ein Lauf entstand leer. Neu: **Einzug** (`einzug_vorbereiten`) kündigt an und legt den Lauf mit genau diesen Forderungen in einem Schritt an; ohne gültiges Mandat keine Ankündigung. Kasse neu gegliedert: Start (Zu tun), Einzüge, Forderungen, Abrechnen, Einstellungen. | #35 und dieser PR |
+| O11: Die App-Kasse war nur per Typecheck geprüft. | Hinfällig: Die App hat keine Kasse mehr, Kasse und Verwaltung der Finanzen gibt es nur im Web. | – |
 | O25: Ein Kiosk-Konto ließ sich mit einem Mitglied verknüpfen. | `link_auth_user` prüfte nur `members`, nicht `kiosk_devices`. Neu: `private.login_pruefen` weist Kiosk-Konten ab und gilt für `link_auth_user` und `create_member` (Login-Pflicht, Migration `20261014105338`). Zusätzlich prüft `member-login` beim Übernehmen eines vorhandenen Kontos, dass es kein Kiosk-Konto ist. | dieser PR |
 | O3: Eine geänderte E-Mail blieb in `auth.users` die alte. | Die Verwaltung änderte nur `members.email`. Neu: Aktion `email_aendern` in `member-login`. Sie ändert zuerst das Mitglied über `update_member` mit dem Token des Admins, danach den Login (`updateUserById`). Lehnt der Login ab, setzt sie das Mitglied auf die alte Adresse zurück. | dieser PR |
 | O4: Löschen und Anonymisieren ließen das Konto in `auth.users` verwaist zurück. | Beide liefen als RPC direkt aus dem Web. Neu: Aktion `loeschen` (Art `loeschen` oder `anonymisieren`) in `member-login`. Erst die RPC mit dem Token des Admins, dann `deleteUser`. | dieser PR |

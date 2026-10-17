@@ -1,10 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { formatCents } from "@tcm/core";
-import {
-  forderungenAnkuendigen, monatAbrechnen, monatSchliessen,
-} from "@/app/admin/kasse/aktionen";
+import { monatAbrechnen, monatSchliessen } from "@/app/admin/kasse/aktionen";
 import { FensterKnopf } from "@/components/FensterKnopf";
 import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 
@@ -34,7 +33,7 @@ const STAND_TON: Record<MonatZeile["status"], string> = { open: "", closed: "gel
 
 /**
  * Was bei einem Monat als Naechstes zu tun ist: erst schliessen, dann
- * abrechnen, dann ankuendigen. Der laufende Monat hat noch nichts zu tun.
+ * abrechnen, dann einziehen. Der laufende Monat hat noch nichts zu tun.
  */
 function naechsterSchritt(m: MonatZeile, jetzt: number) {
   if (m.status === "open") {
@@ -46,7 +45,15 @@ function naechsterSchritt(m: MonatZeile, jetzt: number) {
     return { marke: "abrechnen", knopf: "Forderungen erzeugen", text: "Die Summe steht fest. Das Abrechnen macht daraus Forderungen je Mitglied." };
   }
   if (m.offen > 0) {
-    return { marke: "ankündigen", knopf: `${m.offen} ankündigen`, text: "Ohne Vorabankündigung darf nicht eingezogen werden." };
+    // Angekuendigt wird mit dem Einzug, nicht hier: dort steht der Tag fest,
+    // an dem abgebucht wird, und wer mitgeht.
+    const gruppe = `drinks|${m.year}-${String(m.month).padStart(2, "0")}|`;
+    return {
+      marke: "einziehen",
+      knopf: "Einzug vorbereiten",
+      text: `${m.offen} ${m.offen === 1 ? "Forderung ist" : "Forderungen sind"} noch nicht eingezogen.`,
+      href: `/admin/kasse/einzug?gruppe=${encodeURIComponent(gruppe)}`,
+    };
   }
   return null;
 }
@@ -59,22 +66,10 @@ function naechsterSchritt(m: MonatZeile, jetzt: number) {
  * Abrechnen macht Forderungen daraus. Dazwischen kann der Vorstand die Zahlen
  * ansehen — was nach dem Abrechnen niemandem mehr hilft.
  */
-export function GetraenkemonatKarte({
-  monate, fristTage,
-}: {
-  monate: MonatZeile[];
-  fristTage: number;
-}) {
+export function GetraenkemonatKarte({ monate }: { monate: MonatZeile[] }) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
   const [gewaehlt, setGewaehlt] = useState<MonatZeile | null>(null);
-
-  /** Der früheste Tag, an dem eingezogen werden darf. */
-  function fruehesteFaelligkeit(): string {
-    const d = new Date();
-    d.setDate(d.getDate() + fristTage + 1);
-    return d.toISOString().slice(0, 10);
-  }
 
   // Numerisch vergleichen statt über Date: `new Date("2026-08-01")` ist
   // UTC-Mitternacht, `new Date(2026, 7, 1)` Ortszeit-Mitternacht — der laufende
@@ -88,7 +83,7 @@ export function GetraenkemonatKarte({
       <Gruppenkopf titel="Getränkemonate" id="h-getraenkemonate" />
       <p className="unterzeile">
         Erst schließen, dann abrechnen. Ein geschlossener Monat lässt sich an der Theke nicht
-        mehr verändern – nur so steht der Betrag fest, bevor er angekündigt wird.
+        mehr verändern – nur so steht der Betrag fest, bevor er eingezogen wird.
       </p>
 
       {meldung && (
@@ -142,7 +137,10 @@ export function GetraenkemonatKarte({
               <div><dt>Forderungen</dt><dd className="tnum">{gewaehlt.forderungen || "—"}</dd></div>
             </dl>
             {schritt && <p className="unterzeile">{schritt.text}</p>}
-            {schritt && (
+            {schritt?.href && (
+              <Link className="knopf gold block" href={schritt.href}>{schritt.knopf}</Link>
+            )}
+            {schritt && !schritt.href && (
               <button
                 type="button"
                 className="knopf gold block"
@@ -152,13 +150,7 @@ export function GetraenkemonatKarte({
                     const e =
                       gewaehlt.status === "open"
                         ? await monatSchliessen(gewaehlt.year, gewaehlt.month)
-                        : gewaehlt.status === "closed"
-                          ? await monatAbrechnen(gewaehlt.year, gewaehlt.month, null)
-                          : await forderungenAnkuendigen({
-                              faelligAm: fruehesteFaelligkeit(),
-                              art: "drinks",
-                              zeitraum: `${gewaehlt.year}-${String(gewaehlt.month).padStart(2, "0")}`,
-                            });
+                        : await monatAbrechnen(gewaehlt.year, gewaehlt.month, null);
                     setMeldung({ ok: e.ok, text: e.meldung });
                     if (e.ok) setGewaehlt(null);
                   })
