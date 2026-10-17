@@ -44,15 +44,16 @@ export default async function LaufSeite({
 
   // Der angekuendigte Faelligkeitstag steht an jeder Forderung. Gelesen, nicht
   // gerechnet: ab wann eingezogen werden darf, prueft die Datenbank.
+  // Nur die Arten, die dieser Lauf einzieht - sonst bestimmte etwa eine
+  // Getraenke-Ankuendigung den Tag eines reinen Beitragslaufs.
+  let abfrage = supabase
+    .from("charges")
+    .select("due_date")
+    .eq("status", "notified")
+    .not("due_date", "is", null);
+  if (lauf.kinds) abfrage = abfrage.in("kind", lauf.kinds);
   const { data: spaetester } = kandidaten.length
-    ? await supabase
-        .from("charges")
-        .select("due_date")
-        .eq("status", "notified")
-        .not("due_date", "is", null)
-        .order("due_date", { ascending: false })
-        .limit(1)
-        .maybeSingle()
+    ? await abfrage.order("due_date", { ascending: false }).limit(1).maybeSingle()
     : { data: null };
   const faelligAb = spaetester?.due_date ?? null;
 

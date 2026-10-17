@@ -368,7 +368,7 @@ function Jahresbeitraege({
         <div className="kennzahl">
           <span className="label">Ohne Mandat</span>
           <span className="wert dpl tnum">{ohneMandat.length}</span>
-          <span className="info">zahlen per Überweisung</span>
+          <span className="info">gehen nicht in den Einzug</span>
         </div>
         <div className="kennzahl">
           <span className="label">Bereits berechnet</span>
@@ -379,9 +379,9 @@ function Jahresbeitraege({
 
       {ohneMandat.length > 0 && (
         <div className="hinweis fehler">
-          <strong>{ohneMandat.length} Mitglieder haben kein gültiges SEPA-Mandat.</strong> Sie
-          erscheinen nicht in der Lastschriftdatei und müssen separat angeschrieben werden –
-          sonst rutschen sie unbemerkt durch:{" "}
+          <strong>{ohneMandat.length} Mitglieder haben kein gültiges SEPA-Mandat.</strong> Es fehlt,
+          ist widerrufen oder seit 36 Monaten ungenutzt und damit erloschen. Ohne neues Mandat
+          gehen sie nicht in den Einzug:{" "}
           {ohneMandat.slice(0, 8).map((z) => z.member_name).join(", ")}
           {ohneMandat.length > 8 && ` und ${ohneMandat.length - 8} weitere`}.
         </div>
@@ -466,7 +466,7 @@ const STAENDE = [
   { wert: "", label: "Alle" },
   { wert: "open", label: "Offen" },
   { wert: "notified", label: "Angekündigt" },
-  { wert: "submitted", label: "Eingereicht" },
+  { wert: "submitted", label: "Im Einzug" },
   { wert: "settled", label: "Bezahlt" },
   { wert: "returned", label: "Zurückgebucht" },
 ] as const;

@@ -46,7 +46,7 @@ const ALT: Record<string, MitgliedTeil> = {
 const FORDERUNG_STAND: Record<string, { text: string; ton: string }> = {
   open: { text: "offen", ton: "gelb" },
   notified: { text: "angekündigt", ton: "gelb" },
-  submitted: { text: "eingereicht", ton: "" },
+  submitted: { text: "im Einzug", ton: "" },
   settled: { text: "bezahlt", ton: "gruen" },
   returned: { text: "zurückgebucht", ton: "rot" },
   waived: { text: "erlassen", ton: "" },

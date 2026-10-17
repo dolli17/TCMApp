@@ -75,19 +75,22 @@ const REIHE: DebitStepKey[] = ["forderung", "ankuendigung", "lauf", "datei", "ru
  * Schritt ist der aktuelle, alle danach sind offen.
  */
 export function debitFlow(input: DebitFlowInput): DebitFlow {
-  const { charges, batch, today } = input;
+  const { charges, batch } = input;
   const imLauf = batch !== null && batch.itemCount > 0;
   const weiter = batch !== null && batch.status !== "draft";
   const frist = charges.dueDate;
-  const fristLaeuft = frist !== null && frist > today;
 
   const erledigt: Record<DebitStepKey, boolean> = {
     forderung: charges.members > 0 || imLauf || weiter,
-    // Ist ein Mitglied einzugsfaehig oder schon im Lauf, hat die Datenbank die
-    // Frist fuer ihn bestaetigt. Ohne Lauf zaehlt der angekuendigte Tag.
+    // Mit dem Versand ist die Ankuendigung erledigt. Die 14 Tage sind kein
+    // eigener Schritt, sondern eine Bedingung an den Faelligkeitstag: Lauf
+    // und Datei duerfen sofort entstehen, die Bank bucht erst am
+    // angekuendigten Tag ab. Frueher galt der Schritt erst nach Ablauf der
+    // Frist als erledigt, und die Kasse zeigte "Vorabankuendigung laeuft",
+    // obwohl die Datei laengst erzeugt werden konnte.
     ankuendigung:
       imLauf || weiter || (batch?.readyMembers ?? 0) > 0 ||
-      (batch === null && charges.unannounced === 0 && frist !== null && !fristLaeuft),
+      (charges.unannounced === 0 && frist !== null),
     lauf: imLauf || weiter,
     datei: weiter,
     ruecklaeufer: batch?.status === "completed",
@@ -109,14 +112,16 @@ export function debitFlow(input: DebitFlowInput): DebitFlow {
         ? frist ? `angekündigt zum ${isoDateLabel(frist)}` : "angekündigt"
         : charges.unannounced > 0
           ? `${charges.unannounced} noch nicht angekündigt`
-          : frist ? `Frist läuft bis ${isoDateLabel(frist)}` : "Vorabankündigung je Mitglied",
+          : "Vorabankündigung je Mitglied",
     lauf: !batch
-      ? frist ? `ab ${isoDateLabel(frist)} möglich` : "Noch kein Lauf angelegt"
+      ? frist ? `jetzt möglich, Einzug ab ${isoDateLabel(frist)}` : "Noch kein Lauf angelegt"
       : imLauf || weiter
         ? `${batch.itemCount} Posten zum ${isoDateLabel(batch.collectionDate)}`
         : batch.readyMembers > 0
           ? `${batch.readyMembers} ${batch.readyMembers === 1 ? "Mitglied" : "Mitglieder"} einzugsfähig`
-          : `Einzug am ${isoDateLabel(batch.collectionDate)}`,
+          : frist && batch.collectionDate < frist
+            ? `Einzug am ${isoDateLabel(batch.collectionDate)} liegt vor dem angekündigten ${isoDateLabel(frist)}`
+            : `Einzug am ${isoDateLabel(batch.collectionDate)}`,
     datei:
       batch?.status === "generated" ? "erzeugt, noch nicht eingereicht"
       : weiter ? "erzeugt und eingereicht"
@@ -129,21 +134,15 @@ export function debitFlow(input: DebitFlowInput): DebitFlow {
 
   const steps = REIHE.map((key, i) => ({ key, nr: i + 1, name: NAMEN[key], info: info[key], state: stand(key) }));
 
-  return { steps, current: aktuell, label: standLabel(aktuell, batch, charges.unannounced, frist) };
+  return { steps, current: aktuell, label: standLabel(aktuell, batch) };
 }
 
-function standLabel(
-  aktuell: DebitStepKey | null,
-  batch: DebitFlowInput["batch"],
-  unannounced: number,
-  frist: string | null,
-): string {
+function standLabel(aktuell: DebitStepKey | null, batch: DebitFlowInput["batch"]): string {
   switch (aktuell) {
     case null: return "Abgeschlossen";
     case "forderung": return "Keine Forderungen";
-    case "ankuendigung":
-      return unannounced > 0 || !frist ? "Ankündigung offen" : "Vorabankündigung läuft";
-    case "lauf": return "Auswahl offen";
+    case "ankuendigung": return "Ankündigung offen";
+    case "lauf": return batch ? "Auswahl offen" : "Lauf anlegen";
     case "datei": return "Bereit für die Datei";
     case "ruecklaeufer": return batch?.status === "generated" ? "Datei liegt bereit" : "Eingereicht";
   }
@@ -159,6 +158,8 @@ export interface AdminTodoInput {
   openApplications: number;
   /** Angekuendigte Forderungen: der spaeteste Faelligkeitstag, ISO */
   noticeDueDate: string | null;
+  /** Der juengste noch nicht abgeschlossene Lastschriftlauf */
+  batchStatus: DebitBatchStatus | null;
   /** Wohin "Lauf ansehen" fuehrt */
   batchHref: string;
   /** Zurueckgebuchte Forderungen, die noch offen sind */
@@ -232,14 +233,36 @@ export function adminTodos(input: AdminTodoInput): AdminTodo[] {
     });
   }
 
-  if (input.noticeDueDate && input.noticeDueDate > today) {
+  // Nach der Ankuendigung ist sofort etwas zu tun: Lauf und Datei duerfen
+  // vor Ablauf der Frist entstehen, die Bank bucht erst am angekuendigten Tag
+  // ab. Frueher stand hier "Bis dahin ist nichts zu tun", und nach Ablauf der
+  // Frist verschwand der Punkt ganz, obwohl noch nichts eingezogen war.
+  if (input.batchStatus === "draft") {
+    liste.push({
+      key: "lauf-datei",
+      title: "Lastschriftlauf fertigstellen",
+      text: "Mitglieder aufnehmen und die Datei erzeugen. Abgebucht wird erst am Fälligkeitstag.",
+      action: "Zum Lauf",
+      href: input.batchHref,
+      urgent: true,
+    });
+  } else if (input.batchStatus === "generated") {
+    liste.push({
+      key: "lauf-einreichen",
+      title: "Lastschriftdatei einreichen",
+      text: "Die Datei im Onlinebanking hochladen und danach im Lauf vermerken.",
+      action: "Zum Lauf",
+      href: input.batchHref,
+      urgent: true,
+    });
+  } else if (input.noticeDueDate) {
     liste.push({
       key: "ankuendigung",
-      title: "Vorabankündigung läuft",
-      text: `Einzug frühestens am ${isoDateLabel(input.noticeDueDate)}. Bis dahin ist nichts zu tun.`,
-      action: "Lauf ansehen",
-      href: input.batchHref,
-      urgent: false,
+      title: "Angekündigte Forderungen einziehen",
+      text: `Lastschriftlauf anlegen und die Datei erzeugen – schon jetzt möglich. Abgebucht wird frühestens am ${isoDateLabel(input.noticeDueDate)}.`,
+      action: "Lauf anlegen",
+      href: "/admin/kasse?abschnitt=lastschrift",
+      urgent: true,
     });
   }
 

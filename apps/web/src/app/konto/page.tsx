@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 const STATUS_TEXT: Record<string, string> = {
   open: "offen",
   notified: "angekündigt",
-  submitted: "eingereicht",
+  submitted: "im Einzug",
   settled: "bezahlt",
   returned: "zurückgebucht",
   waived: "erlassen",
