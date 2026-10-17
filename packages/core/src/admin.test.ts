@@ -33,23 +33,24 @@ describe("debitFlow", () => {
     expect(f.label).toBe("Ankündigung offen");
   });
 
-  it("die Frist laeuft: gelb mit Datum, der Lauf erst ab dann", () => {
+  it("angekuendigt, Frist laeuft noch: die Ankuendigung ist erledigt, der Lauf ist sofort dran", () => {
     const f = debitFlow({
       charges: { members: 3, totalCents: 36000, unannounced: 0, dueDate: "2026-10-12" }, batch: null, today: HEUTE,
     });
-    expect(f.current).toBe("ankuendigung");
-    expect(f.steps[1]!.info).toBe("Frist läuft bis 12.10.2026");
-    expect(f.steps[2]!.info).toBe("ab 12.10.2026 möglich");
-    expect(f.label).toBe("Vorabankündigung läuft");
+    expect(f.current).toBe("lauf");
+    expect(f.steps[1]!).toMatchObject({ state: "erledigt", info: "angekündigt zum 12.10.2026" });
+    expect(f.steps[2]!.info).toBe("jetzt möglich, Einzug ab 12.10.2026");
+    expect(f.label).toBe("Lauf anlegen");
   });
 
-  it("ein Lauf ohne einzugsfaehige Mitglieder bleibt bei der Ankuendigung", () => {
+  it("ein Lauf ohne einzugsfaehige Mitglieder steht bei der Auswahl und nennt den Grund", () => {
     const f = debitFlow({
-      charges: { members: 2, totalCents: 1000, unannounced: 0, dueDate: "2026-10-12" },
+      charges: { members: 2, totalCents: 1000, unannounced: 0, dueDate: "2026-10-20" },
       batch: lauf({ readyMembers: 0 }),
       today: HEUTE,
     });
-    expect(f.current).toBe("ankuendigung");
+    expect(f.current).toBe("lauf");
+    expect(f.steps[2]!.info).toBe("Einzug am 15.10.2026 liegt vor dem angekündigten 20.10.2026");
   });
 
   it("meldet die Datenbank Mitglieder als einzugsfaehig, ist die Auswahl dran", () => {
@@ -102,7 +103,7 @@ describe("debitFlow", () => {
 
 describe("adminTodos", () => {
   const leer = {
-    today: HEUTE, openApplications: 0, noticeDueDate: null, batchHref: "/admin/kasse/lastschriften",
+    today: HEUTE, openApplications: 0, noticeDueDate: null, batchStatus: null, batchHref: "/admin/kasse/lastschriften",
     returnedCharges: 0, openDrinkMonths: [{ year: 2026, month: 9 }],
   };
 
@@ -117,15 +118,25 @@ describe("adminTodos", () => {
     expect(t[0]!.href).toBe("/admin/mitglieder/antraege");
   });
 
-  it("eine laufende Frist ist nur zur Kenntnis und fuehrt zum Lauf", () => {
-    const t = adminTodos({ ...leer, today: "2026-09-10", noticeDueDate: "2026-10-12", batchHref: "/admin/kasse/lastschriften/x" });
+  it("angekuendigt ohne Lauf: sofort einziehen, auch waehrend die Frist laeuft", () => {
+    const t = adminTodos({ ...leer, today: "2026-09-10", noticeDueDate: "2026-10-12" });
     expect(t).toHaveLength(1);
-    expect(t[0]!).toMatchObject({ title: "Vorabankündigung läuft", urgent: false, href: "/admin/kasse/lastschriften/x" });
+    expect(t[0]!).toMatchObject({ title: "Angekündigte Forderungen einziehen", urgent: true, href: "/admin/kasse?abschnitt=lastschrift" });
     expect(t[0]!.text).toContain("12.10.2026");
   });
 
-  it("eine abgelaufene Frist ist kein Punkt mehr", () => {
-    expect(adminTodos({ ...leer, today: "2026-09-10", noticeDueDate: "2026-09-10" })).toEqual([]);
+  it("nach Ablauf der Frist bleibt der Punkt stehen, bis eingezogen ist", () => {
+    expect(adminTodos({ ...leer, today: "2026-10-20", noticeDueDate: "2026-10-12", openDrinkMonths: [] }))
+      .toHaveLength(1);
+  });
+
+  it("ein offener Lauf fuehrt zu seinem naechsten Schritt", () => {
+    const entwurf = adminTodos({ ...leer, today: "2026-09-10", noticeDueDate: "2026-10-12", batchStatus: "draft", batchHref: "/admin/kasse/lastschriften/x" });
+    expect(entwurf.map((x) => x.title)).toEqual(["Lastschriftlauf fertigstellen"]);
+    expect(entwurf[0]!.href).toBe("/admin/kasse/lastschriften/x");
+    expect(adminTodos({ ...leer, today: "2026-09-10", batchStatus: "generated" }).map((x) => x.title))
+      .toEqual(["Lastschriftdatei einreichen"]);
+    expect(adminTodos({ ...leer, today: "2026-09-10", batchStatus: "submitted" })).toEqual([]);
   });
 
   it("der laufende Getraenkemonat erscheint erst kurz vor dem Ende", () => {
@@ -141,7 +152,7 @@ describe("adminTodos", () => {
       openDrinkMonths: [{ year: 2026, month: 9 }, { year: 2026, month: 8 }],
     });
     expect(t.map((x) => x.title)).toEqual([
-      "Getränkemonat August abschließen", "Vorabankündigung läuft", "Getränkemonat September",
+      "Getränkemonat August abschließen", "Angekündigte Forderungen einziehen", "Getränkemonat September",
     ]);
   });
 

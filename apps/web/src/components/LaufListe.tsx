@@ -30,32 +30,32 @@ export async function LaufListe({ laeufe }: { laeufe: LaufZeile[] }) {
   const supabase = await createServerSupabase();
   const heute = heuteInBerlin();
 
-  const kandidaten = new Map<string, { alle: number; bereit: number }>();
+  const kandidaten = new Map<string, { alle: number; bereit: number; faelligAb: string | null }>();
   const entwuerfe = laeufe.filter((l) => l.status === "draft" && l.item_count === 0);
-  const [spaetesterRes] = await Promise.all([
-    // Der angekuendigte Faelligkeitstag, gelesen wie auf der Laufseite
-    entwuerfe.length
-      ? supabase
-          .from("charges")
-          .select("due_date")
-          .eq("status", "notified")
-          .not("due_date", "is", null)
-          .order("due_date", { ascending: false })
-          .limit(1)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    ...entwuerfe.map(async (l) => {
-      const { data } = await supabase.rpc("debit_batch_candidates", {
-        p_collection_date: l.collection_date,
-        p_kinds: (l.kinds ?? undefined) as never,
-      });
+  await Promise.all(
+    entwuerfe.map(async (l) => {
+      // Der angekuendigte Faelligkeitstag, gelesen wie auf der Laufseite:
+      // nur fuer die Arten, die dieser Lauf einzieht.
+      let spaetester = supabase
+        .from("charges")
+        .select("due_date")
+        .eq("status", "notified")
+        .not("due_date", "is", null);
+      if (l.kinds) spaetester = spaetester.in("kind", l.kinds as never);
+      const [{ data }, { data: faellig }] = await Promise.all([
+        supabase.rpc("debit_batch_candidates", {
+          p_collection_date: l.collection_date,
+          p_kinds: (l.kinds ?? undefined) as never,
+        }),
+        spaetester.order("due_date", { ascending: false }).limit(1).maybeSingle(),
+      ]);
       kandidaten.set(l.id, {
         alle: (data ?? []).length,
         bereit: (data ?? []).filter((k) => k.einzugsfaehig).length,
+        faelligAb: faellig?.due_date ?? null,
       });
     }),
-  ]);
-  const faelligAb = (spaetesterRes as { data: { due_date: string | null } | null }).data?.due_date ?? null;
+  );
 
   if (laeufe.length === 0) {
     return <p className="leer-klein">Es gibt noch keinen Lastschriftlauf.</p>;
@@ -69,7 +69,7 @@ export async function LaufListe({ laeufe }: { laeufe: LaufZeile[] }) {
             members: kandidaten.get(l.id)?.alle ?? 0,
             totalCents: 0,
             unannounced: 0,
-            dueDate: kandidaten.has(l.id) ? faelligAb : null,
+            dueDate: kandidaten.get(l.id)?.faelligAb ?? null,
           },
           batch: {
             status: l.status as DebitBatchStatus,

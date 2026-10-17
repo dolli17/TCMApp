@@ -27,7 +27,7 @@ export interface ForderungZeile {
 const STAND: Record<ForderungZeile["status"], string> = {
   open: "offen",
   notified: "angekündigt",
-  submitted: "eingereicht",
+  submitted: "im Einzug",
   settled: "bezahlt",
   returned: "zurückgebucht",
   waived: "erlassen",

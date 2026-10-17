@@ -91,7 +91,10 @@ export default async function VerwaltungSeite() {
   // Fuer einen Entwurf fragt die Seite die Datenbank, wer einzugsfaehig ist.
   // Die Frist wird hier nicht nachgerechnet.
   const kandidatenRes = lauf?.status === "draft"
-    ? await supabase.rpc("debit_batch_candidates", { p_collection_date: lauf.collection_date })
+    ? await supabase.rpc("debit_batch_candidates", {
+        p_collection_date: lauf.collection_date,
+        p_kinds: (lauf.kinds ?? undefined) as never,
+      })
     : null;
 
   const weg = debitFlow({
@@ -119,6 +122,7 @@ export default async function VerwaltungSeite() {
     today: heute,
     openApplications: offeneAntraege,
     noticeDueDate: faellig,
+    batchStatus: (lauf?.status as DebitBatchStatus | undefined) ?? null,
     batchHref: laufHref,
     returnedCharges: forderungen.filter((f) => f.status === "returned").length,
     openDrinkMonths: monateRes.data ?? [],

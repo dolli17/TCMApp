@@ -184,7 +184,7 @@ export function LastschriftLauf({
               {moeglich.length > 0
                 ? "Mitglieder in den Lauf aufnehmen"
                 : faelligAb
-                  ? `Lastschriftlauf ab ${isoDateLabel(faelligAb)}`
+                  ? `Einzugstag frühestens am ${isoDateLabel(faelligAb)}`
                   : "Noch nichts einzugsfähig"}
             </b>
             <p>
