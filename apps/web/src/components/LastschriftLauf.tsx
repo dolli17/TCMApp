@@ -1,30 +1,17 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
-  CHARGE_KIND_LABEL, debitFlow, formatCents, isoDateLabel, sortChargeKinds,
+  CHARGE_KIND_LABEL, einzugStand, formatCents, isoDateLabel, isoPlusTage, sortChargeKinds,
 } from "@tcm/core";
 import {
-  dateiErzeugen, laufAbschliessen, laufEingereicht, postenAufnehmen, ruecklaeuferErfassen,
+  dateiErzeugen, einzugLoeschen, einzugMitgliedEntfernen, laufAbschliessen, laufEingereicht, ruecklaeuferErfassen,
 } from "@/app/admin/kasse/lastschriften/aktionen";
 import { ArtMarken } from "@/components/ArtMarke";
 import { FensterKnopf } from "@/components/FensterKnopf";
 import { Geldweg } from "@/components/Geldweg";
 import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
-
-export interface KandidatZeile {
-  payer_id: string;
-  payer_name: string;
-  charge_ids: string[];
-  positionen: number;
-  arten: string;
-  kinds: string[];
-  amount_cents: number;
-  mandate_id: string | null;
-  mandate_reference: string | null;
-  einzugsfaehig: boolean;
-  grund: string | null;
-}
 
 export interface PostenZeile {
   end_to_end_id: string;
@@ -43,7 +30,7 @@ export interface LaufKopf {
   id: string;
   title: string;
   collection_date: string;
-  /** Eingeschränkt auf diese Arten; null = alle angekündigten */
+  /** Die Arten, die der Einzug enthält; null = alle */
   kinds: string[] | null;
   status: "draft" | "generated" | "submitted" | "completed";
   total_cents: number;
@@ -51,118 +38,77 @@ export interface LaufKopf {
   storage_path: string | null;
 }
 
-/**
- * Ein Lastschriftlauf von der Auswahl bis zu den Ruecklaeufern
- * (Entwurf AdminKasse, docs/design/clubhaus)
- *
- * Oben der naechste Schritt auf brand, darunter der Weg des Geldes
- * (am Telefon senkrecht), dann je Mitglied eine Zeile - eine Lastschrift je
- * Mitglied, wie sie auf dem Kontoauszug steht (docs/design/clubhaus/
- * verwaltung, VwLauf).
- *
- * Ob ein Mitglied mitgehen darf, sagt allein die Datenbank
- * (debit_batch_candidates, guard_prenotification). Die Seite zeigt ihren
- * Grund woertlich an und rechnet keine Frist nach. Solange nichts im Lauf ist,
- * gibt es auch keine Datei - der Knopf bleibt mit Schloss gesperrt, daneben
- * steht, was die Datenbank dazu sagt. Nach dem Erzeugen ist der Lauf zu: die
- * Datei ist ein Buchungsbeleg und darf sich nicht mehr aendern.
- */
-const AUSSCHNITT = 25;
-
-/** Summe je Art im Lauf (debit_batch_kinds) */
+/** Summe je Art im Einzug (debit_batch_kinds) */
 export interface ArtSumme {
   kind: string;
   positionen: number;
   summe_cents: number;
 }
 
+const AUSSCHNITT = 25;
+
+/**
+ * Ein Einzug (Entwurf Kasse neu, Ansicht 3).
+ *
+ * Oben der nächste Schritt auf Vereinsblau, darunter die vier Stände mit den
+ * Terminen, dann je Mitglied eine Zeile - eine Lastschrift je Mitglied, wie
+ * sie auf dem Kontoauszug steht.
+ *
+ * Ein Einzug entsteht angekündigt (einzug_vorbereiten). Die Datei darf sofort
+ * erzeugt werden: der Abbuchungstag steht in ihr, und die Bank bucht erst dann
+ * ab. Früher stand hier "Vorabankündigung läuft", obwohl längst etwas zu tun
+ * war. Nach dem Erzeugen ist der Einzug zu: die Datei ist ein Buchungsbeleg.
+ */
 export function LastschriftLauf({
-  lauf, kandidaten, posten, jeArt, faelligAb, heute,
+  lauf, posten, jeArt, angekuendigtAm, fristTage, heute,
 }: {
   lauf: LaufKopf;
-  kandidaten: KandidatZeile[];
   posten: PostenZeile[];
   jeArt: ArtSumme[];
-  /** Der spaeteste angekuendigte Faelligkeitstag der Kandidaten, ISO */
-  faelligAb: string | null;
+  /** Wann die Mitglieder informiert wurden, ISO */
+  angekuendigtAm: string | null;
+  fristTage: number;
   heute: string;
 }) {
+  const router = useRouter();
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
-  const [zurueck, setZurueck] = useState<string | null>(null);
+  const [gewaehlt, setGewaehlt] = useState<string | null>(null);
   const [grund, setGrund] = useState("");
+  const [alle, setAlle] = useState(false);
   const [laeuft, starte] = useTransition();
 
-  const entwurf = lauf.status === "draft";
-  const moeglich = kandidaten.filter((k) => k.einzugsfaehig);
-  const draussen = kandidaten.filter((k) => !k.einzugsfaehig);
-  const summeMoeglich = moeglich.reduce((s, k) => s + k.amount_cents, 0);
-  const summeAlle = lauf.total_cents + kandidaten.reduce((s, k) => s + k.amount_cents, 0);
   const zurueckgebucht = posten.filter((p) => p.result === "returned").length;
-
-  const weg = debitFlow({
-    charges: {
-      members: posten.length + kandidaten.length,
-      totalCents: summeAlle,
-      unannounced: 0,
-      dueDate: faelligAb,
-    },
-    batch: {
-      status: lauf.status,
-      collectionDate: lauf.collection_date,
-      itemCount: lauf.item_count,
-      readyMembers: moeglich.length,
-      returned: zurueckgebucht,
-    },
+  const stand = einzugStand({
+    status: lauf.status,
+    collectionDate: lauf.collection_date,
+    itemCount: lauf.item_count,
+    returned: zurueckgebucht,
+    announcedOn: angekuendigtAm,
     today: heute,
   });
-
-  // Die Saetze der Datenbank, jeder einmal - sie begruenden die Sperre.
-  const gruende = [...new Set(draussen.map((k) => k.grund).filter((g): g is string => Boolean(g)))];
+  const offen = lauf.status === "draft";
+  const nachFrist = lauf.status === "submitted" && heute > stand.ruecklaeuferBis;
+  const zeige = alle ? posten : posten.slice(0, AUSSCHNITT);
+  const auswahl = posten.find((p) => p.end_to_end_id === gewaehlt) ?? null;
 
   function melde(e: { ok: boolean; meldung: string }) {
     setMeldung({ ok: e.ok, text: e.meldung });
   }
 
-  const aufnehmenKnopf = (
-    <button
-      type="button"
-      className="knopf gold block"
-      disabled={laeuft}
-      onClick={() => starte(async () => melde(await postenAufnehmen(lauf.id, null)))}
-    >
-      {moeglich.length} {moeglich.length === 1 ? "Lastschrift" : "Lastschriften"} über{" "}
-      {formatCents(summeMoeglich)} aufnehmen
-    </button>
-  );
-
-  const [nurOhneMandat, setNurOhneMandat] = useState(false);
-  const ohneMandat = kandidaten.filter((k) => !k.mandate_id);
-  // Ein Lauf hat schnell einige hundert Mitglieder; die Seite zeigt erst einen
-  // Ausschnitt, der Rest kommt auf Wunsch dazu.
-  const [alle, setAlle] = useState(false);
-  const zeigePosten = nurOhneMandat ? [] : posten;
-  const alleKandidaten = nurOhneMandat ? ohneMandat : kandidaten;
-  const gesamt = zeigePosten.length + alleKandidaten.length;
-  const grenze = alle ? Infinity : AUSSCHNITT;
-  const sichtbarePosten = zeigePosten.slice(0, grenze);
-  const zeigeKandidaten = alleKandidaten.slice(0, Math.max(0, grenze - sichtbarePosten.length));
-  const zurueckPosten = posten.find((p) => p.end_to_end_id === zurueck) ?? null;
-
   return (
     <div className="verwaltung lastschriftlauf">
       <header className="lauf-titel">
-        <div className="kicker">Lastschriftlauf</div>
+        <div className="kicker">Einzug</div>
         <div className="titelzeile">
           <h1 className="pagetitle">{lauf.title}</h1>
-          <span className={`statusmarke gross ${weg.current === null ? "gruen" : "gelb"}`}>{weg.label}</span>
+          <span className={`statusmarke gross ${stand.ton}`}>{stand.label}</span>
         </div>
-        {/* Was dieser Lauf einzieht - früher war das nirgends zu sehen */}
         <p className="unterzeile lauf-arten">
-          {lauf.kinds ? (
-            <>Zieht nur ein: <ArtMarken arten={lauf.kinds} /></>
-          ) : (
-            "Zieht alle angekündigten Forderungen ein, gleich welcher Art."
-          )}
+          <ArtMarken arten={lauf.kinds ?? jeArt.map((a) => a.kind)} />{" "}
+          <span className="tnum">
+            {lauf.item_count} {lauf.item_count === 1 ? "Mitglied" : "Mitglieder"} ·{" "}
+            {formatCents(lauf.total_cents)} · Abbuchung am <b>{isoDateLabel(lauf.collection_date)}</b>
+          </span>
         </p>
       </header>
 
@@ -172,125 +118,91 @@ export function LastschriftLauf({
         </div>
       )}
 
-      {/* Der nächste Schritt steht über allem (Regel 8) */}
-      <section className="naechster-schritt" aria-labelledby="h-naechster">
-        <svg className="linien" viewBox="0 0 350 196" preserveAspectRatio="xMaxYMin slice" aria-hidden="true">
-          <path d="M170 196 L225 0 M350 55 L225 196 M200 95 H350 M218 36 H350" />
-        </svg>
-        <div className="kicker" id="h-naechster">Nächster Schritt</div>
-        {entwurf && posten.length === 0 && (
-          <>
-            <b className="titel">
-              {moeglich.length > 0
-                ? "Mitglieder in den Lauf aufnehmen"
-                : faelligAb
-                  ? `Einzugstag frühestens am ${isoDateLabel(faelligAb)}`
-                  : "Noch nichts einzugsfähig"}
-            </b>
-            <p>
-              Die Frist der Vorabankündigung hängt an jeder Forderung und wird in der Datenbank
-              geprüft. Vorher lässt sich keine Datei erzeugen.
-            </p>
-            {moeglich.length > 0 && aufnehmenKnopf}
-            <button type="button" className="knopf gesperrt block" disabled aria-describedby="sperrgrund">
-              <Schloss />
-              pain.008 erzeugen
-            </button>
-            <ul className="sperrgrund" id="sperrgrund">
-              {moeglich.length > 0 ? (
-                <li>Im Lauf ist noch keine Lastschrift.</li>
-              ) : gruende.length > 0 ? (
-                gruende.map((g) => <li key={g}>{g}</li>)
-              ) : (
-                <li>Für diesen Fälligkeitstag liegt keine angekündigte Forderung vor.</li>
-              )}
-            </ul>
-          </>
-        )}
-
-        {entwurf && posten.length > 0 && (
-          <>
-            <b className="titel">Datei erzeugen</b>
-            <p>
-              Die Datei wird einmal erzeugt und bleibt danach unverändert – sie ist der Beleg
-              dessen, was die Bank bekommt. Danach lässt sich am Lauf nichts mehr ändern.
-            </p>
-            <button
-              type="button"
-              className="knopf gold block"
-              disabled={laeuft}
-              onClick={() => starte(async () => melde(await dateiErzeugen(lauf.id)))}
-            >
-              {laeuft ? "Wird erzeugt…" : "pain.008 erzeugen"}
-            </button>
-            {moeglich.length > 0 && (
+      {stand.naechster && (
+        <section className="naechster-schritt" aria-labelledby="h-naechster">
+          <svg className="linien" viewBox="0 0 350 196" preserveAspectRatio="xMaxYMin slice" aria-hidden="true">
+            <path d="M170 196 L225 0 M350 55 L225 196 M200 95 H350 M218 36 H350" />
+          </svg>
+          <div className="kicker" id="h-naechster">Nächster Schritt</div>
+          <b className="titel">{stand.naechster.titel}</b>
+          <p>{stand.naechster.text}</p>
+          <div className="knopfreihe">
+            {offen && lauf.item_count > 0 && (
               <button
                 type="button"
-                className="knopf auf-blau block"
+                className="knopf gold"
                 disabled={laeuft}
-                onClick={() => starte(async () => melde(await postenAufnehmen(lauf.id, null)))}
+                onClick={() => starte(async () => melde(await dateiErzeugen(lauf.id)))}
               >
-                Noch {moeglich.length} {moeglich.length === 1 ? "Mitglied" : "Mitglieder"} aufnehmen
+                {laeuft ? "Wird erzeugt…" : "pain.008 erzeugen"}
               </button>
             )}
-          </>
-        )}
+            {offen && lauf.item_count === 0 && (
+              <button
+                type="button"
+                className="knopf auf-blau"
+                disabled={laeuft}
+                onClick={() =>
+                  starte(async () => {
+                    const e = await einzugLoeschen(lauf.id);
+                    melde(e);
+                    if (e.ok) router.push("/admin/kasse?abschnitt=einzuege");
+                  })
+                }
+              >
+                Leeren Einzug löschen
+              </button>
+            )}
+            {lauf.status === "generated" && (
+              <button
+                type="button"
+                className="knopf gold"
+                disabled={laeuft}
+                onClick={() => starte(async () => melde(await laufEingereicht(lauf.id, null)))}
+              >
+                Im Onlinebanking eingereicht
+              </button>
+            )}
+            {lauf.status === "submitted" && (
+              // Erst abschließen, wenn nichts mehr zurückkommt; wer zu früh
+              // abhakt, hält Geld für da, das noch unterwegs ist.
+              <button
+                type="button"
+                className={`knopf ${nachFrist ? "gold" : "auf-blau"}`}
+                disabled={laeuft}
+                onClick={() => starte(async () => melde(await laufAbschliessen(lauf.id)))}
+              >
+                Einzug abschließen
+              </button>
+            )}
+            {lauf.storage_path && (
+              <a className="knopf auf-blau" href={`/admin/kasse/lastschriften/${lauf.id}/datei`}>
+                Datei herunterladen
+              </a>
+            )}
+          </div>
+        </section>
+      )}
+      {!stand.naechster && lauf.storage_path && (
+        <p className="mit">
+          Abgeschlossen. Die Datei bleibt als Beleg am Einzug:{" "}
+          <a href={`/admin/kasse/lastschriften/${lauf.id}/datei`}>herunterladen</a>.
+        </p>
+      )}
 
-        {lauf.status === "generated" && (
-          <>
-            <b className="titel">Im Onlinebanking einreichen</b>
-            <p>
-              Hochgeladen wird die Datei im Onlinebanking; die App bekommt von dort keine
-              Rückmeldung. Danach hier vermerken.
-            </p>
-            <button
-              type="button"
-              className="knopf gold block"
-              disabled={laeuft}
-              onClick={() => starte(async () => melde(await laufEingereicht(lauf.id, null)))}
-            >
-              Im Onlinebanking eingereicht
-            </button>
-          </>
-        )}
-
-        {lauf.status === "submitted" && (
-          <>
-            <b className="titel">Rückläufer eintragen</b>
-            <p>
-              Alles, was nicht als zurückgebucht vermerkt ist, gilt beim Abschließen als
-              eingezogen. Eine Rücklastschrift kann bis zu acht Wochen nach dem Einzug kommen.
-            </p>
-            {/* Erst abschließen, wenn nichts mehr zurückkommt; wer zu früh
-                abhakt, hält Geld für da, das noch unterwegs ist. */}
-            <button
-              type="button"
-              className="knopf auf-blau block"
-              disabled={laeuft}
-              onClick={() => starte(async () => melde(await laufAbschliessen(lauf.id)))}
-            >
-              Lauf abschließen
-            </button>
-          </>
-        )}
-
-        {lauf.status === "completed" && (
-          <>
-            <b className="titel">Abgeschlossen</b>
-            <p>Der Lauf ist erledigt. Die Datei bleibt als Beleg am Lauf.</p>
-          </>
-        )}
-
-        {lauf.storage_path && (
-          <a className="knopf auf-blau block" href={`/admin/kasse/lastschriften/${lauf.id}/datei`}>
-            Datei herunterladen
-          </a>
-        )}
-      </section>
-
-      <section className="karte gross" aria-labelledby="h-weg">
-        <h2 className="dpl" id="h-weg">Der Weg des Geldes</h2>
-        <Geldweg schritte={weg.steps} />
+      <section className="karte gross" aria-labelledby="h-stand">
+        <h2 className="dpl" id="h-stand">Stand</h2>
+        <Geldweg schritte={stand.schritte} />
+        <dl className="einzug-termine">
+          {angekuendigtAm && (
+            <>
+              <div><dt>Informiert</dt><dd className="tnum">{isoDateLabel(angekuendigtAm)}</dd></div>
+              <div><dt>Frühestens abbuchbar</dt><dd className="tnum">{isoDateLabel(isoPlusTage(angekuendigtAm, fristTage))}</dd></div>
+            </>
+          )}
+          <div><dt>Abbuchung</dt><dd className="tnum">{isoDateLabel(lauf.collection_date)}</dd></div>
+          <div><dt>Rückläufer möglich bis</dt><dd className="tnum">{isoDateLabel(stand.ruecklaeuferBis)}</dd></div>
+        </dl>
       </section>
 
       <div className="verwaltung-raster">
@@ -298,36 +210,31 @@ export function LastschriftLauf({
           <Gruppenkopf
             titel="Je Mitglied"
             id="h-zahler"
-            neben={`${posten.length + kandidaten.length} · ${formatCents(summeAlle)}`}
+            neben={`${posten.length} · ${formatCents(lauf.total_cents)}`}
           />
-          <p className="unterzeile">Alle Forderungen eines Mitglieds = eine Zeile, eine Buchung. Geschwister auf demselben Konto ergeben je eine eigene Lastschrift.</p>
+          <p className="unterzeile">
+            Eine Lastschrift je Mitglied, jedes mit eigenem Mandat.
+            {offen ? " Bis zur Datei lässt sich ein Mitglied noch herausnehmen." : ""}
+          </p>
 
-          {kandidaten.length > 0 && (
-            <div className="filterchips" role="group" aria-label="Mitglieder filtern">
-              <button type="button" aria-pressed={!nurOhneMandat} onClick={() => setNurOhneMandat(false)}>Alle</button>
-              <button type="button" aria-pressed={nurOhneMandat} onClick={() => setNurOhneMandat(true)}>
-                Ohne Mandat · {ohneMandat.length}
-              </button>
-            </div>
-          )}
-
-          {posten.length + kandidaten.length === 0 ? (
-            <p className="leer-klein">Für diesen Fälligkeitstag liegt keine angekündigte Forderung vor.</p>
+          {posten.length === 0 ? (
+            <p className="leer-klein">In diesem Einzug steht keine Lastschrift.</p>
           ) : (
             <ul className="liste-gruppe" aria-label="Je Mitglied">
-              {sichtbarePosten.map((p) => {
-                // Erst nach dem Einreichen: vorher ist noch nichts unterwegs,
-                // das zurückkommen könnte.
+              {zeige.map((p) => {
+                // Rückläufer erst nach dem Einreichen: vorher ist noch nichts
+                // unterwegs, das zurückkommen könnte.
                 const kannZurueck =
                   p.result === "pending" && (lauf.status === "submitted" || lauf.status === "completed");
+                const klickbar = (offen || kannZurueck) && !laeuft;
                 return (
                   <li key={p.end_to_end_id}>
                     <Listenzeile
                       titel={p.payer_name}
                       kontext={
                         <>
-                          <ArtMarken arten={p.kinds} /> {p.mitglieder}
-                          {p.positionen > 1 ? ` · ${p.positionen} Posten` : ""}
+                          <ArtMarken arten={p.kinds} />{" "}
+                          {p.positionen > 1 ? `${p.positionen} Posten · ` : ""}Mandat {p.mandate_reference}
                           <br />
                           <span className="kennung">{p.end_to_end_id}</span>
                         </>
@@ -338,48 +245,27 @@ export function LastschriftLauf({
                           {p.result === "returned" ? (
                             <span className="statusmarke rot" title={p.return_reason ?? undefined}>zurückgebucht</span>
                           ) : (
-                            <span className="statusmarke gruen">{p.result === "settled" ? "eingezogen" : "im Lauf"}</span>
+                            <span className="statusmarke gruen">{p.result === "settled" ? "eingezogen" : "Lastschrift"}</span>
                           )}
                         </span>
                       }
-                      label={kannZurueck ? `${p.payer_name}: Rücklastschrift erfassen` : undefined}
-                      onClick={kannZurueck && !laeuft ? () => { setZurueck(p.end_to_end_id); setGrund(""); } : undefined}
+                      label={
+                        offen
+                          ? `${p.payer_name}: aus dem Einzug nehmen`
+                          : kannZurueck ? `${p.payer_name}: Rücklastschrift erfassen` : undefined
+                      }
+                      onClick={klickbar ? () => { setGewaehlt(p.end_to_end_id); setGrund(""); } : undefined}
                     />
                   </li>
                 );
               })}
-              {zeigeKandidaten.map((k) => (
-                <li key={k.payer_id}>
-                  <Listenzeile
-                    titel={k.payer_name}
-                    kontext={
-                      <>
-                        <ArtMarken arten={k.kinds} /> {k.arten}
-                        {k.positionen > 1 ? ` · ${k.positionen} Posten` : ""}
-                        {!k.einzugsfaehig && k.grund && (
-                          <>
-                            <br />
-                            <span className="grund">{k.grund}</span>
-                          </>
-                        )}
-                      </>
-                    }
-                    neben={
-                      <span className="neben">
-                        <span className="betrag tnum">{formatCents(k.amount_cents)}</span>
-                        {k.einzugsfaehig ? (
-                          <span className="statusmarke gelb">angekündigt</span>
-                        ) : (
-                          <span className="statusmarke rot">{k.mandate_id ? "gesperrt" : "kein Mandat"}</span>
-                        )}
-                      </span>
-                    }
-                  />
-                </li>
-              ))}
-              {gesamt > grenze && (
+              {posten.length > zeige.length && (
                 <li>
-                  <Listenzeile titel={`Alle ${gesamt} zeigen`} hinweis={`${gesamt - grenze} weitere`} onClick={() => setAlle(true)} />
+                  <Listenzeile
+                    titel={`Alle ${posten.length} zeigen`}
+                    hinweis={`${posten.length - zeige.length} weitere`}
+                    onClick={() => setAlle(true)}
+                  />
                 </li>
               )}
             </ul>
@@ -387,24 +273,10 @@ export function LastschriftLauf({
         </section>
 
         <dl className="karte gross zusammenfassung">
-          <div>
-            <dt>Mitglieder</dt>
-            <dd className="dpl tnum">{posten.length + kandidaten.length}</dd>
-          </div>
-          <div>
-            <dt>Summe</dt>
-            <dd className="dpl tnum">{formatCents(summeAlle)}</dd>
-          </div>
-          <div>
-            <dt>Ohne Mandat</dt>
-            <dd className="dpl tnum rot">{ohneMandat.length}</dd>
-          </div>
-          <div>
-            <dt>Fällig am</dt>
-            <dd className="dpl tnum">{isoDateLabel(lauf.collection_date)}</dd>
-          </div>
-          {/* Aufschlüsselung, sobald etwas im Lauf ist: was davon Beitrag,
-              was Getränke, was Arbeitsdienst ist */}
+          <div><dt>Mitglieder</dt><dd className="dpl tnum">{posten.length}</dd></div>
+          <div><dt>Summe</dt><dd className="dpl tnum">{formatCents(lauf.total_cents)}</dd></div>
+          <div><dt>Abbuchung</dt><dd className="dpl tnum">{isoDateLabel(lauf.collection_date)}</dd></div>
+          {/* Aufschlüsselung: was davon Beitrag, was Getränke, was Arbeitsdienst ist */}
           {sortChargeKinds(jeArt.map((a) => a.kind)).map((k) => {
             const a = jeArt.find((x) => x.kind === k)!;
             return (
@@ -417,12 +289,40 @@ export function LastschriftLauf({
         </dl>
       </div>
 
-      {zurueckPosten && (
+      {auswahl && offen && (
+        <FensterKnopf
+          titel="Aus dem Einzug nehmen"
+          unterzeile={`${auswahl.payer_name} · ${formatCents(auswahl.amount_cents)}`}
+          offen
+          onSchliessen={() => setGewaehlt(null)}
+        >
+          <p className="unterzeile">
+            Die Forderungen werden wieder offen. Angekündigt war der{" "}
+            {isoDateLabel(lauf.collection_date)} – ein späterer Einzug kündigt neu an.
+          </p>
+          <button
+            type="button"
+            className="knopf gefahr block gross"
+            disabled={laeuft}
+            onClick={() =>
+              starte(async () => {
+                const e = await einzugMitgliedEntfernen(lauf.id, auswahl.end_to_end_id);
+                melde(e);
+                if (e.ok) setGewaehlt(null);
+              })
+            }
+          >
+            Aus dem Einzug nehmen
+          </button>
+        </FensterKnopf>
+      )}
+
+      {auswahl && !offen && (
         <FensterKnopf
           titel="Rücklastschrift erfassen"
-          unterzeile={`${zurueckPosten.payer_name} · ${formatCents(zurueckPosten.amount_cents)}`}
+          unterzeile={`${auswahl.payer_name} · ${formatCents(auswahl.amount_cents)}`}
           offen
-          onSchliessen={() => setZurueck(null)}
+          onSchliessen={() => setGewaehlt(null)}
         >
           <p className="unterzeile">
             Der Grund geht unverändert an das Mitglied – „Konto nicht gedeckt" und
@@ -446,13 +346,13 @@ export function LastschriftLauf({
             onClick={() =>
               starte(async () => {
                 const e = await ruecklaeuferErfassen({
-                  kennung: zurueckPosten.end_to_end_id,
+                  kennung: auswahl.end_to_end_id,
                   grund,
                   am: null,
                   batchId: lauf.id,
                 });
                 melde(e);
-                if (e.ok) setZurueck(null);
+                if (e.ok) setGewaehlt(null);
               })
             }
           >
@@ -461,16 +361,5 @@ export function LastschriftLauf({
         </FensterKnopf>
       )}
     </div>
-  );
-}
-
-function Schloss() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
-      <path
-        d="M6 11h12v10H6zM8.5 11V7.5a3.5 3.5 0 0 1 7 0V11"
-        fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"
-      />
-    </svg>
   );
 }

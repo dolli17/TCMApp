@@ -19,74 +19,6 @@ function frisch(batchId?: string) {
   revalidatePath("/konto");
 }
 
-export async function laufAnlegen(daten: {
-  titel: string;
-  faelligAm: string;
-  /** null = alle angekündigten Arten */
-  arten: ChargeKind[] | null;
-}): Promise<AktionsErgebnis & { id?: string }> {
-  const supabase = await createServerSupabase();
-
-  const { data, error } = await supabase.rpc("create_debit_batch", {
-    p_title: daten.titel,
-    p_collection_date: daten.faelligAm,
-    p_kinds: daten.arten ?? undefined,
-  });
-
-  if (error) return { ok: false, meldung: translateDbError(error) };
-
-  frisch();
-  return { ok: true, meldung: "Der Lauf ist angelegt.", id: data as string };
-}
-
-export async function postenAufnehmen(
-  batchId: string,
-  zahlerIds: string[] | null,
-): Promise<AktionsErgebnis> {
-  const supabase = await createServerSupabase();
-
-  const { data, error } = await supabase.rpc("add_charges_to_debit_batch", {
-    p_batch_id: batchId,
-    p_payer_ids: zahlerIds ?? undefined,
-  });
-
-  if (error) return { ok: false, meldung: translateDbError(error) };
-
-  frisch(batchId);
-
-  const z = data?.[0];
-  const auf = z?.aufgenommen ?? 0;
-  if (auf === 0) {
-    return { ok: true, meldung: "Es war nichts Einzugsfähiges dabei." };
-  }
-  return {
-    ok: true,
-    meldung: `${auf} ${auf === 1 ? "Forderung" : "Forderungen"} aufgenommen${
-      (z?.uebersprungen ?? 0) > 0
-        ? `, ${z!.uebersprungen} ${
-            z!.uebersprungen === 1 ? "Mitglied bleibt" : "Mitglieder bleiben"
-          } außen vor`
-        : ""
-    }.`,
-  };
-}
-
-export async function postenEntfernen(
-  itemId: string,
-  batchId: string,
-): Promise<AktionsErgebnis> {
-  const supabase = await createServerSupabase();
-
-  const { error } = await supabase.rpc("remove_charge_from_debit_batch", {
-    p_item_id: itemId,
-  });
-
-  if (error) return { ok: false, meldung: translateDbError(error) };
-
-  frisch(batchId);
-  return { ok: true, meldung: "Der Posten ist aus dem Lauf genommen." };
-}
-
 /**
  * Die Lastschriftdatei bauen und ablegen.
  *
@@ -111,7 +43,7 @@ export async function dateiErzeugen(batchId: string): Promise<AktionsErgebnis> {
 
   const zeilen = data ?? [];
   if (zeilen.length === 0) {
-    return { ok: false, meldung: "Der Lauf enthält keine Posten." };
+    return { ok: false, meldung: "Der Einzug enthält keine Lastschrift." };
   }
 
   const kopf = zeilen[0]!;
@@ -247,7 +179,7 @@ export async function laufAbschliessen(batchId: string): Promise<AktionsErgebnis
   const z = data?.[0];
   return {
     ok: true,
-    meldung: `Lauf abgeschlossen: ${z?.eingezogen ?? 0} eingezogen${
+    meldung: `Einzug abgeschlossen: ${z?.eingezogen ?? 0} eingezogen${
       (z?.zurueck ?? 0) > 0 ? `, ${z!.zurueck} zurückgebucht` : ""
     }.`,
   };
@@ -267,5 +199,88 @@ export async function laufEingereicht(
   if (error) return { ok: false, meldung: translateDbError(error) };
 
   frisch(batchId);
-  return { ok: true, meldung: "Der Lauf ist als eingereicht vermerkt." };
+  return { ok: true, meldung: "Der Einzug ist als eingereicht vermerkt." };
+}
+
+// ---------------------------------------------------------------------------
+// Der Einzug: ankündigen und Lauf anlegen in einem Schritt
+// ---------------------------------------------------------------------------
+
+export interface EinzugAuswahl {
+  kind: ChargeKind;
+  period: string | null;
+  returned: boolean;
+}
+
+export interface VorschauZeile {
+  member_id: string;
+  member_name: string;
+  positionen: number;
+  arten: string;
+  kinds: string[];
+  amount_cents: number;
+  mandate_reference: string | null;
+  einzugsfaehig: boolean;
+  grund: string | null;
+}
+
+/** Wer mitginge - dieselbe Prüfung, die der Einzug selbst nimmt. */
+export async function einzugVorschau(
+  abbuchung: string,
+  gruppen: EinzugAuswahl[],
+): Promise<{ ok: true; zeilen: VorschauZeile[] } | { ok: false; meldung: string }> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.rpc("einzug_vorschau", {
+    p_collection_date: abbuchung,
+    p_gruppen: gruppen as never,
+  });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, zeilen: (data ?? []) as unknown as VorschauZeile[] };
+}
+
+export async function einzugVorbereiten(daten: {
+  abbuchung: string;
+  gruppen: EinzugAuswahl[];
+  titel: string;
+}): Promise<AktionsErgebnis & { id?: string }> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.rpc("einzug_vorbereiten", {
+    p_collection_date: daten.abbuchung,
+    p_gruppen: daten.gruppen as never,
+    p_title: daten.titel,
+  });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+
+  const z = data?.[0];
+  frisch(z?.batch_id);
+  const n = z?.lastschriften ?? 0;
+  return {
+    ok: true,
+    id: z?.batch_id,
+    meldung: `${n} ${n === 1 ? "Ankündigung ist" : "Ankündigungen sind"} verschickt, der Einzug ist angelegt.`,
+  };
+}
+
+/** Ein Mitglied aus dem Einzug nehmen, solange die Datei fehlt. */
+export async function einzugMitgliedEntfernen(
+  batchId: string,
+  kennung: string,
+): Promise<AktionsErgebnis> {
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.rpc("einzug_mitglied_entfernen", {
+    p_batch_id: batchId,
+    p_end_to_end_id: kennung,
+  });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  frisch(batchId);
+  return { ok: true, meldung: "Das Mitglied ist aus dem Einzug genommen. Seine Forderungen sind wieder offen." };
+}
+
+/** Einen leeren Einzug löschen - nur ohne Lastschrift und ohne Datei. */
+export async function einzugLoeschen(batchId: string): Promise<AktionsErgebnis> {
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.rpc("einzug_loeschen", { p_batch_id: batchId });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  frisch(batchId);
+  return { ok: true, meldung: "Der leere Einzug ist gelöscht." };
 }

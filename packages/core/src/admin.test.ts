@@ -121,7 +121,7 @@ describe("adminTodos", () => {
   it("angekuendigt ohne Lauf: sofort einziehen, auch waehrend die Frist laeuft", () => {
     const t = adminTodos({ ...leer, today: "2026-09-10", noticeDueDate: "2026-10-12" });
     expect(t).toHaveLength(1);
-    expect(t[0]!).toMatchObject({ title: "Angekündigte Forderungen einziehen", urgent: true, href: "/admin/kasse?abschnitt=lastschrift" });
+    expect(t[0]!).toMatchObject({ title: "Angekündigte Forderungen einziehen", urgent: true, href: "/admin/kasse/einzug" });
     expect(t[0]!.text).toContain("12.10.2026");
   });
 
@@ -132,7 +132,7 @@ describe("adminTodos", () => {
 
   it("ein offener Lauf fuehrt zu seinem naechsten Schritt", () => {
     const entwurf = adminTodos({ ...leer, today: "2026-09-10", noticeDueDate: "2026-10-12", batchStatus: "draft", batchHref: "/admin/kasse/lastschriften/x" });
-    expect(entwurf.map((x) => x.title)).toEqual(["Lastschriftlauf fertigstellen"]);
+    expect(entwurf.map((x) => x.title)).toEqual(["Einzug: Datei erzeugen"]);
     expect(entwurf[0]!.href).toBe("/admin/kasse/lastschriften/x");
     expect(adminTodos({ ...leer, today: "2026-09-10", batchStatus: "generated" }).map((x) => x.title))
       .toEqual(["Lastschriftdatei einreichen"]);

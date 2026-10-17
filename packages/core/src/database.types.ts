@@ -2374,6 +2374,46 @@ export type Database = {
           valid_from: string
         }[]
       }
+      einzug_gruppen: {
+        Args: never
+        Returns: {
+          anzahl: number
+          kind: Database["public"]["Enums"]["charge_kind"]
+          mitglieder: number
+          period_label: string
+          ruecklaeufer: boolean
+          summe_cents: number
+        }[]
+      }
+      einzug_loeschen: { Args: { p_batch_id: string }; Returns: undefined }
+      einzug_mitglied_entfernen: {
+        Args: { p_batch_id: string; p_end_to_end_id: string }
+        Returns: undefined
+      }
+      einzug_vorbereiten: {
+        Args: { p_collection_date: string; p_gruppen: Json; p_title?: string }
+        Returns: {
+          ausnahmen: number
+          batch_id: string
+          forderungen: number
+          lastschriften: number
+          summe_cents: number
+        }[]
+      }
+      einzug_vorschau: {
+        Args: { p_collection_date: string; p_gruppen: Json }
+        Returns: {
+          amount_cents: number
+          arten: string
+          einzugsfaehig: boolean
+          grund: string
+          kinds: Database["public"]["Enums"]["charge_kind"][]
+          mandate_reference: string
+          member_id: string
+          member_name: string
+          positionen: number
+        }[]
+      }
       end_membership: {
         Args: {
           p_cancellation_date?: string

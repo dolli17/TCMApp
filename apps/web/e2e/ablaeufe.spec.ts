@@ -1116,29 +1116,34 @@ test.describe("Verwaltung", () => {
     await expect(page.getByRole("heading", { name: `Jahresbeiträge ${jahr - 1}` })).toBeVisible();
   });
 
-  test("die Kasse führt über drei Segmente und ihre Unterseiten", async ({ page }) => {
+  test("die Kasse führt über fünf Segmente und ihre Unterseiten", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/kasse");
 
-    // Die Segmente folgen dem Weg des Geldes: abrechnen, ankündigen, einziehen
+    // Start sagt, was zu tun ist, und erklärt den Weg des Geldes
     const segmente = page.getByRole("navigation", { name: "Kasse", exact: true });
-    for (const name of ["Forderungen", "Abrechnen", "Lastschriften"]) {
+    for (const name of ["Start", "Einzüge", "Forderungen", "Abrechnen", "Einstellungen"]) {
       await expect(segmente.getByRole("link", { name })).toBeVisible();
     }
+    await expect(segmente.getByRole("link", { name: "Start" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("heading", { name: "Zu tun" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "So läuft das Geld" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Einzug vorbereiten" }).first()).toBeVisible();
 
-    // Unter „Abrechnen“ stehen alle Quellen von Forderungen, darunter die
-    // Getränkemonate und die Einrichtung
+    // Unter „Abrechnen“ stehen alle Quellen von Forderungen und die Getränkemonate
     await segmente.getByRole("link", { name: "Abrechnen" }).click();
     const quellen = page.locator('.liste-gruppe[aria-label="Abrechnungen"]');
     for (const name of [/^Jahresbeiträge \d{4}/, /^Arbeitsdienst \d{4}/, /^Gastgebühren/]) {
       await expect(quellen.getByRole("link", { name })).toBeVisible();
     }
     await expect(page.getByRole("heading", { name: "Getränkemonate" })).toBeVisible();
+
+    // Beitragsarten und Regeln stehen unter „Einstellungen“
+    await segmente.getByRole("link", { name: "Einstellungen" }).click();
     const einrichtung = page.getByRole("navigation", { name: "Einrichtung der Kasse" });
     for (const name of ["Beitragsarten", "Regeln"]) {
       await expect(einrichtung.getByRole("link", { name })).toBeVisible();
     }
-
     await einrichtung.getByRole("link", { name: "Beitragsarten" }).click();
     await expect(page.getByRole("heading", { name: "Beitragsarten" })).toBeVisible();
     // Ohne diese Tabelle liessen sich keine Jahresbeitraege erzeugen - sie war der
@@ -1158,27 +1163,19 @@ test.describe("Verwaltung", () => {
     ).toContainText("Für 2029 ist alles berechnet");
   });
 
-  test("die Vorabankündigung lässt kein zu frühes Datum zu", async ({ page }) => {
+  test("ein Einzug lässt keinen Abbuchungstag vor Ablauf der Frist zu", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/admin/kasse?abschnitt=beitraege");
+    await page.goto("/admin/kasse/einzug");
+    await expect(page.getByRole("heading", { name: "Einzug vorbereiten" })).toBeVisible();
 
-    // Über die Überschrift filtern: „Vorabankündigung" steht auch im Fließtext
-    // der Karte darüber, und hasText würde beide treffen.
-    const karte = page
-      .locator("section.karte")
-      .filter({ has: page.getByRole("heading", { name: "Vorabankündigung" }) });
-    await expect(karte).toContainText("eine je Mitglied");
-
-    // Steht etwas an, nimmt das Feld gar kein zu frühes Datum an — die Frist
-    // wird nicht erst beim Absenden geprüft. Ob gerade etwas ansteht, hängt
-    // vom Bestand ab; die Frist selbst prüft 12_vorabankuendigung.sql.
-    const feld = karte.getByLabel("Fällig am");
-    if ((await feld.count()) > 0) {
-      const min = await feld.getAttribute("min");
-      const heute = new Date().toISOString().slice(0, 10);
-      expect(min).not.toBeNull();
-      expect(min! > heute).toBe(true);
-    }
+    // Das Feld nimmt kein zu frühes Datum an - die Frist wird nicht erst beim
+    // Absenden geprüft. Die Frist selbst prüft 24_einzug.sql.
+    const feld = page.getByLabel("Abbuchungstag");
+    const min = await feld.getAttribute("min");
+    const inDreizehnTagen = new Date(Date.now() + 13 * 86_400_000).toISOString().slice(0, 10);
+    expect(min).not.toBeNull();
+    expect(min! > inDreizehnTagen).toBe(true);
+    await expect(feld).toHaveValue(min!);
   });
 
   test("Forderungen lassen sich nach Stand filtern", async ({ page }) => {
@@ -1268,15 +1265,15 @@ test.describe("Verwaltung", () => {
     ).not.toContainText("9,99");
   });
 
-  test("die Lastschriftläufe sagen, was zum Einziehen noch fehlt", async ({ page }) => {
+  test("die Einzüge sagen, was zum Einziehen noch fehlt", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/kasse/lastschriften");
 
-    // Die Läufe sind ein Segment der Kasse; die alte Adresse leitet dorthin.
-    await expect(page).toHaveURL(/\/admin\/kasse\?abschnitt=lastschrift/);
-    await expect(page.getByRole("heading", { name: "Lastschriftläufe" })).toBeVisible();
-    await page.getByRole("button", { name: "Lauf anlegen" }).click();
-    await expect(page.getByRole("heading", { name: "Neuer Lastschriftlauf" }).first()).toBeVisible();
+    // Die Einzüge sind ein Segment der Kasse; alte Adressen leiten dorthin.
+    await expect(page).toHaveURL(/\/admin\/kasse\?abschnitt=einzuege/);
+    await expect(page.getByRole("heading", { name: "Laufend" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Abgeschlossen" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Einzug vorbereiten" })).toHaveAttribute("href", "/admin/kasse/einzug");
 
     // Ohne Gläubiger-ID und Vereins-IBAN lässt sich keine Datei bauen. Das muss
     // hier stehen und nicht erst beim Klick auf „erzeugen".
@@ -1309,25 +1306,50 @@ test.describe("Verwaltung", () => {
     }
   });
 
-  test("ein neuer Lastschriftlauf schlägt einen Namen vor und lässt Arten wählen", async ({ page }) => {
+  test("ein Einzug kündigt an und legt die Lastschrift in einem Schritt an", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/admin/kasse?abschnitt=lastschrift");
-    await page.getByRole("button", { name: "Lauf anlegen" }).click();
 
-    const name = page.getByLabel("Bezeichnung");
-    await expect(name).toHaveValue(/^Lastschrift \d{2}\.\d{2}\.\d{4}$/);
+    // Eine eigene Forderung, damit der Test nicht vom Bestand abhängt
+    await page.goto("/admin/kasse?abschnitt=abrechnen");
+    await page.getByRole("button", { name: "Forderung anlegen" }).first().click();
+    const fenster = page.locator("dialog.fenster");
+    await fenster.getByLabel("Mitglied").fill("Nadine Bauer");
+    await fenster.getByLabel("Art").selectOption("deposit");
+    await fenster.getByLabel("Betrag in Euro").fill("12,50");
+    await fenster.getByLabel("Beschreibung").fill("ZZTest Pfand Einzug");
+    await fenster.getByRole("button", { name: "Forderung anlegen" }).click();
+    await expect(fenster.locator(".hinweis.erfolg")).toBeVisible({ timeout: 20_000 });
 
-    await page.getByLabel("Nur bestimmte Arten").check();
-    // Vorausgewählt ist der Beitrag; der Name sagt jetzt, was eingezogen wird
-    await expect(page.getByLabel("Beitrag", { exact: true })).toBeChecked();
-    await expect(name).toHaveValue(/· Beitrag$/);
-    await page.getByLabel("Getränke", { exact: true }).check();
-    await expect(name).toHaveValue(/· Beitrag, Getränke$/);
+    // Start nennt sie unter „Zu tun“ und führt mit Vorauswahl weiter
+    await page.goto("/admin/kasse");
+    const zuTun = page.locator('.liste-gruppe[aria-label="Zu tun"]');
+    await zuTun.getByRole("link", { name: /Pfand · noch nicht eingezogen/ }).click();
+    await page.waitForURL(/\/admin\/kasse\/einzug\?gruppe=/);
+    await expect(page.getByRole("checkbox", { name: /Pfand/ })).toBeChecked();
 
-    // Ohne Art lässt sich nichts anlegen
-    await page.getByLabel("Beitrag", { exact: true }).uncheck();
-    await page.getByLabel("Getränke", { exact: true }).uncheck();
-    await expect(page.getByRole("button", { name: "Lauf anlegen" }).last()).toBeDisabled();
+    // Ein Tag, ein Name, eine Vorschau
+    await expect(page.getByLabel("Bezeichnung")).toHaveValue("Pfand");
+    const wer = page.locator("section", { has: page.getByRole("heading", { name: "Wer ist dabei?" }) });
+    await expect(wer.locator(".kachel.gruen")).toContainText("Lastschrift", { timeout: 20_000 });
+
+    await page.getByRole("button", { name: "Ankündigen und Einzug anlegen" }).click();
+    await page.waitForURL(/\/admin\/kasse\/lastschriften\/[0-9a-f-]{36}$/, { timeout: 20_000 });
+
+    // Angekündigt - und die Datei ist sofort dran, ohne auf die Frist zu warten
+    await expect(page.locator(".lauf-titel .statusmarke")).toHaveText("Angekündigt");
+    await expect(page.getByText("Datei erzeugen und bei der Bank einreichen")).toBeVisible();
+    await expect(page.getByRole("button", { name: "pain.008 erzeugen" })).toBeEnabled();
+    await expect(page.getByRole("heading", { name: "Stand" })).toBeVisible();
+
+    // Bis zur Datei lässt sich ein Mitglied herausnehmen; die Forderung ist dann wieder offen
+    await page.getByRole("button", { name: /Nadine Bauer: aus dem Einzug nehmen/ }).click();
+    await page.locator("dialog.fenster").getByRole("button", { name: "Aus dem Einzug nehmen" }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("wieder offen", { timeout: 20_000 });
+    await expect(page.locator(".lauf-titel .statusmarke")).toHaveText("Leer");
+
+    // Ein leerer Einzug lässt sich löschen
+    await page.getByRole("button", { name: "Leeren Einzug löschen" }).click();
+    await page.waitForURL(/abschnitt=einzuege/, { timeout: 20_000 });
   });
 
   test("die Lastschriftdatei ist keinem normalen Mitglied zugänglich", async ({ page }) => {
