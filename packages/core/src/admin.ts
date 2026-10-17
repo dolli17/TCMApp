@@ -1,151 +1,19 @@
 /**
- * Verwaltung: der Weg des Geldes und was heute zu tun ist
- * (Entwuerfe AdminUebersicht und AdminKasse, docs/design/clubhaus)
+ * Verwaltung: was heute zu tun ist (Entwurf AdminUebersicht,
+ * docs/design/clubhaus). Den Stand eines Einzugs rechnet einzug.ts.
  *
  * Reine Darstellung. Ob eine Forderung eingezogen werden darf, entscheidet
- * weiter die Datenbank (debit_batch_candidates, guard_prenotification). Hier
- * wird nur aus dem, was sie liefert, abgelesen, auf welchem Schritt ein Lauf
- * steht - keine Frist wird nachgerechnet.
+ * weiter die Datenbank - keine Frist wird nachgerechnet.
  */
 
 import { formatCents } from "./money";
 
 export type DebitBatchStatus = "draft" | "generated" | "submitted" | "completed";
-export type DebitStepKey = "forderung" | "ankuendigung" | "lauf" | "datei" | "ruecklaeufer";
-/** erledigt = gruen, aktuell = gelb, offen = grau */
-export type DebitStepState = "erledigt" | "aktuell" | "offen";
-
-export interface DebitStep {
-  key: DebitStepKey;
-  nr: number;
-  name: string;
-  info: string;
-  state: DebitStepState;
-}
-
-export interface DebitFlowInput {
-  /** Die Forderungen, um die es geht - im Lauf oder auf dem Weg dorthin. */
-  charges: {
-    members: number;
-    totalCents: number;
-    /** Offen und noch nicht angekuendigt */
-    unannounced: number;
-    /** Der spaeteste angekuendigte Faelligkeitstag (charges.due_date), ISO */
-    dueDate: string | null;
-  };
-  /** Der Lauf, falls einer angelegt ist */
-  batch: {
-    status: DebitBatchStatus;
-    collectionDate: string;
-    itemCount: number;
-    /** Mitglieder, die die Datenbank fuer diesen Lauf als einzugsfaehig meldet */
-    readyMembers: number;
-    returned: number;
-  } | null;
-  /** Heute in Berlin, ISO (YYYY-MM-DD) */
-  today: string;
-}
-
-export interface DebitFlow {
-  steps: DebitStep[];
-  /** Kurzer Stand fuer die Marke neben dem Titel */
-  label: string;
-  /** Der aktuelle Schritt, oder null, wenn alles erledigt ist */
-  current: DebitStepKey | null;
-}
 
 /** "2026-10-12" -> "12.10.2026" - ohne Date, also ohne Zeitzonenfalle. */
 export function isoDateLabel(iso: string): string {
   const [j, m, t] = iso.slice(0, 10).split("-");
   return `${t}.${m}.${j}`;
-}
-
-const NAMEN: Record<DebitStepKey, string> = {
-  forderung: "Forderung",
-  ankuendigung: "Ankündigung",
-  lauf: "Lastschriftlauf",
-  datei: "Datei",
-  ruecklaeufer: "Rückläufer",
-};
-const REIHE: DebitStepKey[] = ["forderung", "ankuendigung", "lauf", "datei", "ruecklaeufer"];
-
-/**
- * Die fuenf Schritte Forderung -> Ankuendigung -> Lastschriftlauf -> Datei ->
- * Ruecklaeufer. Erledigt ist, was die Daten belegen; der erste nicht erledigte
- * Schritt ist der aktuelle, alle danach sind offen.
- */
-export function debitFlow(input: DebitFlowInput): DebitFlow {
-  const { charges, batch } = input;
-  const imLauf = batch !== null && batch.itemCount > 0;
-  const weiter = batch !== null && batch.status !== "draft";
-  const frist = charges.dueDate;
-
-  const erledigt: Record<DebitStepKey, boolean> = {
-    forderung: charges.members > 0 || imLauf || weiter,
-    // Mit dem Versand ist die Ankuendigung erledigt. Die 14 Tage sind kein
-    // eigener Schritt, sondern eine Bedingung an den Faelligkeitstag: Lauf
-    // und Datei duerfen sofort entstehen, die Bank bucht erst am
-    // angekuendigten Tag ab. Frueher galt der Schritt erst nach Ablauf der
-    // Frist als erledigt, und die Kasse zeigte "Vorabankuendigung laeuft",
-    // obwohl die Datei laengst erzeugt werden konnte.
-    ankuendigung:
-      imLauf || weiter || (batch?.readyMembers ?? 0) > 0 ||
-      (charges.unannounced === 0 && frist !== null),
-    lauf: imLauf || weiter,
-    datei: weiter,
-    ruecklaeufer: batch?.status === "completed",
-  };
-
-  const aktuell = REIHE.find((k) => !erledigt[k]) ?? null;
-  const stand = (k: DebitStepKey): DebitStepState =>
-    aktuell === null || REIHE.indexOf(k) < REIHE.indexOf(aktuell)
-      ? "erledigt"
-      : k === aktuell ? "aktuell" : "offen";
-
-  const info: Record<DebitStepKey, string> = {
-    forderung:
-      charges.members > 0
-        ? `${charges.members} ${charges.members === 1 ? "Mitglied" : "Mitglieder"}, ${formatCents(charges.totalCents)}`
-        : erledigt.forderung ? "erzeugt" : "Noch keine offene Forderung",
-    ankuendigung:
-      stand("ankuendigung") === "erledigt"
-        ? frist ? `angekündigt zum ${isoDateLabel(frist)}` : "angekündigt"
-        : charges.unannounced > 0
-          ? `${charges.unannounced} noch nicht angekündigt`
-          : "Vorabankündigung je Mitglied",
-    lauf: !batch
-      ? frist ? `jetzt möglich, Einzug ab ${isoDateLabel(frist)}` : "Noch kein Lauf angelegt"
-      : imLauf || weiter
-        ? `${batch.itemCount} Posten zum ${isoDateLabel(batch.collectionDate)}`
-        : batch.readyMembers > 0
-          ? `${batch.readyMembers} ${batch.readyMembers === 1 ? "Mitglied" : "Mitglieder"} einzugsfähig`
-          : frist && batch.collectionDate < frist
-            ? `Einzug am ${isoDateLabel(batch.collectionDate)} liegt vor dem angekündigten ${isoDateLabel(frist)}`
-            : `Einzug am ${isoDateLabel(batch.collectionDate)}`,
-    datei:
-      batch?.status === "generated" ? "erzeugt, noch nicht eingereicht"
-      : weiter ? "erzeugt und eingereicht"
-      : "pain.008 fürs Onlinebanking",
-    ruecklaeufer:
-      (batch?.returned ?? 0) > 0
-        ? `${batch!.returned} Rückläufer erfasst`
-        : batch?.status === "completed" ? "keine Rückläufer" : "per EndToEndId eintragen",
-  };
-
-  const steps = REIHE.map((key, i) => ({ key, nr: i + 1, name: NAMEN[key], info: info[key], state: stand(key) }));
-
-  return { steps, current: aktuell, label: standLabel(aktuell, batch) };
-}
-
-function standLabel(aktuell: DebitStepKey | null, batch: DebitFlowInput["batch"]): string {
-  switch (aktuell) {
-    case null: return "Abgeschlossen";
-    case "forderung": return "Keine Forderungen";
-    case "ankuendigung": return "Ankündigung offen";
-    case "lauf": return batch ? "Auswahl offen" : "Lauf anlegen";
-    case "datei": return "Bereit für die Datei";
-    case "ruecklaeufer": return batch?.status === "generated" ? "Datei liegt bereit" : "Eingereicht";
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -156,8 +24,18 @@ export interface AdminTodoInput {
   /** Heute in Berlin, ISO (YYYY-MM-DD) */
   today: string;
   openApplications: number;
-  /** Angekuendigte Forderungen: der spaeteste Faelligkeitstag, ISO */
-  noticeDueDate: string | null;
+  /**
+   * Angekuendigte Forderungen, die in keinem Einzug stecken (aus der alten
+   * Kasse, in der Ankuendigung und Lauf getrennt waren), oder null
+   */
+  notice: {
+    count: number;
+    totalCents: number;
+    /** Der spaeteste angekuendigte Faelligkeitstag, ISO */
+    dueDate: string;
+    /** Wie die Gruppen heissen, etwa "Jahresbeiträge 2026" */
+    groups: string[];
+  } | null;
   /** Der juengste noch nicht abgeschlossene Lastschriftlauf */
   batchStatus: DebitBatchStatus | null;
   /** Wohin "Lauf ansehen" fuehrt */
@@ -255,11 +133,12 @@ export function adminTodos(input: AdminTodoInput): AdminTodo[] {
       href: input.batchHref,
       urgent: true,
     });
-  } else if (input.noticeDueDate) {
+  } else if (input.notice) {
+    const { count, totalCents, dueDate, groups } = input.notice;
     liste.push({
       key: "ankuendigung",
-      title: "Angekündigte Forderungen einziehen",
-      text: `Sie stecken in keinem Einzug. Ein neuer Einzug kündigt sie mit dem neuen Abbuchungstag an (zuletzt angekündigt zum ${isoDateLabel(input.noticeDueDate)}).`,
+      title: `${count === 1 ? "1 angekündigte Forderung" : `${count} angekündigte Forderungen`} ohne Einzug`,
+      text: `${groups.join(", ")}: ${formatCents(totalCents)}, angekündigt zum ${isoDateLabel(dueDate)}, aber in keinem Einzug – abgebucht wird so nichts. Ein neuer Einzug kündigt sie mit seinem Abbuchungstag erneut an.`,
       action: "Einzug vorbereiten",
       href: "/admin/kasse/einzug",
       urgent: true,

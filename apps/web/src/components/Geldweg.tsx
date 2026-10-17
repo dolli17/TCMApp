@@ -1,4 +1,4 @@
-/** Ein Schritt, wie ihn debitFlow oder einzugStand liefern. */
+/** Ein Stand, wie ihn einzugStand liefert. */
 export interface GeldwegSchritt {
   key: string;
   name: string;
@@ -7,11 +7,10 @@ export interface GeldwegSchritt {
 }
 
 /**
- * Der Weg des Geldes in fuenf Schritten: erledigt gruen mit Haekchen,
+ * Der Weg des Geldes durch die Staende eines Einzugs: erledigt gruen mit Haekchen,
  * aktuell gelb, offen grau umrandet. Am Telefon senkrecht mit dem Satz
  * darunter, ab 768 px waagerecht (docs/design/clubhaus/verwaltung, Regel 8).
- * Welcher Schritt wo steht, rechnet @tcm/core (debitFlow, beim Einzug
- * einzugStand mit vier Staenden).
+ * Welcher Stand erreicht ist, rechnet @tcm/core (einzugStand).
  */
 export function Geldweg({ schritte }: { schritte: readonly GeldwegSchritt[] }) {
   return (

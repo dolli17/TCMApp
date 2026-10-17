@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
-  adminTodos, debitFlow, formatCents, localMinutes, timeToMinutes, timelinePosition, timelineSegments,
-  type DebitBatchStatus,
+  adminTodos, einzugGruppeTitel, einzugStand, formatCents, localMinutes, timeToMinutes, timelinePosition,
+  timelineSegments, type ChargeKind, type DebitBatchStatus,
 } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Geldweg } from "@/components/Geldweg";
@@ -33,11 +33,11 @@ function heuteInBerlin(): string {
 /**
  * Der Einstieg in die Verwaltung (Entwurf AdminUebersicht, docs/design/clubhaus)
  *
- * Vier Kennzahlen mit Sprungziel, der Weg des Geldes fuer den juengsten
- * offenen Lastschriftlauf, die Anlage heute und rechts, was heute zu tun ist.
- * Welcher Schritt dran ist und was auf die Liste gehoert, rechnet @tcm/core
- * (debitFlow, adminTodos) - aus dem, was die Datenbank liefert. Ob eingezogen
- * werden darf, entscheidet weiter allein die Datenbank.
+ * Vier Kennzahlen mit Sprungziel, der Stand des laufenden Einzugs, die
+ * Anlage heute und rechts, was heute zu tun ist. Welcher Stand erreicht ist
+ * und was auf die Liste gehoert, rechnet @tcm/core (einzugStand, adminTodos) -
+ * aus dem, was die Datenbank liefert. Ob eingezogen werden darf, entscheidet
+ * weiter allein die Datenbank.
  *
  * Nur Lesen. Jede Quelle wird fuer sich geladen; schlaegt eine fehl, zeigt
  * nur ihr Abschnitt den Fehler.
@@ -62,7 +62,7 @@ export default async function VerwaltungSeite() {
     supabase.rpc("booking_settings"),
     supabase
       .from("charges")
-      .select("payer_id, amount_cents, status, due_date, debit_items(result)")
+      .select("kind, period_label, amount_cents, status, due_date, debit_items(result)")
       .in("status", ["open", "notified", "returned"]),
     supabase.rpc("debit_batch_overview", { p_limit: 6 }),
     supabase.from("billing_periods").select("year, month").eq("status", "open"),
@@ -77,67 +77,51 @@ export default async function VerwaltungSeite() {
   const forderungen = forderungenRes.data ?? [];
   const offenSumme = forderungen.reduce((s, f) => s + f.amount_cents, 0);
 
-  // --- Der Weg des Geldes --------------------------------------------------
-  // Der juengste Lauf, der noch nicht abgeschlossen ist. Die Liste kommt
-  // neueste zuerst aus der Datenbank.
-  const lauf = (laeufeRes.data ?? []).find((l) => l.status !== "completed") ?? null;
-  const unterwegs = forderungen.filter((f) => f.status !== "returned");
-  const angekuendigt = unterwegs.filter((f) => f.status === "notified");
-  const faellig = angekuendigt.reduce<string | null>(
-    (max, f) => (f.due_date && (!max || f.due_date > max) ? f.due_date : max),
-    null,
-  );
-
-  // Fuer einen Entwurf fragt die Seite die Datenbank, wer einzugsfaehig ist.
-  // Die Frist wird hier nicht nachgerechnet.
-  const kandidatenRes = lauf?.status === "draft"
-    ? await supabase.rpc("debit_batch_candidates", {
-        p_collection_date: lauf.collection_date,
-        p_kinds: (lauf.kinds ?? undefined) as never,
+  // --- Der laufende Einzug -----------------------------------------------
+  // Der juengste, der noch nicht abgeschlossen ist und etwas enthaelt; ein
+  // leerer Entwurf laeuft nicht. Die Liste kommt neueste zuerst.
+  const offeneLaeufe = (laeufeRes.data ?? []).filter((l) => l.status !== "completed" && l.item_count > 0);
+  const lauf = offeneLaeufe[0] ?? null;
+  const stand = lauf
+    ? einzugStand({
+        status: lauf.status as DebitBatchStatus,
+        collectionDate: lauf.collection_date,
+        itemCount: lauf.item_count,
+        returned: lauf.zurueck,
+        today: heute,
       })
     : null;
-
-  const weg = debitFlow({
-    charges: {
-      members: new Set(unterwegs.map((f) => f.payer_id)).size,
-      totalCents: unterwegs.reduce((s, f) => s + f.amount_cents, 0),
-      unannounced: unterwegs.filter((f) => f.status === "open").length,
-      dueDate: faellig,
-    },
-    batch: lauf
-      ? {
-          status: lauf.status as DebitBatchStatus,
-          collectionDate: lauf.collection_date,
-          itemCount: lauf.item_count,
-          readyMembers: (kandidatenRes?.data ?? []).filter((k) => k.einzugsfaehig).length,
-          returned: lauf.zurueck,
-        }
-      : null,
-    today: heute,
-  });
   const laufHref = lauf ? `/admin/kasse/lastschriften/${lauf.id}` : "/admin/kasse?abschnitt=einzuege";
 
+  // Was in keinem Einzug steckt und noch eingezogen werden kann.
+  const imEinzug = (f: (typeof forderungen)[number]) =>
+    (f.debit_items ?? []).some((i) => i.result === "pending" || i.result === "settled");
+  const ohneEinzug = forderungen.filter((f) => f.status !== "returned" && !imEinzug(f));
+  const ohneEinzugSumme = ohneEinzug.reduce((s, f) => s + f.amount_cents, 0);
+
   // Fuer "Heute zu tun" zaehlt der Einzug, bei dem etwas zu tun ist - nicht
-  // der juengste. Und angekuendigt ohne Einzug ist nur, was in keinem
-  // aktiven Posten steckt.
-  const offeneLaeufe = (laeufeRes.data ?? []).filter((l) => l.status !== "completed");
+  // der juengste.
   const dran =
-    offeneLaeufe.find((l) => l.status === "draft" && l.item_count > 0) ??
+    offeneLaeufe.find((l) => l.status === "draft") ??
     offeneLaeufe.find((l) => l.status === "generated") ??
     null;
-  const ohneEinzug = angekuendigt.filter(
-    (f) => !(f.debit_items ?? []).some((i) => i.result === "pending" || i.result === "settled"),
-  );
-  const faelligOhneEinzug = ohneEinzug.reduce<string | null>(
-    (max, f) => (f.due_date && (!max || f.due_date > max) ? f.due_date : max),
-    null,
-  );
+
+  // Angekuendigt, aber in keinem Einzug: das gibt es nur noch aus der alten
+  // Kasse, in der Ankuendigung und Lauf getrennt waren.
+  const angekuendigtOhne = ohneEinzug.filter((f) => f.status === "notified");
+  const notice = angekuendigtOhne.length === 0 ? null : {
+    count: angekuendigtOhne.length,
+    totalCents: angekuendigtOhne.reduce((s, f) => s + f.amount_cents, 0),
+    dueDate: angekuendigtOhne.reduce((max, f) => (f.due_date && f.due_date > max ? f.due_date : max), ""),
+    groups: [...new Set(angekuendigtOhne.map((f) =>
+      einzugGruppeTitel({ kind: f.kind as ChargeKind, period_label: f.period_label, ruecklaeufer: false })))].sort(),
+  };
 
   // --- Heute zu tun --------------------------------------------------------
   const aufgaben = adminTodos({
     today: heute,
     openApplications: offeneAntraege,
-    noticeDueDate: faelligOhneEinzug,
+    notice: notice?.dueDate ? notice : null,
     batchStatus: (dran?.status as DebitBatchStatus | undefined) ?? null,
     batchHref: dran ? `/admin/kasse/lastschriften/${dran.id}` : laufHref,
     returnedCharges: forderungen.filter((f) => f.status === "returned").length,
@@ -182,8 +166,7 @@ export default async function VerwaltungSeite() {
   // Die dringendste Aufgabe als grosse Karte, die uebrigen als Zeilen.
   const erste = aufgaben[0]?.urgent ? aufgaben[0] : null;
   const weitere = erste ? aufgaben.slice(1) : aufgaben;
-  const nr = weg.steps.findIndex((x) => x.state === "aktuell") + 1;
-  const aktuellerSchritt = weg.steps[nr - 1];
+  const nr = stand ? stand.schritte.findIndex((x) => x.state === "aktuell") + 1 : 0;
 
   return (
     <div className="verwaltung uebersicht">
@@ -242,32 +225,48 @@ export default async function VerwaltungSeite() {
             )}
           </section>
 
-          {/* --- Lastschriftlauf -------------------------------------------- */}
+          {/* --- Einzug ----------------------------------------------------- */}
           <section className="liste-abschnitt" aria-labelledby="h-geldweg">
             <Gruppenkopf
-              titel={lauf ? lauf.title : "Lastschriftlauf"}
+              titel={lauf ? `Einzug · ${lauf.title}` : "Einzug"}
               id="h-geldweg"
-              neben={<Link href={laufHref}>{lauf ? "Öffnen" : "Läufe"}</Link>}
+              neben={<Link href={laufHref}>{lauf ? "Öffnen" : "Einzüge"}</Link>}
             />
             {forderungenRes.error || laeufeRes.error ? (
-              <div className="hinweis fehler">Der Stand der Lastschrift konnte nicht geladen werden.</div>
-            ) : (
+              <div className="hinweis fehler">Der Stand der Einzüge konnte nicht geladen werden.</div>
+            ) : lauf && stand ? (
               <Link href={laufHref} className="karte geldweg-karte">
                 <ol className="geldweg-balken" aria-hidden="true">
-                  {weg.steps.map((x) => <li key={x.key} className={x.state} />)}
+                  {stand.schritte.map((x) => <li key={x.key} className={x.state} />)}
                 </ol>
                 <span className="zeile">
-                  <b>{nr > 0 ? `Schritt ${nr} von 5 · ${aktuellerSchritt!.name}` : "Alle Schritte erledigt"}</b>
-                  <span className={`statusmarke ${weg.current === null ? "gruen" : "gelb"}`}>{weg.label}</span>
+                  <b>{nr > 0 ? `Stand ${nr} von 4 · ${stand.schritte[nr - 1]!.name}` : "Abgeschlossen"}</b>
+                  <span className={`statusmarke ${stand.ton}`}>{stand.label}</span>
                 </span>
                 <small>
-                  {[aktuellerSchritt?.info, weg.steps[0]!.info].filter(Boolean).join(" · ")}
+                  {formatCents(lauf.total_cents)} · {lauf.item_count} {lauf.item_count === 1 ? "Mitglied" : "Mitglieder"}
+                  {stand.naechster ? ` · Als Nächstes: ${stand.naechster.titel}` : ""}
                 </small>
                 {/* Am Desktop steht der Weg zusätzlich ausgeschrieben */}
                 <span className="nur-breit">
-                  <Geldweg schritte={weg.steps} />
+                  <Geldweg schritte={stand.schritte} />
                 </span>
               </Link>
+            ) : (
+              <div className="liste-gruppe">
+                <Listenzeile
+                  href={ohneEinzug.length > 0 ? "/admin/kasse/einzug" : "/admin/kasse?abschnitt=einzuege"}
+                  punkt="info"
+                  titel="Gerade läuft kein Einzug"
+                  kontext={
+                    ohneEinzug.length > 0
+                      ? `${ohneEinzug.length} ${ohneEinzug.length === 1 ? "Forderung" : "Forderungen"} über ${formatCents(ohneEinzugSumme)} noch nicht eingezogen.`
+                      : "Alles ist eingezogen."
+                  }
+                  hinweis={ohneEinzug.length > 0 ? "Einzug vorbereiten" : undefined}
+                  hinweisTon="blau"
+                />
+              </div>
             )}
           </section>
         </div>
