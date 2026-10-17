@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { adminTodos, debitFlow, isoDateLabel, memberCategory, type DebitFlowInput } from "./admin";
+import { adminTodos, isoDateLabel, memberCategory } from "./admin";
 
 const HEUTE = "2026-09-28";
-const keineForderung = { members: 0, totalCents: 0, unannounced: 0, dueDate: null };
-const lauf = (b: Partial<NonNullable<DebitFlowInput["batch"]>> = {}) => ({
-  status: "draft" as const, collectionDate: "2026-10-15", itemCount: 0, readyMembers: 0, returned: 0, ...b,
-});
-const staende = (input: DebitFlowInput) => debitFlow(input).steps.map((s) => s.state);
 
 describe("isoDateLabel", () => {
   it("schreibt das Datum deutsch, ohne Zeitzone", () => {
@@ -15,95 +10,10 @@ describe("isoDateLabel", () => {
   });
 });
 
-describe("debitFlow", () => {
-  it("ohne Forderungen steht alles auf dem ersten Schritt", () => {
-    const f = debitFlow({ charges: keineForderung, batch: null, today: HEUTE });
-    expect(f.current).toBe("forderung");
-    expect(f.steps.map((s) => s.state)).toEqual(["aktuell", "offen", "offen", "offen", "offen"]);
-    expect(f.steps[0]!.info).toBe("Noch keine offene Forderung");
-  });
-
-  it("nicht angekuendigte Forderungen: Ankuendigung ist dran", () => {
-    const f = debitFlow({
-      charges: { members: 3, totalCents: 36000, unannounced: 4, dueDate: null }, batch: null, today: HEUTE,
-    });
-    expect(f.current).toBe("ankuendigung");
-    expect(f.steps[0]!.info).toMatch(/^3 Mitglieder, 360,00/);
-    expect(f.steps[1]!.info).toBe("4 noch nicht angekündigt");
-    expect(f.label).toBe("Ankündigung offen");
-  });
-
-  it("angekuendigt, Frist laeuft noch: die Ankuendigung ist erledigt, der Lauf ist sofort dran", () => {
-    const f = debitFlow({
-      charges: { members: 3, totalCents: 36000, unannounced: 0, dueDate: "2026-10-12" }, batch: null, today: HEUTE,
-    });
-    expect(f.current).toBe("lauf");
-    expect(f.steps[1]!).toMatchObject({ state: "erledigt", info: "angekündigt zum 12.10.2026" });
-    expect(f.steps[2]!.info).toBe("jetzt möglich, Einzug ab 12.10.2026");
-    expect(f.label).toBe("Lauf anlegen");
-  });
-
-  it("ein Lauf ohne einzugsfaehige Mitglieder steht bei der Auswahl und nennt den Grund", () => {
-    const f = debitFlow({
-      charges: { members: 2, totalCents: 1000, unannounced: 0, dueDate: "2026-10-20" },
-      batch: lauf({ readyMembers: 0 }),
-      today: HEUTE,
-    });
-    expect(f.current).toBe("lauf");
-    expect(f.steps[2]!.info).toBe("Einzug am 15.10.2026 liegt vor dem angekündigten 20.10.2026");
-  });
-
-  it("meldet die Datenbank Mitglieder als einzugsfaehig, ist die Auswahl dran", () => {
-    const f = debitFlow({
-      charges: { members: 2, totalCents: 1000, unannounced: 0, dueDate: "2026-10-12" },
-      batch: lauf({ readyMembers: 2 }),
-      today: HEUTE,
-    });
-    expect(staende({ charges: { members: 2, totalCents: 1000, unannounced: 0, dueDate: null }, batch: lauf({ readyMembers: 2 }), today: HEUTE }))
-      .toEqual(["erledigt", "erledigt", "aktuell", "offen", "offen"]);
-    expect(f.steps[2]!.info).toBe("2 Mitglieder einzugsfähig");
-    expect(f.label).toBe("Auswahl offen");
-  });
-
-  it("Posten im Entwurf: die Datei ist dran", () => {
-    const f = debitFlow({ charges: keineForderung, batch: lauf({ itemCount: 5 }), today: HEUTE });
-    expect(f.current).toBe("datei");
-    expect(f.steps[2]!.info).toBe("5 Posten zum 15.10.2026");
-    expect(f.label).toBe("Bereit für die Datei");
-  });
-
-  it("erzeugt und eingereicht: Ruecklaeufer sind dran", () => {
-    expect(debitFlow({ charges: keineForderung, batch: lauf({ status: "generated", itemCount: 5 }), today: HEUTE }).label)
-      .toBe("Datei liegt bereit");
-    const f = debitFlow({ charges: keineForderung, batch: lauf({ status: "submitted", itemCount: 5, returned: 1 }), today: HEUTE });
-    expect(f.current).toBe("ruecklaeufer");
-    expect(f.steps[3]!.info).toBe("erzeugt und eingereicht");
-    expect(f.steps[4]!.info).toBe("1 Rückläufer erfasst");
-  });
-
-  it("abgeschlossen: alles gruen", () => {
-    const f = debitFlow({ charges: keineForderung, batch: lauf({ status: "completed", itemCount: 5 }), today: HEUTE });
-    expect(f.current).toBeNull();
-    expect(f.steps.every((s) => s.state === "erledigt")).toBe(true);
-    expect(f.steps[4]!.info).toBe("keine Rückläufer");
-    expect(f.label).toBe("Abgeschlossen");
-  });
-
-  it("es gibt immer hoechstens einen aktuellen Schritt, davor nur erledigte", () => {
-    const f = debitFlow({
-      charges: { members: 1, totalCents: 100, unannounced: 1, dueDate: "2026-10-01" },
-      batch: lauf({ readyMembers: 1 }),
-      today: HEUTE,
-    });
-    const s = f.steps.map((x) => x.state);
-    expect(s.filter((x) => x === "aktuell")).toHaveLength(1);
-    expect(s.slice(0, s.indexOf("aktuell")).every((x) => x === "erledigt")).toBe(true);
-  });
-});
-
 describe("adminTodos", () => {
+  const notice = { count: 144, totalCents: 36500, dueDate: "2026-10-12", groups: ["Gastgebühren", "Jahresbeiträge 2026"] };
   const leer = {
-    today: HEUTE, openApplications: 0, noticeDueDate: null, batchStatus: null, batchHref: "/admin/kasse/lastschriften",
+    today: HEUTE, openApplications: 0, notice: null, batchStatus: null, batchHref: "/admin/kasse/lastschriften",
     returnedCharges: 0, openDrinkMonths: [{ year: 2026, month: 9 }],
   };
 
@@ -119,19 +29,21 @@ describe("adminTodos", () => {
   });
 
   it("angekuendigt ohne Lauf: sofort einziehen, auch waehrend die Frist laeuft", () => {
-    const t = adminTodos({ ...leer, today: "2026-09-10", noticeDueDate: "2026-10-12" });
+    const t = adminTodos({ ...leer, today: "2026-09-10", notice });
     expect(t).toHaveLength(1);
-    expect(t[0]!).toMatchObject({ title: "Angekündigte Forderungen einziehen", urgent: true, href: "/admin/kasse/einzug" });
+    expect(t[0]!).toMatchObject({ title: "144 angekündigte Forderungen ohne Einzug", urgent: true, href: "/admin/kasse/einzug" });
     expect(t[0]!.text).toContain("12.10.2026");
+    expect(t[0]!.text).toContain("Gastgebühren, Jahresbeiträge 2026");
+    expect(t[0]!.text).toContain("365,00");
   });
 
   it("nach Ablauf der Frist bleibt der Punkt stehen, bis eingezogen ist", () => {
-    expect(adminTodos({ ...leer, today: "2026-10-20", noticeDueDate: "2026-10-12", openDrinkMonths: [] }))
+    expect(adminTodos({ ...leer, today: "2026-10-20", notice, openDrinkMonths: [] }))
       .toHaveLength(1);
   });
 
   it("ein offener Lauf fuehrt zu seinem naechsten Schritt", () => {
-    const entwurf = adminTodos({ ...leer, today: "2026-09-10", noticeDueDate: "2026-10-12", batchStatus: "draft", batchHref: "/admin/kasse/lastschriften/x" });
+    const entwurf = adminTodos({ ...leer, today: "2026-09-10", notice, batchStatus: "draft", batchHref: "/admin/kasse/lastschriften/x" });
     expect(entwurf.map((x) => x.title)).toEqual(["Einzug: Datei erzeugen"]);
     expect(entwurf[0]!.href).toBe("/admin/kasse/lastschriften/x");
     expect(adminTodos({ ...leer, today: "2026-09-10", batchStatus: "generated" }).map((x) => x.title))
@@ -148,11 +60,11 @@ describe("adminTodos", () => {
 
   it("ein vergangener offener Monat ist zu handeln und steht vor den Hinweisen", () => {
     const t = adminTodos({
-      ...leer, today: "2026-09-29", noticeDueDate: "2026-10-12",
+      ...leer, today: "2026-09-29", notice,
       openDrinkMonths: [{ year: 2026, month: 9 }, { year: 2026, month: 8 }],
     });
     expect(t.map((x) => x.title)).toEqual([
-      "Getränkemonat August abschließen", "Angekündigte Forderungen einziehen", "Getränkemonat September",
+      "Getränkemonat August abschließen", "144 angekündigte Forderungen ohne Einzug", "Getränkemonat September",
     ]);
   });
 
