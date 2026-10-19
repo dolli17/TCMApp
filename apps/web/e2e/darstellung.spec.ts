@@ -83,7 +83,7 @@ test.describe("Anmeldeseiten", () => {
 
 test.describe("Layout", () => {
   // "/" ist Home - mit wischbaren Reihen bis an den Rand besonders anfaellig.
-  const SEITEN = ["/", "/plan", "/plan/spiele", "/getraenke", "/konto", "/konto/daten"];
+  const SEITEN = ["/", "/plan", "/plan/spiele", "/verein/getraenke", "/verein/veranstaltungen", "/konto", "/konto/daten"];
 
   test.describe("Telefon (390px)", () => {
     test.use({ viewport: { width: 390, height: 844 } });

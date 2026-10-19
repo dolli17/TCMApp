@@ -18,13 +18,13 @@ export interface AktionsErgebnis {
 /**
  * Nach jeder Änderung drei Seiten auffrischen.
  *
- * /getraenke und /kiosk sind kein Beiwerk: eine Preisänderung muss an der
+ * /verein/getraenke und /kiosk sind kein Beiwerk: eine Preisänderung muss an der
  * Theke sofort ankommen, sonst bucht das nächste Mitglied noch zum alten
  * Preis - und wundert sich später über die Abrechnung.
  */
 function frisch() {
   revalidatePath("/admin/getraenke");
-  revalidatePath("/getraenke");
+  revalidatePath("/verein/getraenke");
   revalidatePath("/kiosk");
 }
 

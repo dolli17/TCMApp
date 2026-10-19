@@ -14,6 +14,7 @@ const PFADE = {
   home: "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z",
   platz: "M4 4h16v16H4zM4 12h16M8 8h8v8H8zM12 8v8",
   getraenk: "M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8",
+  verein: "M5 21V4h11l-2 4 2 4H5",
   konto: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
   glocke: "M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8M13.7 21a2 2 0 0 1-3.4 0",
   // Die Verwaltung (nur mit Platzrechten)

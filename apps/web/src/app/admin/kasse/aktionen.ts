@@ -159,7 +159,7 @@ export async function monatSchliessen(
   if (error) return { ok: false, meldung: translateDbError(error) };
 
   frisch();
-  revalidatePath("/getraenke");
+  revalidatePath("/verein/getraenke");
 
   const z = data?.[0];
   return {

@@ -2628,6 +2628,10 @@ export type Database = {
         Returns: undefined
       }
       event_loeschen: { Args: { p_id: string }; Returns: undefined }
+      event_mein_wartelistenplatz: {
+        Args: { p_event_id: string }
+        Returns: number
+      }
       event_speichern: {
         Args: {
           p_companions_allowed: boolean

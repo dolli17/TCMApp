@@ -14,7 +14,7 @@ export async function getraenkBuchen(itemId: string, menge: number) {
 
   if (error) return { ok: false, meldung: translateDbError(error) };
 
-  revalidatePath("/getraenke");
+  revalidatePath("/verein/getraenke");
   return { ok: true, meldung: "Gebucht." };
 }
 
@@ -28,7 +28,7 @@ export async function getraenkStornieren(purchaseId: string) {
 
   if (error) return { ok: false, meldung: translateDbError(error) };
 
-  revalidatePath("/getraenke");
+  revalidatePath("/verein/getraenke");
   return { ok: true, meldung: "Zurückgenommen." };
 }
 

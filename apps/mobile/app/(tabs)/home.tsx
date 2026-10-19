@@ -3,8 +3,8 @@
  *
  * Was heute zaehlt, auf einen Blick (docs/design/clubhaus, Abschnitt 5):
  * die eigenen naechsten Termine, drei Schnellaktionen, welche Plaetze gerade
- * frei sind, wer Mitspieler sucht, der laufende Monat und die letzten
- * Neuigkeiten.
+ * frei sind, wer Mitspieler sucht, was demnaechst im Verein ansteht, der
+ * laufende Monat und die letzten Neuigkeiten.
  *
  * Nur Lesen. Gebucht, mitgespielt und eingetragen wird auf den Bildschirmen,
  * auf die die Knoepfe fuehren.
@@ -21,17 +21,18 @@ import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-na
 import { router, useFocusEffect, type Href } from "expo-router";
 import Svg, { Circle, Path } from "react-native-svg";
 import {
-  bookingKicker, dayTag, formatCents, localMinutes, relativeTimeLabel, sumOpenDrinks,
+  bookingKicker, dayTag, eventDemnaechst, formatCents, localMinutes, relativeTimeLabel, sumOpenDrinks,
   timelinePosition, timelineSegments, upcomingBookings,
 } from "@tcm/core";
 import { abstand, radius, schrift } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
+import { EventKarte } from "@/components/EventKarte";
 import { GrosserKopf } from "@/components/GrosserKopf";
 import { MiniZeitleiste } from "@/components/MiniZeitleiste";
 import {
   ladeArbeitsdienst, ladeBenachrichtigungen, ladeBuchungsarten, ladeBuchungseinstellungen,
   ladeEigeneGetraenke, ladeMeineBuchungen, ladeMeinenNamen, ladeOffeneSpiele, ladePlaetze,
-  ladeTagesplan,
+  ladeTagesplan, ladeVeranstaltungen,
 } from "@/lib/daten";
 import { abschnitt, ersterFehler, useLaden, type Abschnitt } from "@/lib/laden";
 import { alsUhrzeit, jetztFrei, lokaleMinuten, zuMinuten } from "@/lib/plan";
@@ -47,11 +48,11 @@ const heuteInBerlin = () =>
 
 async function ladeHome() {
   const heute = heuteInBerlin();
-  const [name, meine, plaetze, plan, einstellungen, arten, offen, getraenke, dienst, neues] =
+  const [name, meine, plaetze, plan, einstellungen, arten, offen, getraenke, dienst, neues, events] =
     await Promise.allSettled([
       ladeMeinenNamen(), ladeMeineBuchungen(), ladePlaetze(), ladeTagesplan(heute),
       ladeBuchungseinstellungen(), ladeBuchungsarten(), ladeOffeneSpiele(),
-      ladeEigeneGetraenke(), ladeArbeitsdienst(), ladeBenachrichtigungen(3),
+      ladeEigeneGetraenke(), ladeArbeitsdienst(), ladeBenachrichtigungen(3), ladeVeranstaltungen(),
     ]);
 
   // "Jetzt frei" braucht vier Quellen; fehlt eine, fehlt der Abschnitt.
@@ -78,6 +79,7 @@ async function ladeHome() {
     getraenke: abschnitt(getraenke),
     dienst: abschnitt(dienst),
     neues: abschnitt(neues),
+    events: abschnitt(events),
   };
 }
 
@@ -129,6 +131,7 @@ export default function Home() {
           <Schnellaktionen />
           <JetztFrei frei={d.frei} />
           <OffeneSpiele offen={d.offen} />
+          <DemnaechstImVerein events={d.events} />
           <DeinMonat getraenke={d.getraenke} dienst={d.dienst} />
           <Neuigkeiten neues={d.neues} />
         </>
@@ -314,7 +317,7 @@ function Schnellaktionen() {
   const { farben } = useTheme();
   const kacheln: { text: string; pfad: string; ziel: Href; gelb?: boolean }[] = [
     { text: "Platz buchen", pfad: PFAD.buchen, ziel: { pathname: "/plaetze", params: { buchen: "jetzt" } }, gelb: true },
-    { text: "Getränk eintragen", pfad: PFAD.getraenk, ziel: "/getraenke" },
+    { text: "Getränk eintragen", pfad: PFAD.getraenk, ziel: "/verein/getraenke" },
     { text: "Mitspielen", pfad: PFAD.mitspielen, ziel: "/plaetze/spiele" },
   ];
 
@@ -463,6 +466,24 @@ function OffeneSpiele({ offen }: { offen: Abschnitt<Offen> }) {
   );
 }
 
+/* --- Demnaechst im Verein ------------------------------------------------- */
+
+type Events = Awaited<ReturnType<typeof ladeVeranstaltungen>>;
+
+function DemnaechstImVerein({ events }: { events: Abschnitt<Events> }) {
+  const { stil } = useTheme();
+  const liste = eventDemnaechst(events.wert ?? [], new Date());
+
+  return (
+    <>
+      <Kopfzeile titel="Demnächst im Verein" link={{ text: "Alle", ziel: "/verein/veranstaltungen" }} />
+      {events.fehler && <Fehlerzeile text={events.fehler} />}
+      {events.wert && liste.length === 0 && <Text style={stil.leise}>Gerade ist nichts geplant.</Text>}
+      {liste.map((e) => <EventKarte key={e.id} e={e} aufforderung />)}
+    </>
+  );
+}
+
 /* --- Dein Monat ----------------------------------------------------------- */
 
 type Getraenke = Awaited<ReturnType<typeof ladeEigeneGetraenke>>;
@@ -484,7 +505,7 @@ function DeinMonat({ getraenke, dienst }: { getraenke: Abschnitt<Getraenke>; die
       <Kopfzeile titel={`Dein ${monat}`} />
       <View style={{ flexDirection: "row", gap: 10 }}>
         <Pressable
-          onPress={() => router.navigate("/getraenke")}
+          onPress={() => router.navigate("/verein/getraenke")}
           accessibilityRole="button"
           style={[stil.listenkarte, kachel]}
         >

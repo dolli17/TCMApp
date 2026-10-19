@@ -6,9 +6,9 @@ import { anmelden, NUTZER, PASSWORT, testName } from "./hilfen";
  * Veranstaltungen in der Verwaltung: anlegen, Anmeldungen mit Forderung,
  * Korrektur, Absage, Arbeitsdienst mit Anwesenheit und Stunden.
  *
- * Die Oberflaeche fuer Mitglieder kommt erst in Schritt 2. Bis dahin meldet
- * sich das Testmitglied direkt ueber die RPC an - dieselbe, die spaeter Web
- * und App aufrufen.
+ * In der Verwaltung meldet sich das Testmitglied direkt ueber die RPC an -
+ * dieselbe, die Web und App aufrufen. Der Durchlauf fuer Mitglieder unter
+ * /verein/veranstaltungen steht unten.
  */
 
 /** Ein Supabase-Client, angemeldet als dieses Konto. */
@@ -171,5 +171,93 @@ test.describe("Veranstaltungen verwalten", () => {
     await anmelden(page, NUTZER.mitglied);
     await page.goto("/admin/veranstaltungen");
     await expect(page.getByText("Diese Seite ist Administratoren vorbehalten.")).toBeVisible();
+  });
+});
+
+test.describe("Veranstaltungen für Mitglieder", () => {
+  test.skip(!NUTZER.admin || !NUTZER.mitglied || !PASSWORT, "Testkonten fehlen in .env.local");
+
+  test("anmelden mit Begleitperson, ändern, Forderung im Konto, abmelden", async ({ page }) => {
+    const titel = testName("Sommerfest");
+    const admin = await alsKonto(NUTZER.admin);
+    const beginn = new Date(Date.now() + 20 * 86_400_000);
+    beginn.setUTCHours(17, 0, 0, 0);
+    const { data: id, error } = await admin.rpc("event_speichern", {
+      p_id: null as unknown as string,
+      p_kind: "fest",
+      p_title: titel,
+      p_description: "Mit Grill und Musik.",
+      p_location: "Clubhaus",
+      p_starts_at: beginn.toISOString(),
+      p_ends_at: new Date(beginn.getTime() + 4 * 3_600_000).toISOString(),
+      p_registration_enabled: true,
+      p_registration_deadline: new Date(beginn.getTime() - 5 * 86_400_000).toISOString(),
+      p_max_participants: 10,
+      p_companions_allowed: true,
+      p_fee_cents: 1250,
+      p_work_hours: null as unknown as number,
+      p_veroeffentlichen: true,
+    });
+    expect(error).toBeNull();
+
+    try {
+      await anmelden(page, NUTZER.mitglied);
+
+      // Ohne gemerkten Reiter führt "Verein" zu den Getränken.
+      await page.goto("/verein");
+      await expect(page).toHaveURL(/\/verein\/getraenke$/);
+      await page.getByRole("navigation", { name: "Bereich" }).getByRole("link", { name: "Veranstaltungen" }).click();
+      await expect(page).toHaveURL(/\/verein\/veranstaltungen$/);
+
+      const karte = page.getByRole("link", { name: new RegExp(titel) });
+      await expect(karte).toContainText("noch 10 Plätze frei");
+      await karte.click();
+      await expect(page.getByRole("heading", { level: 1, name: titel })).toBeVisible();
+      await expect(page.getByText("0 angemeldet · noch 10 frei")).toBeVisible();
+      await expect(page.getByText(/danach kostet die Abmeldung trotzdem/)).toBeVisible();
+
+      // Anmelden mit einer Begleitperson
+      await page.getByRole("button", { name: "Eine Begleitperson mehr" }).click();
+      await page.getByLabel("Bemerkung").fill("vegetarisch");
+      await page.getByRole("button", { name: /^Verbindlich anmelden · 25,00/ }).click();
+      await expect(page.locator(".hinweis[role=status]")).toContainText("Du bist angemeldet");
+      await expect(page.getByText("Du + 1 Begleitperson")).toBeVisible();
+      await expect(page.getByText("2 angemeldet · noch 8 frei")).toBeVisible();
+      await expect(page.locator(".event-mein .betrag")).toContainText("25,00");
+
+      // Begleitperson wieder streichen
+      await page.getByRole("button", { name: "Anmeldung ändern" }).click();
+      await page.getByRole("button", { name: "Eine Begleitperson weniger" }).click();
+      await page.getByRole("button", { name: /^Änderung sichern/ }).click();
+      await expect(page.locator(".hinweis[role=status]")).toContainText("geändert");
+      await expect(page.getByText("Du allein")).toBeVisible();
+      await expect(page.locator(".event-mein .betrag")).toContainText("12,50");
+
+      // Im Konto unter den offenen Forderungen
+      await page.goto("/konto");
+      const forderung = page.locator("li.forderung", { hasText: titel });
+      await expect(forderung).toContainText("Veranstaltung");
+      await expect(forderung).toContainText("12,50");
+
+      // "Verein" merkt sich den Reiter; die Startseite zeigt den Stand.
+      await page.goto("/verein");
+      await expect(page).toHaveURL(/\/verein\/veranstaltungen$/);
+      await expect(page.getByRole("link", { name: new RegExp(titel) })).toContainText("Angemeldet");
+      await page.goto("/");
+      await expect(page.getByRole("heading", { name: "Demnächst im Verein" })).toBeVisible();
+
+      // Abmelden vor dem Anmeldeschluss: kostenlos, die Forderung ist weg.
+      await page.goto(`/verein/veranstaltungen/${id}`);
+      await page.getByRole("button", { name: /^Abmelden \(bis .* kostenlos\)/ }).click();
+      await page.getByRole("button", { name: "Ja, abmelden" }).click();
+      await expect(page.locator(".hinweis[role=status]")).toContainText("abgemeldet");
+      await expect(page.getByRole("heading", { name: "Anmelden" })).toBeVisible();
+
+      const mitglied = await alsKonto(NUTZER.mitglied);
+      const { data: rest } = await mitglied.from("charges").select("id").eq("event_id", id!);
+      expect(rest ?? []).toHaveLength(0);
+    } finally {
+      await admin.rpc("event_absagen", { p_id: id! });
+    }
   });
 });

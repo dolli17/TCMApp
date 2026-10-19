@@ -71,10 +71,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="getraenke"
+        name="verein"
         options={{
-          title: "Getränke",
-          tabBarIcon: ({ color }) => <Symbol name="getraenk" farbe={color} groesse={22} />,
+          title: "Verein",
+          tabBarIcon: ({ color }) => <Symbol name="verein" farbe={color} groesse={22} />,
         }}
       />
       <Tabs.Screen

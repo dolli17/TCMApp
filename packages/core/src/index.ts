@@ -14,6 +14,7 @@ export * from "./rollen";
 export * from "./forderungen";
 export * from "./einzug";
 export * from "./veranstaltungen";
+export * from "./veranstaltungen-mitglieder";
 export * from "./client";
 export * from "./schemas";
 export * from "./onboarding";

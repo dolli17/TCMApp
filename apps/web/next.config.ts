@@ -39,6 +39,9 @@ const config: NextConfig = {
       },
       { source: "/admin/serien", destination: "/admin/plaetze", permanent: true },
       { source: "/admin/beitraege", destination: "/admin/kasse", permanent: true },
+      // Getränke und Veranstaltungen stehen gemeinsam unter "Verein". Der
+      // Kiosk hat seine eigene Adresse und bleibt, wo er ist.
+      { source: "/getraenke", destination: "/verein/getraenke", permanent: true },
     ];
   },
 };
