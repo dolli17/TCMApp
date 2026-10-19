@@ -897,6 +897,7 @@ export type Database = {
           published_at: string | null
           registration_deadline: string | null
           registration_enabled: boolean
+          reminder_sent_at: string | null
           starts_at: string
           status: Database["public"]["Enums"]["event_status"]
           title: string
@@ -919,6 +920,7 @@ export type Database = {
           published_at?: string | null
           registration_deadline?: string | null
           registration_enabled?: boolean
+          reminder_sent_at?: string | null
           starts_at: string
           status?: Database["public"]["Enums"]["event_status"]
           title: string
@@ -941,6 +943,7 @@ export type Database = {
           published_at?: string | null
           registration_deadline?: string | null
           registration_enabled?: boolean
+          reminder_sent_at?: string | null
           starts_at?: string
           status?: Database["public"]["Enums"]["event_status"]
           title?: string
