@@ -11,13 +11,14 @@ import type { ChargeKind } from "./sepa/types";
 
 /** Reihenfolge wie im Vereinsjahr: was am meisten Geld bewegt, zuerst. */
 export const CHARGE_KINDS: readonly ChargeKind[] = [
-  "fee", "drinks", "work_duty", "guest", "deposit", "misc",
+  "fee", "drinks", "work_duty", "event", "guest", "deposit", "misc",
 ];
 
 export const CHARGE_KIND_LABEL: Record<ChargeKind, string> = {
   fee: "Beitrag",
   drinks: "Getränke",
   work_duty: "Arbeitsdienst",
+  event: "Veranstaltung",
   guest: "Gastgebühr",
   deposit: "Pfand",
   misc: "Sonstiges",
@@ -34,6 +35,7 @@ export const CHARGE_KIND_TON: Record<ChargeKind, ChargeKindTon> = {
   fee: "blau",
   drinks: "gold",
   work_duty: "grau",
+  event: "grau",
   guest: "grau",
   deposit: "grau",
   misc: "grau",
@@ -47,7 +49,7 @@ export function sortChargeKinds(kinds: readonly string[] | null | undefined): Ch
 
 /**
  * Kurztext fuer eine Auswahl von Arten, etwa im Namen eines Laufs:
- * null oder alle sechs = "alle Arten".
+ * null oder alle Arten = "alle Arten".
  */
 export function chargeKindsText(kinds: readonly string[] | null | undefined): string {
   const sortiert = sortChargeKinds(kinds);

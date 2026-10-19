@@ -43,6 +43,9 @@ const SYMBOLE = {
   dienst: (
     <path d="M9 4h6v3H9zM7 5H5v16h14V5h-2M9 14l2 2 4-4" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
   ),
+  veranstaltung: (
+    <path d="M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M8 3v4M16 3v4M12 13l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+  ),
   uebersicht: (
     <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" strokeWidth="1.8" fill="none" strokeLinejoin="round" />
   ),

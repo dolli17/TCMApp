@@ -210,6 +210,8 @@ export interface EinzugAuswahl {
   kind: ChargeKind;
   period: string | null;
   returned: boolean;
+  /** Nur bei Veranstaltungen */
+  event?: string | null;
 }
 
 export interface VorschauZeile {

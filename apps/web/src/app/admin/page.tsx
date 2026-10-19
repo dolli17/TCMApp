@@ -19,6 +19,7 @@ const HEUTE_LANG = new Intl.DateTimeFormat("de-DE", {
 /** Die Bereiche als Liste - am Telefon, wo keine Seitenleiste steht. */
 const BEREICHE = [
   { href: "/admin/mitglieder", label: "Mitglieder", symbol: "mitglieder" },
+  { href: "/admin/veranstaltungen", label: "Veranstaltungen", symbol: "veranstaltung" },
   { href: "/admin/arbeitsdienst", label: "Arbeitsdienst", symbol: "dienst" },
   { href: "/admin/kasse", label: "Kasse", symbol: "kasse" },
   { href: "/admin/plaetze", label: "Plätze & Serien", symbol: "serie" },
@@ -62,7 +63,7 @@ export default async function VerwaltungSeite() {
     supabase.rpc("booking_settings"),
     supabase
       .from("charges")
-      .select("kind, period_label, amount_cents, status, due_date, debit_items(result)")
+      .select("kind, period_label, event_id, amount_cents, status, due_date, debit_items(result), events(title)")
       .in("status", ["open", "notified", "returned"]),
     supabase.rpc("debit_batch_overview", { p_limit: 6 }),
     supabase.from("billing_periods").select("year, month").eq("status", "open"),
@@ -114,7 +115,10 @@ export default async function VerwaltungSeite() {
     totalCents: angekuendigtOhne.reduce((s, f) => s + f.amount_cents, 0),
     dueDate: angekuendigtOhne.reduce((max, f) => (f.due_date && f.due_date > max ? f.due_date : max), ""),
     groups: [...new Set(angekuendigtOhne.map((f) =>
-      einzugGruppeTitel({ kind: f.kind as ChargeKind, period_label: f.period_label, ruecklaeufer: false })))].sort(),
+      einzugGruppeTitel({
+        kind: f.kind as ChargeKind, period_label: f.period_label, ruecklaeufer: false,
+        event_id: f.event_id, titel: f.events?.title ?? null,
+      })))].sort(),
   };
 
   // --- Heute zu tun --------------------------------------------------------

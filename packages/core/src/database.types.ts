@@ -439,6 +439,7 @@ export type Database = {
           created_at: string
           description: string
           due_date: string | null
+          event_id: string | null
           id: string
           kind: Database["public"]["Enums"]["charge_kind"]
           member_id: string
@@ -454,6 +455,7 @@ export type Database = {
           created_at?: string
           description: string
           due_date?: string | null
+          event_id?: string | null
           id?: string
           kind: Database["public"]["Enums"]["charge_kind"]
           member_id: string
@@ -469,6 +471,7 @@ export type Database = {
           created_at?: string
           description?: string
           due_date?: string | null
+          event_id?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["charge_kind"]
           member_id?: string
@@ -484,6 +487,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "charges_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
           {
@@ -807,6 +817,137 @@ export type Database = {
           {
             foreignKeyName: "drink_purchases_voided_by_fkey"
             columns: ["voided_by"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_registrations: {
+        Row: {
+          attended: boolean
+          cancelled_at: string | null
+          companions: number
+          event_id: string
+          id: string
+          member_id: string
+          note: string | null
+          registered_at: string
+          status: Database["public"]["Enums"]["event_registration_status"]
+          updated_at: string
+          waitlisted_at: string | null
+        }
+        Insert: {
+          attended?: boolean
+          cancelled_at?: string | null
+          companions?: number
+          event_id: string
+          id?: string
+          member_id: string
+          note?: string | null
+          registered_at?: string
+          status?: Database["public"]["Enums"]["event_registration_status"]
+          updated_at?: string
+          waitlisted_at?: string | null
+        }
+        Update: {
+          attended?: boolean
+          cancelled_at?: string | null
+          companions?: number
+          event_id?: string
+          id?: string
+          member_id?: string
+          note?: string | null
+          registered_at?: string
+          status?: Database["public"]["Enums"]["event_registration_status"]
+          updated_at?: string
+          waitlisted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_registrations_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          cancelled_at: string | null
+          companions_allowed: boolean
+          created_at: string
+          created_by: string | null
+          description: string | null
+          ends_at: string | null
+          fee_cents: number | null
+          id: string
+          kind: Database["public"]["Enums"]["event_kind"]
+          location: string | null
+          max_participants: number | null
+          published_at: string | null
+          registration_deadline: string | null
+          registration_enabled: boolean
+          starts_at: string
+          status: Database["public"]["Enums"]["event_status"]
+          title: string
+          updated_at: string
+          work_hours: number | null
+        }
+        Insert: {
+          cancelled_at?: string | null
+          companions_allowed?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string | null
+          fee_cents?: number | null
+          id?: string
+          kind: Database["public"]["Enums"]["event_kind"]
+          location?: string | null
+          max_participants?: number | null
+          published_at?: string | null
+          registration_deadline?: string | null
+          registration_enabled?: boolean
+          starts_at: string
+          status?: Database["public"]["Enums"]["event_status"]
+          title: string
+          updated_at?: string
+          work_hours?: number | null
+        }
+        Update: {
+          cancelled_at?: string | null
+          companions_allowed?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string | null
+          fee_cents?: number | null
+          id?: string
+          kind?: Database["public"]["Enums"]["event_kind"]
+          location?: string | null
+          max_participants?: number | null
+          published_at?: string | null
+          registration_deadline?: string | null
+          registration_enabled?: boolean
+          starts_at?: string
+          status?: Database["public"]["Enums"]["event_status"]
+          title?: string
+          updated_at?: string
+          work_hours?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "members"
             referencedColumns: ["id"]
@@ -1772,6 +1913,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          event_id: string | null
           hours: number
           id: string
           member_id: string
@@ -1785,6 +1927,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          event_id?: string | null
           hours: number
           id?: string
           member_id: string
@@ -1798,6 +1941,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          event_id?: string | null
           hours?: number
           id?: string
           member_id?: string
@@ -1818,6 +1962,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_duty_entries_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
           {
@@ -2378,11 +2529,13 @@ export type Database = {
         Args: never
         Returns: {
           anzahl: number
+          event_id: string
           kind: Database["public"]["Enums"]["charge_kind"]
           mitglieder: number
           period_label: string
           ruecklaeufer: boolean
           summe_cents: number
+          titel: string
         }[]
       }
       einzug_loeschen: { Args: { p_batch_id: string }; Returns: undefined }
@@ -2433,6 +2586,153 @@ export type Database = {
         Returns: number
       }
       ensure_default_settings: { Args: never; Returns: number }
+      event_abmelden: { Args: { p_event_id: string }; Returns: undefined }
+      event_absagen: {
+        Args: { p_id: string }
+        Returns: {
+          geloescht: number
+          verbleibend: number
+        }[]
+      }
+      event_admin_abmelden: {
+        Args: { p_registration_id: string }
+        Returns: undefined
+      }
+      event_admin_aendern: {
+        Args: {
+          p_companions: number
+          p_note?: string
+          p_registration_id: string
+        }
+        Returns: undefined
+      }
+      event_admin_anmelden: {
+        Args: {
+          p_companions?: number
+          p_event_id: string
+          p_member_id: string
+          p_note?: string
+        }
+        Returns: string
+      }
+      event_anmelden: {
+        Args: { p_companions?: number; p_event_id: string; p_note?: string }
+        Returns: Database["public"]["Enums"]["event_registration_status"]
+      }
+      event_anmeldung_aendern: {
+        Args: { p_companions: number; p_event_id: string; p_note?: string }
+        Returns: Database["public"]["Enums"]["event_registration_status"]
+      }
+      event_anwesenheit_setzen: {
+        Args: { p_attended: boolean; p_registration_id: string }
+        Returns: undefined
+      }
+      event_loeschen: { Args: { p_id: string }; Returns: undefined }
+      event_speichern: {
+        Args: {
+          p_companions_allowed: boolean
+          p_description: string
+          p_ends_at: string
+          p_fee_cents: number
+          p_id: string
+          p_kind: Database["public"]["Enums"]["event_kind"]
+          p_location: string
+          p_max_participants: number
+          p_registration_deadline: string
+          p_registration_enabled: boolean
+          p_starts_at: string
+          p_title: string
+          p_veroeffentlichen?: boolean
+          p_work_hours: number
+        }
+        Returns: string
+      }
+      event_stunden_gutschreiben: {
+        Args: { p_event_id: string }
+        Returns: {
+          gutgeschrieben: number
+          uebersprungen: number
+        }[]
+      }
+      event_teilnehmer: {
+        Args: { p_event_id: string }
+        Returns: {
+          attended: boolean
+          cancelled_at: string
+          charge_cents: number
+          charge_gesperrt: boolean
+          charge_id: string
+          charge_status: Database["public"]["Enums"]["charge_status"]
+          companions: number
+          gutgeschrieben: boolean
+          member_id: string
+          member_name: string
+          note: string
+          registered_at: string
+          registration_id: string
+          status: Database["public"]["Enums"]["event_registration_status"]
+          waitlisted_at: string
+        }[]
+      }
+      event_veroeffentlichen: { Args: { p_id: string }; Returns: undefined }
+      event_verwaltung: {
+        Args: never
+        Returns: {
+          abgemeldet: number
+          anmeldungen: number
+          anwesend: number
+          begleitpersonen: number
+          cancelled_at: string
+          companions_allowed: boolean
+          created_at: string
+          description: string
+          einziehbar: number
+          einziehbar_cents: number
+          ends_at: string
+          fee_cents: number
+          forderungen: number
+          forderungen_cents: number
+          gutgeschrieben: number
+          id: string
+          im_einzug: number
+          kind: Database["public"]["Enums"]["event_kind"]
+          location: string
+          max_participants: number
+          personen: number
+          published_at: string
+          registration_deadline: string
+          registration_enabled: boolean
+          starts_at: string
+          status: Database["public"]["Enums"]["event_status"]
+          title: string
+          warteliste: number
+          work_hours: number
+        }[]
+      }
+      events_fuer_mitglied: {
+        Args: never
+        Returns: {
+          companions_allowed: boolean
+          description: string
+          ends_at: string
+          fee_cents: number
+          id: string
+          kind: Database["public"]["Enums"]["event_kind"]
+          location: string
+          max_participants: number
+          mein_status: Database["public"]["Enums"]["event_registration_status"]
+          meine_begleitpersonen: number
+          meine_bemerkung: string
+          personen: number
+          registration_deadline: string
+          registration_enabled: boolean
+          starts_at: string
+          status: Database["public"]["Enums"]["event_status"]
+          title: string
+          warteliste: number
+          work_hours: number
+        }[]
+      }
       fee_run_execute: {
         Args: { p_due_date?: string; p_year: number }
         Returns: {
@@ -3167,7 +3467,14 @@ export type Database = {
       billing_period_status: "open" | "closed" | "charged"
       booking_kind: "booking" | "blocking"
       booking_status: "active" | "cancelled"
-      charge_kind: "fee" | "drinks" | "deposit" | "work_duty" | "misc" | "guest"
+      charge_kind:
+        | "fee"
+        | "drinks"
+        | "deposit"
+        | "work_duty"
+        | "misc"
+        | "guest"
+        | "event"
       charge_status:
         | "open"
         | "notified"
@@ -3178,6 +3485,9 @@ export type Database = {
       debit_batch_status: "draft" | "generated" | "submitted" | "completed"
       debit_item_result: "pending" | "settled" | "returned"
       drink_category: "drink" | "food" | "other"
+      event_kind: "arbeitsdienst" | "fest" | "termin"
+      event_registration_status: "registered" | "waitlisted" | "cancelled"
+      event_status: "draft" | "published" | "cancelled"
       gender: "female" | "male" | "diverse"
       mandate_sequence: "FRST" | "RCUR" | "OOFF" | "FNAL"
       mandate_status: "active" | "revoked" | "expired"
@@ -3323,7 +3633,15 @@ export const Constants = {
       billing_period_status: ["open", "closed", "charged"],
       booking_kind: ["booking", "blocking"],
       booking_status: ["active", "cancelled"],
-      charge_kind: ["fee", "drinks", "deposit", "work_duty", "misc", "guest"],
+      charge_kind: [
+        "fee",
+        "drinks",
+        "deposit",
+        "work_duty",
+        "misc",
+        "guest",
+        "event",
+      ],
       charge_status: [
         "open",
         "notified",
@@ -3335,6 +3653,9 @@ export const Constants = {
       debit_batch_status: ["draft", "generated", "submitted", "completed"],
       debit_item_result: ["pending", "settled", "returned"],
       drink_category: ["drink", "food", "other"],
+      event_kind: ["arbeitsdienst", "fest", "termin"],
+      event_registration_status: ["registered", "waitlisted", "cancelled"],
+      event_status: ["draft", "published", "cancelled"],
       gender: ["female", "male", "diverse"],
       mandate_sequence: ["FRST", "RCUR", "OOFF", "FNAL"],
       mandate_status: ["active", "revoked", "expired"],

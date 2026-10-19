@@ -2281,3 +2281,74 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 @media (max-width: 599px) {
   .liste-gruppe.zu-tun .hinweis-rechts { display: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Veranstaltungen (Entwurf "Veranstaltungen": AdminListe, AdminDetail, AdminFormular)
+   --------------------------------------------------------------------------- */
+.listenzeile .symbolkachel:has(.datum-kachel) {
+  width: 48px; height: 52px; border-radius: 14px; background: var(--blue-soft); color: var(--blue-ink);
+}
+.listenzeile .symbolkachel:has(.datum-kachel.vorbei) { background: var(--surf-2); color: var(--ink-2); }
+.datum-kachel { display: grid; justify-items: center; line-height: 1; gap: 2px; }
+.datum-kachel b { font-family: var(--font-display); font-size: 21px; font-weight: 800; }
+.datum-kachel small { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.listenzeile .titel .marke-klein { vertical-align: 2px; margin-right: 2px; }
+
+.event-marken { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 4px; }
+.veranstaltung-detail .beschreibung { margin: 8px 0 0; max-width: 720px; color: var(--ink-2); line-height: 1.5; }
+.veranstaltung-aktionen { display: grid; gap: 10px; justify-items: end; }
+.veranstaltung-aktionen .knopfreihe, .rueckfrage .knopfreihe { display: flex; flex-wrap: wrap; gap: 8px; }
+.rueckfrage { display: grid; gap: 10px; max-width: 460px; }
+@media (min-width: 900px) {
+  .kennzahlen.vier { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.teilnehmer { display: grid; gap: 16px; }
+.teilnehmer .tabellenhuelle { box-shadow: none; }
+.teilnehmer-tabelle { min-width: 760px; }
+.teilnehmer-tabelle tr.abgemeldet td { color: var(--muted); }
+.teilnehmer-tabelle tr.wartend td:first-child b::after {
+  content: "Warteliste"; margin-left: 8px; font-size: 11px; font-weight: 700; color: var(--gold-ink);
+}
+.teilnehmer-tabelle input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--blue); }
+.teilnehmer-tabelle input:not([type]) { margin: 0; min-width: 120px; }
+.teilnehmer-tabelle .klein-zahl { width: 56px; min-width: 0 !important; }
+.teilnehmer-tabelle .zeilen-knoepfe { white-space: nowrap; text-align: right; }
+.teilnehmer-tabelle .zeilen-knoepfe .knopf + .knopf { margin-left: 6px; }
+.teilnehmer-tabelle .leise { color: var(--muted); }
+.teilnehmer-hinzu {
+  display: grid; gap: 12px; align-items: end;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  padding-top: 16px; border-top: 1px solid var(--line);
+}
+.teilnehmer-hinzu label { margin: 0; }
+.teilnehmer-hinzu label.breit { grid-column: span 2; }
+.teilnehmer-hinzu .unterzeile { grid-column: 1 / -1; margin: 0; }
+@media (max-width: 599px) {
+  .teilnehmer-hinzu label.breit { grid-column: 1 / -1; }
+}
+.stunden-gutschreiben, .forderungen-hinweis {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;
+}
+.stunden-gutschreiben { padding-top: 16px; border-top: 1px solid var(--line); }
+.stunden-gutschreiben > div, .forderungen-hinweis > div { display: grid; gap: 4px; max-width: 720px; }
+.forderungen-hinweis { background: var(--blue-soft); border-color: color-mix(in srgb, var(--blue) 25%, transparent); }
+.forderungen-hinweis .unterzeile { margin: 0; color: var(--ink-2); }
+
+.veranstaltungs-formular { display: grid; gap: 18px; max-width: 860px; }
+.veranstaltungs-formular .abschnitt { display: grid; gap: 14px; }
+.veranstaltungs-formular .abschnitt h2 { margin: 0; font-size: 22px; }
+.veranstaltungs-formular label { margin: 0; }
+.veranstaltungs-formular label small { display: block; margin-top: 4px; color: var(--muted); font-size: 12.5px; }
+.veranstaltungs-formular label.schmal { max-width: 240px; }
+.veranstaltungs-formular .hinweis { margin: 0; }
+.art-wahl-veranstaltung { border: 0; margin: 0; padding: 0; }
+.art-wahl-veranstaltung legend { padding: 0; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.art-wahl-veranstaltung > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.art-wahl-veranstaltung button {
+  min-height: 44px; padding: 0 16px; border-radius: var(--radius-knopf);
+  border: 1px solid var(--line); background: var(--surf); color: var(--ink);
+  font: inherit; font-weight: 700; cursor: pointer;
+}
+.art-wahl-veranstaltung button[aria-pressed="true"] { border-color: var(--blue); background: var(--blue-soft); color: var(--blue-ink); }
+.formular-fuss { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }

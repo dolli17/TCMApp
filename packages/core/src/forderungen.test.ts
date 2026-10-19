@@ -10,7 +10,7 @@ describe("Forderungsarten", () => {
       expect(CHARGE_KIND_LABEL[k]).toBeTruthy();
       expect(CHARGE_KIND_TON[k]).toBeTruthy();
     }
-    expect(CHARGE_KINDS).toHaveLength(6);
+    expect(CHARGE_KINDS).toHaveLength(7);
   });
 
   it("sortiert in Vereinsreihenfolge und laesst Unbekanntes weg", () => {
