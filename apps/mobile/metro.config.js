@@ -29,4 +29,18 @@ config.watchFolders = [wurzel];
 // diesen Schalter liest Metro nur "main" und meldet den Pfad als unbekannt.
 config.resolver.unstable_enablePackageExports = true;
 
+// React immer aus apps/mobile. expo-router fuehrt react nicht als
+// Abhaengigkeit, pnpm legt es ihm also nicht daneben, und Metro nimmt dann
+// die hochgezogene Kopie in node_modules/.pnpm/node_modules. Welche Version
+// dort liegt, entscheidet pnpm je nach Installation: lokal 18, auf EAS auch
+// schon die 19 der Web-App. Mit der 19 erzeugt der Router Elemente, die der
+// Renderer von React Native 0.76 ablehnt, und die App stuerzt beim Start ab.
+const reactAusApp = path.join(projekt, "package.json");
+config.resolver.resolveRequest = (context, name, platform) => {
+  if (name === "react" || name.startsWith("react/")) {
+    return context.resolveRequest({ ...context, originModulePath: reactAusApp }, name, platform);
+  }
+  return context.resolveRequest(context, name, platform);
+};
+
 module.exports = config;
