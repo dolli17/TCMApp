@@ -76,6 +76,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           href: "/admin/mitglieder", label: "Mitglieder", kurz: "Mitglieder", symbol: "mitglieder",
           zahl: offeneAntraege || undefined,
         },
+        { href: "/admin/veranstaltungen", label: "Veranstaltungen", kurz: "Termine", symbol: "veranstaltung" },
         { href: "/admin/arbeitsdienst", label: "Arbeitsdienst", kurz: "Dienst", symbol: "dienst" },
         { href: "/admin/kasse", label: "Kasse", kurz: "Kasse", symbol: "kasse" },
         { href: "/admin/plaetze", label: "Plätze & Serien", kurz: "Plätze", symbol: "serie" },

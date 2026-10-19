@@ -329,7 +329,10 @@ function ZuTun({
   heute, gruppen, laeufe, getraenkemonate,
 }: {
   heute: string;
-  gruppen: { kind: string; period_label: string | null; ruecklaeufer: boolean; anzahl: number; mitglieder: number; summe_cents: number }[];
+  gruppen: {
+    kind: string; period_label: string | null; ruecklaeufer: boolean; anzahl: number; mitglieder: number;
+    summe_cents: number; event_id: string | null; titel: string | null;
+  }[];
   laeufe: LaufZeile[];
   getraenkemonate: { year: number; month: number; status: "open" | "closed" }[];
 }) {

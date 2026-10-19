@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
-  CHARGE_KIND_LABEL, einzugGruppeSchluessel, einzugGruppeTitel, einzugTitel, formatCents, isoDateLabel,
+  CHARGE_KIND_LABEL, einzugGruppeAuswahl, einzugGruppeSchluessel, einzugGruppeTitel, einzugTitel, formatCents, isoDateLabel,
   type EinzugGruppe,
 } from "@tcm/core";
 import {
@@ -62,7 +62,7 @@ export function EinzugVorbereiten({
     starteLaden(async () => {
       const e = await einzugVorschau(
         abbuchung,
-        auswahl.map((g) => ({ kind: g.kind, period: g.period_label, returned: g.ruecklaeufer })),
+        auswahl.map(einzugGruppeAuswahl),
       );
       if (nr !== anfrage.current) return;
       if (e.ok) {
@@ -250,7 +250,7 @@ export function EinzugVorbereiten({
               const e = await einzugVorbereiten({
                 abbuchung,
                 titel,
-                gruppen: auswahl.map((g) => ({ kind: g.kind, period: g.period_label, returned: g.ruecklaeufer })),
+                gruppen: auswahl.map(einzugGruppeAuswahl),
               });
               setMeldung({ ok: e.ok, text: e.meldung });
               if (e.ok && e.id) router.push(`/admin/kasse/lastschriften/${e.id}`);

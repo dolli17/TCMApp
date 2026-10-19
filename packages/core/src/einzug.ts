@@ -45,6 +45,10 @@ export interface EinzugGruppe {
   kind: ChargeKind;
   period_label: string | null;
   ruecklaeufer: boolean;
+  /** Nur bei Veranstaltungen: je Veranstaltung eine Gruppe */
+  event_id?: string | null;
+  /** Titel der Veranstaltung, aus einzug_gruppen */
+  titel?: string | null;
 }
 
 const MEHRZAHL: Partial<Record<ChargeKind, string>> = {
@@ -55,8 +59,13 @@ const MEHRZAHL: Partial<Record<ChargeKind, string>> = {
 /**
  * Wie eine Gruppe in der Auswahl heisst: "Jahresbeiträge 2027",
  * "Getränke September 2026", "Gastgebühren", "Rückläufer · Beitrag 2026".
+ * Eine Veranstaltung heisst wie sie selbst: "Saisonabschlussfest".
  */
 export function einzugGruppeTitel(g: EinzugGruppe): string {
+  if (g.kind === "event") {
+    const name = g.titel?.trim() || CHARGE_KIND_LABEL.event;
+    return g.ruecklaeufer ? `Rückläufer · ${name}` : name;
+  }
   const zeitraum = zeitraumText(g.period_label);
   if (g.ruecklaeufer) {
     return `Rückläufer · ${CHARGE_KIND_LABEL[g.kind]}${zeitraum ? ` ${zeitraum}` : ""}`;
@@ -70,9 +79,21 @@ export function einzugTitel(gruppen: readonly EinzugGruppe[], abbuchung: string)
   return gruppen.length === 1 ? einzugGruppeTitel(gruppen[0]!) : `Einzug ${isoDateLabel(abbuchung)}`;
 }
 
-/** Schluessel einer Gruppe fuer Formulare und Listen. */
+/**
+ * Schluessel einer Gruppe fuer Formulare und Listen. Die Veranstaltung haengt
+ * nur bei Veranstaltungen hinten an, damit alte Links (?gruppe=fee|2027|)
+ * gueltig bleiben.
+ */
 export function einzugGruppeSchluessel(g: EinzugGruppe): string {
-  return `${g.kind}|${g.period_label ?? ""}|${g.ruecklaeufer ? "r" : ""}`;
+  const basis = `${g.kind}|${g.period_label ?? ""}|${g.ruecklaeufer ? "r" : ""}`;
+  return g.event_id ? `${basis}|${g.event_id}` : basis;
+}
+
+/** Die Auswahl, wie einzug_vorschau und einzug_vorbereiten sie erwarten. */
+export function einzugGruppeAuswahl(g: EinzugGruppe): {
+  kind: ChargeKind; period: string | null; returned: boolean; event: string | null;
+} {
+  return { kind: g.kind, period: g.period_label, returned: g.ruecklaeufer, event: g.event_id ?? null };
 }
 
 export type EinzugStandKey = "angekuendigt" | "datei" | "eingereicht" | "abgeschlossen";
@@ -214,7 +235,7 @@ export interface KasseTodoInput {
 }
 
 const ART_TON: Record<ChargeKind, "blau" | "gold" | "grau"> = {
-  fee: "blau", drinks: "gold", work_duty: "grau", guest: "grau", deposit: "grau", misc: "grau",
+  fee: "blau", drinks: "gold", work_duty: "grau", event: "grau", guest: "grau", deposit: "grau", misc: "grau",
 };
 
 /**

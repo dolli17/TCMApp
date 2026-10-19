@@ -23,7 +23,7 @@ export type SequenceType = "FRST" | "RCUR" | "OOFF" | "FNAL";
  * fehlte hier - der Dateierzeuger haette nicht uebersetzt, sobald eine solche
  * Forderung in einen Lauf kommt.
  */
-export type ChargeKind = "fee" | "drinks" | "deposit" | "work_duty" | "guest" | "misc";
+export type ChargeKind = "fee" | "drinks" | "deposit" | "work_duty" | "guest" | "event" | "misc";
 
 export interface Creditor {
   /** Name, wie er auf dem Kontoauszug des Mitglieds erscheint. */

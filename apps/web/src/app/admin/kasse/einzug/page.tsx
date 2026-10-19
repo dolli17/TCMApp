@@ -52,6 +52,8 @@ export default async function EinzugSeite({
     anzahl: g.anzahl,
     mitglieder: g.mitglieder,
     summe_cents: g.summe_cents,
+    event_id: g.event_id,
+    titel: g.titel,
   }));
   const vorgewaehlt = (Array.isArray(gruppe) ? gruppe : gruppe ? [gruppe] : [])
     .filter((k) => gruppen.some((g) => einzugGruppeSchluessel(g) === k));

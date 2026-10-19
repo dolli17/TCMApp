@@ -6,6 +6,10 @@ import {
 } from "@tcm/core";
 import { forderungAnlegen } from "@/app/admin/kasse/aktionen";
 
+/** Veranstaltungsgebuehren entstehen nur mit der Anmeldung, nie von Hand. */
+type HandArt = Exclude<ChargeKind, "event">;
+const HAND_ARTEN = CHARGE_KINDS.filter((k): k is HandArt => k !== "event");
+
 export interface MitgliedWahl {
   id: string;
   name: string;
@@ -21,7 +25,7 @@ export interface MitgliedWahl {
  */
 export function ForderungAnlegen({ mitglieder }: { mitglieder: MitgliedWahl[] }) {
   const [name, setName] = useState("");
-  const [art, setArt] = useState<ChargeKind>("misc");
+  const [art, setArt] = useState<HandArt>("misc");
   const [betrag, setBetrag] = useState("");
   const [beschreibung, setBeschreibung] = useState("");
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
@@ -78,8 +82,8 @@ export function ForderungAnlegen({ mitglieder }: { mitglieder: MitgliedWahl[] })
         </label>
         <label>
           <span>Art</span>
-          <select value={art} onChange={(e) => setArt(e.target.value as ChargeKind)}>
-            {CHARGE_KINDS.map((k) => (
+          <select value={art} onChange={(e) => setArt(e.target.value as HandArt)}>
+            {HAND_ARTEN.map((k) => (
               <option key={k} value={k}>{CHARGE_KIND_LABEL[k]}</option>
             ))}
           </select>
