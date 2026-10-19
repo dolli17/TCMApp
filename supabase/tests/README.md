@@ -54,6 +54,7 @@ sie danach zurück. Die Tests hinterlassen also keinen Zustand – auch nicht di
 | `25_veranstaltungen.sql` | Anmeldung erzeugt sofort die Forderung (Preis × Personen), passt sich bis zum Anmeldeschluss an, Warteliste ohne Forderung und Nachrücken (wer passt), nach dem Schluss fest und erst dann im Einzug, im Einzug gesperrt, Gebühr ziehen mit, Absage löscht, Mitglieder sehen nur Zahlen, Stunden aus dem Arbeitsdienst genau einmal |
 | `26_veranstaltungen_mitglieder.sql` | Eigener Platz auf der Warteliste in der Reihenfolge des Nachrückens, ohne fremde Anmeldungen |
 | `27_veranstaltungen_nachrichten.sql` | Nachrichten zu Veranstaltungen: Veröffentlichen an alle aktiven Mitglieder genau einmal, Nachrücken mit Betrag, Absage an Angemeldete und Wartende, Verlegen nur bei echter Änderung; Verweis `event_id` in `my_notifications`; Mail- und Push-Arten |
+| `28_veranstaltungen_erinnerung.sql` | Erinnerung zwei Tage vor dem Anmeldeschluss: nur an aktive Mitglieder ohne Anmeldung, genau einmal je Veranstaltung, nicht für Entwürfe, Abgesagtes oder ohne Anmeldung; pg_cron-Job `veranstaltungs-erinnerungen` |
 | `99_runtests.sql` | Führt die Suite aus |
 
 Die Dateien `01` bis `23` **definieren nur Funktionen**. Ausgeführt wird alles in

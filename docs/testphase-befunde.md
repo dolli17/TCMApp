@@ -60,6 +60,7 @@ Testern bzw. App Store · **P3** Komfort, Aufräumen.
 |---|---|---|---|
 | O19 | P3 | **Testlauf-Rückstände:** Ein früherer E2E-Lauf hat dem lokalen Testmitglied die Admin-Rolle gegeben. Danach schlugen Berechtigungstests fehl, bis `db:reset` lief. | Die betroffenen Verwaltungstests sollen vergebene Rollen wieder entziehen; oder vor jedem Lauf `db:reset`. |
 | O20 | P3 | Die Abläufe „Einladung über den Server“ und „Passwort-vergessen-Link in Tab 2“ sind nur einmalig mit dem lokalen Mail-Postfach (Mailpit) geprüft, nicht als dauerhafte E2E-Tests. | Hilfsfunktion für Mailpit in `apps/web/e2e/hilfen.ts` und dauerhafte Tests daraus machen. |
+| O26 | P3 | **E2E „ein Mitglied mit Historie lässt sich nicht löschen“ (`apps/web/e2e/mitglieder.spec.ts:296`) scheitert nur im Gesamtlauf.** Einzeln auf frischer DB besteht er. Er sucht nach „Bauer“ und nimmt den ersten Treffer; im Gesamtlauf ist das je nach dem, was vorherige Tests angelegt haben, ein anderer Datensatz (beobachtet: der des Admins). Der Test hängt also von der Reihenfolge ab. Gefunden beim Gesamtlauf zu PR #40 am 19.10. | Den Datensatz eindeutig wählen, z. B. über die Mitgliedsnummer oder die ID des Testmitglieds statt über den ersten Treffer der Suche. |
 
 ### Noch nicht live geprüft
 
