@@ -22,6 +22,8 @@ export interface Posten {
   title: string;
   body: string;
   created_at: string;
+  /** Veranstaltung, um die es geht (Schritt 3 der Veranstaltungen) */
+  event_id?: string | null;
 }
 
 const ZEIT = new Intl.DateTimeFormat("de-DE", {
@@ -58,6 +60,28 @@ function nurForderungen(posten: Posten[]): boolean {
   return posten.every((p) => p.kind.startsWith("charge_"));
 }
 
+/** Geht es nur um Veranstaltungen? Dann führt der Knopf dorthin. */
+function nurVeranstaltungen(posten: Posten[]): boolean {
+  return posten.every((p) => p.kind.startsWith("event_"));
+}
+
+/**
+ * Wohin der Knopf führt. Bei Veranstaltungen auf die eine Veranstaltung, wenn
+ * alle Posten dieselbe betreffen, sonst auf die Liste.
+ */
+export function mailZiel(posten: Posten[], siteUrl: string): { href: string; knopf: string; kurz: string } {
+  if (nurBuchungen(posten)) return { href: `${siteUrl}/plan/meine`, knopf: "Meine Buchungen ansehen", kurz: "Meine Buchungen" };
+  if (nurForderungen(posten)) return { href: `${siteUrl}/konto`, knopf: "Mein Konto ansehen", kurz: "Mein Konto" };
+  if (nurVeranstaltungen(posten)) {
+    const ids = new Set(posten.map((p) => p.event_id ?? ""));
+    const [id] = [...ids];
+    return ids.size === 1 && id
+      ? { href: `${siteUrl}/verein/veranstaltungen/${id}`, knopf: "Veranstaltung ansehen", kurz: "Zur Veranstaltung" }
+      : { href: `${siteUrl}/verein/veranstaltungen`, knopf: "Veranstaltungen ansehen", kurz: "Veranstaltungen" };
+  }
+  return { href: siteUrl, knopf: "In der App ansehen", kurz: "Zur App" };
+}
+
 function escape(text: string): string {
   return text
     .replaceAll("&", "&amp;")
@@ -82,7 +106,8 @@ export function html(vorname: string | null, posten: Posten[], siteUrl: string):
   const rest = posten.length - gezeigt.length;
   const buchungen = nurBuchungen(posten);
   const geld = nurForderungen(posten);
-  const ziel = buchungen ? `${siteUrl}/plan/meine` : geld ? `${siteUrl}/konto` : siteUrl;
+  const veranstaltungen = nurVeranstaltungen(posten);
+  const ziel = mailZiel(posten, siteUrl);
 
   const zeilen = gezeigt
     .map(
@@ -103,7 +128,9 @@ export function html(vorname: string | null, posten: Posten[], siteUrl: string):
       ? "Neues zu deinen Platzbuchungen"
       : geld
         ? "Zu deinem Beitragskonto"
-        : "Neues aus dem Verein"
+        : veranstaltungen
+          ? "Neues zu Veranstaltungen"
+          : "Neues aus dem Verein"
   }</h2>
 
   <p>Hallo${vorname ? ` ${escape(vorname)}` : ""},</p>
@@ -111,8 +138,10 @@ export function html(vorname: string | null, posten: Posten[], siteUrl: string):
   <p>${
     geld
       ? "das betrifft dein Konto beim Verein:"
-      : !buchungen
-        ? "es gibt Neues aus dem Verein:"
+      : veranstaltungen
+        ? "es gibt Neues zu Veranstaltungen im Verein:"
+        : !buchungen
+          ? "es gibt Neues aus dem Verein:"
         : posten.length === 1
           ? "an deiner Platzbuchung hat sich etwas geändert:"
           : "an deinen Platzbuchungen hat sich etwas geändert:"
@@ -126,10 +155,10 @@ ${
     : ""
 }
   <p style="margin: 24px 0;">
-    <a href="${ziel}"
+    <a href="${ziel.href}"
        style="background: #1f4e79; color: #ffffff; text-decoration: none;
               padding: 12px 20px; border-radius: 14px; display: inline-block;">
-      ${buchungen ? "Meine Buchungen ansehen" : geld ? "Mein Konto ansehen" : "In der App ansehen"}
+      ${ziel.knopf}
     </a>
   </p>
 
@@ -153,6 +182,8 @@ export function text(vorname: string | null, posten: Posten[], siteUrl: string):
   const rest = posten.length - gezeigt.length;
   const buchungen = nurBuchungen(posten);
   const geld = nurForderungen(posten);
+  const veranstaltungen = nurVeranstaltungen(posten);
+  const ziel = mailZiel(posten, siteUrl);
 
   const zeilen = gezeigt
     .map((p) => `- ${p.title}\n  ${p.body}\n  ${ZEIT.format(new Date(p.created_at))} Uhr`)
@@ -165,16 +196,14 @@ export function text(vorname: string | null, posten: Posten[], siteUrl: string):
       ? "an deinen Platzbuchungen hat sich etwas geändert:"
       : geld
         ? "das betrifft dein Konto beim Verein:"
-        : "es gibt Neues aus dem Verein:",
+        : veranstaltungen
+          ? "es gibt Neues zu Veranstaltungen im Verein:"
+          : "es gibt Neues aus dem Verein:",
     "",
     zeilen,
     rest > 0 ? `\n… und ${rest} weitere. Alle stehen in der App.` : "",
     "",
-    buchungen
-      ? `Meine Buchungen: ${siteUrl}/plan/meine`
-      : geld
-        ? `Mein Konto: ${siteUrl}/konto`
-        : `Zur App: ${siteUrl}`,
+    `${ziel.kurz}: ${ziel.href}`,
     "",
     "Diese Hinweise kannst du unter Mein Konto → Einwilligungen → E-Mails zu",
     "Buchungen abstellen. In der App siehst du sie dann weiterhin.",

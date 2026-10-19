@@ -6,7 +6,7 @@ import {
   dayLabel,
   dayTag,
   groupNotifications,
-  notificationSymbol,
+  notificationSymbol, notificationZiel,
   relativeTimeLabel,
   sumOpenDrinks,
   timelinePosition,
@@ -170,6 +170,22 @@ describe("notificationSymbol", () => {
     expect(notificationSymbol("charge_announced")).toBe("geld");
     expect(notificationSymbol("application_new")).toBe("person");
     expect(notificationSymbol("etwas_neues")).toBe("glocke");
+    expect(notificationSymbol("event_cancelled")).toBe("storno");
+    expect(notificationSymbol("event_promoted")).toBe("glocke");
+  });
+});
+
+describe("notificationZiel", () => {
+  it("fuehrt zur Veranstaltung, in Web und App mit eigenem Pfad", () => {
+    expect(notificationZiel({ event_id: "e1" })).toEqual({
+      web: "/verein/veranstaltungen/e1",
+      app: "/verein/veranstaltung/e1",
+    });
+  });
+
+  it("ohne Veranstaltung nirgends hin", () => {
+    expect(notificationZiel({ event_id: null })).toBeNull();
+    expect(notificationZiel({})).toBeNull();
   });
 });
 

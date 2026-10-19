@@ -33,6 +33,8 @@ export function VeranstaltungsFormular({
   const router = useRouter();
   const [f, setF] = useState<EventFormular>(anfang);
   const [fehler, setFehler] = useState<string | null>(null);
+  // Beim Veröffentlichen alle Mitglieder benachrichtigen - Vorgabe an.
+  const [benachrichtigen, setBenachrichtigen] = useState(true);
   const [laeuft, starte] = useTransition();
 
   const setze = <K extends keyof EventFormular>(k: K, v: EventFormular[K]) => setF((alt) => ({ ...alt, [k]: v }));
@@ -45,7 +47,7 @@ export function VeranstaltungsFormular({
     }
     setFehler(null);
     starte(async () => {
-      const e = await veranstaltungSpeichern(id, r.daten, veroeffentlichen);
+      const e = await veranstaltungSpeichern(id, r.daten, veroeffentlichen, benachrichtigen);
       if (!e.ok) {
         setFehler(e.meldung);
         return;
@@ -179,6 +181,17 @@ export function VeranstaltungsFormular({
           <p className="unterzeile">Eine Gebühr gibt es nur mit Anmeldung.</p>
         )}
       </section>
+
+      {entwurf ? (
+        <label className="schalter">
+          <input type="checkbox" checked={benachrichtigen} onChange={(e) => setBenachrichtigen(e.target.checked)} />
+          <span>Mitglieder beim Veröffentlichen benachrichtigen</span>
+        </label>
+      ) : (
+        <p className="unterzeile">
+          Ändern sich Tag, Uhrzeit oder Ort, bekommen Angemeldete und Wartende eine Nachricht.
+        </p>
+      )}
 
       {fehler && <div className="hinweis fehler" role="alert">{fehler}</div>}
 

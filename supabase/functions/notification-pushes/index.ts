@@ -20,6 +20,7 @@
  */
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { pushMeldung } from "./pushvorlage.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -42,6 +43,7 @@ interface Posten {
   title: string;
   body: string;
   created_at: string;
+  event_id?: string | null;
 }
 
 interface Empfaenger {
@@ -65,24 +67,6 @@ function antwort(koerper: Record<string, unknown>, status = 200): Response {
     status,
     headers: { "Content-Type": "application/json" },
   });
-}
-
-/**
- * Aus mehreren Posten wird eine Meldung.
- *
- * Eine Serienanlage mit sechzig Terminen erzeugt sechzig Benachrichtigungen in
- * Sekunden. Als sechzig Tonsignale wäre das ein Grund, Push abzuschalten.
- */
-function meldung(items: Posten[]): { titel: string; text: string } {
-  if (items.length === 1) {
-    const eins = items[0];
-    return { titel: eins.title, text: eins.body };
-  }
-
-  return {
-    titel: `${items.length} Änderungen an deinen Buchungen`,
-    text: items.map((i) => i.title).join(" · "),
-  };
 }
 
 /**
@@ -168,7 +152,8 @@ Deno.serve(async (req) => {
   // haben, und beide sollen es erfahren.
   const nachrichten: Nachricht[] = [];
   for (const e of empfaenger) {
-    const m = meldung(e.items);
+    // Texte und Ziel aus @tcm/core (pushvorlage.ts), dort getestet.
+    const m = pushMeldung(e.items);
     for (const geraet of e.tokens) {
       nachrichten.push({
         to: geraet,
@@ -176,7 +161,7 @@ Deno.serve(async (req) => {
         body: m.text,
         sound: "default",
         badge: e.items.length,
-        data: { ziel: "/nachrichten" },
+        data: { ziel: m.ziel },
       });
     }
   }

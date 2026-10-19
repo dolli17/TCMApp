@@ -893,6 +893,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["event_kind"]
           location: string | null
           max_participants: number | null
+          members_notified_at: string | null
           published_at: string | null
           registration_deadline: string | null
           registration_enabled: boolean
@@ -914,6 +915,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["event_kind"]
           location?: string | null
           max_participants?: number | null
+          members_notified_at?: string | null
           published_at?: string | null
           registration_deadline?: string | null
           registration_enabled?: boolean
@@ -935,6 +937,7 @@ export type Database = {
           kind?: Database["public"]["Enums"]["event_kind"]
           location?: string | null
           max_participants?: number | null
+          members_notified_at?: string | null
           published_at?: string | null
           registration_deadline?: string | null
           registration_enabled?: boolean
@@ -1685,6 +1688,7 @@ export type Database = {
         Row: {
           body: string
           created_at: string
+          event_id: string | null
           id: string
           kind: string
           mailed_at: string | null
@@ -1696,6 +1700,7 @@ export type Database = {
         Insert: {
           body: string
           created_at?: string
+          event_id?: string | null
           id?: string
           kind: string
           mailed_at?: string | null
@@ -1707,6 +1712,7 @@ export type Database = {
         Update: {
           body?: string
           created_at?: string
+          event_id?: string | null
           id?: string
           kind?: string
           mailed_at?: string | null
@@ -1716,6 +1722,13 @@ export type Database = {
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notifications_member_id_fkey"
             columns: ["member_id"]
@@ -2632,6 +2645,10 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: number
       }
+      event_mitglieder_benachrichtigen: {
+        Args: { p_id: string }
+        Returns: number
+      }
       event_speichern: {
         Args: {
           p_companions_allowed: boolean
@@ -2989,6 +3006,7 @@ export type Database = {
         Returns: {
           body: string
           created_at: string
+          event_id: string
           id: string
           kind: string
           read_at: string

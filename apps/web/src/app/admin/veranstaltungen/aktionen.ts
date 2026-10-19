@@ -20,6 +20,21 @@ function frisch(id?: string) {
 }
 
 /**
+ * Alle aktiven Mitglieder über die Veröffentlichung benachrichtigen. Die
+ * Datenbank schreibt genau einmal je Veranstaltung; ein zweiter Aufruf
+ * liefert 0. Ein Fehler hier macht die Veröffentlichung nicht rückgängig.
+ */
+async function mitgliederBenachrichtigen(
+  supabase: Awaited<ReturnType<typeof createServerSupabase>>, id: string,
+): Promise<string> {
+  const { data, error } = await supabase.rpc("event_mitglieder_benachrichtigen", { p_id: id });
+  if (error) return ` Die Mitglieder ließen sich nicht benachrichtigen: ${translateDbError(error)}`;
+  const n = data ?? 0;
+  if (n === 0) return "";
+  return n === 1 ? " Ein Mitglied ist benachrichtigt." : ` ${n} Mitglieder sind benachrichtigt.`;
+}
+
+/**
  * Anlegen oder speichern. Die Regeln prüft die Datenbank (event_speichern):
  * etwa keine Gebühr ändern nach dem Anmeldeschluss, keine Plätze unter die
  * Belegung.
@@ -28,6 +43,7 @@ export async function veranstaltungSpeichern(
   id: string | null,
   daten: EventSpeichernDaten,
   veroeffentlichen: boolean,
+  benachrichtigen = false,
 ): Promise<AktionsErgebnis & { id?: string }> {
   const supabase = await createServerSupabase();
   // Leere Felder gehen als null: die Funktion nimmt null als "ohne", der
@@ -51,20 +67,26 @@ export async function veranstaltungSpeichern(
 
   if (error) return { ok: false, meldung: translateDbError(error) };
 
+  const nachricht = veroeffentlichen && benachrichtigen && data
+    ? await mitgliederBenachrichtigen(supabase, data)
+    : "";
   frisch(data ?? undefined);
   return {
     ok: true,
     id: data ?? undefined,
-    meldung: veroeffentlichen ? "Die Veranstaltung ist veröffentlicht." : "Gespeichert.",
+    meldung: veroeffentlichen ? `Die Veranstaltung ist veröffentlicht.${nachricht}` : "Gespeichert.",
   };
 }
 
-export async function veranstaltungVeroeffentlichen(id: string): Promise<AktionsErgebnis> {
+export async function veranstaltungVeroeffentlichen(
+  id: string, benachrichtigen = false,
+): Promise<AktionsErgebnis> {
   const supabase = await createServerSupabase();
   const { error } = await supabase.rpc("event_veroeffentlichen", { p_id: id });
   if (error) return { ok: false, meldung: translateDbError(error) };
+  const nachricht = benachrichtigen ? await mitgliederBenachrichtigen(supabase, id) : "";
   frisch(id);
-  return { ok: true, meldung: "Die Veranstaltung ist veröffentlicht." };
+  return { ok: true, meldung: `Die Veranstaltung ist veröffentlicht.${nachricht}` };
 }
 
 export async function veranstaltungAbsagen(id: string): Promise<AktionsErgebnis> {

@@ -16,7 +16,9 @@
  * nicht aufhalten.
  */
 
+import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
+import { router, type Href } from "expo-router";
 import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
@@ -158,4 +160,27 @@ export async function istAngemeldet(): Promise<boolean> {
     .maybeSingle();
 
   return Boolean(data);
+}
+
+/**
+ * Tippen auf eine Push-Nachricht oeffnet ihr Ziel.
+ *
+ * Die Edge Function notification-pushes legt es in data.ziel ab (aus
+ * pushvorlage.ts in @tcm/core): bei einer Veranstaltung deren Bildschirm,
+ * sonst die Nachrichten. useLastNotificationResponse deckt auch den Kaltstart
+ * ab - die App war zu, das Tippen hat sie geoeffnet. Jede Antwort nur einmal,
+ * sonst springt die App nach jedem Neuzeichnen wieder dorthin.
+ */
+export function usePushZiel(): void {
+  const antwort = Notifications.useLastNotificationResponse();
+  const erledigt = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!antwort) return;
+    const id = antwort.notification.request.identifier;
+    if (erledigt.current === id) return;
+    erledigt.current = id;
+    const ziel = antwort.notification.request.content.data?.ziel;
+    if (typeof ziel === "string" && ziel.startsWith("/")) router.push(ziel as Href);
+  }, [antwort]);
 }

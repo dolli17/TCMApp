@@ -310,6 +310,11 @@ export default async function Start() {
                         <small>{relativeTimeLabel(n.created_at, jetzt)}</small>
                       </span>
                       <span className="body">{n.body}</span>
+                      {n.event_id && (
+                        <Link href={`/verein/veranstaltungen/${n.event_id}`} className="nachricht-link">
+                          Zur Veranstaltung
+                        </Link>
+                      )}
                     </span>
                   </li>
                 ))}

@@ -2429,3 +2429,5 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   .event-raster { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
   .verein-veranstaltungen .event-liste { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+.veranstaltung-aktionen .knopfreihe .schalter { align-items: center; margin: 0 8px 0 0; }
+.nachricht-link { display: inline-block; margin-top: 4px; font-size: 13.5px; font-weight: 600; }

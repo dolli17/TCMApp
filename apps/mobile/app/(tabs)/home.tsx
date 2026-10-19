@@ -21,7 +21,7 @@ import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-na
 import { router, useFocusEffect, type Href } from "expo-router";
 import Svg, { Circle, Path } from "react-native-svg";
 import {
-  bookingKicker, dayTag, eventDemnaechst, formatCents, localMinutes, relativeTimeLabel, sumOpenDrinks,
+  bookingKicker, dayTag, eventDemnaechst, formatCents, notificationZiel, localMinutes, relativeTimeLabel, sumOpenDrinks,
   timelinePosition, timelineSegments, upcomingBookings,
 } from "@tcm/core";
 import { abstand, radius, schrift } from "@tcm/ui";
@@ -560,9 +560,13 @@ function Neuigkeiten({ neues }: { neues: Abschnitt<Neues> }) {
         <View style={[stil.listenkarte, { borderRadius: radius.karte, padding: 0, overflow: "hidden" }]}>
           {liste.map((n, i) => {
             const ungelesen = !n.read_at;
+            const ziel = notificationZiel(n);
             return (
-              <View
+              <Pressable
                 key={n.id}
+                disabled={!ziel}
+                onPress={ziel ? () => router.push(ziel.app as Href) : undefined}
+                accessibilityRole={ziel ? "link" : undefined}
                 style={{
                   flexDirection: "row", gap: 12, paddingVertical: 14, paddingHorizontal: 16,
                   borderTopWidth: i === 0 ? 0 : 1, borderTopColor: farben.line,
@@ -588,8 +592,13 @@ function Neuigkeiten({ neues }: { neues: Abschnitt<Neues> }) {
                   <Text style={{ fontSize: 13.5, lineHeight: 19, color: farben.ink2, marginTop: 2, fontFamily: "Barlow_400Regular" }} numberOfLines={3}>
                     {n.body}
                   </Text>
+                  {ziel && (
+                    <Text style={{ fontSize: 13.5, marginTop: 4, color: farben.blue, fontFamily: "Barlow_600SemiBold" }}>
+                      Zur Veranstaltung ›
+                    </Text>
+                  )}
                 </View>
-              </View>
+              </Pressable>
             );
           })}
         </View>

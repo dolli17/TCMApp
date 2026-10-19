@@ -24,12 +24,13 @@ export function VeranstaltungsAktionen({
   const router = useRouter();
   const [frage, setFrage] = useState<"absagen" | "loeschen" | null>(null);
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
+  const [benachrichtigen, setBenachrichtigen] = useState(true);
   const [laeuft, starte] = useTransition();
 
   function tue(was: "veroeffentlichen" | "absagen" | "loeschen") {
     starte(async () => {
       const e = was === "veroeffentlichen"
-        ? await veranstaltungVeroeffentlichen(id)
+        ? await veranstaltungVeroeffentlichen(id, benachrichtigen)
         : was === "absagen" ? await veranstaltungAbsagen(id) : await veranstaltungLoeschen(id);
       setFrage(null);
       setMeldung({ ok: e.ok, text: e.meldung });
@@ -48,9 +49,15 @@ export function VeranstaltungsAktionen({
           <a className="knopf leise" href={`/admin/veranstaltungen/${id}/export`} download>Liste exportieren</a>
         )}
         {status === "draft" && (
-          <button type="button" className="knopf gold" disabled={laeuft} onClick={() => tue("veroeffentlichen")}>
-            Veröffentlichen
-          </button>
+          <>
+            <label className="schalter">
+              <input type="checkbox" checked={benachrichtigen} onChange={(e) => setBenachrichtigen(e.target.checked)} />
+              <span>Mitglieder benachrichtigen</span>
+            </label>
+            <button type="button" className="knopf gold" disabled={laeuft} onClick={() => tue("veroeffentlichen")}>
+              Veröffentlichen
+            </button>
+          </>
         )}
         {status === "published" && frage !== "absagen" && (
           <button type="button" className="knopf leise" disabled={laeuft} onClick={() => setFrage("absagen")}>
@@ -67,7 +74,7 @@ export function VeranstaltungsAktionen({
         <div className="hinweis rueckfrage" role="group" aria-label="Rückfrage">
           <span>
             {frage === "absagen"
-              ? "Absagen? Offene Forderungen werden gelöscht; was schon in einem Einzug steckt, bleibt stehen."
+              ? "Absagen? Offene Forderungen werden gelöscht; was schon in einem Einzug steckt, bleibt stehen. Angemeldete und Wartende bekommen eine Nachricht."
               : "Den Entwurf endgültig löschen?"}
           </span>
           <span className="knopfreihe">

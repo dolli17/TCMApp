@@ -188,10 +188,27 @@ export type NotificationSymbol = "platz" | "storno" | "geld" | "person" | "glock
 
 export function notificationSymbol(kind: string): NotificationSymbol {
   if (kind === "booking_cancelled" || kind === "booking_displaced" || kind === "booking_removed") return "storno";
+  if (kind === "event_cancelled") return "storno";
   if (kind.startsWith("booking_") || kind === "player_left") return "platz";
   if (kind.startsWith("charge_")) return "geld";
   if (kind.startsWith("application_")) return "person";
   return "glocke";
+}
+
+/**
+ * Wohin eine Nachricht fuehrt: zur Veranstaltung, wenn sie eine nennt
+ * (notifications.event_id), sonst nirgends. Die Pfade unterscheiden sich
+ * zwischen Web und App, weil die App die Liste als Reiter und das Detail
+ * als eigenen Bildschirm hat.
+ */
+export function notificationZiel(
+  n: { event_id?: string | null },
+): { web: string; app: string } | null {
+  if (!n.event_id) return null;
+  return {
+    web: `/verein/veranstaltungen/${n.event_id}`,
+    app: `/verein/veranstaltung/${n.event_id}`,
+  };
 }
 
 /**

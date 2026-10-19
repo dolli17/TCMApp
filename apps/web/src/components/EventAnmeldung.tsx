@@ -28,7 +28,8 @@ export function EventAnmeldung({
 }) {
   const router = useRouter();
   const jetzt = new Date(jetztIso);
-  const dabei = e.mein_status === "registered" || e.mein_status === "waitlisted";
+  // Abgesagt ist abgesagt: dann zaehlt die Anmeldung nicht mehr, es gibt nur den Hinweis.
+  const dabei = e.status !== "cancelled" && (e.mein_status === "registered" || e.mein_status === "waitlisted");
   const [begleitung, setBegleitung] = useState(dabei ? e.meine_begleitpersonen ?? 0 : 0);
   const [bemerkung, setBemerkung] = useState(dabei ? e.meine_bemerkung ?? "" : "");
   const [bearbeiten, setBearbeiten] = useState(false);
