@@ -13,7 +13,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  betreff, html, text, type Posten,
+  betreff, html, mailZiel, text, type Posten,
 } from "./mailvorlage";
 
 function posten(anzahl: number, titel = "Deine Platzbuchung wurde aufgehoben"): Posten[] {
@@ -172,5 +172,39 @@ describe("text", () => {
   it("maskiert im Text nichts - dort gibt es kein Markup", () => {
     const ausgabe = text(null, posten(1), "https://tcm.example");
     expect(ausgabe).not.toContain("&amp;");
+  });
+});
+
+describe("Veranstaltungen führen zur Veranstaltung", () => {
+  const abgesagt: Posten = {
+    kind: "event_cancelled",
+    title: "Abgesagt: Sommerfest",
+    body: "Sommerfest am 06.11.2026, 19:00 Uhr, Clubhaus faellt aus. Die Gebuehr entfaellt.",
+    created_at: "2026-10-19T10:00:00.000Z",
+    event_id: "e1",
+  };
+
+  it("eine Veranstaltung: Knopf auf ihre Seite", () => {
+    expect(mailZiel([abgesagt], "https://tcm.example")).toEqual({
+      href: "https://tcm.example/verein/veranstaltungen/e1",
+      knopf: "Veranstaltung ansehen",
+      kurz: "Zur Veranstaltung",
+    });
+    const ausgabe = html("Eva", [abgesagt], "https://tcm.example");
+    expect(ausgabe).toContain("Neues zu Veranstaltungen");
+    expect(ausgabe).toContain('href="https://tcm.example/verein/veranstaltungen/e1"');
+    expect(text("Eva", [abgesagt], "https://tcm.example"))
+      .toContain("Zur Veranstaltung: https://tcm.example/verein/veranstaltungen/e1");
+  });
+
+  it("mehrere Veranstaltungen: auf die Liste", () => {
+    const zwei = [abgesagt, { ...abgesagt, kind: "event_changed", event_id: "e2" }];
+    expect(mailZiel(zwei, "https://tcm.example").href).toBe("https://tcm.example/verein/veranstaltungen");
+  });
+
+  it("gemischt mit Buchungen: die Startseite wie bisher", () => {
+    const gemischt = [abgesagt, ...posten(1)];
+    expect(mailZiel(gemischt, "https://tcm.example").href).toBe("https://tcm.example");
+    expect(html(null, gemischt, "https://tcm.example")).toContain("Neues aus dem Verein");
   });
 });

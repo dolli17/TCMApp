@@ -261,3 +261,59 @@ test.describe("Veranstaltungen für Mitglieder", () => {
     }
   });
 });
+
+test.describe("Nachrichten zu Veranstaltungen", () => {
+  test.skip(!NUTZER.admin || !NUTZER.mitglied || !PASSWORT, "Testkonten fehlen in .env.local");
+
+  test("Veröffentlichen erreicht Mitglieder, Verlegen und Absage die Angemeldeten, mit Link", async ({ page }) => {
+    const titel = testName("Nachrichtenfest");
+    const mitglied = await alsKonto(NUTZER.mitglied);
+    const admin = await alsKonto(NUTZER.admin);
+    const nachrichten = async () => {
+      const { data } = await mitglied.rpc("my_notifications", { p_limit: 100 });
+      return (data ?? []).filter((n) => n.title.endsWith(titel));
+    };
+
+    // Veröffentlichen mit dem Haken (Vorgabe an)
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/veranstaltungen/neu");
+    await expect(page.getByLabel("Mitglieder beim Veröffentlichen benachrichtigen")).toBeChecked();
+    const id = await anlegen(page, { art: "Fest", titel, beginn: inTagen(21), schluss: inTagen(14, "23:59") });
+
+    let liste = await nachrichten();
+    expect(liste.map((n) => n.kind)).toEqual(["event_published"]);
+    expect(liste[0]!.event_id).toBe(id);
+    expect(liste[0]!.title).toBe(`Neu im Verein: ${titel}`);
+
+    // Angemeldet, dann verlegt: eine Nachricht, erneutes Speichern keine zweite.
+    await mitglied.rpc("event_anmelden", { p_event_id: id, p_companions: 0 });
+    const { data: e } = await admin.from("events").select("*").eq("id", id).single();
+    const speichern = (ort: string) => admin.rpc("event_speichern", {
+      p_id: id, p_kind: e!.kind, p_title: e!.title, p_description: e!.description as string,
+      p_location: ort, p_starts_at: e!.starts_at, p_ends_at: e!.ends_at as string,
+      p_registration_enabled: e!.registration_enabled, p_registration_deadline: e!.registration_deadline as string,
+      p_max_participants: e!.max_participants as number, p_companions_allowed: e!.companions_allowed,
+      p_fee_cents: e!.fee_cents as number, p_work_hours: e!.work_hours as number,
+    });
+    expect((await speichern("Halle")).error).toBeNull();
+    expect((await speichern("Halle")).error).toBeNull();
+    liste = await nachrichten();
+    expect(liste.filter((n) => n.kind === "event_changed")).toHaveLength(1);
+
+    // Absage über die Verwaltung
+    await page.goto(`/admin/veranstaltungen/${id}`);
+    await page.getByRole("button", { name: "Absagen" }).click();
+    await page.getByRole("button", { name: "Ja, absagen" }).click();
+    await expect(page.getByRole("status")).toContainText("Abgesagt");
+
+    // Das Mitglied findet die Absage unter der Glocke und kommt zur Veranstaltung.
+    await anmelden(page, NUTZER.mitglied);
+    await page.goto("/plan");
+    await page.locator(".seitenkopf button.glocke").click();
+    const eintrag = page.locator("dialog.fenster .nachrichtenliste li", { hasText: `Abgesagt: ${titel}` });
+    await expect(eintrag).toContainText("faellt aus");
+    await eintrag.getByRole("link", { name: "Zur Veranstaltung" }).click();
+    await expect(page).toHaveURL(new RegExp(`/verein/veranstaltungen/${id}$`));
+    await expect(page.getByText("Diese Veranstaltung ist abgesagt.")).toBeVisible();
+  });
+});

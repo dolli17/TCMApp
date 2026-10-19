@@ -6,6 +6,7 @@ export * from "./workDuty";
 export * from "./errors";
 export * from "./booking";
 export * from "./home";
+export * from "./pushvorlage";
 export * from "./courtStatus";
 export * from "./freeSlots";
 export * from "./offeneSpiele";

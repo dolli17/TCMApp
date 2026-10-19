@@ -10,6 +10,8 @@ export interface Benachrichtigung {
   body: string;
   read_at: string | null;
   created_at: string;
+  /** Veranstaltung, um die es geht - dann gibt es einen Link dorthin */
+  event_id: string | null;
 }
 
 /**

@@ -8,21 +8,28 @@ import {
   BarlowSemiCondensed_700Bold,
   BarlowSemiCondensed_800ExtraBold,
 } from "@expo-google-fonts/barlow-semi-condensed";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
 import { farben } from "@tcm/ui";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ThemeAnbieter, useTheme } from "@/lib/theme";
-import { setzeAnzeigeverhalten } from "@/lib/push";
+import { setzeAnzeigeverhalten, usePushZiel } from "@/lib/push";
 
 // Einmal beim Start, nicht in einer Komponente: der Handler gehoert zum Modul
 // und nicht zu einem Bildschirm, der auch wieder verschwinden kann.
 setzeAnzeigeverhalten();
 
+/** Nur auf dem Geraet: im Browser gibt es keine Push-Nachrichten zum Antippen. */
+function PushZiel() {
+  usePushZiel();
+  return null;
+}
+
 function Navigation() {
   const { theme, farben } = useTheme();
   return (
     <>
+      {Platform.OS !== "web" && <PushZiel />}
       <StatusBar style={theme === "dunkel" ? "light" : "dark"} />
       <Stack
         screenOptions={{

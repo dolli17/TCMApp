@@ -11,9 +11,10 @@
  */
 
 import { Pressable, Text, View } from "react-native";
+import { router, type Href } from "expo-router";
 import Svg, { Path } from "react-native-svg";
 import {
-  groupNotifications, notificationSymbol, relativeTimeLabel, type NotificationSymbol,
+  groupNotifications, notificationSymbol, notificationZiel, relativeTimeLabel, type NotificationSymbol,
 } from "@tcm/core";
 import { radius } from "@tcm/ui";
 import type { ladeBenachrichtigungen } from "@/lib/daten";
@@ -64,10 +65,16 @@ export function NachrichtenListe({ liste, alleGesehen }: { liste: Nachricht[]; a
           >
             {g.items.map((n, i) => {
               const neu = n.read_at === null && !alleGesehen;
+              // Nennt die Nachricht eine Veranstaltung, oeffnet ein Tippen sie.
+              const ziel = notificationZiel(n);
               return (
-                <View
+                <Pressable
                   key={n.id}
+                  disabled={!ziel}
+                  onPress={ziel ? () => router.push(ziel.app as Href) : undefined}
+                  accessibilityRole={ziel ? "link" : undefined}
                   accessibilityLabel={`${neu ? "Neu: " : ""}${n.title}. ${n.body}. ${relativeTimeLabel(n.created_at)}`}
+                  accessibilityHint={ziel ? "Öffnet die Veranstaltung" : undefined}
                   style={{
                     flexDirection: "row", gap: 12, paddingVertical: 14, paddingHorizontal: 16,
                     borderTopWidth: i === 0 ? 0 : 1, borderTopColor: farben.line,
@@ -102,8 +109,13 @@ export function NachrichtenListe({ liste, alleGesehen }: { liste: Nachricht[]; a
                     >
                       {n.body}
                     </Text>
+                    {ziel && (
+                      <Text style={{ fontSize: 13.5, marginTop: 4, color: farben.blue, fontFamily: "Barlow_600SemiBold" }}>
+                        Zur Veranstaltung ›
+                      </Text>
+                    )}
                   </View>
-                </View>
+                </Pressable>
               );
             })}
           </View>

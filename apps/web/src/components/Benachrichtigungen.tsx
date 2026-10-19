@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
-  groupNotifications, notificationSymbol, relativeTimeLabel, type NotificationSymbol,
+  groupNotifications, notificationSymbol, notificationZiel, relativeTimeLabel, type NotificationSymbol,
 } from "@tcm/core";
 import {
   alsGelesenMarkieren, ladeBenachrichtigungen, type Benachrichtigung,
@@ -112,7 +113,7 @@ export function Benachrichtigungen({ ungelesen, label }: { ungelesen: number; la
           <div className="fenster-kopf">
             <div>
               <h2>Benachrichtigungen</h2>
-              <p>Was sich an deinen Buchungen geändert hat</p>
+              <p>Was sich für dich geändert hat</p>
             </div>
             {!alleGesehen && liste?.some((n) => n.read_at === null) && (
               <button type="button" className="knopf leise klein" onClick={alleGelesen}>
@@ -158,6 +159,15 @@ export function Benachrichtigungen({ ungelesen, label }: { ungelesen: number; la
                             <small className="tnum">{relativeTimeLabel(n.created_at)}</small>
                           </span>
                           <span className="body">{n.body}</span>
+                          {notificationZiel(n) && (
+                            <Link
+                              href={notificationZiel(n)!.web}
+                              className="nachricht-link"
+                              onClick={() => dialog.current?.close()}
+                            >
+                              Zur Veranstaltung
+                            </Link>
+                          )}
                         </span>
                       </li>
                     ))}
