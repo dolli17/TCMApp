@@ -1,6 +1,7 @@
 import { formatCents, sumOpenDrinks } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Getraenkekarte } from "@/components/Getraenkekarte";
+import { VereinSegmente } from "@/components/VereinSegmente";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,7 @@ export default async function GetraenkeSeite() {
 
   return (
     <>
-      <h1 className="pagetitle">Getränke</h1>
+      <VereinSegmente aktiv="getraenke" />
 
       {/* Der laufende Monat - Entwurf AppGetraenke */}
       <section className="monatskarte" aria-label={`Getränke im ${monat}`}>

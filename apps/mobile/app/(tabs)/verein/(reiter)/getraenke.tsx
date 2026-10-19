@@ -1,5 +1,5 @@
 /**
- * Getraenke (Entwurf AppGetraenke, docs/design/clubhaus)
+ * Getraenke (Entwurf AppGetraenke, docs/design/clubhaus), ein Reiter von "Verein"
  *
  * Oben der laufende Monat, darunter die Karte als Kacheln mit Zaehler: man
  * sammelt, was man genommen hat, und traegt es ueber die Leiste unten auf
@@ -21,7 +21,7 @@ import {
 } from "@tcm/core";
 import { abstand, radius } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
-import { GrosserKopf } from "@/components/GrosserKopf";
+import { Rundknopf } from "@/components/Rundknopf";
 import {
   bucheGetraenk, ladeEigeneGetraenke, ladeGetraenkekarte, ladeStornoFenster, storniereGetraenk,
 } from "@/lib/daten";
@@ -124,7 +124,6 @@ export default function Getraenke() {
         aktualisiert={zustand.aktualisiert}
         onAktualisieren={zustand.neuLaden}
         fehler={zustand.fehler}
-        kopf={<GrosserKopf titel="Getränke" />}
       >
         {/* --- Der laufende Monat ------------------------------------------ */}
         <View style={{ backgroundColor: farben.brand, borderRadius: radius.karteGross, padding: 20, overflow: "hidden" }}>
@@ -306,35 +305,5 @@ export default function Getraenke() {
         </View>
       )}
     </View>
-  );
-}
-
-function Rundknopf({
-  zeichen, gelb, beschriftung, deaktiviert, onPress,
-}: {
-  zeichen: "plus" | "minus";
-  gelb?: boolean;
-  beschriftung: string;
-  deaktiviert?: boolean;
-  onPress: () => void;
-}) {
-  const { farben } = useTheme();
-  const tinte = gelb ? farben.onGold : farben.ink;
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={deaktiviert}
-      accessibilityRole="button"
-      accessibilityLabel={beschriftung}
-      hitSlop={4}
-      style={{
-        width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center",
-        backgroundColor: gelb ? farben.gold : farben.surf2, opacity: deaktiviert ? 0.4 : 1,
-      }}
-    >
-      <Svg width={16} height={16} viewBox="0 0 24 24">
-        <Path d={zeichen === "plus" ? "M12 5v14M5 12h14" : "M5 12h14"} stroke={tinte} strokeWidth={2.6} strokeLinecap="round" />
-      </Svg>
-    </Pressable>
   );
 }

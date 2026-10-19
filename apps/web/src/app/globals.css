@@ -2352,3 +2352,80 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 .art-wahl-veranstaltung button[aria-pressed="true"] { border-color: var(--blue); background: var(--blue-soft); color: var(--blue-ink); }
 .formular-fuss { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+
+/* ---------------------------------------------------------------------------
+   Veranstaltungen für Mitglieder (Entwurf Main, Detail, Home)
+   --------------------------------------------------------------------------- */
+.event-monat { margin-bottom: 20px; }
+.event-monat-titel {
+  margin: 0 0 8px; font-size: 13px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted);
+}
+.event-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.event-karte {
+  display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px;
+  border-radius: var(--radius-karte, 18px); background: var(--surf); border: 1px solid var(--line);
+  color: var(--ink); text-decoration: none; min-width: 0;
+}
+.event-karte:hover { text-decoration: none; border-color: color-mix(in srgb, var(--blue) 35%, var(--line)); }
+.event-karte > .datum-kachel {
+  flex: 0 0 auto; width: 52px; height: 56px; align-content: center; border-radius: 14px;
+  background: var(--brand); color: #fff;
+}
+.event-karte > .datum-kachel.vorbei { background: var(--surf-2); color: var(--ink-2); }
+.event-karte-text { display: grid; gap: 3px; min-width: 0; }
+.event-karte-text .titel { font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
+.event-karte-text small { color: var(--muted); font-size: 13.5px; }
+.event-karte-text .zeile { font-size: 13.5px; font-weight: 700; }
+.event-karte.vorbei .titel { color: var(--ink-2); }
+.event-marken { display: flex; flex-wrap: wrap; gap: 6px; }
+.event-vergangen-link { margin: 4px 0 0; text-align: center; font-weight: 600; }
+
+.event-kopf {
+  position: relative; overflow: hidden; margin: 0 0 16px; padding: 18px 20px 22px;
+  border-radius: var(--radius-kartegross); background: var(--brand); color: #fff;
+}
+.event-kopf > :not(.platzlinien) { position: relative; }
+.event-kopf .platzlinien {
+  position: absolute; right: 0; top: 0; width: 350px; height: 150px;
+  fill: none; stroke: rgba(255,255,255,.12); stroke-width: 2;
+}
+.event-kopf .zurueck { color: #fff; opacity: .85; display: inline-block; margin-bottom: 10px; }
+.event-kopf .pagetitle { color: #fff; margin: 8px 0 4px; overflow-wrap: anywhere; }
+.event-kopf p { margin: 0; opacity: .9; }
+
+.event-raster { display: grid; gap: 16px; }
+.event-haupt, .event-seite { display: grid; gap: 16px; align-content: start; min-width: 0; }
+.eckdaten dl { margin: 0; display: grid; gap: 14px; }
+.eckdaten dl > div { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; }
+.eckdaten dt { color: var(--muted); font-size: 13.5px; }
+.eckdaten dd { margin: 0; display: grid; gap: 4px; min-width: 0; }
+.eckdaten dd small { color: var(--muted); font-size: 13px; line-height: 1.45; }
+.eckdaten .balken { display: block; height: 8px; border-radius: 4px; background: var(--surf-2); overflow: hidden; }
+.eckdaten .balken i { display: block; height: 100%; border-radius: 4px; background: var(--green); }
+.karte.beschreibung p { margin: 0; white-space: pre-line; line-height: 1.55; }
+
+.event-mein h2, .event-anmelden h2 { margin: 0 0 12px; font-size: 20px; }
+.event-mein.angemeldet {
+  background: color-mix(in srgb, var(--green) 10%, var(--surf));
+  border-color: color-mix(in srgb, var(--green) 35%, transparent);
+}
+.event-mein.wartet { background: var(--gold-soft); border-color: var(--gold-line); }
+.event-mein p { margin: 0 0 8px; }
+.event-mein .betrag b { font-size: 20px; }
+.event-knoepfe, .event-abmelden-frage { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.event-abmelden-frage p { flex: 1 0 100%; margin: 0; font-weight: 600; }
+.event-formular { display: grid; gap: 14px; }
+.event-begleitung { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.event-begleitung > span { display: grid; gap: 2px; }
+.event-begleitung small { color: var(--muted); font-size: 13px; }
+.event-bemerkung { margin: 0; }
+.gebuehr-hinweis { margin: 12px 0 0; font-size: 13px; line-height: 1.5; }
+.event-mein .hinweis, .event-anmelden .hinweis { margin: 0 0 12px; }
+
+.home-verein .event-liste { gap: 8px; }
+
+@media (min-width: 900px) {
+  .event-raster { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
+  .verein-veranstaltungen .event-liste { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

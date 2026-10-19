@@ -34,6 +34,9 @@ const SYMBOLE = {
   getraenk: (
     <path d="M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
   ),
+  verein: (
+    <path d="M5 21V4h11l-2 4 2 4H5" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+  ),
   konto: (
     <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0" strokeWidth="1.8" fill="none" strokeLinecap="round" />
   ),

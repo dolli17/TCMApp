@@ -43,9 +43,9 @@ export async function einstellungenSpeichern(formData: FormData): Promise<Aktion
 
   // Die Werte stehen seit dem Umbau bei ihrem Gegenstand, also auf fuenf
   // Seiten statt auf einer. /admin frischt den ganzen Zweig auf; /plan und
-  // /getraenke, weil dort die Zeiten und Preise unmittelbar wirken.
+  // /verein/getraenke, weil dort die Zeiten und Preise unmittelbar wirken.
   revalidatePath("/admin", "layout");
   revalidatePath("/plan");
-  revalidatePath("/getraenke");
+  revalidatePath("/verein/getraenke");
   return { ok: true, meldung: "Einstellungen gespeichert." };
 }

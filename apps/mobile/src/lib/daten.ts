@@ -8,6 +8,7 @@
 
 import {
   berlinTime, hatPlatzRechte, hatVolleRechte, isValidIban, memberProfileSchema, translateDbError,
+  type Database, type EventKind, type EventRegistrationStatus, type EventStatus, type MitgliedEvent,
   type OnboardingSchrittKey, type OnboardingZustand,
 } from "@tcm/core";
 import { supabase } from "./supabase";
@@ -832,4 +833,91 @@ export async function schliesseOnboardingAb(): Promise<
     meldung: translateDbError(error),
     ...(fehlt.length > 0 ? { fehlt } : {}),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Veranstaltungen (Verein > Veranstaltungen)
+// ---------------------------------------------------------------------------
+
+type EventZeile = Database["public"]["Functions"]["events_fuer_mitglied"]["Returns"][number];
+
+function alsMitgliedEvent(z: EventZeile): MitgliedEvent {
+  return {
+    ...z,
+    kind: z.kind as EventKind,
+    status: z.status as EventStatus,
+    work_hours: z.work_hours == null ? null : Number(z.work_hours),
+    mein_status: (z.mein_status as EventRegistrationStatus | null) ?? null,
+  };
+}
+
+/** Alle veroeffentlichten und abgesagten Veranstaltungen mit dem eigenen Stand. */
+export async function ladeVeranstaltungen(): Promise<MitgliedEvent[]> {
+  const { data, error } = await supabase.rpc("events_fuer_mitglied");
+  if (error) throw new Error(translateDbError(error));
+  return (data ?? []).map(alsMitgliedEvent);
+}
+
+export interface VeranstaltungDetail {
+  event: MitgliedEvent;
+  /** Eigener Platz auf der Warteliste, sonst null */
+  wartePlatz: number | null;
+  /** Die eigene Forderung zur Anmeldung, falls es eine gibt */
+  forderung: { amount_cents: number; status: string } | null;
+}
+
+export async function ladeVeranstaltung(id: string): Promise<VeranstaltungDetail | null> {
+  const { data: sitzung } = await supabase.auth.getUser();
+  const { data: ich } = await supabase
+    .from("members").select("id").eq("auth_user_id", sitzung.user?.id ?? "").maybeSingle();
+
+  const [eventRes, platzRes, forderungRes] = await Promise.all([
+    supabase.rpc("events_fuer_mitglied").eq("id", id).maybeSingle(),
+    supabase.rpc("event_mein_wartelistenplatz", { p_event_id: id }),
+    // Ausdruecklich die eigene: ein Admin saehe ueber RLS auch alle anderen.
+    supabase
+      .from("charges")
+      .select("amount_cents, status")
+      .eq("event_id", id)
+      .eq("member_id", ich?.id ?? "")
+      .neq("status", "waived")
+      .maybeSingle(),
+  ]);
+  if (eventRes.error) throw new Error(translateDbError(eventRes.error));
+  if (!eventRes.data) return null;
+  return {
+    event: alsMitgliedEvent(eventRes.data),
+    wartePlatz: platzRes.data ?? null,
+    forderung: forderungRes.data ?? null,
+  };
+}
+
+export async function meldeZuVeranstaltungAn(id: string, begleitpersonen: number, bemerkung: string): Promise<Ergebnis> {
+  const { data, error } = await supabase.rpc("event_anmelden", {
+    p_event_id: id, p_companions: begleitpersonen, p_note: bemerkung,
+  });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return {
+    ok: true,
+    meldung: data === "waitlisted" ? "Ausgebucht – du stehst auf der Warteliste." : "Du bist angemeldet.",
+  };
+}
+
+export async function aendereVeranstaltungsAnmeldung(
+  id: string, begleitpersonen: number, bemerkung: string,
+): Promise<Ergebnis> {
+  const { data, error } = await supabase.rpc("event_anmeldung_aendern", {
+    p_event_id: id, p_companions: begleitpersonen, p_note: bemerkung,
+  });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return {
+    ok: true,
+    meldung: data === "waitlisted" ? "Geändert – du stehst weiter auf der Warteliste." : "Deine Anmeldung ist geändert.",
+  };
+}
+
+export async function meldeVonVeranstaltungAb(id: string): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("event_abmelden", { p_event_id: id });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Du bist abgemeldet." };
 }

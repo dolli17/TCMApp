@@ -49,7 +49,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const eintraege: NavEintrag[] = [
     { href: "/", label: "Home", kurz: "Home", symbol: "home" },
     { href: "/plan", label: "Belegungsplan", kurz: "Plätze", symbol: "platz" },
-    { href: "/getraenke", label: "Getränke", kurz: "Getränke", symbol: "getraenk" },
+    { href: "/verein", label: "Verein", kurz: "Verein", symbol: "verein", bereich: true },
     { href: "/konto", label: "Mein Konto", kurz: "Konto", symbol: "konto" },
   ];
 

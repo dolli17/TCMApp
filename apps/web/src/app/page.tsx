@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  bookingKicker, dayTag, formatCents, freeCourtsNow, localMinutes, minutesOf, minutesToTime,
+  bookingKicker, dayTag, eventDemnaechst, formatCents, freeCourtsNow, localMinutes, minutesOf, minutesToTime,
   offenesSpielText, relativeTimeLabel, sumOpenDrinks, timeToMinutes, timelinePosition,
   timelineSegments, upcomingBookings,
 } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
+import { EventKarte } from "@/components/EventKarte";
 import { MiniZeitleiste } from "@/components/MiniZeitleiste";
+import { alsMitgliedEvent } from "@/lib/veranstaltungen";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +43,7 @@ export default async function Start() {
 
   const heute = heuteInBerlin();
   const supabase = await createServerSupabase();
-  const [meineRes, plaetzeRes, planRes, einstellungRes, artenRes, offenRes, getraenkeRes, dienstRes, neuesRes] =
+  const [meineRes, plaetzeRes, planRes, einstellungRes, artenRes, offenRes, getraenkeRes, dienstRes, neuesRes, eventsRes] =
     await Promise.all([
       supabase.rpc("my_bookings", {}),
       supabase.from("courts").select("id, name, short_name").eq("active", true).order("position"),
@@ -58,6 +60,7 @@ export default async function Start() {
       supabase.rpc("my_drink_purchases"),
       supabase.rpc("my_work_duty", {}),
       supabase.rpc("my_notifications", { p_limit: 3 }),
+      supabase.rpc("events_fuer_mitglied"),
     ]);
 
   const jetzt = new Date();
@@ -91,6 +94,7 @@ export default async function Start() {
   const ist = Number(dienst?.completed_hours ?? 0);
   const soll = Number(dienst?.required_hours ?? 0);
   const neues = (neuesRes.data ?? []).slice(0, 3);
+  const demnaechst = eventDemnaechst((eventsRes.data ?? []).map(alsMitgliedEvent), jetzt);
 
   return (
     <div className="home">
@@ -161,7 +165,7 @@ export default async function Start() {
               <Pfad d="M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM12 12v6M9 15h6" />
               Platz buchen
             </Link>
-            <Link href="/getraenke">
+            <Link href="/verein/getraenke">
               <Pfad d="M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8" />
               Getränk eintragen
             </Link>
@@ -236,13 +240,32 @@ export default async function Start() {
               </ul>
             )}
           </section>
+
+          {/* --- Demnaechst im Verein -------------------------------------- */}
+          <section className="home-verein" aria-labelledby="h-verein">
+            <div className="sectionlabel">
+              <h2 id="h-verein">Demnächst im Verein</h2>
+              <Link href="/verein/veranstaltungen">Alle</Link>
+            </div>
+            {eventsRes.error ? (
+              <div className="hinweis fehler">Die Veranstaltungen konnten nicht geladen werden.</div>
+            ) : demnaechst.length === 0 ? (
+              <p className="leer-klein">Gerade ist nichts geplant.</p>
+            ) : (
+              <ul className="event-liste">
+                {demnaechst.map((e) => (
+                  <li key={e.id}><EventKarte e={e} jetzt={jetzt} aufforderung /></li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
 
         <aside className="home-seite" aria-label="Dein Monat und Neuigkeiten">
           {/* --- Dein Monat ------------------------------------------------ */}
           <section className="karte monat" aria-labelledby="h-monat">
             <h2 id="h-monat">Dein {MONAT.format(jetzt)}</h2>
-            <Link href="/getraenke" className="zeile">
+            <Link href="/verein/getraenke" className="zeile">
               <span>Getränke</span>
               {getraenkeRes.error ? (
                 <small className="fehlertext">nicht geladen</small>

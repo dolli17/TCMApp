@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import logo from "@tcm/ui/logo-weiss.png";
 import { drinkBatchReport, formatCents, MAX_DRINK_QUANTITY, type DrinkBatchResult } from "@tcm/core";
-import { kioskBuchen } from "@/app/getraenke/aktionen";
+import { kioskBuchen } from "@/app/verein/getraenke/aktionen";
 
 interface Mitglied {
   id: string;

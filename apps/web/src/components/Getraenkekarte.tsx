@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import {
   canVoidSelf, drinkBatchReport, formatCents, MAX_DRINK_QUANTITY, type DrinkBatchResult,
 } from "@tcm/core";
-import { getraenkBuchen, getraenkStornieren } from "@/app/getraenke/aktionen";
+import { getraenkBuchen, getraenkStornieren } from "@/app/verein/getraenke/aktionen";
 
 interface Artikel {
   id: string;

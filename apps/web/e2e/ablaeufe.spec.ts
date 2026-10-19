@@ -418,9 +418,11 @@ test.describe("Platzbuchung", () => {
 test.describe("Getränke", () => {
   test("Mitglied bucht ein Getränk und nimmt es zurück", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
+    // Die alte Adresse aus Lesezeichen fuehrt in den Bereich Verein.
     await page.goto("/getraenke");
+    await expect(page).toHaveURL(/\/verein\/getraenke$/);
 
-    await expect(page.getByRole("heading", { name: "Getränke" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Was nimmst du?" })).toBeVisible();
 
     const vorher = await page.locator(".zuletzt li").count();
     // Sammeln und auf einmal eintragen
