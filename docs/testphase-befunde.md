@@ -4,7 +4,7 @@ Sammelstelle für Fehler, Lücken und Auffälligkeiten aus der Testphase (Start:
 damit sie gebündelt abgearbeitet werden können. Neue Befunde unten in **Offen** ergänzen;
 Erledigtes mit Commit nach **Behoben** verschieben.
 
-Stand: 14.10.2026
+Stand: 20.10.2026
 
 Legende Priorität: **P1** blockiert Tester oder ist ein Sicherheitsthema · **P2** vor externen
 Testern bzw. App Store · **P3** Komfort, Aufräumen.
@@ -61,6 +61,120 @@ Testern bzw. App Store · **P3** Komfort, Aufräumen.
 | O19 | P3 | **Testlauf-Rückstände:** Ein früherer E2E-Lauf hat dem lokalen Testmitglied die Admin-Rolle gegeben. Danach schlugen Berechtigungstests fehl, bis `db:reset` lief. | Die betroffenen Verwaltungstests sollen vergebene Rollen wieder entziehen; oder vor jedem Lauf `db:reset`. |
 | O20 | P3 | Die Abläufe „Einladung über den Server“ und „Passwort-vergessen-Link in Tab 2“ sind nur einmalig mit dem lokalen Mail-Postfach (Mailpit) geprüft, nicht als dauerhafte E2E-Tests. | Hilfsfunktion für Mailpit in `apps/web/e2e/hilfen.ts` und dauerhafte Tests daraus machen. |
 | O26 | P3 | **E2E „ein Mitglied mit Historie lässt sich nicht löschen“ (`apps/web/e2e/mitglieder.spec.ts:296`) scheitert nur im Gesamtlauf.** Einzeln auf frischer DB besteht er. Er sucht nach „Bauer“ und nimmt den ersten Treffer; im Gesamtlauf ist das je nach dem, was vorherige Tests angelegt haben, ein anderer Datensatz (beobachtet: der des Admins). Der Test hängt also von der Reihenfolge ab. Gefunden beim Gesamtlauf zu PR #40 am 19.10. | Den Datensatz eindeutig wählen, z. B. über die Mitgliedsnummer oder die ID des Testmitglieds statt über den ersten Treffer der Suche. |
+
+### Härtung vor dem Go-Live (Audit 20.10.2026)
+
+Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Plan und Reihenfolge der Wellen: Härtungsplan (bis zum Go-Live keine großen neuen Funktionen). „Geprüft“ heißt: am Code von Hand nachgesehen. Alles andere stammt aus dem Audit und wird beim Fix zuerst mit einem roten Test belegt.
+
+#### Security
+
+| # | Prio | Befund | Was zu tun ist |
+|---|---|---|---|
+| S1 | P1 | **Konto-Übernahme:** `loginAnlegen` in `member-login/index.ts:~600` übernimmt ein vorhandenes Auth-Konto mit gleicher E-Mail. Lokal sind `enable_signup = true` und `enable_confirmations = false` gesetzt, die Mindestlänge des Passworts ist 6. Wer sich mit der Adresse eines künftigen Mitglieds registriert, bekommt dessen Konto. | Übernahme nur bei Logins, die die Verwaltung selbst angelegt hat. Signup aus (lokal und Cloud), Mindestlänge ≥ 10. Die Cloud-Einstellung prüfen. |
+| S2 | P2 | Open Redirect über `?weiter=` (`apps/web/src/app/login/page.tsx:66`) | PR #43 |
+| S3 | P2 | `istDienstschluessel()` in `notification-mails`/`-pushes` liest die JWT-Rolle ohne Signaturprüfung. Das ist nur sicher, solange `verify_jwt` an ist. | Mit dem Schlüssel aus der Umgebung vergleichen. |
+| S4 | P2 | Keine CSP und keine Permissions-Policy, HSTS ohne `includeSubDomains` | Header in `next.config.ts`, Nonce/Hash für das Theme-Skript |
+| S5 | P2 | App: Tokens liegen in AsyncStorage, Einladung und Recovery laufen im Implicit Flow über `tcm://` | `expo-secure-store`, `token_hash` + `verifyOtp` |
+| S6 | P3 | `submit_membership_application`: `p_ip` setzt der Aufrufer selbst, die Sperre lässt sich umgehen | IP serverseitig ermitteln *(Migration)* |
+| S7 | P2 | CSV-Injection im Teilnehmer-Export (`csvFeld`) | PR #43 |
+| S8 | P3 | `private.*`-Funktionen sind für PUBLIC ausführbar. `private` ist nicht per API erreichbar, betroffen ist also nur die Tiefenverteidigung. | Revoke + Default-Privileges, pgTAP-Test für Funktionsrechte *(Migration)* |
+| S9 | P2 | Middleware lässt ohne Env-Variablen alles durch | PR #43 |
+| S10 | P3 | Export-Route ohne eigene Rollenprüfung | PR #43 |
+| S11 | P2 | `SUPABASE_ACCESS_TOKEN` gilt in `deploy.yml` für den ganzen Job, auch für `pnpm install`. Unklar ist, woher der IBAN-Vault-Schlüssel in Prod kommt (siehe O1). | Token nur für die Steps, die ihn brauchen. Runbook für den Schlüssel. |
+| S12 | P1 | **Ausgetretene und archivierte Mitglieder behalten vollen Zugang.** *Geprüft.* `private.is_member()`, `current_member_id()`, `is_admin()` und `has_role()` prüfen weder `status` noch `login_disabled_at`. `archive_member` sperrt den Login nicht, `end_membership` entzieht keine Rollen. Ein ausgeschiedener Vorstand sieht weiter IBANs. Gleicher Befund wie B3. | Status- und Sperrprüfung in den Rechtefunktionen. Beim Archivieren und Austreten den Login sperren *(Migration)*. |
+| S13 | P1 | **Löschen und Anonymisieren entfernen die Daten nicht vollständig (DSGVO Art. 17).** Im `change_log` bleiben der ganze Datensatz und alle alten Werte stehen. `anonymize_member` lässt `guardian_*` stehen. Anträge bleiben mit Name, Adresse und Geburtsdatum erhalten. Für `privacy.change_log_days` gibt es keinen Aufräumlauf. | Log-Zeilen schwärzen, `guardian_*` leeren, Antrag schwärzen, pg_cron für die Aufbewahrung *(Migration)* |
+| S14 | P2 | `next` 15.5.22 hat kritische Advisories (u. a. im Image Optimizer), `sharp`/`postcss` hohe | `next ≥ 15.5.24`, `sharp ≥ 0.35.5` |
+| S15 | P2 | Jedes Mitglied liest die komplette Buchungshistorie aller Mitglieder mit allen Spalten (`cancellation_reason`, `cancelled_by`, `created_by`, `booking_code`) | Spalten-Grant und zeitliche Begrenzung *(Migration)* |
+| S16 | P2 | Admin-Konten nur mit Passwort: TOTP aus, `secure_password_change = false`, Leaked-Password-Schutz auf Dev aus | TOTP für admin/board, aal2 in `is_admin`, Re-Auth beim Passwortwechsel |
+| S17 | P3 | Mitglieder lesen ihre eigenen `notes`, `import_notes`, `legacy_data` | Spalten-Grant *(Migration)* |
+| S18 | P3 | `member-login`: Ein Admin kann sich oder alle anderen Admins sperren. `email_aendern` ändert auch Admin-Adressen ohne Hinweis an die alte Adresse. | Schutz für den letzten Admin, Hinweis-Mail an die alte Adresse |
+| S19 | P3 | Eine Sperre wirkt erst nach Ablauf des JWT (bis 1 h) | Mit S12 erledigt |
+| S20 | P3 | Login-CSRF über das `#access_token`-Fragment in `passwort-setzen` | Mit S5 (`token_hash`) |
+| S21 | P3 | Freitext ohne Längengrenze (`guest_name`, `cancellation_reason`, Namen) | CHECK-Constraints *(Migration)* |
+| S22 | P3 | Globaler Deckel von 20 Anträgen pro Stunde: Mit Fake-Anträgen lassen sich alle echten blockieren | Captcha oder Bestätigungsmail |
+| S23 | P3 | Rechtstexte sind nach der Zustimmung noch änderbar | Trigger: Text einer zugestimmten Version unveränderlich *(Migration)* |
+| S24 | P3 | Am Kiosk bucht man ohne PIN für jedes Mitglied | Design-Entscheidung festhalten oder Push an das Mitglied |
+| S25 | P3 | **Schema `tests` mit 53 pgTAP-Funktionen liegt auf Dev.** Die Tests liefen also einmal gegen die Cloud. | Bereinigung mit Lucas abstimmen (kein DDL von Claude). Für Prod ausschließen. |
+| S26 | P3 | `register_push_token` hängt ein fremdes Token auf das eigene Konto um | Umhängen nur bei stillgelegtem Token *(Migration)* |
+| S27 | P3 | Kinder erteilen die Elternzustimmung und das SEPA-Mandat selbst | Bestätigung per Mail an die Eltern |
+| S28 | P3 | `pnpm audit`: kritische/hohe Lücken in Expo-Build-Werkzeugen (nur zur Build-Zeit) | Expo-Patchupdate, `pnpm.overrides` |
+
+#### Bugs
+
+| # | Prio | Befund | Was zu tun ist |
+|---|---|---|---|
+| B1 | P1 | **Doppelte Belastung:** *Geprüft.* `waive_charge`/`settle_charge_manually` sperren nur `submitted`/`settled`. Eine Forderung im laufenden Einzug (`notified`) lässt sich also erlassen oder als bezahlt abhaken und wird trotzdem eingezogen. `mark_debit_batch_generated` überschreibt danach den Status. | Ablehnen, wenn `forderung_gesperrt` gilt, oder den Posten aus dem Entwurf nehmen *(Migration)* |
+| B2 | P1 | Eine Gastgebühr entsteht doppelt bzw. wird beim Storno nicht erlassen, sobald sie angekündigt ist (`sync_guest_charges`, `waive_guest_charges` zählen nur `open`) | Alle Status außer `waived` zählen. Gastgebühr erst ab Spielbeginn einziehbar. *(Migration)* |
+| B3 | P1 | Archivierte Mitglieder können buchen und sich anmelden | siehe S12 |
+| B4 | P2 | `archive_member` räumt Gastgebühren, Veranstaltungsanmeldungen, Wartelisten und Mitspielerplätze nicht auf. Ein Archivierter rückt sogar nach. | Ergänzen *(Migration)* |
+| B5 | P2 | Archivieren bei offenem Einzug: Die Lastschrift auf das widerrufene Mandat landet in der Datei | Posten aus Entwürfen entfernen *(Migration)* |
+| B6 | P2 | `join_booking` ohne `for update`: Wer gleichzeitig „Mitspielen“ tippt, überbucht | Zeilensperre, auch in `update_booking_players`/`leave_booking` *(Migration)* |
+| B7 | P2 | Lastschriftdatei lässt sich nach einem Teilfehler nie wieder erzeugen (Upsert ohne UPDATE-Policy im Bucket `sepa`) | Eindeutiger Pfad je Versuch |
+| B8 | P2 | Kiosk: Während der 2,5 s Bestätigung bucht der Nächste in den Korb des Vorgängers | Korb sofort leeren, Timer abbrechen |
+| B9 | P2 | Mails und Pushes gehen nach einem Teilfehler doppelt raus (`release_*` gibt alle IDs frei) | Nur die fehlgeschlagenen Stapel freigeben |
+| B10 | P2 | SEPA-Mandat im Onboarding scheitert zwischen 0 und 2 Uhr: `signed_on` ist das Berliner Datum, die Constraint prüft gegen `current_date` (UTC) | Constraint auf Berliner Datum *(Migration)* |
+| B11 | P2 | Am letzten Vorlauftag zeigt der Plan Zeiten als frei, die der Server ablehnt (`canStartAt` ohne `leadDays`) | `@tcm/core` |
+| B12 | P2 | Clients prüfen `min_players` nicht (Doppel mit einem Mitspieler) | `checkPlayers` nutzen |
+| B13 | P2 | Stornieren, Austragen und Mitspielen werden auch für begonnene Buchungen angeboten | Gemeinsamer Helfer in core |
+| B14 | P2 | Ein Ladefehler sieht aus wie „nichts da“ (`/konto`, Belegungsplan, Kasse) | `error` je Abschnitt auswerten |
+| B15 | P3 | `current_drink_price` nutzt das UTC-Datum: Nachts gilt am Umstellungstag noch der alte Preis | `private.heute()` *(Migration)* |
+| B16 | P3 | UTC-Datum als „heute“ in sechs Web-Formularen und mehreren SQL-Vorgaben. In der Neujahrsnacht wird der Beitrag des Vorjahres zugewiesen. | `berlinDay`, `private.heute()` |
+| B17 | P3 | Wird der Anmeldeschluss verschoben, kommt keine neue Erinnerung | `reminder_sent_at` zurücksetzen |
+| B18 | P3 | Web-Getränkekarte verliert Eingaben während des Sendens | Sperren während `laeuft` |
+| B19 | P3 | App-Tab „Konto“ lädt bei Fokus nicht nach | `useFocusEffect` |
+| B20 | P3 | Teilfehler bei der E-Mail-Änderung wird als Gesamtfehler gemeldet | Meldung differenzieren |
+
+Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.12.); Mindestbetrag 5 € je Auswahl; veraltete Antworten beim schnellen Tageswechsel in der App.
+
+#### Testing
+
+| # | Prio | Befund | Was zu tun ist |
+|---|---|---|---|
+| T1 | P1 | `scripts/e2e.sh` sourct die Root-`.env` und läuft damit gegen die Cloud | eigener PR (`chore/e2e-nur-lokal`) |
+| T2 | P2 | E2E läuft nicht in CI | Eigener Job mit Edge Runtime und Mailpit. Auth-Rate-Limit (30/5 min) beachten, besser `storageState` je Rolle. |
+| T3 | P2 | E2E nicht deterministisch: 18 datenabhängige `test.skip`, „erster Treffer“ bei Mitspielern und Buchungen. Die Testkonten wandern bei jedem `db reset` (`gen_random_uuid`, Ursache von O26). | Feste E2E-Konten mit festen UUIDs. Feste Termine im seedfreien Fenster 08:00 und 11–14 Uhr. SQL-Fixtures. Rollen und Einstellungen im globalSetup zurücksetzen (O19). |
+| T4 | P2 | pgTAP ohne direkte Tests für u. a. `remove_charge_from_debit_batch`, `fee_run_preview`, `debit_batch_items`, `event_veroeffentlichen`, `event_loeschen`, `update_membership`, `my_booking_quota`, `remove_push_token`, `guard_member_self_update` (GUC-Umgehung) | Nach der Lückenliste aus dem Audit ergänzen |
+| T5 | P2 | Die SEPA-Datei wird nicht Ende-zu-Ende geprüft | E2E: Datei laden, Summe, Anzahl, IBANs prüfen |
+| T6 | P2 | Edge Functions ohne Tests | Deno-Tests für `member-login` mit abgefangenem `Deno.serve` und `fetch`-Router, ohne die Funktion umzubauen |
+| T7 | P3 | Mail-Abläufe nur einmalig geprüft (O20) | Mailpit-Helfer, dauerhafte E2E |
+| T8 | P3 | App: nur 3 von 11 lib-Modulen getestet | Unit-Tests, manuelle Checkliste in `RELEASE.md` (kein Maestro) |
+
+#### UI/UX
+
+| # | Prio | Befund | Was zu tun ist |
+|---|---|---|---|
+| U1 | P2 | Im Web gibt es kein `loading.tsx`/`error.tsx`/`not-found.tsx` | Für die Hauptsegmente ergänzen, mit „Erneut versuchen“ |
+| U2 | P2 | Rohe Supabase-Meldungen (`admin/mitglieder/page.tsx:86` u. a.), App `useLaden` | `translateDbError` durchgehend |
+| U3 | P3 | Nirgends „Erneut versuchen“, Pull-to-Refresh nur in 2 Dateien | Retry und Pull-to-Refresh |
+| U4 | P3 | ~50× `#fff` statt Token, Avatarfarben doppelt | `onBrand`-Token, Avatarfarben nach `@tcm/ui` |
+| U5 | P2 | App: feste Schriftgrößen, keine Prüfung großer Systemschrift | Hauptbildschirme bei größter Stufe prüfen |
+| U6 | P3 | App: Tipp-Elemente ohne `accessibilityLabel`. Im Web keine axe-Prüfung. | Labels, `@axe-core/playwright` |
+| U7 | P3 | Begriffe: Admin/Verwaltung, Belegungsplan/Plätze, Konto/Mein Konto, Home/Start | `docs/begriffe.md`, angleichen |
+| U8 | P3 | Durchklick-Protokoll | Screenshots aller Routen (begonnen im Audit) |
+| U9 | P1 | **„Einzug abschließen“ geht mit einem Klick, auch vor Ablauf der Rückläuferfrist.** Danach lassen sich Rückläufer nicht mehr erfassen (`LastschriftLauf.tsx:166-176, 227-229`). | Vor der Frist sperren oder nachfragen. Rückläufer auch nach dem Abschluss erlauben. |
+| U10 | P2 | Datei erzeugen, „eingereicht“ und „Ankündigen“ (Massenmail) laufen ohne Rückfrage | Rückfrage mit Anzahl, Summe und Datum |
+| U11 | P2 | Fachbegriffe: „pain.008 erzeugen“, „eBuSy-Backend“ | „Bankdatei erzeugen“ |
+| U12 | P2 | Systemseite zeigt Roh-Schlüssel und Cent-Beträge („1500“) und hat mehrere Speichern-Knöpfe | Checkboxen mit deutschen Namen, Euro-Eingabe |
+| U13 | P2 | Fehlertexte in Rot zu kontrastarm (~3,2:1) | Token `redInk` |
+| U14 | P2 | Hauptknopf im Dunkelmodus: Weiß auf `#3A9BE0` = 3,0:1 | dunkleres Blau |
+| U15 | P2 | Grüne Kacheln „Freie Zeiten“ und Gefahr-Knöpfe unter AA | `greenInk`, dunkleres Rot |
+| U16 | P2 | Die Bestätigung nach Buchen oder Getränk erscheint oben außer Sicht | Toast unten, Block hervorheben |
+| U17 | P2 | **Getränke-Korb geht beim Verlassen still verloren.** „+“ wirkt wie gebucht, dem Verein fehlt das Geld. | Hinweis „Noch nicht eingetragen“ und Rückfrage beim Verlassen |
+| U18 | P2 | Platzraster am Telefon schwer zu treffen (34 px je halbe Stunde), Titel abgeschnitten | „Freie Zeiten“ als Standard, Ziele ≥ 44 px |
+| U19 | P2 | Netzwerk- und Rate-Limit-Fehler erscheinen als „Passwort stimmt nicht“ | gesondert melden |
+| U20 | P2 | App „Passwort setzen“: Ladekreis ohne Ende, wenn der Link kein Token hat | Timeout mit „Neuen Link anfordern“ |
+| U21 | P2 | 115 DB-Fehlertexte und Einstellungstexte mit ae/oe/ue (vgl. O13) | Migration mit echten Umlauten *(Migration)* |
+| U22 | P2 | App-Formulare ohne Autofill und ohne Fehler am Feld. Geburtsdatum als Freitext. | Props durchreichen, Datumsauswahl |
+| U23 | P3 | Aufnahmeantrag: Fehlermeldung oben, außer Sicht. `autoComplete="off"` in den Stammdaten. | Meldung beim Knopf, echte `autoComplete` |
+| U24 | P3 | Tippziele 40 statt 44 (Segmente, Chips, Vortag/Folgetag) | 44 |
+| U25 | P3 | Kasse am Telefon: Segmentleiste abgeschnitten, „Ausnahmen“ ohne Link | Umbruch, Links |
+| U26 | P3 | Deaktivierter Gold-Knopf ohne Begründung | neutrale Optik, Grund daneben |
+| U27 | P3 | Leerzustände ohne Handlung | einheitliche Leer-Komponente |
+| U28 | P3 | Doppelte Einstiege (zweimal „Platz buchen“ plus FAB). Abmelden ohne Text und ohne Rückfrage. | aufräumen |
+| U29 | P3 | Legende und Feldränder unter 3:1 | kräftigere Rahmen |
+| U30 | P3 | Englische Reste und Fachbegriffe: „Home“, „Login“, „LK“, „nuLiga-ID“ | „Start“, „Zugang“, Hilfetexte |
+| U31 | P3 | Gebührenhinweis steht unter dem Anmeldeknopf. App „Passwort vergessen“ ohne Spam-Hinweis. Kein Passwort-anzeigen-Schalter. | angleichen |
+| U32 | P3 | Mitgliederliste mit zwei Filtersystemen | zusammenführen |
 
 ### Noch nicht live geprüft
 
