@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
+import { pruefeLokaleUmgebung } from "./e2e/nur-lokal";
 
 /**
  * Die Tests laufen gegen die echte Anwendung mit echter Datenbank. Der Bestand
@@ -50,6 +51,10 @@ function ladeEnvDatei(pfad: string): void {
 // gleichermassen funktioniert.
 ladeEnvDatei(join(process.cwd(), ".env.local"));
 ladeEnvDatei(join(process.cwd(), "apps", "web", ".env.local"));
+
+// Vor jedem globalSetup: nie gegen Dev oder Prod (siehe e2e/nur-lokal.ts).
+pruefeLokaleUmgebung();
+
 export default defineConfig({
   testDir: "./e2e",
   // Räumt die Testanträge weg – vorher wie nachher. Sie zählen auf die Sperren

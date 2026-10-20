@@ -31,6 +31,8 @@ Die CI (`.github/workflows/ci.yml`) läuft bei jedem PR auf `main` oder `product
 
 Playwright-E2E läuft nicht in der CI, sondern lokal mit `pnpm e2e` gegen den lokalen Stack.
 
+Nur gegen den lokalen Stack, nie gegen Dev oder Prod: `apps/web/playwright.config.ts` bricht vor dem ersten Test ab, wenn `NEXT_PUBLIC_SUPABASE_URL`, `E2E_BASE_URL` oder `SUPABASE_FUNCTIONS_URL` nicht auf `127.0.0.1`/`localhost` zeigen. Werte kommen aus `apps/web/.env.local`, exportierte Shell-Variablen haben aber Vorrang. `scripts/e2e.sh` (Build, Server neu starten, Playwright) lädt deshalb nur `apps/web/.env.local`, nie die Root-`.env`, und bricht ebenfalls ab, wenn die URL nicht lokal ist oder der Stack nicht antwortet.
+
 ## Parallel arbeiten (Worktrees, z. B. mit herdr)
 
 Mehrere Features gleichzeitig gehen gut, jedes in einem eigenen Git-Worktree auf einem eigenen Branch:
