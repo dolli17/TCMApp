@@ -1,12 +1,21 @@
 import { teilnehmerCsv, type EventRegistrationStatus } from "@tcm/core";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
 
 /**
  * Die Teilnehmerliste als CSV. Das Recht prüft event_teilnehmer selbst:
  * ausser dem Vorstand bekommt niemand Namen.
+ *
+ * Das Rollenschloss steht trotzdem hier noch einmal: Route Handler laufen
+ * nicht durch app/admin/layout.tsx (wie bei der Lastschriftdatei).
  */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+
+  const angemeldet = await getCurrentMember();
+  if (!angemeldet || !isAdmin(angemeldet.roles)) {
+    return new Response("Diese Liste ist Administratoren vorbehalten.", { status: 403 });
+  }
+
   const supabase = await createServerSupabase();
 
   const [teilnehmerRes, eventRes] = await Promise.all([

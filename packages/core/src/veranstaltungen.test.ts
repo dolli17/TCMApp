@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   berlinLokalZuIso, centsZuPreisText, eventFormularPruefen, eventGebuehrCents, eventPlaetzeText,
   eventReiter, eventSchritte, eventStatusMarke, eventTagKurz, eventTodos, eventZeitText, isoZuBerlinLokal,
-  teilnehmerCsv, type EventFormular, type EventInfo, type EventZahlen,
+  csvFeld, teilnehmerCsv, type EventFormular, type EventInfo, type EventZahlen,
 } from "./veranstaltungen";
 import { formatCents } from "./money";
 import { einzugGruppeAuswahl, einzugGruppeSchluessel, einzugGruppeTitel } from "./einzug";
@@ -156,6 +156,26 @@ describe("Export", () => {
     }]);
     expect(csv.startsWith("﻿Mitglied;Personen")).toBe(true);
     expect(csv).toContain('Bauer, Nadine;3;2;angemeldet;"1× vegetarisch; bitte";02.10.2026;;ja;54,00');
+  });
+
+  it("entschärft Werte, die Excel als Formel liest", () => {
+    expect(csvFeld("=HYPERLINK(\"http://boese.example\")")).toBe(`"'=HYPERLINK(""http://boese.example"")"`);
+    expect(csvFeld("+49 170")).toBe("'+49 170");
+    expect(csvFeld("-1+1")).toBe("'-1+1");
+    expect(csvFeld("@SUM(A1)")).toBe("'@SUM(A1)");
+    expect(csvFeld("\t=1")).toBe("'\t=1");
+    expect(csvFeld("\r=1")).toBe(`"'\r=1"`);
+    expect(csvFeld("Bauer, Nadine")).toBe("Bauer, Nadine");
+    expect(csvFeld("a=b")).toBe("a=b");
+    expect(csvFeld("")).toBe("");
+  });
+
+  it("entschärft Bemerkung und Name auch in der ganzen Liste", () => {
+    const csv = teilnehmerCsv([{
+      member_name: "=1+1", companions: 0, note: "@cmd", status: "registered",
+      attended: false, registered_at: "2026-10-02T10:00:00Z", cancelled_at: null, charge_cents: null,
+    }]);
+    expect(csv).toContain("'=1+1;1;0;angemeldet;'@cmd;02.10.2026;;;");
   });
 });
 

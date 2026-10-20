@@ -22,7 +22,7 @@ import { router, type Href } from "expo-router";
 import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
-import { translateDbError } from "@tcm/core";
+import { sichererWeiterPfad, translateDbError } from "@tcm/core";
 import { farben } from "@tcm/ui";
 import { supabase } from "./supabase";
 import type { Ergebnis } from "./daten";
@@ -181,6 +181,7 @@ export function usePushZiel(): void {
     if (erledigt.current === id) return;
     erledigt.current = id;
     const ziel = antwort.notification.request.content.data?.ziel;
-    if (typeof ziel === "string" && ziel.startsWith("/")) router.push(ziel as Href);
+    // Nur Pfade der App selbst, keine fremden Adressen (@tcm/core).
+    if (typeof ziel === "string" && sichererWeiterPfad(ziel, "") === ziel) router.push(ziel as Href);
   }, [antwort]);
 }

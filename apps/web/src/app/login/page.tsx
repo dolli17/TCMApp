@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { sichererWeiterPfad } from "@tcm/core";
 import { AnmeldeBuehne } from "@/components/AnmeldeBuehne";
 import { aktivitaetMerken } from "@/lib/inaktivitaet";
 import { kontoGewechselt } from "@/lib/konto-kanal";
@@ -12,8 +13,9 @@ function Formular() {
   const router = useRouter();
   const params = useSearchParams();
   // Ziel "/" statt "/plan": die Startseite entscheidet, ob jemand ein Mitglied
-  // ist oder ein Kiosk-Geraet, und leitet entsprechend weiter.
-  const weiter = params.get("weiter") ?? "/";
+  // ist oder ein Kiosk-Geraet, und leitet entsprechend weiter. Nur Pfade der
+  // eigenen Seite - sonst waere der Login ein Sprungbrett nach aussen.
+  const weiter = sichererWeiterPfad(params.get("weiter"));
   // Nach der automatischen Abmeldung (lib/inaktivitaet.ts) sagen, warum.
   const grund = params.get("grund");
   const hinweis =

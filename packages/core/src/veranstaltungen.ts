@@ -486,8 +486,15 @@ export interface TeilnehmerZeile {
   charge_cents: number | null;
 }
 
-function csvFeld(wert: string): string {
-  return /[";\n\r]/.test(wert) ? `"${wert.replace(/"/g, '""')}"` : wert;
+/**
+ * Ein Feld fuer die CSV. Beginnt ein Wert mit = + - @, Tab oder CR, liest
+ * Excel ihn als Formel (CSV-Injection) - eine Bemerkung wie
+ * "=HYPERLINK(...)" liefe beim Vorstand. Ein vorangestelltes Apostroph
+ * macht daraus wieder Text.
+ */
+export function csvFeld(wert: string): string {
+  const text = /^[=+\-@\t\r]/.test(wert) ? `'${wert}` : wert;
+  return /[";\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
 /**
