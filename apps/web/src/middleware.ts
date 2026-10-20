@@ -11,6 +11,7 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { sichererWeiterPfad } from "@tcm/core";
 import { AKTIV_COOKIE, istAbgelaufen } from "@/lib/inaktivitaet";
 import { ONBOARDING, PFAD_KOPF } from "@/lib/pfad";
 
@@ -49,9 +50,23 @@ function weiter(request: NextRequest) {
 export async function middleware(request: NextRequest) {
   let response = weiter(request);
 
+  const pfad = request.nextUrl.pathname;
+  const oeffentlich = OEFFENTLICH.some((p) => pfad === p || pfad.startsWith(p + "/"));
+
+  // Ohne Supabase-Konfiguration laesst sich niemand pruefen. Dann bleiben nur
+  // die oeffentlichen Seiten offen; alles andere wird abgewiesen statt
+  // ungeprueft ausgeliefert (fail-closed). Geprueft wird erst hier zur
+  // Laufzeit, der Build braucht die Variablen nicht.
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return response;
+  if (!url || !key) {
+    if (oeffentlich) return response;
+    console.error("Middleware: NEXT_PUBLIC_SUPABASE_URL oder NEXT_PUBLIC_SUPABASE_ANON_KEY fehlt.");
+    return new NextResponse("Der Dienst ist gerade nicht verfügbar.", {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+    });
+  }
 
   const supabase = createServerClient(url, key, {
     cookies: {
@@ -71,13 +86,10 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const pfad = request.nextUrl.pathname;
-  const oeffentlich = OEFFENTLICH.some((p) => pfad === p || pfad.startsWith(p + "/"));
-
   if (!user && !oeffentlich) {
     const ziel = request.nextUrl.clone();
     ziel.pathname = "/login";
-    ziel.searchParams.set("weiter", pfad);
+    ziel.searchParams.set("weiter", sichererWeiterPfad(pfad));
     return NextResponse.redirect(ziel);
   }
 
@@ -98,7 +110,7 @@ export async function middleware(request: NextRequest) {
     ziel.pathname = "/login";
     ziel.search = "";
     ziel.searchParams.set("grund", "inaktiv");
-    ziel.searchParams.set("weiter", pfad);
+    ziel.searchParams.set("weiter", sichererWeiterPfad(pfad));
     const umleitung = NextResponse.redirect(ziel);
     for (const c of response.cookies.getAll()) umleitung.cookies.set(c);
     umleitung.cookies.delete(AKTIV_COOKIE);
