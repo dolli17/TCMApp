@@ -3,7 +3,7 @@
 Stand: 11.10.2026 · Status: **geplant, noch nicht umgesetzt**
 
 ## Kontext
-Heute gibt es nur **ein** Cloud-Projekt (`xvjqqjiweogtfpfgeoqz`, Free). Dorthin zeigen Web, alle EAS-Profile und auch `scripts/e2e.sh`. Daneben gibt es nur den lokalen Stack.
+Heute gibt es nur **ein** Cloud-Projekt (`xvjqqjiweogtfpfgeoqz`, Free). Dorthin zeigen Web und alle EAS-Profile. (`scripts/e2e.sh` zeigte bis 20.10.2026 ebenfalls dorthin; seitdem läuft E2E nur noch lokal.) Daneben gibt es nur den lokalen Stack.
 
 Für den Rollout an den ganzen Verein soll Prod geschützt sein. Entwickeln und Testen passiert in Dev und lokal, und nach Prod geht nur, was bewusst freigegeben wurde.
 
@@ -94,7 +94,7 @@ Grundregeln:
 - **Migrationen bleiben rückwärtskompatibel:** Alte App-Versionen sprechen weiter mit Prod. Erst erweitern, später aufräumen.
 
 ### 6. Lokal und Schutz vor Verwechslung
-- **`scripts/e2e.sh`** lädt nicht mehr die Cloud-`.env`, sondern immer den lokalen Stack. E2E läuft nie gegen Dev oder Prod.
+- **`scripts/e2e.sh`** lädt nicht mehr die Cloud-`.env`, sondern immer den lokalen Stack. E2E läuft nie gegen Dev oder Prod. **Erledigt (20.10.2026):** zusätzlich bricht `apps/web/playwright.config.ts` vor dem ersten Test ab, wenn eine Adresse nicht lokal ist.
 - **Env-Dateien:** Root-`.env` und `apps/mobile/.env` zeigen auf Dev. Es gibt **keine** Prod-Schlüssel auf dem Mac außer im Passwortmanager. `.env.example` bekommt Platzhalter statt der echten Ref.
 - **Prod-Datenbank** nur über ein neues Skript `scripts/prod-migrate.sh <tag>`:
   - prüft, ob der Tag existiert und der Arbeitsbaum sauber ist;
