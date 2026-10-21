@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { bookingActions } from "@tcm/core";
 import { austragen, stornieren } from "@/app/plan/aktionen";
 
 export interface MeineBuchung {
@@ -39,7 +40,11 @@ const UHR = new Intl.DateTimeFormat("de-DE", {
  * verstecken waere die Einladung, versehentlich vier Leuten den Platz zu
  * nehmen.
  */
-export function MeineBuchungen({ buchungen }: { buchungen: MeineBuchung[] }) {
+export function MeineBuchungen({ buchungen, jetzt }: {
+  buchungen: MeineBuchung[];
+  /** Zeitpunkt der Seite als ISO-Zeitstempel - ab Spielbeginn gibt es nichts mehr zu stornieren. */
+  jetzt: string;
+}) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [nachfrage, setNachfrage] = useState<string | null>(null);
   const [laeuft, starte] = useTransition();
@@ -77,6 +82,11 @@ export function MeineBuchungen({ buchungen }: { buchungen: MeineBuchung[] }) {
           const von = new Date(b.starts_at);
           const bis = new Date(b.ends_at);
           const offen = nachfrage === b.booking_id;
+          // Wer gebucht hat, storniert; wer eingetragen ist, traegt sich aus -
+          // beides nur bis Spielbeginn, so wie cancel_booking und leave_booking.
+          const darf = bookingActions({ startsAt: b.starts_at, own: b.bin_bucher, joined: !b.bin_bucher, now: new Date(jetzt) });
+          const moeglich = b.bin_bucher ? darf.cancel : darf.leave;
+          const vorbei = bis.getTime() <= new Date(jetzt).getTime();
 
           return (
             <li key={b.booking_id} className="mcard termin">
@@ -98,7 +108,9 @@ export function MeineBuchungen({ buchungen }: { buchungen: MeineBuchung[] }) {
               </div>
 
               <div className="termin-tat">
-                {offen ? (
+                {!moeglich ? (
+                  <span className="mit">{vorbei ? "Vorbei" : "Läuft"}</span>
+                ) : offen ? (
                   <>
                     <button
                       type="button"

@@ -73,6 +73,8 @@ interface Props {
   anzeigeMinuten: number;
   /** Immer 60: die Dauer, die eine neue Buchung belegt. */
   dauerMinuten: number;
+  /** Buchungsvorlauf in Tagen (lead_days) - am letzten Tag ist nur bis zur jetzigen Uhrzeit frei. */
+  vorlaufTage: number;
   /** null bedeutet unbegrenzt (Kontingent auf 0 gestellt). */
   kontingentFrei: number | null;
   /** Gastgebuehr je Gast in Cent. */
@@ -157,6 +159,7 @@ export function Belegungsplan(props: Props) {
       durationMinutes: props.dauerMinuten,
       closingMinutes: schlussMin,
       occupied: props.belegungen,
+      leadDays: props.vorlaufTage,
       now: jetzt,
     });
   }
@@ -324,6 +327,7 @@ export function Belegungsplan(props: Props) {
         schluss={schlussMin}
         raster={props.rasterMinuten}
         dauer={props.dauerMinuten}
+        vorlaufTage={props.vorlaufTage}
         verwaltbar={verwaltbar}
         onBuchen={(courtId, minute) => {
           if (kontingentAus) {
@@ -357,6 +361,7 @@ export function Belegungsplan(props: Props) {
                 durationMinutes: props.dauerMinuten,
                 closingMinutes: schlussMin,
                 occupied: props.belegungen,
+                leadDays: props.vorlaufTage,
                 now: jetzt,
               });
               return (

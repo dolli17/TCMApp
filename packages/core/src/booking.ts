@@ -27,6 +27,27 @@ export interface BookingTypeInfo {
   requiresPartner: boolean;
 }
 
+/** Eine Zeile aus booking_types, wie Web und App sie laden. */
+export interface BookingTypeRow {
+  code: string;
+  name: string;
+  duration_minutes: number;
+  min_players: number;
+  max_players: number;
+  requires_partner: boolean;
+}
+
+export function bookingTypeInfo(row: BookingTypeRow): BookingTypeInfo {
+  return {
+    code: row.code,
+    name: row.name,
+    durationMinutes: row.duration_minutes,
+    minPlayers: row.min_players,
+    maxPlayers: row.max_players,
+    requiresPartner: row.requires_partner,
+  };
+}
+
 export type BookingCheck =
   | { ok: true }
   | { ok: false; reason: string };
@@ -123,6 +144,19 @@ export function berlinTime(dayIso: string, minutes: number): Date {
   return new Date(naiv - berlinOffsetMinutes(ersterVersuch) * 60_000);
 }
 
+/**
+ * Der spaeteste Beginn, den create_booking jetzt noch annimmt: now() plus
+ * lead_days Tage.
+ *
+ * Die Datenbank rechnet in UTC, ein Tag sind dort immer 24 Stunden. Ueber
+ * eine Zeitumstellung hinweg verschiebt sich die Grenze deshalb auf der
+ * Berliner Uhr um eine Stunde: am 18.10. um 10:00 reicht der Vorlauf bis
+ * zum 25.10. um 09:00.
+ */
+export function latestStart(leadDays: number, now: Date = new Date()): Date {
+  return new Date(now.getTime() + leadDays * 86_400_000);
+}
+
 export function checkSlot(
   startsAt: Date,
   type: BookingTypeInfo,
@@ -133,8 +167,7 @@ export function checkSlot(
     return { ok: false, reason: "Dieser Zeitpunkt liegt in der Vergangenheit." };
   }
 
-  const grenze = now.getTime() + rules.leadDays * 86_400_000;
-  if (startsAt.getTime() > grenze) {
+  if (startsAt.getTime() > latestStart(rules.leadDays, now).getTime()) {
     return {
       ok: false,
       reason: `Es kann hoechstens ${rules.leadDays} Tage im Voraus gebucht werden.`,
@@ -160,24 +193,44 @@ export function checkSlot(
   return { ok: true };
 }
 
+/**
+ * Wie viele Mitspieler fehlen noch bis zur Untergrenze? Der Bucher zaehlt
+ * mit; eine Spielform mit requires_partner braucht mindestens zwei Leute,
+ * auch wenn min_players niedriger steht.
+ */
+export function missingPlayers(
+  type: BookingTypeInfo,
+  memberCount: number,
+  guestCount: number,
+): number {
+  const gesamt = 1 + memberCount + guestCount;
+  const mindestens = Math.max(type.minPlayers, type.requiresPartner ? 2 : 1);
+  return Math.max(mindestens - gesamt, 0);
+}
+
+/**
+ * Passt die Besetzung zur Spielform? Dieselben Grenzen wie create_booking:
+ * wer Mitspieler sucht, darf unterbesetzt buchen, die Obergrenze gilt immer.
+ */
 export function checkPlayers(
   type: BookingTypeInfo,
   memberCount: number,
   guestCount: number,
+  partnerWanted = false,
 ): BookingCheck {
   const gesamt = 1 + memberCount + guestCount;
 
-  if (type.requiresPartner && gesamt < 2) {
+  const fehlen = partnerWanted ? 0 : missingPlayers(type, memberCount, guestCount);
+  if (fehlen > 0) {
+    const mindestens = Math.max(type.minPlayers, type.requiresPartner ? 2 : 1);
+    const rest = fehlen === 1 ? "es fehlt noch ein Mitspieler" : `es fehlen noch ${fehlen} Mitspieler`;
     return {
       ok: false,
-      reason: `Fuer "${type.name}" musst du mindestens einen Mitspieler angeben.`,
+      reason: `„${type.name}“ braucht mindestens ${mindestens} Spieler – ${rest}.`,
     };
   }
-  if (gesamt < type.minPlayers) {
-    return { ok: false, reason: `"${type.name}" braucht mindestens ${type.minPlayers} Spieler.` };
-  }
   if (gesamt > type.maxPlayers) {
-    return { ok: false, reason: `"${type.name}" erlaubt hoechstens ${type.maxPlayers} Spieler.` };
+    return { ok: false, reason: `„${type.name}“ erlaubt höchstens ${type.maxPlayers} Spieler.` };
   }
   return { ok: true };
 }
@@ -234,10 +287,14 @@ export function canStartAt(opts: {
   durationMinutes: number;
   closingMinutes: number;
   occupied: readonly OccupiedSlot[];
+  /** Buchungsvorlauf wie lead_days; ohne Angabe keine Grenze (Umsetzen kennt keinen). */
+  leadDays?: number | undefined;
   now?: Date;
 }): boolean {
   const jetzt = opts.now ?? new Date();
-  if (berlinTime(opts.day, opts.minute).getTime() < jetzt.getTime()) return false;
+  const beginn = berlinTime(opts.day, opts.minute).getTime();
+  if (beginn < jetzt.getTime()) return false;
+  if (opts.leadDays !== undefined && beginn > latestStart(opts.leadDays, jetzt).getTime()) return false;
   if (opts.minute + opts.durationMinutes > opts.closingMinutes) return false;
   return !opts.occupied.some(
     (b) =>
@@ -292,6 +349,7 @@ export function freeCourtsNow(opts: {
   slotMinutes: number;
   durationMinutes: number;
   occupied: readonly OccupiedSlot[];
+  leadDays?: number | undefined;
   now?: Date;
 }): FreeWindow[] {
   const jetzt = opts.now ?? new Date();
@@ -306,6 +364,7 @@ export function freeCourtsNow(opts: {
       durationMinutes: opts.durationMinutes,
       closingMinutes: opts.closingMinutes,
       occupied: opts.occupied,
+      leadDays: opts.leadDays,
       now: jetzt,
     });
     if (!frei) continue;
@@ -412,4 +471,56 @@ export function umsetzZiele(opts: {
     }
   }
   return out;
+}
+
+/** Was der Betrachter an einer Buchung tun darf. */
+export interface BookingActions {
+  /** Stornieren (cancel_booking) */
+  cancel: boolean;
+  /** Mitspieler aendern (update_booking_players) */
+  editPlayers: boolean;
+  /** Sich als Mitspieler austragen (leave_booking) */
+  leave: boolean;
+  /** Sich als Mitspieler eintragen (join_booking) */
+  join: boolean;
+}
+
+/**
+ * Welche Knoepfe eine Buchung bekommt - abgelesen aus den RPCs, damit Web
+ * und App nichts anbieten, was die Datenbank ablehnt.
+ *
+ * Begonnen ist eine Buchung ab ihrem Beginn (lower(slot) <= now()). Danach
+ * duerfen nur noch Platzrechte (darf_plaetze) stornieren und die Besetzung
+ * aendern - etwa wenn ein Platz waehrend der Spielzeit gesperrt wird.
+ * Austragen und Mitspielen enden mit dem Beginn fuer alle.
+ *
+ * Nicht geprueft wird, was die Liste nicht weiss: ob nach dem Austragen
+ * noch genug Spieler bleiben oder ob das Kontingent reicht. Das sagt die
+ * Datenbank beim Absenden.
+ */
+export function bookingActions(opts: {
+  startsAt: string | Date;
+  /** Der Betrachter hat gebucht. */
+  own: boolean;
+  /** Der Betrachter ist als Mitspieler eingetragen. */
+  joined?: boolean;
+  partnerWanted?: boolean;
+  /** Freie Plaetze bis max_players */
+  free?: number;
+  /** Platzrechte: Admin oder Platzwart */
+  managesCourts?: boolean;
+  now?: Date;
+}): BookingActions {
+  const jetzt = opts.now ?? new Date();
+  const begonnen = new Date(opts.startsAt).getTime() <= jetzt.getTime();
+  const platzrechte = opts.managesCourts === true;
+  const verwalten = (opts.own || platzrechte) && (!begonnen || platzrechte);
+  return {
+    cancel: verwalten,
+    editPlayers: verwalten,
+    leave: !opts.own && opts.joined === true && !begonnen,
+    join:
+      !opts.own && opts.joined !== true && opts.partnerWanted === true &&
+      (opts.free ?? 0) > 0 && !begonnen,
+  };
 }

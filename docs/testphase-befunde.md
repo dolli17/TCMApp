@@ -113,9 +113,9 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 | B8 | P2 | Kiosk: Während der 2,5 s Bestätigung bucht der Nächste in den Korb des Vorgängers | Korb sofort leeren, Timer abbrechen |
 | B9 | P2 | Mails und Pushes gehen nach einem Teilfehler doppelt raus (`release_*` gibt alle IDs frei) | Nur die fehlgeschlagenen Stapel freigeben |
 | B10 | P2 | SEPA-Mandat im Onboarding scheitert zwischen 0 und 2 Uhr: `signed_on` ist das Berliner Datum, die Constraint prüft gegen `current_date` (UTC) | Constraint auf Berliner Datum *(Migration)* |
-| B11 | P2 | Am letzten Vorlauftag zeigt der Plan Zeiten als frei, die der Server ablehnt (`canStartAt` ohne `leadDays`) | `@tcm/core` |
-| B12 | P2 | Clients prüfen `min_players` nicht (Doppel mit einem Mitspieler) | `checkPlayers` nutzen |
-| B13 | P2 | Stornieren, Austragen und Mitspielen werden auch für begonnene Buchungen angeboten | Gemeinsamer Helfer in core |
+| B11 | P2 | Am letzten Vorlauftag zeigt der Plan Zeiten als frei, die der Server ablehnt (`canStartAt` ohne `leadDays`) | **Erledigt (PR #56):** `canStartAt` und alles darauf (`courtStatusAt`, `freeGaps`, `freeSlotsOfDay`, `freeCourtsNow`) prüft `leadDays` wie `create_booking`: jetzt plus lead_days mal 24 Stunden (UTC), über die Zeitumstellung eine Stunde verschoben. Status „buchbar ab …“. Web und App reichen `lead_days` durch. |
+| B12 | P2 | Clients prüfen `min_players` nicht (Doppel mit einem Mitspieler) | **Erledigt (PR #56):** Buchungsblatt in Web und App prüft mit `checkPlayers` (kennt jetzt „Mitspieler gesucht“) und sagt, wie viele Mitspieler fehlen. Server geprüft, pgTAP-Test ergänzt. |
+| B13 | P2 | Stornieren, Austragen und Mitspielen werden auch für begonnene Buchungen angeboten | **Erledigt (PR #56):** `bookingActions` in `@tcm/core` (Regeln aus `cancel_booking`, `update_booking_players`, `leave_booking`, `join_booking`), genutzt im Buchungsblatt und in „Meine & offene Spiele“ in Web und App. |
 | B14 | P2 | Ein Ladefehler sieht aus wie „nichts da“ (`/konto`, Belegungsplan, Kasse) | `error` je Abschnitt auswerten |
 | B15 | P3 | `current_drink_price` nutzt das UTC-Datum: Nachts gilt am Umstellungstag noch der alte Preis | `private.heute()` *(Migration)* |
 | B16 | P3 | UTC-Datum als „heute“ in sechs Web-Formularen und mehreren SQL-Vorgaben. In der Neujahrsnacht wird der Beitrag des Vorjahres zugewiesen. | `berlinDay`, `private.heute()` |

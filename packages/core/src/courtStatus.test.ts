@@ -110,3 +110,26 @@ describe("nextSlotMinute", () => {
     expect(nextSlotMinute({ ...basis, now: um("06:00") })).toBe(timeToMinutes("08:00"));
   });
 });
+
+// B11: am letzten Vorlauftag ist eine Zeit nach der Grenze nicht frei.
+describe("courtStatusAt mit Vorlauf", () => {
+  it("nennt die Uhrzeit, ab der gebucht werden kann", () => {
+    // Jetzt ist der 21.09., 14:10 - der 28.09. ist der siebte Tag.
+    const jetzt = berlinTime("2026-09-21", timeToMinutes("14:10"));
+    const st = (zeit: string) =>
+      courtStatusAt({
+        day: TAG,
+        courtId: "p1",
+        minute: timeToMinutes(zeit),
+        durationMinutes: 60,
+        closingMinutes: timeToMinutes("21:00"),
+        occupied: [],
+        leadDays: 7,
+        now: jetzt,
+      });
+    expect(st("14:00").art).toBe("frei");
+    expect(st("14:30")).toMatchObject({ art: "vorlauf", text: "buchbar ab 14:30" });
+    expect(st("17:00")).toMatchObject({ art: "vorlauf", text: "buchbar ab 17:00" });
+  });
+});
+

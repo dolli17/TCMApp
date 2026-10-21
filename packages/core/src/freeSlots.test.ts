@@ -41,6 +41,16 @@ describe("freeSlotsOfDay", () => {
     expect(uhrzeiten(zeilen([], um("16:00"))).slice(0, 2)).toEqual(["16:00", "17:00"]);
   });
 
+  it("am letzten Vorlauftag ist nach der Grenze nichts frei", () => {
+    const z = freeSlotsOfDay({
+      day: TAG, courtIds: ["p1"], openingMinutes: timeToMinutes("08:00"), closingMinutes: timeToMinutes("21:00"),
+      slotMinutes: 30, durationMinutes: 60, occupied: [], leadDays: 7, now: um("14:10", "2026-09-21"),
+    });
+    expect(z.filter((r) => r.free > 0).map((r) => minutesToTime(r.minute))).toEqual([
+      "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00",
+    ]);
+  });
+
   it("vor der Oeffnung und an kommenden Tagen ab der Oeffnung", () => {
     expect(uhrzeiten(zeilen([], um("06:00")))[0]).toBe("08:00");
     const morgen = zeilen([], um("14:10"), "2026-09-29");
@@ -96,6 +106,15 @@ describe("freeGaps", () => {
         um("06:00"),
       ),
     ).toEqual([]);
+  });
+
+  it("am letzten Vorlauftag endet die Luecke an der Grenze", () => {
+    // Jetzt 21.09. 14:10, sieben Tage Vorlauf: am 28.09. beginnt bis 14:10.
+    const l = freeGaps({
+      day: TAG, courtId: "p1", openingMinutes: timeToMinutes("08:00"), closingMinutes: timeToMinutes("21:00"),
+      slotMinutes: 30, durationMinutes: 60, occupied: [], leadDays: 7, now: um("14:10", "2026-09-21"),
+    });
+    expect(l.map((g) => `${minutesToTime(g.from)}-${minutesToTime(g.until)}`)).toEqual(["08:00-15:00"]);
   });
 
   it("ein vergangener Tag hat keine Luecken", () => {

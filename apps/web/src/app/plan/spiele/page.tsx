@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function SpieleSeite() {
   const supabase = await createServerSupabase();
+  const jetzt = new Date().toISOString();
   const [meineRes, offenRes] = await Promise.all([
     supabase.rpc("my_bookings", {}),
     supabase.rpc("open_matches", {}),
@@ -39,7 +40,7 @@ export default async function SpieleSeite() {
             Deine Buchungen konnten nicht geladen werden. ({meineRes.error.message})
           </div>
         ) : (
-          <MeineBuchungen buchungen={(meineRes.data ?? []) as MeineBuchung[]} />
+          <MeineBuchungen buchungen={(meineRes.data ?? []) as MeineBuchung[]} jetzt={jetzt} />
         )}
       </section>
 
@@ -55,6 +56,7 @@ export default async function SpieleSeite() {
           <OffeneSpiele
             spiele={(offenRes.data ?? []) as OffenesSpiel[]}
             eigene={(meineRes.data ?? []).filter((b) => b.bin_bucher).map((b) => b.booking_id)}
+            jetzt={jetzt}
           />
         )}
       </section>

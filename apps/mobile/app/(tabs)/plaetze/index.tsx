@@ -233,19 +233,23 @@ export default function Plan() {
    * create_booking prueft. Ein Kalender waere der uebliche Griff, wuerde aber
    * Tage anbieten, die die Datenbank ohnehin abweist.
    */
-  const tage = useMemo(() => {
-    const vorlauf = einstellungen?.lead_days ?? 7;
-    return Array.from({ length: vorlauf + 1 }, (_, i) => verschiebe(heute, i));
-  }, [heute, einstellungen?.lead_days]);
+  const vorlauf = einstellungen?.lead_days ?? 7;
+  const tage = useMemo(
+    () => Array.from({ length: vorlauf + 1 }, (_, i) => verschiebe(heute, i)),
+    [heute, vorlauf],
+  );
 
-  /** Kann auf diesem Platz um genau diese Minute eine Buchung beginnen? */
+  /**
+   * Kann auf diesem Platz um genau diese Minute eine Buchung beginnen? Am
+   * letzten Vorlauftag nur bis zur jetzigen Uhrzeit - wie create_booking.
+   */
   const startMoeglich = useCallback(
     (courtId: string, minute: number) =>
       pruefeStart({
         day: datum, courtId, minute, durationMinutes: dauer, closingMinutes: schluss,
-        occupied: belegung,
+        occupied: belegung, leadDays: vorlauf,
       }),
-    [belegung, datum, dauer, schluss],
+    [belegung, datum, dauer, schluss, vorlauf],
   );
 
   const startzeitenIn = useCallback(
@@ -293,6 +297,7 @@ export default function Plan() {
     const [erster] = jetztFrei({
       day: heute, courtIds: plaetze.map((p) => p.id), openingMinutes: oeffnung,
       closingMinutes: schluss, slotMinutes: raster, durationMinutes: dauer, occupied: belegung,
+      leadDays: vorlauf,
     });
     const platz = erster && plaetze.find((p) => p.id === erster.courtId);
     if (!erster || !platz) {
@@ -302,7 +307,7 @@ export default function Plan() {
     oeffneBuchen(platz, erster.fromMinute, heute);
   }, [
     buchenWartet, laedt, geladenFuer, datum, heute, kontingentAus, plaetze, oeffnung, schluss,
-    raster, dauer, belegung, oeffneBuchen,
+    raster, dauer, belegung, oeffneBuchen, vorlauf,
   ]);
 
   /**
@@ -530,6 +535,7 @@ export default function Plan() {
               schluss={schluss}
               raster={raster}
               dauer={dauer}
+              vorlaufTage={vorlauf}
               auswahl={auswahl}
               oeffnebar={oeffnebar}
               onAuswahl={setAuswahl}
@@ -549,6 +555,7 @@ export default function Plan() {
               schluss={schluss}
               raster={raster}
               dauer={dauer}
+              vorlaufTage={vorlauf}
               onBuchen={buchenAuf}
               oeffnebar={oeffnebar}
               onOeffnen={oeffneBelegung}

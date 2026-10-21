@@ -11,7 +11,7 @@
  */
 
 import {
-  berlinTime, canStartAt, minutesOf, minutesToTime, nextSlotMinute, type OccupiedSlot,
+  berlinTime, canStartAt, latestStart, minutesOf, minutesToTime, nextSlotMinute, type OccupiedSlot,
 } from "./booking";
 import { courtStatusAt, type CourtSlot, type CourtStatus } from "./courtStatus";
 import { blockingLabel, occupancyKind, type TimelineKind } from "./home";
@@ -35,6 +35,8 @@ export function freeSlotsOfDay<T extends CourtSlot>(opts: {
   occupied: readonly T[];
   /** Abstand der Zeilen nach der ersten; Vorgabe eine volle Stunde */
   stepMinutes?: number;
+  /** Buchungsvorlauf wie lead_days, siehe canStartAt. */
+  leadDays?: number | undefined;
   now?: Date;
 }): FreeSlotRow<T>[] {
   const jetzt = opts.now ?? new Date();
@@ -65,6 +67,7 @@ export function freeSlotsOfDay<T extends CourtSlot>(opts: {
         durationMinutes: opts.durationMinutes,
         closingMinutes: opts.closingMinutes,
         occupied: opts.occupied,
+        leadDays: opts.leadDays,
         now: jetzt,
       }),
     }));
@@ -97,6 +100,8 @@ export function freeGaps(opts: {
   slotMinutes: number;
   durationMinutes: number;
   occupied: readonly OccupiedSlot[];
+  /** Buchungsvorlauf wie lead_days, siehe canStartAt. */
+  leadDays?: number | undefined;
   now?: Date;
 }): FreeGap[] {
   const jetzt = opts.now ?? new Date();
@@ -115,8 +120,14 @@ export function freeGaps(opts: {
   }
 
   // Bis zur naechsten Belegung oder zum Schluss verlaengern - auch das
-  // Stueck, in dem keine volle Stunde mehr beginnen kann, ist frei.
+  // Stueck, in dem keine volle Stunde mehr beginnen kann, ist frei. Nicht
+  // aber ueber den Vorlauf hinaus: dahinter laesst sich nichts antippen.
+  const grenze = opts.leadDays === undefined ? null : latestStart(opts.leadDays, jetzt).getTime();
+  const imVorlauf = (l: FreeGap) =>
+    grenze !== null &&
+    berlinTime(opts.day, l.until - opts.durationMinutes + opts.slotMinutes).getTime() > grenze;
   for (const l of out) {
+    if (imVorlauf(l)) continue;
     const naechste = opts.occupied
       .filter((b) => b.court_id === opts.courtId && minutesOf(b.starts_at) >= l.until)
       .map((b) => minutesOf(b.starts_at));

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { berlinTime, blockingLabel, timeToMinutes, umsetzZiele } from "@tcm/core";
+import {
+  berlinTime, blockingLabel, bookingActions, bookingTypeInfo, checkPlayers, timeToMinutes, umsetzZiele,
+} from "@tcm/core";
 import type { AktionsErgebnis, TagesBelegung } from "@/app/plan/aktionen";
 import {
   alsUhrzeit, lokaleMinuten,
@@ -188,10 +190,13 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
   // eine um eine Stunde verschobene Startzeit an die Datenbank geschickt.
   const startZeitpunkt = berlinTime(props.datum, start);
 
-  // Wer Mitspieler sucht, darf unterbesetzt buchen - genau dafuer ist der
-  // Schalter da. Die Datenbank sieht das ebenso.
-  const pflichtVerletzt =
-    Boolean(gewaehlt?.requires_partner) && anzahl === 0 && !sucheMitspieler;
+  // Dieselbe Besetzungsregel wie create_booking: ein Doppel braucht drei
+  // Spieler, wer Mitspieler sucht, darf unterbesetzt buchen - genau dafuer ist
+  // der Schalter da.
+  const besetzung = gewaehlt
+    ? checkPlayers(bookingTypeInfo(gewaehlt), mitglieder.length, gaeste.length, sucheMitspieler && nochPlatz)
+    : null;
+  const besetzungFehlt = besetzung !== null && !besetzung.ok ? besetzung.reason : null;
 
   function spielformWechseln(neu: string) {
     setArt(neu);
@@ -280,12 +285,12 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
 
         <div className="blatt-fuss">
           <Fehler text={props.fehler} />
-          <button className="knopf gold gross block" disabled={props.laeuft || pflichtVerletzt}>
+          <button className="knopf gold gross block" disabled={props.laeuft || besetzungFehlt !== null}>
             {props.laeuft ? "Wird gebucht…" : `${platz?.name ?? "Platz"} buchen`}
           </button>
           <p className="fussnote">
-            {pflichtVerletzt
-              ? `${gewaehlt?.name ?? "Diese Spielform"} braucht einen Mitspieler – oder schalte „Mitspieler gesucht“ ein.`
+            {besetzungFehlt
+              ? `${besetzungFehlt}${nochPlatz ? " Oder schalte „Mitspieler gesucht“ ein." : ""}`
               : "Stornieren geht bis Spielbeginn"}
           </p>
         </div>
@@ -386,7 +391,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
 
   const art = props.arten.find((a) => a.code === b.type_code);
   const maxWeitere = Math.max((art?.max_players ?? 4) - 1, 0);
-  const laeuftSchon = new Date(b.starts_at).getTime() < Date.now();
+  const laeuftSchon = new Date(b.starts_at).getTime() <= props.jetzt.getTime();
 
   // Eine Blockung hat keine Mitspieler - dort bleibt nur das Aufheben.
   const nurStorno = b.kind === "blocking";
@@ -394,9 +399,19 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
   // Drei Rollen an demselben Fenster: der Bucher verwaltet, wer
   // Platzrechte hat, verwaltet fremd, und wer nur eingeladen ist, kann ausschliesslich
   // mitspielen. Ohne diese Trennung koennte ein Fremder ueber die
-  // Mitspielersuche die Besetzung des Buchers umwerfen.
-  const darfVerwalten = b.is_own || props.darfPlaetze;
-  const kannMitspielen = !b.is_own && !b.bin_dabei && b.partner_wanted && b.frei > 0;
+  // Mitspielersuche die Besetzung des Buchers umwerfen. Ab Spielbeginn
+  // bleibt nur, wer Platzrechte hat - so eng wie die RPCs (bookingActions).
+  const darf = bookingActions({
+    startsAt: b.starts_at,
+    own: b.is_own,
+    joined: b.bin_dabei,
+    partnerWanted: b.partner_wanted,
+    free: b.frei,
+    managesCourts: props.darfPlaetze,
+    now: props.jetzt,
+  });
+  const darfVerwalten = darf.cancel;
+  const kannMitspielen = darf.join;
 
   // Ein Serientermin faellt aus, eine Blockung wird aufgehoben, eine fremde
   // Buchung wird storniert - drei Vorgaenge mit drei verschiedenen Folgen. Nur
@@ -593,7 +608,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
             </button>
           )}
 
-          {b.is_own && !nurStorno && <p className="fussnote">Stornieren geht bis Spielbeginn</p>}
+          {b.is_own && !nurStorno && !laeuftSchon && <p className="fussnote">Stornieren geht bis Spielbeginn</p>}
         </div>
         )}
       </div>

@@ -60,7 +60,7 @@ export function useJetzt(): Date {
 }
 
 export function PlatzRaster({
-  datum, istHeute, plaetze, belegung, oeffnung, schluss, raster, dauer, auswahl,
+  datum, istHeute, plaetze, belegung, oeffnung, schluss, raster, dauer, vorlaufTage, auswahl,
   oeffnebar, onAuswahl, onOeffnen,
 }: {
   datum: string;
@@ -71,6 +71,8 @@ export function PlatzRaster({
   schluss: number;
   raster: number;
   dauer: number;
+  /** Buchungsvorlauf in Tagen (lead_days), siehe canStartAt. */
+  vorlaufTage: number;
   auswahl: Auswahl | null;
   oeffnebar: (b: Belegung) => boolean;
   onAuswahl: (a: Auswahl) => void;
@@ -194,7 +196,8 @@ export function PlatzRaster({
               >
                 {freeGaps({
                   day: datum, courtId: platz.id, openingMinutes: oeffnung, closingMinutes: schluss,
-                  slotMinutes: raster, durationMinutes: dauer, occupied: belegung, now: jetzt,
+                  slotMinutes: raster, durationMinutes: dauer, occupied: belegung, leadDays: vorlaufTage,
+                  now: jetzt,
                 }).map((l) => (
                   <FreieFlaeche
                     key={l.from}

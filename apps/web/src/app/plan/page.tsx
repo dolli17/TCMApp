@@ -171,6 +171,7 @@ export default async function PlanSeite({
         rasterMinuten={einstellungen.slot_minutes}
         anzeigeMinuten={einstellungen.display_minutes}
         dauerMinuten={artenRes.data?.[0]?.duration_minutes ?? 60}
+        vorlaufTage={einstellungen.lead_days}
         kontingentFrei={unbegrenzt ? null : Math.max(erlaubt - belegt, 0)}
         gastgebuehrCents={einstellungen.guest_fee_cents ?? 0}
         darfPlaetze={darfPlaetze(angemeldet?.roles ?? [])}

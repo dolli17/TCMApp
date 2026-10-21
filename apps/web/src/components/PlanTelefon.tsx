@@ -39,6 +39,8 @@ export function PlanTelefon(props: {
   schluss: number;
   raster: number;
   dauer: number;
+  /** Buchungsvorlauf in Tagen (lead_days), siehe canStartAt. */
+  vorlaufTage: number;
   verwaltbar: (b: Belegung) => boolean;
   onBuchen: (courtId: string, minute: number) => void;
   onVerwalten: (b: Belegung) => void;
@@ -130,7 +132,7 @@ export function PlanTelefon(props: {
 /* --- Übersicht als Raster ------------------------------------------------- */
 
 function Raster({
-  datum, jetzt, istHeute, plaetze, belegungen, oeffnung, schluss, raster, dauer, auswahl,
+  datum, jetzt, istHeute, plaetze, belegungen, oeffnung, schluss, raster, dauer, vorlaufTage, auswahl,
   verwaltbar, onAuswahl, onVerwalten,
 }: Parameters<typeof PlanTelefon>[0] & { auswahl: Auswahl | null; onAuswahl: (a: Auswahl) => void }) {
   const breite = px(schluss - oeffnung);
@@ -192,7 +194,8 @@ function Raster({
               <div key={platz.id} className="tr-zeile" style={{ top: i * ZEILE }} role="group" aria-label={platz.name}>
                 {freeGaps({
                   day: datum, courtId: platz.id, openingMinutes: oeffnung, closingMinutes: schluss,
-                  slotMinutes: raster, durationMinutes: dauer, occupied: belegungen, now: jetzt,
+                  slotMinutes: raster, durationMinutes: dauer, occupied: belegungen, leadDays: vorlaufTage,
+                  now: jetzt,
                 }).map((l) => (
                   <button
                     key={l.from}
@@ -268,12 +271,13 @@ function Raster({
 /* --- Freie Zeiten ---------------------------------------------------------- */
 
 function FreieZeiten({
-  datum, jetzt, plaetze, belegungen, oeffnung, schluss, raster, dauer, verwaltbar, onBuchen, onVerwalten,
+  datum, jetzt, plaetze, belegungen, oeffnung, schluss, raster, dauer, vorlaufTage, verwaltbar, onBuchen,
+  onVerwalten,
 }: Parameters<typeof PlanTelefon>[0]) {
   const [offen, setOffen] = useState<number | null>(null);
   const zeilen = freeSlotsOfDay({
     day: datum, courtIds: plaetze.map((p) => p.id), openingMinutes: oeffnung, closingMinutes: schluss,
-    slotMinutes: raster, durationMinutes: dauer, occupied: belegungen, now: jetzt,
+    slotMinutes: raster, durationMinutes: dauer, occupied: belegungen, leadDays: vorlaufTage, now: jetzt,
   });
   const platzVon = (id: string) => plaetze.find((p) => p.id === id)!;
   const klasse = (art: CourtStatusKind) =>

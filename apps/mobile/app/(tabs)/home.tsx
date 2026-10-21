@@ -366,6 +366,7 @@ function JetztFrei({ frei }: { frei: Abschnitt<FreiDaten> }) {
       slotMinutes: einstellungen?.slot_minutes ?? 30,
       durationMinutes: dauer,
       occupied: belegung,
+      leadDays: einstellungen?.lead_days,
     }).map((f) => ({
       id: f.courtId,
       name: plaetze.find((p) => p.id === f.courtId)?.name ?? "",

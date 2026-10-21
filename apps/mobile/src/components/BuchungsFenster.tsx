@@ -16,7 +16,9 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { blockingLabel, umsetzZiele, type OccupiedSlot } from "@tcm/core";
+import {
+  blockingLabel, bookingActions, bookingTypeInfo, checkPlayers, umsetzZiele, type OccupiedSlot,
+} from "@tcm/core";
 import { Blatt, BlattKopf } from "@/components/Blatt";
 import { Schalter, Segmente } from "@/components/Segmente";
 import { Chipwahl } from "@/components/verwaltung/Formular";
@@ -239,9 +241,13 @@ function BuchenInhalt(
   const maxWeitere = Math.max((gewaehlt?.max_players ?? 2) - 1, 0);
   const anzahl = mitglieder.length + gaeste.length;
   const nochPlatz = anzahl < maxWeitere;
-  // Wer Mitspieler sucht, darf unterbesetzt buchen - genau dafuer ist der
-  // Schalter da. Die Datenbank sieht das ebenso.
-  const pflichtVerletzt = Boolean(gewaehlt?.requires_partner) && anzahl === 0 && !sucht;
+  // Dieselbe Besetzungsregel wie create_booking: ein Doppel braucht drei
+  // Spieler, wer Mitspieler sucht, darf unterbesetzt buchen - genau dafuer ist
+  // der Schalter da.
+  const besetzung = gewaehlt
+    ? checkPlayers(bookingTypeInfo(gewaehlt), mitglieder.length, gaeste.length, sucht && nochPlatz)
+    : null;
+  const besetzungFehlt = besetzung !== null && !besetzung.ok ? besetzung.reason : null;
   const ich = props.verzeichnis.find((m) => m.id === props.meineId);
 
   const beginn = (
@@ -314,12 +320,12 @@ function BuchenInhalt(
         <Fehlerzeile text={props.fehler} />
         <Hauptknopf
           text={props.laeuft ? "Wird gebucht …" : `${props.fenster.platzName} buchen`}
-          gesperrt={props.laeuft || pflichtVerletzt}
+          gesperrt={props.laeuft || besetzungFehlt !== null}
           onPress={() => props.onBuchen(f.courtId, start, art, mitglieder, gaeste, sucht)}
         />
         <Fussnote>
-          {pflichtVerletzt
-            ? `${gewaehlt?.name ?? "Diese Spielform"} braucht einen Mitspieler – oder schalte „Mitspieler gesucht“ ein.`
+          {besetzungFehlt
+            ? `${besetzungFehlt}${nochPlatz ? " Oder schalte „Mitspieler gesucht“ ein." : ""}`
             : "Stornieren geht bis Spielbeginn"}
         </Fussnote>
       </View>
@@ -436,16 +442,27 @@ function VerwaltenInhalt(
   // Drei Rollen an demselben Blatt: der Bucher verwaltet, wer
   // Platzrechte hat, verwaltet fremd, und wer nur eingeladen ist, kann ausschliesslich
   // mitspielen. Ohne diese Trennung koennte ein Fremder ueber die
-  // Mitspielersuche die Besetzung des Buchers umwerfen.
-  const darfVerwalten = b.is_own === true || props.darfPlaetze;
+  // Mitspielersuche die Besetzung des Buchers umwerfen. Ab Spielbeginn
+  // bleibt nur, wer Platzrechte hat - so eng wie die RPCs (bookingActions).
+  const [jetzt] = useState(() => new Date());
+  const laeuftSchon = new Date(b.starts_at).getTime() <= jetzt.getTime();
+  const darf = bookingActions({
+    startsAt: b.starts_at,
+    own: b.is_own === true,
+    joined: b.bin_dabei === true,
+    partnerWanted: b.partner_wanted === true,
+    free: b.frei,
+    managesCourts: props.darfPlaetze,
+    now: jetzt,
+  });
+  const darfVerwalten = darf.cancel;
   // Ein Serientermin faellt aus, eine Blockung wird aufgehoben, eine fremde
   // Buchung wird storniert - wie im Web. Nur beim Storno einer fremden Buchung
   // ist ein Grund Pflicht: dort sitzt jemand, der eine Erklaerung verdient.
   // Hinter einer Blockung sitzt niemand.
   const grundNoetig = props.darfPlaetze && b.is_own !== true && b.kind === "booking";
   const grundFeld = darfVerwalten && stornoOffen && (serientermin || !nurStorno);
-  const kannMitspielen =
-    b.is_own !== true && b.bin_dabei !== true && b.partner_wanted === true && b.frei > 0;
+  const kannMitspielen = darf.join;
   const geaendert =
     JSON.stringify([...mitglieder].sort()) !== JSON.stringify([...(b.player_member_ids ?? [])].sort()) ||
     JSON.stringify([...gaeste].sort()) !== JSON.stringify([...(b.guest_names ?? [])].sort());
@@ -477,6 +494,9 @@ function VerwaltenInhalt(
         {nurStorno && !serientermin && sperre.grund && <Text style={stil.leise}>{sperre.grund}</Text>}
         {props.darfPlaetze && !b.is_own && !nurStorno && (
           <Text style={stil.leise}>Du bearbeitest eine fremde Buchung mit Platzrechten.</Text>
+        )}
+        {laeuftSchon && (
+          <Text style={stil.leise}>Die Spielzeit läuft bereits – Änderungen nur mit Platzrechten.</Text>
         )}
         {b.partner_wanted === true && b.frei > 0 && (
           <Text style={[stil.leise, { color: farben.goldInk, fontFamily: "Barlow_700Bold" }]}>
@@ -589,7 +609,7 @@ function VerwaltenInhalt(
           />
         )}
 
-        {b.is_own === true && !nurStorno && <Fussnote>Stornieren geht bis Spielbeginn</Fussnote>}
+        {b.is_own === true && !nurStorno && !laeuftSchon && <Fussnote>Stornieren geht bis Spielbeginn</Fussnote>}
       </View>
       )}
 
