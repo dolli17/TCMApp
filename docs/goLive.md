@@ -37,7 +37,7 @@ Grundregeln:
 - **Migrationshistorie reparieren:** Die Cloud kennt andere Versionsnummern als die Dateien. Mit `supabase migration repair` die Historie an die 58 Dateien angleichen, prüfen mit `supabase migration list`. Danach läuft auch Dev über `supabase db push`, genau wie Prod.
 - **Kennzeichnung:** Projekt im Dashboard in „TCMApp **Dev**“ umbenennen. `.mcp.json` und `supabase link` zeigen nur auf Dev.
 - **Auth:** Redirect-URLs und Site-URL auf `https://dev.tennisclub-muckensturm.de` sowie `tcmdev://passwort-setzen` stellen.
-- **Selbstregistrierung aus (S1):** Dashboard → Authentication → Sign In / Providers → „Allow new users to sign up“ ausschalten. Sonst kann sich jemand mit der Adresse eines künftigen Mitglieds registrieren, und `loginAnlegen` übernimmt dieses Konto beim Anlegen. Lokal steht `enable_signup = false` in `supabase/config.toml`, die Cloud übernimmt das nicht von selbst. Prüfen: `POST /auth/v1/signup` mit dem Publishable Key antwortet mit `signup_disabled`.
+- **Selbstregistrierung aus (S1):** Dashboard → Authentication → Sign In / Providers → „Allow new users to sign up“ ausschalten. Sonst kann sich jemand mit der Adresse eines künftigen Mitglieds registrieren, und `loginAnlegen` übernimmt dieses Konto beim Anlegen. Lokal steht `enable_signup = false` in `supabase/config.toml`, die Cloud übernimmt das nicht von selbst. Prüfen: `POST /auth/v1/signup` mit dem Publishable Key antwortet mit `signup_disabled`. *Dev: am 21.10.2026 ausgeschaltet.*
 - **Edge-Secrets:** `SITE_URL`, `MAIL_FROM=dev-noreply@…`, einen eigenen Resend-Key für Dev.
 
 ### 2. Konfiguration als Code
@@ -153,7 +153,7 @@ Grundregeln:
 
 ## Was du selbst tun musst
 - Supabase Pro-Org und Zahlungsmittel einrichten.
-- In Dev und Prod im Dashboard „Allow new users to sign up“ ausschalten (S1).
+- In Prod beim Aufbau im Dashboard „Allow new users to sign up“ ausschalten (S1). Dev ist seit 21.10.2026 erledigt.
 - DNS-Eintrag `dev` bei IONOS.
 - Zweite App in App Store Connect anlegen; geht auch per API, wenn du mich lässt.
 - Zwei neue Resend-Keys erzeugen.
