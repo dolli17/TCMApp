@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 import { anmelden, NUTZER, testName } from "./hilfen";
 
 /**
@@ -660,6 +661,30 @@ test.describe("Mitgliederverwaltung", () => {
     await aufraeumen(page, adresse, nachname);
     await page.goto("/admin/mitglieder?filter=alle&q=" + encodeURIComponent(nachname));
     await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"] li')).toHaveCount(0);
+  });
+
+  test("Selbstregistrierung ist aus, Anlegen durch die Verwaltung geht weiter (S1)", async ({ page }) => {
+    const nachname = testName("Signup");
+    const email = testEmail(nachname);
+
+    // Wer sich vorab mit der Adresse eines künftigen Mitglieds registriert,
+    // bekäme sonst dessen Login: loginAnlegen übernimmt ein vorhandenes Konto.
+    const anonym = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      auth: { persistSession: false },
+    });
+    const { data, error } = await anonym.auth.signUp({ email, password: "geraten123" });
+    expect(error?.code).toBe("signup_disabled");
+    expect(data.user).toBeNull();
+
+    // Dieselbe Adresse legt die Verwaltung danach ganz normal an.
+    await anmelden(page, NUTZER.admin);
+    const adresse = await mitgliedAnlegen(page, nachname);
+    await page.goto(`${adresse.split("?")[0]}?teil=zugang`);
+    const karte = page.locator('section[aria-label="Zugang"]');
+    await expect(karte).toContainText(email);
+    await expect(karte.locator(".marke-klein.gruen")).toContainText("aktiv");
+
+    await aufraeumen(page, adresse, nachname);
   });
 
   test("Einladung erneut senden: neuer Link, der alte verfällt, der neue führt ins Onboarding", async ({

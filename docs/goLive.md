@@ -37,6 +37,7 @@ Grundregeln:
 - **Migrationshistorie reparieren:** Die Cloud kennt andere Versionsnummern als die Dateien. Mit `supabase migration repair` die Historie an die 58 Dateien angleichen, prüfen mit `supabase migration list`. Danach läuft auch Dev über `supabase db push`, genau wie Prod.
 - **Kennzeichnung:** Projekt im Dashboard in „TCMApp **Dev**“ umbenennen. `.mcp.json` und `supabase link` zeigen nur auf Dev.
 - **Auth:** Redirect-URLs und Site-URL auf `https://dev.tennisclub-muckensturm.de` sowie `tcmdev://passwort-setzen` stellen.
+- **Selbstregistrierung aus (S1):** Dashboard → Authentication → Sign In / Providers → „Allow new users to sign up“ ausschalten. Sonst kann sich jemand mit der Adresse eines künftigen Mitglieds registrieren, und `loginAnlegen` übernimmt dieses Konto beim Anlegen. Lokal steht `enable_signup = false` in `supabase/config.toml`, die Cloud übernimmt das nicht von selbst. Prüfen: `POST /auth/v1/signup` mit dem Publishable Key antwortet mit `signup_disabled`.
 - **Edge-Secrets:** `SITE_URL`, `MAIL_FROM=dev-noreply@…`, einen eigenen Resend-Key für Dev.
 
 ### 2. Konfiguration als Code
@@ -55,7 +56,7 @@ Grundregeln:
 - Schema über `supabase link --project-ref <prod>` und `supabase db push` einspielen. **Kein** `db reset`, **kein** Seed.
 - Den Vault-Eintrag `iban_encryption_key` erzeugen. Den Schlüssel **zusätzlich im Passwortmanager sichern**: ohne ihn sind IBANs auch aus einem Backup nicht lesbar.
 - **Schlüssel:** nur neue `sb_publishable_…`/`sb_secret_…`, Legacy-JWT-Keys deaktivieren. Damit ist O1 für Prod erledigt; Dev bekommt ebenfalls neue Keys.
-- **Auth:** Resend-SMTP mit eigenem Prod-API-Key, Signup aus, Leaked-Password-Schutz an (Pro), Redirect-URLs `https://app…/passwort-setzen` und `tcm://passwort-setzen`.
+- **Auth:** Resend-SMTP mit eigenem Prod-API-Key, Signup aus („Allow new users to sign up“ im Dashboard, siehe S1 unter Schritt 1), Leaked-Password-Schutz an (Pro), Redirect-URLs `https://app…/passwort-setzen` und `tcm://passwort-setzen`.
 - **Edge Functions** `member-login`, `notification-mails` und `notification-pushes` deployen. Die Secrets setzen, bei Push mit `PUSH_AKTIV=true`, sobald der APNs-Key da ist (O5).
 - Zeitpläne und Vault-Einträge per Snippet einrichten, dann SEPA-Gläubigerdaten und Kiosk-Gerät.
 - **Erstes Admin-Konto** (Vorstand) per Einladung anlegen.
@@ -152,6 +153,7 @@ Grundregeln:
 
 ## Was du selbst tun musst
 - Supabase Pro-Org und Zahlungsmittel einrichten.
+- In Dev und Prod im Dashboard „Allow new users to sign up“ ausschalten (S1).
 - DNS-Eintrag `dev` bei IONOS.
 - Zweite App in App Store Connect anlegen; geht auch per API, wenn du mich lässt.
 - Zwei neue Resend-Keys erzeugen.
