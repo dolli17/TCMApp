@@ -3,11 +3,12 @@ import { Linking, Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import Svg, { Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { formatCents, sumOpenDrinks, CHARGE_KIND_LABEL, type ChargeKind } from "@tcm/core";
+import { formatCents, sumOpenDrinks, CHARGE_KIND_LABEL, KONTOLOESCHUNG_TEXT, type ChargeKind } from "@tcm/core";
 import { abstand, radius } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
 import { Blatt, BlattKopf } from "@/components/Blatt";
 import { Glocke } from "@/components/Glocke";
+import { KontoloeschungFormular } from "@/components/KontoloeschungFormular";
 import { MerkmaleKarte, type MerkmalZeile } from "@/components/MerkmaleKarte";
 import { Schalter, Segmente } from "@/components/Segmente";
 import { Stammdatenformular } from "@/components/Stammdatenformular";
@@ -26,7 +27,7 @@ import { webLink } from "@/lib/web";
 const DATUM = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
 const MONAT = new Intl.DateTimeFormat("de-DE", { month: "long", timeZone: "Europe/Berlin" });
 
-type Blattart = "daten" | "notfall" | "einwilligungen" | "bank";
+type Blattart = "daten" | "notfall" | "einwilligungen" | "bank" | "loeschen";
 
 /**
  * Konto (Entwurf AppKonto, docs/design/clubhaus)
@@ -255,6 +256,11 @@ export default function Konto() {
           )}
           <Verweis
             erste={!DATENSCHUTZ}
+            titel={KONTOLOESCHUNG_TEXT.titel}
+            knopf
+            onPress={() => setBlatt("loeschen")}
+          />
+          <Verweis
             titel="Abmelden"
             rot
             onPress={async () => {
@@ -338,6 +344,12 @@ export default function Konto() {
                   ) : (
                     <MerkmaleKarte imBlatt zeilen={merkmale} onGeaendert={zustand.erneutHolen} />
                   )}
+                </>
+              )}
+              {blatt === "loeschen" && (
+                <>
+                  <BlattKopf titel={KONTOLOESCHUNG_TEXT.titel} onZu={zu} />
+                  <KontoloeschungFormular />
                 </>
               )}
               {blatt === "bank" && (
@@ -475,12 +487,15 @@ function Eintrag({ titel, symbol, onPress, erste }: { titel: string; symbol: str
   );
 }
 
-function Verweis({ titel, onPress, rot, erste }: { titel: string; onPress: () => void; rot?: boolean; erste?: boolean }) {
+/** Ein Verweis ins Web ist ein Link; was ein Blatt oeffnet oder etwas tut, ein Knopf. */
+function Verweis({
+  titel, onPress, rot, erste, knopf,
+}: { titel: string; onPress: () => void; rot?: boolean; erste?: boolean; knopf?: boolean }) {
   const { farben } = useTheme();
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole={rot ? "button" : "link"}
+      accessibilityRole={rot || knopf ? "button" : "link"}
       style={({ pressed }) => ({
         minHeight: 52, justifyContent: "center", paddingHorizontal: 16,
         borderTopWidth: erste ? 0 : 1, borderTopColor: farben.line,

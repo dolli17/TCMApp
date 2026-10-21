@@ -22,6 +22,7 @@ export * from "./schemas";
 export * from "./onboarding";
 export * from "./einladung";
 export * from "./weiterleitung";
+export * from "./kontoloeschung";
 export type { Database, Json } from "./database.types";
 export * from "./sepa/types";
 export * from "./sepa/validation";

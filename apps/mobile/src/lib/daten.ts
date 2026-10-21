@@ -7,7 +7,8 @@
  */
 
 import {
-  berlinTime, hatPlatzRechte, hatVolleRechte, isValidIban, memberProfileSchema, translateDbError,
+  berlinTime, hatPlatzRechte, hatVolleRechte, isValidIban, kontoloeschungMeldung, kontoloeschungPruefen,
+  memberProfileSchema, translateDbError,
   type Database, type EventKind, type EventRegistrationStatus, type EventStatus, type MitgliedEvent,
   type OnboardingSchrittKey, type OnboardingZustand,
 } from "@tcm/core";
@@ -504,6 +505,23 @@ export async function speichereStammdaten(neu: Stammdaten, alt: Stammdaten): Pro
  * Eigener Vorgang, weil die Felder nicht zu memberProfileSchema gehoeren - und
  * weil es ein eigener Gedanke ist: wen rufen wir an, wenn etwas passiert.
  */
+/**
+ * Konto loeschen beantragen (O9). Geloescht wird nicht hier: die RPC meldet
+ * den Antrag an Vorstand und Admins. Ein zweiter Antrag binnen 24 Stunden ist
+ * kein Fehler - der erste liegt ja vor.
+ */
+export async function beantrageKontoloeschung(nachricht: string): Promise<Ergebnis> {
+  const eingabe = kontoloeschungPruefen(nachricht);
+  if (!eingabe.ok) return { ok: false, meldung: eingabe.meldung };
+
+  const { data, error } = await supabase.rpc(
+    "konto_loeschung_beantragen",
+    eingabe.nachricht ? { p_nachricht: eingabe.nachricht } : {},
+  );
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: kontoloeschungMeldung(data === true) };
+}
+
 export async function speichereNotfallkontakt(k: Notfallkontakt): Promise<Ergebnis> {
   const { id } = await ladeIchSelbst();
   if (!id) return { ok: false, meldung: "Nicht angemeldet." };

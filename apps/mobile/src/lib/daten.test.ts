@@ -62,6 +62,7 @@ const {
   aendereSperre,
   akzeptiereDokumente,
   anmelden,
+  beantrageKontoloeschung,
   bucheGetraenk,
   bucheplatz,
   entferneMerkmal,
@@ -819,5 +820,39 @@ describe("Onboarding", () => {
     rpc.mockResolvedValue({ data: null, error: { code: "42501", message: "Nur Mitglieder haben ein Onboarding." } });
     const r = await schliesseOnboardingAb();
     expect(r).toEqual({ ok: false, meldung: "Nur Mitglieder haben ein Onboarding." });
+  });
+});
+
+describe("beantrageKontoloeschung", () => {
+  it("schickt die Nachricht getrimmt an die RPC und meldet den Eingang", async () => {
+    rpc.mockResolvedValue({ data: true, error: null });
+    const r = await beantrageKontoloeschung("  Ich ziehe weg. ");
+    expect(rpc).toHaveBeenCalledWith("konto_loeschung_beantragen", { p_nachricht: "Ich ziehe weg." });
+    expect(r).toEqual({ ok: true, meldung: "Dein Antrag ist eingegangen. Der Vorstand meldet sich bei dir." });
+  });
+
+  it("ohne Nachricht ohne Parameter", async () => {
+    rpc.mockResolvedValue({ data: true, error: null });
+    await beantrageKontoloeschung("   ");
+    expect(rpc).toHaveBeenCalledWith("konto_loeschung_beantragen", {});
+  });
+
+  it("false heisst: Antrag liegt schon vor", async () => {
+    rpc.mockResolvedValue({ data: false, error: null });
+    const r = await beantrageKontoloeschung("");
+    expect(r).toEqual({ ok: true, meldung: "Dein Antrag liegt schon vor. Der Vorstand kümmert sich darum." });
+  });
+
+  it("zu lange Nachricht geht gar nicht erst los", async () => {
+    const r = await beantrageKontoloeschung("x".repeat(1001));
+    expect(r.ok).toBe(false);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("uebersetzt Datenbankfehler", async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: "42501", message: "Nicht angemeldet." } });
+    const r = await beantrageKontoloeschung("");
+    expect(r.ok).toBe(false);
+    expect(r.meldung).not.toBe("");
   });
 });

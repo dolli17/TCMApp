@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { memberProfileSchema, translateDbError } from "@tcm/core";
+import { kontoloeschungMeldung, kontoloeschungPruefen, memberProfileSchema, translateDbError } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 
 export interface AktionsErgebnis {
@@ -135,4 +135,23 @@ export async function notfallkontaktSpeichern(formData: FormData): Promise<Aktio
   revalidatePath("/konto");
   revalidatePath("/konto/notfall");
   return { ok: true, meldung: "Notfallkontakt gespeichert." };
+}
+
+/**
+ * Konto löschen beantragen (O9). Gelöscht wird hier nichts: die RPC meldet
+ * den Antrag an Vorstand und Admins. false heißt, aus den letzten 24 Stunden
+ * liegt schon einer vor - für das Mitglied kein Fehler. Dieselbe Logik wie in
+ * der App (apps/mobile/src/lib/daten.ts, beantrageKontoloeschung).
+ */
+export async function kontoloeschungBeantragen(formData: FormData): Promise<AktionsErgebnis> {
+  const eingabe = kontoloeschungPruefen(String(formData.get("nachricht") ?? ""));
+  if (!eingabe.ok) return { ok: false, meldung: eingabe.meldung };
+
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.rpc(
+    "konto_loeschung_beantragen",
+    eingabe.nachricht ? { p_nachricht: eingabe.nachricht } : {},
+  );
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: kontoloeschungMeldung(data === true) };
 }
