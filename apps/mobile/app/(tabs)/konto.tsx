@@ -21,6 +21,7 @@ import {
 import { abschnitt, useLaden } from "@/lib/laden";
 import { istAngemeldet, meldeGeraetAb, registriereGeraet } from "@/lib/push";
 import { mitDeckkraft } from "@/lib/stil";
+import { SCHRIFT_DECKEL } from "@/lib/schrift";
 import { useTheme, type ThemeWahl } from "@/lib/theme";
 import { webLink } from "@/lib/web";
 
@@ -127,7 +128,7 @@ export default function Konto() {
             }}
             accessibilityElementsHidden
           >
-            <Text style={{ color: "#FFFFFF", fontSize: 30, fontFamily: "Barlow_800ExtraBold" }}>{initialen}</Text>
+            <Text maxFontSizeMultiplier={SCHRIFT_DECKEL.form} style={{ color: "#FFFFFF", fontSize: 30, fontFamily: "Barlow_800ExtraBold" }}>{initialen}</Text>
           </View>
           <Text
             accessibilityRole="header"
@@ -431,7 +432,7 @@ function Betrag({ children }: { children: ReactNode }) {
 function Marke({ children, gelb }: { children: ReactNode; gelb?: boolean }) {
   const { farben } = useTheme();
   return (
-    <View style={{ height: 26, paddingHorizontal: 10, borderRadius: 13, justifyContent: "center", backgroundColor: gelb ? farben.goldSoft : farben.surf2 }}>
+    <View style={{ minHeight: 26, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 13, justifyContent: "center", backgroundColor: gelb ? farben.goldSoft : farben.surf2 }}>
       <Text style={{ fontSize: 12.5, fontFamily: "Barlow_600SemiBold", color: gelb ? farben.goldInk : farben.ink2 }}>{children}</Text>
     </View>
   );
@@ -449,7 +450,7 @@ function Statusmarke({ status, faellig }: { status: string; faellig?: string | n
           ? { text: "läuft noch", bg: farben.surf2, fg: farben.ink2 }
           : { text: "offen", bg: farben.surf2, fg: farben.ink2 };
   return (
-    <View style={{ alignSelf: "flex-start", height: 22, paddingHorizontal: 8, borderRadius: 11, marginTop: 5, justifyContent: "center", backgroundColor: art.bg }}>
+    <View style={{ alignSelf: "flex-start", minHeight: 22, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 11, marginTop: 5, justifyContent: "center", backgroundColor: art.bg }}>
       <Text style={{ fontSize: 11.5, fontFamily: "Barlow_700Bold", color: art.fg }}>{art.text}</Text>
     </View>
   );

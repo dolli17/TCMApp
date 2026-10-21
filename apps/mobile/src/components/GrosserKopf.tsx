@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { abstand, schrift } from "@tcm/ui";
 import { Glocke } from "@/components/Glocke";
 import { ladeMeinenNamen } from "@/lib/daten";
+import { SCHRIFT_DECKEL } from "@/lib/schrift";
 import { useTheme } from "@/lib/theme";
 
 type Eigenschaften = {
@@ -81,7 +82,7 @@ function Avatar() {
         alignItems: "center", justifyContent: "center",
       }}
     >
-      <Text style={{ color: "#fff", fontSize: 15, fontFamily: "Barlow_700Bold" }}>
+      <Text maxFontSizeMultiplier={SCHRIFT_DECKEL.form} style={{ color: "#fff", fontSize: 15, fontFamily: "Barlow_700Bold" }}>
         {initialen}
       </Text>
     </Pressable>

@@ -113,7 +113,7 @@ export const AnmeldeFeld = forwardRef<TextInput, TextInputProps & { beschriftung
           placeholderTextColor={farben.muted}
           style={[
             {
-              height: 54, borderRadius: 16, paddingHorizontal: 16, fontSize: 16,
+              minHeight: 54, borderRadius: 16, paddingHorizontal: 16, fontSize: 16,
               backgroundColor: farben.surf, color: farben.ink, fontFamily: "Barlow_400Regular",
               borderWidth: 1.5, borderColor: "rgba(255,255,255,.12)",
             },
@@ -136,7 +136,7 @@ export function GelberKnopf({ text, onPress, gesperrt }: { text: string; onPress
       accessibilityRole="button"
       accessibilityState={{ disabled: gesperrt }}
       style={({ pressed }) => ({
-        height: 58, borderRadius: 18, alignItems: "center", justifyContent: "center",
+        minHeight: 58, borderRadius: 18, alignItems: "center", justifyContent: "center",
         backgroundColor: farben.gold, opacity: gesperrt ? 0.6 : pressed ? 0.85 : 1,
       })}
     >

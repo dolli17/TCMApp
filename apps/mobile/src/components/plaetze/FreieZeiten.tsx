@@ -78,7 +78,7 @@ export function FreieZeiten({
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
         style={{
-          flexDirection: "row", alignItems: "center", height: 40, paddingLeft: 16, paddingRight: 12,
+          flexDirection: "row", alignItems: "center", minHeight: 40, paddingLeft: 16, paddingRight: 12,
           borderBottomWidth: 1, borderBottomColor: farben.line,
         }}
       >
@@ -129,7 +129,7 @@ export function FreieZeiten({
               accessibilityRole="button"
               accessibilityLabel={label}
               accessibilityState={{ expanded: istOffen }}
-              style={{ flexDirection: "row", alignItems: "center", height: 60, paddingLeft: 16, paddingRight: 12 }}
+              style={{ flexDirection: "row", alignItems: "center", minHeight: 60, paddingLeft: 16, paddingRight: 12 }}
             >
               <Text
                 style={{
@@ -179,7 +179,7 @@ export function FreieZeiten({
                           accessibilityRole="button"
                           accessibilityLabel={`${p.name} um ${alsUhrzeit(z.minute)} Uhr buchen`}
                           style={({ pressed }) => ({
-                            flexBasis: "30%", flexGrow: 1, maxWidth: "33%", height: 48, borderRadius: 14,
+                            flexBasis: "30%", flexGrow: 1, maxWidth: "33%", minHeight: 48, borderRadius: 14,
                             alignItems: "center", justifyContent: "center",
                             // greenInk: bg auf green hielt hell nur 3,1:1 (U15)
                             backgroundColor: farben.greenInk, opacity: pressed ? 0.85 : 1,
@@ -203,7 +203,7 @@ export function FreieZeiten({
                       accessibilityRole="button"
                       accessibilityLabel={`${p.name}, ${typ} sucht noch ${b.frei ?? 1}, mitspielen`}
                       style={{
-                        marginTop: 8, height: 48, borderRadius: 14, paddingHorizontal: 14,
+                        marginTop: 8, minHeight: 48, borderRadius: 14, paddingHorizontal: 14,
                         flexDirection: "row", alignItems: "center", justifyContent: "space-between",
                         borderWidth: 1.5, borderStyle: "dashed", borderColor: farben.goldLine,
                         backgroundColor: farben.goldSoft,
