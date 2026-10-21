@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import {
-  berlinTime, canStartAt, courtStatusAt, localMinutes, minutesOf, minutesToTime, nextSlotMinute,
-  occupancyKind, timeToMinutes, type TimelineKind,
+  berlinTime, blockingLabel, canStartAt, courtStatusAt, localMinutes, minutesOf, minutesToTime,
+  nextSlotMinute, occupancyKind, timeToMinutes, type TimelineKind,
 } from "@tcm/core";
 import {
   belegungAm, buchen, mitspielen, mitspielerAendern, mitspielerSuchen, serienterminAbsagen,
-  stornieren, stundeSperren, umsetzen,
+  sperreAendern, sperreAufheben, stornieren, stundeSperren, umsetzen,
 } from "@/app/plan/aktionen";
 import { BuchungsFenster } from "@/components/BuchungsFenster";
 import { PlanTelefon } from "@/components/PlanTelefon";
@@ -50,6 +50,9 @@ export interface Buchungsart {
 
 export interface Mitglied { id: string; first_name: string; last_name: string }
 
+/** Kategorie einer Sperrung: Buchungsart mit applies_to = 'blocking'. */
+export interface Blockungsart { code: string; name: string }
+
 interface Props {
   datum: string;
   /** Jetzt, vom Server - damit Server und Browser beim ersten Zeichnen dasselbe rechnen. */
@@ -57,6 +60,8 @@ interface Props {
   plaetze: Platz[];
   belegungen: Belegung[];
   arten: Buchungsart[];
+  /** Kategorien einer Sperrung, nach sort_order. */
+  blockungsarten: Blockungsart[];
   verzeichnis: Mitglied[];
   /** Eigene Mitglieds-Id - wer bucht, kann sich nicht selbst als Mitspieler waehlen. */
   meineId: string | null;
@@ -212,17 +217,51 @@ export function Belegungsplan(props: Props) {
    * statt still zu verdraengen.
    */
   async function sperren(
-    courtId: string, minute: number, grund: string, verdraengen: boolean,
+    courtId: string, minute: number, typCode: string, grund: string, verdraengen: boolean,
   ): Promise<number | null> {
     const e = await stundeSperren({
       platzId: courtId,
       von: zeitpunkt(minute).toISOString(),
       bis: zeitpunkt(minute + props.anzeigeMinuten).toISOString(),
+      typCode,
       grund,
       verdraengen,
     });
+    return kollisionOderErgebnis(e);
+  }
+
+  /** Eine Sperrung aendern - Minuten am Tag des Plans, zweistufig wie sperren. */
+  async function sperreBearbeiten(
+    bookingId: string, platzIds: string[], von: number, bis: number, typCode: string, grund: string,
+    verdraengen: boolean,
+  ): Promise<number | null> {
+    const e = await sperreAendern({
+      bookingId,
+      platzIds,
+      von: zeitpunkt(von).toISOString(),
+      bis: zeitpunkt(bis).toISOString(),
+      typCode,
+      grund,
+      verdraengen,
+    });
+    return kollisionOderErgebnis(e);
+  }
+
+  /**
+   * Liegen Buchungen im Weg, fragt das Blatt selbst nach ("1 Buchung
+   * verdraengen"). Die Meldung der Datenbank dazu waere doppelt.
+   */
+  function kollisionOderErgebnis(e: { ok: boolean; meldung: string; kollisionen?: number }) {
+    if (e.kollisionen !== undefined) {
+      setFensterFehler(null);
+      return e.kollisionen;
+    }
     ergebnis(e);
-    return e.kollisionen ?? null;
+    return null;
+  }
+
+  function aufheben(bookingId: string) {
+    starte(async () => ergebnis(await sperreAufheben(bookingId)));
   }
 
   function ausschreiben(bookingId: string, gesucht: boolean) {
@@ -258,7 +297,9 @@ export function Belegungsplan(props: Props) {
 
   /** Wer oder was steht im Block. */
   function wer(b: Belegung): string {
-    if (b.kind === "blocking") return b.title ?? b.type_name;
+    if (b.series_id) return b.title ?? b.type_name;
+    // Sperrung: oben die Kategorie, der Grund steht darunter (siehe unten).
+    if (b.kind === "blocking") return blockingLabel(b).kategorie;
     return b.owner_name ?? "belegt";
   }
 
@@ -390,6 +431,9 @@ export function Belegungsplan(props: Props) {
                           {b.partner_wanted && b.frei > 0 && <span className="sucht-marke">sucht {b.frei}</span>}
                         </span>
                         {b.players.length > 0 && <span className="mit">{b.players.join(", ")}</span>}
+                        {b.kind === "blocking" && !b.series_id && blockingLabel(b).grund && (
+                          <span className="mit">{blockingLabel(b).grund}</span>
+                        )}
                       </>
                     );
 
@@ -430,6 +474,7 @@ export function Belegungsplan(props: Props) {
           plaetze={props.plaetze}
           belegungen={props.belegungen}
           arten={props.arten}
+          blockungsarten={props.blockungsarten}
           verzeichnis={props.verzeichnis}
           meineId={props.meineId}
           jetzt={jetzt}
@@ -453,6 +498,8 @@ export function Belegungsplan(props: Props) {
           onUmsetzen={setzeUm}
           onTagLaden={belegungAm}
           onSperren={sperren}
+          onSperreAendern={sperreBearbeiten}
+          onSperreAufheben={aufheben}
           onAusschreiben={ausschreiben}
           onBeitreten={beitreten}
           onSchliessen={() => {

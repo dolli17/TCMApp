@@ -175,6 +175,8 @@ function PlatzListe({
                 kontext={p.subline ?? undefined}
                 hinweis={!p.active ? "stillgelegt" : jetzt ? jetzt.text : "frei"}
                 hinweisTon={!p.active ? "leise" : jetzt ? (jetzt.art === "gesperrt" ? "rot" : "gold") : "gruen"}
+                // Bearbeitet und aufgehoben wird eine Sperrung im Belegungsplan.
+                href={jetzt?.art === "gesperrt" ? "/plan" : undefined}
               />
             </li>
           );

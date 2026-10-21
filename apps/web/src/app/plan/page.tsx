@@ -39,7 +39,7 @@ export default async function PlanSeite({
 
   const [
     angemeldet,
-    [plaetzeRes, planRes, artenRes, einstellungRes, quotaRes, verzeichnisRes, meineRes],
+    [plaetzeRes, planRes, artenRes, einstellungRes, quotaRes, verzeichnisRes, meineRes, blockungsartenRes],
   ] =
     await Promise.all([
       getCurrentMember(),
@@ -56,6 +56,12 @@ export default async function PlanSeite({
       supabase.rpc("my_booking_quota"),
       supabase.rpc("member_directory", { p_query: "" }),
       supabase.rpc("my_bookings", {}),
+      supabase
+        .from("booking_types")
+        .select("code, name")
+        .eq("active", true)
+        .eq("applies_to", "blocking")
+        .order("sort_order"),
       ]),
     ]);
 
@@ -157,6 +163,7 @@ export default async function PlanSeite({
         plaetze={plaetzeRes.data ?? []}
         belegungen={(planRes.data ?? []) as never}
         arten={artenRes.data ?? []}
+        blockungsarten={blockungsartenRes.data ?? []}
         verzeichnis={verzeichnisRes.data ?? []}
         meineId={angemeldet?.member?.id ?? null}
         oeffnung={String(einstellungen.opening_time).slice(0, 5)}
