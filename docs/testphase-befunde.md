@@ -4,7 +4,7 @@ Sammelstelle für Fehler, Lücken und Auffälligkeiten aus der Testphase (Start:
 damit sie gebündelt abgearbeitet werden können. Neue Befunde unten in **Offen** ergänzen;
 Erledigtes mit Commit nach **Behoben** verschieben.
 
-Stand: 20.10.2026
+Stand: 21.10.2026
 
 Legende Priorität: **P1** blockiert Tester oder ist ein Sicherheitsthema · **P2** vor externen
 Testern bzw. App Store · **P3** Komfort, Aufräumen.
@@ -81,14 +81,14 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 | S9 | P2 | Middleware lässt ohne Env-Variablen alles durch | PR #43 |
 | S10 | P3 | Export-Route ohne eigene Rollenprüfung | PR #43 |
 | S11 | P2 | `SUPABASE_ACCESS_TOKEN` gilt in `deploy.yml` für den ganzen Job, auch für `pnpm install`. Unklar ist, woher der IBAN-Vault-Schlüssel in Prod kommt (siehe O1). | Token nur für die Steps, die ihn brauchen. Runbook für den Schlüssel. |
-| S12 | P1 | **Ausgetretene und archivierte Mitglieder behalten vollen Zugang.** *Geprüft.* `private.is_member()`, `current_member_id()`, `is_admin()` und `has_role()` prüfen weder `status` noch `login_disabled_at`. `archive_member` sperrt den Login nicht, `end_membership` entzieht keine Rollen. Ein ausgeschiedener Vorstand sieht weiter IBANs. Gleicher Befund wie B3. | Status- und Sperrprüfung in den Rechtefunktionen. Beim Archivieren und Austreten den Login sperren *(Migration)*. |
+| S12 | P1 | **Ausgetretene und archivierte Mitglieder behalten vollen Zugang.** *Geprüft.* `private.is_member()`, `current_member_id()`, `is_admin()` und `has_role()` prüfen weder `status` noch `login_disabled_at`. `archive_member` sperrt den Login nicht, `end_membership` entzieht keine Rollen. Ein ausgeschiedener Vorstand sieht weiter IBANs. Gleicher Befund wie B3. | **Erledigt (PR #XX):** `private.hat_zugang` in allen fünf Rechtefunktionen (auch `darf_plaetze`): nicht archiviert, kein `login_disabled_at`, aktiv oder Austrittsdatum heute oder später. `archive_member` setzt den Sperrvermerk, das Web bannt danach das Auth-Konto (`login_deaktivieren`). `end_membership` nimmt bei Austritt zu heute die Rollen, `reactivate_membership` gibt alte Rollen nicht zurück. |
 | S13 | P1 | **Löschen und Anonymisieren entfernen die Daten nicht vollständig (DSGVO Art. 17).** Im `change_log` bleiben der ganze Datensatz und alle alten Werte stehen. `anonymize_member` lässt `guardian_*` stehen. Anträge bleiben mit Name, Adresse und Geburtsdatum erhalten. Für `privacy.change_log_days` gibt es keinen Aufräumlauf. | Log-Zeilen schwärzen, `guardian_*` leeren, Antrag schwärzen, pg_cron für die Aufbewahrung *(Migration)* |
 | S14 | P2 | `next` 15.5.22 hat kritische Advisories (u. a. im Image Optimizer), `sharp`/`postcss` hohe | `next ≥ 15.5.24`, `sharp ≥ 0.35.5` |
 | S15 | P2 | Jedes Mitglied liest die komplette Buchungshistorie aller Mitglieder mit allen Spalten (`cancellation_reason`, `cancelled_by`, `created_by`, `booking_code`) | Spalten-Grant und zeitliche Begrenzung *(Migration)* |
 | S16 | P2 | Admin-Konten nur mit Passwort: TOTP aus, `secure_password_change = false`, Leaked-Password-Schutz auf Dev aus | TOTP für admin/board, aal2 in `is_admin`, Re-Auth beim Passwortwechsel |
 | S17 | P3 | Mitglieder lesen ihre eigenen `notes`, `import_notes`, `legacy_data` | Spalten-Grant *(Migration)* |
 | S18 | P3 | `member-login`: Ein Admin kann sich oder alle anderen Admins sperren. `email_aendern` ändert auch Admin-Adressen ohne Hinweis an die alte Adresse. | Schutz für den letzten Admin, Hinweis-Mail an die alte Adresse |
-| S19 | P3 | Eine Sperre wirkt erst nach Ablauf des JWT (bis 1 h) | Mit S12 erledigt |
+| S19 | P3 | Eine Sperre wirkt erst nach Ablauf des JWT (bis 1 h) | Mit S12 erledigt (PR #XX): Die Prüfung liest bei jeder Anfrage die Datenbank. |
 | S20 | P3 | Login-CSRF über das `#access_token`-Fragment in `passwort-setzen` | Mit S5 (`token_hash`) |
 | S21 | P3 | Freitext ohne Längengrenze (`guest_name`, `cancellation_reason`, Namen) | CHECK-Constraints *(Migration)* |
 | S22 | P3 | Globaler Deckel von 20 Anträgen pro Stunde: Mit Fake-Anträgen lassen sich alle echten blockieren | Captcha oder Bestätigungsmail |
@@ -105,9 +105,9 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 |---|---|---|---|
 | B1 | P1 | **Doppelte Belastung:** *Geprüft.* `waive_charge`/`settle_charge_manually` sperren nur `submitted`/`settled`. Eine Forderung im laufenden Einzug (`notified`) lässt sich also erlassen oder als bezahlt abhaken und wird trotzdem eingezogen. `mark_debit_batch_generated` überschreibt danach den Status. | Ablehnen, wenn `forderung_gesperrt` gilt, oder den Posten aus dem Entwurf nehmen *(Migration)* |
 | B2 | P1 | Eine Gastgebühr entsteht doppelt bzw. wird beim Storno nicht erlassen, sobald sie angekündigt ist (`sync_guest_charges`, `waive_guest_charges` zählen nur `open`) | Alle Status außer `waived` zählen. Gastgebühr erst ab Spielbeginn einziehbar. *(Migration)* |
-| B3 | P1 | Archivierte Mitglieder können buchen und sich anmelden | siehe S12 |
-| B4 | P2 | `archive_member` räumt Gastgebühren, Veranstaltungsanmeldungen, Wartelisten und Mitspielerplätze nicht auf. Ein Archivierter rückt sogar nach. | Ergänzen *(Migration)* |
-| B5 | P2 | Archivieren bei offenem Einzug: Die Lastschrift auf das widerrufene Mandat landet in der Datei | Posten aus Entwürfen entfernen *(Migration)* |
+| B3 | P1 | Archivierte Mitglieder können buchen und sich anmelden | **Erledigt mit S12 (PR #XX)** |
+| B4 | P2 | `archive_member` räumt Gastgebühren, Veranstaltungsanmeldungen, Wartelisten und Mitspielerplätze nicht auf. Ein Archivierter rückt sogar nach. | **Erledigt (PR #XX):** `archive_member` erlässt Gastgebühren abgesagter Buchungen, gibt Mitspielerplätze frei (Nachricht an den Bucher), meldet von künftigen Veranstaltungen und Wartelisten ab. `event_nachruecken` lässt Archivierte aus. |
+| B5 | P2 | Archivieren bei offenem Einzug: Die Lastschrift auf das widerrufene Mandat landet in der Datei | **Erledigt (PR #XX):** `archive_member` nimmt das Mitglied aus Einzügen ohne Datei, die Forderungen sind wieder offen. |
 | B6 | P2 | `join_booking` ohne `for update`: Wer gleichzeitig „Mitspielen“ tippt, überbucht | Zeilensperre, auch in `update_booking_players`/`leave_booking` *(Migration)* |
 | B7 | P2 | Lastschriftdatei lässt sich nach einem Teilfehler nie wieder erzeugen (Upsert ohne UPDATE-Policy im Bucket `sepa`) | Eindeutiger Pfad je Versuch |
 | B8 | P2 | Kiosk: Während der 2,5 s Bestätigung bucht der Nächste in den Korb des Vorgängers | Korb sofort leeren, Timer abbrechen |
@@ -123,6 +123,9 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 | B18 | P3 | Web-Getränkekarte verliert Eingaben während des Sendens | Sperren während `laeuft` |
 | B19 | P3 | App-Tab „Konto“ lädt bei Fokus nicht nach | `useFocusEffect` |
 | B20 | P3 | Teilfehler bei der E-Mail-Änderung wird als Gesamtfehler gemeldet | Meldung differenzieren |
+| B21 | P2 | `end_membership` setzt den Status sofort auf inaktiv, auch beim Austritt zum Jahresende. Bis zum Austrittsdatum hat das Mitglied Zugang (S12), fehlt aber in `member_directory` (Mitspielerwahl, Kiosk) und `record_purchase` weist es ab. Gefunden bei S12. | Status erst zum Austrittsdatum setzen oder dort `hat_zugang` statt `status = 'active'` prüfen *(Migration)* |
+| B22 | P3 | Ausgetretene (Datum vorbei) werden nicht gebannt: Die Anmeldung gelingt, danach sind alle Seiten leer, weil die Datenbank nichts mehr liefert. Gefunden bei S12. | Nach der Anmeldung einen Hinweis „Kein Zugang mehr“ zeigen und abmelden (Web und App) |
+| B23 | P3 | `update_member` kann `status` direkt auf `archived` setzen und umgeht damit das Aufräumen von `archive_member` (B4, B5). Zugang und Nachrücken sind trotzdem gesperrt. Gefunden bei S12. | `status` in `update_member` nur zwischen aktiv und inaktiv zulassen *(Migration)* |
 
 Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.12.); Mindestbetrag 5 € je Auswahl; veraltete Antworten beim schnellen Tageswechsel in der App.
 

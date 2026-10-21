@@ -203,12 +203,17 @@ export async function mitgliedArchivieren(
 
   if (error) return { ok: false, meldung: translateDbError(error) };
 
+  // Die Datenbank sperrt sofort (Sperrvermerk, hat_zugang). Der Bann im
+  // Auth-Konto sorgt dafür, dass auch die Anmeldung selbst scheitert.
+  const sperre = await memberLogin({ aktion: "login_deaktivieren", memberId: id });
+
   neuLaden(id);
 
   const z = data?.[0];
   const teile = ["Mitglied archiviert."];
   if (z?.cancelled_bookings) teile.push(`${z.cancelled_bookings} künftige Buchungen abgesagt.`);
   if (z?.open_charges) teile.push(`${z.open_charges} Forderungen bleiben bestehen.`);
+  if (!sperre.ok) teile.push(`Der Login ließ sich nicht sperren: ${sperre.meldung}`);
   return { ok: true, meldung: teile.join(" ") };
 }
 
