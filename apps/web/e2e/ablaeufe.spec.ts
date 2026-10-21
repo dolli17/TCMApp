@@ -148,13 +148,13 @@ test.describe("Anmeldung", () => {
     // Home steht als erster Eintrag im Menue und ist hier aktiv.
     const nav = page.getByRole("navigation", { name: "Hauptmenü" }).first();
     await expect(nav.getByRole("link").first()).toHaveAttribute("aria-current", "page");
-    await expect(nav.getByRole("link").first()).toHaveText("Home");
+    await expect(nav.getByRole("link").first()).toHaveText("Start");
   });
 
   test("Mitglied kann sich anmelden und sieht den Belegungsplan", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
     await page.goto("/plan");
-    await expect(page.getByRole("heading", { level: 1, name: "Belegungsplan" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Plätze", exact: true })).toBeVisible();
     await expect(page.locator(".plan-raster .raster")).toBeVisible();
     // Acht Plaetze, jeder mit eigenem Spaltenkopf
     await expect(page.locator(".raster .spalten-kopf")).toHaveCount(8);
@@ -190,7 +190,7 @@ test.describe("Ein Konto pro Browser", () => {
     await anmelden(page, NUTZER.mitglied);
     const tab2 = await context.newPage();
     await tab2.goto("/plan");
-    await expect(tab2.getByRole("heading", { level: 1, name: "Belegungsplan" })).toBeVisible();
+    await expect(tab2.getByRole("heading", { level: 1, name: "Plätze", exact: true })).toBeVisible();
     await page.waitForTimeout(3_000);
     await expect(page).not.toHaveURL(/\/login/);
   });
@@ -464,7 +464,7 @@ test.describe("Berechtigungen", () => {
     test(`normales Mitglied kommt nicht an ${pfad}`, async ({ page }) => {
       await anmelden(page, NUTZER.mitglied);
       await page.goto(pfad);
-      await expect(page.locator(".hinweis.fehler")).toContainText(/Administrator/);
+      await expect(page.locator(".hinweis.fehler")).toContainText(/vorbehalten/);
     });
   }
 
@@ -1303,8 +1303,8 @@ test.describe("Verwaltung", () => {
 
     // Angekündigt - und die Datei ist sofort dran, ohne auf die Frist zu warten
     await expect(page.locator(".lauf-titel .statusmarke")).toHaveText("Angekündigt");
-    await expect(page.getByText("Datei erzeugen und bei der Bank einreichen")).toBeVisible();
-    await expect(page.getByRole("button", { name: "pain.008 erzeugen" })).toBeEnabled();
+    await expect(page.getByText("Bankdatei erzeugen und im Onlinebanking einreichen")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Bankdatei erzeugen" })).toBeEnabled();
     await expect(page.getByRole("heading", { name: "Stand" })).toBeVisible();
 
     // Bis zur Datei lässt sich ein Mitglied herausnehmen; die Forderung ist dann wieder offen
@@ -1403,20 +1403,20 @@ test.describe("Verwaltung", () => {
     await expect(marke).toHaveText("Angekündigt");
 
     // Datei: Rückfrage, Abbrechen lässt den Einzug offen
-    await page.getByRole("button", { name: "pain.008 erzeugen" }).click();
+    await page.getByRole("button", { name: "Bankdatei erzeugen" }).click();
     await expect(rueckfrage).toContainText(`Abbuchung am ${abbuchung} – Datei jetzt erzeugen?`);
     await rueckfrage.getByRole("button", { name: "Abbrechen" }).click();
     await expect(marke).toHaveText("Angekündigt");
-    await page.getByRole("button", { name: "pain.008 erzeugen" }).click();
-    await rueckfrage.getByRole("button", { name: "Ja, Datei erzeugen" }).click();
+    await page.getByRole("button", { name: "Bankdatei erzeugen" }).click();
+    await rueckfrage.getByRole("button", { name: "Ja, Bankdatei erzeugen" }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("Die Datei ist erzeugt", { timeout: 20_000 });
-    await expect(marke).toHaveText("Datei erzeugt");
+    await expect(marke).toHaveText("Bankdatei erzeugt");
 
     // Eingereicht: ebenfalls erst nach Rückfrage
     await page.getByRole("button", { name: "Im Onlinebanking eingereicht" }).click();
     await expect(rueckfrage).toContainText(`Abbuchung am ${abbuchung} – wirklich als eingereicht vermerken?`);
     await rueckfrage.getByRole("button", { name: "Abbrechen" }).click();
-    await expect(marke).toHaveText("Datei erzeugt");
+    await expect(marke).toHaveText("Bankdatei erzeugt");
     await page.getByRole("button", { name: "Im Onlinebanking eingereicht" }).click();
     await rueckfrage.getByRole("button", { name: "Ja, eingereicht" }).click();
     await expect(marke).toHaveText("Eingereicht", { timeout: 20_000 });

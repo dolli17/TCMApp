@@ -122,7 +122,7 @@ export function BankUndMandatKarte({
     <section className="karte einstellungen" aria-label="Bankverbindung und Mandat">
       <h2 className="dpl">Bankverbindung und SEPA-Mandat</h2>
       <p className="unterzeile">
-        Ohne gültiges Mandat erscheint das Mitglied nicht in der Lastschriftdatei und muss
+        Ohne gültiges Mandat erscheint das Mitglied nicht in der Bankdatei und muss
         überweisen.
       </p>
 
@@ -167,7 +167,7 @@ export function BankUndMandatKarte({
                         <>
                           {m.reference}
                           {m.reference_conflict && (
-                            <span className="statusmarke rot" title="Aus eBuSy mit mehrfach vergebener Referenz">
+                            <span className="statusmarke rot" title="Aus dem bisherigen Vereinsprogramm eBuSy, Referenz mehrfach vergeben">
                               {" "}doppelt
                             </span>
                           )}
@@ -248,7 +248,7 @@ export function BankUndMandatKarte({
                   <span>Referenz</span>
                   <input name="reference" placeholder="automatisch" />
                   <span className="beschreibung">
-                    Bestandsmandate aus eBuSy behalten ihre Referenz – nur dann bleiben sie gültig.
+                    Mandate aus dem bisherigen Vereinsprogramm eBuSy behalten ihre Referenz – nur dann bleiben sie gültig.
                   </span>
                 </label>
               </div>

@@ -155,8 +155,13 @@ const stile = StyleSheet.create({
     gap: 2,
   },
   glasEbene: { borderRadius: LEISTE_HOEHE / 2, overflow: "hidden" },
+  // Breite aus dem Inhalt plus gleichem Anteil am Rest: „Verwaltung“ passt
+  // so ohne Auslassungspunkte, die kurzen Tabs bleiben breit genug.
   tab: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "auto",
+    paddingHorizontal: 5,
     height: TAB_HOEHE,
     borderRadius: TAB_HOEHE / 2,
     alignItems: "center",

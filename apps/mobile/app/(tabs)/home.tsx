@@ -136,7 +136,7 @@ export default function Home() {
           <Neuigkeiten neues={d.neues} />
         </>
       )}
-      {!d && !zustand.laedt && <Text style={stil.leise}>Home konnte nicht geladen werden.</Text>}
+      {!d && !zustand.laedt && <Text style={stil.leise}>Die Startseite konnte nicht geladen werden.</Text>}
     </Bildschirm>
   );
 }
@@ -381,7 +381,7 @@ function JetztFrei({ frei }: { frei: Abschnitt<FreiDaten> }) {
       <Kopfzeile titel="Jetzt frei" link={{ text: "Alle Plätze", ziel: "/plaetze" }} />
       {frei.fehler && <Fehlerzeile text={frei.fehler} />}
       {frei.wert && karten.length === 0 && (
-        <Text style={stil.leise}>Gerade ist kein Platz frei – schau in den Belegungsplan für später.</Text>
+        <Text style={stil.leise}>Gerade ist kein Platz frei – schau in die Belegung für später.</Text>
       )}
       {karten.length > 0 && (
         <Wischreihe abstandZwischen={10}>

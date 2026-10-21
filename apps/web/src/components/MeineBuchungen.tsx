@@ -73,7 +73,7 @@ export function MeineBuchungen({ buchungen, jetzt }: {
       */}
       {buchungen.length === 0 && (
         <p className="unterzeile">
-          Für dich steht gerade nichts an. Im Belegungsplan findest du die freien Plätze.
+          Für dich steht gerade nichts an. In der Belegung findest du die freien Plätze.
         </p>
       )}
 

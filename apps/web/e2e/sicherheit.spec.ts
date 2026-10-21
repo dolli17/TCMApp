@@ -72,7 +72,7 @@ test.describe("Sicherheits-Header", () => {
 
     // Der Belegungsplan abonniert Realtime per WebSocket.
     await page.goto("/plan");
-    await expect(page.getByRole("heading", { name: "Belegungsplan" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Plätze", exact: true })).toBeVisible();
 
     // Das Theme-Skript lief: die Wahl wirkt nach dem Neuladen, ohne Klick.
     await page.goto("/konto");

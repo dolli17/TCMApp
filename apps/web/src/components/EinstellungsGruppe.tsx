@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { centsAlsEingabe, einstellungsText, listeAusWert, listenOptionen } from "@tcm/core";
 import { einstellungenSpeichern } from "@/app/admin/einstellungs-aktionen";
 import { Gruppenkopf } from "@/components/Listenzeile";
 
@@ -30,6 +31,115 @@ function feldTyp(valueType: string): string {
 }
 
 /**
+ * Eine Einstellung als Zeile: deutscher Name, Erklärung, rechts die Eingabe.
+ *
+ * Name und Erklärung kommen aus `@tcm/core` (einstellungen.ts), nicht aus der
+ * Tabelle. Betraege stehen in Cent in der Datenbank und werden hier in Euro
+ * gezeigt; die Aktion rechnet beim Speichern zurück. Listen von
+ * Benachrichtigungsarten sind Häkchen. Der Rohwert geht als `alt:` mit, damit
+ * nur Geändertes gespeichert wird.
+ */
+function EinstellungsFeld({ e }: { e: Einstellung }) {
+  const t = einstellungsText(e);
+  const wert = alsText(e.value);
+  const alt = <input type="hidden" name={`alt:${e.key}`} value={wert} />;
+
+  if (t.art === "liste") {
+    // Eine Gruppe statt fieldset: dessen Legende sitzt in der Trennlinie.
+    const an = new Set(listeAusWert(e.value));
+    const id = `einstellung-${e.key.replace(/\W/g, "-")}`;
+    return (
+      <div className="einstellung liste" role="group" aria-labelledby={id}>
+        <span className="titel" id={id}>{t.label}</span>
+        {t.beschreibung && <span className="beschreibung">{t.beschreibung}</span>}
+        <input type="hidden" name={`liste:${e.key}`} value="" />
+        <div className="haken-raster">
+          {listenOptionen(e.value).map((o) => (
+            <label key={o.kind} className="wahl">
+              <input type="checkbox" name={`art:${e.key}`} value={o.kind} defaultChecked={an.has(o.kind)} />
+              {o.label}
+            </label>
+          ))}
+        </div>
+        {alt}
+      </div>
+    );
+  }
+
+  let eingabe;
+  if (t.art === "euro") {
+    eingabe = (
+      <input
+        type="text"
+        inputMode="decimal"
+        name={`euro:${e.key}`}
+        defaultValue={centsAlsEingabe(e.value)}
+        placeholder="0,00"
+        aria-label={`${t.label} (€)`}
+      />
+    );
+  } else if (t.art === "auswahl" && t.optionen) {
+    const optionen = t.optionen.some((o) => o.wert === wert)
+      ? t.optionen
+      : [...t.optionen, { wert, label: wert }];
+    eingabe = (
+      <select name={`wert:${e.key}`} defaultValue={wert} aria-label={t.label}>
+        {optionen.map((o) => (
+          <option key={o.wert} value={o.wert}>{o.label}</option>
+        ))}
+      </select>
+    );
+  } else {
+    eingabe = (
+      <input
+        type={feldTyp(e.value_type)}
+        name={`wert:${e.key}`}
+        defaultValue={wert}
+        min={e.value_type === "integer" ? 0 : undefined}
+        step={e.value_type === "time" ? 900 : undefined}
+        aria-label={t.label}
+      />
+    );
+  }
+
+  return (
+    <label className="einstellung">
+      <span className="titel">{t.art === "euro" ? `${t.label} (€)` : t.label}</span>
+      {t.beschreibung && <span className="beschreibung">{t.beschreibung}</span>}
+      {eingabe}
+      {alt}
+    </label>
+  );
+}
+
+function useSpeichern() {
+  const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
+  const [laeuft, starte] = useTransition();
+
+  function abschicken(fd: FormData) {
+    starte(async () => {
+      const e = await einstellungenSpeichern(fd);
+      setMeldung({ ok: e.ok, text: e.meldung });
+    });
+  }
+
+  const hinweis = meldung && (
+    <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">
+      {meldung.text}
+    </div>
+  );
+  return { abschicken, laeuft, hinweis };
+}
+
+function Felder({ eintraege }: { eintraege: Einstellung[] }) {
+  return (
+    <div className="liste-gruppe einstellungs-felder">
+      {eintraege.map((e) => <EinstellungsFeld key={e.key} e={e} />)}
+    </div>
+  );
+}
+
+/**
  * Eine gruppierte Karte je Themengruppe, jede mit eigenem Formular und eigener
  * Rückmeldung; die Felder stehen als Zeilen darin, das Eingabefeld rechts.
  *
@@ -43,54 +153,54 @@ export function EinstellungsGruppe({
   text: string;
   eintraege: Einstellung[];
 }) {
-  const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
-  const [laeuft, starte] = useTransition();
-
-  function abschicken(fd: FormData) {
-    starte(async () => {
-      const e = await einstellungenSpeichern(fd);
-      setMeldung({ ok: e.ok, text: e.meldung });
-    });
-  }
+  const { abschicken, laeuft, hinweis } = useSpeichern();
 
   return (
     <section className="liste-abschnitt einstellungen" aria-label={titel}>
       <Gruppenkopf titel={titel} />
       <p className="unterzeile">{text}</p>
-
-      {meldung && (
-        <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">
-          {meldung.text}
-        </div>
-      )}
+      {hinweis}
 
       <form action={abschicken}>
-        <div className="liste-gruppe einstellungs-felder">
-          {eintraege.map((e) => {
-            const wert = alsText(e.value);
-            return (
-              <label key={e.key} className="einstellung">
-                <span className="titel">{e.label ?? e.key}</span>
-                {e.description && <span className="beschreibung">{e.description}</span>}
-                <input
-                  type={feldTyp(e.value_type)}
-                  name={`wert:${e.key}`}
-                  defaultValue={wert}
-                  min={e.value_type === "integer" ? 0 : undefined}
-                  step={e.value_type === "time" ? 900 : undefined}
-                  aria-label={e.label ?? e.key}
-                />
-                <input type="hidden" name={`alt:${e.key}`} value={wert} />
-                <span className="schluessel">{e.key}</span>
-              </label>
-            );
-          })}
-        </div>
-
+        <Felder eintraege={eintraege} />
         <button className="knopf" disabled={laeuft}>
           {laeuft ? "Wird gespeichert…" : "Speichern"}
         </button>
       </form>
     </section>
+  );
+}
+
+/**
+ * Mehrere Gruppen in einem Formular mit einem Knopf am Ende (Systemseite,
+ * U12). Dort stehen lauter kleine, unabhängige Werte; drei Knöpfe ließen
+ * offen, welcher was speichert. Gespeichert wird ohnehin nur, was sich
+ * geändert hat.
+ */
+export function EinstellungsFormular({
+  gruppen,
+}: {
+  gruppen: { titel: string; text: string; eintraege: Einstellung[] }[];
+}) {
+  const { abschicken, laeuft, hinweis } = useSpeichern();
+
+  return (
+    <form action={abschicken} className="einstellungs-formular">
+      <div className="einstellungs-raster">
+        {gruppen.map((g) => (
+          <section key={g.titel} className="liste-abschnitt einstellungen" aria-label={g.titel}>
+            <Gruppenkopf titel={g.titel} />
+            <p className="unterzeile">{g.text}</p>
+            <Felder eintraege={g.eintraege} />
+          </section>
+        ))}
+      </div>
+      <div className="einstellungs-fuss">
+        {hinweis}
+        <button className="knopf" disabled={laeuft}>
+          {laeuft ? "Wird gespeichert…" : "Alle Änderungen speichern"}
+        </button>
+      </div>
+    </form>
   );
 }

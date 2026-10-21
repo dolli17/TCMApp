@@ -314,7 +314,7 @@ function Platzliste({
     <section className="liste-abschnitt" aria-labelledby="h-plaetze">
       <Gruppenkopf titel="Plätze" id="h-plaetze" />
       <p className="unterzeile">
-        Die Reihenfolge bestimmt, wie die Spalten im Belegungsplan stehen. Ein stillgelegter
+        Die Reihenfolge bestimmt, wie die Spalten in der Belegung stehen. Ein stillgelegter
         Platz verschwindet aus dem Plan; seine bisherigen Buchungen bleiben erhalten.
       </p>
 

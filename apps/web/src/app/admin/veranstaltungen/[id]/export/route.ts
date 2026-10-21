@@ -13,7 +13,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const angemeldet = await getCurrentMember();
   if (!angemeldet || !isAdmin(angemeldet.roles)) {
-    return new Response("Diese Liste ist Administratoren vorbehalten.", { status: 403 });
+    return new Response("Diese Liste ist dem Vorstand und den App Admins vorbehalten.", { status: 403 });
   }
 
   const supabase = await createServerSupabase();

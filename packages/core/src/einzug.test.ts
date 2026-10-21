@@ -48,7 +48,7 @@ describe("einzugStand", () => {
     expect(s.schritte.map((x) => x.state)).toEqual(["erledigt", "aktuell", "offen", "offen"]);
     expect(s.schritte[0]!.info).toBe("17.10.2026 · Abbuchung 03.11.2026");
     expect(s.schritte[1]!.info).toBe("jetzt möglich");
-    expect(s.naechster!.titel).toBe("Datei erzeugen und bei der Bank einreichen");
+    expect(s.naechster!.titel).toBe("Bankdatei erzeugen und im Onlinebanking einreichen");
     expect(s.naechster!.text).toContain("03.11.2026");
   });
 
@@ -96,7 +96,7 @@ describe("kasseTodos", () => {
       getraenkemonate: [{ year: 2026, month: 10, status: "open" }, { year: 2026, month: 9, status: "open" }],
     });
     expect(t.map((x) => x.title)).toEqual([
-      "Getränke September 2026 · Datei erzeugen",
+      "Getränke September 2026 · Bankdatei erzeugen",
       "Rückläufer · Beitrag 2026 · 3 Lastschriften zurückgebucht",
       "Jahresbeiträge 2027 · noch nicht eingezogen",
       "Getränkemonat September abschließen",

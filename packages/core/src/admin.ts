@@ -118,8 +118,8 @@ export function adminTodos(input: AdminTodoInput): AdminTodo[] {
   if (input.batchStatus === "draft") {
     liste.push({
       key: "lauf-datei",
-      title: "Einzug: Datei erzeugen",
-      text: "Die Datei kannst du schon jetzt erzeugen und einreichen. Abgebucht wird erst am Abbuchungstag.",
+      title: "Einzug: Bankdatei erzeugen",
+      text: "Die Bankdatei kannst du schon jetzt erzeugen und einreichen. Abgebucht wird erst am Abbuchungstag.",
       action: "Zum Einzug",
       href: input.batchHref,
       urgent: true,
@@ -127,8 +127,8 @@ export function adminTodos(input: AdminTodoInput): AdminTodo[] {
   } else if (input.batchStatus === "generated") {
     liste.push({
       key: "lauf-einreichen",
-      title: "Lastschriftdatei einreichen",
-      text: "Die Datei im Onlinebanking hochladen und danach im Einzug vermerken.",
+      title: "Bankdatei einreichen",
+      text: "Die Bankdatei im Onlinebanking hochladen und danach im Einzug vermerken.",
       action: "Zum Einzug",
       href: input.batchHref,
       urgent: true,

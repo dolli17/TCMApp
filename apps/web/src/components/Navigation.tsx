@@ -10,7 +10,7 @@ import { usePathname } from "next/navigation";
  *
  * Die Seitenleiste (ab 768 px) zeigt die Bereiche der Verwaltung einzeln in
  * einem eigenen Abschnitt; die schwebende Leiste hat für Admins einen fünften
- * Tab „Admin“, der auf die Übersicht führt (docs/design/clubhaus/verwaltung).
+ * Tab „Verwaltung“, der auf die Übersicht führt (docs/design/clubhaus/verwaltung).
  */
 
 export interface NavEintrag {
@@ -20,7 +20,7 @@ export interface NavEintrag {
   symbol: keyof typeof SYMBOLE;
   /** Kleine Zahl daneben, etwa offene Anträge */
   zahl?: number;
-  /** Aktiv für alles unter href, auch für href selbst (der Admin-Tab) */
+  /** Aktiv für alles unter href, auch für href selbst (der Tab „Verwaltung“) */
   bereich?: boolean;
 }
 
@@ -123,7 +123,7 @@ export function Seitenmenue({
 
 /**
  * Schwebende Leiste unter 768 px, rechts daneben der runde Buchen-Knopf.
- * Die Haupteintraege wie in der App, fuer Admins dazu der Tab "Admin".
+ * Die Haupteintraege wie in der App, fuer Admins dazu der Tab "Verwaltung".
  */
 export function Fussmenue({ eintraege }: { eintraege: NavEintrag[] }) {
   return (

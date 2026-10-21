@@ -10,7 +10,7 @@
  * darunter noch dazugehoert - bei den Plaetzen die Reiterleiste.
  *
  * Wer Platzrechte hat (Vorstand, App Admin, Platzwart), bekommt einen
- * fuenften Tab "Verwaltung", wie im Web der Tab "Admin". Fuer alle anderen
+ * fuenften Tab "Verwaltung", wie im Web (docs/begriffe.md). Fuer alle anderen
  * steht er mit href: null in der Liste, und die
  * Leiste laesst ihn aus. Die Rolle wird einmal beim Aufbau der Tabs gelesen;
  * wer sich abmeldet, verlaesst die Tabs ohnehin.
@@ -59,7 +59,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: "Home",
+          title: "Start",
           tabBarIcon: ({ color }) => <Symbol name="home" farbe={color} groesse={22} />,
         }}
       />
@@ -80,8 +80,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="konto"
         options={{
-          title: "Mein Konto",
-          tabBarLabel: "Konto",
+          title: "Konto",
           tabBarIcon: ({ color }) => <Symbol name="konto" farbe={color} groesse={22} />,
         }}
       />
@@ -89,9 +88,6 @@ export default function TabLayout() {
         name="verwaltung"
         options={{
           title: "Verwaltung",
-          // Fuenf Tabs neben dem Buchen-Knopf: "Verwaltung" passt nicht, im
-          // Web heisst der Tab ebenso kurz "Admin".
-          tabBarLabel: "Admin",
           href: platzRechte ? undefined : null,
           tabBarIcon: ({ color }) => <Symbol name="admin" farbe={color} groesse={22} />,
         }}

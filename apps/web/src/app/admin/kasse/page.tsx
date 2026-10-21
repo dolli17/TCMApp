@@ -130,7 +130,7 @@ export default async function KasseSeite({
   const fehltHinweis = fehlend.length > 0 && (
     <div className="hinweis fehler">
       Es fehlt noch {fehlend.join(" und ")}. Ohne diese Angaben lässt sich keine
-      Lastschriftdatei erzeugen – sie stehen unter{" "}
+      Bankdatei erzeugen – sie stehen unter{" "}
       <Link href="/admin/kasse?abschnitt=regeln">Kasse → Einstellungen → Regeln</Link>.
     </div>
   );
@@ -208,8 +208,8 @@ export default async function KasseSeite({
         <>
           {fehltHinweis}
           <p className="unterzeile">
-            Ein Einzug fasst angekündigte Forderungen zu einer Datei für die Bank zusammen. Jeder
-            Einzug hat einen Abbuchungstag und läuft durch vier Stände: angekündigt → Datei erzeugt →
+            Ein Einzug fasst angekündigte Forderungen zu einer Bankdatei zusammen. Jeder
+            Einzug hat einen Abbuchungstag und läuft durch vier Stände: angekündigt → Bankdatei erzeugt →
             eingereicht → abgeschlossen.
           </p>
           <section className="liste-abschnitt" aria-labelledby="h-laufend">
@@ -450,9 +450,9 @@ function Jahresbeitraege({
 
       {!glaeubigerId && (
         <div className="hinweis fehler">
-          Die Gläubiger-Identifikationsnummer fehlt noch. Sie steht im eBuSy-Backend und muss
-          unverändert übernommen werden – nur dann bleiben die Bestandsmandate gültig. Ohne sie
-          lässt sich keine Lastschriftdatei erzeugen.
+          Die Gläubiger-Identifikationsnummer fehlt noch. Sie steht im bisherigen Vereinsprogramm eBuSy
+          und muss unverändert übernommen werden – nur dann bleiben die bestehenden Mandate gültig.
+          Ohne sie lässt sich keine Bankdatei erzeugen.
         </div>
       )}
 
@@ -552,7 +552,7 @@ function Jahresbeitraege({
 
       <p className="mit">
         Nach dem Erzeugen der Forderungen folgt der Einzug: Er schickt jedem Mitglied die
-        Vorabankündigung mit Betrag und Abbuchungstag und legt die Lastschriftdatei an.
+        Vorabankündigung mit Betrag und Abbuchungstag und legt die Bankdatei an.
       </p>
     </>
   );

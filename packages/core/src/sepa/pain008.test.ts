@@ -183,7 +183,7 @@ describe("Abbruchbedingungen", () => {
   it("bricht ohne Glaeubiger-ID ab", () => {
     expect(() =>
       buildPain008(lauf({ creditor: { ...lauf().creditor, creditorId: "" } }), HEUTE),
-    ).toThrow(/Glaeubiger-Identifikationsnummer fehlt/);
+    ).toThrow(/Gläubiger-Identifikationsnummer fehlt/);
   });
 
   it("bricht bei ungueltiger IBAN ab", () => {

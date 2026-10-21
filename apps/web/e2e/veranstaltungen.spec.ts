@@ -170,7 +170,7 @@ test.describe("Veranstaltungen verwalten", () => {
 
     await anmelden(page, NUTZER.mitglied);
     await page.goto("/admin/veranstaltungen");
-    await expect(page.getByText("Diese Seite ist Administratoren vorbehalten.")).toBeVisible();
+    await expect(page.getByText("Dieser Bereich der Verwaltung ist dem Vorstand und den App Admins vorbehalten.")).toBeVisible();
   });
 });
 

@@ -180,12 +180,12 @@ export default async function Start() {
           <section aria-labelledby="h-frei">
             <div className="sectionlabel">
               <h2 id="h-frei">Jetzt frei</h2>
-              <Link href="/plan">Zum Belegungsplan</Link>
+              <Link href="/plan">Zu den Plätzen</Link>
             </div>
             {freiFehler ? (
               <div className="hinweis fehler">Die freien Plätze konnten nicht geladen werden.</div>
             ) : frei.length === 0 ? (
-              <p className="leer-klein">Gerade ist kein Platz frei – schau in den Belegungsplan für später.</p>
+              <p className="leer-klein">Gerade ist kein Platz frei – schau in die Belegung für später.</p>
             ) : (
               <div className="frei-reihe">
                 {frei.map((f) => (
