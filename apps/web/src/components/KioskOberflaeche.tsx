@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import logo from "@tcm/ui/logo-weiss.png";
 import {
@@ -76,7 +76,10 @@ export function KioskOberflaeche({
   const [korb, setKorb] = useState<DrinkBasket>({});
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [zuletzt, setZuletzt] = useState<string[]>([]);
-  const [laeuft, starte] = useTransition();
+  // Eigener Zustand statt useTransition: die Transition bliebe bis nach der
+  // Revalidierung von /kiosk offen, und der Naechste koennte in der
+  // Bestaetigung noch nicht tippen.
+  const [laeuft, setLaeuft] = useState(false);
   const suchfeld = useRef<HTMLInputElement>(null);
   const druck = useRef<{ id: string; timer: ReturnType<typeof setTimeout>; lang: boolean } | null>(null);
   /** Laeuft, solange nach einer Buchung die Bestaetigung steht. */
@@ -155,12 +158,22 @@ export function KioskOberflaeche({
   function eintragen() {
     if (!gewaehlt || positionen.length === 0) return;
     const fuer = gewaehlt;
-    starte(async () => {
+    setLaeuft(true);
+    void (async () => {
       const ergebnisse: (DrinkBatchResult & { id: string })[] = [];
-      for (const a of positionen) {
-        const menge = korb[a.id] ?? 0;
-        const r = await kioskBuchen(fuer.id, a.id, menge);
-        ergebnisse.push({ id: a.id, name: a.name, quantity: menge, ok: r.ok, message: r.meldung });
+      try {
+        for (const a of positionen) {
+          const menge = korb[a.id] ?? 0;
+          const r = await kioskBuchen(fuer.id, a.id, menge);
+          ergebnisse.push({ id: a.id, name: a.name, quantity: menge, ok: r.ok, message: r.meldung });
+        }
+      } catch {
+        // Netz weg o. ae.: was nicht mehr drankam, gilt als nicht eingetragen.
+        for (const a of positionen.slice(ergebnisse.length)) {
+          ergebnisse.push({ id: a.id, name: a.name, quantity: korb[a.id] ?? 0, ok: false, message: "Keine Verbindung" });
+        }
+      } finally {
+        setLaeuft(false);
       }
       const bericht = drinkBatchReport(ergebnisse);
       merkeZuletzt(fuer.id);
@@ -179,7 +192,7 @@ export function KioskOberflaeche({
         setMeldung(bericht);
         setKorb(basketAfterBatch(ergebnisse));
       }
-    });
+    })();
   }
 
   return (
