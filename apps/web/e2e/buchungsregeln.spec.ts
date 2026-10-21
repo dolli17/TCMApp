@@ -114,6 +114,10 @@ test.describe("Buchungsregeln im Plan", () => {
         { name: "tcm_aktiv", value: String(jetzt), url: new URL(page.url()).origin },
       ]);
       await page.goto(`/plan?tag=${tag}`);
+      // Der Plan startet mit der Zeit des Servers und folgt der Uhr des
+      // Browsers erst mit seinem Minutentakt - also eine Minute weiter.
+      await page.clock.fastForward(61_000);
+      await page.mouse.click(5, 5);
 
       await eigene.click();
       await expect(fenster).toBeVisible();

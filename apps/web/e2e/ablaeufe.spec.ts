@@ -55,12 +55,22 @@ async function oeffneBuchung(page: Page, platz: string, zeit: string) {
   return fenster;
 }
 
-/** Die eigene Buchung im Raster stornieren. */
+/**
+ * Die eigene Buchung im Raster stornieren.
+ *
+ * Gewartet wird, bis die Buchung aus dem Raster verschwunden ist, nicht auf
+ * die Meldung: nach einem ersten Storno steht „storniert“ schon da, und der
+ * Test liefe weiter, bevor der zweite durch ist - die Buchung blieb dann
+ * liegen und stand dem nächsten Test im Weg.
+ */
 async function storniere(page: Page, platz: string, zeit: string) {
   const fenster = await oeffneBuchung(page, platz, zeit);
   await fenster.getByRole("button", { name: "Buchung stornieren" }).click();
   await fenster.getByRole("button", { name: "Wirklich stornieren" }).click();
-  await expect(page.locator(".hinweis.erfolg")).toContainText("storniert", { timeout: 15_000 });
+  await expect(
+    page.getByRole("button", { name: `Buchung ${zeit} auf ${platz} verwalten` }),
+  ).toHaveCount(0, { timeout: 15_000 });
+  await expect(page.locator(".hinweis.erfolg")).toContainText("storniert");
 }
 
 /**
@@ -1520,10 +1530,7 @@ test.describe("Buchung umsetzen", () => {
 
     // Aufräumen: das Mitglied storniert die eigene Buchung am neuen Platz.
     await page.goto(`/plan?tag=${tag}`);
-    const eigene = await oeffne(page, ziel.platz, ziel.zeit);
-    await eigene.getByRole("button", { name: "Buchung stornieren" }).click();
-    await eigene.getByRole("button", { name: "Wirklich stornieren" }).click();
-    await expect(page.locator(".hinweis.erfolg")).toContainText("storniert", { timeout: 15_000 });
+    await storniere(page, ziel.platz, ziel.zeit);
   });
 
   test("ist das Ziel inzwischen belegt, zeigt das Blatt den Fehler", async ({ page, context }) => {
@@ -1556,16 +1563,10 @@ test.describe("Buchung umsetzen", () => {
     await expect(fenster.locator(".hinweis.fehler")).toContainText("bereits belegt", { timeout: 15_000 });
 
     // Aufräumen: beide Buchungen wieder weg.
-    const zweiteBuchung = await oeffne(zweiter, ziel.platz, ziel.zeit);
-    await zweiteBuchung.getByRole("button", { name: "Buchung stornieren" }).click();
-    await zweiteBuchung.getByRole("button", { name: "Wirklich stornieren" }).click();
-    await expect(zweiter.locator(".hinweis.erfolg")).toContainText("storniert", { timeout: 15_000 });
+    await storniere(zweiter, ziel.platz, ziel.zeit);
     await zweiter.close();
 
     await page.goto(`/plan?tag=${tag}`);
-    const erste = await oeffne(page, alt.platz, alt.zeit);
-    await erste.getByRole("button", { name: "Buchung stornieren" }).click();
-    await erste.getByRole("button", { name: "Wirklich stornieren" }).click();
-    await expect(page.locator(".hinweis.erfolg")).toContainText("storniert", { timeout: 15_000 });
+    await storniere(page, alt.platz, alt.zeit);
   });
 });
