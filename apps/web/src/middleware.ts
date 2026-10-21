@@ -7,6 +7,9 @@
  *
  * Ausserdem zwei Weichen: ohne Anmeldung zur Loginseite, und solange das
  * Onboarding offen ist, auf /onboarding.
+ *
+ * Und die Content-Security-Policy mit einer Nonce je Anfrage
+ * (lib/sicherheit.ts).
  */
 
 import { createServerClient } from "@supabase/ssr";
@@ -14,6 +17,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { sichererWeiterPfad } from "@tcm/core";
 import { AKTIV_COOKIE, istAbgelaufen } from "@/lib/inaktivitaet";
 import { ONBOARDING, PFAD_KOPF } from "@/lib/pfad";
+import { NONCE_KOPF, inhaltsRichtlinie, neueNonce } from "@/lib/sicherheit";
 
 /**
  * Seiten, die ohne Anmeldung erreichbar sind.
@@ -40,15 +44,25 @@ const OEFFENTLICH = [
   "/beitragsordnung",
 ];
 
-/** Der Pfad fuer das Layout (lib/pfad.ts): Anmeldeseiten ohne Menue. */
-function weiter(request: NextRequest) {
+/**
+ * Der Pfad fuer das Layout (lib/pfad.ts): Anmeldeseiten ohne Menue. Dazu die
+ * Nonce: Next.js findet sie im CSP-Kopf der Anfrage, das Layout in NONCE_KOPF.
+ * Beide werden hier ueberschrieben, ein Aufrufer kann sie nicht vorgeben.
+ */
+function weiter(request: NextRequest, nonce: string) {
+  const richtlinie = inhaltsRichtlinie(nonce);
   const kopf = new Headers(request.headers);
   kopf.set(PFAD_KOPF, request.nextUrl.pathname);
-  return NextResponse.next({ request: { headers: kopf } });
+  kopf.set(NONCE_KOPF, nonce);
+  kopf.set("Content-Security-Policy", richtlinie);
+  const response = NextResponse.next({ request: { headers: kopf } });
+  response.headers.set("Content-Security-Policy", richtlinie);
+  return response;
 }
 
 export async function middleware(request: NextRequest) {
-  let response = weiter(request);
+  const nonce = neueNonce();
+  let response = weiter(request, nonce);
 
   const pfad = request.nextUrl.pathname;
   const oeffentlich = OEFFENTLICH.some((p) => pfad === p || pfad.startsWith(p + "/"));
@@ -73,7 +87,7 @@ export async function middleware(request: NextRequest) {
       getAll: () => request.cookies.getAll(),
       setAll: (list) => {
         for (const { name, value } of list) request.cookies.set(name, value);
-        response = weiter(request);
+        response = weiter(request, nonce);
         for (const { name, value, options } of list) {
           response.cookies.set(name, value, options);
         }

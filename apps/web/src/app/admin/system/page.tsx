@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
+import { translateDbError } from "@tcm/core";
+import { Fehlerzustand } from "@/components/Fehlerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +45,7 @@ export default async function SystemSeite() {
     .order("key");
 
   if (error) {
-    return <div className="hinweis fehler">{error.message}</div>;
+    return <Fehlerzustand text={translateDbError(error)} />;
   }
 
   const alle = data ?? [];

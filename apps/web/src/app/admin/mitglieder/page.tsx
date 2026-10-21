@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { EINLADUNGS_STATUS_TEXT, formatCents, memberCategory, rollenMarken, type MemberCategory } from "@tcm/core";
+import { EINLADUNGS_STATUS_TEXT, formatCents, memberCategory, rollenMarken, translateDbError, type MemberCategory } from "@tcm/core";
 import { ladeEinladungsstatus } from "@/lib/einladungen";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { MitgliederSegmente } from "@/components/MitgliederSegmente";
@@ -9,6 +9,7 @@ import { MitgliederWahl } from "@/components/MitgliederWahl";
 import { MitgliedUebersicht } from "@/components/MitgliedUebersicht";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { ladeBeitragsarten } from "@/lib/beitragsarten";
+import { Fehlerzustand } from "@/components/Fehlerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -83,7 +84,7 @@ export default async function MitgliederSeite({
     ]);
 
   if (error) {
-    return <div className="hinweis fehler">{error.message}</div>;
+    return <Fehlerzustand text={translateDbError(error)} />;
   }
 
   // Mehrere Beitragsarten je Jahr sind moeglich, etwa Beitrag und Pfand.

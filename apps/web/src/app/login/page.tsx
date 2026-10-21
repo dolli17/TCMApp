@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { sichererWeiterPfad } from "@tcm/core";
+import { anmeldeFehlerText, sichererWeiterPfad } from "@tcm/core";
 import { AnmeldeBuehne } from "@/components/AnmeldeBuehne";
 import { aktivitaetMerken } from "@/lib/inaktivitaet";
 import { kontoGewechselt } from "@/lib/konto-kanal";
@@ -55,9 +55,10 @@ function Formular() {
     });
 
     if (error) {
-      // Die Meldung nennt bewusst nicht, ob die Adresse existiert - sonst
-      // liesse sich damit herausfinden, wer im Verein ist.
-      setFehler("E-Mail-Adresse oder Passwort stimmt nicht.");
+      // Falsche Adresse und falsches Passwort bleiben ein Satz - sonst
+      // liesse sich herausfinden, wer im Verein ist. Kein Netz oder zu viele
+      // Versuche dagegen werden gesondert gemeldet (U19).
+      setFehler(anmeldeFehlerText(error));
       setLaeuft(false);
       return;
     }

@@ -3,6 +3,8 @@ import { FensterKnopf } from "@/components/FensterKnopf";
 import { Listenzeile } from "@/components/Listenzeile";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { MerkmalsFormular, type MerkmalsDefinition } from "@/components/MerkmalsFormular";
+import { translateDbError } from "@tcm/core";
+import { Fehlerzustand } from "@/components/Fehlerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +43,7 @@ export default async function MerkmaleSeite({
   ]);
 
   if (typenRes.error) {
-    return <div className="hinweis fehler">{typenRes.error.message}</div>;
+    return <Fehlerzustand text={translateDbError(typenRes.error)} />;
   }
 
   const zaehler = new Map<string, number>();

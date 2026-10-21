@@ -10,7 +10,7 @@
  * aufrufbaren Server Action, auch dieser rohe Durchgriff auf die Function.
  */
 
-import { translateDbError } from "@tcm/core";
+import { VERBINDUNGSFEHLER_TEXT, translateDbError } from "@tcm/core";
 import { createServerSupabase } from "./server";
 
 /**
@@ -94,8 +94,8 @@ export async function memberLogin(anfrage: LoginAnfrage): Promise<LoginErgebnis>
       body: JSON.stringify(anfrage),
     });
   } catch (fehler) {
-    const text = fehler instanceof Error ? fehler.message : String(fehler);
-    return { ok: false, meldung: `Die Zugangsverwaltung ist nicht erreichbar: ${text}` };
+    console.error("member-login nicht erreichbar:", fehler);
+    return { ok: false, meldung: `Die Zugangsverwaltung ist nicht erreichbar. ${VERBINDUNGSFEHLER_TEXT}` };
   }
 
   let ergebnis: {

@@ -1,6 +1,42 @@
 import path from "node:path";
 import type { NextConfig } from "next";
 
+/**
+ * Feste Sicherheits-Header fuer jede Antwort (S4). Die CSP haengt an einer
+ * Nonce je Anfrage und steht deshalb in der Middleware (src/lib/sicherheit.ts).
+ *
+ * Traefik setzt HSTS, nosniff, Referrer-Policy und X-Frame-Options auf dem
+ * Server ebenfalls (deploy/web/docker-compose.yml) und ueberschreibt dabei
+ * HSTS - beide Stellen muessen gleich lauten. Hier stehen sie, damit der
+ * Container auch ohne Traefik vollstaendig antwortet.
+ *
+ * Die Permissions-Policy schaltet ab, was die Seite nicht braucht. Kommt
+ * einmal etwas dazu (etwa die Kamera fuer einen Scanner), muss es hier frei.
+ */
+const SICHERHEITS_HEADER = [
+  { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "X-Frame-Options", value: "DENY" },
+  {
+    key: "Permissions-Policy",
+    value: [
+      "accelerometer=()",
+      "autoplay=()",
+      "browsing-topics=()",
+      "camera=()",
+      "display-capture=()",
+      "geolocation=()",
+      "gyroscope=()",
+      "magnetometer=()",
+      "microphone=()",
+      "midi=()",
+      "payment=()",
+      "usb=()",
+    ].join(", "),
+  },
+];
+
 const config: NextConfig = {
   // @tcm/core wird als TypeScript-Quelle eingebunden, nicht als gebautes Paket.
   transpilePackages: ["@tcm/core"],
@@ -11,6 +47,11 @@ const config: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../.."),
   reactStrictMode: true,
+  poweredByHeader: false,
+
+  async headers() {
+    return [{ source: "/:path*", headers: SICHERHEITS_HEADER }];
+  },
 
   /**
    * Die Verwaltung wurde nach Themen neu geordnet. Wer ein Lesezeichen auf eine

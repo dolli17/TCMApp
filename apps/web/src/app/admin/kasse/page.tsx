@@ -1,10 +1,11 @@
 import Link from "next/link";
 import {
-  CHARGE_KINDS, CHARGE_KIND_LABEL, einzugGruppeSchluessel, formatCents, kasseTodos,
+  CHARGE_KINDS, CHARGE_KIND_LABEL, einzugGruppeSchluessel, formatCents, kasseTodos, translateDbError,
   type ChargeKind, type DebitBatchStatus,
 } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
+import { Fehlerzustand } from "@/components/Fehlerzustand";
 import { FensterKnopf } from "@/components/FensterKnopf";
 import { KassenKennzahlen } from "@/components/KassenKennzahlen";
 import { LaufListe, type LaufZeile } from "@/components/LaufListe";
@@ -109,6 +110,14 @@ export default async function KasseSeite({
       : KEINE,
   ]);
 
+  // Eine gescheiterte Abfrage darf nicht wie "alles erledigt" oder "kein
+  // Einzug" aussehen (B14). Die Abfragen eines Abschnitts sind alle nötig;
+  // scheitert eine, steht statt des Abschnitts der Fehler.
+  const ladefehler =
+    vorschauRes.error ?? einstellungRes.error ?? monateRes.error ?? forderungenRes.error ??
+    artenRes.error ?? laeufeRes.error ?? mitgliederRes.error ?? gastRes.error ??
+    gruppenRes.error ?? getraenkeRes.error;
+
   const einstellungen = einstellungRes.data ?? [];
   const glaeubigerId = String(
     einstellungen.find((s) => s.key === "sepa.creditor_id")?.value ?? "",
@@ -178,7 +187,11 @@ export default async function KasseSeite({
         </>
       )}
 
-      {gewaehlt === "start" && (
+      {ladefehler && (
+        <Fehlerzustand titel="Die Kasse ließ sich nicht laden." text={translateDbError(ladefehler)} />
+      )}
+
+      {!ladefehler && gewaehlt === "start" && (
         <>
           <ZuTun
             heute={heute}
@@ -191,7 +204,7 @@ export default async function KasseSeite({
         </>
       )}
 
-      {gewaehlt === "einzuege" && (
+      {!ladefehler && gewaehlt === "einzuege" && (
         <>
           {fehltHinweis}
           <p className="unterzeile">
@@ -218,7 +231,7 @@ export default async function KasseSeite({
         </>
       )}
 
-      {gewaehlt === "beitraege" && (
+      {!ladefehler && gewaehlt === "beitraege" && (
         <Jahresbeitraege
           jahr={jahr}
           zeilen={(vorschauRes.data ?? []) as VorschauZeile[]}
@@ -230,7 +243,7 @@ export default async function KasseSeite({
         />
       )}
 
-      {gewaehlt === "abrechnen" && (
+      {!ladefehler && gewaehlt === "abrechnen" && (
         <>
           <p className="unterzeile">
             Hier entstehen Forderungen. Abgebucht wird hier noch nichts – das geschieht danach über
@@ -271,7 +284,7 @@ export default async function KasseSeite({
         </>
       )}
 
-      {gewaehlt === "forderungen" && (
+      {!ladefehler && gewaehlt === "forderungen" && (
         <>
           <p className="unterzeile">
             Wer schuldet dem Verein was? Hier wird nur nachgeschlagen – eingezogen wird über{" "}
@@ -285,7 +298,7 @@ export default async function KasseSeite({
         </>
       )}
 
-      {gewaehlt === "einstellungen" && (
+      {!ladefehler && gewaehlt === "einstellungen" && (
         <>
           {fehltHinweis}
           <nav className="gruppe" aria-label="Einrichtung der Kasse">
@@ -299,14 +312,14 @@ export default async function KasseSeite({
         </>
       )}
 
-      {gewaehlt === "arten" && (
+      {!ladefehler && gewaehlt === "arten" && (
         <BeitragsartenPflege
           arten={(artenRes.data ?? []) as unknown as BeitragsartZeile[]}
           jahr={jahr}
         />
       )}
 
-      {gewaehlt === "regeln" && (
+      {!ladefehler && gewaehlt === "regeln" && (
         <>
           <EinstellungsGruppe
             titel="Fälligkeit"

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { isSlotConflict, translateDbError } from "./errors";
+import {
+  ALLGEMEINER_FEHLER_TEXT, VERBINDUNGSFEHLER_TEXT, isNetworkError, isSlotConflict, translateDbError,
+} from "./errors";
 
 /**
  * translateDbError entscheidet, was ein Mitglied im Fehlerfall zu lesen bekommt.
@@ -65,6 +67,33 @@ describe("translateDbError", () => {
     expect(translateDbError({ code: "42501" })).toBe("Dafür fehlt dir die Berechtigung.");
     expect(translateDbError({ code: "23P01" })).toContain("bereits belegt");
     expect(translateDbError({ code: "P0002" })).toContain("nicht gefunden");
+  });
+
+  it("zeigt keinen technischen Rohtext ohne bekannten Code", () => {
+    expect(
+      translateDbError({ message: "Cannot coerce the result to a single JSON object", code: "PGRST116" }),
+    ).toBe(ALLGEMEINER_FEHLER_TEXT);
+    expect(translateDbError({ message: "permission denied for table members" })).toBe(
+      ALLGEMEINER_FEHLER_TEXT,
+    );
+  });
+
+  it("erkennt eine fehlende Verbindung, egal aus welcher Laufzeit", () => {
+    for (const message of [
+      "TypeError: fetch failed",
+      "TypeError: Failed to fetch",
+      "NetworkError when attempting to fetch resource.",
+      "Load failed",
+      "Network request failed",
+    ]) {
+      expect(translateDbError({ message, details: "", code: "" })).toBe(VERBINDUNGSFEHLER_TEXT);
+      expect(isNetworkError({ message })).toBe(true);
+    }
+    expect(translateDbError({ message: "x", details: "Error: connect ECONNREFUSED 127.0.0.1:54321" })).toBe(
+      VERBINDUNGSFEHLER_TEXT,
+    );
+    expect(isNetworkError({ code: "42501" })).toBe(false);
+    expect(isNetworkError(null)).toBe(false);
   });
 
   it("hat immer etwas zu sagen", () => {

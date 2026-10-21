@@ -255,6 +255,32 @@ input:focus, select:focus, textarea:focus {
   background: color-mix(in srgb, var(--green) 12%, transparent); color: var(--green-ink);
 }
 
+/* Ein Ladefehler (components/Fehlerzustand.tsx): nicht wie "nichts da",
+   sondern mit Grund und "Erneut versuchen". */
+.fehlerzustand {
+  margin: var(--space-l) auto; max-width: 520px; padding: 20px;
+  border-radius: var(--radius-karte); background: var(--surf);
+  border: 1.5px solid color-mix(in srgb, var(--red) 35%, var(--line));
+  text-align: center; color: var(--ink-2);
+}
+.fehlerzustand p { margin: 0 0 12px; }
+.fehlerzustand .titel { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--ink); }
+.fehlerzustand.kompakt { margin: 12px 0; max-width: none; padding: 14px 16px; text-align: left; }
+.fehlerzustand.kompakt .titel { font-size: 16px; margin-bottom: 4px; }
+.globaler-fehler { min-height: 100vh; display: grid; place-items: center; padding: var(--space-rand); background: var(--bg); }
+
+/* Wird geladen (loading.tsx) */
+.laden {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 48px 0; color: var(--muted); font-size: 14px;
+}
+.laden-kreis {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2.5px solid var(--line-2); border-top-color: var(--blue);
+  animation: laden-dreh .8s linear infinite;
+}
+@keyframes laden-dreh { to { transform: rotate(360deg); } }
+
 /* ---------------------------------------------------------------------------
    Tabellen
    --------------------------------------------------------------------------- */

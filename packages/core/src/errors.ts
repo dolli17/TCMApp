@@ -59,8 +59,29 @@ const CODE_TEXTE: Record<string, string> = {
   P0002: "Der gesuchte Datensatz wurde nicht gefunden.",
 };
 
+/**
+ * Kein Netz oder der Server antwortet nicht. supabase-js meldet das nicht als
+ * eigenen Code, sondern reicht den Text des fehlgeschlagenen fetch durch -
+ * je nach Laufzeit anders formuliert (Node, Chrome, Firefox, Safari, RN).
+ */
+const VERBINDUNG = /fetch failed|failed to fetch|networkerror|network request failed|load failed|econnrefused|econnreset|enotfound|etimedout|socket hang up/i;
+
+export const VERBINDUNGSFEHLER_TEXT =
+  "Keine Verbindung zum Server. Bitte prüfe die Internetverbindung und versuche es erneut.";
+
+/** Was übrig bleibt, wenn keine Regel greift: kein englischer Rohtext. */
+export const ALLGEMEINER_FEHLER_TEXT = "Das hat nicht geklappt. Bitte versuche es erneut.";
+
+/** Ist der Fehler ein Verbindungsproblem und kein Fehler in der Sache? */
+export function isNetworkError(error: PostgresLikeError | null | undefined): boolean {
+  if (!error) return false;
+  return VERBINDUNG.test(`${error.message ?? ""} ${error.details ?? ""}`);
+}
+
 export function translateDbError(error: PostgresLikeError | null | undefined): string {
   if (!error) return "Unbekannter Fehler.";
+
+  if (isNetworkError(error)) return VERBINDUNGSFEHLER_TEXT;
 
   const haystack = `${error.message ?? ""} ${error.details ?? ""}`;
 
@@ -77,7 +98,9 @@ export function translateDbError(error: PostgresLikeError | null | undefined): s
 
   if (error.code && CODE_TEXTE[error.code]) return CODE_TEXTE[error.code]!;
 
-  return message || "Unbekannter Fehler.";
+  // Ein technischer Text ohne bekannten Code ("permission denied for table",
+  // PostgREST-Meldungen) hilft niemandem. Er gehört ins Log, nicht vor Augen.
+  return message ? ALLGEMEINER_FEHLER_TEXT : "Unbekannter Fehler.";
 }
 
 /** War es ein Konflikt mit einer bestehenden Buchung? */

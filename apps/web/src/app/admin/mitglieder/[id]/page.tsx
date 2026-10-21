@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { formatCents, isoDateLabel, rollenMarken } from "@tcm/core";
+import { formatCents, isoDateLabel, rollenMarken, translateDbError } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { BankUndMandatKarte, type FinanzZeile } from "@/components/BankUndMandatKarte";
 import { BeitragsartenKarte, type BeitragsZeile } from "@/components/BeitragsartenKarte";
@@ -15,6 +15,7 @@ import { ZugehoerigkeitKarte } from "@/components/ZugehoerigkeitKarte";
 import { MannschaftKarte } from "@/components/MannschaftKarte";
 import { MitgliedUebersicht, type MitgliedTeil } from "@/components/MitgliedUebersicht";
 import { stammdatenSpeichern } from "./aktionen";
+import { Fehlerzustand } from "@/components/Fehlerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -402,7 +403,7 @@ async function Zugang({ id, selbst }: { id: string; selbst: boolean }) {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.rpc("member_login_state", { p_member_id: id });
 
-  if (error) return <div className="hinweis fehler">{error.message}</div>;
+  if (error) return <Fehlerzustand text={translateDbError(error)} />;
 
   const zustand = data?.[0];
   if (!zustand) return null;
@@ -426,7 +427,7 @@ async function BankUndMandat({ id }: { id: string }) {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.rpc("member_finances", { p_member_id: id });
 
-  if (error) return <div className="hinweis fehler">{error.message}</div>;
+  if (error) return <Fehlerzustand text={translateDbError(error)} />;
 
   return <BankUndMandatKarte mitgliedId={id} zeilen={(data ?? []) as FinanzZeile[]} />;
 }
@@ -435,7 +436,7 @@ async function BankUndMandat({ id }: { id: string }) {
 async function Beitraege({ id, jahr }: { id: string; jahr: number }) {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.rpc("member_fee_overview", { p_member_id: id, p_year: jahr });
-  if (error) return <div className="hinweis fehler">{error.message}</div>;
+  if (error) return <Fehlerzustand text={translateDbError(error)} />;
   return <BeitragsartenKarte mitgliedId={id} jahr={jahr} zeilen={(data ?? []) as BeitragsZeile[]} />;
 }
 
@@ -454,7 +455,7 @@ async function Forderungen({ id }: { id: string }) {
       <section className="liste-abschnitt" aria-labelledby="h-forderungen">
         <Gruppenkopf titel="Forderungen" id="h-forderungen" />
         {forderungenRes.error ? (
-          <div className="hinweis fehler">{forderungenRes.error.message}</div>
+          <Fehlerzustand text={translateDbError(forderungenRes.error)} />
         ) : (forderungenRes.data ?? []).length === 0 ? (
           <p className="leer-klein">Noch keine Forderung.</p>
         ) : (
@@ -487,7 +488,7 @@ async function Merkmale({ id }: { id: string }) {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.rpc("member_attributes", { p_member_id: id });
 
-  if (error) return <div className="hinweis fehler">{error.message}</div>;
+  if (error) return <Fehlerzustand text={translateDbError(error)} />;
 
   return (
     <>
@@ -547,7 +548,7 @@ async function Protokoll({ id }: { id: string }) {
     .order("changed_at", { ascending: false })
     .limit(200);
 
-  if (error) return <div className="hinweis fehler">{error.message}</div>;
+  if (error) return <Fehlerzustand text={translateDbError(error)} />;
 
   const eintraege = data ?? [];
   if (eintraege.length === 0) {

@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { translateDbError } from "@tcm/core";
 import { createServerSupabase, darfPlaetze, getCurrentMember } from "@/lib/supabase/server";
 import { Belegungsplan } from "@/components/Belegungsplan";
 import { PlanAbo } from "@/components/PlanAbo";
 import { PlanSegmente } from "@/components/PlanSegmente";
+import { Fehlerzustand } from "@/components/Fehlerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -70,10 +72,19 @@ export default async function PlanSeite({
 
   if (!einstellungen) {
     return (
-      <div className="hinweis fehler">
-        Die Buchungseinstellungen konnten nicht geladen werden.
-        {einstellungRes.error ? ` (${einstellungRes.error.message})` : ""}
-      </div>
+      <Fehlerzustand
+        titel="Die Buchungseinstellungen konnten nicht geladen werden."
+        text={einstellungRes.error ? translateDbError(einstellungRes.error) : undefined}
+      />
+    );
+  }
+
+  // Ohne Plätze oder Belegung sähe der Plan leer und frei aus (B14) - und
+  // jemand buchte auf einen Platz, der längst belegt ist.
+  const ladefehler = plaetzeRes.error ?? planRes.error ?? artenRes.error;
+  if (ladefehler) {
+    return (
+      <Fehlerzustand titel="Der Belegungsplan ließ sich nicht laden." text={translateDbError(ladefehler)} />
     );
   }
 

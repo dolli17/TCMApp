@@ -6,6 +6,8 @@ import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { AufstellungKarte, type Aufstellungszeile } from "@/components/AufstellungKarte";
 import { MannschaftsFormular, type Mannschaft } from "@/components/MannschaftsFormular";
 import type { Person } from "@/components/Personensuche";
+import { translateDbError } from "@tcm/core";
+import { Fehlerzustand } from "@/components/Fehlerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +23,7 @@ export default async function MannschaftenSeite({
   const { data, error } = await supabase.rpc("team_overview");
 
   if (error) {
-    return <div className="hinweis fehler">{error.message}</div>;
+    return <Fehlerzustand text={translateDbError(error)} />;
   }
 
   const mannschaften = (data ?? []) as Mannschaft[];

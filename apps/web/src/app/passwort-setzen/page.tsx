@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { passwortFehlerText } from "@tcm/core";
 import { AnmeldeBuehne } from "@/components/AnmeldeBuehne";
 import { aktivitaetVergessen } from "@/lib/inaktivitaet";
 import { kontoGewechselt } from "@/lib/konto-kanal";
@@ -178,7 +179,7 @@ export default function PasswortSetzenSeite() {
     const { error } = await createClient().auth.updateUser({ password: passwort });
 
     if (error) {
-      setFehler(error.message);
+      setFehler(passwortFehlerText(error));
       setLaeuft(false);
       return;
     }
