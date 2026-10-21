@@ -71,7 +71,7 @@ function nurVeranstaltungen(posten: Posten[]): boolean {
  */
 export function mailZiel(posten: Posten[], siteUrl: string): { href: string; knopf: string; kurz: string } {
   if (nurBuchungen(posten)) return { href: `${siteUrl}/plan/meine`, knopf: "Meine Buchungen ansehen", kurz: "Meine Buchungen" };
-  if (nurForderungen(posten)) return { href: `${siteUrl}/konto`, knopf: "Mein Konto ansehen", kurz: "Mein Konto" };
+  if (nurForderungen(posten)) return { href: `${siteUrl}/konto`, knopf: "Konto ansehen", kurz: "Konto" };
   if (nurVeranstaltungen(posten)) {
     const ids = new Set(posten.map((p) => p.event_id ?? ""));
     const [id] = [...ids];
@@ -163,7 +163,7 @@ ${
   </p>
 
   <p style="color: #5b6b7a; font-size: 14px;">
-    Diese Hinweise kannst du unter <em>Mein Konto → Einwilligungen → E-Mails zu
+    Diese Hinweise kannst du unter <em>Konto → Einwilligungen → E-Mails zu
     Buchungen</em> abstellen. In der App siehst du sie dann weiterhin.
   </p>
 
@@ -205,7 +205,7 @@ export function text(vorname: string | null, posten: Posten[], siteUrl: string):
     "",
     `${ziel.kurz}: ${ziel.href}`,
     "",
-    "Diese Hinweise kannst du unter Mein Konto → Einwilligungen → E-Mails zu",
+    "Diese Hinweise kannst du unter Konto → Einwilligungen → E-Mails zu",
     "Buchungen abstellen. In der App siehst du sie dann weiterhin.",
     "",
     "Sportliche Grüße",

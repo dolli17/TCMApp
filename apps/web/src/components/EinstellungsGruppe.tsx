@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import { centsAlsEingabe, einstellungsText, listeAusWert, listenOptionen } from "@tcm/core";
 import { einstellungenSpeichern } from "@/app/admin/einstellungs-aktionen";
 import { Gruppenkopf } from "@/components/Listenzeile";
@@ -101,6 +101,8 @@ function EinstellungsFeld({ e }: { e: Einstellung }) {
       />
     );
   }
+  // Für die Prüfung vor dem Speichern (einstellungsEingabeFehler)
+  const typ = <input type="hidden" name={`typ:${e.key}`} value={e.value_type} />;
 
   return (
     <label className="einstellung">
@@ -108,18 +110,29 @@ function EinstellungsFeld({ e }: { e: Einstellung }) {
       {t.beschreibung && <span className="beschreibung">{t.beschreibung}</span>}
       {eingabe}
       {alt}
+      {typ}
     </label>
   );
 }
 
+/**
+ * onSubmit statt `<form action>`: React 19 setzt ein Formular nach jeder
+ * Action zurück, auch wenn sie {ok:false} meldet - dann wären alle Eingaben
+ * weg. So bleiben sie stehen. Nach einem Erfolg baut `stand` die Felder neu
+ * auf, damit sie die gespeicherten Werte zeigen (etwa "17,50" statt "17,5").
+ */
 function useSpeichern() {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
+  const [stand, setStand] = useState(0);
   const [laeuft, starte] = useTransition();
 
-  function abschicken(fd: FormData) {
+  function abschicken(ev: FormEvent<HTMLFormElement>) {
+    ev.preventDefault();
+    const fd = new FormData(ev.currentTarget);
     starte(async () => {
       const e = await einstellungenSpeichern(fd);
       setMeldung({ ok: e.ok, text: e.meldung });
+      if (e.ok) setStand((n) => n + 1);
     });
   }
 
@@ -128,7 +141,7 @@ function useSpeichern() {
       {meldung.text}
     </div>
   );
-  return { abschicken, laeuft, hinweis };
+  return { abschicken, stand, laeuft, hinweis };
 }
 
 function Felder({ eintraege }: { eintraege: Einstellung[] }) {
@@ -153,7 +166,7 @@ export function EinstellungsGruppe({
   text: string;
   eintraege: Einstellung[];
 }) {
-  const { abschicken, laeuft, hinweis } = useSpeichern();
+  const { abschicken, stand, laeuft, hinweis } = useSpeichern();
 
   return (
     <section className="liste-abschnitt einstellungen" aria-label={titel}>
@@ -161,7 +174,7 @@ export function EinstellungsGruppe({
       <p className="unterzeile">{text}</p>
       {hinweis}
 
-      <form action={abschicken}>
+      <form key={stand} onSubmit={abschicken}>
         <Felder eintraege={eintraege} />
         <button className="knopf" disabled={laeuft}>
           {laeuft ? "Wird gespeichert…" : "Speichern"}
@@ -182,10 +195,10 @@ export function EinstellungsFormular({
 }: {
   gruppen: { titel: string; text: string; eintraege: Einstellung[] }[];
 }) {
-  const { abschicken, laeuft, hinweis } = useSpeichern();
+  const { abschicken, stand, laeuft, hinweis } = useSpeichern();
 
   return (
-    <form action={abschicken} className="einstellungs-formular">
+    <form key={stand} onSubmit={abschicken} className="einstellungs-formular">
       <div className="einstellungs-raster">
         {gruppen.map((g) => (
           <section key={g.titel} className="liste-abschnitt einstellungen" aria-label={g.titel}>

@@ -111,13 +111,18 @@ a:hover { text-decoration: underline; }
   box-shadow: var(--shadow-float);
 }
 /* Gleich breit, aber nie schmaler als der Text: „Verwaltung“ (U7) braucht
-   am Telefon ein paar Pixel mehr als die anderen. Der Innenabstand hält den
-   Text aus den runden Ecken der Markierung. */
+   am Telefon mehr als die anderen. Der Innenabstand hält den Text aus den
+   runden Ecken der Markierung; abgeschnitten wird nichts, die Breite reicht
+   immer. Unter 380 px wird die Schrift kleiner, damit die fünf Tabs eines
+   Admins auch bei 320 px in der Pille bleiben. */
 .schwebeleiste a {
   flex: 1 1 0; min-width: max-content; height: 52px; border-radius: 26px; padding: 0 5px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   color: var(--muted); font-size: 11px; font-weight: 600; text-decoration: none;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 379px) {
+  .schwebeleiste a { font-size: 10px; padding: 0 2px; }
 }
 .schwebeleiste a[aria-current="page"] { background: var(--tab-aktiv); color: var(--tab-aktiv-ink); }
 .schwebeleiste a:hover { text-decoration: none; }

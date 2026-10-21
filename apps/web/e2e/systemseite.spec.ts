@@ -13,6 +13,7 @@ import { anmelden, NUTZER, PASSWORT } from "./hilfen";
 
 const STUNDENSATZ = "work_duty.hourly_rate_cents";
 const PUSH_ARTEN = "notifications.push_kinds";
+const PROTOKOLL_TAGE = "privacy.change_log_days";
 
 async function alsAdmin(): Promise<SupabaseClient> {
   const supabase = createClient(
@@ -81,18 +82,27 @@ test.describe("Systemseite", () => {
     await expect(page.getByLabel("Stundensatz Arbeitsdienst (€)")).toHaveValue(neu);
   });
 
-  test("ein ungültiger Betrag wird abgelehnt und nichts gespeichert", async ({ page }) => {
+  test("ein ungültiger Betrag hält alles auf und lässt die Eingaben stehen", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/system");
 
     const davor = await wert(admin, STUNDENSATZ);
+    const tageDavor = await wert(admin, PROTOKOLL_TAGE);
+    const tage = page.getByLabel("Aufbewahrung des Änderungsprotokolls in Tagen");
+    await tage.fill("999");
     await page.getByLabel("Stundensatz Arbeitsdienst (€)").fill("15,001");
     await page.getByRole("button", { name: "Alle Änderungen speichern" }).click();
     await expect(page.locator(".einstellungs-fuss .hinweis.fehler")).toContainText(
       "Stundensatz Arbeitsdienst: Bitte einen Betrag in Euro",
       { timeout: 15_000 },
     );
+    await expect(page.locator(".einstellungs-fuss .hinweis.fehler")).toContainText("Nichts wurde gespeichert");
+    // Auch der gültige Wert daneben ist nicht gespeichert ...
     expect(await wert(admin, STUNDENSATZ)).toBe(davor);
+    expect(await wert(admin, PROTOKOLL_TAGE)).toBe(tageDavor);
+    // ... aber die Eingaben stehen noch da (React 19 setzt <form action> zurück).
+    await expect(tage).toHaveValue("999");
+    await expect(page.getByLabel("Stundensatz Arbeitsdienst (€)")).toHaveValue("15,001");
   });
 
   test("Häkchen speichern die Liste der Push-Arten", async ({ page }) => {

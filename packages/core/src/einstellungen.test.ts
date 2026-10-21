@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   BENACHRICHTIGUNGS_ARTEN,
   centsAlsEingabe,
+  einstellungsEingabeFehler,
   einstellungsText,
   euroEingabeAlsCents,
   listeAusWert,
@@ -79,5 +80,25 @@ describe("Listen", () => {
 
   it("hat für jede Art einen deutschen Namen", () => {
     for (const a of BENACHRICHTIGUNGS_ARTEN) expect(a.label).not.toMatch(/_/);
+  });
+});
+
+describe("einstellungsEingabeFehler", () => {
+  it("lässt gültige Werte durch", () => {
+    expect(einstellungsEingabeFehler("integer", "7")).toBeNull();
+    expect(einstellungsEingabeFehler("integer", "0")).toBeNull();
+    expect(einstellungsEingabeFehler("time", "08:00")).toBeNull();
+    expect(einstellungsEingabeFehler("time", "21:30:00")).toBeNull();
+    expect(einstellungsEingabeFehler("date", "2026-10-21")).toBeNull();
+    expect(einstellungsEingabeFehler("text", "")).toBeNull();
+  });
+
+  it("lehnt ab, was set_setting ablehnen würde", () => {
+    expect(einstellungsEingabeFehler("integer", "")).toMatch(/ganze Zahl/);
+    expect(einstellungsEingabeFehler("integer", "-1")).toMatch(/ganze Zahl/);
+    expect(einstellungsEingabeFehler("integer", "1,5")).toMatch(/ganze Zahl/);
+    expect(einstellungsEingabeFehler("integer", "99999999999")).toMatch(/ganze Zahl/);
+    expect(einstellungsEingabeFehler("time", "25:00")).toMatch(/Uhrzeit/);
+    expect(einstellungsEingabeFehler("date", "morgen")).toMatch(/Datum/);
   });
 });

@@ -137,7 +137,7 @@ test.describe("Anmeldung", () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test("nach dem Anmelden erscheint Home", async ({ page }) => {
+  test("nach dem Anmelden erscheint die Startseite", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
     await expect(page).toHaveURL((u) => u.pathname === "/");
     await expect(page.getByRole("heading", { level: 1, name: /^Hallo, / })).toBeVisible();
@@ -145,13 +145,13 @@ test.describe("Anmeldung", () => {
       await expect(page.getByRole("heading", { level: 2, name: abschnitt })).toBeVisible();
     }
     await expect(page.getByRole("heading", { level: 2, name: /^Dein / })).toBeVisible();
-    // Home steht als erster Eintrag im Menue und ist hier aktiv.
+    // Start steht als erster Eintrag im Menue und ist hier aktiv.
     const nav = page.getByRole("navigation", { name: "Hauptmenü" }).first();
     await expect(nav.getByRole("link").first()).toHaveAttribute("aria-current", "page");
     await expect(nav.getByRole("link").first()).toHaveText("Start");
   });
 
-  test("Mitglied kann sich anmelden und sieht den Belegungsplan", async ({ page }) => {
+  test("Mitglied kann sich anmelden und sieht die Plätze", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
     await page.goto("/plan");
     await expect(page.getByRole("heading", { level: 1, name: "Plätze", exact: true })).toBeVisible();
@@ -1065,7 +1065,10 @@ test.describe("Verwaltung", () => {
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: "Buchungsarten" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Buchungsregeln" })).toBeVisible();
-    await expect(page.getByText("booking.opening_time")).toBeVisible();
+    // Deutsche Namen statt Schlüssel (U12)
+    await expect(page.getByLabel("Öffnungszeit", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Gastgebühr (€)")).toBeVisible();
+    await expect(page.getByText("booking.opening_time")).toHaveCount(0);
   });
 
   test("die Lastschrift steht in der Kasse, mit Jahresschalter", async ({ page }) => {
@@ -1073,7 +1076,9 @@ test.describe("Verwaltung", () => {
     await page.goto("/admin/kasse?abschnitt=regeln");
 
     await expect(page.getByRole("heading", { name: "Lastschrift" })).toBeVisible();
-    await expect(page.getByText("sepa.creditor_id")).toBeVisible();
+    await expect(page.getByLabel("Gläubiger-Identifikationsnummer")).toBeVisible();
+    await expect(page.getByLabel("Format der Bankdatei")).toBeVisible();
+    await expect(page.getByText("sepa.creditor_id")).toHaveCount(0);
 
     const jahr = new Date().getFullYear();
     await page.goto("/admin/kasse?abschnitt=beitraege");
@@ -1404,7 +1409,7 @@ test.describe("Verwaltung", () => {
 
     // Datei: Rückfrage, Abbrechen lässt den Einzug offen
     await page.getByRole("button", { name: "Bankdatei erzeugen" }).click();
-    await expect(rueckfrage).toContainText(`Abbuchung am ${abbuchung} – Datei jetzt erzeugen?`);
+    await expect(rueckfrage).toContainText(`Abbuchung am ${abbuchung} – Bankdatei jetzt erzeugen?`);
     await rueckfrage.getByRole("button", { name: "Abbrechen" }).click();
     await expect(marke).toHaveText("Angekündigt");
     await page.getByRole("button", { name: "Bankdatei erzeugen" }).click();

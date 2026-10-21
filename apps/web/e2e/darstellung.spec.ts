@@ -153,6 +153,29 @@ test.describe("Layout", () => {
       expect(ueberbreite, `Die Seite ist ${ueberbreite}px zu breit`).toBeLessThanOrEqual(0);
     });
 
+    test("die Tabs eines Admins bleiben auch bei 320 px in der Leiste", async ({ page }) => {
+      // „Verwaltung“ ist der längste Tab (U7). Er darf weder abgeschnitten
+      // werden noch unter den Buchen-Knopf ragen.
+      await anmelden(page, ADMIN);
+      await page.goto("/plan");
+      for (const breite of [320, 360, 390]) {
+        await page.setViewportSize({ width: breite, height: 700 });
+        const mass = await page.evaluate(() => {
+          const leiste = document.querySelector(".schwebeleiste")!.getBoundingClientRect();
+          const tabs = [...document.querySelectorAll<HTMLElement>(".schwebeleiste a")];
+          return {
+            leisteRechts: leiste.right,
+            tabRechts: Math.max(...tabs.map((a) => a.getBoundingClientRect().right)),
+            knopfLinks: document.querySelector(".buchknopf")!.getBoundingClientRect().left,
+            beschnitten: tabs.filter((a) => a.scrollWidth > a.clientWidth).map((a) => a.textContent),
+          };
+        });
+        expect(mass.tabRechts, `${breite}px: Tab ragt aus der Leiste`).toBeLessThanOrEqual(mass.leisteRechts);
+        expect(mass.leisteRechts, `${breite}px: Leiste unter dem Buchen-Knopf`).toBeLessThanOrEqual(mass.knopfLinks);
+        expect(mass.beschnitten, `${breite}px`).toEqual([]);
+      }
+    });
+
     test("ein Admin erreicht die Verwaltung über den Tab „Verwaltung“", async ({ page }) => {
       await anmelden(page, ADMIN);
       await page.goto("/konto");

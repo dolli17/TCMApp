@@ -23,7 +23,7 @@
  */
 
 import type { ComponentProps } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { BlurView } from "expo-blur";
 import { router, type Tabs } from "expo-router";
 import Svg, { Path } from "react-native-svg";
@@ -38,10 +38,13 @@ type LeistenEigenschaften = Parameters<
 >[0];
 
 const TAB_HOEHE = 52;
+/** Darunter passen fünf Tabs mit „Verwaltung“ nur in kleinerer Schrift (U7). */
+const SCHMAL = 380;
 
 export function SchwebendeLeiste({ state, descriptors, navigation }: LeistenEigenschaften) {
   const { farben, theme } = useTheme();
   const rand = useSafeAreaInsets();
+  const schmal = useWindowDimensions().width < SCHMAL;
 
   // Ohne Weichzeichner wuerde der Inhalt durch die Leiste hindurch lesbar.
   const glas = Platform.OS === "android" ? mitDeckkraft(farben.glass, 0.96) : farben.glass;
@@ -102,10 +105,10 @@ export function SchwebendeLeiste({ state, descriptors, navigation }: LeistenEige
               accessibilityRole="tab"
               accessibilityState={{ selected: aktiv }}
               accessibilityLabel={optionen.tabBarAccessibilityLabel ?? label}
-              style={[stile.tab, aktiv && { backgroundColor: farben.tabAktiv }]}
+              style={[stile.tab, schmal && stile.tabSchmal, aktiv && { backgroundColor: farben.tabAktiv }]}
             >
               {optionen.tabBarIcon?.({ focused: aktiv, color: farbe, size: 22 })}
-              <Text style={[stile.tabText, { color: farbe }]} numberOfLines={1}>
+              <Text style={[stile.tabText, schmal && stile.tabTextSchmal, { color: farbe }]} numberOfLines={1}>
                 {label}
               </Text>
             </Pressable>
@@ -168,7 +171,9 @@ const stile = StyleSheet.create({
     justifyContent: "center",
     gap: 3,
   },
+  tabSchmal: { paddingHorizontal: 2 },
   tabText: { fontSize: 11, fontFamily: "Barlow_600SemiBold" },
+  tabTextSchmal: { fontSize: 10 },
   buchen: {
     width: LEISTE_HOEHE,
     height: LEISTE_HOEHE,

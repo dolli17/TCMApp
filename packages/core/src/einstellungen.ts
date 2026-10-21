@@ -211,3 +211,26 @@ export function euroEingabeAlsCents(eingabe: string): string | null {
     return null;
   }
 }
+
+/**
+ * Prueft eine Eingabe nach value_type, bevor irgendetwas gespeichert wird.
+ *
+ * Dieselben Regeln wie in set_setting, nur frueher: scheitert der dritte von
+ * fuenf Werten erst in der Datenbank, waeren die ersten beiden schon
+ * geschrieben. null heisst gueltig, sonst steht da, was fehlt.
+ */
+export function einstellungsEingabeFehler(valueType: string, wert: string): string | null {
+  const w = wert.trim();
+  switch (valueType) {
+    case "integer":
+      return /^\d+$/.test(w) && Number(w) <= 2147483647 ? null : "Bitte eine ganze Zahl ab 0 eingeben.";
+    case "time":
+      return /^([01]?\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(w) ? null : "Bitte eine Uhrzeit eingeben, z. B. 08:00.";
+    case "date":
+      return /^\d{4}-\d{2}-\d{2}$/.test(w) && !Number.isNaN(Date.parse(w)) ? null : "Bitte ein Datum eingeben.";
+    case "boolean":
+      return /^(true|false)$/.test(w) ? null : "Bitte ja oder nein wählen.";
+    default:
+      return null;
+  }
+}
