@@ -7,6 +7,7 @@ import logo from "@tcm/ui/logo.png";
 import logoWeiss from "@tcm/ui/logo-weiss.png";
 import { createServerSupabase, darfPlaetze, getCurrentMember, isAdmin } from "@/lib/supabase/server";
 import { ANMELDESEITEN, OHNE_RAHMEN, PFAD_KOPF } from "@/lib/pfad";
+import { NONCE_KOPF } from "@/lib/sicherheit";
 import { AbmeldeKnopf } from "@/components/AbmeldeKnopf";
 import { Benachrichtigungen } from "@/components/Benachrichtigungen";
 import { Inaktivitaet } from "@/components/Inaktivitaet";
@@ -29,7 +30,12 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const angemeldet = await getCurrentMember();
   const rollen = angemeldet?.roles ?? [];
-  const pfad = (await headers()).get(PFAD_KOPF) ?? "";
+  const kopf = await headers();
+  const pfad = kopf.get(PFAD_KOPF) ?? "";
+  // Ohne die Nonce der Middleware blockiert die CSP das Theme-Skript (S4).
+  // headers() macht zugleich jede Seite dynamisch - Voraussetzung dafür, dass
+  // Next die Nonce an seine Skripte hängt (lib/sicherheit.ts).
+  const nonce = kopf.get(NONCE_KOPF) ?? undefined;
   // Mit Menue nur fuer Mitglieder - und nicht auf den Anmeldeseiten.
   const mitRahmen = Boolean(angemeldet?.member) && !OHNE_RAHMEN.includes(pfad);
   const istMitglied = Boolean(angemeldet?.member);
@@ -99,8 +105,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="de" suppressHydrationWarning>
       <head>
-        {/* Muss vor dem ersten Zeichnen laufen, sonst blitzt das helle Theme auf. */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_SKRIPT }} />
+        {/* Muss vor dem ersten Zeichnen laufen, sonst blitzt das helle Theme auf.
+            Der Browser blendet die Nonce nach dem Laden aus; daher ohne
+            Hydrationswarnung. */}
+        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: THEME_SKRIPT }} />
       </head>
       <body>
         {/* Ein Konto pro Browser (lib/konto-kanal.ts) - auch am Kiosk. Nicht

@@ -1,4 +1,4 @@
-import { minutesOf, minutesToTime, occupancyKind } from "@tcm/core";
+import { minutesOf, minutesToTime, occupancyKind, translateDbError } from "@tcm/core";
 import { createServerSupabase, getCurrentMember, isAdmin } from "@/lib/supabase/server";
 import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
 import { FensterKnopf } from "@/components/FensterKnopf";
@@ -10,6 +10,7 @@ import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { SerienFormular } from "@/components/SerienFormular";
 import { SerienListe, type SerienZeile } from "@/components/SerienListe";
+import { Fehlerzustand } from "@/components/Fehlerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -122,9 +123,7 @@ export default async function PlaetzeSeite({
       />
 
       {plaetzeRes.error && (
-        <div className="hinweis fehler">
-          Die Plätze konnten nicht geladen werden. ({plaetzeRes.error.message})
-        </div>
+        <Fehlerzustand kompakt titel="Die Plätze konnten nicht geladen werden." text={translateDbError(plaetzeRes.error)} />
       )}
 
       {serienAnsicht ? (

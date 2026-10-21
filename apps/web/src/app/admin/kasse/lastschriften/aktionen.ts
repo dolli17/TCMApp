@@ -108,7 +108,8 @@ export async function dateiErzeugen(batchId: string): Promise<AktionsErgebnis> {
     .upload(pfad, xml, { contentType: "application/xml", upsert: true });
 
   if (ablageFehler) {
-    return { ok: false, meldung: `Die Datei ließ sich nicht ablegen. (${ablageFehler.message})` };
+    console.error("Lastschriftdatei ablegen:", ablageFehler);
+    return { ok: false, meldung: `Die Datei ließ sich nicht ablegen. ${translateDbError(ablageFehler)}` };
   }
 
   const summe = lauf.items.reduce((s, i) => s + i.amountCents, 0);

@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { formatCents, sumOpenDrinks, CHARGE_KIND_LABEL, type ChargeKind } from "@tcm/core";
+import { formatCents, sumOpenDrinks, translateDbError, CHARGE_KIND_LABEL, type ChargeKind } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { AbmeldeKnopf } from "@/components/AbmeldeKnopf";
+import { Fehlerzustand } from "@/components/Fehlerzustand";
 import { ThemeUmschalter } from "@/components/ThemeUmschalter";
 
 export const dynamic = "force-dynamic";
@@ -52,6 +53,10 @@ export default async function KontoSeite() {
       supabase.rpc("my_drink_purchases"),
     ]);
 
+  // Eine gescheiterte Abfrage ist nicht "Nichts offen" (B14).
+  const forderungenFehler = forderungenRes.error ?? getraenkeRes.error;
+  const dienstFehler = arbeitsdienstRes.error ?? einsaetzeRes.error;
+
   const forderungen = forderungenRes.data ?? [];
   // Offen ist, was noch eingezogen oder bezahlt werden muss. "returned" zaehlt
   // mit: eine zurueckgebuchte Lastschrift ist Geld, das der Verein nicht
@@ -93,44 +98,53 @@ export default async function KontoSeite() {
           {/* --- Offene Forderungen ---------------------------------------- */}
           <section aria-labelledby="h-offen">
             <div className="sectionlabel"><h2 id="h-offen">Offene Forderungen</h2></div>
-            {zurueck.length > 0 && (
+            {forderungenFehler && (
+              <Fehlerzustand
+                kompakt
+                titel="Deine Forderungen ließen sich nicht laden."
+                text={translateDbError(forderungenFehler)}
+              />
+            )}
+            {!forderungenFehler && zurueck.length > 0 && (
               <div className="hinweis fehler">
                 {zurueck.length === 1 ? "Eine Lastschrift kam zurück" : `${zurueck.length} Lastschriften kamen zurück`}{" "}
                 – die Beträge sind wieder offen. Bitte melde dich beim Verein, damit wir das klären können.
               </div>
             )}
-            <ul className="gruppe forderungen">
-              {offen.map((f) => (
-                <li key={f.id} className="forderung">
-                  <span className="was">
-                    <b>
-                      {CHARGE_KIND_LABEL[f.kind as ChargeKind] ?? f.kind}
-                      {f.period_label ? ` ${f.period_label}` : ""}
-                    </b>
-                    {f.description && <small>{f.description}</small>}
-                    <Statusmarke status={f.status} faellig={f.due_date} />
-                  </span>
-                  <span className="betrag dpl tnum">{formatCents(f.amount_cents)}</span>
-                </li>
-              ))}
-              {getraenkeLaufend > 0 && (
-                <li className="forderung">
-                  <span className="was">
-                    <b>Getränke {MONAT.format(new Date())}</b>
-                    <Statusmarke status="laufend" />
-                  </span>
-                  <span className="betrag dpl tnum">{formatCents(getraenkeLaufend)}</span>
-                </li>
-              )}
-              {offen.length === 0 && getraenkeLaufend === 0 ? (
-                <li className="leer-zeile">Nichts offen.</li>
-              ) : (
-                <li className="summe">
-                  <span>Zusammen</span>
-                  <span className="betrag dpl tnum">{formatCents(summe)}</span>
-                </li>
-              )}
-            </ul>
+            {!forderungenFehler && (
+              <ul className="gruppe forderungen">
+                {offen.map((f) => (
+                  <li key={f.id} className="forderung">
+                    <span className="was">
+                      <b>
+                        {CHARGE_KIND_LABEL[f.kind as ChargeKind] ?? f.kind}
+                        {f.period_label ? ` ${f.period_label}` : ""}
+                      </b>
+                      {f.description && <small>{f.description}</small>}
+                      <Statusmarke status={f.status} faellig={f.due_date} />
+                    </span>
+                    <span className="betrag dpl tnum">{formatCents(f.amount_cents)}</span>
+                  </li>
+                ))}
+                {getraenkeLaufend > 0 && (
+                  <li className="forderung">
+                    <span className="was">
+                      <b>Getränke {MONAT.format(new Date())}</b>
+                      <Statusmarke status="laufend" />
+                    </span>
+                    <span className="betrag dpl tnum">{formatCents(getraenkeLaufend)}</span>
+                  </li>
+                )}
+                {offen.length === 0 && getraenkeLaufend === 0 ? (
+                  <li className="leer-zeile">Nichts offen.</li>
+                ) : (
+                  <li className="summe">
+                    <span>Zusammen</span>
+                    <span className="betrag dpl tnum">{formatCents(summe)}</span>
+                  </li>
+                )}
+              </ul>
+            )}
 
             {frueher.length > 0 && (
               <details className="frueher">
@@ -157,7 +171,14 @@ export default async function KontoSeite() {
           </section>
 
           {/* --- Arbeitsdienst ---------------------------------------------- */}
-          {dienst && (
+          {dienstFehler && (
+            <Fehlerzustand
+              kompakt
+              titel="Dein Arbeitsdienst ließ sich nicht laden."
+              text={translateDbError(dienstFehler)}
+            />
+          )}
+          {dienst && !dienstFehler && (
             <section className="karte arbeitsdienst-karte" aria-label="Arbeitsdienst">
               <div className="kopfzeile">
                 <b>Arbeitsdienst {dienst.year}</b>

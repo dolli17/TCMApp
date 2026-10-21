@@ -4,6 +4,7 @@ export * from "./fees";
 export * from "./drinks";
 export * from "./workDuty";
 export * from "./errors";
+export * from "./anmeldefehler";
 export * from "./booking";
 export * from "./home";
 export * from "./pushvorlage";

@@ -36,7 +36,10 @@ services:
       - traefik.http.routers.tcm-test.middlewares=tcm-header
       - traefik.http.routers.tcm-test.service=tcm
       - traefik.http.services.tcm.loadbalancer.server.port=3000
+      # Gleich wie SICHERHEITS_HEADER in apps/web/next.config.ts: Traefik
+      # ueberschreibt den HSTS-Kopf der App. Die CSP setzt die App selbst.
       - traefik.http.middlewares.tcm-header.headers.stsSeconds=31536000
+      - traefik.http.middlewares.tcm-header.headers.stsIncludeSubdomains=true
       - traefik.http.middlewares.tcm-header.headers.contentTypeNosniff=true
       - traefik.http.middlewares.tcm-header.headers.referrerPolicy=strict-origin-when-cross-origin
       - traefik.http.middlewares.tcm-header.headers.frameDeny=true

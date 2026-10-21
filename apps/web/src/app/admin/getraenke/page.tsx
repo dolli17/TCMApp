@@ -5,6 +5,8 @@ import { FensterKnopf } from "@/components/FensterKnopf";
 import { GetraenkFormular, GetraenkeVerwaltung, type GetraenkZeile } from "@/components/GetraenkeVerwaltung";
 import { GetraenkemonatKarte, type MonatZeile } from "@/components/GetraenkemonatKarte";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
+import { translateDbError } from "@tcm/core";
+import { Fehlerzustand } from "@/components/Fehlerzustand";
 
 const MONAT = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric" });
 
@@ -69,9 +71,7 @@ export default async function GetraenkeSeite() {
       </VerwaltungsKopf>
 
       {karteRes.error && (
-        <div className="hinweis fehler">
-          Die Getränkekarte konnte nicht geladen werden. ({karteRes.error.message})
-        </div>
+        <Fehlerzustand kompakt titel="Die Getränkekarte konnte nicht geladen werden." text={translateDbError(karteRes.error)} />
       )}
 
       <section className="naechster-schritt quer" aria-labelledby="h-abrechnung">

@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
-import { naechsterPflichtschritt, onboardingSchritte, type OnboardingSchrittKey, type OnboardingZustand } from "@tcm/core";
+import { naechsterPflichtschritt, onboardingSchritte, translateDbError, type OnboardingSchrittKey, type OnboardingZustand } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { OnboardingAssistent } from "@/components/OnboardingAssistent";
+import { Fehlerzustand } from "@/components/Fehlerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export default async function OnboardingSeite({
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.rpc("my_onboarding");
 
-  if (error) return <div className="hinweis fehler">{error.message}</div>;
+  if (error) return <Fehlerzustand text={translateDbError(error)} />;
   // Kein Mitglied, etwa ein Kiosk-Gerät: hier gibt es nichts einzurichten.
   const zustand = data as unknown as OnboardingZustand | null;
   if (!zustand) redirect("/");

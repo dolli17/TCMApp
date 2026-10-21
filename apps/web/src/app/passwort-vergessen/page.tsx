@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { authStoerungText } from "@tcm/core";
 import { AnmeldeBuehne } from "@/components/AnmeldeBuehne";
 import { createClient } from "@/lib/supabase/client";
 
@@ -17,9 +18,11 @@ export default function PasswortVergessenSeite() {
   const [email, setEmail] = useState("");
   const [laeuft, setLaeuft] = useState(false);
   const [abgeschickt, setAbgeschickt] = useState(false);
+  const [fehler, setFehler] = useState<string | null>(null);
 
   async function anfordern(e: React.FormEvent) {
     e.preventDefault();
+    setFehler(null);
     setLaeuft(true);
 
     const ziel =
@@ -27,8 +30,16 @@ export default function PasswortVergessenSeite() {
         ? undefined
         : `${window.location.origin}/passwort-setzen`;
 
-    // Der Fehler interessiert hier bewusst nicht: die Antwort bleibt dieselbe.
-    await createClient().auth.resetPasswordForEmail(email.trim(), { redirectTo: ziel });
+    // Ob es die Adresse gibt, verrät die Antwort bewusst nicht. Eine Störung
+    // (kein Netz, zu viele Versuche) schon - sonst wartet jemand auf eine
+    // Mail, die nie verschickt wurde (U19).
+    const { error } = await createClient().auth.resetPasswordForEmail(email.trim(), { redirectTo: ziel });
+    const stoerung = authStoerungText(error);
+    if (stoerung) {
+      setFehler(stoerung);
+      setLaeuft(false);
+      return;
+    }
 
     setAbgeschickt(true);
     setLaeuft(false);
@@ -58,6 +69,8 @@ export default function PasswortVergessenSeite() {
                 required
               />
             </label>
+
+            {fehler && <div className="hinweis fehler" role="alert">{fehler}</div>}
 
             <button className="knopf block" disabled={laeuft}>
               {laeuft ? "Wird verschickt…" : "Link anfordern"}

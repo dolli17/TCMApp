@@ -5,6 +5,8 @@ import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { AntragsListe } from "@/components/AntragsListe";
 import type { Antrag } from "@/components/AntragsFenster";
 import { ladeBeitragsarten } from "@/lib/beitragsarten";
+import { translateDbError } from "@tcm/core";
+import { Fehlerzustand } from "@/components/Fehlerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +41,7 @@ export default async function AntraegeSeite({
   const [antraegeRes, beitragsarten] = await Promise.all([abfrage, ladeBeitragsarten(supabase)]);
 
   if (antraegeRes.error) {
-    return <div className="hinweis fehler">{antraegeRes.error.message}</div>;
+    return <Fehlerzustand text={translateDbError(antraegeRes.error)} />;
   }
 
   const antraege = (antraegeRes.data ?? []) as unknown as Antrag[];

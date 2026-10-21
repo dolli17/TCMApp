@@ -2,6 +2,8 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { MeineBuchungen, type MeineBuchung } from "@/components/MeineBuchungen";
 import { OffeneSpiele, type OffenesSpiel } from "@/components/OffeneSpiele";
 import { PlanSegmente } from "@/components/PlanSegmente";
+import { translateDbError } from "@tcm/core";
+import { Fehlerzustand } from "@/components/Fehlerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -36,9 +38,7 @@ export default async function SpieleSeite() {
           <h2 id="h-meine">Deine Termine</h2>
         </div>
         {meineRes.error ? (
-          <div className="hinweis fehler">
-            Deine Buchungen konnten nicht geladen werden. ({meineRes.error.message})
-          </div>
+          <Fehlerzustand kompakt titel="Deine Buchungen konnten nicht geladen werden." text={translateDbError(meineRes.error)} />
         ) : (
           <MeineBuchungen buchungen={(meineRes.data ?? []) as MeineBuchung[]} jetzt={jetzt} />
         )}
@@ -49,9 +49,7 @@ export default async function SpieleSeite() {
           <h2 id="h-offen">Offene Spiele</h2>
         </div>
         {offenRes.error ? (
-          <div className="hinweis fehler">
-            Die offenen Spiele konnten nicht geladen werden. ({offenRes.error.message})
-          </div>
+          <Fehlerzustand kompakt titel="Die offenen Spiele konnten nicht geladen werden." text={translateDbError(offenRes.error)} />
         ) : (
           <OffeneSpiele
             spiele={(offenRes.data ?? []) as OffenesSpiel[]}
