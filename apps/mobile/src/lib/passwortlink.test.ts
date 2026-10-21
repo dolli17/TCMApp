@@ -26,10 +26,32 @@ describe("linkAuswerten", () => {
     expect(linkAuswerten({ error: "access_denied", error_code: "otp_expired" })).toEqual({ art: "ungueltig" });
   });
 
-  it("ignoriert Sitzungen im Fragment", () => {
-    // Expo Router reicht das Fragment nicht als Parameter durch; selbst wenn,
-    // ist access_token kein Weg mehr hinein.
-    expect(linkAuswerten({ access_token: "x", refresh_token: "y" })).toEqual({ art: "ohne" });
+  it("nimmt im Uebergang die Sitzung aus dem Fragment an (Parameter #)", () => {
+    expect(linkAuswerten({ "#": "access_token=a%2Eb&refresh_token=r&type=recovery" })).toEqual({
+      art: "fragment", accessToken: "a.b", refreshToken: "r",
+    });
+  });
+
+  it("liest das Fragment notfalls aus der rohen Adresse", () => {
+    expect(linkAuswerten({}, "tcm://passwort-setzen#access_token=a&refresh_token=r")).toEqual({
+      art: "fragment", accessToken: "a", refreshToken: "r",
+    });
+  });
+
+  it("token_hash geht dem Fragment vor", () => {
+    expect(linkAuswerten({ token_hash: "h", type: "invite", "#": "access_token=a&refresh_token=r" })).toEqual({
+      art: "token", tokenHash: "h", typ: "invite",
+    });
+  });
+
+  it("ein Fragment ohne refresh_token reicht nicht", () => {
+    expect(linkAuswerten({}, "tcm://passwort-setzen#access_token=a")).toEqual({ art: "ohne" });
+  });
+
+  it("meldet einen Fehler im Fragment als ungueltig", () => {
+    expect(linkAuswerten({}, "tcm://passwort-setzen#error=access_denied&error_code=otp_expired")).toEqual({
+      art: "ungueltig",
+    });
   });
 
   it("ohne Parameter: kein Link", () => {

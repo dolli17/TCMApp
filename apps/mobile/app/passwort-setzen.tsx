@@ -3,8 +3,8 @@
  *
  * Ziel des Links aus der E-Mail. Der Link bringt einen Einmal-Hash mit
  * (?token_hash=…&type=…), den die App hier mit verifyOtp gegen eine Sitzung
- * tauscht - siehe src/lib/passwortlink.ts, warum eine fertige Sitzung im
- * Fragment nicht mehr zaehlt.
+ * tauscht. Uebergangsweise zaehlt auch noch die fertige Sitzung im Fragment -
+ * siehe src/lib/passwortlink.ts.
  *
  * Anders als PKCE braucht der Hash keinen Gegenschluessel auf dem Geraet, das
  * den Link angefordert hat: Wer den Reset am Telefon anstoesst und die Mail am
@@ -13,6 +13,7 @@
 
 import { useEffect, useState } from "react";
 import { View } from "react-native";
+import * as Linking from "expo-linking";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   AnmeldeFeld, AnmeldeHinweis, AnmeldeLaden, AnmeldeSeite, GelberKnopf, LeiserVerweis,
@@ -31,9 +32,15 @@ const FRIST_MS = 15_000;
 
 export default function PasswortSetzen() {
   const parameter = useLocalSearchParams();
-  const link = linkAuswerten(parameter);
+  const adresse = Linking.useURL();
+  const link = linkAuswerten(parameter, adresse);
   // Fuer die Abhaengigkeiten des Effekts: das Objekt ist bei jedem Rendern neu.
-  const linkSchluessel = link.art === "token" ? `${link.typ}:${link.tokenHash}` : link.art;
+  const linkSchluessel =
+    link.art === "token"
+      ? `${link.typ}:${link.tokenHash}`
+      : link.art === "fragment"
+        ? `fragment:${link.accessToken}`
+        : link.art;
 
   const [bereit, setBereit] = useState(false);
   const [linkFehler, setLinkFehler] = useState<string | null>(null);
@@ -54,14 +61,20 @@ export default function PasswortSetzen() {
       }
 
       try {
-        if (link.art === "token") {
+        if (link.art === "token" || link.art === "fragment") {
           // Nie zwei Konten zugleich - wie im Web: wer schon angemeldet ist und
           // den Link fuer ein anderes Konto oeffnet, wird erst abgemeldet.
           const { data } = await supabase.auth.getSession();
           if (data.session) await supabase.auth.signOut({ scope: "local" });
 
-          const { error } = await mitFrist(
-            supabase.auth.verifyOtp({ token_hash: link.tokenHash, type: link.typ }),
+          const { error } = await mitFrist<{ error: unknown }>(
+            link.art === "token"
+              ? supabase.auth.verifyOtp({ token_hash: link.tokenHash, type: link.typ })
+              // Uebergang, bis die Cloud-Vorlagen token_hash schicken (S20).
+              : supabase.auth.setSession({
+                  access_token: link.accessToken,
+                  refresh_token: link.refreshToken,
+                }),
             FRIST_MS,
           );
           if (!aktiv) return;

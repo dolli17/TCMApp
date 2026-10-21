@@ -74,7 +74,7 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 | S2 | P2 | Open Redirect über `?weiter=` (`apps/web/src/app/login/page.tsx:66`) | PR #43 |
 | S3 | P2 | `istDienstschluessel()` in `notification-mails`/`-pushes` liest die JWT-Rolle ohne Signaturprüfung. Das ist nur sicher, solange `verify_jwt` an ist. | PR #46: zeitkonstanter Vergleich, sonst prüft Auth die Signatur |
 | S4 | P2 | Keine CSP und keine Permissions-Policy, HSTS ohne `includeSubDomains` | Header in `next.config.ts`, Nonce/Hash für das Theme-Skript |
-| S5 | P2 | App: Tokens liegen in AsyncStorage, Einladung und Recovery laufen im Implicit Flow über `tcm://` | PR #53: Sitzung im Schlüsselbund (Stücke ab 2 KB, Umzug aus AsyncStorage), Mail-Links mit `token_hash` + `verifyOtp`. Offen: Cloud-Mailvorlagen umstellen, vor dem nächsten App-Build. |
+| S5 | P2 | App: Tokens liegen in AsyncStorage, Einladung und Recovery laufen im Implicit Flow über `tcm://` | PR #53: Sitzung im Schlüsselbund (Stücke ab 2 KB, Umzug aus AsyncStorage), Mail-Links mit `token_hash` + `verifyOtp`. Das Fragment gilt übergangsweise weiter, Rest unter S20. |
 | S6 | P3 | `submit_membership_application`: `p_ip` setzt der Aufrufer selbst, die Sperre lässt sich umgehen | IP serverseitig ermitteln *(Migration)* |
 | S7 | P2 | CSV-Injection im Teilnehmer-Export (`csvFeld`) | PR #43 |
 | S8 | P3 | `private.*`-Funktionen sind für PUBLIC ausführbar. `private` ist nicht per API erreichbar, betroffen ist also nur die Tiefenverteidigung. | Revoke + Default-Privileges, pgTAP-Test für Funktionsrechte *(Migration)* |
@@ -89,7 +89,7 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 | S17 | P3 | Mitglieder lesen ihre eigenen `notes`, `import_notes`, `legacy_data` | Spalten-Grant *(Migration)* |
 | S18 | P3 | `member-login`: Ein Admin kann sich oder alle anderen Admins sperren. `email_aendern` ändert auch Admin-Adressen ohne Hinweis an die alte Adresse. | Schutz für den letzten Admin, Hinweis-Mail an die alte Adresse |
 | S19 | P3 | Eine Sperre wirkt erst nach Ablauf des JWT (bis 1 h) | Mit S12 erledigt (PR #47): Die Prüfung liest bei jeder Anfrage die Datenbank. |
-| S20 | P3 | Login-CSRF über das `#access_token`-Fragment in `passwort-setzen` | PR #53: Die App nimmt kein Fragment mehr an. Im Web bleibt der Fragment-Zweig als Übergang, bis die Cloud-Vorlagen `token_hash` liefern. Danach entfernen. |
+| S20 | P3 | Login-CSRF über das `#access_token`-Fragment in `passwort-setzen` | **Teilweise** (PR #53): Die Mailvorlagen liefern `token_hash`, App und Web lösen ihn mit `verifyOtp` ein. Übergangsweise nehmen beide noch `#access_token` an. Offen: Cloud-Mailvorlagen auf token_hash umstellen, danach Fragment-Zweig in App und Web entfernen (`docs/goLive.md`, Schritt 1). |
 | S21 | P3 | Freitext ohne Längengrenze (`guest_name`, `cancellation_reason`, Namen) | CHECK-Constraints *(Migration)* |
 | S22 | P3 | Globaler Deckel von 20 Anträgen pro Stunde: Mit Fake-Anträgen lassen sich alle echten blockieren | Captcha oder Bestätigungsmail |
 | S23 | P3 | Rechtstexte sind nach der Zustimmung noch änderbar | Trigger: Text einer zugestimmten Version unveränderlich *(Migration)* |

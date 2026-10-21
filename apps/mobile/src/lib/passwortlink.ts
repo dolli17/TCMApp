@@ -2,10 +2,16 @@
  * Was der Link aus der E-Mail mitbringt
  *
  * Einladung und "Passwort vergessen" kommen als ?token_hash=…&type=… an (siehe
- * supabase/templates). Die App loest den Hash selbst mit verifyOtp ein. Eine
- * fertige Sitzung im Fragment (#access_token=…) nimmt sie bewusst nicht mehr
- * an: Einen solchen Link kann jeder mit seinem eigenen Konto bauen und einem
- * anderen unterschieben, der dann unbemerkt in fremdem Namen angemeldet ist.
+ * supabase/templates). Die App loest den Hash selbst mit verifyOtp ein.
+ *
+ * Uebergang: Solange die Cloud-Vorlagen noch {{ .ConfirmationURL }} schicken,
+ * kommt die fertige Sitzung im Fragment (#access_token=…&refresh_token=…).
+ * Die nimmt die App vorerst weiter an, genau wie das Web - sonst brechen die
+ * Links, je nachdem ob zuerst der Build oder die Vorlage wechselt. Einen
+ * solchen Link kann aber jeder mit seinem eigenen Konto bauen und einem
+ * anderen unterschieben (Login-CSRF, Befund S20). Sobald die Cloud-Vorlagen
+ * umgestellt sind, faellt der Zweig in App und Web gemeinsam weg
+ * (docs/goLive.md).
  */
 
 import type { EmailOtpType } from "@supabase/supabase-js";
@@ -16,6 +22,7 @@ export type LinkTyp = (typeof TYPEN)[number];
 
 export type LinkInhalt =
   | { art: "token"; tokenHash: string; typ: LinkTyp }
+  | { art: "fragment"; accessToken: string; refreshToken: string }
   | { art: "ungueltig" }
   | { art: "ohne" };
 
@@ -25,7 +32,17 @@ function einzeln(wert: string | string[] | undefined): string | undefined {
   return Array.isArray(wert) ? wert[0] : wert;
 }
 
-export function linkAuswerten(parameter: Parameter): LinkInhalt {
+/** Das Fragment einer Adresse, ohne "#". */
+function fragmentAus(adresse: string | null | undefined): string {
+  if (!adresse?.includes("#")) return "";
+  return adresse.slice(adresse.indexOf("#") + 1);
+}
+
+/**
+ * Expo Router legt das Fragment unter dem Parameter "#" ab. Kommt es dort
+ * nicht an, hilft die rohe Adresse aus expo-linking.
+ */
+export function linkAuswerten(parameter: Parameter, adresse?: string | null): LinkInhalt {
   const tokenHash = einzeln(parameter.token_hash);
   const typ = einzeln(parameter.type);
 
@@ -35,8 +52,16 @@ export function linkAuswerten(parameter: Parameter): LinkInhalt {
     }
     return { art: "ungueltig" };
   }
-  // Supabase meldet Fehler wie einen abgelaufenen Link als Abfrage.
-  if (einzeln(parameter.error) || einzeln(parameter.error_code)) return { art: "ungueltig" };
+
+  const fragment = new URLSearchParams(einzeln(parameter["#"]) || fragmentAus(adresse));
+  const accessToken = fragment.get("access_token");
+  const refreshToken = fragment.get("refresh_token");
+  if (accessToken && refreshToken) return { art: "fragment", accessToken, refreshToken };
+
+  // Supabase meldet Fehler wie einen abgelaufenen Link als Abfrage oder im Fragment.
+  if (einzeln(parameter.error) || einzeln(parameter.error_code) || fragment.get("error")) {
+    return { art: "ungueltig" };
+  }
   return { art: "ohne" };
 }
 

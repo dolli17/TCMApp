@@ -67,8 +67,9 @@ export default function PasswortSetzenSeite() {
 
       // Übergang: Mails, die noch mit der alten Vorlage verschickt wurden
       // (oder solange die Cloud-Vorlage nicht umgestellt ist), bringen die
-      // Sitzung im Fragment mit. Entfällt, sobald überall token_hash ankommt -
-      // dann ist auch hier Befund S20 zu.
+      // Sitzung im Fragment mit. Die App nimmt sie ebenso an. Beide Zweige
+      // fallen gemeinsam weg, sobald überall token_hash ankommt (S20,
+      // docs/goLive.md).
       // Einladung und Zurücksetzen durch den Vorstand entstehen auf dem Server
       // (Edge Function member-login) und kommen im impliziten Verfahren an: die
       // Sitzung steht im Fragment (#access_token=…&refresh_token=…). Der
