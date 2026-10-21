@@ -40,7 +40,8 @@
         {
           "color": "#1466A8"
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {

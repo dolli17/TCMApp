@@ -39,6 +39,7 @@ Grundregeln:
 - **Auth:** Redirect-URLs und Site-URL auf `https://dev.tennisclub-muckensturm.de` sowie `tcmdev://passwort-setzen` stellen.
 - **Selbstregistrierung aus (S1):** Dashboard → Authentication → Sign In / Providers → „Allow new users to sign up“ ausschalten. Sonst kann sich jemand mit der Adresse eines künftigen Mitglieds registrieren, und `loginAnlegen` übernimmt dieses Konto beim Anlegen. Lokal steht `enable_signup = false` unter `[auth]` in `supabase/config.toml`, die Cloud übernimmt das nicht von selbst. Den Provider „Email“ **nicht** abschalten, ebenso wenig `[auth.email] enable_signup`: Das sperrt alle Passwort-Anmeldungen (`email_provider_disabled`). Prüfen: `POST /auth/v1/signup` mit dem Publishable Key antwortet mit `signup_disabled`. *Dev: am 21.10.2026 ausgeschaltet.*
 - **Edge-Secrets:** `SITE_URL`, `MAIL_FROM=dev-noreply@…`, einen eigenen Resend-Key für Dev.
+- **Cloud-Mailvorlagen auf token_hash umstellen, danach Fragment-Zweig in App und Web entfernen (S20).** Dashboard → Authentication → Email Templates: „Invite user“ und „Reset password“ mit dem Text aus `supabase/templates/einladung.html` bzw. `passwort.html` (Link `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=…`). App und Web nehmen seit PR #53 beide Formen an, die Reihenfolge von Vorlage und App-Build ist also egal. Erst wenn Dev **und** Prod umgestellt sind und keine alten Links mehr gelten (24 Stunden), den `#access_token`-Zweig in `apps/mobile/src/lib/passwortlink.ts` bzw. `app/passwort-setzen.tsx` und in `apps/web/src/app/passwort-setzen/page.tsx` gemeinsam entfernen.
 
 ### 2. Konfiguration als Code
 - In `supabase/config.toml` Abschnitte `[remotes.dev]` und `[remotes.prod]` mit `project_id` anlegen, dazu jeweils `site_url` und `additional_redirect_urls`.
@@ -57,7 +58,7 @@ Grundregeln:
 - Schema über `supabase link --project-ref <prod>` und `supabase db push` einspielen. **Kein** `db reset`, **kein** Seed.
 - Den Vault-Eintrag `iban_encryption_key` erzeugen. Den Schlüssel **zusätzlich im Passwortmanager sichern**: ohne ihn sind IBANs auch aus einem Backup nicht lesbar.
 - **Schlüssel:** nur neue `sb_publishable_…`/`sb_secret_…`, Legacy-JWT-Keys deaktivieren. Damit ist O1 für Prod erledigt; Dev bekommt ebenfalls neue Keys.
-- **Auth:** Resend-SMTP mit eigenem Prod-API-Key, Signup aus („Allow new users to sign up“ im Dashboard, siehe S1 unter Schritt 1), Leaked-Password-Schutz an (Pro), Redirect-URLs `https://app…/passwort-setzen` und `tcm://passwort-setzen`.
+- **Auth:** Resend-SMTP mit eigenem Prod-API-Key, Signup aus („Allow new users to sign up“ im Dashboard, siehe S1 unter Schritt 1), Leaked-Password-Schutz an (Pro), Redirect-URLs `https://app…/passwort-setzen` und `tcm://passwort-setzen`. Mailvorlagen gleich mit token_hash anlegen (siehe Schritt 1).
 - **Edge Functions** `member-login`, `notification-mails` und `notification-pushes` deployen. Die Secrets setzen, bei Push mit `PUSH_AKTIV=true`, sobald der APNs-Key da ist (O5).
 - Zeitpläne und Vault-Einträge per Snippet einrichten, dann SEPA-Gläubigerdaten und Kiosk-Gerät.
 - **Erstes Admin-Konto** (Vorstand) per Einladung anlegen.

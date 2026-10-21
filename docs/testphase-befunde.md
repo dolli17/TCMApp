@@ -74,7 +74,7 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 | S2 | P2 | Open Redirect über `?weiter=` (`apps/web/src/app/login/page.tsx:66`) | PR #43 |
 | S3 | P2 | `istDienstschluessel()` in `notification-mails`/`-pushes` liest die JWT-Rolle ohne Signaturprüfung. Das ist nur sicher, solange `verify_jwt` an ist. | PR #46: zeitkonstanter Vergleich, sonst prüft Auth die Signatur |
 | S4 | P2 | Keine CSP und keine Permissions-Policy, HSTS ohne `includeSubDomains` | Header in `next.config.ts`, Nonce/Hash für das Theme-Skript |
-| S5 | P2 | App: Tokens liegen in AsyncStorage, Einladung und Recovery laufen im Implicit Flow über `tcm://` | `expo-secure-store`, `token_hash` + `verifyOtp` |
+| S5 | P2 | App: Tokens liegen in AsyncStorage, Einladung und Recovery laufen im Implicit Flow über `tcm://` | PR #53: Sitzung im Schlüsselbund (Stücke ab 2 KB, Umzug aus AsyncStorage), Mail-Links mit `token_hash` + `verifyOtp`. Das Fragment gilt übergangsweise weiter, Rest unter S20. |
 | S6 | P3 | `submit_membership_application`: `p_ip` setzt der Aufrufer selbst, die Sperre lässt sich umgehen | IP serverseitig ermitteln *(Migration)* |
 | S7 | P2 | CSV-Injection im Teilnehmer-Export (`csvFeld`) | PR #43 |
 | S8 | P3 | `private.*`-Funktionen sind für PUBLIC ausführbar. `private` ist nicht per API erreichbar, betroffen ist also nur die Tiefenverteidigung. | Revoke + Default-Privileges, pgTAP-Test für Funktionsrechte *(Migration)* |
@@ -89,7 +89,7 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 | S17 | P3 | Mitglieder lesen ihre eigenen `notes`, `import_notes`, `legacy_data` | Spalten-Grant *(Migration)* |
 | S18 | P3 | `member-login`: Ein Admin kann sich oder alle anderen Admins sperren. `email_aendern` ändert auch Admin-Adressen ohne Hinweis an die alte Adresse. | Schutz für den letzten Admin, Hinweis-Mail an die alte Adresse |
 | S19 | P3 | Eine Sperre wirkt erst nach Ablauf des JWT (bis 1 h) | Mit S12 erledigt (PR #47): Die Prüfung liest bei jeder Anfrage die Datenbank. |
-| S20 | P3 | Login-CSRF über das `#access_token`-Fragment in `passwort-setzen` | Mit S5 (`token_hash`) |
+| S20 | P3 | Login-CSRF über das `#access_token`-Fragment in `passwort-setzen` | **Teilweise** (PR #53): Die Mailvorlagen liefern `token_hash`, App und Web lösen ihn mit `verifyOtp` ein. Übergangsweise nehmen beide noch `#access_token` an. Offen: Cloud-Mailvorlagen auf token_hash umstellen, danach Fragment-Zweig in App und Web entfernen (`docs/goLive.md`, Schritt 1). |
 | S21 | P3 | Freitext ohne Längengrenze (`guest_name`, `cancellation_reason`, Namen) | CHECK-Constraints *(Migration)* |
 | S22 | P3 | Globaler Deckel von 20 Anträgen pro Stunde: Mit Fake-Anträgen lassen sich alle echten blockieren | Captcha oder Bestätigungsmail |
 | S23 | P3 | Rechtstexte sind nach der Zustimmung noch änderbar | Trigger: Text einer zugestimmten Version unveränderlich *(Migration)* |
@@ -167,7 +167,7 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 | U17 | P2 | **Getränke-Korb geht beim Verlassen still verloren.** „+“ wirkt wie gebucht, dem Verein fehlt das Geld. | Hinweis „Noch nicht eingetragen“ und Rückfrage beim Verlassen |
 | U18 | P2 | Platzraster am Telefon schwer zu treffen (34 px je halbe Stunde), Titel abgeschnitten | „Freie Zeiten“ als Standard, Ziele ≥ 44 px |
 | U19 | P2 | Netzwerk- und Rate-Limit-Fehler erscheinen als „Passwort stimmt nicht“ | gesondert melden |
-| U20 | P2 | App „Passwort setzen“: Ladekreis ohne Ende, wenn der Link kein Token hat | Timeout mit „Neuen Link anfordern“ |
+| U20 | P2 | App „Passwort setzen“: Ladekreis ohne Ende, wenn der Link kein Token hat | PR #53: Meldung mit „Neuen Link anfordern“ und „Zurück zur Anmeldung“, Frist 15 s |
 | U21 | P2 | 115 DB-Fehlertexte und Einstellungstexte mit ae/oe/ue (vgl. O13) | Migration mit echten Umlauten *(Migration)* |
 | U22 | P2 | App-Formulare ohne Autofill und ohne Fehler am Feld. Geburtsdatum als Freitext. | Props durchreichen, Datumsauswahl |
 | U23 | P3 | Aufnahmeantrag: Fehlermeldung oben, außer Sicht. `autoComplete="off"` in den Stammdaten. | Meldung beim Knopf, echte `autoComplete` |

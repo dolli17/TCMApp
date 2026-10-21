@@ -86,7 +86,8 @@ async function einladungsLinks(email: string, anzahl: number): Promise<string[]>
         links = [];
         for (const id of ids) {
           const mail = await (await fetch(`${mailpit}/api/v1/message/${id}`)).json();
-          const treffer = /href="([^"]*\/verify[^"]*)"/.exec(mail.HTML ?? "");
+          // Die Vorlage verlinkt direkt auf /passwort-setzen?token_hash=… (S20).
+          const treffer = /href="([^"]*token_hash=[^"]*)"/.exec(mail.HTML ?? "");
           if (treffer?.[1]) links.push(treffer[1].replace(/&amp;/g, "&"));
         }
         return links.length;
@@ -715,8 +716,10 @@ test.describe("Mitgliederverwaltung", () => {
 
     // Zwei Einladungen in Mailpit; nur der jüngste Link gilt.
     const links = await einladungsLinks(email, 2);
-    const alt = await fetch(links[links.length - 1]!, { redirect: "manual" });
-    expect(alt.headers.get("location") ?? "").toContain("error");
+    await page.goto(links[links.length - 1]!);
+    await expect(page.getByText("Dieser Link ist abgelaufen oder wurde schon benutzt.")).toBeVisible({
+      timeout: 20_000,
+    });
 
     await page.goto(links[0]!);
     await page.waitForURL(/\/passwort-setzen/);
