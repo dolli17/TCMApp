@@ -991,7 +991,8 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 }
 .tr-frei:focus-visible { outline: 2px solid var(--blue); outline-offset: -3px; border-radius: 10px; }
 .tr-block {
-  position: absolute; top: 4px; bottom: 4px; z-index: 1; overflow: hidden;
+  /* Unten 3 statt 4: die Linie der Zeile nimmt 1 px, so bleiben 44 px (U18) */
+  position: absolute; top: 4px; bottom: 3px; z-index: 1; overflow: hidden;
   display: flex; flex-direction: column; justify-content: center;
   padding: 4px 8px; border: 0; border-radius: 10px; text-align: left;
   font: inherit; font-size: 12px; line-height: 1.25; white-space: nowrap;
