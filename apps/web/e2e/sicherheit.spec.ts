@@ -86,6 +86,79 @@ test.describe("Sicherheits-Header", () => {
   });
 });
 
+/**
+ * Eine Nonce-CSP blockiert die Skripte jeder Seite, die beim Build statisch
+ * vorgerendert wurde - sie trägt keine Nonce. Die Seite sähe richtig aus,
+ * reagierte aber auf nichts. Darum je Route: keine Verletzung, jedes Skript
+ * mit Nonce, und React hat das HTML übernommen (Hydration).
+ */
+test.describe("CSP auf allen Seitenarten", () => {
+  async function pruefeSeite(page: Page, pfad: string) {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __csp: string[] };
+      w.__csp = [];
+      document.addEventListener("securitypolicyviolation", (e) =>
+        w.__csp.push(`${e.violatedDirective} ${e.blockedURI}`),
+      );
+    });
+    const konsole = verletzungen(page);
+    const antwort = await page.goto(pfad);
+    expect(antwort?.ok(), pfad).toBe(true);
+    await page.waitForLoadState("networkidle");
+
+    const stand = await page.evaluate(() => ({
+      csp: (window as unknown as { __csp: string[] }).__csp,
+      ohneNonce: [...document.scripts].filter((s) => !s.nonce).length,
+      hydriert: [...document.querySelectorAll("body *")].some((el) =>
+        Object.keys(el).some((k) => k.startsWith("__reactFiber")),
+      ),
+    }));
+    expect(stand.csp, pfad).toEqual([]);
+    expect(konsole, pfad).toEqual([]);
+    expect(stand.ohneNonce, pfad).toBe(0);
+    expect(stand.hydriert, pfad).toBe(true);
+  }
+
+  test("der Wächter bemerkt eine Verletzung überhaupt", async ({ page }) => {
+    // Gegenprobe: sonst bestünden die Tests unten auch mit taubem Listener.
+    await page.addInitScript(() => {
+      const w = window as unknown as { __csp: string[] };
+      w.__csp = [];
+      document.addEventListener("securitypolicyviolation", (e) => w.__csp.push(e.violatedDirective));
+    });
+    await page.goto("/login");
+    await page.evaluate(() => {
+      const img = document.createElement("img");
+      img.src = "https://example.invalid/x.png";
+      document.body.append(img);
+    });
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __csp: string[] }).__csp))
+      .toContain("img-src");
+  });
+
+  test("öffentliche Seiten", async ({ page }) => {
+    for (const pfad of [
+      "/login", "/passwort-vergessen", "/passwort-setzen", "/antrag",
+      "/impressum", "/datenschutz", "/satzung", "/beitragsordnung",
+    ]) {
+      await pruefeSeite(page, pfad);
+    }
+  });
+
+  test("Kiosk", async ({ page }) => {
+    await anmelden(page, NUTZER.kiosk);
+    await pruefeSeite(page, "/kiosk");
+  });
+
+  test("Verwaltung, Plan und Konto", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    for (const pfad of ["/admin", "/admin/kasse", "/plan", "/plan/spiele", "/konto"]) {
+      await pruefeSeite(page, pfad);
+    }
+  });
+});
+
 test.describe("Fehlerdarstellung", () => {
   test("eine unbekannte Adresse zeigt die eigene 404-Seite", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);

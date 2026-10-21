@@ -7,6 +7,12 @@
  * Theme-Skript mit (NONCE_KOPF). Was diese Skripte nachladen, ist über
  * 'strict-dynamic' erlaubt - sonst nichts.
  *
+ * Das setzt dynamisches Rendering voraus: eine beim Build vorgerenderte Seite
+ * hat keine Nonce, und der Browser blockierte ihre Skripte - die Seite stünde
+ * da, reagierte aber auf nichts. Dynamisch ist heute jede Seite, weil das
+ * Root-Layout headers() liest (Pfad, Nonce). Wer das ändert, muss die Seiten
+ * auf andere Weise dynamisch halten; e2e/sicherheit.spec.ts prüft es.
+ *
  * Die festen Header (HSTS, Permissions-Policy, ...) stehen in next.config.ts.
  */
 

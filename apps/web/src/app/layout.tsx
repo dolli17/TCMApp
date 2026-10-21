@@ -33,6 +33,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const kopf = await headers();
   const pfad = kopf.get(PFAD_KOPF) ?? "";
   // Ohne die Nonce der Middleware blockiert die CSP das Theme-Skript (S4).
+  // headers() macht zugleich jede Seite dynamisch - Voraussetzung dafür, dass
+  // Next die Nonce an seine Skripte hängt (lib/sicherheit.ts).
   const nonce = kopf.get(NONCE_KOPF) ?? undefined;
   // Mit Menue nur fuer Mitglieder - und nicht auf den Anmeldeseiten.
   const mitRahmen = Boolean(angemeldet?.member) && !OHNE_RAHMEN.includes(pfad);
