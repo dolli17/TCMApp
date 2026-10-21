@@ -1,6 +1,4 @@
-import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { istLokalerStack, sqlLokal } from "./lokale-db";
 
 /**
  * Die beiden Onboarding-Konten des Seeds zurücksetzen (neu@, kind@).
@@ -16,12 +14,11 @@ import { join, resolve } from "node:path";
  * Anwendungslogik. Nur gegen den lokalen Stack.
  */
 
-const WURZEL = resolve(__dirname, "../../..");
-
 const SQL = `
 begin;
 create temp table ziel on commit drop as
-  select id from public.members where email in ('neu@tcm.local', 'kind@tcm.local');
+  select id from public.members
+   where id in ('e2e00000-0000-4000-8000-000000000004', 'e2e00000-0000-4000-8000-000000000005');
 delete from public.sepa_mandates where member_id in (select id from ziel);
 delete from public.bank_accounts where member_id in (select id from ziel);
 delete from public.member_consents where member_id in (select id from ziel);
@@ -38,18 +35,6 @@ commit;
 `;
 
 export default async function onboardingZuruecksetzen(): Promise<void> {
-  const adresse = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
-  if (!/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(adresse)) return;
-
-  const config = readFileSync(join(WURZEL, "supabase", "config.toml"), "utf8");
-  const projekt = /^project_id\s*=\s*"(.+)"/m.exec(config)?.[1] ?? "";
-
-  const r = spawnSync(
-    "docker",
-    ["exec", "-i", `supabase_db_${projekt}`, "psql", "-U", "postgres", "-v", "ON_ERROR_STOP=1", "-q"],
-    { input: SQL, encoding: "utf8" },
-  );
-  if (r.status !== 0) {
-    throw new Error(`Onboarding-Konten ließen sich nicht zurücksetzen: ${r.stderr || r.error?.message}`);
-  }
+  if (!istLokalerStack()) return;
+  sqlLokal(SQL, "Onboarding-Konten ließen sich nicht zurücksetzen");
 }
