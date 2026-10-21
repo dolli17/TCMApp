@@ -7,7 +7,9 @@
  * canStartAt. Durchgesetzt wird sie weiterhin nur in create_booking.
  */
 
-import { berlinTime, canStartAt, minutesOf, minutesToTime, type OccupiedSlot } from "./booking";
+import {
+  berlinTime, canStartAt, latestStart, localMinutes, minutesOf, minutesToTime, type OccupiedSlot,
+} from "./booking";
 import { blockingLabel, occupancyKind, type OccupancyFlags } from "./home";
 
 export type CourtStatusKind =
@@ -22,7 +24,9 @@ export type CourtStatusKind =
   /** Die Zeit ist schon vorbei. */
   | "vorbei"
   /** Eine volle Stunde endete nach Schluss. */
-  | "schluss";
+  | "schluss"
+  /** Liegt hinter dem Buchungsvorlauf, ist also noch nicht buchbar. */
+  | "vorlauf";
 
 export type CourtSlot = OccupiedSlot &
   OccupancyFlags & {
@@ -44,6 +48,8 @@ export function courtStatusAt<T extends CourtSlot>(opts: {
   durationMinutes: number;
   closingMinutes: number;
   occupied: readonly T[];
+  /** Buchungsvorlauf wie lead_days, siehe canStartAt. */
+  leadDays?: number | undefined;
   now?: Date;
 }): CourtStatus<T> {
   const jetzt = opts.now ?? new Date();
@@ -76,6 +82,18 @@ export function courtStatusAt<T extends CourtSlot>(opts: {
   if (opts.minute + opts.durationMinutes > opts.closingMinutes) {
     return { art: "schluss", text: `Schluss um ${minutesToTime(opts.closingMinutes)}` };
   }
+  const beginn = berlinTime(opts.day, opts.minute);
+  if (opts.leadDays !== undefined && beginn.getTime() > latestStart(opts.leadDays, jetzt).getTime()) {
+    // Frei wird die Zeit, sobald sie in den Vorlauf rutscht - am letzten
+    // Vorlauftag also heute zur genannten Uhrzeit.
+    const ab = new Date(beginn.getTime() - opts.leadDays * 86_400_000);
+    return {
+      art: "vorlauf",
+      text: berlinTag.format(ab) === berlinTag.format(jetzt)
+        ? `buchbar ab ${minutesToTime(localMinutes(ab))}`
+        : "noch nicht buchbar",
+    };
+  }
   const gleichDanach = eigene.find(
     (b) => minutesOf(b.starts_at) > opts.minute && minutesOf(b.starts_at) < opts.minute + opts.durationMinutes,
   );
@@ -86,6 +104,8 @@ export function courtStatusAt<T extends CourtSlot>(opts: {
     belegung: gleichDanach,
   };
 }
+
+const berlinTag = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" });
 
 function beschreibe<T extends CourtSlot>(b: T): CourtStatus<T> {
   const von = minutesToTime(minutesOf(b.starts_at));

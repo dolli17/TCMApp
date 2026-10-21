@@ -14,9 +14,10 @@
 import { useCallback, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
-import { dayLabel, dayTag, offenesSpielText, upcomingBookings } from "@tcm/core";
+import { bookingActions, dayLabel, dayTag, offenesSpielText, upcomingBookings } from "@tcm/core";
 import { radius } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
+import { useJetzt } from "@/components/plaetze/PlatzRaster";
 import {
   ladeMeineBuchungen, ladeOffeneSpiele, spieleMit, storniereBuchung, verlasseBuchung,
 } from "@/lib/daten";
@@ -50,6 +51,7 @@ export default function Spiele() {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [offenFuer, setOffenFuer] = useState<string | null>(null);
   const [nachfrage, setNachfrage] = useState<string | null>(null);
+  const jetzt = useJetzt();
 
   const { erneutHolen } = zustand;
   const ausfuehren = useCallback(
@@ -67,7 +69,7 @@ export default function Spiele() {
 
   const meine = zustand.daten?.meine;
   const offen = zustand.daten?.offen;
-  const termine = meine?.wert ? upcomingBookings(meine.wert) : [];
+  const termine = meine?.wert ? upcomingBookings(meine.wert, jetzt) : [];
   const eigene = new Set((meine?.wert ?? []).filter((b) => b.bin_bucher).map((b) => b.booking_id));
 
   return (
@@ -98,6 +100,10 @@ export default function Spiele() {
         const gefragt = nachfrage === b.booking_id;
         const zeit = alsUhrzeit(lokaleMinuten(b.starts_at));
         const mit = b.players.filter((p) => p && p !== b.owner_name);
+        // Wer gebucht hat, storniert; wer eingetragen ist, traegt sich aus -
+        // beides nur bis Spielbeginn, so wie cancel_booking und leave_booking.
+        const darf = bookingActions({ startsAt: b.starts_at, own: b.bin_bucher, joined: !b.bin_bucher, now: jetzt });
+        const moeglich = b.bin_bucher ? darf.cancel : darf.leave;
 
         return (
           <View key={b.booking_id} style={[stil.listenkarte, { borderRadius: radius.karte, padding: 14, gap: 12 }]}>
@@ -125,28 +131,32 @@ export default function Spiele() {
                     : `du bist eingetragen · gebucht von ${b.owner_name}`}
                 </Text>
               </View>
-              <Pressable
-                onPress={() => {
-                  setOffenFuer(aufgeklappt ? null : b.booking_id);
-                  setNachfrage(null);
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={`Optionen für ${dayLabel(b.starts_at)} ${zeit}`}
-                accessibilityState={{ expanded: aufgeklappt }}
-                style={{
-                  width: 44, height: 44, borderRadius: 22, backgroundColor: farben.surf2,
-                  alignItems: "center", justifyContent: "center",
-                }}
-              >
-                <Svg width={18} height={18} viewBox="0 0 24 24">
-                  <Circle cx={5} cy={12} r={1.8} fill={farben.ink2} />
-                  <Circle cx={12} cy={12} r={1.8} fill={farben.ink2} />
-                  <Circle cx={19} cy={12} r={1.8} fill={farben.ink2} />
-                </Svg>
-              </Pressable>
+              {moeglich ? (
+                <Pressable
+                  onPress={() => {
+                    setOffenFuer(aufgeklappt ? null : b.booking_id);
+                    setNachfrage(null);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Optionen für ${dayLabel(b.starts_at)} ${zeit}`}
+                  accessibilityState={{ expanded: aufgeklappt }}
+                  style={{
+                    width: 44, height: 44, borderRadius: 22, backgroundColor: farben.surf2,
+                    alignItems: "center", justifyContent: "center",
+                  }}
+                >
+                  <Svg width={18} height={18} viewBox="0 0 24 24">
+                    <Circle cx={5} cy={12} r={1.8} fill={farben.ink2} />
+                    <Circle cx={12} cy={12} r={1.8} fill={farben.ink2} />
+                    <Circle cx={19} cy={12} r={1.8} fill={farben.ink2} />
+                  </Svg>
+                </Pressable>
+              ) : (
+                <Text style={stil.leise}>läuft</Text>
+              )}
             </View>
 
-            {aufgeklappt && (
+            {aufgeklappt && moeglich && (
               <Pressable
                 disabled={laeuft}
                 accessibilityRole="button"
@@ -190,6 +200,10 @@ export default function Spiele() {
         const gesamt = dabei + o.frei;
         const leute = [o.owner_name, ...o.players];
         const text = offenesSpielText(o, eigene.has(o.booking_id));
+        const darf = bookingActions({
+          startsAt: o.starts_at, own: eigene.has(o.booking_id), joined: o.bin_dabei, partnerWanted: true,
+          free: o.frei, now: jetzt,
+        });
         return (
           <View key={o.booking_id} style={[stil.listenkarte, { borderRadius: radius.karte + 2, padding: 16, gap: 14 }]}>
             <Text style={{ fontSize: 17, lineHeight: 22, fontFamily: "Barlow_700Bold", color: farben.ink }} accessibilityRole="header">
@@ -244,7 +258,7 @@ export default function Spiele() {
                   </Svg>
                   <Text style={{ fontSize: 14, fontFamily: "Barlow_700Bold", color: farben.greenInk }}>Du bist dabei</Text>
                 </View>
-              ) : (
+              ) : !darf.join ? null : (
                 <Pressable
                   disabled={laeuft}
                   onPress={() => ausfuehren(() => spieleMit(o.booking_id))}

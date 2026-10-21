@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { offenesSpielText } from "@tcm/core";
+import { bookingActions, offenesSpielText } from "@tcm/core";
 import { mitspielen } from "@/app/plan/aktionen";
 
 export interface OffenesSpiel {
@@ -42,10 +42,13 @@ const UHR = new Intl.DateTimeFormat("de-DE", {
 export function OffeneSpiele({
   spiele,
   eigene = [],
+  jetzt,
 }: {
   spiele: OffenesSpiel[];
   /** Buchungen, die das angemeldete Mitglied selbst gebucht hat */
   eigene?: string[];
+  /** Zeitpunkt der Seite als ISO-Zeitstempel - ab Spielbeginn nimmt join_booking niemanden mehr. */
+  jetzt: string;
 }) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
@@ -78,7 +81,12 @@ export function OffeneSpiele({
         {spiele.map((s) => {
           const von = new Date(s.starts_at);
           const bis = new Date(s.ends_at);
-          const text = offenesSpielText(s, eigene.includes(s.booking_id));
+          const eigenes = eigene.includes(s.booking_id);
+          const text = offenesSpielText(s, eigenes);
+          const darf = bookingActions({
+            startsAt: s.starts_at, own: eigenes, joined: s.bin_dabei, partnerWanted: true, free: s.frei,
+            now: new Date(jetzt),
+          });
 
           return (
             <li key={s.booking_id} className="mcard termin">
@@ -102,7 +110,7 @@ export function OffeneSpiele({
               <div className="termin-tat">
                 {s.bin_dabei ? (
                   <span className="mit">Du bist dabei</span>
-                ) : (
+                ) : !darf.join ? null : (
                   <button
                     type="button"
                     className="knopf klein"

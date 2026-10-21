@@ -19,7 +19,7 @@ import { useTheme } from "@/lib/theme";
 import { platzNummer, useJetzt, type Platz } from "./PlatzRaster";
 
 export function FreieZeiten({
-  datum, plaetze, belegung, oeffnung, schluss, raster, dauer, onBuchen, oeffnebar, onOeffnen,
+  datum, plaetze, belegung, oeffnung, schluss, raster, dauer, vorlaufTage, onBuchen, oeffnebar, onOeffnen,
 }: {
   datum: string;
   plaetze: Platz[];
@@ -28,6 +28,8 @@ export function FreieZeiten({
   schluss: number;
   raster: number;
   dauer: number;
+  /** Buchungsvorlauf in Tagen (lead_days), siehe canStartAt. */
+  vorlaufTage: number;
   onBuchen: (platz: Platz, minute: number) => void;
   /** Ob sich eine Belegung im Blatt oeffnen laesst - Sperrungen nur mit Platzrechten. */
   oeffnebar: (b: Belegung) => boolean;
@@ -39,7 +41,7 @@ export function FreieZeiten({
 
   const zeilen = freeSlotsOfDay({
     day: datum, courtIds: plaetze.map((p) => p.id), openingMinutes: oeffnung, closingMinutes: schluss,
-    slotMinutes: raster, durationMinutes: dauer, occupied: belegung, now: jetzt,
+    slotMinutes: raster, durationMinutes: dauer, occupied: belegung, leadDays: vorlaufTage, now: jetzt,
   });
   const platzVon = (id: string) => plaetze.find((p) => p.id === id)!;
 

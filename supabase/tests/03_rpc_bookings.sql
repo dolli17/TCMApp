@@ -436,6 +436,29 @@ begin
     'Nach dem abgewiesenen Tausch stehen die beiden Mitspieler unveraendert da');
 end; $f$;
 
+/**
+ * B12: Die Clients pruefen min_players jetzt vor dem Absenden. Massgeblich
+ * bleibt create_booking - ein Doppel mit nur einem Mitspieler wird dort
+ * abgewiesen, mit "Mitspieler gesucht" aber angenommen.
+ */
+create or replace function tests.test_rpc_doppel_mit_einem_mitspieler() returns setof text language plpgsql as $f$
+declare a record; b record; v_court uuid := tests.fixture_court();
+        s1 timestamptz := tests.naechster_slot(2, 16);
+begin
+  select * into a from tests.fixture_user() limit 1;
+  select * into b from tests.fixture_user() limit 1;
+  perform tests.act_as(a.auth_id);
+
+  return next throws_ok(
+    format('select public.create_booking(%L, %L, %L, array[%L]::uuid[])', v_court, s1, 'doppel', b.member_id),
+    '22023', null, 'Ein Doppel mit einem Mitspieler wird abgewiesen');
+  return next lives_ok(
+    format('select public.create_booking(%L, %L, %L, array[%L]::uuid[], %L::text[], true)',
+           v_court, s1, 'doppel', b.member_id, '{}'),
+    'Mit "Mitspieler gesucht" ist das Doppel mit einem Mitspieler erlaubt');
+  perform set_config('role', 'postgres', true);
+end; $f$;
+
 -- ---------------------------------------------------------------------------
 
 /**

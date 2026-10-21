@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   berlinTime,
+  bookingActions,
+  bookingTypeInfo,
   canStartAt,
   checkPlayers,
   checkQuota,
   checkSlot,
   freeCourtsNow,
+  latestStart,
+  missingPlayers,
   minutesOf,
   minutesToTime,
   slotsForDay,
@@ -127,6 +131,52 @@ describe("checkPlayers", () => {
   it("verlangt beim Doppel mindestens drei", () => {
     expect(checkPlayers(DOPPEL, 1, 0).ok).toBe(false);
     expect(checkPlayers(DOPPEL, 1, 1).ok).toBe(true);
+  });
+
+  // B12: ein Doppel mit einem Mitspieler lehnt create_booking ab. Die
+  // Meldung soll sagen, wie viele noch fehlen - nicht nur die Untergrenze.
+  it("sagt beim Doppel mit einem Mitspieler, dass noch einer fehlt", () => {
+    const r = checkPlayers(DOPPEL, 1, 0);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toBe("„Doppel“ braucht mindestens 3 Spieler – es fehlt noch ein Mitspieler.");
+  });
+
+  it("sagt beim leeren Doppel, dass zwei fehlen - nicht nur einer", () => {
+    const r = checkPlayers(DOPPEL, 0, 0);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toBe("„Doppel“ braucht mindestens 3 Spieler – es fehlen noch 2 Mitspieler.");
+  });
+
+  it("laesst mit „Mitspieler gesucht“ unterbesetzt buchen, wie create_booking", () => {
+    expect(checkPlayers(DOPPEL, 1, 0, true).ok).toBe(true);
+    expect(checkPlayers(EINZEL, 0, 0, true).ok).toBe(true);
+    // Die Obergrenze gilt trotzdem.
+    expect(checkPlayers(EINZEL, 2, 0, true).ok).toBe(false);
+  });
+});
+
+describe("bookingTypeInfo", () => {
+  it("macht aus der Tabellenzeile die Spielform", () => {
+    expect(
+      bookingTypeInfo({
+        code: "doppel", name: "Doppel", duration_minutes: 90, min_players: 3, max_players: 4, requires_partner: true,
+      }),
+    ).toEqual(DOPPEL);
+  });
+});
+
+describe("missingPlayers", () => {
+  it("zaehlt den Bucher mit", () => {
+    expect(missingPlayers(DOPPEL, 0, 0)).toBe(2);
+    expect(missingPlayers(DOPPEL, 1, 0)).toBe(1);
+    expect(missingPlayers(DOPPEL, 1, 1)).toBe(0);
+    expect(missingPlayers(EINZEL, 0, 0)).toBe(1);
+    expect(missingPlayers(EINZEL, 0, 1)).toBe(0);
+  });
+
+  it("verlangt einen Partner auch dann, wenn min_players 1 waere", () => {
+    expect(missingPlayers({ ...EINZEL, minPlayers: 1 }, 0, 0)).toBe(1);
+    expect(missingPlayers({ ...EINZEL, minPlayers: 1, requiresPartner: false }, 0, 0)).toBe(0);
   });
 });
 
@@ -255,6 +305,61 @@ describe("canStartAt und freeCourtsNow", () => {
 
     it("sieht nur Belegungen desselben Platzes", () => {
       expect(pruefe("18:00", [belegt("p2", "18:00", "19:00")])).toBe(true);
+    });
+
+    it("ohne leadDays gibt es keine Grenze nach vorn", () => {
+      expect(pruefe("15:00", [])).toBe(true);
+    });
+  });
+
+  // B11: create_booking lehnt ab, was nach now() + lead_days Tagen beginnt.
+  // Die Datenbank rechnet in UTC, ein Tag sind dort genau 24 Stunden.
+  describe("canStartAt mit Vorlauf", () => {
+    const frei = (tag: string, zeit: string, jetzt: Date, leadDays = 7) =>
+      canStartAt({
+        day: tag,
+        courtId: "p1",
+        minute: timeToMinutes(zeit),
+        durationMinutes: 60,
+        closingMinutes: timeToMinutes("21:00"),
+        occupied: [],
+        leadDays,
+        now: jetzt,
+      });
+
+    it("am letzten Vorlauftag nur bis zur Uhrzeit von jetzt", () => {
+      const jetzt = berlinTime("2026-06-15", timeToMinutes("10:00"));
+      expect(frei("2026-06-22", "09:30", jetzt)).toBe(true);
+      // Genau die Grenze laesst die Datenbank noch zu.
+      expect(frei("2026-06-22", "10:00", jetzt)).toBe(true);
+      expect(frei("2026-06-22", "10:30", jetzt)).toBe(false);
+      expect(frei("2026-06-22", "15:00", jetzt)).toBe(false);
+      // Davor ist alles frei.
+      expect(frei("2026-06-21", "20:00", jetzt)).toBe(true);
+    });
+
+    it("rechnet ueber die Zeitumstellung am 25.10. in echten 24 Stunden", () => {
+      // 18.10. 10:00 Sommerzeit ist 08:00 UTC. Sieben Tage spaeter, am 25.10.,
+      // gilt Winterzeit - 08:00 UTC ist dann 09:00 Berliner Zeit, nicht 10:00.
+      const jetzt = berlinTime("2026-10-18", timeToMinutes("10:00"));
+      expect(jetzt.toISOString()).toBe("2026-10-18T08:00:00.000Z");
+      expect(frei("2026-10-25", "09:00", jetzt)).toBe(true);
+      expect(frei("2026-10-25", "09:30", jetzt)).toBe(false);
+      expect(frei("2026-10-25", "10:00", jetzt)).toBe(false);
+    });
+
+    it("rechnet am 25.10. selbst richtig, wenn jetzt Winterzeit ist", () => {
+      // 25.10. 10:00 Winterzeit ist 09:00 UTC; am 01.11. ist es wieder 10:00.
+      const jetzt = berlinTime("2026-10-25", timeToMinutes("10:00"));
+      expect(frei("2026-11-01", "10:00", jetzt)).toBe(true);
+      expect(frei("2026-11-01", "10:30", jetzt)).toBe(false);
+    });
+  });
+
+  describe("latestStart", () => {
+    it("ist jetzt plus leadDays mal 24 Stunden", () => {
+      const jetzt = new Date("2026-10-18T08:00:00Z");
+      expect(latestStart(7, jetzt).toISOString()).toBe("2026-10-25T08:00:00.000Z");
     });
   });
 
@@ -398,5 +503,65 @@ describe("umsetzZiele", () => {
 
   it("hat fuer eine vergangene Buchung keine Ziele", () => {
     expect(ziele({ jetzt: "15:00" })).toEqual([]);
+  });
+});
+
+// B13: Was die RPCs bei einer Buchung erlauben - cancel_booking,
+// update_booking_players, leave_booking und join_booking.
+describe("bookingActions", () => {
+  const JETZT_B = new Date("2026-10-25T09:00:00Z"); // 10:00 Berlin, Winterzeit
+  const spaeter = "2026-10-25T10:00:00Z";
+  const begonnen = "2026-10-25T08:30:00Z";
+  const genauJetzt = JETZT_B.toISOString();
+
+  const aktionen = (b: Partial<Parameters<typeof bookingActions>[0]> & { startsAt: string }) =>
+    bookingActions({ own: false, now: JETZT_B, ...b });
+
+  it("der Bucher storniert und aendert Mitspieler bis Spielbeginn", () => {
+    expect(aktionen({ startsAt: spaeter, own: true })).toEqual({
+      cancel: true, editPlayers: true, leave: false, join: false,
+    });
+    expect(aktionen({ startsAt: begonnen, own: true })).toEqual({
+      cancel: false, editPlayers: false, leave: false, join: false,
+    });
+  });
+
+  it("zu Spielbeginn gilt die Buchung als begonnen, wie lower(slot) <= now()", () => {
+    expect(aktionen({ startsAt: genauJetzt, own: true }).cancel).toBe(false);
+    expect(aktionen({ startsAt: genauJetzt, joined: true }).leave).toBe(false);
+    expect(aktionen({ startsAt: genauJetzt, partnerWanted: true, free: 1 }).join).toBe(false);
+  });
+
+  it("mit Platzrechten auch waehrend der Spielzeit und fuer fremde Buchungen", () => {
+    expect(aktionen({ startsAt: begonnen, managesCourts: true })).toEqual({
+      cancel: true, editPlayers: true, leave: false, join: false,
+    });
+    expect(aktionen({ startsAt: begonnen, own: true, managesCourts: true }).cancel).toBe(true);
+  });
+
+  it("fremde Buchungen ohne Platzrechte: weder stornieren noch aendern", () => {
+    expect(aktionen({ startsAt: spaeter })).toEqual({
+      cancel: false, editPlayers: false, leave: false, join: false,
+    });
+  });
+
+  it("ein Mitspieler traegt sich nur vor Spielbeginn aus", () => {
+    expect(aktionen({ startsAt: spaeter, joined: true }).leave).toBe(true);
+    expect(aktionen({ startsAt: begonnen, joined: true }).leave).toBe(false);
+    // Platzrechte aendern daran nichts - leave_booking kennt keine Ausnahme.
+    expect(aktionen({ startsAt: begonnen, joined: true, managesCourts: true }).leave).toBe(false);
+  });
+
+  it("der Bucher traegt sich nicht aus, er storniert", () => {
+    expect(aktionen({ startsAt: spaeter, own: true, joined: true }).leave).toBe(false);
+  });
+
+  it("mitspielen nur, wenn gesucht wird, Platz frei ist und noch nicht begonnen", () => {
+    expect(aktionen({ startsAt: spaeter, partnerWanted: true, free: 1 }).join).toBe(true);
+    expect(aktionen({ startsAt: begonnen, partnerWanted: true, free: 1 }).join).toBe(false);
+    expect(aktionen({ startsAt: spaeter, partnerWanted: false, free: 1 }).join).toBe(false);
+    expect(aktionen({ startsAt: spaeter, partnerWanted: true, free: 0 }).join).toBe(false);
+    expect(aktionen({ startsAt: spaeter, partnerWanted: true, free: 1, own: true }).join).toBe(false);
+    expect(aktionen({ startsAt: spaeter, partnerWanted: true, free: 1, joined: true }).join).toBe(false);
   });
 });

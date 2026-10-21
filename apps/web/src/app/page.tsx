@@ -85,6 +85,7 @@ export default async function Start() {
         slotMinutes: einstellungen?.slot_minutes ?? 30,
         durationMinutes: artenRes.data?.[0]?.duration_minutes ?? 60,
         occupied: belegung,
+        leadDays: einstellungen?.lead_days,
         now: jetzt,
       });
 
