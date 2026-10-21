@@ -7,7 +7,7 @@
  * Erhoehung genommen haben, weiterhin den alten Preis.
  */
 
-import { sumCents } from "./money";
+import { formatCents, sumCents } from "./money";
 
 export interface DrinkPurchase {
   id: string;
@@ -123,4 +123,70 @@ export function drinkBatchReport(results: readonly DrinkBatchResult[]): { ok: bo
       ? `Nicht eingetragen: ${fehler}.`
       : `Nicht eingetragen: ${fehler}. Eingetragen: ${gut.map(teil).join(", ")}.`;
   return { ok: false, text };
+}
+
+/**
+ * Der Getraenke-Korb: gesammelt, noch nicht eingetragen (Artikel-Id -> Menge).
+ *
+ * Dieselbe Logik in der Getraenkekarte (Web und App) und am Kiosk. Mit "+"
+ * waechst nur der Korb - gebucht ist erst, was ueber "Eintragen" an die
+ * Datenbank gegangen ist (U17).
+ */
+export type DrinkBasket = Readonly<Record<string, number>>;
+
+/** Eins mehr oder weniger, begrenzt auf 0 bis MAX_DRINK_QUANTITY. Bei 0 faellt der Artikel heraus. */
+export function changeBasket(basket: DrinkBasket, itemId: string, delta: number): DrinkBasket {
+  const neu = Math.max(0, Math.min(MAX_DRINK_QUANTITY, (basket[itemId] ?? 0) + delta));
+  const rest = { ...basket };
+  if (neu === 0) delete rest[itemId];
+  else rest[itemId] = neu;
+  return rest;
+}
+
+/**
+ * Was im Korb liegt, in der Reihenfolge der Karte.
+ *
+ * Nur Artikel, die noch auf der Karte stehen, zaehlen mit - ein gemerkter
+ * Korb kann einen inzwischen entfernten Artikel enthalten.
+ */
+export function basketSummary<T extends { id: string; price_cents: number | null }>(
+  items: readonly T[],
+  basket: DrinkBasket,
+): { lines: T[]; count: number; totalCents: number } {
+  const lines = items.filter((a) => (basket[a.id] ?? 0) > 0);
+  return {
+    lines,
+    count: lines.reduce((s, a) => s + (basket[a.id] ?? 0), 0),
+    totalCents: lines.reduce((s, a) => s + (basket[a.id] ?? 0) * (a.price_cents ?? 0), 0),
+  };
+}
+
+/** Nach dem Eintragen: was geklappt hat, verlaesst den Korb; was nicht, bleibt fuer einen neuen Versuch. */
+export function basketAfterBatch(results: readonly (DrinkBatchResult & { id: string })[]): DrinkBasket {
+  return Object.fromEntries(results.filter((r) => !r.ok).map((r) => [r.id, r.quantity]));
+}
+
+/** Ein gemerkter Korb (JSON) - alles, was nicht nach Artikel-Id -> Menge aussieht, faellt weg. */
+export function parseBasket(raw: string | null | undefined): DrinkBasket {
+  if (!raw) return {};
+  let wert: unknown;
+  try {
+    wert = JSON.parse(raw);
+  } catch {
+    return {};
+  }
+  if (!wert || typeof wert !== "object" || Array.isArray(wert)) return {};
+  const korb: Record<string, number> = {};
+  for (const [id, menge] of Object.entries(wert)) {
+    if (typeof menge === "number" && Number.isInteger(menge) && menge > 0) {
+      korb[id] = Math.min(menge, MAX_DRINK_QUANTITY);
+    }
+  }
+  return korb;
+}
+
+/** Die Erinnerung, wenn jemand mit vollem Korb geht: "2 Getränke (5,00 €) sind noch nicht eingetragen." */
+export function basketReminder(count: number, totalCents: number): string {
+  const was = count === 1 ? "1 Getränk" : `${count} Getränke`;
+  return `${was} (${formatCents(totalCents)}) ${count === 1 ? "ist" : "sind"} noch nicht eingetragen.`;
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import {
-  canVoidSelf, drinkBatchReport, formatCents, MAX_DRINK_QUANTITY, type DrinkBatchResult,
+  basketAfterBatch, basketReminder, basketSummary, canVoidSelf, changeBasket, drinkBatchReport,
+  formatCents, MAX_DRINK_QUANTITY, parseBasket, type DrinkBasket, type DrinkBatchResult,
 } from "@tcm/core";
 import { getraenkBuchen, getraenkStornieren } from "@/app/verein/getraenke/aktionen";
 
@@ -37,34 +38,93 @@ const QUELLE: Record<string, string> = { kiosk: "Theke", bar_duty: "Thekendienst
  * ueber die Leiste auf einmal ein. Gebucht wird weiter je Artikel ueber
  * getraenkBuchen - es gibt keinen Sammelauftrag. Schlaegt einer fehl, sagt
  * die Meldung welcher, und er bleibt zum erneuten Versuch gewaehlt.
+ *
+ * Mit "+" ist noch nichts gebucht (U17). Damit niemand mit vollem Korb geht
+ * und glaubt, es sei eingetragen: Die Leiste sagt "noch nicht eingetragen",
+ * der Korb liegt im sessionStorage dieses Tabs (je Konto) und ist nach einem
+ * Seitenwechsel oder Neuladen wieder da, und wer die Seite mit vollem Korb
+ * verlaesst, wird gefragt. Waehrend des Sendens ist die Karte gesperrt, sonst
+ * ueberschriebe das Ergebnis die neuen Eingaben (B18).
  */
 export function Getraenkekarte({
   artikel,
   buchungen,
   stornoFensterMinuten,
+  kontoId,
 }: {
   artikel: Artikel[];
   buchungen: Buchung[];
   stornoFensterMinuten: number;
+  /** Fuer den Speicherschluessel: wer sich im selben Tab neu anmeldet, sieht nicht den Korb des Vorgaengers. */
+  kontoId: string;
 }) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
-  /** Gesammelt, noch nicht eingetragen: Artikel-Id -> Menge */
-  const [korb, setKorb] = useState<Record<string, number>>({});
+  const [korb, setKorb] = useState<DrinkBasket>({});
   const [laeuft, starte] = useTransition();
+  const speicher = `tcm-getraenkekorb:${kontoId}`;
+  /** Ob der gemerkte Korb schon gelesen ist - vorher wird nichts geschrieben. */
+  const [geladen, setGeladen] = useState(false);
 
-  const gewaehlt = artikel.filter((a) => (korb[a.id] ?? 0) > 0);
-  const stueck = gewaehlt.reduce((s, a) => s + (korb[a.id] ?? 0), 0);
-  const betrag = gewaehlt.reduce((s, a) => s + (korb[a.id] ?? 0) * a.price_cents, 0);
+  const { lines: gewaehlt, count: stueck, totalCents: betrag } = basketSummary(artikel, korb);
+
+  // Merken - erst nachdem der gemerkte Korb gelesen ist, sonst loeschte der
+  // erste Lauf ihn mit dem leeren Anfangszustand. Als State, nicht als Ref:
+  // im Strict Mode laufen die Effekte doppelt, und eine Ref waere beim
+  // zweiten Lauf schon gesetzt.
+  useEffect(() => {
+    if (!geladen) return;
+    try {
+      if (Object.keys(korb).length === 0) sessionStorage.removeItem(speicher);
+      else sessionStorage.setItem(speicher, JSON.stringify(korb));
+    } catch {
+      // Ohne Speicher bleibt der Korb eben nur, solange die Seite offen ist.
+    }
+  }, [korb, speicher, geladen]);
+
+  useEffect(() => {
+    try {
+      setKorb(parseBasket(sessionStorage.getItem(speicher)));
+    } catch {
+      // siehe oben
+    }
+    setGeladen(true);
+  }, [speicher]);
+
+  // Rueckfrage beim Verlassen mit vollem Korb: Schliessen und Neuladen fragt
+  // der Browser selbst, interne Links fangen wir vor dem Router ab.
+  useEffect(() => {
+    if (stueck === 0) return;
+    const frage = `${basketReminder(stueck, betrag)}\n\nGebucht wird erst mit „Eintragen“. Seite trotzdem verlassen? Die Auswahl bleibt in diesem Tab gemerkt.`;
+
+    function vorDemEntladen(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    function beimKlick(e: MouseEvent) {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const link = e.target instanceof Element ? e.target.closest("a[href]") : null;
+      if (!(link instanceof HTMLAnchorElement) || link.target === "_blank" || link.hasAttribute("download")) return;
+      const ziel = new URL(link.href, window.location.href);
+      if (ziel.origin === window.location.origin && ziel.pathname === window.location.pathname) return;
+      if (!window.confirm(frage)) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+
+    window.addEventListener("beforeunload", vorDemEntladen);
+    document.addEventListener("click", beimKlick, true);
+    return () => {
+      window.removeEventListener("beforeunload", vorDemEntladen);
+      document.removeEventListener("click", beimKlick, true);
+    };
+  }, [stueck, betrag]);
 
   function aendern(id: string, um: number) {
+    // Waehrend des Sendens gesperrt: das Ergebnis setzt den Korb neu (B18).
+    if (laeuft) return;
     setMeldung(null);
-    setKorb((k) => {
-      const neu = Math.max(0, Math.min(MAX_DRINK_QUANTITY, (k[id] ?? 0) + um));
-      const rest = { ...k };
-      if (neu === 0) delete rest[id];
-      else rest[id] = neu;
-      return rest;
-    });
+    setKorb((k) => changeBasket(k, id, um));
   }
 
   function eintragen() {
@@ -78,7 +138,7 @@ export function Getraenkekarte({
       }
       setMeldung(drinkBatchReport(ergebnisse));
       // Was geklappt hat, verlaesst den Korb; was nicht, bleibt fuer einen neuen Versuch.
-      setKorb(Object.fromEntries(ergebnisse.filter((e) => !e.ok).map((e) => [e.id, e.quantity])));
+      setKorb(basketAfterBatch(ergebnisse));
     });
   }
 
@@ -100,6 +160,9 @@ export function Getraenkekarte({
           <h2 id="h-karte">Was nimmst du?</h2>
           <span className="mit">Karte aus der Verwaltung</span>
         </div>
+        <p className="mit" style={{ margin: "-4px 0 12px" }}>
+          Mit + sammelst du. Gebucht ist erst, was du unten einträgst.
+        </p>
         <ul className="getraenke-kacheln">
           {artikel.map((a) => {
             const menge = korb[a.id] ?? 0;
@@ -115,17 +178,22 @@ export function Getraenkekarte({
                 <div className="zaehler">
                   {menge > 0 && (
                     <>
-                      <button type="button" aria-label={`${a.name}: eins weniger`} onClick={() => aendern(a.id, -1)}>
+                      <button
+                        type="button"
+                        aria-label={`${a.name}: eins weniger`}
+                        disabled={laeuft}
+                        onClick={() => aendern(a.id, -1)}
+                      >
                         <Zeichen d="M5 12h14" />
                       </button>
-                      <output className="dpl" aria-label={`${menge} gewählt`}>{menge}</output>
+                      <output className="dpl" aria-label={`${menge} gewählt, noch nicht eingetragen`}>{menge}</output>
                     </>
                   )}
                   <button
                     type="button"
                     className="gelb"
                     aria-label={`${a.name}: eins mehr`}
-                    disabled={menge >= MAX_DRINK_QUANTITY}
+                    disabled={laeuft || menge >= MAX_DRINK_QUANTITY}
                     onClick={() => aendern(a.id, 1)}
                   >
                     <Zeichen d="M12 5v14M5 12h14" />
@@ -200,8 +268,10 @@ export function Getraenkekarte({
       {stueck > 0 && (
         <div className="eintragen-leiste" role="region" aria-label="Gewählte Getränke">
           <div aria-live="polite">
-            <b>{stueck} {stueck === 1 ? "Getränk" : "Getränke"}</b>
-            <small>{formatCents(betrag)} · aufs Monatskonto</small>
+            <b>
+              {stueck} {stueck === 1 ? "Getränk" : "Getränke"} · {formatCents(betrag)}
+            </b>
+            <small className="offen">Noch nicht eingetragen</small>
           </div>
           <button type="button" className="knopf gold" onClick={eintragen} disabled={laeuft}>
             {laeuft ? "Wird eingetragen…" : "Eintragen"}

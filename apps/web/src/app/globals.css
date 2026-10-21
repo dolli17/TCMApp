@@ -1458,6 +1458,13 @@ li.chip { padding-right: 4px; }
 .eintragen-leiste b { display: block; font-size: 15px; }
 .eintragen-leiste small { display: block; font-size: 13px; opacity: .7; }
 .eintragen-leiste .knopf { min-height: 52px; border-radius: 18px; padding: 0 24px; font-family: var(--font-text); font-size: 16px; font-weight: 800; }
+/* U17: Der Korb ist noch nicht gebucht - das soll man sehen, nicht nur lesen. */
+.eintragen-leiste small.offen { opacity: 1; font-weight: 700; }
+.eintragen-leiste .knopf:not(:disabled) { animation: eintragen-ruf 1.6s ease-out 2; }
+@keyframes eintragen-ruf {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 70%, transparent); }
+  100% { box-shadow: 0 0 0 12px transparent; }
+}
 
 /* ---------------------------------------------------------------------------
    Konto (docs/design/clubhaus, AppKonto)

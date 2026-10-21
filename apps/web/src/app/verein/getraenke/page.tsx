@@ -8,10 +8,11 @@ export const dynamic = "force-dynamic";
 export default async function GetraenkeSeite() {
   const supabase = await createServerSupabase();
 
-  const [karteRes, buchungenRes, einstellungRes] = await Promise.all([
+  const [karteRes, buchungenRes, einstellungRes, nutzerRes] = await Promise.all([
     supabase.rpc("drink_menu"),
     supabase.rpc("my_drink_purchases"),
     supabase.from("settings").select("key, value").in("key", ["drinks.void_window_minutes"]),
+    supabase.auth.getUser(),
   ]);
 
   const stornoFenster = Number(
@@ -44,6 +45,7 @@ export default async function GetraenkeSeite() {
         artikel={karteRes.data ?? []}
         buchungen={buchungen}
         stornoFensterMinuten={stornoFenster}
+        kontoId={nutzerRes.data.user?.id ?? "anonym"}
       />
     </>
   );

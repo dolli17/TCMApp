@@ -11,6 +11,7 @@ import {
   type Database, type EventKind, type EventRegistrationStatus, type EventStatus, type MitgliedEvent,
   type OnboardingSchrittKey, type OnboardingZustand,
 } from "@tcm/core";
+import { leereKorb } from "./getraenkekorb";
 import { supabase } from "./supabase";
 import { deutschZuIso, heuteInBerlin } from "./verwaltung/gemeinsam";
 
@@ -33,6 +34,7 @@ export async function anmelden(email: string, passwort: string): Promise<Ergebni
 }
 
 export async function abmelden(): Promise<void> {
+  leereKorb();
   await supabase.auth.signOut();
 }
 

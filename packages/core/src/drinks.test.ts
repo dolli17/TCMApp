@@ -1,12 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
+  basketAfterBatch,
+  basketReminder,
+  basketSummary,
   canVoidSelf,
+  changeBasket,
   drinkBatchReport,
   isDebitable,
+  MAX_DRINK_QUANTITY,
   monthlyTotalCents,
+  parseBasket,
   summarizeByItem,
   type DrinkPurchase,
 } from "./drinks";
+import { formatCents } from "./money";
 
 function kauf(over: Partial<DrinkPurchase> = {}): DrinkPurchase {
   return {
@@ -146,5 +153,63 @@ describe("drinkBatchReport", () => {
       ok: false,
       text: "Nicht eingetragen: 3× Cola.",
     });
+  });
+});
+
+describe("Getraenke-Korb", () => {
+  const karte = [
+    { id: "bier", price_cents: 250 },
+    { id: "wasser", price_cents: 150 },
+    { id: "ohnePreis", price_cents: null },
+  ];
+
+  it("zaehlt hoch und runter, bei 0 faellt der Artikel heraus", () => {
+    let korb = changeBasket({}, "bier", 1);
+    korb = changeBasket(korb, "bier", 1);
+    expect(korb).toEqual({ bier: 2 });
+    korb = changeBasket(korb, "bier", -1);
+    korb = changeBasket(korb, "bier", -1);
+    expect(korb).toEqual({});
+    expect(changeBasket({}, "bier", -1)).toEqual({});
+  });
+
+  it("begrenzt auf die Hoechstmenge und laesst den alten Korb unberuehrt", () => {
+    const alt = { bier: MAX_DRINK_QUANTITY };
+    expect(changeBasket(alt, "bier", 1)).toEqual({ bier: MAX_DRINK_QUANTITY });
+    const neu = changeBasket(alt, "wasser", 1);
+    expect(alt).toEqual({ bier: MAX_DRINK_QUANTITY });
+    expect(neu).toEqual({ bier: MAX_DRINK_QUANTITY, wasser: 1 });
+  });
+
+  it("fasst in der Reihenfolge der Karte zusammen und ignoriert Artikel, die es nicht mehr gibt", () => {
+    const s = basketSummary(karte, { wasser: 1, bier: 2, weg: 4, ohnePreis: 1 });
+    expect(s.lines.map((a) => a.id)).toEqual(["bier", "wasser", "ohnePreis"]);
+    expect(s.count).toBe(4);
+    expect(s.totalCents).toBe(650);
+    expect(basketSummary(karte, {})).toEqual({ lines: [], count: 0, totalCents: 0 });
+  });
+
+  it("behaelt nach dem Eintragen nur, was nicht geklappt hat", () => {
+    expect(
+      basketAfterBatch([
+        { id: "bier", name: "Bier", quantity: 2, ok: true },
+        { id: "wasser", name: "Wasser", quantity: 3, ok: false, message: "Gesperrt." },
+      ]),
+    ).toEqual({ wasser: 3 });
+  });
+
+  it("liest einen gemerkten Korb und verwirft Unsinn", () => {
+    expect(parseBasket(JSON.stringify({ bier: 2 }))).toEqual({ bier: 2 });
+    expect(parseBasket(null)).toEqual({});
+    expect(parseBasket("kaputt{")).toEqual({});
+    expect(parseBasket("[1,2]")).toEqual({});
+    expect(parseBasket(JSON.stringify({ a: 0, b: -1, c: 1.5, d: "2", e: 999 }))).toEqual({
+      e: MAX_DRINK_QUANTITY,
+    });
+  });
+
+  it("erinnert mit Menge und Betrag", () => {
+    expect(basketReminder(1, 250)).toBe(`1 Getränk (${formatCents(250)}) ist noch nicht eingetragen.`);
+    expect(basketReminder(3, 650)).toBe(`3 Getränke (${formatCents(650)}) sind noch nicht eingetragen.`);
   });
 });
