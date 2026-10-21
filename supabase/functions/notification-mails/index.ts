@@ -16,8 +16,10 @@
  *      dabei `mailed_at`. Über einen HTTP-Aufruf hinweg gibt es keine
  *      Transaktionsklammer; wer erst sendet und danach markiert, verschickt bei
  *      einem Absturz dazwischen beim nächsten Lauf alles noch einmal.
- *   3. Senden. Klappt das nicht, gibt `release_notification_mails` die
- *      Nachrichten wieder frei, und der nächste Lauf versucht es erneut.
+ *   3. Senden. Scheitert ein Stapel, gibt `release_notification_mails` die
+ *      Nachrichten frei, die noch nicht draußen sind, und der nächste Lauf
+ *      versucht es erneut. Was in einem früheren Stapel rausging, bleibt
+ *      abgehakt (B9).
  *
  * Ohne `RESEND_API_KEY` läuft alles bis auf Schritt 3 — der Trockenlauf, den
  * .env.example seit jeher zusagt. So lässt sich die Funktion lokal gefahrlos
@@ -32,6 +34,8 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { betreff, html, text, type Posten } from "./mailvorlage.ts";
 // Symlink auf packages/core/src/dienstschluessel.ts, dort unter Test.
 import { istDienstschluessel } from "./dienstschluessel.ts";
+// Symlink auf packages/core/src/versandstapel.ts, dort unter Test.
+import { inStapelnSenden } from "./versandstapel.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -127,6 +131,7 @@ Deno.serve(async (req) => {
     html: html(e.first_name, e.items, SITE_URL),
     text: text(e.first_name, e.items, SITE_URL),
   }));
+  const sendungen = mails.map((mail, i) => ({ nachricht: mail, ids: empfaenger[i].notification_ids }));
 
   const benachrichtigungen = empfaenger.reduce((s, e) => s + e.notification_ids.length, 0);
 
@@ -150,36 +155,34 @@ Deno.serve(async (req) => {
     });
   }
 
-  // 3.: Senden. Ein Fehlschlag gibt alles wieder frei - lieber fünf Minuten
-  // später noch einmal als eine Nachricht, die niemand je bekommt.
-  const alleIds = empfaenger.flatMap((e) => e.notification_ids);
+  // 3.: Senden. Ein Fehlschlag gibt frei, was noch nicht draußen ist - lieber
+  // fünf Minuten später noch einmal als eine Nachricht, die niemand je
+  // bekommt. Was ein früherer Stapel schon verschickt hat, bleibt abgehakt.
   const lauf = crypto.randomUUID();
 
-  try {
-    for (let i = 0; i < mails.length; i += STAPEL) {
-      const teil = mails.slice(i, i + STAPEL);
+  const { fehler, freizugeben } = await inStapelnSenden(sendungen, STAPEL, async (teil, i) => {
+    const res = await fetch("https://api.resend.com/emails/batch", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+        // Wiederholt pg_net die Anfrage, entstehen keine zweiten Mails.
+        "Idempotency-Key": `${lauf}-${i}`,
+      },
+      body: JSON.stringify(teil),
+    });
 
-      const res = await fetch("https://api.resend.com/emails/batch", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-          // Wiederholt pg_net die Anfrage, entstehen keine zweiten Mails.
-          "Idempotency-Key": `${lauf}-${i}`,
-        },
-        body: JSON.stringify(teil),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Resend antwortete mit ${res.status}: ${await res.text()}`);
-      }
+    if (!res.ok) {
+      throw new Error(`Resend antwortete mit ${res.status}: ${await res.text()}`);
     }
-  } catch (fehler) {
-    await alsDienst.rpc("release_notification_mails", { p_ids: alleIds });
+  });
+
+  if (fehler !== null) {
+    await alsDienst.rpc("release_notification_mails", { p_ids: freizugeben });
     return antwort(
       {
         ok: false,
-        meldung: `Der Versand ist fehlgeschlagen; die Nachrichten stehen wieder an. ${
+        meldung: `Der Versand ist fehlgeschlagen; ${freizugeben.length} Nachrichten stehen wieder an. ${
           fehler instanceof Error ? fehler.message : String(fehler)
         }`,
       },
