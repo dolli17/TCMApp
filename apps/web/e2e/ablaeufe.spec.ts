@@ -1463,7 +1463,7 @@ test.describe("Verwaltung", () => {
     // Ankündigen: erst die Rückfrage mit Anzahl, Summe und Tag; Abbrechen schickt nichts
     const rueckfrage = page.getByRole("group", { name: "Rückfrage" });
     await page.getByRole("button", { name: "Ankündigen und Einzug anlegen" }).click();
-    await expect(rueckfrage).toContainText(/\d+ Lastschriften?, [\d.]+,\d\d\s€, Abbuchung am/);
+    await expect(rueckfrage).toContainText(/\d+ Lastschrift(en)?, [\d.]+,\d\d\s€, Abbuchung am/);
     await expect(rueckfrage).toContainText(`${abbuchung} – wirklich ankündigen?`);
     await rueckfrage.getByRole("button", { name: "Abbrechen" }).click();
     await expect(rueckfrage).toHaveCount(0);
