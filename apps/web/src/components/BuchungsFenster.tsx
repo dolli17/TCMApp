@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { berlinTime, umsetzZiele } from "@tcm/core";
+import { berlinTime, blockingLabel, timeToMinutes, umsetzZiele } from "@tcm/core";
 import type { AktionsErgebnis, TagesBelegung } from "@/app/plan/aktionen";
 import {
   alsUhrzeit, lokaleMinuten,
-  type Belegung, type Buchungsart, type Fenster, type Mitglied, type Platz,
+  type Belegung, type Blockungsart, type Buchungsart, type Fenster, type Mitglied, type Platz,
 } from "@/components/Belegungsplan";
 import { initialen, Mitspielersuche } from "@/components/Mitspielersuche";
 
@@ -16,6 +16,8 @@ interface Props {
   /** Belegung des Tages, der im Plan zu sehen ist - fuer die Ziele beim Umsetzen. */
   belegungen: Belegung[];
   arten: Buchungsart[];
+  /** Kategorien einer Sperrung, die erste ist die Vorgabe. */
+  blockungsarten: Blockungsart[];
   verzeichnis: Mitglied[];
   /** Eigene Mitglieds-Id, damit man sich nicht selbst als Mitspieler waehlt. */
   meineId: string | null;
@@ -44,8 +46,14 @@ interface Props {
   onTagLaden: (tag: string) => Promise<AktionsErgebnis & { belegung?: TagesBelegung[] }>;
   /** Gibt die Zahl der Kollisionen zurueck, wenn ohne Verdraengen abgebrochen wurde. */
   onSperren: (
-    courtId: string, minute: number, grund: string, verdraengen: boolean,
+    courtId: string, minute: number, typCode: string, grund: string, verdraengen: boolean,
   ) => Promise<number | null>;
+  /** Wie onSperren, fuer eine bestehende Sperrung. Minuten am Tag des Plans. */
+  onSperreAendern: (
+    bookingId: string, platzIds: string[], von: number, bis: number, typCode: string, grund: string,
+    verdraengen: boolean,
+  ) => Promise<number | null>;
+  onSperreAufheben: (bookingId: string) => void;
   onAusschreiben: (bookingId: string, gesucht: boolean) => void;
   onBeitreten: (bookingId: string) => void;
   onSchliessen: () => void;
@@ -162,6 +170,10 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
   const [gaeste, setGaeste] = useState<string[]>([]);
   const [sucheMitspieler, setSucheMitspieler] = useState(false);
   const [sperrgrund, setSperrgrund] = useState<string | null>(null);
+  // Vorgabe bleibt die Platzpflege, wie vor der Kategoriewahl; sonst die erste.
+  const [sperrart, setSperrart] = useState(
+    props.blockungsarten.find((a) => a.code === "platzpflege")?.code ?? props.blockungsarten[0]?.code ?? "platzpflege",
+  );
   const [sperrKollisionen, setSperrKollisionen] = useState<number | null>(null);
 
   const gewaehlt = props.arten.find((a) => a.code === art);
@@ -294,11 +306,25 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
           ) : (
             <>
               <label>
-                <span>Grund der Sperrung</span>
+                <span>Kategorie</span>
+                <select
+                  value={sperrart}
+                  onChange={(e) => {
+                    setSperrart(e.target.value);
+                    setSperrKollisionen(null);
+                  }}
+                >
+                  {props.blockungsarten.map((a) => (
+                    <option key={a.code} value={a.code}>{a.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Grund (freiwillig)</span>
                 <input
                   type="text"
                   value={sperrgrund}
-                  placeholder="z. B. Platzpflege nach Regen"
+                  placeholder="z. B. nach Regen"
                   onChange={(e) => setSperrgrund(e.target.value)}
                 />
               </label>
@@ -310,11 +336,12 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
                 <button
                   type="button"
                   className={sperrKollisionen === null ? "knopf leise" : "knopf gefahr"}
-                  disabled={props.laeuft || sperrgrund.trim() === ""}
+                  disabled={props.laeuft}
                   onClick={async () => {
                     const offen = await props.onSperren(
                       props.fenster.courtId,
                       stunde,
+                      sperrart,
                       sperrgrund,
                       sperrKollisionen !== null,
                     );
@@ -354,6 +381,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
   const [gaeste, setGaeste] = useState<string[]>(b.guest_names ?? []);
   const [stornoOffen, setStornoOffen] = useState(false);
   const [umsetzOffen, setUmsetzOffen] = useState(false);
+  const [bearbeitenOffen, setBearbeitenOffen] = useState(false);
   const [grund, setGrund] = useState("");
 
   const art = props.arten.find((a) => a.code === b.type_code);
@@ -381,6 +409,10 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
     props.darfPlaetze && b.kind === "booking" && !istSerientermin &&
     new Date(b.ends_at).getTime() > props.jetzt.getTime();
   const grundNoetig = props.darfPlaetze && !b.is_own && b.kind === "booking";
+  // Eine Sperrung aendert, wer sperren darf (update_blocking). Serientermine
+  // gehoeren zur Serie und werden dort geaendert.
+  const kannSperreAendern = props.darfPlaetze && nurStorno && !istSerientermin;
+  const sperre = blockingLabel(b);
   const geaendert =
     JSON.stringify([...mitglieder].sort()) !== JSON.stringify([...(b.player_member_ids ?? [])].sort()) ||
     JSON.stringify([...gaeste].sort()) !== JSON.stringify([...(b.guest_names ?? [])].sort());
@@ -405,11 +437,12 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           {istSerientermin
             ? `${b.title ?? b.type_name} · Serientermin`
             : nurStorno
-              ? `Gesperrt · ${b.title?.trim() || "ohne Grund"}`
+              ? `Gesperrt · ${sperre.kategorie}`
               : `${b.type_name} · gebucht von ${b.is_own ? "dir" : (b.owner_name ?? "unbekannt")}`}
         </p>
+        {nurStorno && !istSerientermin && sperre.grund && <p className="mit">{sperre.grund}</p>}
 
-        {props.darfPlaetze && !b.is_own && (
+        {props.darfPlaetze && !b.is_own && !nurStorno && (
           <p className="hinweis">Du bearbeitest eine fremde Buchung mit Platzrechten.</p>
         )}
         {laeuftSchon && (
@@ -471,7 +504,11 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           />
         )}
 
-        {darfVerwalten && stornoOffen && (
+        {bearbeitenOffen && kannSperreAendern && (
+          <SperreBearbeiten {...props} sperre={b} onZu={() => setBearbeitenOffen(false)} />
+        )}
+
+        {darfVerwalten && stornoOffen && !(nurStorno && !istSerientermin) && (
           <label>
             <span>Grund{grundNoetig ? "" : " (freiwillig)"}</span>
             <input
@@ -485,9 +522,21 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           </label>
         )}
 
+        {!bearbeitenOffen && (
         <div className="blatt-fuss">
           {/* Beim Umsetzen steht der Fehler dort, wo geklickt wurde. */}
           <Fehler text={umsetzOffen ? null : props.fehler} />
+
+          {kannSperreAendern && !stornoOffen && (
+            <button
+              type="button"
+              className="knopf gold gross block"
+              disabled={props.laeuft}
+              onClick={() => setBearbeitenOffen(true)}
+            >
+              Sperrung bearbeiten
+            </button>
+          )}
 
           {kannMitspielen && (
             <button
@@ -519,10 +568,12 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
               onClick={() =>
                 istSerientermin
                   ? props.onTerminAbsagen(b.booking_id, grund)
-                  : props.onStornieren(b.booking_id, grund)
+                  : nurStorno
+                    ? props.onSperreAufheben(b.booking_id)
+                    : props.onStornieren(b.booking_id, grund)
               }
             >
-              {istSerientermin ? "Termin wirklich absagen" : "Wirklich stornieren"}
+              {istSerientermin ? "Termin wirklich absagen" : nurStorno ? "Wirklich aufheben" : "Wirklich stornieren"}
             </button>
           ) : (
             <button
@@ -544,6 +595,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
 
           {b.is_own && !nurStorno && <p className="fussnote">Stornieren geht bis Spielbeginn</p>}
         </div>
+        )}
       </div>
 
       {/* Abgesetzt wie das Sperren: Umsetzen ist die Ausnahme, wenn ein Platz
@@ -567,6 +619,124 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * Zeit, Plaetze, Kategorie und Grund einer Sperrung - wie beim Sperren
+ * zweistufig: liegen Buchungen im Weg, nennt der erste Versuch ihre Zahl,
+ * und erst der zweite verdraengt sie. Der Tag bleibt der des Plans; ein Ende
+ * nach Mitternacht steht als 24:00 da.
+ */
+function SperreBearbeiten(props: Props & { sperre: Belegung; onZu: () => void }) {
+  const b = props.sperre;
+  const anfangVon = lokaleMinuten(b.starts_at);
+  const dauer = Math.round((new Date(b.ends_at).getTime() - new Date(b.starts_at).getTime()) / 60_000);
+  const [plaetze, setPlaetze] = useState<string[]>([b.court_id]);
+  const [von, setVon] = useState(alsUhrzeit(anfangVon));
+  const [bis, setBis] = useState(alsUhrzeit(Math.min(anfangVon + dauer, 24 * 60 - 1)));
+  const [art, setArt] = useState(b.type_code);
+  const [grund, setGrund] = useState(b.title?.trim() ?? "");
+  const [kollisionen, setKollisionen] = useState<number | null>(null);
+
+  // Eine abgeschaltete Kategorie bleibt waehlbar, solange die Sperrung sie traegt.
+  const arten = props.blockungsarten.some((a) => a.code === b.type_code)
+    ? props.blockungsarten
+    : [{ code: b.type_code, name: b.type_name }, ...props.blockungsarten];
+  const vonMin = von ? timeToMinutes(von) : NaN;
+  const bisMin = bis ? timeToMinutes(bis) : NaN;
+  const zeitOk = Number.isFinite(vonMin) && Number.isFinite(bisMin) && bisMin > vonMin;
+
+  function neu<T>(setzen: (w: T) => void) {
+    return (w: T) => {
+      setzen(w);
+      setKollisionen(null);
+    };
+  }
+
+  async function speichern(verdraengen: boolean) {
+    setKollisionen(await props.onSperreAendern(b.booking_id, plaetze, vonMin, bisMin, art, grund, verdraengen));
+  }
+
+  return (
+    <div className="sperre-bearbeiten">
+      <fieldset className="chipwahl" style={{ ["--spalten" as string]: Math.min(props.plaetze.length, 8) }}>
+        <legend>Plätze</legend>
+        <div>
+          {props.plaetze.map((p) => {
+            const an = plaetze.includes(p.id);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className="dpl"
+                aria-pressed={an}
+                aria-label={p.name}
+                onClick={() => neu(setPlaetze)(an ? plaetze.filter((x) => x !== p.id) : [...plaetze, p.id])}
+              >
+                {p.short_name.replace(/^P/, "")}
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      <div className="tippfelder">
+        <label className="tippfeld">
+          <span>Von</span>
+          <input type="time" step={props.rasterMinuten * 60} value={von} onChange={(e) => neu(setVon)(e.target.value)} />
+        </label>
+        <label className="tippfeld">
+          <span>Bis</span>
+          <input type="time" step={props.rasterMinuten * 60} value={bis} onChange={(e) => neu(setBis)(e.target.value)} />
+        </label>
+      </div>
+
+      <label>
+        <span>Kategorie</span>
+        <select value={art} onChange={(e) => neu(setArt)(e.target.value)}>
+          {arten.map((a) => (
+            <option key={a.code} value={a.code}>{a.name}</option>
+          ))}
+        </select>
+      </label>
+      <label>
+        <span>Grund (freiwillig)</span>
+        <input type="text" value={grund} placeholder="z. B. nach Regen" onChange={(e) => setGrund(e.target.value)} />
+      </label>
+
+      <div className="blatt-fuss">
+        <Fehler text={props.fehler} />
+        {!zeitOk && <p className="fussnote">Das Ende muss nach dem Beginn liegen.</p>}
+        {kollisionen !== null && (
+          <div className="folgen" role="status">
+            <div>
+              <b>
+                {kollisionen} {kollisionen === 1 ? "Buchung liegt" : "Buchungen liegen"} im Weg.
+              </b>{" "}
+              {kollisionen === 1 ? "Sie wird" : "Sie werden"} abgesagt, die Mitglieder bekommen Bescheid.
+            </div>
+          </div>
+        )}
+        {kollisionen === null ? (
+          <button
+            type="button"
+            className="knopf gold gross block"
+            disabled={props.laeuft || plaetze.length === 0 || !zeitOk}
+            onClick={() => void speichern(false)}
+          >
+            {props.laeuft ? "Wird gespeichert…" : "Änderungen speichern"}
+          </button>
+        ) : (
+          <button type="button" className="knopf gefahr block" disabled={props.laeuft} onClick={() => void speichern(true)}>
+            {kollisionen} {kollisionen === 1 ? "Buchung" : "Buchungen"} verdrängen
+          </button>
+        )}
+        <button type="button" className="knopf leise block" onClick={props.onZu}>
+          Doch nicht
+        </button>
+      </div>
+    </div>
   );
 }
 

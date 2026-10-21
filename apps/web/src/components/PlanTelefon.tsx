@@ -268,7 +268,7 @@ function Raster({
 /* --- Freie Zeiten ---------------------------------------------------------- */
 
 function FreieZeiten({
-  datum, jetzt, plaetze, belegungen, oeffnung, schluss, raster, dauer, onBuchen, onVerwalten,
+  datum, jetzt, plaetze, belegungen, oeffnung, schluss, raster, dauer, verwaltbar, onBuchen, onVerwalten,
 }: Parameters<typeof PlanTelefon>[0]) {
   const [offen, setOffen] = useState<number | null>(null);
   const zeilen = freeSlotsOfDay({
@@ -299,6 +299,11 @@ function FreieZeiten({
         const sucht = z.courts.filter((c) => c.status.art === "sucht" && !c.status.belegung?.bin_dabei);
         const eigen = z.courts.filter((c) => c.status.art === "eigen");
         const frei = z.courts.filter((c) => c.status.art === "frei");
+        // Mit Platzrechten laesst sich eine Sperrung auch von hier bearbeiten
+        // und aufheben - wie in der Übersicht.
+        const gesperrt = z.courts.filter(
+          (c) => c.status.art === "gesperrt" && c.status.belegung && verwaltbar(c.status.belegung),
+        );
         const label = [
           `${alsUhrzeit(z.minute)} Uhr`,
           z.free === 0 ? "kein Platz frei" : z.free === 1 ? "1 Platz frei" : `${z.free} Plätze frei`,
@@ -363,6 +368,21 @@ function FreieZeiten({
                     >
                       <span>{p.name} · {b.type_name} sucht noch {b.frei}</span>
                       <span>Mitspielen</span>
+                    </button>
+                  );
+                })}
+                {gesperrt.map((c) => {
+                  const p = platzVon(c.courtId);
+                  return (
+                    <button
+                      key={c.courtId}
+                      type="button"
+                      className="fz-gesperrt"
+                      onClick={() => onVerwalten(c.status.belegung!)}
+                      aria-label={`${p.name}, ${c.status.text}, öffnen`}
+                    >
+                      <span>{p.name} · {c.status.text}</span>
+                      <span>Öffnen</span>
                     </button>
                   );
                 })}

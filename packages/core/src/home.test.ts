@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { berlinTime, timeToMinutes } from "./booking";
 import {
+  blockingLabel,
   berlinDay,
   bookingKicker,
   dayLabel,
@@ -214,5 +215,13 @@ describe("groupNotifications", () => {
   it("laesst leere Gruppen weg", () => {
     expect(groupNotifications([n("2026-09-01T10:00:00Z")], jetzt).map((x) => x.label)).toEqual(["Früher"]);
     expect(groupNotifications([], jetzt)).toEqual([]);
+  });
+});
+
+describe("blockingLabel", () => {
+  it("Kategorie aus der Buchungsart, Grund freiwillig", () => {
+    expect(blockingLabel({ type_name: "Platzpflege", title: " Regen " })).toEqual({ kategorie: "Platzpflege", grund: "Regen" });
+    expect(blockingLabel({ type_name: "Verbandsspiel", title: "  " })).toEqual({ kategorie: "Verbandsspiel", grund: null });
+    expect(blockingLabel({ type_name: null, title: null })).toEqual({ kategorie: "Gesperrt", grund: null });
   });
 });

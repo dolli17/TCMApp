@@ -60,16 +60,16 @@ describe("courtStatusAt", () => {
     ).toMatchObject({ art: "sucht", text: "Doppel sucht 1 · 17:00" });
   });
 
-  it("gesperrt mit Grund", () => {
+  it("gesperrt mit Kategorie und Grund", () => {
     expect(
-      status("17:00", [belegt("08:00", "21:00", { kind: "blocking", title: "Platzpflege" })]),
-    ).toMatchObject({ art: "gesperrt", text: "gesperrt · Platzpflege" });
+      status("17:00", [belegt("08:00", "21:00", { kind: "blocking", type_name: "Platzpflege", title: "Regen" })]),
+    ).toMatchObject({ art: "gesperrt", text: "gesperrt · Platzpflege, Regen" });
   });
 
-  it("gesperrt ohne Grund", () => {
-    expect(status("17:00", [belegt("08:00", "21:00", { kind: "blocking", title: " " })]).text).toBe(
-      "gesperrt · ohne Grund",
-    );
+  it("gesperrt ohne Grund nennt nur die Kategorie", () => {
+    expect(
+      status("17:00", [belegt("08:00", "21:00", { kind: "blocking", type_name: "Verbandsspiel", title: " " })]).text,
+    ).toBe("gesperrt · Verbandsspiel");
   });
 
   it("Training einer Serie", () => {

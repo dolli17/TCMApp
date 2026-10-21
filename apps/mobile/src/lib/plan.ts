@@ -8,10 +8,11 @@
 
 import { canStartAt, freeCourtsNow, minutesOf, minutesToTime, timeToMinutes } from "@tcm/core";
 
-import type { ladeBuchungsarten, ladeTagesplan, ladeVerzeichnis } from "./daten";
+import type { ladeBlockungsarten, ladeBuchungsarten, ladeTagesplan, ladeVerzeichnis } from "./daten";
 
 export type Belegung = Awaited<ReturnType<typeof ladeTagesplan>>[number];
 export type Buchungsart = Awaited<ReturnType<typeof ladeBuchungsarten>>[number];
+export type Blockungsart = Awaited<ReturnType<typeof ladeBlockungsarten>>[number];
 export type Mitglied = Awaited<ReturnType<typeof ladeVerzeichnis>>[number];
 
 /**
@@ -49,3 +50,14 @@ export const startMoeglich = canStartAt;
 
 /** Welche Plaetze sind ab jetzt frei, und bis wann? Siehe freeCourtsNow. */
 export const jetztFrei = freeCourtsNow;
+
+/**
+ * Beginn und Ende einer Sperrung in Minuten des Tages, an dem sie beginnt.
+ * Endet sie um Mitternacht oder spaeter, steht das Ende auf 24:00 - mehr
+ * bietet das Bearbeiten nicht an.
+ */
+export function sperrZeit(b: { starts_at: string; ends_at: string }): { von: number; bis: number } {
+  const von = minutesOf(b.starts_at);
+  const dauer = (new Date(b.ends_at).getTime() - new Date(b.starts_at).getTime()) / 60_000;
+  return { von, bis: Math.min(von + Math.round(dauer), 24 * 60) };
+}

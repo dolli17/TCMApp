@@ -133,7 +133,8 @@ function Sperrformular({
   const [grund, setGrund] = useState("");
   const [kollisionen, setKollisionen] = useState<number | null>(null);
 
-  const vollstaendig = gewaehlt.length > 0 && tag !== "" && grund.trim() !== "";
+  // Der Grund ist freiwillig; was die Sperrung ist, sagt die Kategorie.
+  const vollstaendig = gewaehlt.length > 0 && tag !== "";
 
   function absenden(verdraengen: boolean) {
     starte(async () => {
@@ -218,7 +219,7 @@ function Sperrformular({
 
       <div className="formraster">
         <label>
-          <span>Art</span>
+          <span>Kategorie</span>
           <select value={artCode} onChange={(e) => setArtCode(e.target.value)}>
             {arten.map((a) => (
               <option key={a.code} value={a.code}>{a.name}</option>
@@ -226,11 +227,11 @@ function Sperrformular({
           </select>
         </label>
         <label>
-          <span>Grund</span>
+          <span>Grund (freiwillig)</span>
           <input
             type="text"
             value={grund}
-            placeholder="z. B. Platzpflege nach Regen"
+            placeholder="z. B. nach Regen"
             onChange={(e) => setGrund(e.target.value)}
           />
         </label>

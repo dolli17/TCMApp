@@ -117,7 +117,7 @@ export default function Spiele() {
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={[stil.text, { fontFamily: "Barlow_700Bold" }]} numberOfLines={1}>
-                  {b.court_name} · {b.kind === "blocking" ? (b.title ?? b.type_name) : b.type_name}
+                  {b.court_name} · {b.type_name}
                 </Text>
                 <Text style={[stil.leise, { marginTop: 2 }]} numberOfLines={2}>
                   {b.bin_bucher

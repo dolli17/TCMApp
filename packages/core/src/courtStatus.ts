@@ -2,13 +2,13 @@
  * Was ist auf einem Platz zu einer gewaehlten Uhrzeit los?
  *
  * Die Statuszeile der Platzliste ("frei 17:00 – 18:00", "belegt bis 19:00",
- * "Deine Buchung · 17:00", "Doppel sucht 1 · 17:00", "gesperrt · Grund").
+ * "Deine Buchung · 17:00", "Doppel sucht 1 · 17:00", "gesperrt · Kategorie, Grund").
  * Ob gebucht werden kann, entscheidet dieselbe Regel wie ueberall:
  * canStartAt. Durchgesetzt wird sie weiterhin nur in create_booking.
  */
 
 import { berlinTime, canStartAt, minutesOf, minutesToTime, type OccupiedSlot } from "./booking";
-import { occupancyKind, type OccupancyFlags } from "./home";
+import { blockingLabel, occupancyKind, type OccupancyFlags } from "./home";
 
 export type CourtStatusKind =
   | "frei"
@@ -93,7 +93,10 @@ function beschreibe<T extends CourtSlot>(b: T): CourtStatus<T> {
   const art = occupancyKind(b);
   switch (art) {
     case "gesperrt":
-      return { art, text: `gesperrt · ${b.title?.trim() || "ohne Grund"}`, belegung: b };
+    {
+      const { kategorie, grund } = blockingLabel(b);
+      return { art, text: `gesperrt · ${grund ? `${kategorie}, ${grund}` : kategorie}`, belegung: b };
+    }
     case "serie":
       return { art, text: `${b.title?.trim() || b.type_name || "Serie"} bis ${bis}`, belegung: b };
     case "eigen":

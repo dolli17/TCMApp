@@ -136,6 +136,19 @@ export function occupancyKind(b: OccupancyFlags): TimelineKind {
   return "belegt";
 }
 
+/**
+ * Kategorie und Grund einer Sperrung. Die Kategorie ist der Name der
+ * Buchungsart ("Platzpflege", "Verbandsspiel"), der Grund ist freiwillig und
+ * fehlt dann. Im Plan steht die Kategorie oben, der Grund darunter - in App
+ * und Web gleich.
+ */
+export function blockingLabel(b: { title?: string | null; type_name?: string | null }): {
+  kategorie: string;
+  grund: string | null;
+} {
+  return { kategorie: b.type_name?.trim() || "Gesperrt", grund: b.title?.trim() || null };
+}
+
 export interface TimelineSegment {
   /** Anteil vom linken Rand, 0 bis 100 */
   left: number;

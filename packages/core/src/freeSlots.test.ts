@@ -125,8 +125,14 @@ describe("occupancyLabel", () => {
     expect(l({ kind: "blocking", series_id: "s", title: "Training" })).toMatchObject({
       art: "serie", title: "Training", detail: "bis 19:00",
     });
-    expect(l({ kind: "blocking", title: "Platzpflege" })).toMatchObject({
-      art: "gesperrt", title: "gesperrt", detail: "Platzpflege",
+    expect(l({ kind: "blocking", type_name: "Platzpflege", title: "Regen" })).toMatchObject({
+      art: "gesperrt", title: "Platzpflege", detail: "Regen",
+      spoken: "17:00 bis 19:00 Uhr, gesperrt, Platzpflege, Regen",
+    });
+    // Der Grund ist freiwillig: dann steht nur die Kategorie im Block.
+    expect(l({ kind: "blocking", type_name: "Verbandsspiel", title: null })).toMatchObject({
+      art: "gesperrt", title: "Verbandsspiel", detail: "",
+      spoken: "17:00 bis 19:00 Uhr, gesperrt, Verbandsspiel",
     });
   });
 });

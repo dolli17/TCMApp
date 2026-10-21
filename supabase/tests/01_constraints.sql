@@ -225,7 +225,9 @@ begin
 end;
 $$;
 
-create or replace function tests.test_blockung_ohne_titel_abgelehnt()
+-- Seit 20261021094821_sperrungen_bearbeiten.sql ist der Grund einer Sperrung
+-- freiwillig (B25); was sie ist, sagt die Buchungsart.
+create or replace function tests.test_blockung_ohne_titel_erlaubt()
 returns setof text
 language plpgsql
 as $$
@@ -233,13 +235,11 @@ declare
   v_court uuid := tests.fixture_court();
   v_start timestamptz := date_trunc('hour', now()) + interval '37 days';
 begin
-  return next throws_ok(
+  return next lives_ok(
     format($q$insert into public.bookings (court_id, slot, booking_type_id, kind)
               values (%L, tstzrange(%L, %L, '[)'), %L, 'blocking')$q$,
            v_court, v_start, v_start + interval '1 hour', tests.type_einzel()),
-    '23514',
-    null,
-    'Blockung ohne Titel wird abgelehnt'
+    'Blockung ohne Titel ist erlaubt'
   );
 end;
 $$;

@@ -1,26 +1,25 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { AppState, Pressable, ScrollView, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import Svg, { Path } from "react-native-svg";
+import Svg, { Path, Rect } from "react-native-svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { berlinTime, occupancyKind } from "@tcm/core";
-import { abstand } from "@tcm/ui";
+import { abstand, radius, schattenRn } from "@tcm/ui";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme";
 import {
-  aendereMitspieler, bucheplatz, ladeBuchungsarten, ladeBuchungseinstellungen,
-  ladeIchSelbst, ladeKontingent, ladePlaetze, ladeTagesplan,
-  ladeVerzeichnis, sageSerienterminAb, setzeUm, sperreStunde, spieleMit, storniereBuchung,
-  sucheMitspieler,
+  aendereMitspieler, aendereSperre, bucheplatz, hebeSperreAuf, ladeBlockungsarten,
+  ladeBuchungsarten, ladeBuchungseinstellungen, ladeIchSelbst, ladeKontingent, ladePlaetze,
+  ladeTagesplan, ladeVerzeichnis, sageSerienterminAb, setzeUm, sperreStunde, spieleMit,
+  storniereBuchung, sucheMitspieler,
 } from "@/lib/daten";
 import {
   alsUhrzeit, jetztFrei, startMoeglich as pruefeStart, zuMinuten,
-  type Belegung, type Buchungsart, type Fenster, type Mitglied,
+  type Belegung, type Blockungsart, type Buchungsart, type Fenster, type Mitglied,
 } from "@/lib/plan";
 import { Bildschirm } from "@/components/Bildschirm";
 import { BuchungsFenster } from "@/components/BuchungsFenster";
-import { Segmente } from "@/components/Segmente";
 import { FreieZeiten, FreieZeitenLegende } from "@/components/plaetze/FreieZeiten";
 import { PlatzRaster, RasterLegende, type Auswahl } from "@/components/plaetze/PlatzRaster";
 import { LEISTE_ABSTAND_UNTEN, LEISTE_HOEHE, LEISTE_RAND } from "@/lib/masse";
@@ -42,14 +41,18 @@ function lesbar(datum: string): string {
     .format(new Date(j!, (m ?? 1) - 1, t));
 }
 
-/** Fuer die Tageszeile: "Heute, Dienstag 13.10." */
+/**
+ * Fuer die Tageszeile: "Heute, 13.10.", "Morgen, 14.10." oder
+ * "Donnerstag 15.10.". Heute und Morgen ersetzen den Wochentag - neben
+ * Pfeilen und Ansichtsschalter ist fuer beides kein Platz.
+ */
 function tageszeile(datum: string, heute: string): string {
   const [j, m, t] = datum.split("-").map(Number);
   const d = new Date(j!, (m ?? 1) - 1, t);
-  const wochentag = new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(d);
   const kurz = `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.`;
-  const vorsatz = datum === heute ? "Heute, " : datum === verschiebe(heute, 1) ? "Morgen, " : "";
-  return `${vorsatz}${wochentag} ${kurz}`;
+  if (datum === heute) return `Heute, ${kurz}`;
+  if (datum === verschiebe(heute, 1)) return `Morgen, ${kurz}`;
+  return `${new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(d)} ${kurz}`;
 }
 
 type Ansicht = "uebersicht" | "freie-zeiten";
@@ -68,8 +71,10 @@ type Platz = Awaited<ReturnType<typeof ladePlaetze>>[number];
 /**
  * Die Plaetze (docs/design/clubhaus/plaetze, HANDOFF-PLAETZE).
  *
- * Zwei Ansichten derselben Tagesbelegung, umschaltbar ueber das Segment
- * "Übersicht | Freie Zeiten"; die Wahl bleibt in AsyncStorage. Die Übersicht
+ * Zwei Ansichten derselben Tagesbelegung, umschaltbar ueber den kleinen
+ * Raster/Liste-Schalter rechts in der Datumszeile; die Wahl bleibt in
+ * AsyncStorage. Ein zweites Segment unter "Belegung | Meine & offene Spiele"
+ * war eine Leiste zu viel (U34). Die Übersicht
  * ist ein Raster - Plaetze als Zeilen, Stunden zum Wischen -, in dem eine
  * freie Flaeche Platz und Beginn auswaehlt; gebucht wird ueber die Leiste
  * unten. Freie Zeiten listet die Startzeiten mit den freien Plaetzen.
@@ -89,6 +94,7 @@ export default function Plan() {
   const [plaetze, setPlaetze] = useState<Platz[]>([]);
   const [belegung, setBelegung] = useState<Belegung[]>([]);
   const [arten, setArten] = useState<Buchungsart[]>([]);
+  const [blockungsarten, setBlockungsarten] = useState<Blockungsart[]>([]);
   const [verzeichnis, setVerzeichnis] = useState<Mitglied[]>([]);
   const [kontingent, setKontingent] = useState({ used: 0, allowed: 0 });
   const [einstellungen, setEinstellungen] =
@@ -114,12 +120,13 @@ export default function Plan() {
    */
   const laden = useCallback(async (tag: string, still = false) => {
     if (!still) setLaedt(true);
-    const [p, b, k, e, a, v, ich] = await Promise.all([
+    const [p, b, k, e, a, ba, v, ich] = await Promise.all([
       ladePlaetze(), ladeTagesplan(tag), ladeKontingent(), ladeBuchungseinstellungen(),
-      ladeBuchungsarten(), ladeVerzeichnis(""), ladeIchSelbst(),
+      ladeBuchungsarten(), ladeBlockungsarten(), ladeVerzeichnis(""), ladeIchSelbst(),
     ]);
     setPlaetze(p); setBelegung(b); setKontingent(k); setEinstellungen(e);
-    setArten(a); setVerzeichnis(v); setDarfPlaetze(ich.platzRechte); setMeineId(ich.id);
+    setArten(a); setBlockungsarten(ba); setVerzeichnis(v); setDarfPlaetze(ich.platzRechte);
+    setMeineId(ich.id);
     setGeladenFuer(tag);
     setLaedt(false);
   }, []);
@@ -379,17 +386,44 @@ export default function Plan() {
     );
 
   async function sperren(
-    courtId: string, von: number, bis: number, grund: string, verdraengen: boolean,
+    courtId: string, von: number, bis: number, typCode: string, grund: string, verdraengen: boolean,
   ): Promise<number | null> {
     const tag = fenster?.tag ?? datum;
     const r = await mitLauf(() =>
       sperreStunde({
-        platzId: courtId, von: zeitpunkt(tag, von), bis: zeitpunkt(tag, bis), grund, verdraengen,
+        platzId: courtId, von: zeitpunkt(tag, von), bis: zeitpunkt(tag, bis), typCode, grund, verdraengen,
       }),
     );
-    await ergebnis(r);
-    return r.kollisionen ?? null;
+    return kollisionOderErgebnis(r);
   }
+
+  async function sperreAendern(
+    bookingId: string, platzIds: string[], von: number, bis: number, typCode: string, grund: string,
+    verdraengen: boolean,
+  ): Promise<number | null> {
+    const tag = fenster?.tag ?? datum;
+    const r = await mitLauf(() =>
+      aendereSperre({
+        bookingId, platzIds, von: zeitpunkt(tag, von), bis: zeitpunkt(tag, bis), typCode, grund, verdraengen,
+      }),
+    );
+    return kollisionOderErgebnis(r);
+  }
+
+  /**
+   * Liegen Buchungen im Weg, fragt das Blatt selbst nach ("1 Buchung
+   * verdraengen"). Die Meldung der Datenbank dazu waere doppelt.
+   */
+  async function kollisionOderErgebnis(r: { ok: boolean; meldung: string; kollisionen?: number }) {
+    if (r.kollisionen !== undefined) {
+      setFensterFehler(null);
+      return r.kollisionen;
+    }
+    await ergebnis(r);
+    return null;
+  }
+
+  const sperreAufheben = (id: string) => mitLauf(async () => ergebnis(await hebeSperreAuf(id)));
 
   const gewaehlterPlatz = auswahl ? plaetze.find((p) => p.id === auswahl.courtId) : undefined;
   const tagIndex = tage.indexOf(datum);
@@ -397,52 +431,49 @@ export default function Plan() {
   return (
     <>
       <Bildschirm laedt={laedt} aktualisiert={aktualisiert} onAktualisieren={vonHand}>
-        <Segmente<Ansicht>
-          beschriftung="Darstellung"
-          wert={ansicht}
-          onWahl={waehleAnsicht}
-          optionen={[
-            { wert: "uebersicht", label: "Übersicht" },
-            { wert: "freie-zeiten", label: "Freie Zeiten" },
-          ]}
-        />
-
-        {ansicht === "uebersicht" ? (
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <Rundknopf
-              richtung="zurueck"
-              beschriftung="Vortag"
-              aus={tagIndex <= 0}
-              onPress={() => waehleTag(tage[tagIndex - 1]!)}
-            />
-            <Pressable
-              onPress={() => setTagwahlOffen((o) => !o)}
-              accessibilityRole="button"
-              accessibilityLabel={`${lesbar(datum)}, Tag wählen`}
-              accessibilityState={{ expanded: tagwahlOffen }}
-              style={{ flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingHorizontal: 8 }}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Rundknopf
+            richtung="zurueck"
+            beschriftung="Vortag"
+            aus={tagIndex <= 0}
+            onPress={() => waehleTag(tage[tagIndex - 1]!)}
+          />
+          <Pressable
+            onPress={() => setTagwahlOffen((o) => !o)}
+            accessibilityRole="button"
+            accessibilityLabel={`${lesbar(datum)}, Tag wählen`}
+            accessibilityState={{ expanded: tagwahlOffen }}
+            style={{
+              flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", justifyContent: "center",
+              gap: 6, minHeight: 44,
+            }}
+          >
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
+              style={{ flexShrink: 1, fontSize: 17, fontFamily: "Barlow_700Bold", color: farben.ink }}
             >
-              <Text style={{ fontSize: 17, fontFamily: "Barlow_700Bold", color: farben.ink }}>
-                {tageszeile(datum, heute)}
-              </Text>
-              <Svg width={14} height={14} viewBox="0 0 24 24" style={{ transform: [{ rotate: tagwahlOffen ? "180deg" : "0deg" }] }}>
-                <Path d="M6 9l6 6 6-6" stroke={farben.muted} strokeWidth={2.4} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-            </Pressable>
-            <Rundknopf
-              richtung="vor"
-              beschriftung="Folgetag"
-              aus={tagIndex < 0 || tagIndex >= tage.length - 1}
-              onPress={() => waehleTag(tage[tagIndex + 1]!)}
-            />
-          </View>
-        ) : null}
+              {tageszeile(datum, heute)}
+            </Text>
+            <Svg width={14} height={14} viewBox="0 0 24 24" style={{ transform: [{ rotate: tagwahlOffen ? "180deg" : "0deg" }] }}>
+              <Path d="M6 9l6 6 6-6" stroke={farben.muted} strokeWidth={2.4} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <Rundknopf
+            richtung="vor"
+            beschriftung="Folgetag"
+            aus={tagIndex < 0 || tagIndex >= tage.length - 1}
+            onPress={() => waehleTag(tage[tagIndex + 1]!)}
+          />
+          <AnsichtSchalter wert={ansicht} onWahl={waehleAnsicht} />
+        </View>
 
-        {(ansicht === "freie-zeiten" || tagwahlOffen) && (
+        {tagwahlOffen && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            style={{ marginHorizontal: -abstand.rand, marginTop: ansicht === "uebersicht" ? -6 : 0 }}
+            style={{ marginHorizontal: -abstand.rand, marginTop: -6 }}
             contentContainerStyle={{ gap: 6, paddingHorizontal: abstand.rand }}
           >
             {tage.map((t) => {
@@ -519,6 +550,7 @@ export default function Plan() {
               raster={raster}
               dauer={dauer}
               onBuchen={buchenAuf}
+              oeffnebar={oeffnebar}
               onOeffnen={oeffneBelegung}
             />
             <FreieZeitenLegende />
@@ -569,6 +601,7 @@ export default function Plan() {
           oeffnungMinuten={oeffnung}
           schlussMinuten={schluss}
           arten={arten}
+          blockungsarten={blockungsarten}
           verzeichnis={verzeichnis}
           meineId={meineId}
           rasterMinuten={raster}
@@ -586,6 +619,8 @@ export default function Plan() {
           onAusschreiben={ausschreiben}
           onBeitreten={beitreten}
           onSperren={sperren}
+          onSperreAendern={sperreAendern}
+          onSperreAufheben={sperreAufheben}
           onSchliessen={() => {
             setFenster(null);
             setFensterFehler(null);
@@ -626,5 +661,55 @@ function Rundknopf({
         />
       </Svg>
     </Pressable>
+  );
+}
+
+/* --- Raster oder Liste --------------------------------------------------- */
+
+/**
+ * Klein und rechts in der Datumszeile: Übersicht (Raster) oder Freie Zeiten
+ * (Liste). Zwei Knoepfe statt eines Wechselknopfs, damit man sieht, was
+ * gerade gilt, und der Screenreader beide Namen hoert.
+ */
+function AnsichtSchalter({ wert, onWahl }: { wert: Ansicht; onWahl: (a: Ansicht) => void }) {
+  const { farben, theme } = useTheme();
+  const knopf = (a: Ansicht, label: string, symbol: (farbe: string) => ReactNode) => {
+    const aktiv = wert === a;
+    const farbe = aktiv ? farben.ink : farben.muted;
+    return (
+      <Pressable
+        onPress={() => onWahl(a)}
+        accessibilityRole="radio"
+        accessibilityLabel={label}
+        accessibilityState={{ selected: aktiv }}
+        hitSlop={4}
+        style={[
+          { width: 36, height: 32, borderRadius: radius.knopf - 6, alignItems: "center", justifyContent: "center" },
+          aktiv && { backgroundColor: farben.segAktiv },
+          aktiv && theme === "hell" && schattenRn.hell.klein,
+        ]}
+      >
+        <Svg width={18} height={18} viewBox="0 0 24 24">{symbol(farbe)}</Svg>
+      </Pressable>
+    );
+  };
+  return (
+    <View
+      accessibilityRole="radiogroup"
+      accessibilityLabel="Darstellung"
+      style={{ flexDirection: "row", gap: 2, padding: 4, borderRadius: radius.knopf - 2, backgroundColor: farben.surf2 }}
+    >
+      {knopf("uebersicht", "Übersicht", (f) => (
+        <>
+          <Rect x={3.5} y={3.5} width={7} height={7} rx={1.8} stroke={f} strokeWidth={2} fill="none" />
+          <Rect x={13.5} y={3.5} width={7} height={7} rx={1.8} stroke={f} strokeWidth={2} fill="none" />
+          <Rect x={3.5} y={13.5} width={7} height={7} rx={1.8} stroke={f} strokeWidth={2} fill="none" />
+          <Rect x={13.5} y={13.5} width={7} height={7} rx={1.8} stroke={f} strokeWidth={2} fill="none" />
+        </>
+      ))}
+      {knopf("freie-zeiten", "Freie Zeiten", (f) => (
+        <Path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" stroke={f} strokeWidth={2.2} strokeLinecap="round" fill="none" />
+      ))}
+    </View>
   );
 }

@@ -14,7 +14,7 @@ import {
   berlinTime, canStartAt, minutesOf, minutesToTime, nextSlotMinute, type OccupiedSlot,
 } from "./booking";
 import { courtStatusAt, type CourtSlot, type CourtStatus } from "./courtStatus";
-import { occupancyKind, type TimelineKind } from "./home";
+import { blockingLabel, occupancyKind, type TimelineKind } from "./home";
 
 export interface FreeSlotRow<T extends CourtSlot = CourtSlot> {
   /** Startzeit in Minuten seit Mitternacht */
@@ -148,7 +148,7 @@ export interface OccupancyLabel {
 /**
  * Wie eine Belegung im Raster beschriftet ist: "Du / Einzel",
  * "[Name] / Doppel", "sucht 2 / Doppel", "Training / bis 19:00",
- * "gesperrt / Grund".
+ * "Platzpflege / Grund" (Kategorie der Sperrung, darunter der Grund, falls es einen gibt).
  */
 export function occupancyLabel(
   b: CourtSlot & { owner_name?: string | null },
@@ -172,8 +172,11 @@ export function occupancyLabel(
       return { art, title: name, detail: `bis ${bis}`, spoken: `${zeit}, ${name}` };
     }
     case "gesperrt": {
-      const grund = b.title?.trim() || "ohne Grund";
-      return { art, title: "gesperrt", detail: grund, spoken: `${zeit}, gesperrt, ${grund}` };
+      const { kategorie, grund } = blockingLabel(b);
+      return {
+        art, title: kategorie, detail: grund ?? "",
+        spoken: `${zeit}, gesperrt, ${kategorie}${grund ? `, ${grund}` : ""}`,
+      };
     }
     default: {
       const wer = b.owner_name?.trim() || "belegt";

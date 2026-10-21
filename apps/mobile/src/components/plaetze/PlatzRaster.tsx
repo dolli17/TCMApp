@@ -22,10 +22,22 @@ import { useTheme } from "@/lib/theme";
 import { Schraffur } from "@/components/MiniZeitleiste";
 
 export const STUNDE_PX = 68;
-const ZEILE = 52;
+// 46 statt 52: so passen Raster und Legende auf einem ueblichen Telefon ueber
+// die schwebende Leiste, ohne dass man scrollen muss (U34). Die Bloecke
+// bleiben mit 38 Pixeln gut antippbar.
+const ZEILE = 46;
 const KOPF = 34;
 const SPALTE = 46;
 const px = (minuten: number) => (minuten / 60) * STUNDE_PX;
+
+/**
+ * Das Raster hat feste Masse: 68 Pixel je Stunde, 46 je Platz. Waechst die
+ * Schrift mit der Systemeinstellung ungebremst mit, laufen die Stunden
+ * ineinander und rechts aus dem Bild, und "PLATZ" bricht um (U34). Deshalb
+ * waechst sie hier nur ein Stueck mit; was ein Block sagt, steht vollstaendig
+ * im accessibilityLabel.
+ */
+const RASTER_SCHRIFT = 1.15;
 
 export interface Platz { id: string; name: string; short_name: string }
 
@@ -118,10 +130,12 @@ export function PlatzRaster({
               borderBottomWidth: 1, borderBottomColor: mitDeckkraft(farben.ink, 0.06),
             }}
           >
-            <Text style={{ fontSize: 9.5, letterSpacing: 0.8, fontFamily: "Barlow_700Bold", color: farben.muted }}>
+            {/* Die Spalte ist 46 Pixel schmal und die Zeile 46 hoch: hier waechst
+                die Schrift gar nicht mit. Der Platzname steht im Label. */}
+            <Text maxFontSizeMultiplier={1} style={{ fontSize: 9.5, letterSpacing: 0.8, fontFamily: "Barlow_700Bold", color: farben.muted }}>
               PLATZ
             </Text>
-            <Text style={{ fontSize: 20, lineHeight: 21, fontFamily: "BarlowSemiCondensed_700Bold", color: farben.ink }}>
+            <Text maxFontSizeMultiplier={1} style={{ fontSize: 20, lineHeight: 21, fontFamily: "BarlowSemiCondensed_700Bold", color: farben.ink }}>
               {platzNummer(p)}
             </Text>
           </View>
@@ -145,6 +159,7 @@ export function PlatzRaster({
           >
             {stunden.map((m) => (
               <Text
+                maxFontSizeMultiplier={RASTER_SCHRIFT}
                 key={m}
                 style={{
                   position: "absolute", top: 10, left: px(m - oeffnung) + 6,
@@ -211,21 +226,23 @@ export function PlatzRaster({
                         accessibilityHint={kannAuf ? "Öffnet die Buchung" : undefined}
                         style={({ pressed }) => [
                           {
-                            position: "absolute", top: 5, bottom: 5, left: px(von - oeffnung) + 3,
+                            position: "absolute", top: 4, bottom: 4, left: px(von - oeffnung) + 3,
                             width: Math.max(px(bis - von) - 6, 12), borderRadius: 10, overflow: "hidden",
-                            paddingVertical: 4, paddingHorizontal: 8, justifyContent: "center",
+                            paddingVertical: 2, paddingHorizontal: 8, justifyContent: "center",
                             opacity: pressed && kannAuf ? 0.8 : 1,
                           },
                           f.box,
                         ]}
                       >
                         {l.art === "serie" && <Schraffur farbe={mitDeckkraft(farben.ink, 0.1)} />}
-                        <Text numberOfLines={1} style={{ fontSize: 12, lineHeight: 15, fontFamily: "Barlow_700Bold", color: f.text }}>
+                        <Text maxFontSizeMultiplier={RASTER_SCHRIFT} numberOfLines={1} style={{ fontSize: 12, fontFamily: "Barlow_700Bold", color: f.text }}>
                           {l.title}
                         </Text>
-                        <Text numberOfLines={1} style={{ fontSize: 12, lineHeight: 15, fontFamily: "Barlow_500Medium", color: f.text, opacity: 0.85 }}>
-                          {l.detail}
-                        </Text>
+                        {l.detail !== "" && (
+                          <Text maxFontSizeMultiplier={RASTER_SCHRIFT} numberOfLines={1} style={{ fontSize: 12, fontFamily: "Barlow_500Medium", color: f.text, opacity: 0.85 }}>
+                            {l.detail}
+                          </Text>
+                        )}
                       </Pressable>
                     );
                   })}
@@ -236,16 +253,16 @@ export function PlatzRaster({
                     accessibilityElementsHidden
                     importantForAccessibility="no-hide-descendants"
                     style={{
-                      position: "absolute", top: 5, bottom: 5, left: px(auswahl.minute - oeffnung) + 3,
+                      position: "absolute", top: 4, bottom: 4, left: px(auswahl.minute - oeffnung) + 3,
                       width: px(dauer) - 6, borderRadius: 10, borderWidth: 2, borderColor: farben.gold,
-                      backgroundColor: farben.goldSoft, paddingVertical: 3, paddingHorizontal: 7,
+                      backgroundColor: farben.goldSoft, paddingVertical: 1, paddingHorizontal: 7,
                       justifyContent: "center",
                     }}
                   >
-                    <Text numberOfLines={1} style={{ fontSize: 12, lineHeight: 15, fontFamily: "Barlow_700Bold", color: farben.goldInk }}>
+                    <Text maxFontSizeMultiplier={RASTER_SCHRIFT} numberOfLines={1} style={{ fontSize: 12, fontFamily: "Barlow_700Bold", color: farben.goldInk }}>
                       + {alsUhrzeit(auswahl.minute)}
                     </Text>
-                    <Text numberOfLines={1} style={{ fontSize: 12, lineHeight: 15, fontFamily: "Barlow_500Medium", color: farben.goldInk, opacity: 0.85 }}>
+                    <Text maxFontSizeMultiplier={RASTER_SCHRIFT} numberOfLines={1} style={{ fontSize: 12, fontFamily: "Barlow_500Medium", color: farben.goldInk, opacity: 0.85 }}>
                       ausgewählt
                     </Text>
                   </View>

@@ -113,6 +113,8 @@ export default function PlaetzeVerwaltung() {
                   kontext={p.subline ?? undefined}
                   hinweis={!p.active ? "stillgelegt" : jetzt ? jetzt.text : "frei"}
                   hinweisTon={!p.active ? "leise" : jetzt ? (jetzt.art === "gesperrt" ? "rot" : "gold") : "gruen"}
+                  // Bearbeitet und aufgehoben wird eine Sperrung im Platzplan.
+                  href={jetzt?.art === "gesperrt" ? "/plaetze" : undefined}
                 />
               );
             })}

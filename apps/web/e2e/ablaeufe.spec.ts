@@ -870,7 +870,7 @@ test.describe("Plätze und Sperrungen", () => {
       // Bei einer Blockung heißt der Knopf „Sperrung aufheben“ – dort sitzt
       // niemand, dessen Buchung storniert würde.
       await fenster.getByRole("button", { name: "Sperrung aufheben" }).click();
-      await fenster.getByRole("button", { name: "Wirklich stornieren" }).click();
+      await fenster.getByRole("button", { name: "Wirklich aufheben" }).click();
       // Auf den neu gerenderten Plan warten statt auf die Erfolgsmeldung: die
       // steht schon da, während die Tabelle noch die alte ist, und der nächste
       // Klick ginge dann ins Leere.
@@ -1016,7 +1016,7 @@ test.describe("Serien ändern, sperren, Gründe nennen", () => {
 
     const fenster = page.locator("dialog.fenster");
     await fenster.getByRole("button", { name: "Stattdessen sperren" }).click();
-    await fenster.getByLabel("Grund der Sperrung").fill("ZZTest Regen");
+    await fenster.getByLabel("Grund (freiwillig)").fill("ZZTest Regen");
     await fenster.getByRole("button", { name: "Sperren", exact: true }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("gesperrt", { timeout: 15_000 });
 
@@ -1028,8 +1028,65 @@ test.describe("Serien ändern, sperren, Gründe nennen", () => {
     await page.locator(".plan-raster button.beleg.gesperrt", { hasText: "ZZTest Regen" }).first().click();
     const auf = page.locator("dialog.fenster");
     await auf.getByRole("button", { name: "Sperrung aufheben" }).click();
-    await auf.getByRole("button", { name: "Wirklich stornieren" }).click();
-    await expect(page.locator(".hinweis.erfolg")).toContainText("storniert", { timeout: 15_000 });
+    await auf.getByRole("button", { name: "Wirklich aufheben" }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("aufgehoben", { timeout: 15_000 });
+  });
+
+  test("Sperrung ohne Grund anlegen, bearbeiten und aufheben", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/plan");
+    for (let i = 0; i < 6; i++) {
+      const vorher = page.url();
+      await naechsterTag(page);
+      await page.waitForURL((u) => u.toString() !== vorher);
+    }
+    const tag = new URL(page.url()).searchParams.get("tag") ?? "";
+
+    const freieZelle = page.locator(".plan-raster button.frei-slot").first();
+    test.skip((await freieZelle.count()) === 0, "Kein freier Slot an diesem Tag");
+    await freieZelle.click();
+
+    // Sperren ohne Grund, nur mit Kategorie: im Block steht die Kategorie.
+    const fenster = page.locator("dialog.fenster");
+    await fenster.getByRole("button", { name: "Stattdessen sperren" }).click();
+    await fenster.getByLabel("Kategorie").selectOption({ label: "Verbandsspiel" });
+    await fenster.getByRole("button", { name: "Sperren", exact: true }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("gesperrt", { timeout: 15_000 });
+    const blockung = page.locator(".plan-raster button.beleg.gesperrt", { hasText: "Verbandsspiel" }).first();
+    await expect(blockung).toBeVisible();
+
+    // Bearbeiten: andere Kategorie, ein Grund, eine halbe Stunde länger.
+    await blockung.click();
+    const blatt = page.locator("dialog.fenster");
+    await blatt.getByRole("button", { name: "Sperrung bearbeiten" }).click();
+    await blatt.getByLabel("Kategorie").selectOption({ label: "Platzpflege" });
+    await blatt.getByLabel("Grund (freiwillig)").fill("ZZTest Nässe");
+    const bis = blatt.getByLabel("Bis");
+    const [h, m] = (await bis.inputValue()).split(":").map(Number);
+    const neu = h! * 60 + m! + 30;
+    await bis.fill(`${String(Math.floor(neu / 60)).padStart(2, "0")}:${String(neu % 60).padStart(2, "0")}`);
+    await blatt.getByRole("button", { name: "Änderungen speichern" }).click();
+
+    // Liegt am Ende eine Buchung im Weg, fragt das Blatt nach.
+    const verdraengen = blatt.getByRole("button", { name: /verdrängen/ });
+    const erfolg = page.locator(".hinweis.erfolg");
+    await expect(verdraengen.or(erfolg)).toBeVisible({ timeout: 15_000 });
+    if (await verdraengen.isVisible()) await verdraengen.click();
+    await expect(erfolg).toContainText("Sperrung geändert", { timeout: 15_000 });
+
+    // Oben die Kategorie, darunter der Grund.
+    await page.goto(`/plan?tag=${tag}`);
+    const geaendert = page.locator(".plan-raster button.beleg.gesperrt", { hasText: "ZZTest Nässe" }).first();
+    await expect(geaendert.locator(".wer")).toContainText("Platzpflege");
+    await expect(geaendert.locator(".mit")).toContainText("ZZTest Nässe");
+
+    // Aufräumen und dabei das Aufheben prüfen.
+    await geaendert.click();
+    const auf = page.locator("dialog.fenster");
+    await auf.getByRole("button", { name: "Sperrung aufheben" }).click();
+    await auf.getByRole("button", { name: "Wirklich aufheben" }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("aufgehoben", { timeout: 15_000 });
+    await expect(page.locator(".plan-raster .beleg.gesperrt", { hasText: "ZZTest Nässe" })).toHaveCount(0);
   });
 
   test("Serie bearbeiten statt beenden und neu anlegen", async ({ page }) => {

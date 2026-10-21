@@ -45,7 +45,8 @@ export function PlatzSperren({
   const { laeuft, meldung, setMeldung, ausfuehren } = useAktion();
 
   const alle = plaetze.length > 0 && gewaehlt.length === plaetze.length;
-  const vollstaendig = gewaehlt.length > 0 && tag.trim() !== "" && grund.trim() !== "";
+  // Der Grund ist freiwillig; was die Sperrung ist, sagt die Art.
+  const vollstaendig = gewaehlt.length > 0 && tag.trim() !== "";
 
   /** Jede Aenderung macht eine alte Kollisionszahl ungueltig. */
   function geaendert<T>(setzen: (w: T) => void) {
@@ -92,12 +93,12 @@ export function PlatzSperren({
 
       <FormGruppe>
         <FormAuswahl
-          label="Art"
+          label="Kategorie"
           wert={artCode}
           optionen={arten.map((a) => ({ wert: a.code, label: a.name }))}
           onWahl={setArtCode}
         />
-        <FormFeld label="Grund" wert={grund} onAendern={setGrund} platzhalter="z. B. Platzpflege nach Regen" />
+        <FormFeld label="Grund (freiwillig)" wert={grund} onAendern={setGrund} platzhalter="z. B. nach Regen" />
       </FormGruppe>
 
       <Meldung meldung={meldung} />

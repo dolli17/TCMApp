@@ -130,17 +130,24 @@ export async function serienterminAbsagen(
   return { ok: true, meldung: "Der Termin ist abgesagt." };
 }
 
+/** "3 Buchungen liegen in diesem Zeitraum ..." - die Zahl fuer die Rueckfrage. */
+function kollisionenAus(meldung: string): number | undefined {
+  const treffer = /^(\d+) Buchungen liegen/.exec(meldung);
+  return treffer ? Number(treffer[1]) : undefined;
+}
+
 /**
  * Eine einzelne Stunde direkt aus dem Belegungsplan sperren.
  *
  * Dieselbe RPC wie in der Platzverwaltung, nur mit genau einem Platz und einer
  * Stunde. Wer bei Regen am Platz steht, tippt auf die Stunde statt sich durch
- * das Verwaltungsmenue zu suchen.
+ * das Verwaltungsmenue zu suchen. Die Kategorie ist Pflicht, der Grund nicht.
  */
 export async function stundeSperren(daten: {
   platzId: string;
   von: string;
   bis: string;
+  typCode: string;
   grund: string;
   verdraengen: boolean;
 }): Promise<AktionsErgebnis & { kollisionen?: number }> {
@@ -150,22 +157,72 @@ export async function stundeSperren(daten: {
     p_court_ids: [daten.platzId],
     p_von: daten.von,
     p_bis: daten.bis,
-    p_type_code: "platzpflege",
-    p_title: daten.grund,
+    p_type_code: daten.typCode,
+    p_title: daten.grund.trim(),
     p_force: daten.verdraengen,
   });
 
   if (error) {
-    const treffer = /^(\d+) Buchungen liegen/.exec(error.message);
-    if (treffer) {
-      return { ok: false, meldung: translateDbError(error), kollisionen: Number(treffer[1]) };
-    }
-    return { ok: false, meldung: translateDbError(error) };
+    return { ok: false, meldung: translateDbError(error), kollisionen: kollisionenAus(error.message) };
   }
 
   revalidatePath("/plan");
   revalidatePath("/admin/plaetze");
   return { ok: true, meldung: "Die Stunde ist gesperrt." };
+}
+
+/**
+ * Eine Sperrung aendern: Zeit, Plaetze, Kategorie und Grund (update_blocking).
+ *
+ * Zweistufig wie das Sperren: liegen am neuen Ort Buchungen, kommt ihre Zahl
+ * zurueck, und erst mit verdraengen werden sie abgesagt.
+ */
+export async function sperreAendern(daten: {
+  bookingId: string;
+  platzIds: string[];
+  von: string;
+  bis: string;
+  typCode: string;
+  grund: string;
+  verdraengen: boolean;
+}): Promise<AktionsErgebnis & { kollisionen?: number }> {
+  const supabase = await createServerSupabase();
+
+  const { data, error } = await supabase.rpc("update_blocking", {
+    p_booking_id: daten.bookingId,
+    p_court_ids: daten.platzIds,
+    p_von: daten.von,
+    p_bis: daten.bis,
+    p_type_code: daten.typCode,
+    p_title: daten.grund.trim(),
+    p_force: daten.verdraengen,
+  });
+
+  if (error) {
+    return { ok: false, meldung: translateDbError(error), kollisionen: kollisionenAus(error.message) };
+  }
+
+  revalidatePath("/plan");
+  revalidatePath("/admin/plaetze");
+  const verdraengt = data?.[0]?.displaced_count ?? 0;
+  return {
+    ok: true,
+    meldung: verdraengt > 0
+      ? `Sperrung geändert, ${verdraengt} ${verdraengt === 1 ? "Buchung" : "Buchungen"} verdrängt.`
+      : "Sperrung geändert.",
+  };
+}
+
+/** Eine Sperrung aufheben - dieselbe RPC wie das Stornieren, eigene Meldung. */
+export async function sperreAufheben(bookingId: string): Promise<AktionsErgebnis> {
+  const supabase = await createServerSupabase();
+
+  const { error } = await supabase.rpc("cancel_booking", { p_booking_id: bookingId });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+
+  revalidatePath("/plan");
+  revalidatePath("/admin/plaetze");
+  return { ok: true, meldung: "Die Sperrung ist aufgehoben." };
 }
 
 /**

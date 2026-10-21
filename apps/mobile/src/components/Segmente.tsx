@@ -63,6 +63,8 @@ export function Segmente<T extends string | number>({
           >
             <Text
               numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
               style={{
                 fontSize: 15, color: aktiv ? farben.ink : farben.muted,
                 fontFamily: aktiv ? "Barlow_700Bold" : "Barlow_600SemiBold",

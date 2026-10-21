@@ -3320,6 +3320,21 @@ export type Database = {
           member_id: string
         }[]
       }
+      update_blocking: {
+        Args: {
+          p_bis: string
+          p_booking_id: string
+          p_court_ids: string[]
+          p_force?: boolean
+          p_title: string
+          p_type_code: string
+          p_von: string
+        }
+        Returns: {
+          created_count: number
+          displaced_count: number
+        }[]
+      }
       update_booking_players: {
         Args: {
           p_booking_id: string
