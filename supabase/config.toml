@@ -240,8 +240,11 @@ web3 = 30
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
-# Aus wie oben unter [auth] (S1).
-enable_signup = false
+# Bleibt an, trotz S1: Dieser Schalter ist in der CLI der ganze E-Mail-Provider
+# (GOTRUE_EXTERNAL_EMAIL_ENABLED). Aus hiesse "Email logins are disabled" -
+# niemand kaeme mehr mit Passwort herein. Die Selbstregistrierung sperrt
+# allein enable_signup = false oben unter [auth].
+enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
