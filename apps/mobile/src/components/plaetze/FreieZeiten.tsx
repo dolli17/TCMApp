@@ -3,7 +3,8 @@
  *
  * Eine Zeile je Startzeit mit einem Kaestchen je Platz und "n frei". Antippen
  * klappt die Zeile auf: freie Plaetze als grosse Knoepfe, Spiele, die
- * Mitspieler suchen, und die eigene Buchung. Immer nur eine Zeile offen.
+ * Mitspieler suchen, die eigene Buchung und - mit Platzrechten - Sperrungen,
+ * die sich dort bearbeiten und aufheben lassen. Immer nur eine Zeile offen.
  *
  * Die Zeilen rechnet @tcm/core (freeSlotsOfDay, also courtStatusAt und
  * canStartAt).
@@ -18,7 +19,7 @@ import { useTheme } from "@/lib/theme";
 import { platzNummer, useJetzt, type Platz } from "./PlatzRaster";
 
 export function FreieZeiten({
-  datum, plaetze, belegung, oeffnung, schluss, raster, dauer, onBuchen, onOeffnen,
+  datum, plaetze, belegung, oeffnung, schluss, raster, dauer, onBuchen, oeffnebar, onOeffnen,
 }: {
   datum: string;
   plaetze: Platz[];
@@ -28,6 +29,8 @@ export function FreieZeiten({
   raster: number;
   dauer: number;
   onBuchen: (platz: Platz, minute: number) => void;
+  /** Ob sich eine Belegung im Blatt oeffnen laesst - Sperrungen nur mit Platzrechten. */
+  oeffnebar: (b: Belegung) => boolean;
   onOeffnen: (platz: Platz, b: Belegung) => void;
 }) {
   const { farben } = useTheme();
@@ -92,6 +95,9 @@ export function FreieZeiten({
         );
         const eigen = z.courts.filter((c) => c.status.art === "eigen");
         const frei = z.courts.filter((c) => c.status.art === "frei");
+        const gesperrt = z.courts.filter(
+          (c) => c.status.art === "gesperrt" && c.status.belegung && oeffnebar(c.status.belegung),
+        );
 
         const label = [
           `${alsUhrzeit(z.minute)} Uhr`,
@@ -196,6 +202,29 @@ export function FreieZeiten({
                         {p.name} · {typ} sucht noch {b.frei ?? 1}
                       </Text>
                       <Text style={{ fontSize: 14.5, fontFamily: "Barlow_700Bold", color: farben.goldInk }}>Mitspielen</Text>
+                    </Pressable>
+                  );
+                })}
+
+                {gesperrt.map((c) => {
+                  const p = platzVon(c.courtId);
+                  return (
+                    <Pressable
+                      key={c.courtId}
+                      onPress={() => onOeffnen(p, c.status.belegung!)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${p.name}, ${c.status.text}, öffnen`}
+                      accessibilityHint="Sperrung bearbeiten oder aufheben"
+                      style={({ pressed }) => ({
+                        marginTop: 8, minHeight: 48, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 8,
+                        flexDirection: "row", alignItems: "center", gap: 10,
+                        backgroundColor: farben.surf3, opacity: pressed ? 0.85 : 1,
+                      })}
+                    >
+                      <Text style={{ flex: 1, fontSize: 14.5, fontFamily: "Barlow_700Bold", color: farben.ink2 }}>
+                        {p.name} · {c.status.text}
+                      </Text>
+                      <Text style={{ fontSize: 14.5, fontFamily: "Barlow_700Bold", color: farben.ink }}>Öffnen</Text>
                     </Pressable>
                   );
                 })}

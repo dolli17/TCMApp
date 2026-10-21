@@ -223,9 +223,11 @@ export function PlatzRaster({
                         <Text numberOfLines={1} style={{ fontSize: 12, lineHeight: 15, fontFamily: "Barlow_700Bold", color: f.text }}>
                           {l.title}
                         </Text>
-                        <Text numberOfLines={1} style={{ fontSize: 12, lineHeight: 15, fontFamily: "Barlow_500Medium", color: f.text, opacity: 0.85 }}>
-                          {l.detail}
-                        </Text>
+                        {l.detail !== "" && (
+                          <Text numberOfLines={1} style={{ fontSize: 12, lineHeight: 15, fontFamily: "Barlow_500Medium", color: f.text, opacity: 0.85 }}>
+                            {l.detail}
+                          </Text>
+                        )}
                       </Pressable>
                     );
                   })}

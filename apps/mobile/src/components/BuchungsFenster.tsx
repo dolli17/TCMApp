@@ -4,7 +4,8 @@
  * Bottom-Sheet nach dem Entwurf AppBuchen (docs/design/clubhaus, Abschnitt
  * 4): oben rund (radius.blatt), Griff, dahinter abgedunkelt. Dasselbe Blatt
  * fuer Buchen, Bearbeiten, Mitspielen, Stornieren und - abgesetzt unten -
- * fuer das Sperren mit Platzrechten.
+ * fuer das Sperren mit Platzrechten. Eine Sperrung laesst sich hier auch
+ * bearbeiten (Zeit, Plaetze, Kategorie, Grund) und aufheben.
  *
  * Nur Darstellung. Ob gebucht werden darf, entscheidet create_booking; die
  * Startzeiten, die hier waehlbar sind, kommen aus canStartAt.
@@ -15,14 +16,15 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { umsetzZiele, type OccupiedSlot } from "@tcm/core";
+import { blockingLabel, umsetzZiele, type OccupiedSlot } from "@tcm/core";
 import { Blatt, BlattKopf } from "@/components/Blatt";
 import { Schalter, Segmente } from "@/components/Segmente";
+import { Chipwahl } from "@/components/verwaltung/Formular";
 import { mitDeckkraft } from "@/lib/stil";
 import { useTheme } from "@/lib/theme";
 import {
-  alsUhrzeit, lokaleMinuten,
-  type Belegung, type Buchungsart, type Fenster, type Mitglied,
+  alsUhrzeit, lokaleMinuten, sperrZeit,
+  type Belegung, type Blockungsart, type Buchungsart, type Fenster, type Mitglied,
 } from "@/lib/plan";
 
 interface Props {
@@ -36,6 +38,8 @@ interface Props {
   oeffnungMinuten: number;
   schlussMinuten: number;
   arten: Buchungsart[];
+  /** Kategorien einer Sperrung, die erste ist die Vorgabe. */
+  blockungsarten: Blockungsart[];
   verzeichnis: Mitglied[];
   /** Eigene Mitglieds-Id, damit man sich nicht selbst als Mitspieler waehlt. */
   meineId: string | null;
@@ -63,7 +67,15 @@ interface Props {
   onAusschreiben: (bookingId: string, gesucht: boolean) => void;
   onBeitreten: (bookingId: string) => void;
   /** Gibt die Zahl der Buchungen zurueck, die verdraengt wuerden - sonst null. */
-  onSperren: (courtId: string, von: number, bis: number, grund: string, verdraengen: boolean) => Promise<number | null>;
+  onSperren: (
+    courtId: string, von: number, bis: number, typCode: string, grund: string, verdraengen: boolean,
+  ) => Promise<number | null>;
+  /** Wie onSperren, fuer eine bestehende Sperrung. Minuten am Tag des Plans. */
+  onSperreAendern: (
+    bookingId: string, platzIds: string[], von: number, bis: number, typCode: string, grund: string,
+    verdraengen: boolean,
+  ) => Promise<number | null>;
+  onSperreAufheben: (bookingId: string) => void;
   onSchliessen: () => void;
 }
 
@@ -323,6 +335,10 @@ function SperrBereich(props: Props & { fenster: Extract<Fenster, { modus: "buche
   const { stil, farben } = useTheme();
   const f = props.fenster;
   const [grund, setGrund] = useState<string | null>(null);
+  // Vorgabe bleibt die Platzpflege, wie vor der Kategoriewahl; sonst die erste.
+  const [art, setArt] = useState(
+    props.blockungsarten.find((a) => a.code === "platzpflege")?.code ?? props.blockungsarten[0]?.code ?? "platzpflege",
+  );
   const [kollisionen, setKollisionen] = useState<number | null>(null);
   const bis = f.stunde + props.anzeigeMinuten;
 
@@ -332,28 +348,41 @@ function SperrBereich(props: Props & { fenster: Extract<Fenster, { modus: "buche
         <Nebenknopf klein text="Stattdessen sperren" onPress={() => setGrund("")} />
       ) : (
         <>
-          <Feldname>Grund der Sperrung</Feldname>
-          <TextInput
-            style={[stil.feld, { marginTop: -8 }]}
-            value={grund}
-            onChangeText={setGrund}
-            placeholder="z. B. Platzpflege nach Regen"
-            placeholderTextColor={farben.muted}
-            accessibilityLabel="Grund der Sperrung"
-          />
+          <View>
+            <Feldname>Kategorie</Feldname>
+            <Chipwahl
+              optionen={props.blockungsarten.map((a) => ({ wert: a.code, label: a.name }))}
+              wert={art}
+              onWahl={(neu) => {
+                setArt(neu);
+                setKollisionen(null);
+              }}
+            />
+          </View>
+          <View>
+            <Feldname>Grund (freiwillig)</Feldname>
+            <TextInput
+              style={stil.feld}
+              value={grund}
+              onChangeText={setGrund}
+              placeholder="z. B. nach Regen"
+              placeholderTextColor={farben.muted}
+              accessibilityLabel="Grund der Sperrung, freiwillig"
+            />
+          </View>
           <Text style={stil.leise}>
             Gesperrt wird {alsUhrzeit(f.stunde)}–{alsUhrzeit(bis)} Uhr auf {f.platzName}.
           </Text>
           <Nebenknopf
             gefahr={kollisionen !== null}
-            gesperrt={props.laeuft || grund.trim() === ""}
+            gesperrt={props.laeuft}
             text={
               kollisionen === null
                 ? "Sperren"
                 : `${kollisionen} ${kollisionen === 1 ? "Buchung" : "Buchungen"} verdrängen`
             }
             onPress={async () => {
-              const offen = await props.onSperren(f.courtId, f.stunde, bis, grund, kollisionen !== null);
+              const offen = await props.onSperren(f.courtId, f.stunde, bis, art, grund, kollisionen !== null);
               setKollisionen(offen);
             }}
           />
@@ -383,6 +412,7 @@ function VerwaltenInhalt(
   const [gaeste, setGaeste] = useState<string[]>(b.guest_names ?? []);
   const [stornoOffen, setStornoOffen] = useState(false);
   const [umsetzOffen, setUmsetzOffen] = useState(false);
+  const [bearbeitenOffen, setBearbeitenOffen] = useState(false);
   const [grund, setGrund] = useState("");
 
   const art = props.arten.find((a) => a.code === b.type_code);
@@ -396,6 +426,10 @@ function VerwaltenInhalt(
   const kannUmsetzen =
     props.darfPlaetze && b.kind === "booking" && !serientermin &&
     new Date(b.ends_at).getTime() > Date.now();
+  // Eine Sperrung aendert, wer sperren darf (update_blocking). Serientermine
+  // gehoeren zur Serie und werden dort geaendert.
+  const kannSperreAendern = props.darfPlaetze && nurStorno && !serientermin;
+  const sperre = blockingLabel(b);
 
   // Drei Rollen an demselben Blatt: der Bucher verwaltet, wer
   // Platzrechte hat, verwaltet fremd, und wer nur eingeladen ist, kann ausschliesslich
@@ -435,9 +469,10 @@ function VerwaltenInhalt(
           {serientermin
             ? `${b.title?.trim() || b.type_name} · Serientermin`
             : nurStorno
-              ? `Gesperrt · ${b.title?.trim() || "ohne Grund"}`
+              ? `Gesperrt · ${sperre.kategorie}`
               : `${b.type_name} · gebucht von ${b.is_own ? "dir" : (b.owner_name ?? "unbekannt")}`}
         </Text>
+        {nurStorno && !serientermin && sperre.grund && <Text style={stil.leise}>{sperre.grund}</Text>}
         {props.darfPlaetze && !b.is_own && !nurStorno && (
           <Text style={stil.leise}>Du bearbeitest eine fremde Buchung mit Platzrechten.</Text>
         )}
@@ -486,9 +521,20 @@ function VerwaltenInhalt(
         />
       )}
 
+      {bearbeitenOffen && kannSperreAendern ? (
+        <SperreBearbeiten {...props} sperre={b} onZurueck={() => setBearbeitenOffen(false)} />
+      ) : (
       <View style={{ gap: 10 }}>
         {/* Beim Umsetzen steht der Fehler dort, wo getippt wurde. */}
         <Fehlerzeile text={umsetzOffen ? null : props.fehler} />
+
+        {kannSperreAendern && !stornoOffen && (
+          <Hauptknopf
+            text="Sperrung bearbeiten"
+            gesperrt={props.laeuft}
+            onPress={() => setBearbeitenOffen(true)}
+          />
+        )}
 
         {kannMitspielen && (
           <Hauptknopf
@@ -535,13 +581,15 @@ function VerwaltenInhalt(
                 setUmsetzOffen(false);
               }
               else if (serientermin) props.onTerminAbsagen(b.booking_id, grund);
-              else props.onStornieren(b.booking_id, nurStorno ? undefined : grund);
+              else if (nurStorno) props.onSperreAufheben(b.booking_id);
+              else props.onStornieren(b.booking_id, grund);
             }}
           />
         )}
 
         {b.is_own === true && !nurStorno && <Fussnote>Stornieren geht bis Spielbeginn</Fussnote>}
       </View>
+      )}
 
       {/* Abgesetzt wie das Sperren: Umsetzen ist die Ausnahme, wenn ein Platz
           ausfaellt - nicht das, was man an einer Buchung gewoehnlich tut. */}
@@ -562,6 +610,169 @@ function VerwaltenInhalt(
         </View>
       )}
     </>
+  );
+}
+
+/* --- Sperrung bearbeiten ------------------------------------------------- */
+
+/**
+ * Zeit, Plaetze, Kategorie und Grund einer Sperrung - wie beim Sperren
+ * zweistufig: liegen Buchungen im Weg, nennt der erste Versuch ihre Zahl,
+ * und erst der zweite verdraengt sie. Der Tag bleibt der des Plans.
+ */
+function SperreBearbeiten(
+  props: Props & { sperre: Belegung; onZurueck: () => void },
+) {
+  const { stil, farben } = useTheme();
+  const b = props.sperre;
+  const anfang = sperrZeit(b);
+  const [plaetze, setPlaetze] = useState<string[]>([b.court_id]);
+  const [von, setVon] = useState(anfang.von);
+  const [bis, setBis] = useState(anfang.bis);
+  // Eine abgeschaltete Kategorie bleibt waehlbar, solange die Sperrung sie traegt.
+  const [art, setArt] = useState(b.type_code ?? props.blockungsarten[0]?.code ?? "platzpflege");
+  const [grund, setGrund] = useState(b.title?.trim() ?? "");
+  const [kollisionen, setKollisionen] = useState<number | null>(null);
+
+  const arten = props.blockungsarten.some((a) => a.code === b.type_code) || !b.type_code
+    ? props.blockungsarten
+    : [{ code: b.type_code, name: b.type_name ?? b.type_code }, ...props.blockungsarten];
+  const schritt = props.rasterMinuten;
+
+  /** Jede Aenderung macht eine alte Kollisionszahl ungueltig. */
+  function neu<T>(setzen: (w: T) => void) {
+    return (w: T) => {
+      setzen(w);
+      setKollisionen(null);
+    };
+  }
+
+  return (
+    <View style={{ gap: 16 }}>
+      <View>
+        <Feldname>Plätze</Feldname>
+        <Chipwahl
+          mehrfach
+          optionen={props.plaetze.map((p) => ({ wert: p.id, label: p.name }))}
+          wert={plaetze}
+          onWahl={(id) =>
+            neu(setPlaetze)(plaetze.includes(id) ? plaetze.filter((x) => x !== id) : [...plaetze, id])}
+        />
+      </View>
+
+      <View style={{ gap: 8 }}>
+        <Feldname>Zeit</Feldname>
+        <Zeitschritt
+          name="Von" minute={von} schritt={schritt}
+          min={0} max={bis - schritt} onWert={neu(setVon)}
+        />
+        <Zeitschritt
+          name="Bis" minute={bis} schritt={schritt}
+          min={von + schritt} max={24 * 60} onWert={neu(setBis)}
+        />
+      </View>
+
+      <View>
+        <Feldname>Kategorie</Feldname>
+        <Chipwahl
+          optionen={arten.map((a) => ({ wert: a.code, label: a.name }))}
+          wert={art}
+          onWahl={neu(setArt)}
+        />
+      </View>
+
+      <View>
+        <Feldname>Grund (freiwillig)</Feldname>
+        <TextInput
+          style={stil.feld}
+          value={grund}
+          onChangeText={setGrund}
+          placeholder="z. B. nach Regen"
+          placeholderTextColor={farben.muted}
+          accessibilityLabel="Grund der Sperrung, freiwillig"
+        />
+      </View>
+
+      <View style={{ gap: 10 }}>
+        <Fehlerzeile text={props.fehler} />
+        {kollisionen !== null && (
+          <Text style={stil.leise}>
+            {kollisionen === 1
+              ? "1 Buchung liegt im Weg. Sie wird abgesagt, die Mitglieder bekommen Bescheid."
+              : `${kollisionen} Buchungen liegen im Weg. Sie werden abgesagt, die Mitglieder bekommen Bescheid.`}
+          </Text>
+        )}
+        {kollisionen === null ? (
+          <Hauptknopf
+            text={props.laeuft ? "Wird gespeichert …" : "Änderungen speichern"}
+            gesperrt={props.laeuft || plaetze.length === 0}
+            onPress={async () =>
+              setKollisionen(await props.onSperreAendern(b.booking_id, plaetze, von, bis, art, grund, false))}
+          />
+        ) : (
+          <Nebenknopf
+            gefahr
+            gesperrt={props.laeuft}
+            text={`${kollisionen} ${kollisionen === 1 ? "Buchung" : "Buchungen"} verdrängen`}
+            onPress={async () =>
+              setKollisionen(await props.onSperreAendern(b.booking_id, plaetze, von, bis, art, grund, true))}
+          />
+        )}
+        <Nebenknopf klein text="Doch nicht" onPress={props.onZurueck} />
+      </View>
+    </View>
+  );
+}
+
+/** Eine Uhrzeit mit Minus und Plus, im Raster des Plans. */
+function Zeitschritt({
+  name, minute, schritt, min, max, onWert,
+}: {
+  name: string;
+  minute: number;
+  schritt: number;
+  min: number;
+  max: number;
+  onWert: (m: number) => void;
+}) {
+  const { farben } = useTheme();
+  const runter = () => minute - schritt >= min && onWert(minute - schritt);
+  const hoch = () => minute + schritt <= max && onWert(minute + schritt);
+  const knopf = (zeichen: "−" | "+", aus: boolean, onPress: () => void, label: string) => (
+    <Pressable
+      onPress={onPress}
+      disabled={aus}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: aus }}
+      style={({ pressed }) => ({
+        width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center",
+        backgroundColor: farben.surf3, opacity: aus ? 0.4 : pressed ? 0.8 : 1,
+      })}
+    >
+      <Text style={{ fontSize: 22, lineHeight: 24, fontFamily: "Barlow_700Bold", color: farben.ink }}>{zeichen}</Text>
+    </Pressable>
+  );
+  return (
+    <View
+      style={{
+        flexDirection: "row", alignItems: "center", gap: 12, padding: 6, paddingLeft: 16,
+        borderRadius: 18, backgroundColor: farben.surf2,
+      }}
+    >
+      <Text style={{ flex: 1, fontSize: 15, fontFamily: "Barlow_600SemiBold", color: farben.ink2 }}>{name}</Text>
+      {knopf("−", minute - schritt < min, runter, `${name} ${schritt} Minuten früher`)}
+      <Text
+        accessibilityLabel={`${name} ${alsUhrzeit(minute)} Uhr`}
+        style={{
+          minWidth: 64, textAlign: "center", fontSize: 20, fontFamily: "BarlowSemiCondensed_700Bold",
+          color: farben.ink, fontVariant: ["tabular-nums"],
+        }}
+      >
+        {alsUhrzeit(minute)}
+      </Text>
+      {knopf("+", minute + schritt > max, hoch, `${name} ${schritt} Minuten später`)}
+    </View>
   );
 }
 

@@ -59,12 +59,14 @@ vi.mock("./supabase", () => ({
 
 const {
   aendereMitspieler,
+  aendereSperre,
   akzeptiereDokumente,
   anmelden,
   bucheGetraenk,
   bucheplatz,
   entferneMerkmal,
   erteileMandat,
+  hebeSperreAuf,
   ladeIchSelbst,
   ladeKontingent,
   ladeOnboarding,
@@ -79,6 +81,7 @@ const {
   speichereOnboardingStammdaten,
   speichereStammdaten,
   speichereTennis,
+  sperreStunde,
   storniereBuchung,
   storniereGetraenk,
   sucheMitspieler,
@@ -270,6 +273,100 @@ describe("storniereBuchung", () => {
     rpc.mockResolvedValue({ error: null });
     await storniereBuchung("b1", "   ");
     expect(rpc).toHaveBeenCalledWith("cancel_booking", { p_booking_id: "b1", p_reason: undefined });
+  });
+});
+
+describe("sperreStunde", () => {
+  const STUNDE = {
+    platzId: "p1",
+    von: new Date("2026-08-11T15:00:00Z"),
+    bis: new Date("2026-08-11T16:00:00Z"),
+    typCode: "verbandsspiel",
+    grund: "  ",
+    verdraengen: false,
+  };
+
+  it("schickt die gewaehlte Kategorie und einen leeren Grund", async () => {
+    rpc.mockResolvedValue({ error: null });
+    const r = await sperreStunde(STUNDE);
+    expect(rpc).toHaveBeenCalledWith("create_blocking", {
+      p_court_ids: ["p1"],
+      p_von: "2026-08-11T15:00:00.000Z",
+      p_bis: "2026-08-11T16:00:00.000Z",
+      p_type_code: "verbandsspiel",
+      p_title: "",
+      p_force: false,
+    });
+    expect(r).toEqual({ ok: true, meldung: "Gesperrt." });
+  });
+
+  it("nennt die Zahl der Buchungen, die im Weg liegen", async () => {
+    rpc.mockResolvedValue({
+      error: { code: "23P01", message: "2 Buchungen liegen in diesem Zeitraum. Bestaetige das Verdraengen." },
+    });
+    const r = await sperreStunde(STUNDE);
+    expect(r.ok).toBe(false);
+    expect(r.kollisionen).toBe(2);
+  });
+});
+
+describe("aendereSperre", () => {
+  const AENDERUNG = {
+    bookingId: "s1",
+    platzIds: ["p1", "p2"],
+    von: new Date("2026-08-11T15:00:00Z"),
+    bis: new Date("2026-08-11T17:00:00Z"),
+    typCode: "platzpflege",
+    grund: " Regen ",
+    verdraengen: true,
+  };
+
+  it("reicht alles an update_blocking durch", async () => {
+    rpc.mockResolvedValue({ data: [{ created_count: 1, displaced_count: 0 }], error: null });
+    const r = await aendereSperre(AENDERUNG);
+    expect(rpc).toHaveBeenCalledWith("update_blocking", {
+      p_booking_id: "s1",
+      p_court_ids: ["p1", "p2"],
+      p_von: "2026-08-11T15:00:00.000Z",
+      p_bis: "2026-08-11T17:00:00.000Z",
+      p_type_code: "platzpflege",
+      p_title: "Regen",
+      p_force: true,
+    });
+    expect(r).toEqual({ ok: true, meldung: "Sperrung geändert." });
+  });
+
+  it("meldet, wie viele Buchungen verdraengt wurden", async () => {
+    rpc.mockResolvedValue({ data: [{ created_count: 0, displaced_count: 1 }], error: null });
+    expect((await aendereSperre(AENDERUNG)).meldung).toBe("Sperrung geändert, 1 Buchung verdrängt.");
+  });
+
+  it("nennt ohne Bestaetigung die Zahl der Kollisionen", async () => {
+    rpc.mockResolvedValue({
+      data: null,
+      error: { code: "23P01", message: "3 Buchungen liegen in diesem Zeitraum. Bestaetige das Verdraengen." },
+    });
+    const r = await aendereSperre({ ...AENDERUNG, verdraengen: false });
+    expect(r).toMatchObject({ ok: false, kollisionen: 3 });
+  });
+
+  it("gibt andere Fehler ohne Kollisionszahl weiter", async () => {
+    rpc.mockResolvedValue({
+      data: null,
+      error: { code: "22023", message: "Das Ende muss nach dem Beginn liegen." },
+    });
+    const r = await aendereSperre(AENDERUNG);
+    expect(r.ok).toBe(false);
+    expect(r.kollisionen).toBeUndefined();
+  });
+});
+
+describe("hebeSperreAuf", () => {
+  it("hebt ueber cancel_booking auf und sagt es so", async () => {
+    rpc.mockResolvedValue({ error: null });
+    const r = await hebeSperreAuf("s1");
+    expect(rpc).toHaveBeenCalledWith("cancel_booking", { p_booking_id: "s1" });
+    expect(r).toEqual({ ok: true, meldung: "Die Sperrung ist aufgehoben." });
   });
 });
 

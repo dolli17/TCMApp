@@ -203,17 +203,36 @@ export async function ladeIchSelbst(): Promise<{
   };
 }
 
+/** Die Kategorien einer Sperrung: aktive Buchungsarten mit applies_to = 'blocking'. */
+export async function ladeBlockungsarten() {
+  const { data, error } = await supabase
+    .from("booking_types")
+    .select("code, name")
+    .eq("active", true)
+    .eq("applies_to", "blocking")
+    .order("sort_order");
+  if (error) throw new Error(translateDbError(error));
+  return data ?? [];
+}
+
+/** "3 Buchungen liegen in diesem Zeitraum ..." - die Zahl fuer die Rueckfrage. */
+function kollisionenAus(meldung: string): number | undefined {
+  const treffer = /^(\d+) Buchungen liegen/.exec(meldung);
+  return treffer ? Number(treffer[1]) : undefined;
+}
+
 /**
  * Eine Stunde auf einem Platz sperren (nur mit Platzrechten).
  *
  * Dieselbe RPC und dieselben Werte wie stundeSperren im Web. Liegen dort
  * Buchungen, weist die Datenbank ab und nennt die Zahl; mit verdraengen=true
- * werden sie abgesagt.
+ * werden sie abgesagt. Der Grund ist freiwillig, die Kategorie nicht.
  */
 export async function sperreStunde(daten: {
   platzId: string;
   von: Date;
   bis: Date;
+  typCode: string;
   grund: string;
   verdraengen: boolean;
 }): Promise<Ergebnis & { kollisionen?: number }> {
@@ -221,19 +240,56 @@ export async function sperreStunde(daten: {
     p_court_ids: [daten.platzId],
     p_von: daten.von.toISOString(),
     p_bis: daten.bis.toISOString(),
-    p_type_code: "platzpflege",
-    p_title: daten.grund,
+    p_type_code: daten.typCode,
+    p_title: daten.grund.trim(),
     p_force: daten.verdraengen,
   });
 
-  if (error) {
-    const treffer = /^(\d+) Buchungen liegen/.exec(error.message);
-    if (treffer) {
-      return { ok: false, meldung: translateDbError(error), kollisionen: Number(treffer[1]) };
-    }
-    return { ok: false, meldung: translateDbError(error) };
-  }
-  return { ok: true, meldung: "Die Stunde ist gesperrt." };
+  if (error) return { ok: false, meldung: translateDbError(error), kollisionen: kollisionenAus(error.message) };
+  return { ok: true, meldung: "Gesperrt." };
+}
+
+/**
+ * Eine Sperrung aendern: Zeit, Plaetze, Kategorie und Grund (update_blocking).
+ *
+ * Wie beim Sperren zweistufig: liegen am neuen Ort Buchungen, kommt die Zahl
+ * zurueck, und erst mit verdraengen=true werden sie abgesagt. Fuer jeden
+ * weiteren Platz legt die Datenbank eine eigene Sperrung an.
+ */
+export async function aendereSperre(daten: {
+  bookingId: string;
+  platzIds: string[];
+  von: Date;
+  bis: Date;
+  typCode: string;
+  grund: string;
+  verdraengen: boolean;
+}): Promise<Ergebnis & { kollisionen?: number }> {
+  const { data, error } = await supabase.rpc("update_blocking", {
+    p_booking_id: daten.bookingId,
+    p_court_ids: daten.platzIds,
+    p_von: daten.von.toISOString(),
+    p_bis: daten.bis.toISOString(),
+    p_type_code: daten.typCode,
+    p_title: daten.grund.trim(),
+    p_force: daten.verdraengen,
+  });
+
+  if (error) return { ok: false, meldung: translateDbError(error), kollisionen: kollisionenAus(error.message) };
+  const verdraengt = data?.[0]?.displaced_count ?? 0;
+  return {
+    ok: true,
+    meldung: verdraengt > 0
+      ? `Sperrung geändert, ${verdraengt} ${verdraengt === 1 ? "Buchung" : "Buchungen"} verdrängt.`
+      : "Sperrung geändert.",
+  };
+}
+
+/** Eine Sperrung aufheben - dieselbe RPC wie das Stornieren, eigene Meldung. */
+export async function hebeSperreAuf(bookingId: string): Promise<Ergebnis> {
+  const { error } = await supabase.rpc("cancel_booking", { p_booking_id: bookingId });
+  if (error) return { ok: false, meldung: translateDbError(error) };
+  return { ok: true, meldung: "Die Sperrung ist aufgehoben." };
 }
 
 /**
