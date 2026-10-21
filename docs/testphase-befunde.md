@@ -126,6 +126,8 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 | B21 | P2 | `end_membership` setzt den Status sofort auf inaktiv, auch beim Austritt zum Jahresende. Bis zum Austrittsdatum hat das Mitglied Zugang (S12), fehlt aber in `member_directory` (Mitspielerwahl, Kiosk) und `record_purchase` weist es ab. Gefunden bei S12. | Status erst zum Austrittsdatum setzen oder dort `hat_zugang` statt `status = 'active'` prüfen *(Migration)* |
 | B22 | P3 | Ausgetretene (Datum vorbei) werden nicht gebannt: Die Anmeldung gelingt, danach sind alle Seiten leer, weil die Datenbank nichts mehr liefert. Gefunden bei S12. | Nach der Anmeldung einen Hinweis „Kein Zugang mehr“ zeigen und abmelden (Web und App) |
 | B23 | P3 | `update_member` kann `status` direkt auf `archived` setzen und umgeht damit das Aufräumen von `archive_member` (B4, B5). Zugang und Nachrücken sind trotzdem gesperrt. Gefunden bei S12. | `status` in `update_member` nur zwischen aktiv und inaktiv zulassen *(Migration)* |
+| B24 | P2 | Eine Sperrung lässt sich in der App weder bearbeiten noch aufheben (vom Nutzer gemeldet). *Geprüft:* `cancel_booking` und das Blatt funktionieren, aber in der Ansicht „Freie Zeiten“ ließ sich eine Sperrung gar nicht öffnen, in Verwaltung → Plätze stand nur „gesperrt bis …“ ohne Weg dorthin, und nach dem Aufheben hieß es „Buchung storniert“. Bearbeiten gab es nirgends. | **Erledigt (PR #PR):** Neue RPC `update_blocking` (Zeit, Plätze, Kategorie, Grund; Rechte, Überschneidung und `p_force` wie `create_blocking`). App und Web: „Sperrung bearbeiten“ im Blatt, Sperrungen auch in „Freie Zeiten“ öffnen, eigene Meldung beim Aufheben, gesperrte Plätze in der Platzliste verlinken auf den Plan. |
+| B25 | P3 | Der Grund war beim Sperren Pflicht (`create_blocking`: „Bitte einen Grund angeben.“, Check `bookings_owner_present`). | **Erledigt (PR #PR):** Grund freiwillig in `create_blocking` und `update_blocking`, Check gelockert. Ohne Grund nennen Storno und Nachricht die Kategorie. |
 
 Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.12.); Mindestbetrag 5 € je Auswahl; veraltete Antworten beim schnellen Tageswechsel in der App.
 
@@ -178,6 +180,8 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 | U30 | P3 | Englische Reste und Fachbegriffe: „Home“, „Login“, „LK“, „nuLiga-ID“ | „Start“, „Zugang“, Hilfetexte |
 | U31 | P3 | Gebührenhinweis steht unter dem Anmeldeknopf. App „Passwort vergessen“ ohne Spam-Hinweis. Kein Passwort-anzeigen-Schalter. | angleichen |
 | U32 | P3 | Mitgliederliste mit zwei Filtersystemen | zusammenführen |
+| U33 | P2 | Beim Sperren in der App war die Kategorie fest „Platzpflege“. Im Plan stand „gesperrt“ statt der Kategorie. | **Erledigt (PR #PR):** Kategorie (Buchungsart mit `applies_to = 'blocking'`) wählbar in App und Web. Im Plan oben die Kategorie, darunter der Grund, falls es einen gibt (`blockingLabel` in `@tcm/core`). |
+| U34 | P2 | App, Tab Plätze: zwei Segmentleisten übereinander, Stundenbeschriftung rechts abgeschnitten, Legende von der Tab-Leiste verdeckt. | **Erledigt (PR #PR):** Übersicht/Freie Zeiten über einen Raster/Liste-Umschalter rechts in der Datumszeile. Raster-Schrift wächst nur begrenzt mit (große Schrift ließ die Stunden ineinanderlaufen), Zeilen 46 statt 52 pt, damit die Legende ohne Scrollen über der Leiste steht. Knöpfe im Blatt mit Mindesthöhe. |
 
 ### Noch nicht live geprüft
 
