@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { anmelden, MITGLIED_ID, NUTZER, testName } from "./hilfen";
+import { leerePostfach, mailLink, warteAufMails } from "./mailpit";
 
 /**
  * Mitgliederverwaltung von der Liste bis zum Löschen.
@@ -72,30 +73,37 @@ async function waehleBeitragsart(karte: Locator, teil: string) {
 }
 
 /**
- * Die Links aus den Einladungsmails an eine Adresse, der jüngste zuerst.
- * Lokal fängt Mailpit jede Mail ab (supabase/config.toml, [inbucket]).
+ * Legt ein Mitglied mit echter Adresse an: anders als bei example.org geht
+ * die Einladung wirklich raus, lokal in Mailpit. Gibt Adresse und
+ * Detailseite zurück.
  */
-async function einladungsLinks(email: string, anzahl: number): Promise<string[]> {
-  const mailpit = (process.env.MAILPIT_URL ?? "http://127.0.0.1:54324").replace(/\/$/, "");
-  let links: string[] = [];
-  await expect
-    .poll(
-      async () => {
-        const suche = await (await fetch(`${mailpit}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`)).json();
-        const ids: string[] = (suche.messages ?? []).map((m: { ID: string }) => m.ID);
-        links = [];
-        for (const id of ids) {
-          const mail = await (await fetch(`${mailpit}/api/v1/message/${id}`)).json();
-          // Die Vorlage verlinkt direkt auf /passwort-setzen?token_hash=… (S20).
-          const treffer = /href="([^"]*token_hash=[^"]*)"/.exec(mail.HTML ?? "");
-          if (treffer?.[1]) links.push(treffer[1].replace(/&amp;/g, "&"));
-        }
-        return links.length;
-      },
-      { timeout: 20_000 },
-    )
-    .toBeGreaterThanOrEqual(anzahl);
-  return links;
+async function mitEinladungAnlegen(page: Page, nachname: string): Promise<{ email: string; adresse: string }> {
+  const email = `${nachname}@beispiel-verein.de`.toLowerCase();
+  await leerePostfach(email);
+  const fenster = await anlegeFenster(page, nachname);
+  await fenster.getByLabel("E-Mail").fill(email);
+  await pflichtfelderFuellen(fenster);
+  await fenster.getByRole("button", { name: "Anlegen" }).click();
+  await page.waitForURL(/\/admin\/mitglieder\/[0-9a-f-]{36}/, { timeout: 20_000 });
+  return { email, adresse: page.url() };
+}
+
+/**
+ * Ohne Sitzung weiter, wie in einem fremden Browser. Erst weg von der Seite:
+ * sonst schreibt deren Supabase-Client die Sitzung womöglich zurück.
+ */
+async function ohneSitzung(page: Page) {
+  await page.goto("about:blank");
+  await page.context().clearCookies();
+}
+
+/** Auf /passwort-setzen ein Passwort festlegen. */
+async function passwortSetzen(page: Page, passwort: string) {
+  await page.waitForURL(/\/passwort-setzen/);
+  await page.getByLabel("Neues Passwort").fill(passwort);
+  await page.getByLabel("Noch einmal").fill(passwort);
+  await page.getByRole("button", { name: "Passwort speichern" }).click();
+  await expect(page.getByText("Passwort gespeichert")).toBeVisible({ timeout: 20_000 });
 }
 
 /** Räumt ein Testmitglied wieder ab. Fehler hier sollen den Test nicht kippen. */
@@ -680,15 +688,8 @@ test.describe("Mitgliederverwaltung", () => {
     page,
   }) => {
     const nachname = testName("Einladung");
-    // Keine Testadresse: die Einladung geht wirklich raus, lokal in Mailpit.
-    const email = `${nachname}@beispiel-verein.de`.toLowerCase();
     await anmelden(page, NUTZER.admin);
-    const fenster = await anlegeFenster(page, nachname);
-    await fenster.getByLabel("E-Mail").fill(email);
-    await pflichtfelderFuellen(fenster);
-    await fenster.getByRole("button", { name: "Anlegen" }).click();
-    await page.waitForURL(/\/admin\/mitglieder\/[0-9a-f-]{36}/, { timeout: 20_000 });
-    const adresse = page.url();
+    const { email, adresse } = await mitEinladungAnlegen(page, nachname);
 
     // Die Liste zeigt den Stand, auch über den Filter „Onboarding offen“.
     await page.goto("/admin/mitglieder?art=onboarding&q=" + encodeURIComponent(nachname));
@@ -703,21 +704,103 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(karte.locator(".hinweis.erfolg")).toContainText("neuer Einladungslink", { timeout: 20_000 });
 
     // Zwei Einladungen in Mailpit; nur der jüngste Link gilt.
-    const links = await einladungsLinks(email, 2);
+    const links = (await warteAufMails(email, 2)).map((m) => mailLink(m, "invite"));
     await page.goto(links[links.length - 1]!);
     await expect(page.getByText("Dieser Link ist abgelaufen oder wurde schon benutzt.")).toBeVisible({
       timeout: 20_000,
     });
 
     await page.goto(links[0]!);
-    await page.waitForURL(/\/passwort-setzen/);
-    await page.getByLabel("Neues Passwort").fill("Einladung-2026!");
-    await page.getByLabel("Noch einmal").fill("Einladung-2026!");
-    await page.getByRole("button", { name: "Passwort speichern" }).click();
+    await passwortSetzen(page, "Einladung-2026!");
     // Die Weiche greift: vom Passwort direkt ins Onboarding.
     await page.waitForURL(/\/onboarding/, { timeout: 20_000 });
 
     // Aufräumen als Admin (Login geht mit dem Mitglied).
+    await anmelden(page, NUTZER.admin);
+    await aufraeumen(page, adresse, nachname);
+  });
+
+  test("Einladung: genau eine Mail, ihr Link führt über das Passwort ins Onboarding (T7)", async ({ page }) => {
+    const nachname = testName("Einladungsmail");
+    await anmelden(page, NUTZER.admin);
+    const { email, adresse } = await mitEinladungAnlegen(page, nachname);
+
+    const [mail, ...weitere] = await warteAufMails(email);
+    expect(weitere).toHaveLength(0);
+    // Betreff und Vorlage aus supabase/config.toml, nicht die Vorgabe von Supabase.
+    expect(mail!.betreff).toBe("Dein Zugang zum TC Muckensturm");
+    const link = mailLink(mail!, "invite");
+    expect(new URL(link).pathname).toBe("/passwort-setzen");
+    expect(new URL(link).searchParams.get("token_hash")).toBeTruthy();
+
+    // Als die Eingeladene, ohne die Sitzung des Admins.
+    await ohneSitzung(page);
+    await page.goto(link);
+    await passwortSetzen(page, "Einladung-2026!");
+    await page.waitForURL(/\/onboarding/, { timeout: 20_000 });
+
+    // Der Link gilt nur einmal.
+    await ohneSitzung(page);
+    await page.goto(link);
+    await expect(page.getByText("Dieser Link ist abgelaufen oder wurde schon benutzt.")).toBeVisible({
+      timeout: 20_000,
+    });
+
+    await anmelden(page, NUTZER.admin);
+    await aufraeumen(page, adresse, nachname);
+  });
+
+  test("Passwort vergessen: Mail, Link, neues Passwort, Anmeldung nur noch damit (T7)", async ({ page }) => {
+    const nachname = testName("Vergessen");
+    const alt = "Vorher-2026!";
+    const neu = "Nachher-2026!";
+    await anmelden(page, NUTZER.admin);
+    const { email, adresse } = await mitEinladungAnlegen(page, nachname);
+
+    // Zuerst die Einladung annehmen, damit es ein Passwort zum Vergessen gibt.
+    const [einladung] = await warteAufMails(email);
+    await ohneSitzung(page);
+    await page.goto(mailLink(einladung!, "invite"));
+    await passwortSetzen(page, alt);
+    await page.waitForURL(/\/onboarding/, { timeout: 20_000 });
+    await ohneSitzung(page);
+
+    await page.goto("/passwort-vergessen");
+    await page.getByLabel("E-Mail").fill(email);
+    await page.getByRole("button", { name: "Link anfordern" }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("Wenn zu dieser Adresse");
+
+    const mails = await warteAufMails(email, 2);
+    const mail = mails.find((m) => m.betreff === "Neues Passwort fuer den TC Muckensturm");
+    expect(mail, `Betreffe: ${mails.map((m) => m.betreff).join(" | ")}`).toBeTruthy();
+    const link = mailLink(mail!, "recovery");
+    // Zurück auf diese Seite, nicht auf eine Adresse aus der Konfiguration.
+    expect(new URL(link).origin).toBe(new URL(page.url()).origin);
+
+    await page.goto(link);
+    await passwortSetzen(page, neu);
+    await ohneSitzung(page);
+
+    // Das alte Passwort gilt nicht mehr ...
+    await page.goto("/login");
+    await page.getByLabel("E-Mail").fill(email);
+    await page.getByLabel("Passwort").fill(alt);
+    await page.getByRole("button", { name: "Anmelden" }).click();
+    await expect(page.locator(".hinweis.fehler")).toBeVisible({ timeout: 20_000 });
+    await expect(page).toHaveURL(/\/login/);
+
+    // ... das neue schon.
+    await page.getByLabel("Passwort").fill(neu);
+    await page.getByRole("button", { name: "Anmelden" }).click();
+    await page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 20_000 });
+
+    // Der Link gilt nur einmal.
+    await ohneSitzung(page);
+    await page.goto(link);
+    await expect(page.getByText("Dieser Link ist abgelaufen oder wurde schon benutzt.")).toBeVisible({
+      timeout: 20_000,
+    });
+
     await anmelden(page, NUTZER.admin);
     await aufraeumen(page, adresse, nachname);
   });
