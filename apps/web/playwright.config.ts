@@ -71,7 +71,8 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   timeout: 45_000,
-  reporter: [["list"]],
+  // In der CI zusätzlich der HTML-Bericht, den der e2e-Job als Artefakt hochlädt.
+  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : [["list"]],
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
     locale: "de-DE",

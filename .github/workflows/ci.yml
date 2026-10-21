@@ -74,6 +74,66 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" \
             pnpm --filter @tcm/web build
 
+  # End-to-End gegen den lokalen Stack im Runner (T2). Noch kein Pflicht-Check.
+  # Anders als in verify laufen hier Edge Runtime (member-login) und Mailpit
+  # (Einladungsmails) mit. Der Ablauf selbst ist scripts/e2e.sh wie lokal.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Supabase starten
+        run: pnpm exec supabase start -x studio,imgproxy,logflare,vector,supavisor
+
+      # Dieselben Schlüssel wie lokal, nur aus dem Stack im Runner gelesen.
+      # Die Konten stammen aus supabase/seed.sql.
+      - name: apps/web/.env.local erzeugen
+        run: |
+          eval "$(pnpm exec supabase status -o env | grep -E '^(API_URL|ANON_KEY|INBUCKET_URL|MAILPIT_URL)=')"
+          cat > apps/web/.env.local <<EOF
+          NEXT_PUBLIC_SUPABASE_URL=$API_URL
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY
+          NEXT_PUBLIC_SITE_URL=http://localhost:3000
+          SUPABASE_FUNCTIONS_URL=$API_URL/functions/v1
+          MAILPIT_URL=${MAILPIT_URL:-${INBUCKET_URL:-http://127.0.0.1:54324}}
+          DEV_PASSWORD=tcm-lokal-2026
+          DEV_USER_ADMIN=admin@tcm.local
+          DEV_USER_MEMBER=mitglied@tcm.local
+          DEV_USER_KIOSK=kiosk@tcm.local
+          DEV_USER_NEU=neu@tcm.local
+          DEV_USER_KIND=kind@tcm.local
+          EOF
+          grep -v KEY apps/web/.env.local
+
+      - name: Playwright-Browser installieren
+        run: pnpm --filter @tcm/web exec playwright install --with-deps chromium
+
+      - name: End-to-End (Build, Server auf Port 3000, Playwright)
+        run: bash scripts/e2e.sh --project=chromium
+
+      - name: Server-Log
+        if: failure()
+        run: tail -200 /tmp/tcm-web.log /tmp/tcm-build.log || true
+
+      - name: Bericht und Traces hochladen
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: e2e-bericht
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          retention-days: 14
+
   # Nach production dürfen nur main (Release) und hotfix/* (Hotfix), und die
   # Version in package.json muss neu sein - sonst gäbe es den Tag schon.
   release-check:
