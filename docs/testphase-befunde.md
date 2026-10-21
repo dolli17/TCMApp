@@ -136,7 +136,7 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 | # | Prio | Befund | Was zu tun ist |
 |---|---|---|---|
 | T1 | P1 | `scripts/e2e.sh` sourct die Root-`.env` und läuft damit gegen die Cloud | eigener PR (`chore/e2e-nur-lokal`) |
-| T2 | P2 | E2E läuft nicht in CI | Eigener Job mit Edge Runtime und Mailpit. Auth-Rate-Limit (30/5 min) beachten, besser `storageState` je Rolle. |
+| T2 | P2 | E2E läuft nicht in CI | **Erledigt (PR #52):** Job `e2e` in `ci.yml` (noch kein Pflicht-Check): lokaler Stack mit Edge Runtime und Mailpit im Runner, `.env.local` aus `supabase status`, `scripts/e2e.sh --project=chromium`, Bericht und Traces als Artefakt. Auth-Rate-Limits des lokalen Stacks in `config.toml` angehoben (Anmeldungen 1000/5 min, Mails 100/h). Erster Lauf: 139 bestanden, 0 übersprungen. |
 | T3 | P2 | E2E nicht deterministisch: 18 datenabhängige `test.skip`, „erster Treffer“ bei Mitspielern und Buchungen. Die Testkonten wandern bei jedem `db reset` (`gen_random_uuid`, Ursache von O26). | Feste E2E-Konten mit festen UUIDs. Feste Termine im seedfreien Fenster 08:00 und 11–14 Uhr. SQL-Fixtures. Rollen und Einstellungen im globalSetup zurücksetzen (O19). |
 | T4 | P2 | pgTAP ohne direkte Tests für u. a. `remove_charge_from_debit_batch`, `fee_run_preview`, `debit_batch_items`, `event_veroeffentlichen`, `event_loeschen`, `update_membership`, `my_booking_quota`, `remove_push_token`, `guard_member_self_update` (GUC-Umgehung) | Nach der Lückenliste aus dem Audit ergänzen |
 | T5 | P2 | Die SEPA-Datei wird nicht Ende-zu-Ende geprüft | E2E: Datei laden, Summe, Anzahl, IBANs prüfen |
