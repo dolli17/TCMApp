@@ -8,11 +8,10 @@ import { expect, test, type Page } from "@playwright/test";
  * wieder, ohne dass etwas kaputt wäre.
  */
 
-import { anmelden as anmeldenAls, NUTZER } from "./hilfen";
+import { anmelden as anmeldenAls, freieStunde, NUTZER, tagIn } from "./hilfen";
 
-/** Der Tag nach heute in Europe/Berlin, JJJJ-MM-TT. */
-const morgen = () =>
-  new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date(Date.now() + 86_400_000));
+/** Der Tag nach heute in Europe/Berlin, JJJJ-MM-TT. 11–15 Uhr hält der Seed dort frei. */
+const morgen = () => tagIn(1);
 
 const MITGLIED = NUTZER.mitglied;
 const ADMIN = NUTZER.admin;
@@ -117,7 +116,7 @@ test.describe("Layout", () => {
       await expect(page.getByRole("radio", { name: "Freie Zeiten" })).toHaveAttribute("aria-checked", "true");
 
       const zeile = page.locator(".fz-knopf").filter({ hasNot: page.locator(".fz-zahl.keine") }).first();
-      test.skip((await zeile.count()) === 0, "Morgen ist keine Stunde frei");
+      await expect(zeile).toBeVisible();
       await expect(zeile).toHaveAttribute("aria-label", /Uhr, \d+ Pl(atz|ätze) frei/);
       await zeile.click();
       await expect(zeile).toHaveAttribute("aria-expanded", "true");
@@ -179,7 +178,7 @@ test.describe("Layout", () => {
       // unten oeffnet das Blatt. Morgen, damit noch etwas frei ist.
       await page.goto(`/plan?tag=${morgen()}`);
       const slot = page.locator(".plan-listen button.tr-frei").first();
-      test.skip((await slot.count()) === 0, "Morgen ist keine Stunde frei");
+      await expect(slot).toBeVisible();
       await slot.click();
       const leiste = page.locator(".auswahl-leiste");
       await expect(leiste).toContainText("frei bis");
@@ -219,12 +218,12 @@ test.describe("Layout", () => {
 
     test("freie Zeit zeigt sich auch beim Tastatur-Fokus und öffnet mit Enter", async ({ page }) => {
       await anmelden(page);
-      await page.goto("/plan");
+      // Morgen statt heute: am Abend ist heute keine Stunde mehr frei.
+      await page.goto(`/plan?tag=${morgen()}`);
 
-      const frei = page.locator(".plan-raster button.frei-slot").first();
-      test.skip((await frei.count()) === 0, "Heute ist keine Stunde mehr frei");
-      const beschriftung = (await frei.getAttribute("aria-label")) ?? "";
-      const uhr = /um (\d{2}:\d{2}) buchen/.exec(beschriftung)?.[1] ?? "";
+      const uhr = "11:00";
+      const frei = freieStunde(page, "Platz 1", uhr);
+      await expect(frei).toBeVisible();
 
       // Wer mit der Tastatur kommt, sieht denselben gestrichelten Block wie mit der Maus.
       await frei.focus();

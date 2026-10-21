@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
-import { anmelden, NUTZER, testName } from "./hilfen";
+import { anmelden, MITGLIED_ID, NUTZER, testName } from "./hilfen";
 
 /**
  * Mitgliederverwaltung von der Liste bis zum Löschen.
@@ -298,27 +298,15 @@ test.describe("Mitgliederverwaltung", () => {
   test("ein Mitglied mit Historie lässt sich nicht löschen", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
 
-    // Das Konto, mit dem sich das Testmitglied anmeldet, hat Getränke und
-    // Buchungen im Bestand - genau der Fall, den der Riegel abfangen soll.
-    await page.goto("/admin/mitglieder?filter=alle&q=" + encodeURIComponent("Bauer"));
-    const url = (await page.locator('.liste-gruppe[aria-label="Mitglieder"] li a').first().getAttribute("href"))!;
-    await page.goto(`${url}?teil=austritt`);
+    // Das Testmitglied hat im Seed eine Getränkebuchung - genau der Fall,
+    // den der Riegel abfangen soll. Über die feste ID, nicht über den ersten
+    // Suchtreffer (O26).
+    await page.goto(`/admin/mitglieder/${MITGLIED_ID.mitglied}?teil=austritt`);
 
     const zone = page.locator('section[aria-label="Datensatz beenden"]');
     await expect(zone).toBeVisible();
-
-    // Entweder ist Löschen gesperrt (Historie vorhanden) oder das Feld steht
-    // bereit (unbeschriebener Datensatz). Beides ist zulässig - der Test prüft,
-    // dass die Oberfläche eine der beiden klaren Aussagen trifft.
-    const gesperrt = zone.locator(".hinweis.fehler");
-    const feld = zone.getByLabel(/Nachnamen eingeben/);
-    const istGesperrt = (await gesperrt.count()) > 0;
-    if (istGesperrt) {
-      await expect(gesperrt).toContainText("Löschen ist hier nicht möglich");
-      await expect(feld).toHaveCount(0);
-    } else {
-      await expect(feld).toBeVisible();
-    }
+    await expect(zone.locator(".hinweis.fehler")).toContainText("Löschen ist hier nicht möglich");
+    await expect(zone.getByLabel(/Nachnamen eingeben/)).toHaveCount(0);
 
     const text = await page.locator("body").innerText();
     expect(text).not.toContain("violates");
@@ -965,13 +953,8 @@ test.describe("Mitgliederverwaltung", () => {
   });
 
   test("ein normales Mitglied kommt nicht an die Detailseite", async ({ page }) => {
-    await anmelden(page, NUTZER.admin);
-    await page.goto("/admin/mitglieder");
-    const ziel = await page.locator('.liste-gruppe[aria-label="Mitglieder"] li a').first().getAttribute("href");
-
-    await page.context().clearCookies();
     await anmelden(page, NUTZER.mitglied);
-    await page.goto(ziel!);
+    await page.goto(`/admin/mitglieder/${MITGLIED_ID.admin}`);
 
     await expect(page.locator(".hinweis.fehler")).toContainText(/Administrator/);
   });

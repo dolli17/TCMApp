@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { anmelden, NUTZER } from "./hilfen";
+import { anmelden, MITGLIED_ID, NUTZER } from "./hilfen";
 
 /**
  * Pflicht-Onboarding nach dem ersten Login.
@@ -103,10 +103,7 @@ test.describe("Onboarding", () => {
 
   test("der Vorstand sieht das online erteilte Mandat", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/admin/mitglieder?filter=alle&q=Neumitglied");
-    const zeile = page.locator('.liste-gruppe[aria-label="Mitglieder"] li').filter({ hasText: "Nora" });
-    const href = await zeile.locator("a").first().getAttribute("href");
-    await page.goto(`${href}?teil=bank`);
+    await page.goto(`/admin/mitglieder/${MITGLIED_ID.neu}?teil=bank`);
     const karte = page.locator('section[aria-label="Bankverbindung und Mandat"]');
     await expect(karte).toContainText("•••• 3000");
     await expect(karte.locator(".liste-gruppe .hinweis-rechts.gruen")).toContainText("aktiv");

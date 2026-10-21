@@ -243,8 +243,16 @@ with vornamen as (
     random() as r_gender,
     random() as r_bank,
     random() as r_phone,
-    extensions.gen_random_uuid() as member_id,
-    extensions.gen_random_uuid() as auth_id
+    -- Feste IDs statt gen_random_uuid (T3): Wer Admin wird, wessen Konto die
+    -- Kinder mitbenutzen, und welche Mitglieder admin@ und mitglied@ werden,
+    -- haengt an der Sortierung nach id. Mit zufaelligen IDs wanderte das bei
+    -- jedem db reset. Die ersten beiden werden die Testkonten (siehe unten).
+    case i when 1 then 'e2e00000-0000-4000-8000-000000000001'::uuid
+           when 2 then 'e2e00000-0000-4000-8000-000000000002'::uuid
+           else md5('tcm-mitglied-' || i)::uuid end as member_id,
+    case i when 1 then 'e2e00000-0000-4000-8000-000000000101'::uuid
+           when 2 then 'e2e00000-0000-4000-8000-000000000102'::uuid
+           else md5('tcm-konto-' || i)::uuid end as auth_id
   from generate_series(1, 400) i
 ), passwort as (
   select extensions.crypt('tcm-lokal-2026', extensions.gen_salt('bf')) as hash
@@ -292,7 +300,10 @@ select
   case when r_gender < 0.48 then 'female'::public.salutation
        when r_gender < 0.98 then 'male'::public.salutation
        else 'none'::public.salutation end,
-  (current_date - make_interval(years => age) - make_interval(days => floor(random() * 365)::int))::date,
+  -- Die beiden Testkonten sind erwachsen. random() laeuft trotzdem mit, damit
+  -- der restliche Bestand derselbe bleibt.
+  (current_date - make_interval(years => case when i <= 2 then 41 else age end)
+                - make_interval(days => floor(random() * 365)::int))::date,
   lower(first_name) || '.' || lower(last_name) || i::text || '@example.org',
   case when r_phone < 0.86
        then '0170 ' || lpad(floor(random() * 9999999)::text, 7, '0')
@@ -456,6 +467,7 @@ select id, 'member'::public.app_role from public.members;
 -- Sportwart - sieben Personen; alle uebrigen bleiben Mitglied.
 with nummeriert as (
   select id, row_number() over (order by created_at, id) as rn from public.members
+  where id::text not like 'e2e00000-%'   -- die Testkonten bekommen ihre Rollen unten
 )
 insert into public.member_roles (member_id, role)
 select id, 'admin'::public.app_role from nummeriert where rn <= 7
@@ -501,47 +513,11 @@ join public.drink_prices dp on dp.drink_item_id = di.id
 cross join generate_series(1, 3)
 where random() < 0.6;
 
--- ---------------------------------------------------------------------------
--- Platzbuchungen der naechsten Tage
---
--- Bewusst nur im erlaubten Vorlauffenster und ohne Kontingentverletzung, damit
--- der Bestand konsistent zu den Regeln ist.
--- ---------------------------------------------------------------------------
-with kandidaten as (
-  select
-    c.id as court_id,
-    ((date_trunc('day', now() at time zone 'Europe/Berlin')::date + d)
-      + (array['09:00','10:00','15:00','16:00','17:00','18:00','19:00','20:00'])
-        [1 + floor(random() * 8)::int]::time
-    ) at time zone 'Europe/Berlin' as starts_at,
-    random() as r
-  from public.courts c
-  cross join generate_series(0, 6) d
-), gefiltert as (
-  select court_id, starts_at,
-         (select id from public.members order by random() limit 1) as member_id
-  from kandidaten
-  where r < 0.45 and starts_at > now() + interval '2 hours'
-)
-insert into public.bookings (court_id, slot, kind, booking_type_id, member_id, created_by)
-select court_id, tstzrange(starts_at, starts_at + interval '1 hour', '[)'),
-       'booking', (select id from public.booking_types where code = 'einzel'),
-       member_id, member_id
-from gefiltert
--- Zufallstreffer auf denselben Slot einfach verwerfen; der EXCLUDE-Constraint
--- ist hier Teil des Seeds, nicht ein Fehlerfall.
-on conflict on constraint bookings_no_overlap do nothing;
-
--- Mitspieler ergaenzen: die Mitspielerpflicht gilt auch fuer den Testbestand
-insert into public.booking_players (booking_id, member_id)
-select b.id,
-       (select m.id from public.members m where m.id <> b.member_id order by random() limit 1)
-from public.bookings b
-where b.kind = 'booking'
-  and not exists (select 1 from public.booking_players bp where bp.booking_id = b.id)
-on conflict do nothing;
-
 -- Eine Trainingsserie, wie sie der Sportwart anlegen wuerde
+--
+-- Steht vor den Zufallsbuchungen: die weichen ihr dann aus (on conflict). In
+-- umgekehrter Reihenfolge fehlte der Serie ab und zu ein Termin, und wer sie
+-- bearbeitete, musste ploetzlich eine Buchung verdraengen (E2E-Flake).
 insert into public.booking_series
   (court_id, booking_type_id, weekday, start_time, end_time, valid_from, valid_to, title)
 select
@@ -559,6 +535,54 @@ from public.booking_series bs
 cross join generate_series(bs.valid_from, bs.valid_to, interval '1 day') d
 where extract(dow from d)::integer = bs.weekday
 on conflict on constraint bookings_no_overlap do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Platzbuchungen der naechsten Tage
+--
+-- Bewusst nur im erlaubten Vorlauffenster und ohne Kontingentverletzung, damit
+-- der Bestand konsistent zu den Regeln ist.
+--
+-- Nie um 08:00 und nie zwischen 11 und 15 Uhr: dieses Fenster haelt der Seed
+-- frei, dort buchen die E2E-Tests feste Termine (T3). Die Testkonten
+-- (e2e00000-...) bekommen keine Zufallsbuchungen, sonst stuenden sie den
+-- Tests mit "Du spielst zu dieser Zeit schon" im Weg.
+-- ---------------------------------------------------------------------------
+with kandidaten as (
+  select
+    c.id as court_id,
+    ((date_trunc('day', now() at time zone 'Europe/Berlin')::date + d)
+      + (array['09:00','10:00','15:00','16:00','17:00','18:00','19:00','20:00'])
+        [1 + floor(random() * 8)::int]::time
+    ) at time zone 'Europe/Berlin' as starts_at,
+    random() as r
+  from public.courts c
+  cross join generate_series(0, 6) d
+), gefiltert as (
+  select court_id, starts_at,
+         (select id from public.members where id::text not like 'e2e00000-%'
+           order by random() limit 1) as member_id
+  from kandidaten
+  where r < 0.45 and starts_at > now() + interval '2 hours'
+)
+insert into public.bookings (court_id, slot, kind, booking_type_id, member_id, created_by)
+select court_id, tstzrange(starts_at, starts_at + interval '1 hour', '[)'),
+       'booking', (select id from public.booking_types where code = 'einzel'),
+       member_id, member_id
+from gefiltert
+-- Zufallstreffer auf denselben Slot einfach verwerfen; der EXCLUDE-Constraint
+-- ist hier Teil des Seeds, nicht ein Fehlerfall.
+on conflict on constraint bookings_no_overlap do nothing;
+
+-- Mitspieler ergaenzen: die Mitspielerpflicht gilt auch fuer den Testbestand
+insert into public.booking_players (booking_id, member_id)
+select b.id,
+       (select m.id from public.members m
+         where m.id <> b.member_id and m.id::text not like 'e2e00000-%'
+         order by random() limit 1)
+from public.bookings b
+where b.kind = 'booking'
+  and not exists (select 1 from public.booking_players bp where bp.booking_id = b.id)
+on conflict do nothing;
 
 -- ===========================================================================
 -- Merkmale: Einwilligungen und ein Beispiel aus der Praxis
@@ -681,6 +705,17 @@ end $$;
 -- Drei Konten mit bekannter Adresse: Admin und Mitglied uebernehmen den Login
 -- je eines Mitglieds aus dem Bestand, der Kiosk ist ein eigenes Geraetekonto.
 --
+-- Alle Testkonten haben feste UUIDs mit dem Praefix e2e00000- (T3), dieselben
+-- stehen in apps/web/e2e/hilfen.ts:
+--   ...0001 / ...0101  admin@     Mitglied / Login
+--   ...0002 / ...0102  mitglied@
+--            ...0103  kiosk@     nur Login (Geraetekonto)
+--   ...0004 / ...0104  neu@       (Onboarding, unten)
+--   ...0005 / ...0105  kind@
+--   ...0006 / ...0106  Mia Mitspiel   feste Mitspieler, ohne Login-Nutzung
+--   ...0007 / ...0107  Max Mitspiel
+--   ...0008 / ...0108  Kira Kasse     mit Bankverbindung und Mandat
+--
 -- Die Adressen enden auf .local und sind damit weder erreichbar noch mit
 -- echten Adressen zu verwechseln. Das Passwort steht bewusst im Klartext hier:
 -- es gilt ausschliesslich fuer diese synthetische Datenbank.
@@ -689,10 +724,11 @@ end $$;
 do $$
 declare
   v_passwort constant text := 'tcm-lokal-2026';
+  -- E-Mail, Rolle, Mitglied, Login (beim Kiosk nur der Login)
   v_konten constant text[][] := array[
-    array['admin@tcm.local',    'admin'],
-    array['mitglied@tcm.local', 'member'],
-    array['kiosk@tcm.local',    'kiosk']
+    array['admin@tcm.local',    'admin',  'e2e00000-0000-4000-8000-000000000001', 'e2e00000-0000-4000-8000-000000000101'],
+    array['mitglied@tcm.local', 'member', 'e2e00000-0000-4000-8000-000000000002', 'e2e00000-0000-4000-8000-000000000102'],
+    array['kiosk@tcm.local',    'kiosk',  '',                                     'e2e00000-0000-4000-8000-000000000103']
   ];
   v_zeile  text[];
   v_auth   uuid;
@@ -701,7 +737,7 @@ begin
   foreach v_zeile slice 1 in array v_konten loop
     if v_zeile[2] = 'kiosk' then
       -- Das Tablet an der Theke ist kein Mitglied, sondern ein Geraetekonto.
-      v_auth := extensions.gen_random_uuid();
+      v_auth := v_zeile[4]::uuid;
 
       -- Leere Token-Spalten und eine Identitaet: siehe oben bei den Mitgliedern.
       insert into auth.users (
@@ -731,15 +767,10 @@ begin
       values (v_auth, 'Kiosk Clubheim', 'Theke');
     else
       -- Ein bestehendes Mitglied bekommt die bekannte Adresse, damit die
-      -- Konten echte Historie haben: Buchungen, Getraenke, Forderungen. Sein
-      -- Login zieht mit um.
-      select m.id, m.auth_user_id into v_member, v_auth
-      from public.members m
-      where m.status = 'active'
-        and m.email::text like '%@example.org'
-        and m.birthday is not null and m.birthday <= current_date - interval '18 years'
-      order by m.last_name, m.id
-      limit 1;
+      -- Konten echte Historie haben: Getraenke, Forderungen. Sein Login zieht
+      -- mit um. Welches, steht fest: die ersten beiden des Bestands.
+      v_member := v_zeile[3]::uuid;
+      v_auth := v_zeile[4]::uuid;
 
       update auth.users set email = v_zeile[1] where id = v_auth;
       update auth.identities
@@ -795,16 +826,18 @@ do $$
 declare
   v_passwort constant text := 'tcm-lokal-2026';
   v_konten constant text[][] := array[
-    -- E-Mail, Vorname, Nachname, Geschlecht, Alter in Jahren
-    array['neu@tcm.local',  'Nora', 'Neumitglied', 'female', '34'],
-    array['kind@tcm.local', 'Kian', 'Neumitglied', 'male',   '12']
+    -- E-Mail, Vorname, Nachname, Geschlecht, Alter in Jahren, Mitglied, Login
+    array['neu@tcm.local',  'Nora', 'Neumitglied', 'female', '34',
+          'e2e00000-0000-4000-8000-000000000004', 'e2e00000-0000-4000-8000-000000000104'],
+    array['kind@tcm.local', 'Kian', 'Neumitglied', 'male',   '12',
+          'e2e00000-0000-4000-8000-000000000005', 'e2e00000-0000-4000-8000-000000000105']
   ];
   v_zeile  text[];
   v_auth   uuid;
   v_member uuid;
 begin
   foreach v_zeile slice 1 in array v_konten loop
-    v_auth := extensions.gen_random_uuid();
+    v_auth := v_zeile[7]::uuid;
 
     insert into auth.users (
       id, instance_id, aud, role, email, encrypted_password,
@@ -830,10 +863,10 @@ begin
     );
 
     insert into public.members (
-      auth_user_id, invited_at, onboarding_completed_at, first_name, last_name,
+      id, auth_user_id, invited_at, onboarding_completed_at, first_name, last_name,
       gender, salutation, birthday, email, mobile, street, postcode, city, country_code
     ) values (
-      v_auth, now(), null, v_zeile[2], v_zeile[3],
+      v_zeile[6]::uuid, v_auth, now(), null, v_zeile[2], v_zeile[3],
       v_zeile[4]::public.gender, v_zeile[4]::public.salutation,
       (current_date - make_interval(years => v_zeile[5]::int) - interval '40 days')::date,
       v_zeile[1], '0170 1234567', 'Hauptstr. 1', '70372', 'Stuttgart', 'DE'
@@ -850,4 +883,106 @@ begin
     from public.fee_types t
     where t.code = case when v_zeile[5]::int < 18 then 'jugend' else 'erwachsener' end;
   end loop;
+end $$;
+
+-- ===========================================================================
+-- Feste Mitglieder fuer die E2E-Tests (T3)
+--
+-- Die Tests suchten Mitspieler mit "a" und nahmen den ersten Treffer, und die
+-- Kasse rechnete mit einer "Nadine Bauer", die es nur dank setseed gibt. Jetzt
+-- gibt es drei Mitglieder mit festem Namen und fester UUID, die sonst nirgends
+-- auftauchen: keine Zufallsbuchungen, keine Mannschaft.
+--   Mia Mitspiel, Max Mitspiel  Mitspieler in den Buchungstests
+--   Kira Kasse                  Forderungen und Einzug, mit aktivem Mandat
+-- Dazu bekommt mitglied@ eine Getraenkebuchung: Historie, die das Loeschen
+-- sperrt, haengt damit nicht mehr am Zufall.
+-- ===========================================================================
+
+do $$
+declare
+  v_passwort constant text := 'tcm-lokal-2026';
+  v_konten constant text[][] := array[
+    -- Vorname, Nachname, Geschlecht, Mitglied, Login
+    array['Mia',  'Mitspiel', 'female', 'e2e00000-0000-4000-8000-000000000006', 'e2e00000-0000-4000-8000-000000000106'],
+    array['Max',  'Mitspiel', 'male',   'e2e00000-0000-4000-8000-000000000007', 'e2e00000-0000-4000-8000-000000000107'],
+    array['Kira', 'Kasse',    'female', 'e2e00000-0000-4000-8000-000000000008', 'e2e00000-0000-4000-8000-000000000108']
+  ];
+  v_iban constant text := 'DE02120300000000202051';
+  v_zeile  text[];
+  v_email  text;
+  v_konto  uuid;
+begin
+  foreach v_zeile slice 1 in array v_konten loop
+    -- @example.org: an diese Adressen geht nie eine Mail (ist_testadresse).
+    v_email := lower(v_zeile[1] || '.' || v_zeile[2]) || '@example.org';
+
+    insert into auth.users (
+      id, instance_id, aud, role, email, encrypted_password,
+      email_confirmed_at, created_at, updated_at,
+      raw_app_meta_data, raw_user_meta_data,
+      confirmation_token, recovery_token,
+      email_change, email_change_token_new, email_change_token_current,
+      phone_change, phone_change_token, reauthentication_token
+    ) values (
+      v_zeile[5]::uuid, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+      v_email, extensions.crypt(v_passwort, extensions.gen_salt('bf')),
+      now(), now(), now(),
+      '{"provider":"email","providers":["email"]}'::jsonb,
+      jsonb_build_object('member_id', v_zeile[4]),
+      '', '', '', '', '', '', '', ''
+    );
+
+    insert into auth.identities (
+      id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at
+    ) values (
+      extensions.gen_random_uuid(), v_zeile[5]::uuid, v_zeile[5], 'email',
+      jsonb_build_object('sub', v_zeile[5], 'email', v_email, 'email_verified', true),
+      null, now(), now()
+    );
+
+    insert into public.members (
+      id, auth_user_id, invited_at, onboarding_completed_at, first_name, last_name,
+      gender, salutation, birthday, email, mobile, street, postcode, city, country_code
+    ) values (
+      v_zeile[4]::uuid, v_zeile[5]::uuid, now(), now(), v_zeile[1], v_zeile[2],
+      v_zeile[3]::public.gender, v_zeile[3]::public.salutation,
+      (current_date - interval '35 years')::date,
+      v_email, '0170 7654321', 'Am Sportplatz 1', '70372', 'Stuttgart', 'DE'
+    );
+
+    insert into public.memberships (member_id, number, started_on, status)
+    values (v_zeile[4]::uuid, private.next_membership_number(), current_date - 400, 'active');
+
+    insert into public.member_roles (member_id, role) values (v_zeile[4]::uuid, 'member');
+
+    insert into public.member_fees (member_id, fee_type_id, year)
+    select v_zeile[4]::uuid, t.id, extract(year from current_date)::integer
+    from public.fee_types t where t.code = 'erwachsener';
+  end loop;
+
+  -- Kira Kasse zahlt per Lastschrift: eigene Bankverbindung, aktives Mandat.
+  insert into public.bank_accounts
+    (member_id, iban_encrypted, iban_fingerprint, iban_last4, holder, bank_name)
+  values (
+    'e2e00000-0000-4000-8000-000000000008',
+    private.encrypt_iban(v_iban), private.fingerprint_iban(v_iban), right(v_iban, 4),
+    'Kira Kasse', 'Testbank'
+  )
+  returning id into v_konto;
+
+  insert into public.sepa_mandates
+    (member_id, bank_account_id, reference, signed_on, last_used_on, sequence_type)
+  values (
+    'e2e00000-0000-4000-8000-000000000008', v_konto, 'TCM-E2E-KASSE',
+    current_date - 400, current_date - 200, 'RCUR'
+  );
+
+  -- Historie fuer mitglied@: eine Getraenkebuchung von gestern.
+  insert into public.drink_purchases
+    (member_id, drink_item_id, quantity, unit_price_cents, source, recorded_by, created_at)
+  select 'e2e00000-0000-4000-8000-000000000002', dp.drink_item_id, 1, dp.price_cents, 'app',
+         'e2e00000-0000-4000-8000-000000000002', now() - interval '1 day'
+  from public.drink_prices dp
+  order by dp.valid_from, dp.drink_item_id
+  limit 1;
 end $$;

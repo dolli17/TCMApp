@@ -9,7 +9,58 @@ import { createClient } from "@supabase/supabase-js";
  * werden mitgetestet - nichts davon wäre mit Mocks zu haben.
  */
 
-import { alsListendatum, anmelden, NUTZER, PASSWORT } from "./hilfen";
+import {
+  alsListendatum,
+  anmelden,
+  freieStunde,
+  mitspielerWaehlen,
+  MITSPIELER,
+  NUTZER,
+  oeffneFreieStunde,
+  PASSWORT,
+  tagIn,
+  ZAHLERIN,
+} from "./hilfen";
+import { FREMDE_BUCHUNG } from "./testbestand-zuruecksetzen";
+
+/*
+ * Feste Termine (T3): jeder Buchungstest hat seinen eigenen Platz und Tag im
+ * Fenster, das der Seed frei hält (11–15 Uhr). Das globalSetup räumt dort die
+ * Buchungen der Testkonten weg. Kein Test sucht mehr „die erste freie Zelle“
+ * oder überspringt sich, wenn keine da ist.
+ *
+ *   Tag +1  Platz 1 11:00  Mitspielerpflicht (ohne Buchung)
+ *           Platz 8 12:00  fremde Buchung aus dem globalSetup
+ *   Tag +2  Platz 1 11:00  Escape schließt (ohne Buchung)
+ *           Platz 2 11:00  Admin storniert fremd mit Grund
+ *   Tag +3  Platz 1 11:30  :30 buchen und stornieren
+ *           Platz 6 11:00  Realtime
+ *   Tag +4  Platz 1 11:00  Mitspieler austauschen
+ *           Platz 5 11:00  Sperrung fragt vor dem Verdrängen (sperrt den Tag)
+ *   Tag +5  Platz 2 11:30  angebrochene Stunden (11:30 und 12:30)
+ *           Platz 7 11:00  einzelne Stunde sperren
+ *           Platz 6 12:00  Umsetzen auf belegtes Ziel
+ *   Tag +6  Platz 3 11:00  Meine Buchungen und Glocke
+ *           Platz 4 11:00  offene Spiele und Gäste
+ *           Platz 8 11:00  Sperrung bearbeiten
+ *           Platz 5 12:00  Umsetzen
+ */
+
+/** Die Buchung im Raster öffnen, über ihre Beschriftung. */
+async function oeffneBuchung(page: Page, platz: string, zeit: string) {
+  await page.getByRole("button", { name: `Buchung ${zeit} auf ${platz} verwalten` }).click();
+  const fenster = page.locator("dialog.fenster");
+  await expect(fenster).toBeVisible();
+  return fenster;
+}
+
+/** Die eigene Buchung im Raster stornieren. */
+async function storniere(page: Page, platz: string, zeit: string) {
+  const fenster = await oeffneBuchung(page, platz, zeit);
+  await fenster.getByRole("button", { name: "Buchung stornieren" }).click();
+  await fenster.getByRole("button", { name: "Wirklich stornieren" }).click();
+  await expect(page.locator(".hinweis.erfolg")).toContainText("storniert", { timeout: 15_000 });
+}
 
 /**
  * Einen Tag weiter: die Datums-Kachel rechts neben der gewählten. Früher gab
@@ -200,8 +251,8 @@ test.describe("Platzbuchung", () => {
     await anmelden(page, NUTZER.mitglied);
     await tageWeiter(page, 2);
 
-    const freieZelle = page.locator(".plan-raster button.frei-slot").first();
-    test.skip((await freieZelle.count()) === 0, "Kein freier Slot an diesem Tag");
+    const freieZelle = freieStunde(page, "Platz 1", "11:00");
+    await expect(freieZelle).toBeVisible();
     await freieZelle.click();
 
     const fenster = page.locator("dialog.fenster");
@@ -215,88 +266,37 @@ test.describe("Platzbuchung", () => {
     page,
   }) => {
     await anmelden(page, NUTZER.mitglied);
-    await tageWeiter(page, 3);
+    const fenster = await oeffneFreieStunde(page, tagIn(3), "Platz 1", "11:00");
 
-    const freieZelle = page.locator(".plan-raster button.frei-slot").first();
-    test.skip((await freieZelle.count()) === 0, "Kein freier Slot an diesem Tag");
-    await freieZelle.click();
-
-    const fenster = page.locator("dialog.fenster");
-    await expect(fenster).toBeVisible();
-
-    // Beginn zur halben Stunde, falls diese Haelfte frei ist
-    const halbe = fenster.locator("fieldset.startwahl input:not([disabled])").nth(1);
-    if ((await halbe.count()) > 0) await halbe.click();
+    // Beginn zur halben Stunde
+    await fenster.getByRole("radio", { name: "11:30" }).check();
 
     // Mitspieler durch Tippen finden statt aus 300 Namen zu scrollen
-    await (await suchfeld(fenster)).fill("a");
-    const treffer = fenster.locator(".trefferliste li").first().locator("button");
-    await expect(treffer).toBeVisible();
-    await treffer.click();
+    await mitspielerWaehlen(fenster, MITSPIELER.mia);
     await expect(fenster.locator(".marken li")).toHaveCount(1);
 
     await fenster.getByRole("button", { name: /buchen/i }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("gebucht", { timeout: 15_000 });
 
-    const rueckmeldung = page.locator(".hinweis").first();
-    await expect(rueckmeldung).toBeVisible({ timeout: 15_000 });
-
-    // Entweder gebucht oder eine verstaendliche Ablehnung - nie ein roher
-    // Datenbankfehler.
-    const text = (await rueckmeldung.textContent()) ?? "";
-    expect(text).not.toContain("violates");
-    expect(text).not.toContain("constraint");
-
-    if (text.includes("gebucht")) {
-      const eigene = page.locator(".plan-raster button.beleg.eigen").first();
-      await expect(eigene).toBeVisible();
-      await eigene.click();
-
-      const verwalten = page.locator("dialog.fenster");
-      await expect(verwalten).toBeVisible();
-      await verwalten.getByRole("button", { name: "Buchung stornieren" }).click();
-      await verwalten.getByRole("button", { name: "Wirklich stornieren" }).click();
-      await expect(page.locator(".hinweis.erfolg")).toContainText("storniert", {
-        timeout: 15_000,
-      });
-    }
+    await storniere(page, "Platz 1", "11:30");
   });
 
   test("Mitspieler einer eigenen Buchung austauschen", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
-    await tageWeiter(page, 4);
-
-    const freieZelle = page.locator(".plan-raster button.frei-slot").first();
-    test.skip((await freieZelle.count()) === 0, "Kein freier Slot an diesem Tag");
-    await freieZelle.click();
-
-    const fenster = page.locator("dialog.fenster");
-    await (await suchfeld(fenster)).fill("e");
-    await fenster.locator(".trefferliste li").first().locator("button").click();
+    const fenster = await oeffneFreieStunde(page, tagIn(4), "Platz 1", "11:00");
+    await mitspielerWaehlen(fenster, MITSPIELER.mia);
     await fenster.getByRole("button", { name: /buchen/i }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("gebucht", { timeout: 15_000 });
 
-    const rueckmeldung = page.locator(".hinweis").first();
-    await expect(rueckmeldung).toBeVisible({ timeout: 15_000 });
-    test.skip(!((await rueckmeldung.textContent()) ?? "").includes("gebucht"), "Buchung abgelehnt");
-
-    const eigene = page.locator(".plan-raster button.beleg.eigen").first();
-    await eigene.click();
-
-    const verwalten = page.locator("dialog.fenster");
-    await expect(verwalten).toBeVisible();
-    // Alten Mitspieler merken und entfernen. Beim Einzel ist genau ein
-    // Mitspieler erlaubt, deshalb muss erst Platz gemacht werden.
-    const alterName = (await verwalten.locator(".marken li .name").first().textContent()) ?? "";
-    const alterNachname = alterName.trim().split(" ").pop() ?? "";
+    const verwalten = await oeffneBuchung(page, "Platz 1", "11:00");
+    // Mia entfernen. Beim Einzel ist genau ein Mitspieler erlaubt, deshalb
+    // muss erst Platz gemacht werden.
+    await expect(verwalten.locator(".marken li")).toContainText(MITSPIELER.mia);
     await verwalten.locator(".marken li button").first().click();
 
-    // Ein anderer Treffer als der eben entfernte - sonst aendert sich nichts
-    // und der Speichern-Knopf bleibt zu Recht gesperrt.
-    await (await suchfeld(verwalten)).fill("i");
-    await verwalten
-      .locator(".trefferliste li button")
-      .filter({ hasNotText: alterNachname })
-      .first()
-      .click();
+    // Ein anderer Mitspieler als der eben entfernte - sonst aendert sich
+    // nichts und der Speichern-Knopf bleibt zu Recht gesperrt.
+    await mitspielerWaehlen(verwalten, MITSPIELER.max);
     await verwalten.getByRole("button", { name: "Mitspieler speichern" }).click();
 
     await expect(page.locator(".hinweis.erfolg")).toContainText("aktualisiert", {
@@ -304,24 +304,15 @@ test.describe("Platzbuchung", () => {
     });
 
     // Aufraeumen, damit der naechste Lauf denselben Slot wieder frei findet
-    await page.locator(".plan-raster button.beleg.eigen").first().click();
-    const nochmal = page.locator("dialog.fenster");
-    await nochmal.getByRole("button", { name: "Buchung stornieren" }).click();
-    await nochmal.getByRole("button", { name: "Wirklich stornieren" }).click();
-    await expect(page.locator(".hinweis.erfolg")).toContainText("storniert", { timeout: 15_000 });
+    await storniere(page, "Platz 1", "11:00");
   });
 
   test("Mitspielerpflicht wird durchgesetzt", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
-    await tageWeiter(page, 1);
-
-    const freieZelle = page.locator(".plan-raster button.frei-slot").first();
-    test.skip((await freieZelle.count()) === 0, "Kein freier Slot");
-    await freieZelle.click();
+    const fenster = await oeffneFreieStunde(page, tagIn(1), "Platz 1", "11:00");
 
     // Ohne Mitspieler ist der Buchen-Knopf gesperrt; die Datenbank wuerde es
     // ebenfalls ablehnen, aber der Benutzer soll es vorher sehen.
-    const fenster = page.locator("dialog.fenster");
     await expect(fenster.getByRole("button", { name: /buchen/i })).toBeDisabled();
   });
 
@@ -343,66 +334,41 @@ test.describe("Platzbuchung", () => {
    *    aus wie eine - die zweite fehlte im Plan vollstaendig.
    * 2. War :00 belegt, liess sich :30 nicht mehr anklicken, obwohl der Platz
    *    zu der Zeit frei stand.
+   *
+   * Platz 2 ist an Tag +5 von 11 bis 15 Uhr frei: der Seed bucht dort nie.
    */
   test("angebrochene Stunden: Reststunde bleibt buchbar, beide Buchungen sichtbar", async ({
     page,
   }) => {
     await anmelden(page, NUTZER.mitglied);
-    await tageWeiter(page, 5);
-
-    /** Die Spalte eines Platzes im Raster. */
-    const spalte = (platz: string) => page.locator(`.plan-raster .spalte[aria-label="${platz}"]`);
-    const frei = (platz: string, uhr: string) =>
-      spalte(platz).getByRole("button", { name: `${platz} um ${uhr} buchen` });
-
-    // Einen Platz suchen, der 08 bis 10:30 komplett frei ist - sonst kollidiert
-    // der Test mit dem Bestand oder mit einer Trainingsserie.
-    const plaetze = await page.locator(".plan-raster .spalte").evaluateAll((els) =>
-      els.map((e) => e.getAttribute("aria-label") ?? ""),
-    );
-    let platz = "";
-    for (const p of plaetze) {
-      const alle = await Promise.all(
-        ["08:00", "08:30", "09:00", "09:30", "10:00"].map(async (uhr) => (await frei(p, uhr).count()) === 1),
-      );
-      if (alle.every(Boolean) && (await spalte(p).locator(".beleg").count()) === 0) {
-        platz = p;
-        break;
-      }
-    }
-    test.skip(platz === "", "Kein Platz ist an diesem Tag von 08 bis 11 Uhr durchgehend frei");
+    const platz = "Platz 2";
+    const spalte = page.locator(`.plan-raster .spalte[aria-label="${platz}"]`);
 
     async function imFensterBuchen(uhrzeit: string) {
       const fenster = page.locator("dialog.fenster");
       await expect(fenster).toBeVisible();
       await fenster.getByRole("radio", { name: uhrzeit }).check();
-      await (await suchfeld(fenster)).fill("a");
-      await fenster.locator(".trefferliste li").first().locator("button").click();
+      await mitspielerWaehlen(fenster, MITSPIELER.mia);
       await fenster.getByRole("button", { name: /buchen/i }).click();
       await expect(page.locator(".hinweis.erfolg")).toContainText("gebucht", { timeout: 15_000 });
     }
 
-    await frei(platz, "08:00").click();
-    await imFensterBuchen("08:30");
+    await oeffneFreieStunde(page, tagIn(5), platz, "11:00");
+    await imFensterBuchen("11:30");
 
-    // 09:00 ist jetzt angebrochen, 09:30 bleibt buchbar.
-    await expect(frei(platz, "09:00")).toHaveCount(0);
-    await frei(platz, "09:30").click();
-    await imFensterBuchen("09:30");
+    // 12:00 ist jetzt angebrochen, 12:30 bleibt buchbar.
+    await expect(freieStunde(page, platz, "12:00")).toHaveCount(0);
+    await freieStunde(page, platz, "12:30").click();
+    await imFensterBuchen("12:30");
 
     // Beide Buchungen stehen als eigene Blöcke im Raster, nicht nur die erste.
-    await expect(spalte(platz).locator(".beleg")).toHaveCount(2);
-    await expect(spalte(platz).locator(".beleg").first()).toContainText("08:30–09:30");
-    await expect(spalte(platz).locator(".beleg").last()).toContainText("09:30–10:30");
+    await expect(spalte.locator(".beleg")).toHaveCount(2);
+    await expect(spalte.locator(".beleg").first()).toContainText("11:30–12:30");
+    await expect(spalte.locator(".beleg").last()).toContainText("12:30–13:30");
 
     // Aufraeumen, damit der naechste Lauf denselben Platz wieder frei findet.
-    for (let i = 0; i < 2; i++) {
-      await spalte(platz).locator("button.beleg.eigen").first().click();
-      const fenster = page.locator("dialog.fenster");
-      await fenster.getByRole("button", { name: "Buchung stornieren" }).click();
-      await fenster.getByRole("button", { name: "Wirklich stornieren" }).click();
-      await expect(page.locator(".hinweis.erfolg")).toContainText("storniert", { timeout: 15_000 });
-    }
+    await storniere(page, platz, "11:30");
+    await storniere(page, platz, "12:30");
   });
 
   test("ein Training über 18:30–20:00 belegt 18 und 19 Uhr", async ({ page }) => {
@@ -515,24 +481,24 @@ test.describe("Berechtigungen", () => {
     await expect(page.getByRole("button", { name: "Vorschau" })).toBeVisible();
   });
 
+  // Die fremde Buchung legt das globalSetup an (Mia Mitspiel, testbestand-zuruecksetzen.ts).
   test("Admin kann jede fremde Buchung öffnen", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/plan");
+    await page.goto(`/plan?tag=${tagIn(FREMDE_BUCHUNG.inTagen)}`);
 
-    const fremde = page.locator(".plan-raster button.beleg.belegt").first();
-    test.skip((await fremde.count()) === 0, "Heute ist keine fremde Buchung im Plan");
-
-    await fremde.click();
-    const fenster = page.locator("dialog.fenster");
-    await expect(fenster).toBeVisible();
+    const fenster = await oeffneBuchung(page, FREMDE_BUCHUNG.platz, FREMDE_BUCHUNG.zeit);
     await expect(fenster).toContainText("mit Platzrechten");
     await page.keyboard.press("Escape");
   });
 
   test("normales Mitglied kann eine fremde Buchung nicht öffnen", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
-    await page.goto("/plan");
-    // Fremde Belegungen sind <span>, keine Schaltflaeche - es gibt nichts zu klicken.
+    await page.goto(`/plan?tag=${tagIn(FREMDE_BUCHUNG.inTagen)}`);
+    // Die Buchung steht im Plan ...
+    await expect(
+      page.locator(`.plan-raster .spalte[aria-label="${FREMDE_BUCHUNG.platz}"] .beleg`).first(),
+    ).toBeVisible();
+    // ... aber fremde Belegungen sind <span>, keine Schaltflaeche - es gibt nichts zu klicken.
     await expect(page.locator(".plan-raster button.beleg.belegt")).toHaveCount(0);
   });
 });
@@ -599,8 +565,9 @@ test.describe("Kiosk", () => {
     await anmelden(page, NUTZER.kiosk);
     await page.goto("/kiosk");
 
-    await page.getByPlaceholder("Name eingeben…").fill("a");
-    await page.locator(".kiosk-treffer button").first().click();
+    // Ein festes Mitglied statt des ersten Treffers zu "a".
+    await page.getByPlaceholder("Name eingeben…").fill("Mitspiel");
+    await page.locator(".kiosk-treffer button").filter({ hasText: "Max" }).click();
 
     // Tippen zählt eins dazu, eingetragen wird erst über den gelben Knopf
     await page.locator(".kiosk-kacheln .kachel-knopf").first().click();
@@ -634,19 +601,9 @@ test.describe("Meine Buchungen und Benachrichtigungen", () => {
 
     // 2. Der Admin bucht und traegt das Mitglied als Mitspieler ein.
     await anmelden(page, NUTZER.admin);
-    await page.goto("/plan");
-    for (let i = 0; i < 6; i++) {
-      const vorher = page.url();
-      await naechsterTag(page);
-      await page.waitForURL((u) => u.toString() !== vorher);
-    }
-    const listendatum = alsListendatum(new URL(page.url()).searchParams.get("tag") ?? "");
-
-    const freieZelle = page.locator(".plan-raster button.frei-slot").first();
-    test.skip((await freieZelle.count()) === 0, "Kein freier Slot an diesem Tag");
-    await freieZelle.click();
-
-    const fenster = page.locator("dialog.fenster");
+    const tag = tagIn(6);
+    const listendatum = alsListendatum(tag);
+    const fenster = await oeffneFreieStunde(page, tag, "Platz 3", "11:00");
     await (await suchfeld(fenster)).fill(name);
     const treffer = fenster
       .locator(".trefferliste li button")
@@ -656,15 +613,9 @@ test.describe("Meine Buchungen und Benachrichtigungen", () => {
     await treffer.click();
     await expect(fenster.locator(".marken li")).toContainText(name);
 
-    // Platz und Startzeit merken: das Testmitglied hat im Bestand weitere
-    // Termine, und "der erste in der Liste" waere irgendeiner davon.
-    // Der Kopf des Blatts: "Platz 3 · Montag, 05.10." und darunter "08:30 – 09:30"
-    const platz = ((await fenster.locator(".fenster-kopf .kicker").textContent()) ?? "").split(" · ")[0]!.trim();
-    const buchenKnopf = fenster.getByRole("button", { name: /buchen/i });
-    const startzeit = /(\d{2}:\d{2})/.exec((await fenster.locator(".fenster-kopf h2").textContent()) ?? "")?.[1] ?? "";
-    expect(startzeit, "Das Blatt nennt keine Startzeit").toMatch(/^\d{2}:\d{2}$/);
-
-    await buchenKnopf.click();
+    const platz = "Platz 3";
+    const startzeit = "11:00";
+    await fenster.getByRole("button", { name: /buchen/i }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("gebucht", { timeout: 15_000 });
 
     // 3. Das Mitglied sieht die Glocke und findet die Buchung bei sich.
@@ -720,22 +671,14 @@ test.describe("Meine Buchungen und Benachrichtigungen", () => {
 test.describe("Offene Spiele und Gäste", () => {
   test("ausschreiben, beitreten, Gastgebühr im Konto, Storno erlässt sie", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/plan");
     // Sechs Tage, nicht sieben: der Vorlauf betraegt 7 x 24 Stunden ab jetzt,
-    // und eine Buchung um 08:00 am siebten Tag liegt knapp dahinter.
-    for (let i = 0; i < 6; i++) {
-      const vorher = page.url();
-      await naechsterTag(page);
-      await page.waitForURL((u) => u.toString() !== vorher);
-    }
-    const listendatum = alsListendatum(new URL(page.url()).searchParams.get("tag") ?? "");
-
-    const freieZelle = page.locator(".plan-raster button.frei-slot").first();
-    test.skip((await freieZelle.count()) === 0, "Kein freier Slot an diesem Tag");
-    await freieZelle.click();
-
-    const fenster = page.locator("dialog.fenster");
-    await expect(fenster).toBeVisible();
+    // und eine Buchung am Vormittag des siebten Tages liegt je nach Uhrzeit
+    // dahinter.
+    const tag = tagIn(6);
+    const listendatum = alsListendatum(tag);
+    const platz = "Platz 4";
+    const startzeit = "11:00";
+    const fenster = await oeffneFreieStunde(page, tag, platz, startzeit);
 
     // Doppel: vier Plätze, damit nach Bucher, Gast und Beitretendem noch Luft
     // bleibt und die Buchung ausgeschrieben werden kann.
@@ -745,12 +688,7 @@ test.describe("Offene Spiele und Gäste", () => {
     await expect(fenster.locator(".gasthinweis")).toContainText("10,00 €");
 
     await fenster.getByLabel("Mitspieler gesucht").check();
-
-    // Der Kopf des Blatts: "Platz 3 · Montag, 05.10." und darunter "08:30 – 09:30"
-    const platz = ((await fenster.locator(".fenster-kopf .kicker").textContent()) ?? "").split(" · ")[0]!.trim();
-    const buchenKnopf = fenster.getByRole("button", { name: /buchen/i });
-    const startzeit = /(\d{2}:\d{2})/.exec((await fenster.locator(".fenster-kopf h2").textContent()) ?? "")?.[1] ?? "";
-    await buchenKnopf.click();
+    await fenster.getByRole("button", { name: /buchen/i }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("gebucht", { timeout: 15_000 });
 
     // Der Plan markiert die Buchung als offen. Fuer den Bucher bleibt sie
@@ -842,22 +780,9 @@ test.describe("Plätze und Sperrungen", () => {
   test("Sperrung fragt vor dem Verdrängen und blockiert danach den Slot", async ({ page }) => {
     // Erst eine Buchung anlegen, die im Weg liegt.
     await anmelden(page, NUTZER.mitglied);
-    await page.goto("/plan");
-    for (let i = 0; i < 4; i++) {
-      const vorher = page.url();
-      await naechsterTag(page);
-      await page.waitForURL((u) => u.toString() !== vorher);
-    }
-    const tag = new URL(page.url()).searchParams.get("tag") ?? "";
-    expect(tag).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-
-    const freieZelle = page.locator(".plan-raster button.frei-slot").first();
-    test.skip((await freieZelle.count()) === 0, "Kein freier Slot an diesem Tag");
-    await freieZelle.click();
-
-    const fenster = page.locator("dialog.fenster");
-    await (await suchfeld(fenster)).fill("a");
-    await fenster.locator(".trefferliste li button").first().click();
+    const tag = tagIn(4);
+    const fenster = await oeffneFreieStunde(page, tag, "Platz 5", "11:00");
+    await mitspielerWaehlen(fenster, MITSPIELER.max);
     await fenster.getByRole("button", { name: /buchen/i }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("gebucht", { timeout: 15_000 });
 
@@ -924,26 +849,15 @@ test.describe("Der Plan aktualisiert sich von selbst", () => {
       await anmelden(seiteA, NUTZER.mitglied);
       await anmelden(seiteB, NUTZER.admin);
 
-      // Beide auf denselben Tag, weit genug weg vom Bestand der anderen Tests.
-      await seiteB.goto("/plan");
-      for (let i = 0; i < 3; i++) {
-        const vorher = seiteB.url();
-        await naechsterTag(seiteB);
-        await seiteB.waitForURL((u) => u.toString() !== vorher);
-      }
-      const tag = new URL(seiteB.url()).searchParams.get("tag") ?? "";
+      // Beide auf denselben Tag, der Bucher auf seinen festen Termin.
+      const tag = tagIn(3);
       await seiteA.goto(`/plan?tag=${tag}`);
       await expect(seiteA.locator(".plan-raster .raster")).toBeVisible();
 
       const belegtVorher = await seiteA.locator(".plan-raster .beleg").count();
 
-      const freieZelle = seiteB.locator(".plan-raster button.frei-slot").first();
-      test.skip((await freieZelle.count()) === 0, "Kein freier Slot an diesem Tag");
-      await freieZelle.click();
-
-      const fenster = seiteB.locator("dialog.fenster");
-      await (await suchfeld(fenster)).fill("a");
-      await fenster.locator(".trefferliste li button").first().click();
+      const fenster = await oeffneFreieStunde(seiteB, tag, "Platz 6", "11:00");
+      await mitspielerWaehlen(fenster, MITSPIELER.max);
       await fenster.getByRole("button", { name: /buchen/i }).click();
       await expect(seiteB.locator(".hinweis.erfolg")).toContainText("gebucht", { timeout: 15_000 });
 
@@ -957,13 +871,7 @@ test.describe("Der Plan aktualisiert sich von selbst", () => {
       });
 
       // Aufräumen
-      await seiteB.locator(".plan-raster button.beleg.eigen").first().click();
-      const verwalten = seiteB.locator("dialog.fenster");
-      await verwalten.getByRole("button", { name: "Buchung stornieren" }).click();
-      await verwalten.getByRole("button", { name: "Wirklich stornieren" }).click();
-      await expect(seiteB.locator(".hinweis.erfolg")).toContainText("storniert", {
-        timeout: 15_000,
-      });
+      await storniere(seiteB, "Platz 6", "11:00");
     } finally {
       await zuschauer.close();
       await bucher.close();
@@ -984,31 +892,16 @@ test.describe("Serien ändern, sperren, Gründe nennen", () => {
   }) => {
     // Das Mitglied bucht.
     await anmelden(page, NUTZER.mitglied);
-    await page.goto("/plan");
-    for (let i = 0; i < 2; i++) {
-      const vorher = page.url();
-      await naechsterTag(page);
-      await page.waitForURL((u) => u.toString() !== vorher);
-    }
-    const tag = new URL(page.url()).searchParams.get("tag") ?? "";
-
-    const freieZelle = page.locator(".plan-raster button.frei-slot").first();
-    test.skip((await freieZelle.count()) === 0, "Kein freier Slot an diesem Tag");
-    await freieZelle.click();
-
-    const fenster = page.locator("dialog.fenster");
-    await (await suchfeld(fenster)).fill("a");
-    await fenster.locator(".trefferliste li button").first().click();
+    const tag = tagIn(2);
+    const fenster = await oeffneFreieStunde(page, tag, "Platz 2", "11:00");
+    await mitspielerWaehlen(fenster, MITSPIELER.max);
     await fenster.getByRole("button", { name: /buchen/i }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("gebucht", { timeout: 15_000 });
 
     // Der Admin storniert sie mit Grund.
     await anmelden(page, NUTZER.admin);
     await page.goto(`/plan?tag=${tag}`);
-    const fremde = page.locator(".plan-raster button.beleg.belegt").first();
-    await fremde.click();
-
-    const verwalten = page.locator("dialog.fenster");
+    const verwalten = await oeffneBuchung(page, "Platz 2", "11:00");
     await verwalten.getByRole("button", { name: "Buchung stornieren" }).click();
     // Ohne Grund bleibt der Knopf gesperrt – bei einer fremden Buchung ist er Pflicht.
     await expect(verwalten.getByRole("button", { name: "Wirklich stornieren" })).toBeDisabled();
@@ -1028,19 +921,8 @@ test.describe("Serien ändern, sperren, Gründe nennen", () => {
 
   test("eine einzelne Stunde direkt aus dem Plan sperren", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/plan");
-    for (let i = 0; i < 5; i++) {
-      const vorher = page.url();
-      await naechsterTag(page);
-      await page.waitForURL((u) => u.toString() !== vorher);
-    }
-    const tag = new URL(page.url()).searchParams.get("tag") ?? "";
-
-    const freieZelle = page.locator(".plan-raster button.frei-slot").first();
-    test.skip((await freieZelle.count()) === 0, "Kein freier Slot an diesem Tag");
-    await freieZelle.click();
-
-    const fenster = page.locator("dialog.fenster");
+    const tag = tagIn(5);
+    const fenster = await oeffneFreieStunde(page, tag, "Platz 7", "11:00");
     await fenster.getByRole("button", { name: "Stattdessen sperren" }).click();
     await fenster.getByLabel("Grund (freiwillig)").fill("ZZTest Regen");
     await fenster.getByRole("button", { name: "Sperren", exact: true }).click();
@@ -1060,20 +942,10 @@ test.describe("Serien ändern, sperren, Gründe nennen", () => {
 
   test("Sperrung ohne Grund anlegen, bearbeiten und aufheben", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
-    await page.goto("/plan");
-    for (let i = 0; i < 6; i++) {
-      const vorher = page.url();
-      await naechsterTag(page);
-      await page.waitForURL((u) => u.toString() !== vorher);
-    }
-    const tag = new URL(page.url()).searchParams.get("tag") ?? "";
-
-    const freieZelle = page.locator(".plan-raster button.frei-slot").first();
-    test.skip((await freieZelle.count()) === 0, "Kein freier Slot an diesem Tag");
-    await freieZelle.click();
+    const tag = tagIn(6);
+    const fenster = await oeffneFreieStunde(page, tag, "Platz 8", "11:00");
 
     // Sperren ohne Grund, nur mit Kategorie: im Block steht die Kategorie.
-    const fenster = page.locator("dialog.fenster");
     await fenster.getByRole("button", { name: "Stattdessen sperren" }).click();
     await fenster.getByLabel("Kategorie").selectOption({ label: "Verbandsspiel" });
     await fenster.getByRole("button", { name: "Sperren", exact: true }).click();
@@ -1093,12 +965,8 @@ test.describe("Serien ändern, sperren, Gründe nennen", () => {
     await bis.fill(`${String(Math.floor(neu / 60)).padStart(2, "0")}:${String(neu % 60).padStart(2, "0")}`);
     await blatt.getByRole("button", { name: "Änderungen speichern" }).click();
 
-    // Liegt am Ende eine Buchung im Weg, fragt das Blatt nach.
-    const verdraengen = blatt.getByRole("button", { name: /verdrängen/ });
-    const erfolg = page.locator(".hinweis.erfolg");
-    await expect(verdraengen.or(erfolg)).toBeVisible({ timeout: 15_000 });
-    if (await verdraengen.isVisible()) await verdraengen.click();
-    await expect(erfolg).toContainText("Sperrung geändert", { timeout: 15_000 });
+    // Bis 12:30 ist Platz 8 frei, es muss also nichts verdrängt werden.
+    await expect(page.locator(".hinweis.erfolg")).toContainText("Sperrung geändert", { timeout: 15_000 });
 
     // Oben die Kategorie, darunter der Grund.
     await page.goto(`/plan?tag=${tag}`);
@@ -1122,8 +990,9 @@ test.describe("Serien ändern, sperren, Gründe nennen", () => {
     // Auf der Platzseite stehen drei Tabellen (Plätze, Buchungsarten, Serien) -
     // ein .first() träfe die falsche.
     const serien = page.locator('section[aria-labelledby="h-serien"]');
+    // Das Jugendtraining aus dem Seed; das globalSetup stellt seinen Titel her.
     const zeile = serien.locator(".liste-gruppe li").first();
-    test.skip((await zeile.count()) === 0, "Keine Serie im Bestand");
+    await expect(zeile).toContainText("Jugendtraining");
     const vorher = ((await zeile.locator(".titel").textContent()) ?? "").trim();
 
     // Ein Tippen auf die Zeile öffnet das Blatt zum Ändern.
@@ -1398,7 +1267,7 @@ test.describe("Verwaltung", () => {
     await page.goto("/admin/kasse?abschnitt=abrechnen");
     await page.getByRole("button", { name: "Forderung anlegen" }).first().click();
     const fenster = page.locator("dialog.fenster");
-    await fenster.getByLabel("Mitglied").fill("Nadine Bauer");
+    await fenster.getByLabel("Mitglied").fill(ZAHLERIN);
     await fenster.getByLabel("Art").selectOption("deposit");
     await fenster.getByLabel("Betrag in Euro").fill("12,50");
     await fenster.getByLabel("Beschreibung").fill("ZZTest Pfand Einzug");
@@ -1428,7 +1297,7 @@ test.describe("Verwaltung", () => {
     await expect(page.getByRole("heading", { name: "Stand" })).toBeVisible();
 
     // Bis zur Datei lässt sich ein Mitglied herausnehmen; die Forderung ist dann wieder offen
-    await page.getByRole("button", { name: /Nadine Bauer: aus dem Einzug nehmen/ }).click();
+    await page.getByRole("button", { name: `${ZAHLERIN}: aus dem Einzug nehmen` }).click();
     await page.locator("dialog.fenster").getByRole("button", { name: "Aus dem Einzug nehmen" }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("wieder offen", { timeout: 20_000 });
     await expect(page.locator(".lauf-titel .statusmarke")).toHaveText("Leer");
@@ -1445,7 +1314,7 @@ test.describe("Verwaltung", () => {
     await page.goto("/admin/kasse?abschnitt=abrechnen");
     await page.getByRole("button", { name: "Forderung anlegen" }).first().click();
     const fenster = page.locator("dialog.fenster");
-    await fenster.getByLabel("Mitglied").fill("Nadine Bauer");
+    await fenster.getByLabel("Mitglied").fill(ZAHLERIN);
     await fenster.getByLabel("Art").selectOption("deposit");
     await fenster.getByLabel("Betrag in Euro").fill("13,70");
     await fenster.getByLabel("Beschreibung").fill(beschreibung);
@@ -1493,7 +1362,7 @@ test.describe("Verwaltung", () => {
     await page.goto("/admin/kasse?abschnitt=abrechnen");
     await page.getByRole("button", { name: "Forderung anlegen" }).first().click();
     const fenster = page.locator("dialog.fenster");
-    await fenster.getByLabel("Mitglied").fill("Nadine Bauer");
+    await fenster.getByLabel("Mitglied").fill(ZAHLERIN);
     await fenster.getByLabel("Art").selectOption("deposit");
     await fenster.getByLabel("Betrag in Euro").fill("7,50");
     await fenster.getByLabel("Beschreibung").fill("ZZTest Pfand Rückfrage");
@@ -1547,7 +1416,7 @@ test.describe("Verwaltung", () => {
     await expect(page.getByRole("button", { name: "Einzug abschließen" })).toHaveCount(0);
 
     // Rückläufer lassen sich erfassen; das gibt die Forderung auch wieder frei
-    await page.getByRole("button", { name: /Nadine Bauer: Rücklastschrift erfassen/ }).first().click();
+    await page.getByRole("button", { name: `${ZAHLERIN}: Rücklastschrift erfassen` }).first().click();
     const blatt = page.locator("dialog.fenster");
     await blatt.getByLabel("Grund der Rückgabe").fill("ZZTest Konto nicht gedeckt");
     await blatt.getByRole("button", { name: "Als zurückgebucht vermerken" }).click();
@@ -1591,42 +1460,16 @@ test.describe("Verwaltung", () => {
  * still zu scheitern.
  */
 test.describe("Buchung umsetzen", () => {
-  /** Ein Tag ab heute, in Berliner Zeit, als JJJJ-MM-TT. */
-  function tagIn(tage: number): string {
-    const heute = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
-    const d = new Date(`${heute}T12:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + tage);
-    return d.toISOString().slice(0, 10);
-  }
-
-  /**
-   * Die erste freie Zeit buchen, mit einem Mitspieler aus der Suche. Gibt
-   * Platz und Startzeit zurück, wie sie die Schaltflächen im Raster nennen.
-   */
-  async function bucheErsteFreieZeit(page: Page): Promise<{ platz: string; zeit: string } | null> {
-    const freieZelle = page.locator(".plan-raster button.frei-slot").first();
-    if ((await freieZelle.count()) === 0) return null;
-    // "Platz 1 um 08:00 buchen"
-    const [, platz, zeit] = /^(.+) um (\d{2}:\d{2}) buchen$/.exec(
-      (await freieZelle.getAttribute("aria-label")) ?? "",
-    ) ?? [];
-    await freieZelle.click();
-
-    const fenster = page.locator("dialog.fenster");
-    await (await suchfeld(fenster)).fill("a");
-    await fenster.locator(".trefferliste li button").first().click();
+  /** Einen festen Termin buchen, mit einem festen Mitspieler. */
+  async function bucheFesteZeit(page: Page, tag: string, platz: string, zeit: string, mitspieler: string) {
+    const fenster = await oeffneFreieStunde(page, tag, platz, zeit);
+    await mitspielerWaehlen(fenster, mitspieler);
     await fenster.getByRole("button", { name: /buchen/i }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("gebucht", { timeout: 15_000 });
-    return { platz: platz!, zeit: zeit! };
+    return { platz, zeit };
   }
 
-  /** Die Buchung im Raster öffnen, über ihre Beschriftung. */
-  async function oeffne(page: Page, platz: string, zeit: string) {
-    await page.getByRole("button", { name: `Buchung ${zeit} auf ${platz} verwalten` }).click();
-    const fenster = page.locator("dialog.fenster");
-    await expect(fenster).toBeVisible();
-    return fenster;
-  }
+  const oeffne = oeffneBuchung;
 
   /** Was im Umsetzbereich gerade gewählt ist. */
   async function gewaehltesZiel(fenster: Locator) {
@@ -1643,20 +1486,18 @@ test.describe("Buchung umsetzen", () => {
 
     // Das Mitglied bucht.
     await anmelden(page, NUTZER.mitglied);
-    await page.goto(`/plan?tag=${tag}`);
-    const alt = await bucheErsteFreieZeit(page);
-    test.skip(alt === null, "Kein freier Slot an diesem Tag");
+    const alt = await bucheFesteZeit(page, tag, "Platz 5", "12:00", MITSPIELER.mia);
 
     // Der Admin setzt sie um – ohne Grund geht es bei einer fremden Buchung nicht.
     await anmelden(page, NUTZER.admin);
     await page.goto(`/plan?tag=${tag}`);
-    const fenster = await oeffne(page, alt!.platz, alt!.zeit);
+    const fenster = await oeffne(page, alt.platz, alt.zeit);
     await fenster.getByRole("button", { name: "Umsetzen", exact: true }).click();
 
     const ziel = await gewaehltesZiel(fenster);
     // Vorgewählt ist ein anderer Platz zur selben Zeit.
-    expect(ziel.platz).not.toBe(alt!.platz);
-    expect(ziel.zeit).toBe(alt!.zeit);
+    expect(ziel.platz).not.toBe(alt.platz);
+    expect(ziel.zeit).toBe(alt.zeit);
 
     const knopf = fenster.getByRole("button", { name: "Hierhin umsetzen" });
     await expect(knopf).toBeDisabled();
@@ -1685,16 +1526,16 @@ test.describe("Buchung umsetzen", () => {
   });
 
   test("ist das Ziel inzwischen belegt, zeigt das Blatt den Fehler", async ({ page, context }) => {
-    const tag = tagIn(7);
+    // Nicht Tag +7: eine Buchung am Vormittag liegt dort je nach Uhrzeit
+    // hinter dem Vorlauf von 7 x 24 Stunden.
+    const tag = tagIn(5);
     const zielTag = tagIn(6);
 
     await anmelden(page, NUTZER.admin);
-    await page.goto(`/plan?tag=${tag}`);
-    const alt = await bucheErsteFreieZeit(page);
-    test.skip(alt === null, "Kein freier Slot an diesem Tag");
+    const alt = await bucheFesteZeit(page, tag, "Platz 6", "12:00", MITSPIELER.mia);
 
     // Umsetzen auf einen anderen Tag: dessen Belegung lädt das Blatt nach.
-    const fenster = await oeffne(page, alt!.platz, alt!.zeit);
+    const fenster = await oeffne(page, alt.platz, alt.zeit);
     await fenster.getByRole("button", { name: "Umsetzen", exact: true }).click();
     await fenster.getByLabel("Tag", { exact: true }).fill(zielTag);
     await expect(fenster.locator("fieldset.umsetz-zeiten input:checked")).toHaveCount(1, { timeout: 15_000 });
@@ -1705,8 +1546,7 @@ test.describe("Buchung umsetzen", () => {
     await zweiter.goto(`/plan?tag=${zielTag}`);
     await zweiter.getByRole("button", { name: `${ziel.platz} um ${ziel.zeit} buchen` }).click();
     const buchen = zweiter.locator("dialog.fenster");
-    await (await suchfeld(buchen)).fill("a");
-    await buchen.locator(".trefferliste li button").first().click();
+    await mitspielerWaehlen(buchen, MITSPIELER.max);
     await buchen.getByRole("button", { name: /buchen/i }).click();
     await expect(zweiter.locator(".hinweis.erfolg")).toContainText("gebucht", { timeout: 15_000 });
 
@@ -1722,7 +1562,7 @@ test.describe("Buchung umsetzen", () => {
     await zweiter.close();
 
     await page.goto(`/plan?tag=${tag}`);
-    const erste = await oeffne(page, alt!.platz, alt!.zeit);
+    const erste = await oeffne(page, alt.platz, alt.zeit);
     await erste.getByRole("button", { name: "Buchung stornieren" }).click();
     await erste.getByRole("button", { name: "Wirklich stornieren" }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("storniert", { timeout: 15_000 });
