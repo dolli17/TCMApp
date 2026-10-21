@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 
 /**
  * End-to-End gegen die laufende Anwendung und die echte Datenbank.
@@ -8,7 +9,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
  * werden mitgetestet - nichts davon wäre mit Mocks zu haben.
  */
 
-import { alsListendatum, anmelden, NUTZER } from "./hilfen";
+import { alsListendatum, anmelden, NUTZER, PASSWORT } from "./hilfen";
 
 /**
  * Einen Tag weiter: die Datums-Kachel rechts neben der gewählten. Früher gab
@@ -20,6 +21,31 @@ async function naechsterTag(page: Page) {
     els.findIndex((e) => e.getAttribute("aria-current") === "date"),
   );
   await kacheln.nth(aktuell + 1).click();
+}
+
+/**
+ * Eine Gläubiger-IBAN, falls keine gesetzt ist - ohne sie baut die Kasse
+ * keine Lastschriftdatei. Der lokale Seed setzt nur die Gläubiger-Id.
+ */
+async function setzeGlaeubigerIban() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+    { auth: { persistSession: false } },
+  );
+  const { error: anmeldeFehler } = await supabase.auth.signInWithPassword({
+    email: NUTZER.admin,
+    password: PASSWORT,
+  });
+  expect(anmeldeFehler).toBeNull();
+  const { data } = await supabase.from("settings").select("value").eq("key", "sepa.creditor_iban").maybeSingle();
+  if (!data?.value) {
+    const { error } = await supabase.rpc("set_setting", {
+      p_key: "sepa.creditor_iban",
+      p_value: "DE89370400440532013000",
+    });
+    expect(error).toBeNull();
+  }
 }
 
 /** Das Suchfeld für Mitspieler - es öffnet sich über "+ Mitglied". */
@@ -1392,6 +1418,7 @@ test.describe("Verwaltung", () => {
     await expect(wer.locator(".kachel.gruen")).toContainText("Lastschrift", { timeout: 20_000 });
 
     await page.getByRole("button", { name: "Ankündigen und Einzug anlegen" }).click();
+    await page.getByRole("group", { name: "Rückfrage" }).getByRole("button", { name: "Ja, ankündigen" }).click();
     await page.waitForURL(/\/admin\/kasse\/lastschriften\/[0-9a-f-]{36}$/, { timeout: 20_000 });
 
     // Angekündigt - und die Datei ist sofort dran, ohne auf die Frist zu warten
@@ -1409,6 +1436,75 @@ test.describe("Verwaltung", () => {
     // Ein leerer Einzug lässt sich löschen
     await page.getByRole("button", { name: "Leeren Einzug löschen" }).click();
     await page.waitForURL(/abschnitt=einzuege/, { timeout: 20_000 });
+  });
+
+  test("Ankündigen, Datei und Einreichen fragen nach; abschließen erst nach der Frist", async ({ page }) => {
+    // Ohne Gläubiger-IBAN entsteht keine Datei, und der Seed setzt keine.
+    await setzeGlaeubigerIban();
+    await anmelden(page, NUTZER.admin);
+
+    await page.goto("/admin/kasse?abschnitt=abrechnen");
+    await page.getByRole("button", { name: "Forderung anlegen" }).first().click();
+    const fenster = page.locator("dialog.fenster");
+    await fenster.getByLabel("Mitglied").fill("Nadine Bauer");
+    await fenster.getByLabel("Art").selectOption("deposit");
+    await fenster.getByLabel("Betrag in Euro").fill("7,50");
+    await fenster.getByLabel("Beschreibung").fill("ZZTest Pfand Rückfrage");
+    await fenster.getByRole("button", { name: "Forderung anlegen" }).click();
+    await expect(fenster.locator(".hinweis.erfolg")).toBeVisible({ timeout: 20_000 });
+
+    await page.goto("/admin/kasse/einzug");
+    await page.getByRole("checkbox", { name: /Pfand/ }).first().check();
+    const tag = await page.getByLabel("Abbuchungstag").inputValue();
+    const abbuchung = tag.split("-").reverse().join(".");
+    const wer = page.locator("section", { has: page.getByRole("heading", { name: "Wer ist dabei?" }) });
+    await expect(wer.locator(".kachel.gruen")).toContainText("Lastschrift", { timeout: 20_000 });
+
+    // Ankündigen: erst die Rückfrage mit Anzahl, Summe und Tag; Abbrechen schickt nichts
+    const rueckfrage = page.getByRole("group", { name: "Rückfrage" });
+    await page.getByRole("button", { name: "Ankündigen und Einzug anlegen" }).click();
+    await expect(rueckfrage).toContainText(/\d+ Lastschrift(en)?, [\d.]+,\d\d\s€, Abbuchung am/);
+    await expect(rueckfrage).toContainText(`${abbuchung} – wirklich ankündigen?`);
+    await rueckfrage.getByRole("button", { name: "Abbrechen" }).click();
+    await expect(rueckfrage).toHaveCount(0);
+    await expect(page).toHaveURL(/\/admin\/kasse\/einzug/);
+
+    await page.getByRole("button", { name: "Ankündigen und Einzug anlegen" }).click();
+    await rueckfrage.getByRole("button", { name: "Ja, ankündigen" }).click();
+    await page.waitForURL(/\/admin\/kasse\/lastschriften\/[0-9a-f-]{36}$/, { timeout: 20_000 });
+    const marke = page.locator(".lauf-titel .statusmarke");
+    await expect(marke).toHaveText("Angekündigt");
+
+    // Datei: Rückfrage, Abbrechen lässt den Einzug offen
+    await page.getByRole("button", { name: "pain.008 erzeugen" }).click();
+    await expect(rueckfrage).toContainText(`Abbuchung am ${abbuchung} – Datei jetzt erzeugen?`);
+    await rueckfrage.getByRole("button", { name: "Abbrechen" }).click();
+    await expect(marke).toHaveText("Angekündigt");
+    await page.getByRole("button", { name: "pain.008 erzeugen" }).click();
+    await rueckfrage.getByRole("button", { name: "Ja, Datei erzeugen" }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("Die Datei ist erzeugt", { timeout: 20_000 });
+    await expect(marke).toHaveText("Datei erzeugt");
+
+    // Eingereicht: ebenfalls erst nach Rückfrage
+    await page.getByRole("button", { name: "Im Onlinebanking eingereicht" }).click();
+    await expect(rueckfrage).toContainText(`Abbuchung am ${abbuchung} – wirklich als eingereicht vermerken?`);
+    await rueckfrage.getByRole("button", { name: "Abbrechen" }).click();
+    await expect(marke).toHaveText("Datei erzeugt");
+    await page.getByRole("button", { name: "Im Onlinebanking eingereicht" }).click();
+    await rueckfrage.getByRole("button", { name: "Ja, eingereicht" }).click();
+    await expect(marke).toHaveText("Eingereicht", { timeout: 20_000 });
+
+    // Vor Ablauf der Rückbuchungsfrist ist Abschließen gesperrt und nennt den Tag
+    const abschliessen = page.getByRole("button", { name: /^Abschließen ab \d\d\.\d\d\.\d{4}$/ });
+    await expect(abschliessen).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Einzug abschließen" })).toHaveCount(0);
+
+    // Rückläufer lassen sich erfassen; das gibt die Forderung auch wieder frei
+    await page.getByRole("button", { name: /Nadine Bauer: Rücklastschrift erfassen/ }).first().click();
+    const blatt = page.locator("dialog.fenster");
+    await blatt.getByLabel("Grund der Rückgabe").fill("ZZTest Konto nicht gedeckt");
+    await blatt.getByRole("button", { name: "Als zurückgebucht vermerken" }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("Zurückgebucht", { timeout: 20_000 });
   });
 
   test("die Lastschriftdatei ist keinem normalen Mitglied zugänglich", async ({ page }) => {

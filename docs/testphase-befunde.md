@@ -156,8 +156,8 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 | U6 | P3 | App: Tipp-Elemente ohne `accessibilityLabel`. Im Web keine axe-Prüfung. | Labels, `@axe-core/playwright` |
 | U7 | P3 | Begriffe: Admin/Verwaltung, Belegungsplan/Plätze, Konto/Mein Konto, Home/Start | `docs/begriffe.md`, angleichen |
 | U8 | P3 | Durchklick-Protokoll | Screenshots aller Routen (begonnen im Audit) |
-| U9 | P1 | **„Einzug abschließen“ geht mit einem Klick, auch vor Ablauf der Rückläuferfrist.** Danach lassen sich Rückläufer nicht mehr erfassen (`LastschriftLauf.tsx:166-176, 227-229`). | Vor der Frist sperren oder nachfragen. Rückläufer auch nach dem Abschluss erlauben. |
-| U10 | P2 | Datei erzeugen, „eingereicht“ und „Ankündigen“ (Massenmail) laufen ohne Rückfrage | Rückfrage mit Anzahl, Summe und Datum |
+| U9 | P1 | **„Einzug abschließen“ geht mit einem Klick, auch vor Ablauf der Rückläuferfrist.** Danach lassen sich Rückläufer nicht mehr erfassen (`LastschriftLauf.tsx:166-176, 227-229`). | **Erledigt (PR #48):** Vor Ablauf der Frist (Abbuchung + 56 Tage, `RUECKLAUF_TAGE`) ist der Knopf gesperrt und zeigt „Abschließen ab …“. Die Server-Aktion prüft die Frist ebenfalls. Rückläufer lassen sich auch nach dem Abschluss erfassen; die DB erlaubte das schon. |
+| U10 | P2 | Datei erzeugen, „eingereicht“ und „Ankündigen“ (Massenmail) laufen ohne Rückfrage | **Erledigt (PR #48):** Ankündigen, Datei erzeugen und „eingereicht“ fragen vorher nach, mit Anzahl, Summe und Abbuchungstag (`.hinweis.rueckfrage`). Die App hat keine Kasse. |
 | U11 | P2 | Fachbegriffe: „pain.008 erzeugen“, „eBuSy-Backend“ | „Bankdatei erzeugen“ |
 | U12 | P2 | Systemseite zeigt Roh-Schlüssel und Cent-Beträge („1500“) und hat mehrere Speichern-Knöpfe | Checkboxen mit deutschen Namen, Euro-Eingabe |
 | U13 | P2 | Fehlertexte in Rot zu kontrastarm (~3,2:1) | Token `redInk` |

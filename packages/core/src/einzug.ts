@@ -24,6 +24,15 @@ const MONATE = [
   "Juli", "August", "September", "Oktober", "November", "Dezember",
 ];
 
+/**
+ * Ab wann sich ein Einzug abschliessen laesst: am Tag nach dem Ende der
+ * Rueckbuchungsfrist (Abbuchungstag + acht Wochen). Vorher ist noch Geld
+ * unterwegs, das zurueckkommen kann.
+ */
+export function einzugAbschliessbarAb(collectionDate: string): string {
+  return isoPlusTage(collectionDate, RUECKLAUF_TAGE + 1);
+}
+
 /** ISO-Tag plus n Tage, ohne Zeitzonenfalle. */
 export function isoPlusTage(iso: string, tage: number): string {
   const [j, m, t] = iso.slice(0, 10).split("-").map(Number) as [number, number, number];
@@ -115,6 +124,8 @@ export interface EinzugStand {
   naechster: { titel: string; text: string } | null;
   /** Bis wann Rueckbuchungen kommen koennen, ISO */
   ruecklaeuferBis: string;
+  /** Ab wann sich der Einzug abschliessen laesst, ISO */
+  abschliessbarAb: string;
 }
 
 export interface EinzugStandInput {
@@ -144,6 +155,7 @@ const REIHE: EinzugStandKey[] = ["angekuendigt", "datei", "eingereicht", "abgesc
 export function einzugStand(input: EinzugStandInput): EinzugStand {
   const { status, collectionDate, itemCount, returned, announcedOn, today } = input;
   const ruecklaeuferBis = isoPlusTage(collectionDate, RUECKLAUF_TAGE);
+  const abschliessbarAb = einzugAbschliessbarAb(collectionDate);
   const abbuchung = isoDateLabel(collectionDate);
   const leer = status === "draft" && itemCount === 0;
 
@@ -187,14 +199,14 @@ export function einzugStand(input: EinzugStandInput): EinzugStand {
       text: "Die Datei im Onlinebanking hochladen. Die App bekommt von dort keine Rückmeldung – danach hier vermerken.",
     };
   } else if (status === "submitted") {
-    naechster = today > ruecklaeuferBis
+    naechster = today >= abschliessbarAb
       ? {
           titel: "Einzug abschließen",
           text: "Die acht Wochen für Rückbuchungen sind vorbei. Alles, was nicht als zurückgebucht vermerkt ist, gilt dann als bezahlt.",
         }
       : {
           titel: "Rückläufer eintragen, wenn welche kommen",
-          text: `Bis zum ${isoDateLabel(ruecklaeuferBis)} kann eine Lastschrift zurückkommen. Danach den Einzug abschließen.`,
+          text: `Bis zum ${isoDateLabel(ruecklaeuferBis)} kann eine Lastschrift zurückkommen. Abschließen lässt sich der Einzug ab dem ${isoDateLabel(abschliessbarAb)}.`,
         };
   }
 
@@ -205,7 +217,7 @@ export function einzugStand(input: EinzugStandInput): EinzugStand {
     ? "grau"
     : status === "completed" ? "gruen" : status === "submitted" ? "blau" : "gelb";
 
-  return { label, ton, schritte, naechster, ruecklaeuferBis };
+  return { label, ton, schritte, naechster, ruecklaeuferBis, abschliessbarAb };
 }
 
 // ---------------------------------------------------------------------------
