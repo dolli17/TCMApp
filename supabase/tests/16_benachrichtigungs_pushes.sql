@@ -148,9 +148,12 @@ declare a record; b record; v_besitzer uuid; v_anzahl integer;
 begin
   -- Das Familientelefon: meldet sich ein zweites Mitglied an, muss die Marke
   -- umziehen. Bliebe sie beim ersten, bekaeme der Vorbesitzer die Nachrichten
-  -- des Nachfolgers.
+  -- des Nachfolgers. Seit S26 zieht sie nur um, wenn sie frei ist: hier ist
+  -- sie stillgelegt. Meldet sich der erste in der App ab, ist sie geloescht
+  -- und wird ohnehin neu angelegt (test_welle4_push_token_nicht_fremd_umhaengen).
   select * into a from tests.fixture_user_mit_geraet() limit 1;
   select * into b from tests.fixture_user() limit 1;
+  update public.push_tokens set disabled_at = now() where token = a.token;
 
   perform set_config('request.jwt.claim.sub', b.auth_id::text, true);
   perform public.register_push_token(a.token, 'ios', 'Familientelefon');

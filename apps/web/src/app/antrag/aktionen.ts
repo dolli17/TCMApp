@@ -68,7 +68,10 @@ export async function antragEinreichen(formData: FormData): Promise<AntragsErgeb
   // Zwischenstationen.
   const ip = (kopf.get("x-forwarded-for") ?? "").split(",")[0]?.trim() || null;
 
-  const supabase = await createServerSupabase();
+  // Die Datenbank liest die Herkunft aus x-forwarded-for (S6). Ohne diesen
+  // Kopf sähe sie für jeden Antrag aus dem Formular nur diesen Server, und die
+  // Sperre je Herkunft träfe alle Antragsteller gemeinsam.
+  const supabase = await createServerSupabase(ip ? { "x-forwarded-for": ip } : undefined);
   const { error } = await supabase.rpc("submit_membership_application", {
     p_data: {
       first_name: text("first_name"),
@@ -83,7 +86,6 @@ export async function antragEinreichen(formData: FormData): Promise<AntragsErgeb
       desired_fee_type_id: text("desired_fee_type_id") || null,
       message: text("message") || null,
     },
-    p_ip: ip ?? undefined,
     p_user_agent: kopf.get("user-agent") ?? undefined,
   });
 

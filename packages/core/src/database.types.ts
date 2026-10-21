@@ -2951,6 +2951,7 @@ export type Database = {
           last_sign_in: string
         }[]
       }
+      member_notes: { Args: { p_member_id: string }; Returns: string }
       member_overview: {
         Args: { p_filter?: string; p_limit?: number; p_query?: string }
         Returns: {

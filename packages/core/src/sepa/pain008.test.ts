@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPain008, escapeXml, painNamespace } from "./pain008";
+import { buildPain008, escapeXml, lastschriftPfad, painNamespace } from "./pain008";
 import {
   hasErrors,
   isMandateExpired,
@@ -290,5 +290,22 @@ describe("validateBatch", () => {
       HEUTE,
     );
     expect(issues.some((i) => i.debtorName === "Erika Beispiel")).toBe(true);
+  });
+});
+
+describe("lastschriftPfad", () => {
+  // B7: Der Bucket sepa kennt kein Überschreiben. Scheitert nach dem Ablegen
+  // etwas, braucht der nächste Versuch einen eigenen Pfad, sonst lässt sich
+  // die Datei nie wieder erzeugen.
+  it("legt jeden Versuch unter einem eigenen Pfad ab", () => {
+    const a = lastschriftPfad("lauf-1", "TCM-Lastschrift-2026-11-02.xml", "v1");
+    const b = lastschriftPfad("lauf-1", "TCM-Lastschrift-2026-11-02.xml", "v2");
+    expect(a).not.toBe(b);
+  });
+
+  it("bleibt im Ordner des Laufs und behält den Dateinamen", () => {
+    expect(lastschriftPfad("lauf-1", "TCM-Lastschrift-2026-11-02.xml", "v1")).toBe(
+      "lauf-1/v1/TCM-Lastschrift-2026-11-02.xml",
+    );
   });
 });
