@@ -60,7 +60,7 @@ export function ForderungsListe({ forderungen }: { forderungen: ForderungZeile[]
 
   return (
     <>
-      {meldung && (
+      {meldung && !gewaehlt && (
         <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">
           {meldung.text}
         </div>
@@ -95,7 +95,7 @@ export function ForderungsListe({ forderungen }: { forderungen: ForderungZeile[]
                     )}
                   </span>
                 }
-                onClick={offen(f) ? () => { setGewaehlt(f); setErlassen(false); setGrund(""); } : undefined}
+                onClick={offen(f) ? () => { setGewaehlt(f); setErlassen(false); setGrund(""); setMeldung(null); } : undefined}
               />
             </li>
           ))}
@@ -115,6 +115,16 @@ export function ForderungsListe({ forderungen }: { forderungen: ForderungZeile[]
             <div><dt>Mandat</dt><dd>{gewaehlt.hat_mandat ? "liegt vor" : "fehlt"}</dd></div>
             <div><dt>Stand</dt><dd>{STAND[gewaehlt.status]}</dd></div>
           </dl>
+
+          {/* Eine Ablehnung gehört ins Blatt, sonst steht sie verdeckt dahinter */}
+          {meldung && !meldung.ok && (
+            <div className="hinweis fehler" role="alert">{meldung.text}</div>
+          )}
+          {gewaehlt.status === "notified" && (
+            <p className="unterzeile">
+              Angekündigt: Steckt die Forderung in einem Einzug ohne Datei, wird sie dort herausgenommen.
+            </p>
+          )}
 
           {!erlassen ? (
             <div className="liste-gruppe">
