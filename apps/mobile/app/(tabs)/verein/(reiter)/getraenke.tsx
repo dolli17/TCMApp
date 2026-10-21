@@ -345,7 +345,7 @@ export default function Getraenke() {
             disabled={laeuft}
             accessibilityRole="button"
             style={({ pressed }) => ({
-              height: 52, paddingHorizontal: 24, borderRadius: 18, justifyContent: "center",
+              minHeight: 52, paddingHorizontal: 24, borderRadius: 18, justifyContent: "center",
               backgroundColor: farben.gold, opacity: laeuft ? 0.6 : pressed ? 0.85 : 1,
             })}
           >

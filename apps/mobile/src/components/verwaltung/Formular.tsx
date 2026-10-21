@@ -14,8 +14,11 @@ import { Children, Fragment, isValidElement, useState, type ReactNode } from "re
 import {
   ActivityIndicator, Alert, Platform, Pressable, Text, TextInput, View, type KeyboardTypeOptions,
 } from "react-native";
+import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { Blatt, BlattKopf } from "@/components/Blatt";
 import { Schalter } from "@/components/Segmente";
+import { feldEigenschaften, type Feldinhalt } from "@/lib/feldinhalt";
+import { datumZuDeutsch, deutschZuDatum } from "@/lib/verwaltung/gemeinsam";
 import { useTheme } from "@/lib/theme";
 
 // ---------------------------------------------------------------------------
@@ -83,7 +86,13 @@ export function FormGruppe({ children, titel }: { children: ReactNode; titel?: s
   );
 }
 
-/** Eine Zeile: Label links (104 breit), Eingabe rechts. */
+/**
+ * Eine Zeile: Label links (104 breit), Eingabe rechts.
+ *
+ * `inhalt` sagt, was im Feld steht - daraus folgen Autofill, Tastatur und
+ * Grossschreibung (lib/feldinhalt.ts). `tastatur` und `gross` gehen vor.
+ * `fehler` steht rot direkt unter dem Feld, nicht nur unten am Knopf.
+ */
 export function FormFeld({
   label,
   wert,
@@ -96,6 +105,8 @@ export function FormFeld({
   sicher,
   autoFokus,
   editierbar = true,
+  inhalt,
+  fehler,
 }: {
   label: string;
   wert: string;
@@ -109,14 +120,17 @@ export function FormFeld({
   sicher?: boolean;
   autoFokus?: boolean;
   editierbar?: boolean;
+  inhalt?: Feldinhalt;
+  fehler?: string | null;
 }) {
   const { farben } = useTheme();
+  const auto = feldEigenschaften(inhalt);
   return (
     <View style={{ paddingHorizontal: 16 }}>
       <View style={{ flexDirection: "row", alignItems: mehrzeilig ? "flex-start" : "center", gap: 12, minHeight: 52 }}>
         <Text
           style={{
-            width: 104, fontSize: 15, fontFamily: "Barlow_600SemiBold", color: farben.ink2,
+            width: 104, fontSize: 15, fontFamily: "Barlow_600SemiBold", color: fehler ? farben.red : farben.ink2,
             paddingTop: mehrzeilig ? 15 : 0,
           }}
         >
@@ -127,14 +141,15 @@ export function FormFeld({
           onChangeText={onAendern}
           placeholder={platzhalter}
           placeholderTextColor={farben.muted}
-          keyboardType={tastatur}
+          {...auto}
+          keyboardType={tastatur ?? auto.keyboardType}
           multiline={mehrzeilig}
-          autoCapitalize={gross ?? "sentences"}
-          autoCorrect={false}
+          autoCapitalize={gross ?? auto.autoCapitalize ?? "sentences"}
           secureTextEntry={sicher}
           autoFocus={autoFokus}
           editable={editierbar}
           accessibilityLabel={label}
+          accessibilityHint={fehler ?? undefined}
           style={{
             flex: 1, minWidth: 0, paddingVertical: 14, fontSize: 16, color: editierbar ? farben.ink : farben.muted,
             fontFamily: "Barlow_400Regular", minHeight: mehrzeilig ? 88 : undefined,
@@ -142,11 +157,18 @@ export function FormFeld({
           }}
         />
       </View>
-      {beschreibung && (
+      {fehler ? (
+        <Text
+          style={{ fontSize: 13, color: farben.red, fontFamily: "Barlow_600SemiBold", marginTop: -6, marginBottom: 10 }}
+          accessibilityLiveRegion="polite"
+        >
+          {fehler}
+        </Text>
+      ) : beschreibung ? (
         <Text style={{ fontSize: 12.5, color: farben.muted, fontFamily: "Barlow_400Regular", marginTop: -6, marginBottom: 10 }}>
           {beschreibung}
         </Text>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -262,6 +284,7 @@ export function Chipwahl<T extends string | number>({
   wert,
   onWahl,
   mehrfach,
+  fehler,
 }: {
   label?: string;
   optionen: { wert: T; label: string }[];
@@ -269,12 +292,13 @@ export function Chipwahl<T extends string | number>({
   wert: T | T[] | null;
   onWahl: (w: T) => void;
   mehrfach?: boolean;
+  fehler?: string | null;
 }) {
   const { farben, stil } = useTheme();
   const istAktiv = (w: T) => (mehrfach && Array.isArray(wert) ? wert.includes(w) : wert === w);
   return (
     <View style={{ gap: 8 }}>
-      {label && <Text style={[stil.feldLabel, { marginBottom: 0 }]}>{label}</Text>}
+      {label && <Text style={[stil.feldLabel, { marginBottom: 0 }, fehler ? { color: farben.red } : null]}>{label}</Text>}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }} accessibilityRole={mehrfach ? undefined : "radiogroup"}>
         {optionen.map((o) => {
           const aktiv = istAktiv(o.wert);
@@ -296,6 +320,118 @@ export function Chipwahl<T extends string | number>({
           );
         })}
       </View>
+      {fehler && (
+        <Text style={{ fontSize: 13, color: farben.red, fontFamily: "Barlow_600SemiBold" }} accessibilityLiveRegion="polite">
+          {fehler}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+/**
+ * Ein Datum mit Waehler (U22), etwa das Geburtsdatum. Auf dem Telefon das
+ * Raedchen des Systems statt Tippen, im Browser (Expo-Web) bleibt es beim
+ * Feld mit TT.MM.JJJJ - dort gibt es den Waehler nicht. Der Wert ist in
+ * beiden Faellen TT.MM.JJJJ, die Datenschicht aendert sich nicht.
+ */
+export function FormDatum({
+  label,
+  wert,
+  onAendern,
+  min,
+  max,
+  start,
+  fehler,
+}: {
+  label: string;
+  wert: string;
+  onAendern: (w: string) => void;
+  min?: Date;
+  max?: Date;
+  /** Wo das Raedchen steht, solange noch nichts gewaehlt ist. */
+  start?: Date;
+  fehler?: string | null;
+}) {
+  const { farben, theme } = useTheme();
+  const [offen, setOffen] = useState(false);
+
+  if (Platform.OS === "web") {
+    return (
+      <FormFeld
+        label={label}
+        wert={wert}
+        onAendern={onAendern}
+        platzhalter="TT.MM.JJJJ"
+        tastatur="numbers-and-punctuation"
+        fehler={fehler}
+      />
+    );
+  }
+
+  const gewaehlt = deutschZuDatum(wert);
+  const ausgangswert = gewaehlt ?? start ?? new Date();
+
+  function oeffnen() {
+    if (Platform.OS === "android") {
+      DateTimePickerAndroid.open({
+        value: ausgangswert,
+        mode: "date",
+        minimumDate: min,
+        maximumDate: max,
+        onChange: (e, d) => {
+          if (e.type === "set" && d) onAendern(datumZuDeutsch(d));
+        },
+      });
+      return;
+    }
+    // Erstes Oeffnen uebernimmt den Ausgangswert, sonst bliebe das Feld leer,
+    // wenn das Raedchen schon auf dem richtigen Tag steht.
+    if (!offen && !gewaehlt) onAendern(datumZuDeutsch(ausgangswert));
+    setOffen((o) => !o);
+  }
+
+  return (
+    <View style={{ paddingHorizontal: 16 }}>
+      <Pressable
+        onPress={oeffnen}
+        accessibilityRole="button"
+        accessibilityLabel={`${label}: ${wert || "nicht gewählt"}`}
+        accessibilityHint={fehler ?? "Öffnet die Datumsauswahl"}
+        style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: 52 }}
+      >
+        <Text style={{ width: 104, fontSize: 15, fontFamily: "Barlow_600SemiBold", color: fehler ? farben.red : farben.ink2 }}>
+          {label}
+        </Text>
+        <Text style={{ flex: 1, paddingVertical: 14, fontSize: 16, fontFamily: "Barlow_400Regular", color: wert ? farben.ink : farben.muted }}>
+          {wert || "Datum wählen"}
+        </Text>
+        <Text style={{ fontSize: 14, fontFamily: "Barlow_700Bold", color: farben.blue }}>
+          {offen ? "Fertig" : "Ändern"}
+        </Text>
+      </Pressable>
+      {offen && Platform.OS === "ios" && (
+        <DateTimePicker
+          value={ausgangswert}
+          mode="date"
+          display="spinner"
+          locale="de-DE"
+          minimumDate={min}
+          maximumDate={max}
+          themeVariant={theme === "dunkel" ? "dark" : "light"}
+          onChange={(_e, d) => {
+            if (d) onAendern(datumZuDeutsch(d));
+          }}
+        />
+      )}
+      {fehler && (
+        <Text
+          style={{ fontSize: 13, color: farben.red, fontFamily: "Barlow_600SemiBold", marginTop: -6, marginBottom: 10 }}
+          accessibilityLiveRegion="polite"
+        >
+          {fehler}
+        </Text>
+      )}
     </View>
   );
 }

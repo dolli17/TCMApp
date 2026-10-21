@@ -22,6 +22,7 @@ import {
 import { Blatt, BlattKopf } from "@/components/Blatt";
 import { Schalter, Segmente } from "@/components/Segmente";
 import { Chipwahl } from "@/components/verwaltung/Formular";
+import { SCHRIFT_DECKEL } from "@/lib/schrift";
 import { mitDeckkraft } from "@/lib/stil";
 import { useTheme } from "@/lib/theme";
 import {
@@ -958,7 +959,7 @@ function UmsetzBereich(
                     accessibilityRole="radio"
                     accessibilityState={{ checked: aktiv }}
                     style={{
-                      height: 40, minWidth: 64, paddingHorizontal: 12, borderRadius: 20,
+                      minHeight: 40, minWidth: 64, paddingHorizontal: 12, borderRadius: 20,
                       alignItems: "center", justifyContent: "center",
                       backgroundColor: aktiv ? farben.gold : farben.surf2,
                     }}
@@ -1019,7 +1020,7 @@ function Chip({
   return (
     <View
       style={{
-        height: 40, borderRadius: 20, paddingLeft: 4, paddingRight: onWeg ? 4 : 14,
+        minHeight: 40, borderRadius: 20, paddingLeft: 4, paddingRight: onWeg ? 4 : 14,
         flexDirection: "row", alignItems: "center", gap: 8,
         backgroundColor: leer ? "transparent" : farben.surf2,
         borderWidth: leer ? 1.5 : 0, borderStyle: "dashed", borderColor: farben.line2,
@@ -1032,6 +1033,7 @@ function Chip({
         }}
       >
         <Text
+          maxFontSizeMultiplier={SCHRIFT_DECKEL.form}
           style={{
             fontSize: 12, fontFamily: "Barlow_700Bold",
             color: gelb ? farben.onGold : gast ? farben.goldInk : "#FFFFFF",
@@ -1116,7 +1118,7 @@ function Mitspieler({
   }, [suche, verzeichnis, mitglieder]);
 
   const gestrichelt = {
-    flex: 1, height: 46, borderRadius: 14, borderWidth: 1.5, borderStyle: "dashed" as const,
+    flex: 1, minHeight: 46, borderRadius: 14, borderWidth: 1.5, borderStyle: "dashed" as const,
     borderColor: farben.line2, flexDirection: "row" as const, alignItems: "center" as const,
     justifyContent: "center" as const, gap: 6,
   };

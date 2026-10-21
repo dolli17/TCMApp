@@ -20,6 +20,7 @@ import { Blatt, BlattKopf } from "@/components/Blatt";
 import { AlleGelesenKnopf, NachrichtenListe, type Nachricht } from "@/components/NachrichtenListe";
 import { Symbol } from "@/components/Symbol";
 import { ladeBenachrichtigungen, markiereBenachrichtigungenGelesen, zaehleUngelesen } from "@/lib/daten";
+import { SCHRIFT_DECKEL } from "@/lib/schrift";
 import { useTheme } from "@/lib/theme";
 
 export function Glocke() {
@@ -83,6 +84,7 @@ export function Glocke() {
             }}
           >
             <Text
+              maxFontSizeMultiplier={SCHRIFT_DECKEL.form}
               style={{
                 color: "#fff", fontSize: 10.5,
                 fontFamily: "Barlow_700Bold", fontVariant: ["tabular-nums"],

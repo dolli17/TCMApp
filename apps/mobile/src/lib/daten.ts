@@ -20,7 +20,15 @@ export interface Ergebnis<T = void> {
   ok: boolean;
   meldung: string;
   daten?: T;
+  /** Bei Pruefungsfehlern: welches Feld gemeint ist, damit das Formular es markiert. */
+  feld?: string;
 }
+
+/** Feldnamen von memberProfileSchema (camelCase) auf die Spalten der Formulare. */
+const PROFILFELD: Record<string, string> = {
+  firstName: "first_name", lastName: "last_name", title: "title", phone: "phone",
+  mobile: "mobile", street: "street", postcode: "postcode", city: "city",
+};
 
 export async function anmelden(email: string, passwort: string): Promise<Ergebnis> {
   const { error } = await supabase.auth.signInWithPassword({
@@ -473,7 +481,12 @@ export async function speichereStammdaten(neu: Stammdaten, alt: Stammdaten): Pro
   });
 
   if (!geprueft.success) {
-    return { ok: false, meldung: geprueft.error.issues[0]?.message ?? "Bitte die Eingaben prüfen." };
+    const erster = geprueft.error.issues[0];
+    return {
+      ok: false,
+      meldung: erster?.message ?? "Bitte die Eingaben prüfen.",
+      feld: PROFILFELD[String(erster?.path[0] ?? "")],
+    };
   }
 
   const d = geprueft.data;
@@ -532,7 +545,7 @@ export async function speichereNotfallkontakt(k: Notfallkontakt): Promise<Ergebn
   // Der Constraint in der Datenbank verlangt dasselbe; hier steht es nur
   // frueher und in einem Satz, der erklaert warum.
   if (telefon && !name) {
-    return { ok: false, meldung: "Zur Notfallnummer gehört auch ein Name." };
+    return { ok: false, meldung: "Zur Notfallnummer gehört auch ein Name.", feld: "emergency_contact_name" };
   }
 
   const { error } = await supabase
@@ -779,16 +792,39 @@ export type OnboardingStammdaten = {
   mobile: string;
 };
 
-export async function speichereOnboardingStammdaten(d: OnboardingStammdaten): Promise<Ergebnis> {
+/**
+ * Prueft die Stammdaten des Onboardings vor dem Absenden - dieselben Pflichten
+ * wie onboarding_save_stammdaten, aber mit dem Feld, das fehlt. Die Datenbank
+ * meldet nur "Pflichtangaben fehlen: …", ohne dass das Formular weiss, wo.
+ */
+export function pruefeOnboardingStammdaten(d: OnboardingStammdaten): Ergebnis<string> {
+  const fehlt = (feld: keyof OnboardingStammdaten, meldung: string): Ergebnis<string> => ({ ok: false, meldung, feld });
+  if (!d.first_name.trim()) return fehlt("first_name", "Vorname fehlt.");
+  if (!d.last_name.trim()) return fehlt("last_name", "Nachname fehlt.");
+
   const geburtstag = deutschZuIso(d.birthday);
-  if (!geburtstag) {
-    return { ok: false, meldung: "Bitte das Geburtsdatum als TT.MM.JJJJ angeben." };
-  }
+  if (!geburtstag) return fehlt("birthday", "Bitte das Geburtsdatum als TT.MM.JJJJ angeben.");
   // deutschZuIso liest "85" als 2085 - bei einem Geburtsdatum nie gemeint.
   if (geburtstag > heuteInBerlin()) {
-    return { ok: false, meldung: "Das Geburtsdatum liegt in der Zukunft. Bitte das Jahr vierstellig angeben." };
+    return fehlt("birthday", "Das Geburtsdatum liegt in der Zukunft. Bitte das Jahr vierstellig angeben.");
   }
-  if (!d.gender) return { ok: false, meldung: "Bitte das Geschlecht wählen." };
+  if (geburtstag < "1900-01-01") return fehlt("birthday", "Bitte ein gültiges Geburtsdatum angeben.");
+  if (!d.gender) return fehlt("gender", "Bitte das Geschlecht wählen.");
+
+  if (!d.street.trim()) return fehlt("street", "Straße fehlt.");
+  if (!d.postcode.trim()) return fehlt("postcode", "Postleitzahl fehlt.");
+  if (!d.city.trim()) return fehlt("city", "Ort fehlt.");
+  if (!d.phone.trim() && !d.mobile.trim()) return fehlt("phone", "Bitte Telefon oder Mobil angeben.");
+  return { ok: true, meldung: "", daten: geburtstag };
+}
+
+export async function speichereOnboardingStammdaten(d: OnboardingStammdaten): Promise<Ergebnis> {
+  const geprueft = pruefeOnboardingStammdaten(d);
+  // Das Geschlecht prueft pruefeOnboardingStammdaten mit; hier nur fuer den Typ.
+  if (!geprueft.ok || !geprueft.daten || !d.gender) {
+    return { ok: false, meldung: geprueft.meldung, feld: geprueft.feld };
+  }
+  const geburtstag = geprueft.daten;
 
   const leerZuNull = (w: string) => w.trim() || undefined;
   const { error } = await supabase.rpc("onboarding_save_stammdaten", {
@@ -823,6 +859,10 @@ export type Erziehungsberechtigte = {
 };
 
 export async function speichereErziehungsberechtigte(e: Erziehungsberechtigte): Promise<Ergebnis> {
+  if (!e.name.trim()) return { ok: false, meldung: "Bitte den Namen angeben.", feld: "name" };
+  if (!e.email.trim() && !e.phone.trim()) {
+    return { ok: false, meldung: "Bitte E-Mail oder Telefon angeben.", feld: "email" };
+  }
   const { error } = await supabase.rpc("onboarding_save_guardian", {
     p_name: e.name.trim(),
     p_email: e.email.trim() || undefined,
@@ -842,6 +882,9 @@ export async function speichereOnboardingNotfallkontakt(k: {
   phone: string;
   relation: string;
 }): Promise<Ergebnis> {
+  if (k.phone.trim() && !k.name.trim()) {
+    return { ok: false, meldung: "Zur Notfallnummer gehört auch ein Name.", feld: "name" };
+  }
   const { error } = await supabase.rpc("onboarding_save_notfallkontakt", {
     p_name: k.name.trim(),
     p_phone: k.phone.trim(),

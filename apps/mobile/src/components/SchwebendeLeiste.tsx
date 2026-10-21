@@ -30,6 +30,7 @@ import Svg, { Path } from "react-native-svg";
 import { schattenRn } from "@tcm/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LEISTE_ABSTAND_UNTEN, LEISTE_HOEHE, LEISTE_RAND } from "@/lib/masse";
+import { SCHRIFT_DECKEL } from "@/lib/schrift";
 import { mitDeckkraft } from "@/lib/stil";
 import { useTheme } from "@/lib/theme";
 
@@ -108,7 +109,11 @@ export function SchwebendeLeiste({ state, descriptors, navigation }: LeistenEige
               style={[stile.tab, schmal && stile.tabSchmal, aktiv && { backgroundColor: farben.tabAktiv }]}
             >
               {optionen.tabBarIcon?.({ focused: aktiv, color: farbe, size: 22 })}
-              <Text style={[stile.tabText, schmal && stile.tabTextSchmal, { color: farbe }]} numberOfLines={1}>
+              <Text
+                style={[stile.tabText, schmal && stile.tabTextSchmal, { color: farbe }]}
+                numberOfLines={1}
+                maxFontSizeMultiplier={SCHRIFT_DECKEL.leiste}
+              >
                 {label}
               </Text>
             </Pressable>

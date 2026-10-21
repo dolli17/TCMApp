@@ -36,6 +36,7 @@ import {
 } from "@/lib/daten";
 import { abschnitt, ersterFehler, useLaden, type Abschnitt } from "@/lib/laden";
 import { alsUhrzeit, jetztFrei, lokaleMinuten, zuMinuten } from "@/lib/plan";
+import { useGrosseSchrift } from "@/lib/schrift";
 import { useTheme } from "@/lib/theme";
 
 const BERLIN = "Europe/Berlin";
@@ -241,7 +242,7 @@ function AlsNaechstes({ termine }: { termine: Abschnitt<Termine> }) {
                 accessibilityRole="button"
                 accessibilityLabel={`${bookingKicker(t.starts_at, t.ends_at)}, ${zeit}, ${t.court_name}, Details`}
                 style={{
-                  width: breite, height: 216, borderRadius: radius.karteGross, padding: 20,
+                  width: breite, minHeight: 216, borderRadius: radius.karteGross, padding: 20,
                   overflow: "hidden",
                   backgroundColor: erste ? farben.brand : farben.surf,
                   borderWidth: erste ? 0 : 1, borderColor: farben.line,
@@ -295,7 +296,7 @@ function AlsNaechstes({ termine }: { termine: Abschnitt<Termine> }) {
                   </Text>
                   <View
                     style={{
-                      height: 40, paddingHorizontal: 16, borderRadius: 20, justifyContent: "center",
+                      minHeight: 40, paddingHorizontal: 16, borderRadius: 20, justifyContent: "center",
                       backgroundColor: erste ? "rgba(255,255,255,.18)" : farben.surf2,
                     }}
                   >
@@ -315,6 +316,9 @@ function AlsNaechstes({ termine }: { termine: Abschnitt<Termine> }) {
 
 function Schnellaktionen() {
   const { farben } = useTheme();
+  // Bei grosser Schrift untereinander, Symbol neben dem Text: nebeneinander
+  // braeche "eintragen" sonst mitten im Wort (U5).
+  const gestapelt = useGrosseSchrift();
   const kacheln: { text: string; pfad: string; ziel: Href; gelb?: boolean }[] = [
     { text: "Platz buchen", pfad: PFAD.buchen, ziel: { pathname: "/plaetze", params: { buchen: "jetzt" } }, gelb: true },
     { text: "Getränk eintragen", pfad: PFAD.getraenk, ziel: "/verein/getraenke" },
@@ -322,7 +326,7 @@ function Schnellaktionen() {
   ];
 
   return (
-    <View style={{ flexDirection: "row", gap: 10, marginTop: abstand.s }}>
+    <View style={{ flexDirection: gestapelt ? "column" : "row", gap: 10, marginTop: abstand.s }}>
       {kacheln.map((k) => {
         const tinte = k.gelb ? farben.onGold : farben.ink;
         return (
@@ -331,15 +335,18 @@ function Schnellaktionen() {
             onPress={() => router.navigate(k.ziel)}
             accessibilityRole="button"
             style={({ pressed }) => ({
-              flex: 1, height: 96, borderRadius: radius.karte, padding: 14,
-              justifyContent: "space-between",
+              flex: gestapelt ? undefined : 1, minHeight: gestapelt ? 56 : 96, borderRadius: radius.karte, padding: 14,
+              flexDirection: gestapelt ? "row" : "column",
+              alignItems: gestapelt ? "center" : undefined,
+              gap: gestapelt ? 12 : undefined,
+              justifyContent: gestapelt ? "flex-start" : "space-between",
               backgroundColor: k.gelb ? farben.gold : farben.surf,
               borderWidth: k.gelb ? 0 : 1, borderColor: farben.line,
               opacity: pressed ? 0.85 : 1,
             })}
           >
             <Symbolpfad d={k.pfad} farbe={tinte} staerke={k.gelb ? 2 : 1.8} />
-            <Text style={{ color: tinte, fontSize: 15, lineHeight: 17, fontFamily: "Barlow_700Bold" }}>{k.text}</Text>
+            <Text style={{ color: tinte, fontSize: 15, lineHeight: 17, fontFamily: "Barlow_700Bold", flexShrink: 1 }}>{k.text}</Text>
           </Pressable>
         );
       })}
@@ -456,7 +463,7 @@ function OffeneSpiele({ offen }: { offen: Abschnitt<Offen> }) {
               onPress={() => router.navigate("/plaetze/spiele")}
               accessibilityRole="button"
               accessibilityLabel={`Mitspielen: ${o.type_name} um ${alsUhrzeit(lokaleMinuten(o.starts_at))}`}
-              style={{ height: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: "center", backgroundColor: farben.gold }}
+              style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: "center", backgroundColor: farben.gold }}
             >
               <Text style={{ color: farben.onGold, fontSize: 14, fontFamily: "Barlow_700Bold" }}>Mitspielen</Text>
             </Pressable>

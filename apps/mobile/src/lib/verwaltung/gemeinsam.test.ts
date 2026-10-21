@@ -10,9 +10,15 @@ vi.mock("@/lib/supabase", () => ({
   },
 }));
 
-const { deutschZuIso, heuteInBerlin, isoZuDeutsch, ladeEinstellungen, oderWirf } = await import(
-  "./gemeinsam"
-);
+const {
+  datumZuDeutsch,
+  deutschZuDatum,
+  deutschZuIso,
+  heuteInBerlin,
+  isoZuDeutsch,
+  ladeEinstellungen,
+  oderWirf,
+} = await import("./gemeinsam");
 
 describe("oderWirf", () => {
   it("gibt die Daten ohne Fehler", () => {
@@ -105,5 +111,23 @@ describe("ladeEinstellungen", () => {
   it("wirft bei Fehlern einen Satz", async () => {
     einstellungen = { data: null, error: { message: "permission denied", code: "42501" } };
     await expect(ladeEinstellungen()).rejects.toThrow("Dafür fehlt dir die Berechtigung.");
+  });
+});
+
+describe("Datum zwischen Waehler und Formular", () => {
+  it("lokaler Tag als TT.MM.JJJJ", () => {
+    expect(datumZuDeutsch(new Date(1934, 2, 5))).toBe("05.03.1934");
+    expect(datumZuDeutsch(new Date(2014, 11, 31, 23, 59))).toBe("31.12.2014");
+  });
+
+  it("zurueck zum lokalen Datum, ungueltig gibt null", () => {
+    const d = deutschZuDatum("05.03.1934")!;
+    expect([d.getFullYear(), d.getMonth(), d.getDate()]).toEqual([1934, 2, 5]);
+    expect(deutschZuDatum("31.02.2014")).toBeNull();
+    expect(deutschZuDatum("")).toBeNull();
+  });
+
+  it("Hin und zurueck ergibt dasselbe ISO-Datum", () => {
+    expect(deutschZuIso(datumZuDeutsch(deutschZuDatum("29.02.2000")!))).toBe("2000-02-29");
   });
 });

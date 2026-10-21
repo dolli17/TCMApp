@@ -23,6 +23,7 @@ import {
 } from "@/lib/daten";
 import { useLaden } from "@/lib/laden";
 import { alsUhrzeit, lokaleMinuten } from "@/lib/plan";
+import { SCHRIFT_DECKEL } from "@/lib/schrift";
 import { mitDeckkraft } from "@/lib/stil";
 import { useTheme } from "@/lib/theme";
 
@@ -166,7 +167,7 @@ export default function Spiele() {
                     : setNachfrage(b.booking_id)
                 }
                 style={{
-                  height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center",
+                  minHeight: 48, borderRadius: 16, alignItems: "center", justifyContent: "center",
                   borderWidth: 1.5, borderColor: mitDeckkraft(farben.red, 0.4),
                   opacity: laeuft ? 0.5 : 1,
                 }}
@@ -224,7 +225,7 @@ export default function Spiele() {
                   </Text>
                 )}
               </View>
-              <View style={{ height: 28, paddingHorizontal: 10, borderRadius: 14, justifyContent: "center", backgroundColor: farben.goldSoft }}>
+              <View style={{ minHeight: 28, paddingHorizontal: 10, borderRadius: 14, justifyContent: "center", backgroundColor: farben.goldSoft }}>
                 <Text style={{ fontSize: 12.5, fontFamily: "Barlow_700Bold", color: farben.goldInk }}>sucht {o.frei}</Text>
               </View>
             </View>
@@ -238,7 +239,7 @@ export default function Spiele() {
                       backgroundColor: farben.brand, borderWidth: 2, borderColor: farben.surf,
                     }}
                   >
-                    <Text style={{ fontSize: 11.5, fontFamily: "Barlow_700Bold", color: "#FFFFFF" }}>{initialen(n)}</Text>
+                    <Text maxFontSizeMultiplier={SCHRIFT_DECKEL.form} style={{ fontSize: 11.5, fontFamily: "Barlow_700Bold", color: "#FFFFFF" }}>{initialen(n)}</Text>
                   </View>
                 ))}
                 {Array.from({ length: o.frei }, (_, i) => (
@@ -252,7 +253,7 @@ export default function Spiele() {
                 ))}
               </View>
               {o.bin_dabei ? (
-                <View style={{ height: 42, paddingHorizontal: 16, borderRadius: 21, flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: farben.surf2 }}>
+                <View style={{ minHeight: 42, paddingHorizontal: 16, borderRadius: 21, flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: farben.surf2 }}>
                   <Svg width={16} height={16} viewBox="0 0 24 24">
                     <Path d="M5 12l5 5L20 7" stroke={farben.greenInk} strokeWidth={2.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
                   </Svg>
@@ -264,7 +265,7 @@ export default function Spiele() {
                   onPress={() => ausfuehren(() => spieleMit(o.booking_id))}
                   accessibilityRole="button"
                   accessibilityLabel={`Mitspielen: ${o.type_name} ${dayLabel(o.starts_at)} ${alsUhrzeit(lokaleMinuten(o.starts_at))}`}
-                  style={{ height: 44, paddingHorizontal: 18, borderRadius: 22, justifyContent: "center", backgroundColor: farben.gold, opacity: laeuft ? 0.5 : 1 }}
+                  style={{ minHeight: 44, paddingHorizontal: 18, borderRadius: 22, justifyContent: "center", backgroundColor: farben.gold, opacity: laeuft ? 0.5 : 1 }}
                 >
                   <Text style={{ fontSize: 15, fontFamily: "Barlow_700Bold", color: farben.onGold }}>Mitspielen</Text>
                 </Pressable>

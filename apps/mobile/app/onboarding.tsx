@@ -26,7 +26,7 @@ import {
 import { abstand, radius } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
 import {
-  Chipwahl, FormFeld, FormGruppe, FormSchalter, Knopf, Meldung,
+  Chipwahl, FormDatum, FormFeld, FormGruppe, FormSchalter, Knopf, Meldung,
 } from "@/components/verwaltung/Formular";
 import {
   abmelden, akzeptiereDokumente, entferneMerkmal, erteileMandat, ladeOnboarding, passwortSetzen,
@@ -339,12 +339,35 @@ function Fusszeile() {
   );
 }
 
+/**
+ * Welches Feld der letzte Speicherversuch beanstandet hat (Ergebnis.feld).
+ * Die Meldung steht dann rot am Feld; sobald man dort tippt, verschwindet sie.
+ */
+function useFeldfehler() {
+  const [fehler, setFehler] = useState<{ feld: string; meldung: string } | null>(null);
+  return {
+    fuer: (feld: string) => (fehler?.feld === feld ? fehler.meldung : null),
+    merke: (r: Ergebnis): Ergebnis => {
+      setFehler(!r.ok && r.feld ? { feld: r.feld, meldung: r.meldung } : null);
+      return r;
+    },
+    /** Haengt an onAendern: Tippen nimmt den Fehler am Feld zurueck. */
+    leeren:
+      <T,>(feld: string, setze: (w: T) => void) =>
+      (w: T) => {
+        setFehler((f) => (f?.feld === feld ? null : f));
+        setze(w);
+      },
+  };
+}
+
 /* --- Die Schritte ------------------------------------------------------------ */
 
 function SchrittPasswort({ daten, weiter, zurueck }: SchrittEigenschaften) {
   const { stil } = useTheme();
   const [passwort, setPasswort] = useState("");
   const [wiederholung, setWiederholung] = useState("");
+  const f = useFeldfehler();
 
   if (daten.status.passwort) {
     return (
@@ -358,16 +381,34 @@ function SchrittPasswort({ daten, weiter, zurueck }: SchrittEigenschaften) {
   return (
     <>
       <FormGruppe>
-        <FormFeld label="Passwort" wert={passwort} onAendern={setPasswort} sicher gross="none" />
-        <FormFeld label="Noch einmal" wert={wiederholung} onAendern={setWiederholung} sicher gross="none" />
+        <FormFeld
+          label="Passwort"
+          wert={passwort}
+          onAendern={f.leeren("passwort", setPasswort)}
+          sicher
+          inhalt="passwort-neu"
+          fehler={f.fuer("passwort")}
+        />
+        <FormFeld
+          label="Noch einmal"
+          wert={wiederholung}
+          onAendern={f.leeren("wiederholung", setWiederholung)}
+          sicher
+          inhalt="passwort-neu"
+          fehler={f.fuer("wiederholung")}
+        />
       </FormGruppe>
       <Aktionen
         zurueck={zurueck}
         speichern={async () => {
           // Dieselben Regeln wie in app/passwort-setzen.tsx.
-          if (passwort.length < 8) return { ok: false, meldung: "Das Passwort braucht mindestens acht Zeichen." };
-          if (passwort !== wiederholung) return { ok: false, meldung: "Die beiden Eingaben stimmen nicht überein." };
-          const r = await passwortSetzen(passwort);
+          if (passwort.length < 8) {
+            return f.merke({ ok: false, meldung: "Das Passwort braucht mindestens acht Zeichen.", feld: "passwort" });
+          }
+          if (passwort !== wiederholung) {
+            return f.merke({ ok: false, meldung: "Die beiden Eingaben stimmen nicht überein.", feld: "wiederholung" });
+          }
+          const r = f.merke(await passwortSetzen(passwort));
           return r.ok ? weiter() : r;
         }}
       />
@@ -396,40 +437,45 @@ function SchrittStammdaten({ daten, weiter, zurueck }: SchrittEigenschaften) {
     phone: s.phone ?? "",
     mobile: s.mobile ?? "",
   });
-  const feld = (name: keyof OnboardingStammdaten) => (w: string) => setForm((f) => ({ ...f, [name]: w }));
+  const f = useFeldfehler();
+  const feld = (name: keyof OnboardingStammdaten) =>
+    f.leeren(name, (w: string) => setForm((alt) => ({ ...alt, [name]: w })));
 
   return (
     <>
       <FormGruppe titel="Person">
-        <FormFeld label="Vorname" wert={form.first_name} onAendern={feld("first_name")} gross="words" />
-        <FormFeld label="Nachname" wert={form.last_name} onAendern={feld("last_name")} gross="words" />
-        <FormFeld label="Titel" wert={form.title} onAendern={feld("title")} platzhalter="optional" />
-        <FormFeld
+        <FormFeld label="Vorname" wert={form.first_name} onAendern={feld("first_name")} inhalt="vorname" fehler={f.fuer("first_name")} />
+        <FormFeld label="Nachname" wert={form.last_name} onAendern={feld("last_name")} inhalt="nachname" fehler={f.fuer("last_name")} />
+        <FormFeld label="Titel" wert={form.title} onAendern={feld("title")} platzhalter="optional" inhalt="titel" />
+        <FormDatum
           label="Geburtsdatum"
           wert={form.birthday}
           onAendern={feld("birthday")}
-          platzhalter="TT.MM.JJJJ"
-          tastatur="numbers-and-punctuation"
+          min={new Date(1900, 0, 1)}
+          max={new Date()}
+          start={new Date(1970, 0, 1)}
+          fehler={f.fuer("birthday")}
         />
       </FormGruppe>
       <Chipwahl
         label="Geschlecht"
         optionen={GESCHLECHTER}
         wert={form.gender || null}
-        onWahl={(g) => setForm((f) => ({ ...f, gender: g }))}
+        onWahl={f.leeren("gender", (g: Geschlecht) => setForm((alt) => ({ ...alt, gender: g })))}
+        fehler={f.fuer("gender")}
       />
       <FormGruppe titel="Adresse">
-        <FormFeld label="Straße" wert={form.street} onAendern={feld("street")} />
-        <FormFeld label="PLZ" wert={form.postcode} onAendern={feld("postcode")} tastatur="number-pad" />
-        <FormFeld label="Ort" wert={form.city} onAendern={feld("city")} />
+        <FormFeld label="Straße" wert={form.street} onAendern={feld("street")} inhalt="strasse" fehler={f.fuer("street")} />
+        <FormFeld label="PLZ" wert={form.postcode} onAendern={feld("postcode")} inhalt="plz" fehler={f.fuer("postcode")} />
+        <FormFeld label="Ort" wert={form.city} onAendern={feld("city")} inhalt="ort" fehler={f.fuer("city")} />
       </FormGruppe>
       <FormGruppe titel="Kontakt">
-        <FormFeld label="Telefon" wert={form.phone} onAendern={feld("phone")} tastatur="phone-pad" />
+        <FormFeld label="Telefon" wert={form.phone} onAendern={feld("phone")} inhalt="telefon" fehler={f.fuer("phone")} />
         <FormFeld
           label="Mobil"
           wert={form.mobile}
           onAendern={feld("mobile")}
-          tastatur="phone-pad"
+          inhalt="telefon"
           beschreibung="Telefon oder Mobil genügt."
         />
         <FormFeld label="E-Mail" wert={s.email ?? ""} onAendern={() => {}} editierbar={false} />
@@ -438,7 +484,7 @@ function SchrittStammdaten({ daten, weiter, zurueck }: SchrittEigenschaften) {
       <Aktionen
         zurueck={zurueck}
         speichern={async () => {
-          const r = await speichereOnboardingStammdaten(form);
+          const r = f.merke(await speichereOnboardingStammdaten(form));
           return r.ok ? weiter() : r;
         }}
       />
@@ -508,17 +554,18 @@ function SchrittErziehungsberechtigte({ daten, weiter, zurueck }: SchrittEigensc
   const [email, setEmail] = useState(e.email ?? "");
   const [telefon, setTelefon] = useState(e.phone ?? "");
   const [zustimmung, setZustimmung] = useState(e.zustimmung_am !== null);
+  const f = useFeldfehler();
 
   return (
     <>
       <FormGruppe>
-        <FormFeld label="Name" wert={name} onAendern={setName} gross="words" />
-        <FormFeld label="E-Mail" wert={email} onAendern={setEmail} tastatur="email-address" gross="none" />
+        <FormFeld label="Name" wert={name} onAendern={f.leeren("name", setName)} inhalt="name" fehler={f.fuer("name")} />
+        <FormFeld label="E-Mail" wert={email} onAendern={f.leeren("email", setEmail)} inhalt="email" fehler={f.fuer("email")} />
         <FormFeld
           label="Telefon"
           wert={telefon}
-          onAendern={setTelefon}
-          tastatur="phone-pad"
+          onAendern={f.leeren("email", setTelefon)}
+          inhalt="telefon"
           beschreibung="E-Mail oder Telefon genügt."
         />
       </FormGruppe>
@@ -533,7 +580,7 @@ function SchrittErziehungsberechtigte({ daten, weiter, zurueck }: SchrittEigensc
       <Aktionen
         zurueck={zurueck}
         speichern={async () => {
-          const r = await speichereErziehungsberechtigte({ name, email, phone: telefon, zustimmung });
+          const r = f.merke(await speichereErziehungsberechtigte({ name, email, phone: telefon, zustimmung }));
           return r.ok ? weiter() : r;
         }}
       />
@@ -548,6 +595,7 @@ function SchrittNotfallkontakt({ daten, weiter, zurueck, ueberspringen }: Schrit
   const vorbelegen = daten.minderjaehrig && !n.name && !n.phone;
   const [name, setName] = useState((vorbelegen ? e.name : n.name) ?? "");
   const [telefon, setTelefon] = useState((vorbelegen ? e.phone : n.phone) ?? "");
+  const f = useFeldfehler();
   const [verhaeltnis, setVerhaeltnis] = useState(
     (vorbelegen && e.name ? "Erziehungsberechtigte" : n.relation) ?? "",
   );
@@ -555,15 +603,15 @@ function SchrittNotfallkontakt({ daten, weiter, zurueck, ueberspringen }: Schrit
   return (
     <>
       <FormGruppe>
-        <FormFeld label="Name" wert={name} onAendern={setName} gross="words" />
-        <FormFeld label="Telefon" wert={telefon} onAendern={setTelefon} tastatur="phone-pad" />
+        <FormFeld label="Name" wert={name} onAendern={f.leeren("name", setName)} inhalt="name" fehler={f.fuer("name")} />
+        <FormFeld label="Telefon" wert={telefon} onAendern={setTelefon} inhalt="telefon" />
         <FormFeld label="Verhältnis" wert={verhaeltnis} onAendern={setVerhaeltnis} platzhalter="etwa Mutter, Partner" />
       </FormGruppe>
       <Aktionen
         zurueck={zurueck}
         ueberspringen={ueberspringen}
         speichern={async () => {
-          const r = await speichereOnboardingNotfallkontakt({ name, phone: telefon, relation: verhaeltnis });
+          const r = f.merke(await speichereOnboardingNotfallkontakt({ name, phone: telefon, relation: verhaeltnis }));
           return r.ok ? weiter() : r;
         }}
       />
@@ -613,10 +661,10 @@ function SchrittSepa({ daten, weiter, zurueck }: SchrittEigenschaften) {
           label="Kontoinhaber"
           wert={kontoinhaber}
           onAendern={setKontoinhaber}
-          gross="words"
+          inhalt="name"
           beschreibung={daten.minderjaehrig ? "Bei Kindern ist der Kontoinhaber ein Elternteil." : undefined}
         />
-        <FormFeld label="IBAN" wert={iban} onAendern={setIban} gross="characters" platzhalter="DE…" />
+        <FormFeld label="IBAN" wert={iban} onAendern={setIban} inhalt="iban" platzhalter="DE…" />
       </FormGruppe>
       <FormGruppe>
         <FormSchalter

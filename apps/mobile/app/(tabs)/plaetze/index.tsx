@@ -599,7 +599,7 @@ export default function Plan() {
           style={{
             position: "absolute", left: LEISTE_RAND, right: LEISTE_RAND,
             bottom: LEISTE_ABSTAND_UNTEN + rand.bottom + LEISTE_HOEHE + 14,
-            height: 64, borderRadius: 22, paddingLeft: 18, paddingRight: 8,
+            minHeight: 64, borderRadius: 22, paddingLeft: 18, paddingRight: 8,
             flexDirection: "row", alignItems: "center", justifyContent: "space-between",
             backgroundColor: farben.ink,
             shadowColor: "#000", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.35, shadowRadius: 20,
@@ -619,7 +619,7 @@ export default function Plan() {
             accessibilityRole="button"
             accessibilityLabel={`${gewaehlterPlatz.name} um ${alsUhrzeit(auswahl.minute)} Uhr buchen`}
             style={({ pressed }) => ({
-              height: 48, paddingHorizontal: 22, borderRadius: 16, justifyContent: "center",
+              minHeight: 48, paddingHorizontal: 22, borderRadius: 16, justifyContent: "center",
               backgroundColor: farben.gold, opacity: pressed ? 0.85 : 1,
             })}
           >

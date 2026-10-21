@@ -153,7 +153,7 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 | U2 | P2 | Rohe Supabase-Meldungen (`admin/mitglieder/page.tsx:86` u. a.), App `useLaden` | Web: PR #55 (`translateDbError` erkennt auch Verbindungsfehler, kein Rohtext). Offen: App `useLaden` |
 | U3 | P3 | Nirgends „Erneut versuchen“, Pull-to-Refresh nur in 2 Dateien | Retry und Pull-to-Refresh |
 | U4 | P3 | ~50× `#fff` statt Token, Avatarfarben doppelt | `onBrand`-Token, Avatarfarben nach `@tcm/ui` |
-| U5 | P2 | App: feste Schriftgrößen, keine Prüfung großer Systemschrift | Hauptbildschirme bei größter Stufe prüfen |
+| U5 | P2 | App: feste Schriftgrößen, keine Prüfung großer Systemschrift | PR #65: `minHeight` statt fester Höhen, Schnellaktionen stapeln sich ab fontScale 1.2, Kürzel/Glocke/Tabs gedeckelt. Native Prüfung bei größter Stufe steht noch aus (Simulator). |
 | U6 | P3 | App: Tipp-Elemente ohne `accessibilityLabel`. Im Web keine axe-Prüfung. | Labels, `@axe-core/playwright` |
 | U7 | P3 | Begriffe: Admin/Verwaltung, Belegungsplan/Plätze, Konto/Mein Konto, Home/Start | **Erledigt (PR #64):** `docs/begriffe.md`. Start, Plätze (Ansicht „Belegung“), Konto, Verwaltung, auch als Telefon-Tab in Web und App. Rollenname in der Seitenleiste, Sperrtexte ohne „Administratoren“. |
 | U8 | P3 | Durchklick-Protokoll | Screenshots aller Routen (begonnen im Audit) |
@@ -170,7 +170,7 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 | U19 | P2 | Netzwerk- und Rate-Limit-Fehler erscheinen als „Passwort stimmt nicht“ | Web: PR #55 (Login, Passwort vergessen/setzen; `anmeldeFehlerText` in core) |
 | U20 | P2 | App „Passwort setzen“: Ladekreis ohne Ende, wenn der Link kein Token hat | PR #53: Meldung mit „Neuen Link anfordern“ und „Zurück zur Anmeldung“, Frist 15 s |
 | U21 | P2 | 115 DB-Fehlertexte und Einstellungstexte mit ae/oe/ue (vgl. O13) | Migration mit echten Umlauten *(Migration)* |
-| U22 | P2 | App-Formulare ohne Autofill und ohne Fehler am Feld. Geburtsdatum als Freitext. | Props durchreichen, Datumsauswahl |
+| U22 | P2 | App-Formulare ohne Autofill und ohne Fehler am Feld. Geburtsdatum als Freitext. | PR #65: textContentType/autoComplete je Feld, Fehler rot am Feld, Geburtsdatum per Datumsauswahl (neuer nativer Build nötig). |
 | U23 | P3 | Aufnahmeantrag: Fehlermeldung oben, außer Sicht. `autoComplete="off"` in den Stammdaten. | Meldung beim Knopf, echte `autoComplete` |
 | U24 | P3 | Tippziele 40 statt 44 (Segmente, Chips, Vortag/Folgetag) | 44 |
 | U25 | P3 | Kasse am Telefon: Segmentleiste abgeschnitten, „Ausnahmen“ ohne Link | Umbruch, Links |

@@ -568,6 +568,7 @@ describe("speichereStammdaten", () => {
     const r = await speichereStammdaten({ ...STAMM, postcode: "7645" }, STAMM);
     expect(r.ok).toBe(false);
     expect(r.meldung).toContain("fünfstellig");
+    expect(r.feld).toBe("postcode");
     expect(update).not.toHaveBeenCalled();
   });
 
@@ -582,6 +583,7 @@ describe("speichereStammdaten", () => {
   it("lässt Vor- und Nachname nie leer werden", async () => {
     const r = await speichereStammdaten({ ...STAMM, first_name: "" }, STAMM);
     expect(r.ok).toBe(false);
+    expect(r.feld).toBe("first_name");
     expect(update).not.toHaveBeenCalled();
   });
 });
@@ -597,6 +599,7 @@ describe("speichereNotfallkontakt", () => {
     });
     expect(r.ok).toBe(false);
     expect(r.meldung).toContain("Name");
+    expect(r.feld).toBe("emergency_contact_name");
     expect(update).not.toHaveBeenCalled();
   });
 
@@ -710,7 +713,7 @@ describe("Onboarding", () => {
 
   it("weist ein unlesbares Geburtsdatum ab, bevor es zur Datenbank geht", async () => {
     const r = await speichereOnboardingStammdaten({ ...STAMMDATEN, birthday: "31.02.2014" });
-    expect(r).toEqual({ ok: false, meldung: "Bitte das Geburtsdatum als TT.MM.JJJJ angeben." });
+    expect(r).toEqual({ ok: false, meldung: "Bitte das Geburtsdatum als TT.MM.JJJJ angeben.", feld: "birthday" });
     expect(rpc).not.toHaveBeenCalled();
   });
 
@@ -723,7 +726,21 @@ describe("Onboarding", () => {
 
   it("verlangt ein Geschlecht", async () => {
     const r = await speichereOnboardingStammdaten({ ...STAMMDATEN, gender: "" });
-    expect(r).toEqual({ ok: false, meldung: "Bitte das Geschlecht wählen." });
+    expect(r).toEqual({ ok: false, meldung: "Bitte das Geschlecht wählen.", feld: "gender" });
+  });
+
+  it.each([
+    ["first_name", { first_name: " " }, "Vorname fehlt."],
+    ["last_name", { last_name: "" }, "Nachname fehlt."],
+    ["birthday", { birthday: "01.01.1899" }, "Bitte ein gültiges Geburtsdatum angeben."],
+    ["street", { street: "" }, "Straße fehlt."],
+    ["postcode", { postcode: " " }, "Postleitzahl fehlt."],
+    ["city", { city: "" }, "Ort fehlt."],
+    ["phone", { phone: "", mobile: "" }, "Bitte Telefon oder Mobil angeben."],
+  ])("meldet das fehlende Feld %s, bevor es zur Datenbank geht", async (feld, aenderung, meldung) => {
+    const r = await speichereOnboardingStammdaten({ ...STAMMDATEN, ...aenderung });
+    expect(r).toEqual({ ok: false, meldung, feld });
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it("reicht die Meldung der Datenbank durch", async () => {
@@ -754,6 +771,20 @@ describe("Onboarding", () => {
       p_phone: "0721 1",
       p_consent: true,
     });
+  });
+
+  it("Erziehungsberechtigte: Name und ein Kontaktweg, mit Feld", async () => {
+    expect(await speichereErziehungsberechtigte({ name: "", email: "a@b.de", phone: "", zustimmung: true }))
+      .toEqual({ ok: false, meldung: "Bitte den Namen angeben.", feld: "name" });
+    expect(await speichereErziehungsberechtigte({ name: "Eva", email: " ", phone: "", zustimmung: true }))
+      .toEqual({ ok: false, meldung: "Bitte E-Mail oder Telefon angeben.", feld: "email" });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("Notfallkontakt im Onboarding: Nummer ohne Namen markiert den Namen", async () => {
+    const r = await speichereOnboardingNotfallkontakt({ name: " ", phone: "0721 1", relation: "" });
+    expect(r).toEqual({ ok: false, meldung: "Zur Notfallnummer gehört auch ein Name.", feld: "name" });
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it("speichert den Notfallkontakt über die RPC", async () => {

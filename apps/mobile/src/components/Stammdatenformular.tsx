@@ -15,12 +15,36 @@ import { Pressable, Text, TextInput, View } from "react-native";
 import { abstand } from "@tcm/ui";
 import { useTheme } from "@/lib/theme";
 import type { Ergebnis } from "@/lib/daten";
+import { feldEigenschaften, type Feldinhalt } from "@/lib/feldinhalt";
 
 export type Feld = {
   name: string;
   label: string;
   art?: "text" | "email" | "telefon";
+  /** Fuer Autofill und Tastatur; ohne Angabe nach dem Spaltennamen. */
+  inhalt?: Feldinhalt;
 };
+
+/** Spalten von members und was in ihnen steht. */
+const INHALT_NACH_SPALTE: Record<string, Feldinhalt> = {
+  first_name: "vorname",
+  last_name: "nachname",
+  title: "titel",
+  phone: "telefon",
+  mobile: "telefon",
+  street: "strasse",
+  postcode: "plz",
+  city: "ort",
+  emergency_contact_name: "name",
+  emergency_contact_phone: "telefon",
+};
+
+function inhaltVon(f: Feld): Feldinhalt | undefined {
+  if (f.inhalt) return f.inhalt;
+  if (f.art === "email") return "email";
+  if (f.art === "telefon") return "telefon";
+  return INHALT_NACH_SPALTE[f.name];
+}
 
 type Eigenschaften = {
   titel: string;
@@ -45,8 +69,10 @@ export function Stammdatenformular({
   onGespeichert,
   imBlatt = false,
 }: Eigenschaften) {
-  const { stil } = useTheme();
+  const { stil, farben } = useTheme();
   const [offen, setOffen] = useState(imBlatt);
+  // Das Feld, das der letzte Speicherversuch beanstandet hat (Ergebnis.feld).
+  const [fehlerFeld, setFehlerFeld] = useState<string | null>(null);
   const [entwurf, setEntwurf] = useState(werte);
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
@@ -56,6 +82,7 @@ export function Stammdatenformular({
     // einem Abbrechen noch die verworfenen Eingaben im Feld.
     setEntwurf(werte);
     setMeldung(null);
+    setFehlerFeld(null);
     setOffen(true);
   }
 
@@ -64,6 +91,7 @@ export function Stammdatenformular({
     const r = await onSpeichern(entwurf);
     setLaeuft(false);
     setMeldung({ ok: r.ok, text: r.meldung });
+    setFehlerFeld(!r.ok && r.feld ? r.feld : null);
     if (r.ok) {
       setOffen(false);
       await onGespeichert();
@@ -89,27 +117,37 @@ export function Stammdatenformular({
 
       {erklaerung && <Text style={stil.leise}>{erklaerung}</Text>}
 
-      {meldung && (
+      {/* Ein Fehler mit Feld steht am Feld, nicht noch einmal hier. */}
+      {meldung && !(fehlerFeld && offen) && (
         <Text style={meldung.ok ? stil.hinweisErfolg : stil.hinweisFehler}>{meldung.text}</Text>
       )}
 
       {offen ? (
         <>
-          {felder.map((f) => (
-            <View key={f.name}>
-              <Text style={stil.feldLabel}>{f.label}</Text>
-              <TextInput
-                style={stil.feld}
-                value={entwurf[f.name] ?? ""}
-                onChangeText={(t) => setEntwurf((e) => ({ ...e, [f.name]: t }))}
-                accessibilityLabel={f.label}
-                autoCapitalize={f.art === "email" ? "none" : "sentences"}
-                keyboardType={
-                  f.art === "email" ? "email-address" : f.art === "telefon" ? "phone-pad" : "default"
-                }
-              />
-            </View>
-          ))}
+          {felder.map((f) => {
+            const auto = feldEigenschaften(inhaltVon(f));
+            const fehler = fehlerFeld === f.name ? meldung?.text : undefined;
+            return (
+              <View key={f.name}>
+                <Text style={[stil.feldLabel, fehler ? { color: farben.red } : null]}>{f.label}</Text>
+                <TextInput
+                  style={[stil.feld, fehler ? { borderColor: farben.red } : null]}
+                  value={entwurf[f.name] ?? ""}
+                  onChangeText={(t) => {
+                    if (fehlerFeld === f.name) setFehlerFeld(null);
+                    setEntwurf((e) => ({ ...e, [f.name]: t }));
+                  }}
+                  accessibilityLabel={f.label}
+                  accessibilityHint={fehler}
+                  {...auto}
+                  autoCapitalize={auto.autoCapitalize ?? "sentences"}
+                />
+                {fehler && (
+                  <Text style={[stil.hinweisFehler, { marginTop: 6 }]} accessibilityLiveRegion="polite">{fehler}</Text>
+                )}
+              </View>
+            );
+          })}
 
           <View style={{ flexDirection: "row", gap: abstand.s, marginTop: abstand.s }}>
             <Pressable
