@@ -148,7 +148,7 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 
 | # | Prio | Befund | Was zu tun ist |
 |---|---|---|---|
-| U1 | P2 | Im Web gibt es kein `loading.tsx`/`error.tsx`/`not-found.tsx` | PR #55: `error`/`loading` für `/`, `/plan`, `/verein`, `/konto`, `/admin`, `not-found`, `global-error`, Komponente `Fehlerzustand` |
+| U1 | P2 | Im Web gibt es kein `loading.tsx`/`error.tsx`/`not-found.tsx` | PR #55: `error.tsx` für `/`, `/plan`, `/verein`, `/konto`, `/admin`, `not-found`, `global-error`, Komponente `Fehlerzustand`. **Kein `loading.tsx`:** Damit rendert jeder Link-Prefetch Root- und Admin-Layout samt DB-Abfragen (8,8 KB statt 0,2 KB je Prefetch, 24 allein auf der Mitgliederliste). In der CI hingen dadurch die Navigationen. Ladeanzeige erst nach einem schlankeren Layout oder mit `prefetch={false}` in Listen. |
 | U2 | P2 | Rohe Supabase-Meldungen (`admin/mitglieder/page.tsx:86` u. a.), App `useLaden` | Web: PR #55 (`translateDbError` erkennt auch Verbindungsfehler, kein Rohtext). Offen: App `useLaden` |
 | U3 | P3 | Nirgends „Erneut versuchen“, Pull-to-Refresh nur in 2 Dateien | Retry und Pull-to-Refresh |
 | U4 | P3 | ~50× `#fff` statt Token, Avatarfarben doppelt | `onBrand`-Token, Avatarfarben nach `@tcm/ui` |

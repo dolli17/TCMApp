@@ -114,13 +114,18 @@ export async function memberLogin(anfrage: LoginAnfrage): Promise<LoginErgebnis>
 
   const ok = Boolean(ergebnis.ok);
   const meldung = ergebnis.meldung ?? (antwort.ok ? "Erledigt." : "Das hat nicht geklappt.");
+  // Fehler aus den RPCs kommen roh durch, wie bei einem direkten Aufruf, und
+  // tragen code/details (dbFehler in der Function). Ihre eigenen Sätze -
+  // etwa "nicht angelegt, weil ... : <Grund>" - sind schon für Menschen
+  // geschrieben und gehen unverändert durch.
+  const ausDb = ergebnis.code !== undefined || ergebnis.details !== undefined;
 
   return {
     ok,
-    // Fehler aus den RPCs kommen roh durch, wie bei einem direkten Aufruf.
-    meldung: ok
-      ? meldung
-      : translateDbError({ message: meldung, code: ergebnis.code, details: ergebnis.details }),
+    meldung:
+      ok || !ausDb
+        ? meldung
+        : translateDbError({ message: meldung, code: ergebnis.code, details: ergebnis.details }),
     id: ergebnis.id,
     status: ergebnis.status,
   };

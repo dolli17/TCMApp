@@ -74,13 +74,3 @@ export function SeitenFehler({
     />
   );
 }
-
-/** Der Inhalt jeder loading.tsx. */
-export function Laden({ text = "Wird geladen…" }: { text?: string }) {
-  return (
-    <div className="laden" role="status" aria-live="polite">
-      <span className="laden-kreis" aria-hidden="true" />
-      <span>{text}</span>
-    </div>
-  );
-}

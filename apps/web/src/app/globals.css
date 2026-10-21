@@ -269,17 +269,6 @@ input:focus, select:focus, textarea:focus {
 .fehlerzustand.kompakt .titel { font-size: 16px; margin-bottom: 4px; }
 .globaler-fehler { min-height: 100vh; display: grid; place-items: center; padding: var(--space-rand); background: var(--bg); }
 
-/* Wird geladen (loading.tsx) */
-.laden {
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  padding: 48px 0; color: var(--muted); font-size: 14px;
-}
-.laden-kreis {
-  width: 18px; height: 18px; border-radius: 50%;
-  border: 2.5px solid var(--line-2); border-top-color: var(--blue);
-  animation: laden-dreh .8s linear infinite;
-}
-@keyframes laden-dreh { to { transform: rotate(360deg); } }
 
 /* ---------------------------------------------------------------------------
    Tabellen

@@ -168,6 +168,12 @@ test.describe("Fehlerdarstellung", () => {
     await expect(page.getByRole("link", { name: "Zur Startseite" })).toBeVisible();
   });
 
+  /**
+   * Die Meldung im Formular. Nicht getByRole("alert") allein: Next.js hat
+   * einen eigenen, leeren Ansager mit derselben Rolle (__next-route-announcer__).
+   */
+  const meldung = (page: Page) => page.locator("form").getByRole("alert");
+
   /** Login-Formular ausfüllen, ohne auf die Weiterleitung zu warten. */
   async function versuche(page: Page) {
     await page.goto("/login");
@@ -179,8 +185,8 @@ test.describe("Fehlerdarstellung", () => {
   test("ohne Verbindung meldet der Login keine falschen Zugangsdaten (U19)", async ({ page }) => {
     await page.route("**/auth/v1/token**", (route) => route.abort("internetdisconnected"));
     await versuche(page);
-    await expect(page.getByRole("alert")).toContainText("Keine Verbindung zum Server");
-    await expect(page.getByRole("alert")).not.toContainText("Passwort stimmt nicht");
+    await expect(meldung(page)).toContainText("Keine Verbindung zum Server");
+    await expect(meldung(page)).not.toContainText("Passwort stimmt nicht");
   });
 
   test("nach zu vielen Versuchen sagt der Login das (U19)", async ({ page }) => {
@@ -192,11 +198,11 @@ test.describe("Fehlerdarstellung", () => {
       }),
     );
     await versuche(page);
-    await expect(page.getByRole("alert")).toContainText("Zu viele Versuche");
+    await expect(meldung(page)).toContainText("Zu viele Versuche");
   });
 
   test("falsche Zugangsdaten bleiben ein Satz für Adresse und Passwort", async ({ page }) => {
     await versuche(page);
-    await expect(page.getByRole("alert")).toHaveText("E-Mail-Adresse oder Passwort stimmt nicht.");
+    await expect(meldung(page)).toHaveText("E-Mail-Adresse oder Passwort stimmt nicht.");
   });
 });
