@@ -55,6 +55,7 @@ sie danach zurück. Die Tests hinterlassen also keinen Zustand – auch nicht di
 | `26_veranstaltungen_mitglieder.sql` | Eigener Platz auf der Warteliste in der Reihenfolge des Nachrückens, ohne fremde Anmeldungen |
 | `27_veranstaltungen_nachrichten.sql` | Nachrichten zu Veranstaltungen: Veröffentlichen an alle aktiven Mitglieder genau einmal, Nachrücken mit Betrag, Absage an Angemeldete und Wartende, Verlegen nur bei echter Änderung; Verweis `event_id` in `my_notifications`; Mail- und Push-Arten |
 | `28_veranstaltungen_erinnerung.sql` | Erinnerung zwei Tage vor dem Anmeldeschluss: nur an aktive Mitglieder ohne Anmeldung, genau einmal je Veranstaltung, nicht für Entwürfe, Abgesagtes oder ohne Anmeldung; pg_cron-Job `veranstaltungs-erinnerungen` |
+| `29_zugang_ausgeschiedene.sql` | Zugang endet mit der Mitgliedschaft (`hat_zugang`): Archivierte, Gesperrte und Ausgetretene (nach dem Austrittsdatum) ohne Rechte, bis zum Austrittsdatum alles wie bisher; Archivieren sperrt, erlässt Gastgebühren, gibt Mitspielerplätze frei, meldet von Veranstaltungen und Wartelisten ab, nimmt aus Einzugsentwürfen; Archivierte rücken nicht nach; Rollen enden mit dem Austritt |
 | `99_runtests.sql` | Führt die Suite aus |
 
 Die Dateien `01` bis `23` **definieren nur Funktionen**. Ausgeführt wird alles in
