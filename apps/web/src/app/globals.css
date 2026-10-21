@@ -2307,6 +2307,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .veranstaltung-aktionen { display: grid; gap: 10px; justify-items: end; }
 .veranstaltung-aktionen .knopfreihe, .rueckfrage .knopfreihe { display: flex; flex-wrap: wrap; gap: 8px; }
 .rueckfrage { display: grid; gap: 10px; max-width: 460px; }
+/* Im blauen "Nächster Schritt" (Kasse): Abstand kommt dort vom gap */
+.naechster-schritt .rueckfrage { margin: 0; }
 @media (min-width: 900px) {
   .kennzahlen.vier { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }

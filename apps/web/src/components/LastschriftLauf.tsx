@@ -58,6 +58,10 @@ const AUSSCHNITT = 25;
  * erzeugt werden: der Abbuchungstag steht in ihr, und die Bank bucht erst dann
  * ab. Früher stand hier "Vorabankündigung läuft", obwohl längst etwas zu tun
  * war. Nach dem Erzeugen ist der Einzug zu: die Datei ist ein Buchungsbeleg.
+ *
+ * Datei und "eingereicht" gehen erst nach einer Rückfrage mit Anzahl, Summe
+ * und Abbuchungstag (U10). Abschließen lässt sich erst nach der
+ * Rückbuchungsfrist; Rückläufer lassen sich auch danach noch erfassen (U9).
  */
 export function LastschriftLauf({
   lauf, posten, jeArt, angekuendigtAm, fristTage, heute,
@@ -75,6 +79,7 @@ export function LastschriftLauf({
   const [gewaehlt, setGewaehlt] = useState<string | null>(null);
   const [grund, setGrund] = useState("");
   const [alle, setAlle] = useState(false);
+  const [frage, setFrage] = useState<"datei" | "eingereicht" | null>(null);
   const [laeuft, starte] = useTransition();
 
   const zurueckgebucht = posten.filter((p) => p.result === "returned").length;
@@ -87,12 +92,22 @@ export function LastschriftLauf({
     today: heute,
   });
   const offen = lauf.status === "draft";
-  const nachFrist = lauf.status === "submitted" && heute > stand.ruecklaeuferBis;
+  const nachFrist = heute >= stand.abschliessbarAb;
+  const eckdaten = `${posten.length} ${posten.length === 1 ? "Lastschrift" : "Lastschriften"}, ${formatCents(
+    lauf.total_cents,
+  )}, Abbuchung am ${isoDateLabel(lauf.collection_date)}`;
   const zeige = alle ? posten : posten.slice(0, AUSSCHNITT);
   const auswahl = posten.find((p) => p.end_to_end_id === gewaehlt) ?? null;
 
   function melde(e: { ok: boolean; meldung: string }) {
     setMeldung({ ok: e.ok, text: e.meldung });
+  }
+
+  function bestaetigt(f: "datei" | "eingereicht") {
+    starte(async () => {
+      melde(f === "datei" ? await dateiErzeugen(lauf.id) : await laufEingereicht(lauf.id, null));
+      setFrage(null);
+    });
   }
 
   return (
@@ -127,14 +142,9 @@ export function LastschriftLauf({
           <b className="titel">{stand.naechster.titel}</b>
           <p>{stand.naechster.text}</p>
           <div className="knopfreihe">
-            {offen && lauf.item_count > 0 && (
-              <button
-                type="button"
-                className="knopf gold"
-                disabled={laeuft}
-                onClick={() => starte(async () => melde(await dateiErzeugen(lauf.id)))}
-              >
-                {laeuft ? "Wird erzeugt…" : "pain.008 erzeugen"}
+            {offen && lauf.item_count > 0 && frage !== "datei" && (
+              <button type="button" className="knopf gold" disabled={laeuft} onClick={() => setFrage("datei")}>
+                pain.008 erzeugen
               </button>
             )}
             {offen && lauf.item_count === 0 && (
@@ -153,26 +163,22 @@ export function LastschriftLauf({
                 Leeren Einzug löschen
               </button>
             )}
-            {lauf.status === "generated" && (
-              <button
-                type="button"
-                className="knopf gold"
-                disabled={laeuft}
-                onClick={() => starte(async () => melde(await laufEingereicht(lauf.id, null)))}
-              >
+            {lauf.status === "generated" && frage !== "eingereicht" && (
+              <button type="button" className="knopf gold" disabled={laeuft} onClick={() => setFrage("eingereicht")}>
                 Im Onlinebanking eingereicht
               </button>
             )}
             {lauf.status === "submitted" && (
               // Erst abschließen, wenn nichts mehr zurückkommt; wer zu früh
-              // abhakt, hält Geld für da, das noch unterwegs ist.
+              // abhakt, hält Geld für da, das noch unterwegs ist. Der Server
+              // prüft dieselbe Frist.
               <button
                 type="button"
                 className={`knopf ${nachFrist ? "gold" : "auf-blau"}`}
-                disabled={laeuft}
+                disabled={laeuft || !nachFrist}
                 onClick={() => starte(async () => melde(await laufAbschliessen(lauf.id)))}
               >
-                Einzug abschließen
+                {nachFrist ? "Einzug abschließen" : `Abschließen ab ${isoDateLabel(stand.abschliessbarAb)}`}
               </button>
             )}
             {lauf.storage_path && (
@@ -181,6 +187,25 @@ export function LastschriftLauf({
               </a>
             )}
           </div>
+          {frage && (
+            <div className="hinweis rueckfrage" role="group" aria-label="Rückfrage">
+              <span>
+                {frage === "datei"
+                  ? `${eckdaten} – Datei jetzt erzeugen? Danach ist der Einzug zu, niemand lässt sich mehr herausnehmen.`
+                  : `${eckdaten} – wirklich als eingereicht vermerken? Erst bestätigen, wenn die Datei im Onlinebanking hochgeladen ist.`}
+              </span>
+              <span className="knopfreihe">
+                <button type="button" className="knopf gold klein" disabled={laeuft} onClick={() => bestaetigt(frage)}>
+                  {laeuft
+                    ? frage === "datei" ? "Wird erzeugt…" : "Wird vermerkt…"
+                    : frage === "datei" ? "Ja, Datei erzeugen" : "Ja, eingereicht"}
+                </button>
+                <button type="button" className="knopf leise klein" disabled={laeuft} onClick={() => setFrage(null)}>
+                  Abbrechen
+                </button>
+              </span>
+            </div>
+          )}
         </section>
       )}
       {!stand.naechster && lauf.storage_path && (
@@ -223,9 +248,10 @@ export function LastschriftLauf({
             <ul className="liste-gruppe" aria-label="Je Mitglied">
               {zeige.map((p) => {
                 // Rückläufer erst nach dem Einreichen: vorher ist noch nichts
-                // unterwegs, das zurückkommen könnte.
+                // unterwegs, das zurückkommen könnte. Auch nach dem Abschluss
+                // noch - eine Bank meldet manches erst spät (U9).
                 const kannZurueck =
-                  p.result === "pending" && (lauf.status === "submitted" || lauf.status === "completed");
+                  p.result !== "returned" && (lauf.status === "submitted" || lauf.status === "completed");
                 const klickbar = (offen || kannZurueck) && !laeuft;
                 return (
                   <li key={p.end_to_end_id}>
@@ -327,6 +353,7 @@ export function LastschriftLauf({
           <p className="unterzeile">
             Der Grund geht unverändert an das Mitglied – „Konto nicht gedeckt" und
             „Widerspruch" führen zu ganz verschiedenen nächsten Schritten.
+            {auswahl.result === "settled" ? " Der Einzug ist abgeschlossen; die Forderungen stehen danach wieder offen." : ""}
           </p>
           <div className="formraster">
             <label>

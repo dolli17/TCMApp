@@ -23,6 +23,9 @@ export interface GruppeZeile extends EinzugGruppe {
  * Drei Fragen untereinander: was, wann, wer. Die Vorschau kommt aus derselben
  * Prüfung, die der Einzug nimmt (einzug_vorschau) - wer hier als Ausnahme
  * steht, bekommt keine Ankündigung.
+ *
+ * Ankündigen schickt jedem Mitglied eine Nachricht, auch per E-Mail. Deshalb
+ * erst nach einer Rückfrage mit Anzahl, Summe und Abbuchungstag (U10).
  */
 export function EinzugVorbereiten({
   gruppen, vorgewaehlt, frueheste, fristTage,
@@ -42,6 +45,7 @@ export function EinzugVorbereiten({
   const [vorschau, setVorschau] = useState<VorschauZeile[] | null>(null);
   const [vorschauFehler, setVorschauFehler] = useState<string | null>(null);
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
+  const [frage, setFrage] = useState(false);
   const [laedt, starteLaden] = useTransition();
   const [sendet, starteSenden] = useTransition();
   const anfrage = useRef(0);
@@ -241,24 +245,44 @@ export function EinzugVorbereiten({
           </b>
           <p>Danach kannst du die Datei sofort erzeugen.</p>
         </div>
-        <button
-          type="button"
-          className="knopf gold"
-          disabled={!bereit || sendet}
-          onClick={() =>
-            starteSenden(async () => {
-              const e = await einzugVorbereiten({
-                abbuchung,
-                titel,
-                gruppen: auswahl.map(einzugGruppeAuswahl),
-              });
-              setMeldung({ ok: e.ok, text: e.meldung });
-              if (e.ok && e.id) router.push(`/admin/kasse/lastschriften/${e.id}`);
-            })
-          }
-        >
-          {sendet ? "Wird angekündigt…" : "Ankündigen und Einzug anlegen"}
-        </button>
+        {!frage && (
+          <button type="button" className="knopf gold" disabled={!bereit || sendet} onClick={() => setFrage(true)}>
+            Ankündigen und Einzug anlegen
+          </button>
+        )}
+        {frage && (
+          <div className="hinweis rueckfrage" role="group" aria-label="Rückfrage">
+            <span>
+              {dabei.length} {dabei.length === 1 ? "Lastschrift" : "Lastschriften"}, {formatCents(summe)}, Abbuchung
+              am {isoDateLabel(abbuchung)} – wirklich ankündigen? Jedes Mitglied bekommt eine Nachricht, auch per
+              E-Mail.
+            </span>
+            <span className="knopfreihe">
+              <button
+                type="button"
+                className="knopf gold klein"
+                disabled={!bereit || sendet}
+                onClick={() =>
+                  starteSenden(async () => {
+                    const e = await einzugVorbereiten({
+                      abbuchung,
+                      titel,
+                      gruppen: auswahl.map(einzugGruppeAuswahl),
+                    });
+                    setMeldung({ ok: e.ok, text: e.meldung });
+                    setFrage(false);
+                    if (e.ok && e.id) router.push(`/admin/kasse/lastschriften/${e.id}`);
+                  })
+                }
+              >
+                {sendet ? "Wird angekündigt…" : "Ja, ankündigen"}
+              </button>
+              <button type="button" className="knopf leise klein" disabled={sendet} onClick={() => setFrage(false)}>
+                Abbrechen
+              </button>
+            </span>
+          </div>
+        )}
       </section>
     </>
   );

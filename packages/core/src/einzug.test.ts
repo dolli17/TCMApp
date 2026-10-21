@@ -58,7 +58,10 @@ describe("einzugStand", () => {
     expect(eingereicht.label).toBe("Eingereicht");
     expect(eingereicht.ton).toBe("blau");
     expect(eingereicht.ruecklaeuferBis).toBe("2026-12-29");
+    expect(eingereicht.abschliessbarAb).toBe("2026-12-30");
     expect(eingereicht.naechster!.titel).toBe("Rückläufer eintragen, wenn welche kommen");
+    expect(eingereicht.naechster!.text).toContain("ab dem 30.12.2026");
+    expect(stand({ status: "submitted", today: "2026-12-29" }).naechster!.titel).toBe("Rückläufer eintragen, wenn welche kommen");
     expect(stand({ status: "submitted", today: "2026-12-30" }).naechster!.titel).toBe("Einzug abschließen");
     const fertig = stand({ status: "completed", returned: 2 });
     expect(fertig.label).toBe("Abgeschlossen");

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import {
-  buildPain008, pain008Filename, translateDbError,
+  buildPain008, einzugAbschliessbarAb, isoDateLabel, pain008Filename, translateDbError,
   type ChargeKind, type DebtorItem, type DirectDebitBatch, type PainVersion,
 } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -165,8 +165,32 @@ export async function ruecklaeuferErfassen(daten: {
   };
 }
 
+const BERLIN = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" });
+
+/**
+ * Den Einzug abschliessen: was nicht zurueckkam, gilt als eingezogen.
+ *
+ * Erst nach der Rueckbuchungsfrist (U9). Die Oberflaeche sperrt den Knopf
+ * vorher; die Pruefung hier haelt auch einen direkten Aufruf auf.
+ */
 export async function laufAbschliessen(batchId: string): Promise<AktionsErgebnis> {
   const supabase = await createServerSupabase();
+
+  const { data: lauf, error: laufFehler } = await supabase
+    .from("debit_batches")
+    .select("collection_date")
+    .eq("id", batchId)
+    .maybeSingle();
+  if (laufFehler) return { ok: false, meldung: translateDbError(laufFehler) };
+  if (!lauf) return { ok: false, meldung: "Diesen Einzug gibt es nicht." };
+
+  const ab = einzugAbschliessbarAb(lauf.collection_date);
+  if (BERLIN.format(new Date()) < ab) {
+    return {
+      ok: false,
+      meldung: `Noch können Lastschriften zurückkommen. Abschließen lässt sich der Einzug ab dem ${isoDateLabel(ab)}.`,
+    };
+  }
 
   const { data, error } = await supabase.rpc("complete_debit_batch", {
     p_batch_id: batchId,
