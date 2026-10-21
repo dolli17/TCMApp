@@ -161,12 +161,12 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 | U10 | P2 | Datei erzeugen, „eingereicht“ und „Ankündigen“ (Massenmail) laufen ohne Rückfrage | **Erledigt (PR #48):** Ankündigen, Datei erzeugen und „eingereicht“ fragen vorher nach, mit Anzahl, Summe und Abbuchungstag (`.hinweis.rueckfrage`). Die App hat keine Kasse. |
 | U11 | P2 | Fachbegriffe: „pain.008 erzeugen“, „eBuSy-Backend“ | **Erledigt (PR #64):** „Bankdatei“ statt pain.008/Lastschriftdatei, „bisheriges Vereinsprogramm eBuSy“. |
 | U12 | P2 | Systemseite zeigt Roh-Schlüssel und Cent-Beträge („1500“) und hat mehrere Speichern-Knöpfe | **Erledigt (PR #64):** Texte aus `core/einstellungen.ts`, Euro-Eingabe (Cent beim Speichern), Häkchen für die Benachrichtigungsarten, ein Knopf. E2E `systemseite.spec.ts`. |
-| U13 | P2 | Fehlertexte in Rot zu kontrastarm (~3,2:1) | Token `redInk` |
-| U14 | P2 | Hauptknopf im Dunkelmodus: Weiß auf `#3A9BE0` = 3,0:1 | dunkleres Blau |
-| U15 | P2 | Grüne Kacheln „Freie Zeiten“ und Gefahr-Knöpfe unter AA | `greenInk`, dunkleres Rot |
-| U16 | P2 | Die Bestätigung nach Buchen oder Getränk erscheint oben außer Sicht | Toast unten, Block hervorheben |
+| U13 | P2 | Fehlertexte in Rot zu kontrastarm (~3,2:1) | **Erledigt (PR #63):** Token `redInk` (hell `#A8352D`, dunkel `#FF6B61`) für jeden roten Text in Web und App, ≥ 4,5:1 auch auf rot getönten Hinweisen. Der Test in `packages/ui` hält das fest. |
+| U14 | P2 | Hauptknopf im Dunkelmodus: Weiß auf `#3A9BE0` = 3,0:1 | **Erledigt (PR #63):** dunkles `blue` jetzt `#2478BE` (4,66:1), blauer Text nimmt `blueInk`. Der Hover dunkelt ab, statt hellblau zu werden. |
+| U15 | P2 | Grüne Kacheln „Freie Zeiten“ und Gefahr-Knöpfe unter AA | **Erledigt (PR #63):** Kacheln in `greenInk` (hell dunkler: `#126C48`), `red` ist die Knopffläche (hell `#C4433A`, dunkel `#CF3F35`, Weiß ≥ 4,7:1). |
+| U16 | P2 | Die Bestätigung nach Buchen oder Getränk erscheint oben außer Sicht | **Erledigt (PR #63):** Toast unten über der Leiste (Web und App). Der betroffene Block bzw. die Zeile unter „Zuletzt“ ist 5 s hervorgehoben. Mit E2E-Test. |
 | U17 | P2 | **Getränke-Korb geht beim Verlassen still verloren.** „+“ wirkt wie gebucht, dem Verein fehlt das Geld. | **Erledigt (PR #54):** Der Korb bleibt erhalten (Web: `sessionStorage` je Konto, App: Speicher außerhalb des Bildschirms) und die Leiste zeigt „Noch nicht eingetragen“. Beim Verlassen mit vollem Korb kommt eine Rückfrage (Web: Links und `beforeunload`, App: Erinnerung beim Verlassen). |
-| U18 | P2 | Platzraster am Telefon schwer zu treffen (34 px je halbe Stunde), Titel abgeschnitten | „Freie Zeiten“ als Standard, Ziele ≥ 44 px |
+| U18 | P2 | Platzraster am Telefon schwer zu treffen (34 px je halbe Stunde), Titel abgeschnitten | **Erledigt (PR #63):** „Freie Zeiten“ als Standard, 88 px je Stunde (44 je halbe), Umschalter und Tagesknöpfe ≥ 44 px. Mit E2E-Test. |
 | U19 | P2 | Netzwerk- und Rate-Limit-Fehler erscheinen als „Passwort stimmt nicht“ | Web: PR #55 (Login, Passwort vergessen/setzen; `anmeldeFehlerText` in core) |
 | U20 | P2 | App „Passwort setzen“: Ladekreis ohne Ende, wenn der Link kein Token hat | PR #53: Meldung mit „Neuen Link anfordern“ und „Zurück zur Anmeldung“, Frist 15 s |
 | U21 | P2 | 115 DB-Fehlertexte und Einstellungstexte mit ae/oe/ue (vgl. O13) | Migration mit echten Umlauten *(Migration)* |
