@@ -444,7 +444,7 @@ function Statusmarke({ status, faellig }: { status: string; faellig?: string | n
     status === "notified"
       ? { text: faellig ? `Einzug am ${DATUM.format(new Date(faellig))}` : "angekündigt", bg: farben.goldSoft, fg: farben.goldInk }
       : status === "returned"
-        ? { text: "zurückgebucht", bg: mitDeckkraft(farben.red, 0.14), fg: farben.red }
+        ? { text: "zurückgebucht", bg: mitDeckkraft(farben.red, 0.14), fg: farben.redInk }
         : status === "laufend"
           ? { text: "läuft noch", bg: farben.surf2, fg: farben.ink2 }
           : { text: "offen", bg: farben.surf2, fg: farben.ink2 };
@@ -502,7 +502,7 @@ function Verweis({
         backgroundColor: pressed ? mitDeckkraft(farben.ink, 0.04) : "transparent",
       })}
     >
-      <Text style={{ fontSize: 15.5, fontFamily: rot ? "Barlow_700Bold" : "Barlow_600SemiBold", color: rot ? farben.red : farben.ink }}>
+      <Text style={{ fontSize: 15.5, fontFamily: rot ? "Barlow_700Bold" : "Barlow_600SemiBold", color: rot ? farben.redInk : farben.ink }}>
         {titel}
       </Text>
     </Pressable>

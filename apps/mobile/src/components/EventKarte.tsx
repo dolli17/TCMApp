@@ -72,7 +72,7 @@ export function MarkeKlein({ text, ton }: { text: string; ton: EventTon }) {
     gelb: { bg: farben.goldSoft, ink: farben.goldInk },
     gruen: { bg: mitDeckkraft(farben.green, 0.16), ink: farben.greenInk },
     grau: { bg: farben.chip, ink: farben.ink2 },
-    rot: { bg: mitDeckkraft(farben.red, 0.14), ink: farben.red },
+    rot: { bg: mitDeckkraft(farben.red, 0.14), ink: farben.redInk },
   };
   return (
     <View style={{ alignSelf: "flex-start", borderRadius: radius.chip, paddingVertical: 3, paddingHorizontal: 8, backgroundColor: farbe[ton].bg }}>

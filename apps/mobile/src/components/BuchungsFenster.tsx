@@ -168,7 +168,7 @@ function Nebenknopf({
         opacity: gesperrt ? 0.5 : pressed ? 0.8 : 1,
       })}
     >
-      <Text style={{ color: gefahr ? farben.red : farben.ink, fontSize: klein ? 14 : 16, fontFamily: "Barlow_700Bold", textAlign: "center" }}>
+      <Text style={{ color: gefahr ? farben.redInk : farben.ink, fontSize: klein ? 14 : 16, fontFamily: "Barlow_700Bold", textAlign: "center" }}>
         {text}
       </Text>
     </Pressable>

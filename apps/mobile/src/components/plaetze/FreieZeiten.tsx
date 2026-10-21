@@ -19,7 +19,8 @@ import { useTheme } from "@/lib/theme";
 import { platzNummer, useJetzt, type Platz } from "./PlatzRaster";
 
 export function FreieZeiten({
-  datum, plaetze, belegung, oeffnung, schluss, raster, dauer, vorlaufTage, onBuchen, oeffnebar, onOeffnen,
+  datum, plaetze, belegung, oeffnung, schluss, raster, dauer, vorlaufTage, onBuchen, oeffnebar, markiert,
+  onOeffnen,
 }: {
   datum: string;
   plaetze: Platz[];
@@ -33,6 +34,8 @@ export function FreieZeiten({
   onBuchen: (platz: Platz, minute: number) => void;
   /** Ob sich eine Belegung im Blatt oeffnen laesst - Sperrungen nur mit Platzrechten. */
   oeffnebar: (b: Belegung) => boolean;
+  /** Gehoert die Belegung zur letzten Aktion? Dann ist ihre Zeile kurz hervorgehoben (U16). */
+  markiert: (b: Belegung) => boolean;
   onOeffnen: (platz: Platz, b: Belegung) => void;
 }) {
   const { farben } = useTheme();
@@ -108,12 +111,17 @@ export function FreieZeiten({
           ...eigen.map((c) => `du spielst auf ${platzVon(c.courtId).name}`),
         ].join(", ");
 
+        // Die Zeile, in der die gerade gebuchte oder geaenderte Belegung beginnt
+        const neu = z.courts.some(
+          (c) => c.status.belegung && markiert(c.status.belegung) && minutesOf(c.status.belegung.starts_at) === z.minute,
+        );
+
         return (
           <View
             key={z.minute}
             style={{
               borderBottomWidth: i === zeilen.length - 1 ? 0 : 1, borderBottomColor: farben.line,
-              backgroundColor: istOffen ? farben.surf2 : "transparent",
+              backgroundColor: neu ? farben.goldSoft : istOffen ? farben.surf2 : "transparent",
             }}
           >
             <Pressable
@@ -173,7 +181,8 @@ export function FreieZeiten({
                           style={({ pressed }) => ({
                             flexBasis: "30%", flexGrow: 1, maxWidth: "33%", height: 48, borderRadius: 14,
                             alignItems: "center", justifyContent: "center",
-                            backgroundColor: farben.green, opacity: pressed ? 0.85 : 1,
+                            // greenInk: bg auf green hielt hell nur 3,1:1 (U15)
+                            backgroundColor: farben.greenInk, opacity: pressed ? 0.85 : 1,
                           })}
                         >
                           <Text style={{ fontSize: 15, fontFamily: "Barlow_800ExtraBold", color: farben.bg }}>{p.name}</Text>

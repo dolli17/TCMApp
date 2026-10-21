@@ -164,8 +164,66 @@ describe("Kontrast", () => {
     }
   });
 
-  it("Weiß auf Primärblau erfüllt AA", () => {
-    expect(verhaeltnis("#FFFFFF", farben.hell.blue)).toBeGreaterThanOrEqual(3);
+  /**
+   * Eine Tokenfarbe mit Deckkraft über eine Fläche gelegt - so entstehen die
+   * Hinweisflächen: color-mix(in srgb, var(--red) 12%, transparent) im Web,
+   * mitDeckkraft in der App.
+   */
+  function getoent(farbe: string, anteil: number, flaeche: string): string {
+    const kanaele = (hex: string) => [0, 2, 4].map((i) => parseInt(hex.replace("#", "").slice(i, i + 2), 16));
+    const a = kanaele(farbe);
+    const b = kanaele(flaeche);
+    return "#" + a.map((v, i) => Math.round(v * anteil + b[i]! * (1 - anteil)).toString(16).padStart(2, "0")).join("");
+  }
+
+  it("Knöpfe mit weißer Schrift erfüllen AA (4.5:1) in beiden Themes", () => {
+    // Die Schrift der Knöpfe ist 16px fett - keine "große Schrift" im Sinne
+    // der WCAG (ab 18,66px fett), also gilt 4,5:1. Im Dunkeln lag der
+    // Hauptknopf vorher bei 3,0:1 (U14), der Gefahr-Knopf bei 2,8:1 (U15).
+    for (const theme of ["hell", "dunkel"] as const) {
+      const f = farben[theme];
+      expect(verhaeltnis("#FFFFFF", f.blue), `${theme}: Weiß auf blue`).toBeGreaterThanOrEqual(4.5);
+      expect(verhaeltnis("#FFFFFF", f.red), `${theme}: Weiß auf red`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("Knopfflächen heben sich vom Grund ab (3:1, Bedienelement)", () => {
+    for (const theme of ["hell", "dunkel"] as const) {
+      const f = farben[theme];
+      for (const ton of ["blue", "red"] as const) {
+        for (const flaeche of ["bg", "surf"] as const) {
+          expect(verhaeltnis(f[ton], f[flaeche]), `${theme}: ${ton} auf ${flaeche}`).toBeGreaterThanOrEqual(3);
+        }
+      }
+    }
+  });
+
+  it("die grünen Platzkacheln tragen ihre Schrift (4.5:1)", () => {
+    // "Freie Zeiten": Kachel in greenInk, Schrift in bg (U15). green selbst
+    // ist mit 3,1:1 nur als Kästchen ohne Text gut.
+    for (const theme of ["hell", "dunkel"] as const) {
+      const f = farben[theme];
+      expect(verhaeltnis(f.bg, f.greenInk), `${theme}: bg auf greenInk`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("Fehler- und Erfolgstexte erfüllen AA auch auf den getönten Hinweisflächen", () => {
+    // Die Anteile sind die höchsten, die Web (color-mix) und App
+    // (mitDeckkraft) für Hinweise und Marken benutzen.
+    for (const theme of ["hell", "dunkel"] as const) {
+      const f = farben[theme];
+      for (const flaeche of ["bg", "surf", "surf2"] as const) {
+        const grund = f[flaeche];
+        expect(
+          verhaeltnis(f.redInk, getoent(f.red, 0.18, grund)),
+          `${theme}: redInk auf rot getönter ${flaeche}`,
+        ).toBeGreaterThanOrEqual(4.5);
+        expect(
+          verhaeltnis(f.greenInk, getoent(f.green, 0.16, grund)),
+          `${theme}: greenInk auf grün getönter ${flaeche}`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    }
   });
 
   it("Text auf den Markenflächen erfüllt AA (4.5:1)", () => {
@@ -185,8 +243,8 @@ describe("Kontrast", () => {
     // Dasselbe fuer green: als Flaeche gut, als Text zu hell.
     for (const theme of ["hell", "dunkel"] as const) {
       const f = farben[theme];
-      for (const ton of ["goldInk", "greenInk", "blueInk"] as const) {
-        for (const flaeche of ["bg", "surf", "surf2"] as const) {
+      for (const ton of ["goldInk", "greenInk", "blueInk", "redInk"] as const) {
+        for (const flaeche of ["bg", "surf", "surf2", "surf3"] as const) {
           expect(
             verhaeltnis(f[ton], f[flaeche]),
             `${theme}: ${ton} auf ${flaeche}`,

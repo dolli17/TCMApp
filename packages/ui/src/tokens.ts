@@ -25,8 +25,15 @@ export const farben = {
     goldLine: "#E0B400",
     onGold: "#0A1624",
     green: "#1E9E6A",
-    greenInk: "#167A52",
-    red: "#D7544B",
+    // Vorher #167A52: auf den gruen getoenten Hinweisflaechen nur 4,3:1 (U15).
+    // Zugleich die Flaeche der Platzkacheln unter "Freie Zeiten" (bg darauf).
+    greenInk: "#126C48",
+    // Rot ist wie blue eine Flaeche: Gefahr-Knoepfe mit weisser Schrift, die
+    // Jetzt-Linie, Raender. Vorher #D7544B, darauf hielt Weiss nur 4,0:1 (U15).
+    // Als Text auf hellem Grund reicht auch der neue Wert nicht ueberall -
+    // Fehlertexte nehmen redInk (U13).
+    red: "#C4433A",
+    redInk: "#A8352D",
     // Vereinsblau-Flaechen mit weisser Schrift: "Als Naechstes", Avatare,
     // Monatskarte. Anders als blue in beiden Themes gleich - das helle Blau
     // des dunklen Themes traegt keine weisse Schrift.
@@ -60,7 +67,9 @@ export const farben = {
     segAktiv: "#FFFFFF",
   },
   dunkel: {
-    blue: "#3A9BE0",
+    // Vorher #3A9BE0: Weiss darauf nur 3,0:1, der Hauptknopf fiel durch (U14).
+    // Blauer Text im Dunkeln nimmt blueInk.
+    blue: "#2478BE",
     blueInk: "#8CC6F0",
     blueSoft: "rgba(58,155,224,.18)",
     gold: "#FFD21F",
@@ -70,7 +79,10 @@ export const farben = {
     onGold: "#0A1624",
     green: "#3DD68C",
     greenInk: "#3DD68C",
-    red: "#FF6B61",
+    // Wie im hellen Theme: red ist die Flaeche (vorher #FF6B61, Weiss darauf
+    // 2,8:1), das helle Rot bleibt fuer Text.
+    red: "#CF3F35",
+    redInk: "#FF6B61",
     brand: "#1466A8",
 
     bg: "#07111D",

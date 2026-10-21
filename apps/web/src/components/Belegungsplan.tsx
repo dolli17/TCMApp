@@ -11,6 +11,7 @@ import {
 } from "@/app/plan/aktionen";
 import { BuchungsFenster } from "@/components/BuchungsFenster";
 import { PlanTelefon } from "@/components/PlanTelefon";
+import { Toast, type Meldung } from "@/components/Toast";
 
 export interface Platz { id: string; name: string; short_name: string }
 
@@ -100,6 +101,13 @@ export type Fenster =
   | { modus: "buchen"; courtId: string; stunde: number; start: number }
   | { modus: "verwalten"; belegung: Belegung };
 
+/**
+ * Wohin nach einer Aktion der Blick soll: eine bestehende Buchung oder - bei
+ * einer neuen, deren ID der Server nicht zurueckgibt - Platz und Beginn.
+ */
+type Markierung = { bookingId: string } | { courtId: string; startsAt: number };
+const MARKIERT_MS = 5000;
+
 /** 44 Pixel je Stunde im Raster - wie im Entwurf WebPlan. */
 const STUNDE_PX = 44;
 const px = (minuten: number) => (minuten / 60) * STUNDE_PX;
@@ -123,7 +131,8 @@ const ART_KLASSE: Record<TimelineKind, string> = {
  */
 export function Belegungsplan(props: Props) {
   const [fenster, setFenster] = useState<Fenster | null>(null);
-  const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
+  const [meldung, setMeldung] = useState<Meldung | null>(null);
+  const [markiert, setMarkiert] = useState<Markierung | null>(null);
   const [fensterFehler, setFensterFehler] = useState<string | null>(null);
   const [laeuft, starte] = useTransition();
 
@@ -181,11 +190,13 @@ export function Belegungsplan(props: Props) {
   // Die Server Actions rufen bereits revalidatePath auf; ein zusaetzliches
   // router.refresh() wuerde die Rueckmeldung sofort wieder verschlucken.
   //
-  // Klappt es, schliesst das Blatt und die Meldung steht ueber dem Plan.
-  // Scheitert es, bleibt das Blatt offen und der Grund steht ueber dem Knopf.
-  function ergebnis(e: { ok: boolean; meldung: string }) {
+  // Klappt es, schliesst das Blatt, die Meldung kommt unten als Toast und
+  // der betroffene Block ist kurz hervorgehoben (U16). Scheitert es, bleibt
+  // das Blatt offen und der Grund steht ueber dem Knopf.
+  function ergebnis(e: { ok: boolean; meldung: string }, ziel?: Markierung) {
     if (e.ok) {
       setMeldung({ ok: true, text: e.meldung });
+      setMarkiert(ziel ?? null);
       setFensterFehler(null);
       setFenster(null);
     } else {
@@ -194,11 +205,15 @@ export function Belegungsplan(props: Props) {
   }
 
   function abschicken(fd: FormData) {
-    starte(async () => ergebnis(await buchen(fd)));
+    const ziel = {
+      courtId: String(fd.get("courtId") ?? ""),
+      startsAt: Date.parse(String(fd.get("startsAt") ?? "")),
+    };
+    starte(async () => ergebnis(await buchen(fd), ziel));
   }
 
   function speichern(bookingId: string, mitgliedIds: string[], gaeste: string[]) {
-    starte(async () => ergebnis(await mitspielerAendern(bookingId, mitgliedIds, gaeste)));
+    starte(async () => ergebnis(await mitspielerAendern(bookingId, mitgliedIds, gaeste), { bookingId }));
   }
 
   function abbrechen(bookingId: string, grund?: string) {
@@ -210,7 +225,7 @@ export function Belegungsplan(props: Props) {
   }
 
   function setzeUm(bookingId: string, courtId: string, startsAt: string, grund?: string) {
-    starte(async () => ergebnis(await umsetzen(bookingId, courtId, startsAt, grund)));
+    starte(async () => ergebnis(await umsetzen(bookingId, courtId, startsAt, grund), { bookingId }));
   }
 
   /**
@@ -230,7 +245,7 @@ export function Belegungsplan(props: Props) {
       grund,
       verdraengen,
     });
-    return kollisionOderErgebnis(e);
+    return kollisionOderErgebnis(e, { courtId, startsAt: zeitpunkt(minute).getTime() });
   }
 
   /** Eine Sperrung aendern - Minuten am Tag des Plans, zweistufig wie sperren. */
@@ -247,19 +262,21 @@ export function Belegungsplan(props: Props) {
       grund,
       verdraengen,
     });
-    return kollisionOderErgebnis(e);
+    return kollisionOderErgebnis(e, { bookingId });
   }
 
   /**
    * Liegen Buchungen im Weg, fragt das Blatt selbst nach ("1 Buchung
    * verdraengen"). Die Meldung der Datenbank dazu waere doppelt.
    */
-  function kollisionOderErgebnis(e: { ok: boolean; meldung: string; kollisionen?: number }) {
+  function kollisionOderErgebnis(
+    e: { ok: boolean; meldung: string; kollisionen?: number }, ziel?: Markierung,
+  ) {
     if (e.kollisionen !== undefined) {
       setFensterFehler(null);
       return e.kollisionen;
     }
-    ergebnis(e);
+    ergebnis(e, ziel);
     return null;
   }
 
@@ -268,11 +285,11 @@ export function Belegungsplan(props: Props) {
   }
 
   function ausschreiben(bookingId: string, gesucht: boolean) {
-    starte(async () => ergebnis(await mitspielerSuchen(bookingId, gesucht)));
+    starte(async () => ergebnis(await mitspielerSuchen(bookingId, gesucht), { bookingId }));
   }
 
   function beitreten(bookingId: string) {
-    starte(async () => ergebnis(await mitspielen(bookingId)));
+    starte(async () => ergebnis(await mitspielen(bookingId), { bookingId }));
   }
 
   function oeffneBuchen(courtId: string, minute: number) {
@@ -306,15 +323,31 @@ export function Belegungsplan(props: Props) {
     return b.owner_name ?? "belegt";
   }
 
+  /** Gehoert diese Belegung zur letzten erfolgreichen Aktion? */
+  function istMarkiert(b: Belegung): boolean {
+    if (!markiert) return false;
+    if ("bookingId" in markiert) return b.booking_id === markiert.bookingId;
+    return b.court_id === markiert.courtId && Date.parse(b.starts_at) === markiert.startsAt;
+  }
+
+  // Die Markierung verblasst nach ein paar Sekunden. Sobald der Block nach
+  // dem Neuladen da ist, rollt er ins Bild, falls er ausserhalb liegt.
+  useEffect(() => {
+    if (!markiert) return;
+    const uhr = setTimeout(() => setMarkiert(null), MARKIERT_MS);
+    return () => clearTimeout(uhr);
+  }, [markiert]);
+  useEffect(() => {
+    if (!markiert) return;
+    const el = [...document.querySelectorAll<HTMLElement>(".markiert")].find((e) => e.offsetParent !== null);
+    el?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+  }, [markiert, props.belegungen]);
+
   const legende = <Legende />;
 
   return (
     <>
-      {meldung && (
-        <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">
-          {meldung.text}
-        </div>
-      )}
+      <Toast meldung={meldung} onSchliessen={() => setMeldung(null)} />
 
       {/* --- Telefon: Übersicht und Freie Zeiten ----------------------------- */}
       <PlanTelefon
@@ -329,6 +362,7 @@ export function Belegungsplan(props: Props) {
         dauer={props.dauerMinuten}
         vorlaufTage={props.vorlaufTage}
         verwaltbar={verwaltbar}
+        markiert={istMarkiert}
         onBuchen={(courtId, minute) => {
           if (kontingentAus) {
             setMeldung({ ok: false, text: "Dein Kontingent ist ausgeschöpft." });
@@ -424,7 +458,7 @@ export function Belegungsplan(props: Props) {
                     const b = e.b;
                     const von = Math.max(oeffnungMin, lokaleMinuten(b.starts_at));
                     const bis = Math.min(schlussMin, lokaleMinuten(b.ends_at));
-                    const klasse = `beleg ${ART_KLASSE[occupancyKind(b)]}`;
+                    const klasse = `beleg ${ART_KLASSE[occupancyKind(b)]}${istMarkiert(b) ? " markiert" : ""}`;
                     const stil = { top: px(von - oeffnungMin) + 2, height: Math.max(px(bis - von) - 4, 18) };
                     const inhalt = (
                       <>

@@ -171,7 +171,7 @@ export default function Spiele() {
                   opacity: laeuft ? 0.5 : 1,
                 }}
               >
-                <Text style={{ color: farben.red, fontSize: 15, fontFamily: "Barlow_700Bold" }}>
+                <Text style={{ color: farben.redInk, fontSize: 15, fontFamily: "Barlow_700Bold" }}>
                   {gefragt
                     ? b.bin_bucher ? "Wirklich stornieren" : "Wirklich austragen"
                     : b.bin_bucher ? "Buchung stornieren" : "Mich austragen"}
