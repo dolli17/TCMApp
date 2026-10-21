@@ -13,7 +13,12 @@ import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@tcm/core";
 import { cookies } from "next/headers";
 
-export async function createServerSupabase() {
+/**
+ * kopfzeilen gehen mit jeder Anfrage an Supabase. Gebraucht für
+ * x-forwarded-for beim Mitgliedsantrag: die Datenbank liest die Herkunft aus
+ * dem Kopf (S6) und sähe sonst nur diesen Server.
+ */
+export async function createServerSupabase(kopfzeilen?: Record<string, string>) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -27,6 +32,7 @@ export async function createServerSupabase() {
   const store = await cookies();
 
   return createServerClient<Database>(url, key, {
+    global: kopfzeilen ? { headers: kopfzeilen } : undefined,
     cookies: {
       getAll: () => store.getAll(),
       setAll: (list) => {

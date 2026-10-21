@@ -181,3 +181,16 @@ export function buildPain008(
 export function pain008Filename(batch: DirectDebitBatch): string {
   return `TCM-Lastschrift-${isoDate(batch.collectionDate)}.xml`;
 }
+
+/**
+ * Ablageort der Datei im Bucket sepa: `<Lauf>/<Versuch>/<Dateiname>`.
+ *
+ * Je Versuch ein eigener Ordner (B7). Der Bucket kennt bewusst kein
+ * Überschreiben, eine abgelegte Datei ist ein Beleg. Scheitert nach dem
+ * Ablegen etwas, etwa das Abhaken des Laufs, lief ein zweiter Versuch unter
+ * demselben Pfad sonst für immer gegen das fehlende Änderungsrecht. Welche
+ * Datei gilt, steht danach in debit_batches.storage_path.
+ */
+export function lastschriftPfad(batchId: string, dateiname: string, versuch: string): string {
+  return `${batchId}/${versuch}/${dateiname}`;
+}

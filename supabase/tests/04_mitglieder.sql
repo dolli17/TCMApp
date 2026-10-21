@@ -1521,20 +1521,23 @@ begin
   -- Tests wieder weg.
   delete from public.membership_applications;
 
+  -- Die Herkunft kommt aus dem Anfragekopf, wie PostgREST ihn ablegt (S6).
+  perform set_config('request.headers', '{"x-forwarded-for": "203.0.113.7"}', true);
   perform tests.act_as_anon();
 
   for i in 1..10 loop
-    perform public.submit_membership_application(v_daten[i], '203.0.113.7');
+    perform public.submit_membership_application(v_daten[i]);
   end loop;
 
   return next throws_ok(
-    format($q$select public.submit_membership_application(%L::jsonb, '203.0.113.7')$q$,
+    format($q$select public.submit_membership_application(%L::jsonb)$q$,
            v_daten[11]),
     'P0003', null, 'Der elfte Antrag aus derselben Herkunft wird abgewiesen');
 
   -- Aus einer anderen Herkunft geht es weiter.
+  perform set_config('request.headers', '{"x-forwarded-for": "198.51.100.4"}', true);
   return next lives_ok(
-    format($q$select public.submit_membership_application(%L::jsonb, '198.51.100.4')$q$,
+    format($q$select public.submit_membership_application(%L::jsonb)$q$,
            v_daten[12]),
     'Von woanders her ist weiterhin ein Antrag moeglich');
 
@@ -1545,8 +1548,9 @@ create or replace function tests.test_ip_wird_nur_gehasht_abgelegt()
 returns setof text language plpgsql as $f$
 declare v_hash text; v_daten jsonb := tests.antrag_daten('hash@example.org');
 begin
+  perform set_config('request.headers', '{"x-forwarded-for": "203.0.113.9"}', true);
   perform tests.act_as_anon();
-  perform public.submit_membership_application(v_daten, '203.0.113.9');
+  perform public.submit_membership_application(v_daten);
   perform set_config('role', 'postgres', true);
 
   select ip_hash into v_hash from public.membership_applications where email = 'hash@example.org';

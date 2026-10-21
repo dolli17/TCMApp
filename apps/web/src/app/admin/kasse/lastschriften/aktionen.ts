@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import {
-  buildPain008, einzugAbschliessbarAb, isoDateLabel, pain008Filename, translateDbError,
+  buildPain008, einzugAbschliessbarAb, isoDateLabel, lastschriftPfad, pain008Filename, translateDbError,
   type ChargeKind, type DebtorItem, type DirectDebitBatch, type PainVersion,
 } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -102,10 +102,12 @@ export async function dateiErzeugen(batchId: string): Promise<AktionsErgebnis> {
     return { ok: false, meldung: e instanceof Error ? e.message : "Die Datei ließ sich nicht bauen." };
   }
 
-  const pfad = `${batchId}/${pain008Filename(lauf)}`;
+  // Je Versuch ein eigener Pfad (B7): der Bucket kennt kein Überschreiben,
+  // und nach einem Teilfehler soll sich die Datei neu erzeugen lassen.
+  const pfad = lastschriftPfad(batchId, pain008Filename(lauf), crypto.randomUUID());
   const { error: ablageFehler } = await supabase.storage
     .from("sepa")
-    .upload(pfad, xml, { contentType: "application/xml", upsert: true });
+    .upload(pfad, xml, { contentType: "application/xml" });
 
   if (ablageFehler) {
     console.error("Lastschriftdatei ablegen:", ablageFehler);

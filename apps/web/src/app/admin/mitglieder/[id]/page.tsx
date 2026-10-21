@@ -182,12 +182,13 @@ export default async function MitgliedSeite({
     rollenRes,
     adminZahlRes,
     mannschaftenRes,
+    notizenRes,
   ] =
     await Promise.all([
       supabase
         .from("members")
         .select(
-          "id, first_name, last_name, title, gender, salutation, birthday, email, phone, mobile, street, postcode, city, country_code, notes, status, is_trainer, nationality_code, tennis_lk, nuliga_id, playing_right, playing_right_since, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, auth_user_id, invited_at, login_disabled_at, source, team_id, is_team_captain, teams(name)",
+          "id, first_name, last_name, title, gender, salutation, birthday, email, phone, mobile, street, postcode, city, country_code, status, is_trainer, nationality_code, tennis_lk, nuliga_id, playing_right, playing_right_since, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, auth_user_id, invited_at, login_disabled_at, source, team_id, is_team_captain, teams(name)",
         )
         .eq("id", id)
         .maybeSingle(),
@@ -199,9 +200,11 @@ export default async function MitgliedSeite({
       supabase.from("member_roles").select("role").eq("member_id", id),
       supabase.from("member_roles").select("member_id").in("role", ["admin", "board"]),
       supabase.from("teams").select("id, name, active").order("sort_order").order("name"),
+      // Die Notizen liest ein Client nicht direkt aus members (S17).
+      supabase.rpc("member_notes", { p_member_id: id }),
     ]);
 
-  const m = mitgliedRes.data;
+  const m = mitgliedRes.data ? { ...mitgliedRes.data, notes: notizenRes.data ?? null } : null;
   if (!m) notFound();
 
   const mitgliedschaften = mitgliedschaftenRes.data ?? [];
