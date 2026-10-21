@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatCents, sumOpenDrinks, translateDbError, CHARGE_KIND_LABEL, type ChargeKind } from "@tcm/core";
+import { formatCents, sumOpenDrinks, translateDbError, CHARGE_KIND_LABEL, KONTOLOESCHUNG_TEXT, type ChargeKind } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { AbmeldeKnopf } from "@/components/AbmeldeKnopf";
 import { Fehlerzustand } from "@/components/Fehlerzustand";
@@ -238,6 +238,7 @@ export default async function KontoSeite() {
           <div className="gruppe">
             <Link href="/datenschutz" className="gruppen-zeile">Datenschutz</Link>
             <Link href="/impressum" className="gruppen-zeile">Impressum</Link>
+            <Link href="/konto/loeschen" className="gruppen-zeile">{KONTOLOESCHUNG_TEXT.titel}</Link>
             <AbmeldeKnopf alsZeile />
           </div>
         </div>

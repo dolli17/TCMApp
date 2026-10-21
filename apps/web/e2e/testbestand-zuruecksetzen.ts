@@ -47,6 +47,8 @@ update public.bookings set title = 'Jugendtraining'
  where series_id is not null and title like 'Jugendtraining%' and title <> 'Jugendtraining';
 
 delete from public.notifications where member_id in (select id from e2e);
+-- Antraege auf Kontoloeschung sperren 24 Stunden lang einen neuen (O9).
+delete from public.account_deletion_requests where member_id in (select id from e2e);
 
 delete from public.member_roles
  where member_id in (select id from e2e) and role <> 'member'
