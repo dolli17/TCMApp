@@ -36,6 +36,39 @@ export default function PasswortSetzenSeite() {
     let aktiv = true;
 
     (async () => {
+      // Die Mailvorlagen (supabase/templates) schicken einen Einmal-Hash als
+      // ?token_hash=…&type=…, gleich für Web und App. Erst verifyOtp macht
+      // daraus eine Sitzung - ein Link-Scanner im Postfach, der die Seite nur
+      // abruft, verbraucht ihn nicht.
+      const abfrage = new URLSearchParams(window.location.search);
+      const tokenHash = abfrage.get("token_hash");
+      const typ = abfrage.get("type");
+      if (tokenHash) {
+        const {
+          data: { session: bisher },
+        } = await supabase.auth.getSession();
+        if (bisher) {
+          await supabase.auth.signOut({ scope: "local" });
+          aktivitaetVergessen();
+        }
+
+        const { data: neu, error } =
+          typ === "invite" || typ === "recovery"
+            ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type: typ })
+            : { data: { user: null }, error: true };
+        window.history.replaceState(null, "", window.location.pathname);
+        if (!aktiv) return;
+        if (!error) kontoGewechselt();
+        setGueltig(!error);
+        setKonto(neu.user?.email ?? null);
+        setBereit(true);
+        return;
+      }
+
+      // Übergang: Mails, die noch mit der alten Vorlage verschickt wurden
+      // (oder solange die Cloud-Vorlage nicht umgestellt ist), bringen die
+      // Sitzung im Fragment mit. Entfällt, sobald überall token_hash ankommt -
+      // dann ist auch hier Befund S20 zu.
       // Einladung und Zurücksetzen durch den Vorstand entstehen auf dem Server
       // (Edge Function member-login) und kommen im impliziten Verfahren an: die
       // Sitzung steht im Fragment (#access_token=…&refresh_token=…). Der

@@ -1,5 +1,13 @@
 <!-- Passwort zurücksetzen.
-     Verfügbare Platzhalter: .ConfirmationURL .SiteURL .Email .Token -->
+     Verfügbare Platzhalter: .ConfirmationURL .RedirectTo .TokenHash .SiteURL .Email .Token
+     Der Link führt mit token_hash direkt zur Seite passwort-setzen (Web oder
+     App, je nach redirectTo); die Seite löst ihn dort mit verifyOtp ein.
+     Nicht .ConfirmationURL: die liefert die fertige Sitzung im Fragment
+     (#access_token=…), die jeder mit eigenem Konto bauen und unterschieben
+     kann (Befund S20), und Link-Scanner im Postfach verbrauchen sie beim
+     bloßen Abrufen.
+     Die Cloud-Projekte lesen diese Datei nicht - dort muss derselbe Text im
+     Dashboard unter Auth > Email Templates stehen. -->
 <div style="font-family: Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.5; color: #16222e; max-width: 520px;">
   <h2 style="font-size: 20px; margin: 0 0 16px;">Neues Passwort festlegen</h2>
 
@@ -11,7 +19,7 @@
   </p>
 
   <p style="margin: 24px 0;">
-    <a href="{{ .ConfirmationURL }}"
+    <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery"
        style="background: #1f4e79; color: #ffffff; text-decoration: none;
               padding: 12px 20px; border-radius: 14px; display: inline-block;">
       Passwort neu setzen
@@ -20,7 +28,7 @@
 
   <p style="color: #5b6b7a; font-size: 14px;">
     Falls der Knopf nicht funktioniert, kopiere diese Adresse in deinen Browser:<br>
-    <span style="word-break: break-all;">{{ .ConfirmationURL }}</span>
+    <span style="word-break: break-all;">{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery</span>
   </p>
 
   <p style="color: #5b6b7a; font-size: 14px;">
