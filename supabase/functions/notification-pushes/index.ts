@@ -23,6 +23,8 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { pushMeldung } from "./pushvorlage.ts";
 // Symlink auf packages/core/src/dienstschluessel.ts, dort unter Test.
 import { istDienstschluessel } from "./dienstschluessel.ts";
+// Symlink auf packages/core/src/versandstapel.ts, dort unter Test.
+import { inStapelnSenden, type Sendung } from "./versandstapel.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -132,23 +134,26 @@ Deno.serve(async (req) => {
 
   // Je Gerät eine Nachricht: ein Mitglied kann Telefon und Tablet angemeldet
   // haben, und beide sollen es erfahren.
-  const nachrichten: Nachricht[] = [];
+  const sendungen: Sendung<Nachricht>[] = [];
   for (const e of empfaenger) {
     // Texte und Ziel aus @tcm/core (pushvorlage.ts), dort getestet.
     const m = pushMeldung(e.items);
     for (const geraet of e.tokens) {
-      nachrichten.push({
-        to: geraet,
-        title: m.titel,
-        body: m.text,
-        sound: "default",
-        badge: e.items.length,
-        data: { ziel: m.ziel },
+      sendungen.push({
+        nachricht: {
+          to: geraet,
+          title: m.titel,
+          body: m.text,
+          sound: "default",
+          badge: e.items.length,
+          data: { ziel: m.ziel },
+        },
+        ids: e.notification_ids,
       });
     }
   }
 
-  const alleIds = empfaenger.flatMap((e) => e.notification_ids);
+  const nachrichten = sendungen.map((s) => s.nachricht);
 
   if (!PUSH_AKTIV) {
     // Trockenlauf: nichts senden, aber zeigen, was rausgegangen wäre.
@@ -171,39 +176,38 @@ Deno.serve(async (req) => {
   let gesendet = 0;
   const abgemeldet: string[] = [];
 
-  try {
-    for (let i = 0; i < nachrichten.length; i += STAPEL) {
-      const stapel = nachrichten.slice(i, i + STAPEL);
+  const { fehler, freizugeben } = await inStapelnSenden(sendungen, STAPEL, async (stapel) => {
+    const res = await fetch(EXPO_ENDPUNKT, {
+      method: "POST",
+      headers: kopfzeilen,
+      body: JSON.stringify(stapel),
+    });
 
-      const res = await fetch(EXPO_ENDPUNKT, {
-        method: "POST",
-        headers: kopfzeilen,
-        body: JSON.stringify(stapel),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Expo antwortete mit ${res.status}`);
-      }
-
-      const ergebnis = await res.json() as {
-        data?: { status: string; details?: { error?: string } }[];
-      };
-
-      // Die Belege kommen in derselben Reihenfolge wie die Nachrichten.
-      (ergebnis.data ?? []).forEach((beleg, index) => {
-        if (beleg.status === "ok") {
-          gesendet += 1;
-          return;
-        }
-        if (beleg.details?.error === "DeviceNotRegistered") {
-          const ziel = stapel[index]?.to;
-          if (ziel) abgemeldet.push(ziel);
-        }
-      });
+    if (!res.ok) {
+      throw new Error(`Expo antwortete mit ${res.status}`);
     }
-  } catch (fehler) {
-    // Das Abhaken war verfrüht - der nächste Lauf soll es erneut versuchen.
-    await alsDienst.rpc("release_notification_pushes", { p_ids: alleIds });
+
+    const ergebnis = await res.json() as {
+      data?: { status: string; details?: { error?: string } }[];
+    };
+
+    // Die Belege kommen in derselben Reihenfolge wie die Nachrichten.
+    (ergebnis.data ?? []).forEach((beleg, index) => {
+      if (beleg.status === "ok") {
+        gesendet += 1;
+        return;
+      }
+      if (beleg.details?.error === "DeviceNotRegistered") {
+        const ziel = stapel[index]?.to;
+        if (ziel) abgemeldet.push(ziel);
+      }
+    });
+  });
+
+  if (fehler !== null) {
+    // Das Abhaken war verfrüht, aber nur für das, was noch nicht draußen ist.
+    // Was ein früherer Stapel schon zugestellt hat, bleibt abgehakt (B9).
+    await alsDienst.rpc("release_notification_pushes", { p_ids: freizugeben });
     return antwort(
       { ok: false, meldung: fehler instanceof Error ? fehler.message : "Versand gescheitert." },
       502,

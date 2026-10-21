@@ -34,6 +34,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletion_requests: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+          message: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+          message?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+          message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_deletion_requests_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_accounts: {
         Row: {
           active: boolean
@@ -2802,6 +2831,10 @@ export type Database = {
       iban_to_numeric: { Args: { p_text: string }; Returns: string }
       ist_testadresse: { Args: { p_email: string }; Returns: boolean }
       join_booking: { Args: { p_booking_id: string }; Returns: undefined }
+      konto_loeschung_beantragen: {
+        Args: { p_nachricht?: string }
+        Returns: boolean
+      }
       leave_booking: { Args: { p_booking_id: string }; Returns: undefined }
       link_auth_user: {
         Args: { p_auth_user_id: string; p_member_id: string }
