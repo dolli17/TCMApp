@@ -84,7 +84,7 @@ export default async function PlanSeite({
   const ladefehler = plaetzeRes.error ?? planRes.error ?? artenRes.error;
   if (ladefehler) {
     return (
-      <Fehlerzustand titel="Der Belegungsplan ließ sich nicht laden." text={translateDbError(ladefehler)} />
+      <Fehlerzustand titel="Die Belegung ließ sich nicht laden." text={translateDbError(ladefehler)} />
     );
   }
 
@@ -123,7 +123,7 @@ export default async function PlanSeite({
           <div className="kicker">
             {anzahlPlaetze} Plätze · {oeffnet} bis {schliesst} Uhr
           </div>
-          <h1 className="pagetitle">Belegungsplan</h1>
+          <h1 className="pagetitle">Plätze</h1>
         </div>
         <nav className="datums-kacheln" aria-label="Tag wählen">
           {tage.map((t) => {

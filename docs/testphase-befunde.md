@@ -155,12 +155,12 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 | U4 | P3 | ~50× `#fff` statt Token, Avatarfarben doppelt | `onBrand`-Token, Avatarfarben nach `@tcm/ui` |
 | U5 | P2 | App: feste Schriftgrößen, keine Prüfung großer Systemschrift | Hauptbildschirme bei größter Stufe prüfen |
 | U6 | P3 | App: Tipp-Elemente ohne `accessibilityLabel`. Im Web keine axe-Prüfung. | Labels, `@axe-core/playwright` |
-| U7 | P3 | Begriffe: Admin/Verwaltung, Belegungsplan/Plätze, Konto/Mein Konto, Home/Start | `docs/begriffe.md`, angleichen |
+| U7 | P3 | Begriffe: Admin/Verwaltung, Belegungsplan/Plätze, Konto/Mein Konto, Home/Start | **Erledigt (PR #64):** `docs/begriffe.md`. Start, Plätze (Ansicht „Belegung“), Konto, Verwaltung, auch als Telefon-Tab in Web und App. Rollenname in der Seitenleiste, Sperrtexte ohne „Administratoren“. |
 | U8 | P3 | Durchklick-Protokoll | Screenshots aller Routen (begonnen im Audit) |
 | U9 | P1 | **„Einzug abschließen“ geht mit einem Klick, auch vor Ablauf der Rückläuferfrist.** Danach lassen sich Rückläufer nicht mehr erfassen (`LastschriftLauf.tsx:166-176, 227-229`). | **Erledigt (PR #48):** Vor Ablauf der Frist (Abbuchung + 56 Tage, `RUECKLAUF_TAGE`) ist der Knopf gesperrt und zeigt „Abschließen ab …“. Die Server-Aktion prüft die Frist ebenfalls. Rückläufer lassen sich auch nach dem Abschluss erfassen; die DB erlaubte das schon. |
 | U10 | P2 | Datei erzeugen, „eingereicht“ und „Ankündigen“ (Massenmail) laufen ohne Rückfrage | **Erledigt (PR #48):** Ankündigen, Datei erzeugen und „eingereicht“ fragen vorher nach, mit Anzahl, Summe und Abbuchungstag (`.hinweis.rueckfrage`). Die App hat keine Kasse. |
-| U11 | P2 | Fachbegriffe: „pain.008 erzeugen“, „eBuSy-Backend“ | „Bankdatei erzeugen“ |
-| U12 | P2 | Systemseite zeigt Roh-Schlüssel und Cent-Beträge („1500“) und hat mehrere Speichern-Knöpfe | Checkboxen mit deutschen Namen, Euro-Eingabe |
+| U11 | P2 | Fachbegriffe: „pain.008 erzeugen“, „eBuSy-Backend“ | **Erledigt (PR #64):** „Bankdatei“ statt pain.008/Lastschriftdatei, „bisheriges Vereinsprogramm eBuSy“. |
+| U12 | P2 | Systemseite zeigt Roh-Schlüssel und Cent-Beträge („1500“) und hat mehrere Speichern-Knöpfe | **Erledigt (PR #64):** Texte aus `core/einstellungen.ts`, Euro-Eingabe (Cent beim Speichern), Häkchen für die Benachrichtigungsarten, ein Knopf. E2E `systemseite.spec.ts`. |
 | U13 | P2 | Fehlertexte in Rot zu kontrastarm (~3,2:1) | Token `redInk` |
 | U14 | P2 | Hauptknopf im Dunkelmodus: Weiß auf `#3A9BE0` = 3,0:1 | dunkleres Blau |
 | U15 | P2 | Grüne Kacheln „Freie Zeiten“ und Gefahr-Knöpfe unter AA | `greenInk`, dunkleres Rot |

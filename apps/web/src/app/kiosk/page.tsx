@@ -22,8 +22,8 @@ export default async function KioskSeite() {
   if (mitgliederRes.error || karteRes.error) {
     return (
       <div className="hinweis fehler">
-        Dieses Gerät ist nicht als Kiosk freigeschaltet. Ein Administrator muss es
-        unter Kiosk-Geräte eintragen.
+        Dieses Gerät ist nicht als Kiosk freigeschaltet. Jemand aus dem Vorstand oder ein App Admin
+        muss es unter Kiosk-Geräte eintragen.
       </div>
     );
   }

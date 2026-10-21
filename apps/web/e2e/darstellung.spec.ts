@@ -138,13 +138,13 @@ test.describe("Layout", () => {
     }
 
     test("die schwebende Leiste eines Admins sprengt die Breite nicht", async ({ page }) => {
-      // Ein Admin hat die vier Haupteinträge und dazu den Tab „Admin“
+      // Ein Admin hat die vier Haupteinträge und dazu den Tab „Verwaltung“
       // (docs/design/clubhaus/verwaltung, Regel 1); die Glocke sitzt im
       // Seitenkopf. Das Dokument darf sich in keinem Fall mitverschieben.
       await anmelden(page, ADMIN);
       await page.goto("/plan");
 
-      // Home, Plätze, Getränke, Konto, Admin
+      // Start, Plätze, Verein, Konto, Verwaltung
       await expect(page.locator(".schwebeleiste a")).toHaveCount(5);
       await expect(page.locator(".seitenkopf .glocke")).toHaveCount(1);
       const ueberbreite = await page.evaluate(
@@ -153,10 +153,33 @@ test.describe("Layout", () => {
       expect(ueberbreite, `Die Seite ist ${ueberbreite}px zu breit`).toBeLessThanOrEqual(0);
     });
 
-    test("ein Admin erreicht die Verwaltung über den Tab „Admin“", async ({ page }) => {
+    test("die Tabs eines Admins bleiben auch bei 320 px in der Leiste", async ({ page }) => {
+      // „Verwaltung“ ist der längste Tab (U7). Er darf weder abgeschnitten
+      // werden noch unter den Buchen-Knopf ragen.
+      await anmelden(page, ADMIN);
+      await page.goto("/plan");
+      for (const breite of [320, 360, 390]) {
+        await page.setViewportSize({ width: breite, height: 700 });
+        const mass = await page.evaluate(() => {
+          const leiste = document.querySelector(".schwebeleiste")!.getBoundingClientRect();
+          const tabs = [...document.querySelectorAll<HTMLElement>(".schwebeleiste a")];
+          return {
+            leisteRechts: leiste.right,
+            tabRechts: Math.max(...tabs.map((a) => a.getBoundingClientRect().right)),
+            knopfLinks: document.querySelector(".buchknopf")!.getBoundingClientRect().left,
+            beschnitten: tabs.filter((a) => a.scrollWidth > a.clientWidth).map((a) => a.textContent),
+          };
+        });
+        expect(mass.tabRechts, `${breite}px: Tab ragt aus der Leiste`).toBeLessThanOrEqual(mass.leisteRechts);
+        expect(mass.leisteRechts, `${breite}px: Leiste unter dem Buchen-Knopf`).toBeLessThanOrEqual(mass.knopfLinks);
+        expect(mass.beschnitten, `${breite}px`).toEqual([]);
+      }
+    });
+
+    test("ein Admin erreicht die Verwaltung über den Tab „Verwaltung“", async ({ page }) => {
       await anmelden(page, ADMIN);
       await page.goto("/konto");
-      const tab = page.locator(".schwebeleiste").getByRole("link", { name: "Admin" });
+      const tab = page.locator(".schwebeleiste").getByRole("link", { name: "Verwaltung" });
       await tab.click();
       await page.waitForURL(/\/admin$/);
       // Auch in einem Bereich der Verwaltung bleibt der Tab hervorgehoben.
@@ -164,7 +187,7 @@ test.describe("Layout", () => {
       await expect(tab).toHaveAttribute("aria-current", "page");
     });
 
-    test("ein normales Mitglied hat keinen Tab „Admin“", async ({ page }) => {
+    test("ein normales Mitglied hat keinen Tab „Verwaltung“", async ({ page }) => {
       await anmelden(page);
       await page.goto("/plan");
       await expect(page.locator(".schwebeleiste a")).toHaveCount(4);

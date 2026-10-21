@@ -34,7 +34,7 @@ export function BeitragslaufKarte({
       <h2 className="dpl">Forderungen erzeugen</h2>
       <p className="unterzeile">
         Aus der Vorschau werden echte Forderungen. Eingezogen wird damit noch nichts – erst
-        kommt die Vorabankündigung, dann der Lastschriftlauf.
+        kommt die Vorabankündigung, dann der Einzug.
       </p>
 
       {meldung && (

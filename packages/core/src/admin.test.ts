@@ -44,10 +44,10 @@ describe("adminTodos", () => {
 
   it("ein offener Lauf fuehrt zu seinem naechsten Schritt", () => {
     const entwurf = adminTodos({ ...leer, today: "2026-09-10", notice, batchStatus: "draft", batchHref: "/admin/kasse/lastschriften/x" });
-    expect(entwurf.map((x) => x.title)).toEqual(["Einzug: Datei erzeugen"]);
+    expect(entwurf.map((x) => x.title)).toEqual(["Einzug: Bankdatei erzeugen"]);
     expect(entwurf[0]!.href).toBe("/admin/kasse/lastschriften/x");
     expect(adminTodos({ ...leer, today: "2026-09-10", batchStatus: "generated" }).map((x) => x.title))
-      .toEqual(["Lastschriftdatei einreichen"]);
+      .toEqual(["Bankdatei einreichen"]);
     expect(adminTodos({ ...leer, today: "2026-09-10", batchStatus: "submitted" })).toEqual([]);
   });
 

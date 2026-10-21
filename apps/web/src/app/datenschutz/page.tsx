@@ -59,13 +59,13 @@ export default async function DatenschutzSeite() {
         </li>
         <li>
           <strong>Platzbuchung</strong> – wer wann mit wem auf welchem Platz spielt.
-          Mitspieler sehen gegenseitig ihre Namen; der Belegungsplan zeigt allen
+          Mitspieler sehen gegenseitig ihre Namen; die Belegung der Plätze zeigt allen
           Mitgliedern die Namen der Buchenden. Rechtsgrundlage: Vertrag.
         </li>
         <li>
           <strong>Beiträge und Lastschrift</strong> – Beitragsart, offene Forderungen,
           Bankverbindung (IBAN, Kontoinhaber) und SEPA-Mandat. IBANs werden verschlüsselt
-          gespeichert; die Lastschriftdatei wird vom Vorstand an die Bank übergeben.
+          gespeichert; die Bankdatei mit den Lastschriften wird vom Vorstand an die Bank übergeben.
           Rechtsgrundlage: Vertrag und gesetzliche Aufbewahrungspflichten (Art.&nbsp;6
           Abs.&nbsp;1 lit.&nbsp;c DSGVO).
         </li>
@@ -121,8 +121,8 @@ export default async function DatenschutzSeite() {
 
       <h2>5. Wer deine Daten sieht</h2>
       <p>
-        Mitglieder sehen ihre eigenen Daten sowie im Belegungsplan die Namen anderer
-        Buchender. Der Vorstand (Rolle „Admin“) sieht alle Mitglieder- und Finanzdaten, weil
+        Mitglieder sehen ihre eigenen Daten sowie in der Belegung der Plätze die Namen anderer
+        Buchender. Der Vorstand (Rollen „Vorstand“ und „App Admin“) sieht alle Mitglieder- und Finanzdaten, weil
         er Beiträge, Anträge und den Spielbetrieb verwaltet. Jede Änderung an Stammdaten
         wird mit Zeitpunkt und Bearbeiter protokolliert.
       </p>

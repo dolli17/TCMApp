@@ -19,7 +19,7 @@ export async function GET(
 
   const angemeldet = await getCurrentMember();
   if (!angemeldet || !isAdmin(angemeldet.roles)) {
-    return new Response("Diese Datei ist Administratoren vorbehalten.", { status: 403 });
+    return new Response("Diese Datei ist dem Vorstand und den App Admins vorbehalten.", { status: 403 });
   }
 
   const supabase = await createServerSupabase();

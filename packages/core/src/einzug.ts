@@ -140,7 +140,7 @@ export interface EinzugStandInput {
 
 const NAMEN: Record<EinzugStandKey, string> = {
   angekuendigt: "Angekündigt",
-  datei: "Datei erzeugt",
+  datei: "Bankdatei erzeugt",
   eingereicht: "Eingereicht",
   abgeschlossen: "Abgeschlossen",
 };
@@ -173,7 +173,7 @@ export function einzugStand(input: EinzugStandInput): EinzugStand {
     angekuendigt: leer
       ? "niemand im Einzug"
       : announcedOn ? `${isoDateLabel(announcedOn)} · Abbuchung ${abbuchung}` : `Abbuchung ${abbuchung}`,
-    datei: fertig.datei ? "pain.008 liegt am Einzug" : leer ? "–" : "jetzt möglich",
+    datei: fertig.datei ? "liegt am Einzug" : leer ? "–" : "jetzt möglich",
     eingereicht: fertig.eingereicht ? "bei der Bank" : "nach dem Hochladen vermerken",
     abgeschlossen: fertig.abgeschlossen
       ? returned > 0 ? `${returned} Rückläufer` : "keine Rückläufer"
@@ -190,13 +190,13 @@ export function einzugStand(input: EinzugStandInput): EinzugStand {
     };
   } else if (status === "draft") {
     naechster = {
-      titel: "Datei erzeugen und bei der Bank einreichen",
-      text: `Du musst nicht warten: Die Datei enthält den ${abbuchung} als Abbuchungstag, die Bank bucht erst dann ab.`,
+      titel: "Bankdatei erzeugen und im Onlinebanking einreichen",
+      text: `Du musst nicht warten: Die Bankdatei enthält den ${abbuchung} als Abbuchungstag, die Bank bucht erst dann ab.`,
     };
   } else if (status === "generated") {
     naechster = {
       titel: "Im Onlinebanking einreichen",
-      text: "Die Datei im Onlinebanking hochladen. Die App bekommt von dort keine Rückmeldung – danach hier vermerken.",
+      text: "Die Bankdatei im Onlinebanking hochladen. Die App bekommt von dort keine Rückmeldung – danach hier vermerken.",
     };
   } else if (status === "submitted") {
     naechster = today >= abschliessbarAb
@@ -265,9 +265,9 @@ export function kasseTodos(input: KasseTodoInput): KasseTodo[] {
     if (e.status === "draft" && e.item_count > 0) {
       liste.push({
         key: `einzug-${e.id}`, marke: { text: "Einzug", ton: "gelb" },
-        title: `${e.title} · Datei erzeugen`,
-        text: `Abbuchung am ${abbuchung}. Die Datei kannst du schon jetzt erzeugen und einreichen.`,
-        action: "Datei erzeugen", href, urgent: true,
+        title: `${e.title} · Bankdatei erzeugen`,
+        text: `Abbuchung am ${abbuchung}. Die Bankdatei kannst du schon jetzt erzeugen und einreichen.`,
+        action: "Bankdatei erzeugen", href, urgent: true,
       });
     } else if (e.status === "generated") {
       liste.push({

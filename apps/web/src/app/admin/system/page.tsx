@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { EinstellungsGruppe } from "@/components/EinstellungsGruppe";
+import { EinstellungsFormular } from "@/components/EinstellungsGruppe";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { translateDbError } from "@tcm/core";
 import { Fehlerzustand } from "@/components/Fehlerzustand";
@@ -20,7 +20,7 @@ const GRUPPEN = [
   {
     praefix: "notifications",
     titel: "Benachrichtigungen",
-    text: "Welche Hinweise zusätzlich per E-Mail gehen.",
+    text: "Welche Benachrichtigungen zusätzlich per E-Mail oder als Push gehen.",
   },
   {
     praefix: "work_duty",
@@ -67,28 +67,21 @@ export default async function SystemSeite() {
         </Link>
       </nav>
 
-      <div className="einstellungs-raster">
-        {GRUPPEN.map((g) => {
-          const eintraege = alle.filter((e) => e.key.startsWith(g.praefix + "."));
-          if (eintraege.length === 0) return null;
-          return (
-            <EinstellungsGruppe
-              key={g.praefix}
-              titel={g.titel}
-              text={g.text}
-              eintraege={eintraege}
-            />
-          );
-        })}
-
-        {sonstige.length > 0 && (
-          <EinstellungsGruppe
-            titel="Weitere"
-            text="Werte ohne festen Ort. Kommt hier etwas an, gehört es vermutlich in einen der Bereiche oben."
-            eintraege={sonstige}
-          />
-        )}
-      </div>
+      {/* Ein Formular, ein Knopf (U12): gespeichert wird nur, was sich geändert hat. */}
+      <EinstellungsFormular
+        gruppen={[
+          ...GRUPPEN.map((g) => ({
+            titel: g.titel,
+            text: g.text,
+            eintraege: alle.filter((e) => e.key.startsWith(g.praefix + ".")),
+          })),
+          {
+            titel: "Weitere",
+            text: "Werte ohne festen Ort. Kommt hier etwas an, gehört es vermutlich in einen der Bereiche oben.",
+            eintraege: sonstige,
+          },
+        ].filter((g) => g.eintraege.length > 0)}
+      />
     </div>
   );
 }

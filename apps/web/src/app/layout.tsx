@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import logo from "@tcm/ui/logo.png";
 import logoWeiss from "@tcm/ui/logo-weiss.png";
+import { ROLLEN } from "@tcm/core";
 import { createServerSupabase, darfPlaetze, getCurrentMember, isAdmin } from "@/lib/supabase/server";
 import { ANMELDESEITEN, OHNE_RAHMEN, PFAD_KOPF } from "@/lib/pfad";
 import { NONCE_KOPF } from "@/lib/sicherheit";
@@ -53,17 +54,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   const eintraege: NavEintrag[] = [
-    { href: "/", label: "Home", kurz: "Home", symbol: "home" },
-    { href: "/plan", label: "Belegungsplan", kurz: "Plätze", symbol: "platz" },
+    { href: "/", label: "Start", kurz: "Start", symbol: "home" },
+    { href: "/plan", label: "Plätze", kurz: "Plätze", symbol: "platz" },
     { href: "/verein", label: "Verein", kurz: "Verein", symbol: "verein", bereich: true },
-    { href: "/konto", label: "Mein Konto", kurz: "Konto", symbol: "konto" },
+    { href: "/konto", label: "Konto", kurz: "Konto", symbol: "konto" },
   ];
 
   // Die Bereiche der Vorstandsverwaltung (docs/design/clubhaus/verwaltung,
   // Regel 1): in der Seitenleiste einzeln, am Telefon ein fuenfter Tab
-  // "Admin", der auf die Uebersicht fuehrt. Bei den Mitgliedern steht die
+  // "Verwaltung", der auf die Uebersicht fuehrt (docs/begriffe.md). Bei den Mitgliedern steht die
   // Zahl der offenen Antraege. Der Platzwart (nur Platzrechte) sieht allein
-  // "Plaetze & Serien", sein Admin-Tab fuehrt direkt dorthin.
+  // "Plaetze & Serien", sein Verwaltungs-Tab fuehrt direkt dorthin.
   const admin = isAdmin(rollen);
   const platzwart = !admin && darfPlaetze(rollen);
   let offeneAntraege = 0;
@@ -93,9 +94,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       ? [{ href: "/admin/plaetze", label: "Plätze & Serien", kurz: "Plätze", symbol: "serie" }]
       : [];
   const telefon: NavEintrag[] = admin
-    ? [...eintraege, { href: "/admin", label: "Admin", kurz: "Admin", symbol: "admin", bereich: true }]
+    ? [...eintraege, { href: "/admin", label: "Verwaltung", kurz: "Verwaltung", symbol: "admin", bereich: true }]
     : platzwart
-      ? [...eintraege, { href: "/admin/plaetze", label: "Admin", kurz: "Admin", symbol: "admin", bereich: true }]
+      ? [...eintraege, { href: "/admin/plaetze", label: "Verwaltung", kurz: "Verwaltung", symbol: "admin", bereich: true }]
       : eintraege;
 
   const vorname = angemeldet?.member?.first_name ?? "";
@@ -137,7 +138,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <span className="name">
                     {vorname} {nachname}
                   </span>
-                  <span className="rolle">{admin ? "Admin" : platzwart ? "Platzwart" : "Mitglied"}</span>
+                  <span className="rolle">{ROLLEN.find((r) => rollen.includes(r.rolle))?.label ?? "Mitglied"}</span>
                 </span>
                 <AbmeldeKnopf />
               </div>

@@ -64,7 +64,7 @@ export function buildPain008(
       .filter((i) => i.severity === "error")
       .map((i) => `- ${i.debtorName ? `${i.debtorName}: ` : ""}${i.message}`)
       .join("\n");
-    throw new Error(`Lastschriftdatei kann nicht erzeugt werden:\n${texte}`);
+    throw new Error(`Die Bankdatei kann nicht erzeugt werden:\n${texte}`);
   }
 
   const v = batch.painVersion;

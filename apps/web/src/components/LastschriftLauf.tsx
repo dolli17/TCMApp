@@ -144,7 +144,7 @@ export function LastschriftLauf({
           <div className="knopfreihe">
             {offen && lauf.item_count > 0 && frage !== "datei" && (
               <button type="button" className="knopf gold" disabled={laeuft} onClick={() => setFrage("datei")}>
-                pain.008 erzeugen
+                Bankdatei erzeugen
               </button>
             )}
             {offen && lauf.item_count === 0 && (
@@ -183,7 +183,7 @@ export function LastschriftLauf({
             )}
             {lauf.storage_path && (
               <a className="knopf auf-blau" href={`/admin/kasse/lastschriften/${lauf.id}/datei`}>
-                Datei herunterladen
+                Bankdatei herunterladen
               </a>
             )}
           </div>
@@ -191,14 +191,14 @@ export function LastschriftLauf({
             <div className="hinweis rueckfrage" role="group" aria-label="Rückfrage">
               <span>
                 {frage === "datei"
-                  ? `${eckdaten} – Datei jetzt erzeugen? Danach ist der Einzug zu, niemand lässt sich mehr herausnehmen.`
-                  : `${eckdaten} – wirklich als eingereicht vermerken? Erst bestätigen, wenn die Datei im Onlinebanking hochgeladen ist.`}
+                  ? `${eckdaten} – Bankdatei jetzt erzeugen? Danach ist der Einzug zu, niemand lässt sich mehr herausnehmen.`
+                  : `${eckdaten} – wirklich als eingereicht vermerken? Erst bestätigen, wenn die Bankdatei im Onlinebanking hochgeladen ist.`}
               </span>
               <span className="knopfreihe">
                 <button type="button" className="knopf gold klein" disabled={laeuft} onClick={() => bestaetigt(frage)}>
                   {laeuft
                     ? frage === "datei" ? "Wird erzeugt…" : "Wird vermerkt…"
-                    : frage === "datei" ? "Ja, Datei erzeugen" : "Ja, eingereicht"}
+                    : frage === "datei" ? "Ja, Bankdatei erzeugen" : "Ja, eingereicht"}
                 </button>
                 <button type="button" className="knopf leise klein" disabled={laeuft} onClick={() => setFrage(null)}>
                   Abbrechen
@@ -210,7 +210,7 @@ export function LastschriftLauf({
       )}
       {!stand.naechster && lauf.storage_path && (
         <p className="mit">
-          Abgeschlossen. Die Datei bleibt als Beleg am Einzug:{" "}
+          Abgeschlossen. Die Bankdatei bleibt als Beleg am Einzug:{" "}
           <a href={`/admin/kasse/lastschriften/${lauf.id}/datei`}>herunterladen</a>.
         </p>
       )}
@@ -239,7 +239,7 @@ export function LastschriftLauf({
           />
           <p className="unterzeile">
             Eine Lastschrift je Mitglied, jedes mit eigenem Mandat.
-            {offen ? " Bis zur Datei lässt sich ein Mitglied noch herausnehmen." : ""}
+            {offen ? " Bis zur Bankdatei lässt sich ein Mitglied noch herausnehmen." : ""}
           </p>
 
           {posten.length === 0 ? (

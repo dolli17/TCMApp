@@ -143,13 +143,13 @@ describe("Eine angekündigte Lastschrift führt ins Konto", () => {
   it("verlinkt aufs Konto, nicht auf die Startseite", () => {
     const ausgabe = html("Thomas", ankuendigung, "https://tcm.example");
     expect(ausgabe).toContain("https://tcm.example/konto");
-    expect(ausgabe).toContain("Mein Konto ansehen");
+    expect(ausgabe).toContain("Konto ansehen");
   });
 
   it("gilt auch im Textteil", () => {
     const ausgabe = text("Thomas", ankuendigung, "https://tcm.example");
     expect(ausgabe).toContain("das betrifft dein Konto beim Verein:");
-    expect(ausgabe).toContain("Mein Konto: https://tcm.example/konto");
+    expect(ausgabe).toContain("Konto: https://tcm.example/konto");
   });
 
   it("fällt auf den neutralen Text zurück, sobald anderes dabei ist", () => {

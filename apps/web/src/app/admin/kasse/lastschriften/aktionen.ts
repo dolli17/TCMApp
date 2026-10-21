@@ -99,7 +99,7 @@ export async function dateiErzeugen(batchId: string): Promise<AktionsErgebnis> {
   } catch (e) {
     // buildPain008 wirft mit einer Liste aller Beanstandungen. Sie ist genau
     // das, was der Vorstand lesen muss, um sie abzustellen.
-    return { ok: false, meldung: e instanceof Error ? e.message : "Die Datei ließ sich nicht bauen." };
+    return { ok: false, meldung: e instanceof Error ? e.message : "Die Bankdatei ließ sich nicht erzeugen." };
   }
 
   // Je Versuch ein eigener Pfad (B7): der Bucket kennt kein Überschreiben,

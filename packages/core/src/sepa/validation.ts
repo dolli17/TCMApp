@@ -69,9 +69,9 @@ export function validateBatch(
   if (!batch.creditor.creditorId?.trim()) {
     add(
       "error",
-      "Die Glaeubiger-Identifikationsnummer fehlt. Sie steht im eBuSy-Backend " +
-        "und muss unveraendert uebernommen werden, damit die Bestandsmandate " +
-        "gueltig bleiben.",
+      "Die Gläubiger-Identifikationsnummer fehlt. Sie steht im bisherigen " +
+        "Vereinsprogramm eBuSy und muss unverändert übernommen werden, damit " +
+        "die bestehenden Mandate gültig bleiben.",
     );
   } else if (!/^[A-Z]{2}\d{2}[A-Z0-9]{3}[A-Z0-9]{1,28}$/.test(
     batch.creditor.creditorId.replace(/\s/g, "").toUpperCase(),

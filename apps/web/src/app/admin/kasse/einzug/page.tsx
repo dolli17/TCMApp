@@ -70,7 +70,7 @@ export default async function EinzugSeite({
       {fehlend.length > 0 && (
         <div className="hinweis fehler">
           Es fehlt noch {fehlend.join(" und ")}. Ankündigen geht trotzdem, aber ohne diese Angaben
-          lässt sich danach keine Lastschriftdatei erzeugen – sie stehen unter{" "}
+          lässt sich danach keine Bankdatei erzeugen – sie stehen unter{" "}
           <Link href="/admin/kasse?abschnitt=regeln">Kasse → Einstellungen → Regeln</Link>.
         </div>
       )}

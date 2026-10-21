@@ -1039,7 +1039,7 @@ test.describe("Mitgliederverwaltung", () => {
     await anmelden(page, NUTZER.mitglied);
     await page.goto(`/admin/mitglieder/${MITGLIED_ID.admin}`);
 
-    await expect(page.locator(".hinweis.fehler")).toContainText(/Administrator/);
+    await expect(page.locator(".hinweis.fehler")).toContainText(/vorbehalten/);
   });
 });
 

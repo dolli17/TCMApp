@@ -22,7 +22,7 @@ const PLATZ_BEREICH = "/admin/plaetze";
  * kennt, kommt an diesem Layout ohnehin vorbei.
  *
  * Navigation und Theme stehen nicht mehr hier (docs/design/clubhaus/
- * verwaltung, Regeln 1 und 2): die Seitenleiste bzw. der Admin-Tab führt,
+ * verwaltung, Regeln 1 und 2): die Seitenleiste bzw. der Tab „Verwaltung“ führt,
  * und es gilt das Theme, das das Mitglied gewählt hat.
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -35,5 +35,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const imPlatzBereich = pfad === PLATZ_BEREICH || pfad.startsWith(`${PLATZ_BEREICH}/`);
   if (angemeldet && darfPlaetze(rollen) && imPlatzBereich) return children;
 
-  return <div className="hinweis fehler">Diese Seite ist Administratoren vorbehalten.</div>;
+  return <div className="hinweis fehler">Dieser Bereich der Verwaltung ist dem Vorstand und den App Admins vorbehalten.</div>;
 }
