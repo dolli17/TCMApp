@@ -141,9 +141,9 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 | T3 | P2 | E2E nicht deterministisch: 18 datenabhängige `test.skip`, „erster Treffer“ bei Mitspielern und Buchungen. Die Testkonten wandern bei jedem `db reset` (`gen_random_uuid`, Ursache von O26). | **Erledigt (PR #57):** Feste UUIDs (`e2e00000-…`) für alle Testkonten, der übrige Bestand mit festen IDs per `md5`. Dazu Mia/Max Mitspiel und Kira Kasse (mit Mandat) als feste Mitglieder. Der Seed bucht nie um 08:00 und 11–15 Uhr. Jeder Buchungstest hat dort seinen festen Platz und Tag. Neues globalSetup `testbestand-zuruecksetzen.ts` (Buchungen, Sperrungen, Glocke, Rollen, Vorlauf, fremde Buchung; O19). Keine datenabhängigen `test.skip` mehr. Serie im Seed vor den Zufallsbuchungen (Serien-Flake), „Historie“ über die feste ID (O26). B13 prüft das offene Blatt über den Spielbeginn. CI: 145 bestanden, 0 übersprungen. |
 | T4 | P2 | pgTAP ohne direkte Tests für u. a. `remove_charge_from_debit_batch`, `fee_run_preview`, `debit_batch_items`, `event_veroeffentlichen`, `event_loeschen`, `update_membership`, `my_booking_quota`, `remove_push_token`, `guard_member_self_update` (GUC-Umgehung) | Nach der Lückenliste aus dem Audit ergänzen |
 | T5 | P2 | Die SEPA-Datei wird nicht Ende-zu-Ende geprüft | E2E: Datei laden, Summe, Anzahl, IBANs prüfen |
-| T6 | P2 | Edge Functions ohne Tests | Deno-Tests für `member-login` mit abgefangenem `Deno.serve` und `fetch`-Router, ohne die Funktion umzubauen |
+| T6 | P2 | Edge Functions ohne Tests | **Erledigt (PR #60):** Deno-Tests unter `supabase/functions/_tests` mit abgefangenem `Deno.serve` und `fetch`-Router, Functions unverändert: `member-login` (33) und `notification-mails` (11). `pnpm test:functions`, eigener Schritt im CI-Job `verify`. |
 | T7 | P3 | Mail-Abläufe nur einmalig geprüft (O20) | Mailpit-Helfer, dauerhafte E2E |
-| T8 | P3 | App: nur 3 von 11 lib-Modulen getestet | Unit-Tests, manuelle Checkliste in `RELEASE.md` (kein Maestro) |
+| T8 | P3 | App: nur 3 von 11 lib-Modulen getestet | **Erledigt (PR #60):** Vitest für alle Module in `apps/mobile/src/lib` (neu: `laden`, `masse`, `push`, `stil`, `supabase`, `theme`, `verein`, `verwaltung/gemeinsam`; Hooks über einen Nachbau ohne Renderer). Manuelle Prüf-Checkliste in `apps/mobile/RELEASE.md`. |
 
 #### UI/UX
 
