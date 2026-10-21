@@ -56,6 +56,8 @@ export default function Getraenke() {
    * Eintragen nicht gab, oder die eine zurueckgenommene Zeile.
    */
   const [markiert, setMarkiert] = useState<{ vorher: Set<string> } | { id: string } | null>(null);
+  /** Hoehe der Eintragen-Leiste, fuer den Toast darueber */
+  const [leisteHoehe, setLeisteHoehe] = useState(0);
   const korb = useKorb();
   const [laeuft, setLaeuft] = useState(false);
 
@@ -311,24 +313,26 @@ export default function Getraenke() {
         )}
 
         {/* Platz fuer die Eintragen-Leiste, damit sie nichts verdeckt */}
-        {stueck > 0 && <View style={{ height: 84 }} />}
+        {stueck > 0 && <View style={{ height: Math.max(84, leisteHoehe + 16) }} />}
       </Bildschirm>
 
-      <Toast meldung={meldung} onSchliessen={() => setMeldung(null)} ueberLeiste={stueck > 0} />
+      <Toast meldung={meldung} onSchliessen={() => setMeldung(null)} leisteHoehe={stueck > 0 ? leisteHoehe : 0} />
 
       {/* --- Eintragen-Leiste ueber der Tab-Leiste -------------------------- */}
       {stueck > 0 && (
         <View
+          onLayout={(e) => setLeisteHoehe(e.nativeEvent.layout.height)}
           style={{
             position: "absolute", left: 16, right: 16,
             bottom: LEISTE_ABSTAND_UNTEN + LEISTE_HOEHE + 14 + rand.bottom,
-            height: 68, borderRadius: 24, paddingLeft: 20, paddingRight: 8,
+            // minHeight wie im Web: mit grosser Systemschrift wird die Leiste zweizeilig
+            minHeight: 68, borderRadius: 24, paddingLeft: 20, paddingRight: 8, paddingVertical: 8, gap: 12,
             flexDirection: "row", alignItems: "center", justifyContent: "space-between",
             backgroundColor: farben.ink,
             shadowColor: "#000", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 12,
           }}
         >
-          <View accessibilityLiveRegion="polite">
+          <View accessibilityLiveRegion="polite" style={{ flex: 1, minWidth: 0 }}>
             <Text style={{ color: farben.bg, fontSize: 15, fontFamily: "Barlow_700Bold" }}>
               {stueck} {stueck === 1 ? "Getränk" : "Getränke"} · {formatCents(korbBetrag)}
             </Text>

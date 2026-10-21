@@ -23,16 +23,20 @@ export interface Meldung { ok: boolean; text: string }
 
 const ERFOLG_MS = 8000;
 
-/** Hoehe der Leisten zum Buchen und Eintragen samt Luft - liegt eine da, rueckt der Toast darueber. */
-const LEISTE_DARUEBER = 68 + 10;
+/** Luft zwischen Toast und einer Leiste darunter */
+const LUFT = 10;
 
 export function Toast({
-  meldung, onSchliessen, ueberLeiste = false,
+  meldung, onSchliessen, leisteHoehe = 0,
 }: {
   meldung: Meldung | null;
   onSchliessen: () => void;
-  /** Steht gerade eine Leiste zum Buchen oder Eintragen ueber der Navigation? */
-  ueberLeiste?: boolean;
+  /**
+   * Gemessene Hoehe der Leiste zum Buchen oder Eintragen ueber der
+   * Navigation, 0 ohne Leiste. Gemessen statt fest, damit der Toast auch
+   * ueber einer zweizeiligen Leiste liegt (grosse Systemschrift).
+   */
+  leisteHoehe?: number;
 }) {
   const { farben, theme } = useTheme();
   const rand = useSafeAreaInsets();
@@ -59,7 +63,7 @@ export function Toast({
       pointerEvents="box-none"
       style={{
         position: "absolute", left: LEISTE_RAND, right: LEISTE_RAND,
-        bottom: LEISTE_ABSTAND_UNTEN + rand.bottom + LEISTE_HOEHE + 14 + (ueberLeiste ? LEISTE_DARUEBER : 0),
+        bottom: LEISTE_ABSTAND_UNTEN + rand.bottom + LEISTE_HOEHE + 14 + (leisteHoehe > 0 ? leisteHoehe + LUFT : 0),
       }}
     >
       <View style={{ borderRadius: radius.feld, backgroundColor: farben.surf, shadowColor: "#000", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 18, elevation: 10 }}>

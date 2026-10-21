@@ -120,6 +120,8 @@ export default function Plan() {
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<Meldung | null>(null);
   const [markiert, setMarkiert] = useState<Markierung | null>(null);
+  /** Hoehe der Buchen-Leiste, fuer den Toast darueber */
+  const [leisteHoehe, setLeisteHoehe] = useState(0);
 
   /**
    * still: ohne Ladekreis nachladen.
@@ -593,6 +595,7 @@ export default function Plan() {
 
       {ansicht === "uebersicht" && auswahl && gewaehlterPlatz && !fenster && (
         <View
+          onLayout={(e) => setLeisteHoehe(e.nativeEvent.layout.height)}
           style={{
             position: "absolute", left: LEISTE_RAND, right: LEISTE_RAND,
             bottom: LEISTE_ABSTAND_UNTEN + rand.bottom + LEISTE_HOEHE + 14,
@@ -628,7 +631,7 @@ export default function Plan() {
       <Toast
         meldung={meldung}
         onSchliessen={() => setMeldung(null)}
-        ueberLeiste={ansicht === "uebersicht" && Boolean(auswahl && gewaehlterPlatz) && !fenster}
+        leisteHoehe={ansicht === "uebersicht" && auswahl && gewaehlterPlatz && !fenster ? leisteHoehe : 0}
       />
 
       {fenster && (
