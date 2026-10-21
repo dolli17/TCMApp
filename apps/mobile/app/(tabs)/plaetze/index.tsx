@@ -448,7 +448,12 @@ export default function Plan() {
               gap: 6, minHeight: 44,
             }}
           >
-            <Text numberOfLines={1} style={{ flexShrink: 1, fontSize: 17, fontFamily: "Barlow_700Bold", color: farben.ink }}>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
+              style={{ flexShrink: 1, fontSize: 17, fontFamily: "Barlow_700Bold", color: farben.ink }}
+            >
               {tageszeile(datum, heute)}
             </Text>
             <Svg width={14} height={14} viewBox="0 0 24 24" style={{ transform: [{ rotate: tagwahlOffen ? "180deg" : "0deg" }] }}>

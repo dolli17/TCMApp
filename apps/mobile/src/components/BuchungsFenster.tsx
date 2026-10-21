@@ -137,11 +137,13 @@ function Hauptknopf({ text, onPress, gesperrt }: { text: string; onPress: () => 
       accessibilityRole="button"
       accessibilityState={{ disabled: gesperrt }}
       style={({ pressed }) => ({
-        height: 58, borderRadius: 18, alignItems: "center", justifyContent: "center",
+        // Mindesthoehe statt fester Hoehe: mit grosser Schrift bricht der Text um.
+        minHeight: 58, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 18,
+        alignItems: "center", justifyContent: "center",
         backgroundColor: farben.gold, opacity: gesperrt ? 0.5 : pressed ? 0.85 : 1,
       })}
     >
-      <Text style={{ color: farben.onGold, fontSize: 17, fontFamily: "Barlow_800ExtraBold" }}>{text}</Text>
+      <Text style={{ color: farben.onGold, fontSize: 17, fontFamily: "Barlow_800ExtraBold", textAlign: "center" }}>{text}</Text>
     </Pressable>
   );
 }
@@ -156,7 +158,7 @@ function Nebenknopf({
       disabled={gesperrt}
       accessibilityRole="button"
       style={({ pressed }) => ({
-        height: klein ? 40 : 52, borderRadius: klein ? 20 : 16, paddingHorizontal: 16,
+        minHeight: klein ? 40 : 52, borderRadius: klein ? 20 : 16, paddingHorizontal: 16, paddingVertical: 6,
         alignItems: "center", justifyContent: "center",
         alignSelf: klein ? "flex-start" : "stretch",
         backgroundColor: gefahr ? "transparent" : farben.surf2,
@@ -164,7 +166,7 @@ function Nebenknopf({
         opacity: gesperrt ? 0.5 : pressed ? 0.8 : 1,
       })}
     >
-      <Text style={{ color: gefahr ? farben.red : farben.ink, fontSize: klein ? 14 : 16, fontFamily: "Barlow_700Bold" }}>
+      <Text style={{ color: gefahr ? farben.red : farben.ink, fontSize: klein ? 14 : 16, fontFamily: "Barlow_700Bold", textAlign: "center" }}>
         {text}
       </Text>
     </Pressable>
