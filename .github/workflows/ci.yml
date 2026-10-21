@@ -67,6 +67,11 @@ jobs:
       - name: pnpm verify (Typecheck, Lint, Vitest, pgTAP)
         run: pnpm verify
 
+      # Edge Functions unter Deno, ohne Stack: Deno.serve und fetch sind
+      # abgefangen (supabase/functions/_tests/attrappe.ts).
+      - name: Edge Functions (Deno)
+        run: pnpm test:functions
+
       - name: Web bauen
         run: |
           eval "$(pnpm exec supabase status -o env | grep -E '^(API_URL|ANON_KEY)=')"

@@ -94,6 +94,60 @@ Die Build-Nummer zählt EAS automatisch hoch (`autoIncrement`). Die sichtbare
 Versionsnummer steht in `app.json` unter `expo.version` und wird im Repo
 gepflegt.
 
+## Prüfen vor dem Freigeben
+
+Die Logik in `src/lib` ist mit Vitest abgedeckt (`pnpm --filter @tcm/mobile test`).
+Was nur auf einem echten Gerät sichtbar wird, prüft ein Mensch – einmal je
+Build, bevor er an externe Tester geht. Mit einem Testkonto in Dev, nicht
+mit einem echten Mitglied. Ein Haken nur, wenn es wirklich so war; was
+abweicht, mit Build-Nummer an Lucas.
+
+**Anmelden und Sitzung**
+
+- [ ] Anmelden mit E-Mail und Passwort; falsches Passwort zeigt einen Satz, keinen Code
+- [ ] App ganz schließen und neu öffnen: noch angemeldet (Schlüsselbund)
+- [ ] Telefon sperren, nach einigen Minuten entsperren: App lädt ohne neue Anmeldung
+- [ ] „Passwort vergessen“: Mail kommt an, der Link öffnet die App bzw. die Seite zum Passwortsetzen
+- [ ] Abmelden: zurück auf der Anmeldeseite, nach Neustart nicht wieder angemeldet
+
+**Onboarding** (frisch eingeladenes Konto)
+
+- [ ] Einladungslink öffnen, Passwort setzen, Onboarding bis zum Ende; danach Startseite
+- [ ] Minderjähriges Konto: Erziehungsberechtigte werden verlangt
+
+**Plätze**
+
+- [ ] Platz buchen, in „Meine“ sichtbar, wieder absagen
+- [ ] Mitspieler hinzufügen und entfernen
+- [ ] Offene Spiele: einem Spiel beitreten
+- [ ] Herunterziehen lädt neu, ohne dass die Liste leer springt
+- [ ] Die letzte Zeile langer Listen verschwindet nicht hinter der schwebenden Leiste
+
+**Verein**
+
+- [ ] Getränk buchen; Korb bleibt beim Reiterwechsel, fragt beim Verlassen
+- [ ] Veranstaltung öffnen, anmelden, abmelden
+- [ ] Der Tab „Verein“ öffnet nach Neustart den zuletzt gewählten Reiter
+
+**Push** (nur echtes Gerät, nicht Simulator oder Expo Go)
+
+- [ ] Schalter „Benachrichtigungen“ (Onboarding oder Konto) einschalten: Systemdialog erscheint, nach „Erlauben“ bleibt der Schalter an, auch nach Neustart
+- [ ] Eine Testnachricht kommt an, bei offener App als Banner
+- [ ] Tippen auf die Nachricht öffnet ihr Ziel, auch bei geschlossener App
+- [ ] Schalter aus oder Abmelden: danach kommen keine Nachrichten mehr auf dieses Gerät
+
+**Darstellung**
+
+- [ ] Hell, Dunkel und System im Konto umschalten; die Wahl überlebt den Neustart
+- [ ] Anmeldeseiten sind immer dunkel
+- [ ] Große Schrift (Bedienungshilfen) schneidet keine Knöpfe ab
+- [ ] Kleines Gerät (iPhone SE) und großes (Pro Max): nichts überlappt die Notch oder die Home-Leiste
+
+**Verwaltung** (Konto mit Platzrechten)
+
+- [ ] Tab „Admin“ ist nur mit Platzrechten sichtbar, für gewöhnliche Mitglieder nicht
+- [ ] Plätze sperren und die Sperre wieder aufheben; Serie anlegen
+
 ## Was zurück an Lucas geht
 
 Nichts Geheimes. Zertifikate, Provisioning Profile und APNs-Key liegen bei EAS

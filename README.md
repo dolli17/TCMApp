@@ -96,6 +96,7 @@ pnpm install
 cp .env.example .env      # ausfüllen
 pnpm db:reset             # Schema + synthetischer Testbestand
 pnpm test                 # Unit- und Datenbanktests
+pnpm test:functions       # Edge Functions unter Deno (lädt Deno per pnpm dlx)
 pnpm dev                  # Web-App
 ```
 

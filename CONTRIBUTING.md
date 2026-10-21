@@ -26,7 +26,7 @@ Ein eigenes Staging gibt es bewusst nicht: Dev mit den Testern ist die Abnahme, 
 
 Die CI (`.github/workflows/ci.yml`) läuft bei jedem PR auf `main` oder `production`:
 
-- **`verify`** prüft zuerst, ob neue Migrationen jünger sind als die neueste im Ziel-Branch (siehe „Parallel arbeiten“). Dann führt er `pnpm verify` aus (Typecheck, Lint, Vitest, pgTAP gegen einen lokalen Supabase-Stack im Runner) und baut das Web mit `next build`.
+- **`verify`** prüft zuerst, ob neue Migrationen jünger sind als die neueste im Ziel-Branch (siehe „Parallel arbeiten“). Dann führt er `pnpm verify` aus (Typecheck, Lint, Vitest, pgTAP gegen einen lokalen Supabase-Stack im Runner), danach `pnpm test:functions` (Deno-Tests der Edge Functions, ohne Stack) und baut das Web mit `next build`.
 - **`release-check`** läuft nur bei PRs nach `production`. Er prüft zwei Dinge: Die Quelle ist `main` oder `hotfix/*`, und den Tag `v<version>` gibt es noch nicht.
 
 Playwright-E2E läuft nicht in der CI, sondern lokal mit `pnpm e2e` gegen den lokalen Stack.
