@@ -9,7 +9,7 @@
  *    Beschriftung der Tab-Leiste) waechst nur bis zu einem Deckel. Sonst
  *    laeuft er aus der Form, ohne dass er lesbarer wird.
  *  - Ab einer grossen Stufe stellen sich Layouts um, die nebeneinander keinen
- *    Platz mehr haben (etwa die drei Schnellkacheln auf Home) - statt Woerter
+ *    Platz mehr haben (etwa die drei Schnellkacheln auf Start) - statt Woerter
  *    mitten im Wort zu brechen.
  *
  * Die iOS-Stufen ueber der Vorgabe: 1,12 (gross), 1,24, 1,35 (groesste ohne
