@@ -21,6 +21,8 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { pushMeldung } from "./pushvorlage.ts";
+// Symlink auf packages/core/src/dienstschluessel.ts, dort unter Test.
+import { istDienstschluessel } from "./dienstschluessel.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -69,30 +71,6 @@ function antwort(koerper: Record<string, unknown>, status = 200): Response {
   });
 }
 
-/**
- * Ist der Aufrufer der Zeitgeber (pg_cron mit Dienstschlüssel)?
- *
- * Nicht nur der wörtliche Vergleich mit SUPABASE_SERVICE_ROLE_KEY: Supabase
- * stellt die Schlüssel um (alter JWT-Schlüssel neben neuen sb_secret_…), und
- * in der Umgebung der Funktion steht dann ein anderer gültiger Dienstschlüssel
- * als im Vault des Zeitgebers. Deshalb zählt auch die Rolle im Token. Das ist
- * nur sicher, weil verify_jwt = true (config.toml) die Signatur schon am Tor
- * prüft - ein selbst gebautes Token mit "service_role" kommt gar nicht bis hier.
- */
-function istDienstschluessel(token: string): boolean {
-  if (token === SERVICE_KEY) return true;
-  const teile = token.split(".");
-  if (teile.length !== 3) return false;
-  try {
-    const nutzlast = JSON.parse(
-      atob(teile[1].replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(teile[1].length / 4) * 4, "=")),
-    );
-    return nutzlast?.role === "service_role";
-  } catch {
-    return false;
-  }
-}
-
 Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return antwort({ ok: false, meldung: "Nur POST." }, 405);
@@ -108,7 +86,11 @@ Deno.serve(async (req) => {
   // Der Zeitgeber weist sich mit dem Dienstschlüssel aus. Jeder andere muss ein
   // angemeldeter Administrator sein - geprüft über die Datenbank, nicht über
   // eine Liste in dieser Datei.
-  const istZeitgeber = istDienstschluessel(token);
+  const istZeitgeber = await istDienstschluessel(token, {
+    supabaseUrl: SUPABASE_URL,
+    dienstschluessel: SERVICE_KEY,
+    holen: fetch,
+  });
 
   if (!istZeitgeber) {
     const alsAufrufer = createClient(SUPABASE_URL, ANON_KEY, {

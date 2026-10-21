@@ -70,9 +70,9 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 
 | # | Prio | Befund | Was zu tun ist |
 |---|---|---|---|
-| S1 | P1 | **Konto-Übernahme:** `loginAnlegen` in `member-login/index.ts:~600` übernimmt ein vorhandenes Auth-Konto mit gleicher E-Mail. Lokal sind `enable_signup = true` und `enable_confirmations = false` gesetzt, die Mindestlänge des Passworts ist 6. Wer sich mit der Adresse eines künftigen Mitglieds registriert, bekommt dessen Konto. | Übernahme nur bei Logins, die die Verwaltung selbst angelegt hat. Signup aus (lokal und Cloud), Mindestlänge ≥ 10. Die Cloud-Einstellung prüfen. |
+| S1 | P1 | **Konto-Übernahme:** `loginAnlegen` in `member-login/index.ts:~600` übernimmt ein vorhandenes Auth-Konto mit gleicher E-Mail. Lokal sind `enable_signup = true` und `enable_confirmations = false` gesetzt, die Mindestlänge des Passworts ist 6. Wer sich mit der Adresse eines künftigen Mitglieds registriert, bekommt dessen Konto. | PR #46: Signup lokal aus. Die Übernahme bleibt, weil jedes Konto von der Verwaltung stammt. Die Mindestlänge bleibt bei 6 (abgestimmt). Dev: „Allow new users to sign up“ am 21.10.2026 ausgeschaltet. Offen nur noch Prod, beim Aufbau des Prod-Projekts (goLive.md). |
 | S2 | P2 | Open Redirect über `?weiter=` (`apps/web/src/app/login/page.tsx:66`) | PR #43 |
-| S3 | P2 | `istDienstschluessel()` in `notification-mails`/`-pushes` liest die JWT-Rolle ohne Signaturprüfung. Das ist nur sicher, solange `verify_jwt` an ist. | Mit dem Schlüssel aus der Umgebung vergleichen. |
+| S3 | P2 | `istDienstschluessel()` in `notification-mails`/`-pushes` liest die JWT-Rolle ohne Signaturprüfung. Das ist nur sicher, solange `verify_jwt` an ist. | PR #46: zeitkonstanter Vergleich, sonst prüft Auth die Signatur |
 | S4 | P2 | Keine CSP und keine Permissions-Policy, HSTS ohne `includeSubDomains` | Header in `next.config.ts`, Nonce/Hash für das Theme-Skript |
 | S5 | P2 | App: Tokens liegen in AsyncStorage, Einladung und Recovery laufen im Implicit Flow über `tcm://` | `expo-secure-store`, `token_hash` + `verifyOtp` |
 | S6 | P3 | `submit_membership_application`: `p_ip` setzt der Aufrufer selbst, die Sperre lässt sich umgehen | IP serverseitig ermitteln *(Migration)* |

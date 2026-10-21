@@ -189,7 +189,13 @@ enable_refresh_token_rotation = true
 # Requires enable_refresh_token_rotation = true.
 refresh_token_reuse_interval = 10
 # Allow/disallow new user signups to your project.
-enable_signup = true
+# Aus (S1): Jedes Konto legt die Verwaltung an (member-login: Einladung oder
+# createUser). loginAnlegen uebernimmt ein vorhandenes Konto mit gleicher
+# Adresse - mit offener Selbstregistrierung koennte sich jemand vorab mit der
+# Adresse eines kuenftigen Mitglieds registrieren und bekaeme dessen Login.
+# In der Cloud separat: Dashboard > Authentication > Sign In / Providers >
+# "Allow new users to sign up" aus (docs/goLive.md).
+enable_signup = false
 # Allow/disallow anonymous sign-ins to your project.
 enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
@@ -234,6 +240,10 @@ web3 = 30
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
+# Bleibt an, trotz S1: Dieser Schalter ist in der CLI der ganze E-Mail-Provider
+# (GOTRUE_EXTERNAL_EMAIL_ENABLED). Aus hiesse "Email logins are disabled" -
+# niemand kaeme mehr mit Passwort herein. Die Selbstregistrierung sperrt
+# allein enable_signup = false oben unter [auth].
 enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
