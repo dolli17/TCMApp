@@ -217,10 +217,13 @@ password_requirements = ""
 # rp_origins = ["http://127.0.0.1:3000"]
 
 [auth.rate_limit]
-# Gilt nur fuer den lokalen Stack (die Cloud stellt das im Dashboard ein).
-# Die E2E-Suite meldet sich rund 140-mal in wenigen Minuten von derselben
-# Adresse an und verschickt Einladungen; mit den Vorgaben (30 je 5 Minuten,
-# 2 Mails je Stunde) sperrt sie sich selbst aus (T2).
+# Gilt NUR fuer den lokalen Stack. Die E2E-Suite meldet sich rund 140-mal in
+# wenigen Minuten von derselben Adresse an und verschickt Einladungen; mit den
+# Vorgaben (30 je 5 Minuten, 2 Mails je Stunde) sperrt sie sich selbst aus (T2).
+# Diese Werte duerfen nie per "supabase config push" nach Dev oder Prod: dort
+# in [remotes.dev.auth.rate_limit] / [remotes.prod.auth.rate_limit] bzw. im
+# Dashboard mit den Supabase-Vorgaben oder strenger ueberschreiben
+# (docs/goLive.md, "Konfiguration als Code").
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
 email_sent = 100
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.

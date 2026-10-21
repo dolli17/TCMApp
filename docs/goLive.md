@@ -43,6 +43,7 @@ Grundregeln:
 ### 2. Konfiguration als Code
 - In `supabase/config.toml` Abschnitte `[remotes.dev]` und `[remotes.prod]` mit `project_id` anlegen, dazu jeweils `site_url` und `additional_redirect_urls`.
 - Auth-Einstellungen per `supabase config push` übertragen: `otp_expiry` 86400, `enable_signup` false (nur unter `[auth]`, siehe S1), Vorlagen, SMTP über `env(...)`. Damit ist die Abweichung aus O24 behoben, und beide Projekte sind gleich eingestellt.
+- **Rate-Limits nicht mitschieben:** `[auth.rate_limit]` in `config.toml` gilt nur für den lokalen Stack. Für die E2E-Suite ist es stark angehoben (Anmeldungen und OTP-Prüfungen 1000 je 5 min, Mails 100/h, T2). Für Dev und Prod in `[remotes.dev.auth.rate_limit]` bzw. `[remotes.prod.auth.rate_limit]` mit den Supabase-Vorgaben oder strenger überschreiben: `sign_in_sign_ups` 30, `token_verifications` 30, `token_refresh` 150. `email_sent` richtet sich nach dem SMTP-Kontingent, mit eigenem SMTP gibt Supabase 30/h vor. Wo `config push` die Remotes nicht abdeckt, die Werte im Dashboard setzen. Nach jedem `config push` im Dashboard gegenprüfen, dass Dev und Prod nicht die lokalen Werte bekommen haben.
 - Vor der ersten Nutzung gegen Dev prüfen, welche Felder `config push` tatsächlich überträgt. Was es nicht kann, kommt als Liste in die Runbook-Datei.
 - **Neu: `supabase/env/README.md`** beschreibt die einmalige Einrichtung pro Umgebung:
   - Snippets `benachrichtigungs_mails_zeitplan.sql` und `benachrichtigungs_pushes_zeitplan.sql`, mit Projekt-Ref als Parameter;
