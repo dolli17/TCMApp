@@ -115,7 +115,13 @@ test.describe("Buchungsregeln im Plan", () => {
       ]);
       await page.goto(`/plan?tag=${tag}`);
       // Der Plan startet mit der Zeit des Servers und folgt der Uhr des
-      // Browsers erst mit seinem Minutentakt - also eine Minute weiter.
+      // Browsers erst mit seinem Minutentakt (setInterval nach der
+      // Hydration). Erst das Blatt einmal oeffnen - das geht nur hydriert -,
+      // dann eine Minute weiter.
+      await eigene.click();
+      await expect(fenster).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(fenster).toHaveCount(0);
       await page.clock.fastForward(61_000);
       await page.mouse.click(5, 5);
 
