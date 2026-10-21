@@ -84,8 +84,8 @@ test.describe("Buchungsregeln im Plan", () => {
 
   test("eine begonnene Buchung bietet kein Stornieren mehr an (B13)", async ({ page }) => {
     // Gebucht wird mit echter Zeit auf einen festen Termin uebermorgen. Danach
-    // springt nur die Uhr im Browser auf eine Minute nach Beginn - der Test
-    // haengt so nicht mehr davon ab, ob heute noch etwas frei ist.
+    // springt nur die Uhr im Browser kurz vor Beginn und laeuft darueber - der
+    // Test haengt so nicht mehr davon ab, ob heute noch etwas frei ist.
     const tag = tagIn(2);
     const platz = "Platz 3";
     const uhrzeit = "11:00";
@@ -101,35 +101,34 @@ test.describe("Buchungsregeln im Plan", () => {
     const eigene = page.getByRole("button", { name: `Buchung ${uhrzeit} auf ${platz} verwalten` });
 
     try {
-      // Vor Beginn: Stornieren wird angeboten.
-      await eigene.click();
-      await expect(fenster.getByRole("button", { name: "Buchung stornieren" })).toBeVisible();
-      await page.keyboard.press("Escape");
-
-      // Die Browser-Uhr eine Minute nach Beginn. Der Aktivitaetsstempel zieht
-      // mit, sonst saehe der Browser zwei Tage Pause und meldete ab.
-      const jetzt = new Date(buchung!.startsAt).getTime() + 60_000;
-      await page.clock.install({ time: jetzt });
+      // Die Browser-Uhr auf 90 Sekunden vor Beginn. Der Aktivitaetsstempel
+      // zieht mit, sonst saehe der Browser zwei Tage Pause und meldete ab.
+      const beginn = new Date(buchung!.startsAt).getTime();
+      await page.clock.install({ time: beginn - 90_000 });
       await page.context().addCookies([
-        { name: "tcm_aktiv", value: String(jetzt), url: new URL(page.url()).origin },
+        { name: "tcm_aktiv", value: String(beginn - 90_000), url: new URL(page.url()).origin },
       ]);
       await page.goto(`/plan?tag=${tag}`);
-      // Der Plan startet mit der Zeit des Servers und folgt der Uhr des
-      // Browsers erst mit seinem Minutentakt (setInterval nach der
-      // Hydration). Erst das Blatt einmal oeffnen - das geht nur hydriert -,
-      // dann eine Minute weiter.
-      await eigene.click();
-      await expect(fenster).toBeVisible();
-      await page.keyboard.press("Escape");
-      await expect(fenster).toHaveCount(0);
-      await page.clock.fastForward(61_000);
-      await page.mouse.click(5, 5);
 
+      // Vor Beginn: Stornieren wird angeboten. Das Blatt bleibt offen.
       await eigene.click();
       await expect(fenster).toBeVisible();
+      await expect(fenster.getByRole("button", { name: "Buchung stornieren" })).toBeVisible();
+
+      // Ueber den Beginn hinweg: der Plan stellt seine Uhr jede Minute nach
+      // (setInterval), zwei Takte spaeter laeuft die Spielzeit.
+      await page.clock.fastForward(120_000);
       await expect(fenster).toContainText("Die Spielzeit läuft bereits");
       await expect(fenster.getByRole("button", { name: "Buchung stornieren" })).toHaveCount(0);
       await expect(fenster.getByRole("button", { name: "Mitspieler speichern" })).toHaveCount(0);
+      await page.keyboard.press("Escape");
+
+      // Danach ist die begonnene Buchung fuer das Mitglied nur noch Anzeige:
+      // kein Knopf mehr, der ein Blatt oeffnet (verwaltbar() im Belegungsplan).
+      await expect(eigene).toHaveCount(0);
+      await expect(
+        page.locator(`.plan-raster .spalte[aria-label="${platz}"] .beleg`, { hasText: "11:00–12:00" }),
+      ).toBeVisible();
     } finally {
       // Die Datenbank rechnet mit echter Zeit: dort hat die Buchung noch
       // nicht begonnen, der Bucher kann sie also selbst wieder stornieren.
