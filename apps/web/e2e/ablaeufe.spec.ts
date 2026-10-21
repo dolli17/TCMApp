@@ -1438,6 +1438,53 @@ test.describe("Verwaltung", () => {
     await page.waitForURL(/abschnitt=einzuege/, { timeout: 20_000 });
   });
 
+  test("eine Forderung im Einzugsentwurf erlassen nimmt sie aus dem Einzug (B1)", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    const beschreibung = `ZZTest Pfand Erlassen ${Date.now().toString().slice(-6)}`;
+
+    await page.goto("/admin/kasse?abschnitt=abrechnen");
+    await page.getByRole("button", { name: "Forderung anlegen" }).first().click();
+    const fenster = page.locator("dialog.fenster");
+    await fenster.getByLabel("Mitglied").fill("Nadine Bauer");
+    await fenster.getByLabel("Art").selectOption("deposit");
+    await fenster.getByLabel("Betrag in Euro").fill("13,70");
+    await fenster.getByLabel("Beschreibung").fill(beschreibung);
+    await fenster.getByRole("button", { name: "Forderung anlegen" }).click();
+    await expect(fenster.locator(".hinweis.erfolg")).toBeVisible({ timeout: 20_000 });
+
+    await page.goto("/admin/kasse/einzug");
+    await page.getByRole("checkbox", { name: /Pfand/ }).first().check();
+    const wer = page.locator("section", { has: page.getByRole("heading", { name: "Wer ist dabei?" }) });
+    await expect(wer.locator(".kachel.gruen")).toContainText("Lastschrift", { timeout: 20_000 });
+    await page.getByRole("button", { name: "Ankündigen und Einzug anlegen" }).click();
+    await page.getByRole("group", { name: "Rückfrage" }).getByRole("button", { name: "Ja, ankündigen" }).click();
+    await page.waitForURL(/\/admin\/kasse\/lastschriften\/[0-9a-f-]{36}$/, { timeout: 20_000 });
+
+    // Angekündigt und im Entwurf - in der Kasse trotzdem erlassbar
+    await page.goto("/admin/kasse?abschnitt=forderungen&stand=notified&art=deposit");
+    await page.locator('.liste-gruppe[aria-label="Forderungen"] li', { hasText: beschreibung }).getByRole("button").click();
+    const blatt = page.locator("dialog.fenster");
+    await expect(blatt).toContainText("wird sie dort herausgenommen");
+    await blatt.getByRole("button", { name: "Erlassen" }).click();
+    await blatt.getByLabel("Grund").fill("ZZTest Versehen");
+    await blatt.getByRole("button", { name: "Wirklich erlassen" }).click();
+    await expect(page.locator(".hinweis.erfolg")).toContainText("erlassen", { timeout: 20_000 });
+
+    // Die Datenbank: erlassen und kein Posten mehr im Einzug
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+      { auth: { persistSession: false } },
+    );
+    await supabase.auth.signInWithPassword({ email: NUTZER.admin, password: PASSWORT });
+    const { data: forderung } = await supabase
+      .from("charges").select("id, status").like("description", `${beschreibung}%`).single();
+    expect(forderung?.status).toBe("waived");
+    const { count } = await supabase
+      .from("debit_items").select("id", { count: "exact", head: true }).eq("charge_id", forderung!.id);
+    expect(count).toBe(0);
+  });
+
   test("Ankündigen, Datei und Einreichen fragen nach; abschließen erst nach der Frist", async ({ page }) => {
     // Ohne Gläubiger-IBAN entsteht keine Datei, und der Seed setzt keine.
     await setzeGlaeubigerIban();

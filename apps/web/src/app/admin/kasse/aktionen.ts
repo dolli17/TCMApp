@@ -23,7 +23,8 @@ export interface AktionsErgebnis {
  * schuldet.
  */
 function frisch() {
-  revalidatePath("/admin/kasse");
+  // Mit allen Unterseiten: Erlassen und Abhaken nehmen Posten aus Einzügen.
+  revalidatePath("/admin/kasse", "layout");
   revalidatePath("/admin/getraenke");
   revalidatePath("/konto");
 }
