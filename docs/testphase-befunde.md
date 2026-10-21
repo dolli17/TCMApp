@@ -73,7 +73,7 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 | S1 | P1 | **Konto-Übernahme:** `loginAnlegen` in `member-login/index.ts:~600` übernimmt ein vorhandenes Auth-Konto mit gleicher E-Mail. Lokal sind `enable_signup = true` und `enable_confirmations = false` gesetzt, die Mindestlänge des Passworts ist 6. Wer sich mit der Adresse eines künftigen Mitglieds registriert, bekommt dessen Konto. | PR #46: Signup lokal aus. Die Übernahme bleibt, weil jedes Konto von der Verwaltung stammt. Die Mindestlänge bleibt bei 6 (abgestimmt). Dev: „Allow new users to sign up“ am 21.10.2026 ausgeschaltet. Offen nur noch Prod, beim Aufbau des Prod-Projekts (goLive.md). |
 | S2 | P2 | Open Redirect über `?weiter=` (`apps/web/src/app/login/page.tsx:66`) | PR #43 |
 | S3 | P2 | `istDienstschluessel()` in `notification-mails`/`-pushes` liest die JWT-Rolle ohne Signaturprüfung. Das ist nur sicher, solange `verify_jwt` an ist. | PR #46: zeitkonstanter Vergleich, sonst prüft Auth die Signatur |
-| S4 | P2 | Keine CSP und keine Permissions-Policy, HSTS ohne `includeSubDomains` | Header in `next.config.ts`, Nonce/Hash für das Theme-Skript |
+| S4 | P2 | Keine CSP und keine Permissions-Policy, HSTS ohne `includeSubDomains` | PR #55: CSP mit Nonce (Middleware), Permissions-Policy, HSTS `includeSubDomains` (auch Traefik), E2E `sicherheit.spec.ts` |
 | S5 | P2 | App: Tokens liegen in AsyncStorage, Einladung und Recovery laufen im Implicit Flow über `tcm://` | PR #53: Sitzung im Schlüsselbund (Stücke ab 2 KB, Umzug aus AsyncStorage), Mail-Links mit `token_hash` + `verifyOtp`. Das Fragment gilt übergangsweise weiter, Rest unter S20. |
 | S6 | P3 | `submit_membership_application`: `p_ip` setzt der Aufrufer selbst, die Sperre lässt sich umgehen | IP serverseitig ermitteln *(Migration)* |
 | S7 | P2 | CSV-Injection im Teilnehmer-Export (`csvFeld`) | PR #43 |
@@ -116,7 +116,7 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 | B11 | P2 | Am letzten Vorlauftag zeigt der Plan Zeiten als frei, die der Server ablehnt (`canStartAt` ohne `leadDays`) | **Erledigt (PR #56):** `canStartAt` und alles darauf (`courtStatusAt`, `freeGaps`, `freeSlotsOfDay`, `freeCourtsNow`) prüft `leadDays` wie `create_booking`: jetzt plus lead_days mal 24 Stunden (UTC), über die Zeitumstellung eine Stunde verschoben. Status „buchbar ab …“. Web und App reichen `lead_days` durch. |
 | B12 | P2 | Clients prüfen `min_players` nicht (Doppel mit einem Mitspieler) | **Erledigt (PR #56):** Buchungsblatt in Web und App prüft mit `checkPlayers` (kennt jetzt „Mitspieler gesucht“) und sagt, wie viele Mitspieler fehlen. Server geprüft, pgTAP-Test ergänzt. |
 | B13 | P2 | Stornieren, Austragen und Mitspielen werden auch für begonnene Buchungen angeboten | **Erledigt (PR #56):** `bookingActions` in `@tcm/core` (Regeln aus `cancel_booking`, `update_booking_players`, `leave_booking`, `join_booking`), genutzt im Buchungsblatt und in „Meine & offene Spiele“ in Web und App. |
-| B14 | P2 | Ein Ladefehler sieht aus wie „nichts da“ (`/konto`, Belegungsplan, Kasse) | `error` je Abschnitt auswerten |
+| B14 | P2 | Ein Ladefehler sieht aus wie „nichts da“ (`/konto`, Belegungsplan, Kasse) | PR #55: Fehlerzustand mit „Erneut versuchen“ in `/konto`, Belegungsplan und Kasse |
 | B15 | P3 | `current_drink_price` nutzt das UTC-Datum: Nachts gilt am Umstellungstag noch der alte Preis | `private.heute()` *(Migration)* |
 | B16 | P3 | UTC-Datum als „heute“ in sechs Web-Formularen und mehreren SQL-Vorgaben. In der Neujahrsnacht wird der Beitrag des Vorjahres zugewiesen. | `berlinDay`, `private.heute()` |
 | B17 | P3 | Wird der Anmeldeschluss verschoben, kommt keine neue Erinnerung | `reminder_sent_at` zurücksetzen |
@@ -148,8 +148,8 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 
 | # | Prio | Befund | Was zu tun ist |
 |---|---|---|---|
-| U1 | P2 | Im Web gibt es kein `loading.tsx`/`error.tsx`/`not-found.tsx` | Für die Hauptsegmente ergänzen, mit „Erneut versuchen“ |
-| U2 | P2 | Rohe Supabase-Meldungen (`admin/mitglieder/page.tsx:86` u. a.), App `useLaden` | `translateDbError` durchgehend |
+| U1 | P2 | Im Web gibt es kein `loading.tsx`/`error.tsx`/`not-found.tsx` | PR #55: `error`/`loading` für `/`, `/plan`, `/verein`, `/konto`, `/admin`, `not-found`, `global-error`, Komponente `Fehlerzustand` |
+| U2 | P2 | Rohe Supabase-Meldungen (`admin/mitglieder/page.tsx:86` u. a.), App `useLaden` | Web: PR #55 (`translateDbError` erkennt auch Verbindungsfehler, kein Rohtext). Offen: App `useLaden` |
 | U3 | P3 | Nirgends „Erneut versuchen“, Pull-to-Refresh nur in 2 Dateien | Retry und Pull-to-Refresh |
 | U4 | P3 | ~50× `#fff` statt Token, Avatarfarben doppelt | `onBrand`-Token, Avatarfarben nach `@tcm/ui` |
 | U5 | P2 | App: feste Schriftgrößen, keine Prüfung großer Systemschrift | Hauptbildschirme bei größter Stufe prüfen |
@@ -166,7 +166,7 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 | U16 | P2 | Die Bestätigung nach Buchen oder Getränk erscheint oben außer Sicht | Toast unten, Block hervorheben |
 | U17 | P2 | **Getränke-Korb geht beim Verlassen still verloren.** „+“ wirkt wie gebucht, dem Verein fehlt das Geld. | **Erledigt (PR #54):** Der Korb bleibt erhalten (Web: `sessionStorage` je Konto, App: Speicher außerhalb des Bildschirms) und die Leiste zeigt „Noch nicht eingetragen“. Beim Verlassen mit vollem Korb kommt eine Rückfrage (Web: Links und `beforeunload`, App: Erinnerung beim Verlassen). |
 | U18 | P2 | Platzraster am Telefon schwer zu treffen (34 px je halbe Stunde), Titel abgeschnitten | „Freie Zeiten“ als Standard, Ziele ≥ 44 px |
-| U19 | P2 | Netzwerk- und Rate-Limit-Fehler erscheinen als „Passwort stimmt nicht“ | gesondert melden |
+| U19 | P2 | Netzwerk- und Rate-Limit-Fehler erscheinen als „Passwort stimmt nicht“ | Web: PR #55 (Login, Passwort vergessen/setzen; `anmeldeFehlerText` in core) |
 | U20 | P2 | App „Passwort setzen“: Ladekreis ohne Ende, wenn der Link kein Token hat | PR #53: Meldung mit „Neuen Link anfordern“ und „Zurück zur Anmeldung“, Frist 15 s |
 | U21 | P2 | 115 DB-Fehlertexte und Einstellungstexte mit ae/oe/ue (vgl. O13) | Migration mit echten Umlauten *(Migration)* |
 | U22 | P2 | App-Formulare ohne Autofill und ohne Fehler am Feld. Geburtsdatum als Freitext. | Props durchreichen, Datumsauswahl |
