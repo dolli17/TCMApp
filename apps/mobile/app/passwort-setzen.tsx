@@ -139,6 +139,7 @@ export default function PasswortSetzen() {
             onChangeText={setPasswort}
             secureTextEntry
             autoComplete="new-password"
+            textContentType="newPassword"
           />
           <AnmeldeFeld
             beschriftung="Noch einmal"
@@ -147,6 +148,7 @@ export default function PasswortSetzen() {
             onChangeText={setWiederholung}
             secureTextEntry
             autoComplete="new-password"
+            textContentType="newPassword"
             onSubmitEditing={absenden}
             returnKeyType="go"
           />

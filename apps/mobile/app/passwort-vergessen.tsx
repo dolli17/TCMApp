@@ -36,6 +36,7 @@ export default function PasswortVergessen() {
         onChangeText={setEmail}
         autoCapitalize="none"
         autoComplete="email"
+        textContentType="emailAddress"
         keyboardType="email-address"
         onSubmitEditing={absenden}
         returnKeyType="send"
