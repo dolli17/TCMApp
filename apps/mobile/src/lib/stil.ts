@@ -131,7 +131,7 @@ export function stilFuer(theme: ThemeName) {
     // wo dieselbe Mischung per color-mix aus --red und --green entsteht.
     hinweisFehler: {
       backgroundColor: mitDeckkraft(f.red, theme === "hell" ? 0.12 : 0.16),
-      color: f.red, padding: 12, borderRadius: radius.feld, overflow: "hidden",
+      color: f.redInk, padding: 12, borderRadius: radius.feld, overflow: "hidden",
     },
     hinweisErfolg: {
       backgroundColor: mitDeckkraft(f.green, theme === "hell" ? 0.12 : 0.16),

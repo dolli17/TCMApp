@@ -178,13 +178,13 @@ test.describe("SEPA-Datei", () => {
     const laufId = new URL(page.url()).pathname.split("/").pop()!;
 
     // Datei erzeugen und über den Knopf herunterladen, wie die Kasse es tut
-    await page.getByRole("button", { name: "pain.008 erzeugen" }).click();
-    await rueckfrage.getByRole("button", { name: "Ja, Datei erzeugen" }).click();
+    await page.getByRole("button", { name: "Bankdatei erzeugen" }).click();
+    await rueckfrage.getByRole("button", { name: "Ja, Bankdatei erzeugen" }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("Die Datei ist erzeugt", { timeout: 20_000 });
 
     const [download] = await Promise.all([
       page.waitForEvent("download"),
-      page.getByRole("link", { name: "Datei herunterladen" }).click(),
+      page.getByRole("link", { name: "Bankdatei herunterladen" }).click(),
     ]);
     expect(download.suggestedFilename()).toMatch(/\.xml$/);
     const xml = await readFile((await download.path())!, "utf8");

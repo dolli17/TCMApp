@@ -36,6 +36,7 @@ import { FREMDE_BUCHUNG } from "./testbestand-zuruecksetzen";
  *           Platz 3, 4     buchungsregeln.spec.ts
  *   Tag +3  Platz 1 11:30  :30 buchen und stornieren
  *           Platz 6 11:00  Realtime
+ *           Platz 7 14:00  Bestätigung unten am Telefon (darstellung.spec.ts)
  *   Tag +4  Platz 1 11:00  Mitspieler austauschen
  *           Platz 5 11:00  Sperrung fragt vor dem Verdrängen (sperrt den Tag)
  *   Tag +5  Platz 2 11:30  angebrochene Stunden (11:30 und 12:30)
@@ -153,13 +154,15 @@ test.describe("Anmeldung", () => {
 
   test("Mitglied kann sich anmelden und sieht die Plätze", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
-    await page.goto("/plan");
+    // Morgen: am Abend ist heute nichts mehr buchbar, und "Freie Zeiten"
+    // zeigt dann statt der Kästchen nur einen Satz.
+    await page.goto(`/plan?tag=${tagIn(1)}`);
     await expect(page.getByRole("heading", { level: 1, name: "Plätze", exact: true })).toBeVisible();
     await expect(page.locator(".plan-raster .raster")).toBeVisible();
     // Acht Plaetze, jeder mit eigenem Spaltenkopf
     await expect(page.locator(".raster .spalten-kopf")).toHaveCount(8);
-    // Am Telefon zeigt dieselbe Seite die Übersicht mit wischbaren Stunden
-    await expect(page.locator(".plan-listen .tr-platz")).toHaveCount(8);
+    // Am Telefon zeigt dieselbe Seite zuerst die freien Zeiten, je Platz ein Kästchen
+    await expect(page.locator(".plan-listen .fz-nummern span")).toHaveCount(8);
   });
 });
 
@@ -434,6 +437,9 @@ test.describe("Getränke", () => {
 
     await expect(page.locator(".hinweis.erfolg")).toContainText("Eingetragen", { timeout: 15_000 });
     await expect(page.locator(".zuletzt li")).toHaveCount(vorher + 1);
+    // U16: die Meldung ist im Bild, die neue Zeile hervorgehoben
+    await expect(page.locator(".toast-ort .hinweis.erfolg")).toBeInViewport();
+    await expect(page.locator(".zuletzt li.markiert")).toHaveCount(1);
 
     // Innerhalb des Zeitfensters muss die Ruecknahme moeglich sein
     await page.locator(".zuletzt li").first().getByRole("button", { name: "Zurücknehmen" }).click();

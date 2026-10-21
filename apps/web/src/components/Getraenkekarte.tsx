@@ -6,6 +6,7 @@ import {
   formatCents, MAX_DRINK_QUANTITY, parseBasket, type DrinkBasket, type DrinkBatchResult,
 } from "@tcm/core";
 import { getraenkBuchen, getraenkStornieren } from "@/app/verein/getraenke/aktionen";
+import { Toast, type Meldung } from "@/components/Toast";
 
 interface Artikel {
   id: string;
@@ -30,6 +31,7 @@ const ZEITPUNKT = new Intl.DateTimeFormat("de-DE", {
   timeZone: "Europe/Berlin",
 });
 const QUELLE: Record<string, string> = { kiosk: "Theke", bar_duty: "Thekendienst", app: "App" };
+const MARKIERT_MS = 5000;
 
 /**
  * Die Getraenkekarte (Entwurf AppGetraenke, docs/design/clubhaus)
@@ -45,6 +47,9 @@ const QUELLE: Record<string, string> = { kiosk: "Theke", bar_duty: "Thekendienst
  * Seitenwechsel oder Neuladen wieder da, und wer die Seite mit vollem Korb
  * verlaesst, wird gefragt. Waehrend des Sendens ist die Karte gesperrt, sonst
  * ueberschriebe das Ergebnis die neuen Eingaben (B18).
+ *
+ * Die Rueckmeldung kommt unten als Toast, und die neuen oder
+ * zurueckgenommenen Zeilen unter "Zuletzt" sind kurz hervorgehoben (U16).
  */
 export function Getraenkekarte({
   artikel,
@@ -58,7 +63,12 @@ export function Getraenkekarte({
   /** Fuer den Speicherschluessel: wer sich im selben Tab neu anmeldet, sieht nicht den Korb des Vorgaengers. */
   kontoId: string;
 }) {
-  const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
+  const [meldung, setMeldung] = useState<Meldung | null>(null);
+  /**
+   * Was hervorgehoben wird: die IDs, die es vor dem Eintragen schon gab (alles
+   * andere ist neu), oder die eine zurueckgenommene Zeile.
+   */
+  const [markiert, setMarkiert] = useState<{ vorher: Set<string> } | { id: string } | null>(null);
   const [korb, setKorb] = useState<DrinkBasket>({});
   const [laeuft, starte] = useTransition();
   const speicher = `tcm-getraenkekorb:${kontoId}`;
@@ -127,7 +137,17 @@ export function Getraenkekarte({
     setKorb((k) => changeBasket(k, id, um));
   }
 
+  useEffect(() => {
+    if (!markiert) return;
+    const uhr = setTimeout(() => setMarkiert(null), MARKIERT_MS);
+    return () => clearTimeout(uhr);
+  }, [markiert]);
+
+  const istMarkiert = (id: string) =>
+    markiert !== null && ("id" in markiert ? markiert.id === id : !markiert.vorher.has(id));
+
   function eintragen() {
+    const vorher = new Set(buchungen.map((b) => b.id));
     starte(async () => {
       const ergebnisse: (DrinkBatchResult & { id: string })[] = [];
       // Nacheinander, in der Reihenfolge der Karte - so liest sich auch die Meldung.
@@ -137,6 +157,7 @@ export function Getraenkekarte({
         ergebnisse.push({ id: a.id, name: a.name, quantity: menge, ok: r.ok, message: r.meldung });
       }
       setMeldung(drinkBatchReport(ergebnisse));
+      if (ergebnisse.some((e) => e.ok)) setMarkiert({ vorher });
       // Was geklappt hat, verlaesst den Korb; was nicht, bleibt fuer einen neuen Versuch.
       setKorb(basketAfterBatch(ergebnisse));
     });
@@ -146,14 +167,13 @@ export function Getraenkekarte({
     starte(async () => {
       const r = await getraenkStornieren(id);
       setMeldung({ ok: r.ok, text: r.meldung });
+      if (r.ok) setMarkiert({ id });
     });
   }
 
   return (
     <>
-      {meldung && (
-        <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">{meldung.text}</div>
-      )}
+      <Toast meldung={meldung} onSchliessen={() => setMeldung(null)} />
 
       <section aria-labelledby="h-karte">
         <div className="sectionlabel">
@@ -235,7 +255,10 @@ export function Getraenkekarte({
                 );
 
               return (
-                <li key={b.id} className={storniert ? "zurueck" : undefined}>
+                <li
+                  key={b.id}
+                  className={[storniert && "zurueck", istMarkiert(b.id) && "markiert"].filter(Boolean).join(" ") || undefined}
+                >
                   <span className="was">
                     <b>
                       {b.quantity > 1 ? `${b.quantity}× ` : ""}

@@ -346,7 +346,7 @@ function Anmeldung({
                     onPress={() => setFrage(true)}
                     style={[stil.knopfLeise, { borderColor: mitDeckkraft(farben.red, 0.5) }]}
                   >
-                    <Text style={[stil.knopfLeiseText, { color: farben.red }]}>{eventAbmeldenKnopf(e, jetzt)}</Text>
+                    <Text style={[stil.knopfLeiseText, { color: farben.redInk }]}>{eventAbmeldenKnopf(e, jetzt)}</Text>
                   </Pressable>
                 )}
               </View>

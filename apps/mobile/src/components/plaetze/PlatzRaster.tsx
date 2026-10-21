@@ -2,7 +2,7 @@
  * Die Plaetze als Raster (docs/design/clubhaus/plaetze, PlRaster)
  *
  * Links eine feste Spalte mit den Plaetzen, rechts waagerecht wischbar die
- * Stunden von Oeffnung bis Schluss, 68 Pixel je Stunde. Belegungen sind
+ * Stunden von Oeffnung bis Schluss, 88 Pixel je Stunde. Belegungen sind
  * beschriftete Bloecke; eine freie Flaeche antippen waehlt Platz und Beginn
  * aus. Gebucht wird erst ueber die Leiste unten und das Blatt.
  *
@@ -21,17 +21,20 @@ import { mitDeckkraft } from "@/lib/stil";
 import { useTheme } from "@/lib/theme";
 import { Schraffur } from "@/components/MiniZeitleiste";
 
-export const STUNDE_PX = 68;
+// 88 statt 68: eine halbe Stunde ist so 44 Pixel breit - schmaler trifft man
+// sie mit dem Finger nicht (U18).
+export const STUNDE_PX = 88;
 // 46 statt 52: so passen Raster und Legende auf einem ueblichen Telefon ueber
-// die schwebende Leiste, ohne dass man scrollen muss (U34). Die Bloecke
-// bleiben mit 38 Pixeln gut antippbar.
+// die schwebende Leiste, ohne dass man scrollen muss (U34). Die Bloecke sind
+// 38 hoch, ihre Tippflaeche reicht ueber hitSlop auf die volle Zeile.
+const BLOCK_ABSTAND = 4;
 const ZEILE = 46;
 const KOPF = 34;
 const SPALTE = 46;
 const px = (minuten: number) => (minuten / 60) * STUNDE_PX;
 
 /**
- * Das Raster hat feste Masse: 68 Pixel je Stunde, 46 je Platz. Waechst die
+ * Das Raster hat feste Masse: 88 Pixel je Stunde, 46 je Platz. Waechst die
  * Schrift mit der Systemeinstellung ungebremst mit, laufen die Stunden
  * ineinander und rechts aus dem Bild, und "PLATZ" bricht um (U34). Deshalb
  * waechst sie hier nur ein Stueck mit; was ein Block sagt, steht vollstaendig
@@ -61,7 +64,7 @@ export function useJetzt(): Date {
 
 export function PlatzRaster({
   datum, istHeute, plaetze, belegung, oeffnung, schluss, raster, dauer, vorlaufTage, auswahl,
-  oeffnebar, onAuswahl, onOeffnen,
+  oeffnebar, markiert, onAuswahl, onOeffnen,
 }: {
   datum: string;
   istHeute: boolean;
@@ -75,6 +78,8 @@ export function PlatzRaster({
   vorlaufTage: number;
   auswahl: Auswahl | null;
   oeffnebar: (b: Belegung) => boolean;
+  /** Gehoert die Belegung zur letzten Aktion? Dann ist sie kurz hervorgehoben (U16). */
+  markiert: (b: Belegung) => boolean;
   onAuswahl: (a: Auswahl) => void;
   onOeffnen: (platz: Platz, b: Belegung) => void;
 }) {
@@ -227,14 +232,16 @@ export function PlatzRaster({
                         accessibilityRole={kannAuf ? "button" : "text"}
                         accessibilityLabel={`${platz.name}, ${l.spoken}`}
                         accessibilityHint={kannAuf ? "Öffnet die Buchung" : undefined}
+                        hitSlop={{ top: BLOCK_ABSTAND, bottom: BLOCK_ABSTAND }}
                         style={({ pressed }) => [
                           {
-                            position: "absolute", top: 4, bottom: 4, left: px(von - oeffnung) + 3,
+                            position: "absolute", top: BLOCK_ABSTAND, bottom: BLOCK_ABSTAND, left: px(von - oeffnung) + 3,
                             width: Math.max(px(bis - von) - 6, 12), borderRadius: 10, overflow: "hidden",
                             paddingVertical: 2, paddingHorizontal: 8, justifyContent: "center",
                             opacity: pressed && kannAuf ? 0.8 : 1,
                           },
                           f.box,
+                          markiert(b) && { borderWidth: 3, borderStyle: "solid", borderColor: farben.goldLine },
                         ]}
                       >
                         {l.art === "serie" && <Schraffur farbe={mitDeckkraft(farben.ink, 0.1)} />}

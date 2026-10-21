@@ -8,7 +8,7 @@ import { expect, test, type Page } from "@playwright/test";
  * wieder, ohne dass etwas kaputt wäre.
  */
 
-import { anmelden as anmeldenAls, freieStunde, NUTZER, tagIn } from "./hilfen";
+import { anmelden as anmeldenAls, freieStunde, mitspielerWaehlen, MITSPIELER, NUTZER, tagIn } from "./hilfen";
 
 /** Der Tag nach heute in Europe/Berlin, JJJJ-MM-TT. 11–15 Uhr hält der Seed dort frei. */
 const morgen = () => tagIn(1);
@@ -95,22 +95,54 @@ test.describe("Layout", () => {
       await expect(page.locator(".seitenleiste")).toBeHidden();
     });
 
-    test("der Belegungsplan zeigt die Übersicht statt des Rasters", async ({ page }) => {
-      // Ein Raster mit acht Spalten waere auf 390 Pixel unbedienbar; am
-      // Telefon stehen die Plaetze als Zeilen, die Stunden zum Wischen.
+    test("die Plätze beginnen am Telefon mit den freien Zeiten", async ({ page }) => {
+      // Ein Raster mit acht Spalten waere auf 390 Pixel unbedienbar. Ohne
+      // gemerkte Wahl kommen zuerst die freien Zeiten, dort sind alle Ziele
+      // gross (U18); die Übersicht mit wischbaren Stunden ist einen Tipp weiter.
       await anmelden(page);
-      await page.goto("/plan");
+      await page.goto(`/plan?tag=${morgen()}`);
 
       await expect(page.locator(".plan-listen")).toBeVisible();
       await expect(page.locator(".plan-raster")).toBeHidden();
+      await expect(page.getByRole("radio", { name: "Freie Zeiten" })).toHaveAttribute("aria-checked", "true");
+      await expect(page.locator(".plan-listen .fz-knopf").first()).toBeVisible();
+
+      await page.getByRole("radio", { name: "Übersicht" }).click();
       await expect(page.locator(".plan-listen .tr-platz")).toHaveCount(8);
-      await expect(page.getByRole("radio", { name: "Übersicht" })).toHaveAttribute("aria-checked", "true");
+    });
+
+    test("Ziele am Telefon sind mindestens 44 Pixel groß", async ({ page }) => {
+      // U18: Vorher war eine halbe Stunde im Raster 34 Pixel breit.
+      await anmelden(page);
+      await page.goto(`/plan?tag=${morgen()}`);
+
+      for (const name of ["Übersicht", "Freie Zeiten"]) {
+        const box = await page.getByRole("radio", { name }).boundingBox();
+        expect(box!.height, `Umschalter ${name}`).toBeGreaterThanOrEqual(44);
+      }
+      const zeile = await page.locator(".fz-knopf").first().boundingBox();
+      expect(zeile!.height).toBeGreaterThanOrEqual(44);
+
+      await page.getByRole("radio", { name: "Übersicht" }).click();
+      // Abstand zweier Stundenmarken = eine Stunde; die halbe muss 44 tragen.
+      const marken = page.locator(".tr-kopf span");
+      const [a, b] = [await marken.nth(0).boundingBox(), await marken.nth(1).boundingBox()];
+      expect((b!.x - a!.x) / 2).toBeGreaterThanOrEqual(44);
+      const platz = await page.locator(".tr-zeile").first().boundingBox();
+      expect(platz!.height).toBeGreaterThanOrEqual(44);
+      for (const block of await page.locator(".tr-block").all()) {
+        expect((await block.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      }
     });
 
     test("Freie Zeiten: Wahl bleibt, Zeile klappt auf und öffnet das Blatt", async ({ page }) => {
       await anmelden(page);
       // Morgen, damit der Test nicht von der Uhrzeit abhaengt.
       await page.goto(`/plan?tag=${morgen()}`);
+      // Die gemerkte Wahl schlaegt den Standard
+      await page.getByRole("radio", { name: "Übersicht" }).click();
+      await page.reload();
+      await expect(page.getByRole("radio", { name: "Übersicht" })).toHaveAttribute("aria-checked", "true");
       await page.getByRole("radio", { name: "Freie Zeiten" }).click();
       await page.reload();
       await expect(page.getByRole("radio", { name: "Freie Zeiten" })).toHaveAttribute("aria-checked", "true");
@@ -136,6 +168,37 @@ test.describe("Layout", () => {
         expect(ueberbreite, `${pfad} ist ${ueberbreite}px zu breit`).toBeLessThanOrEqual(0);
       });
     }
+
+    test("nach dem Buchen steht die Bestätigung unten im Bild, die Zeile ist markiert (U16)", async ({ page }) => {
+      // Fester Termin: Tag +3, Platz 7, 14:00 - im Fenster, das der Seed frei
+      // hält, und von keinem anderen Test belegt (siehe ablaeufe.spec.ts).
+      await anmelden(page);
+      await page.goto(`/plan?tag=${tagIn(3)}`);
+      await expect(page.getByRole("radio", { name: "Freie Zeiten" })).toHaveAttribute("aria-checked", "true");
+
+      const zeile = page.locator(".fz-zeile").filter({ has: page.getByRole("button", { name: /^14:00 Uhr,/ }) });
+      await zeile.locator(".fz-knopf").click();
+      await zeile.getByRole("button", { name: "Platz 7 um 14:00 Uhr buchen" }).click();
+      const fenster = page.locator("dialog.fenster");
+      await expect(fenster).toBeVisible();
+      await mitspielerWaehlen(fenster, MITSPIELER.max);
+      await fenster.getByRole("button", { name: /buchen/i }).click();
+
+      // Die Meldung steht unten, wo der Daumen war - vorher oben ausser Sicht.
+      const toast = page.locator(".toast-ort .hinweis.erfolg");
+      await expect(toast).toContainText("gebucht", { timeout: 15_000 });
+      await expect(toast).toBeInViewport();
+      expect((await toast.boundingBox())!.y).toBeGreaterThan(844 / 2);
+      await expect(zeile).toHaveClass(/markiert/);
+
+      // Aufräumen über die Übersicht
+      await page.getByRole("radio", { name: "Übersicht" }).click();
+      await page.locator('.tr-zeile[aria-label="Platz 7"] button.tr-block.eigen').click();
+      await fenster.getByRole("button", { name: "Buchung stornieren" }).click();
+      await fenster.getByRole("button", { name: "Wirklich stornieren" }).click();
+      await expect(toast).toContainText("storniert", { timeout: 15_000 });
+      await expect(page.locator('.tr-zeile[aria-label="Platz 7"] .tr-block.eigen')).toHaveCount(0);
+    });
 
     test("die schwebende Leiste eines Admins sprengt die Breite nicht", async ({ page }) => {
       // Ein Admin hat die vier Haupteinträge und dazu den Tab „Verwaltung“
@@ -200,6 +263,7 @@ test.describe("Layout", () => {
       // Eine freie Flaeche im Raster waehlt Platz und Beginn, die Leiste
       // unten oeffnet das Blatt. Morgen, damit noch etwas frei ist.
       await page.goto(`/plan?tag=${morgen()}`);
+      await page.getByRole("radio", { name: "Übersicht" }).click();
       const slot = page.locator(".plan-listen button.tr-frei").first();
       await expect(slot).toBeVisible();
       await slot.click();

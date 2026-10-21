@@ -179,7 +179,9 @@ a.avatar:hover { text-decoration: none; }
   background: var(--blue); color: #fff;
   box-shadow: 0 8px 18px color-mix(in srgb, var(--blue) 34%, transparent);
 }
-.knopf:hover { background: var(--blue-ink); }
+/* Abdunkeln statt blue-ink: das ist im Dunkeln ein helles Blau, auf dem die
+   weisse Schrift verschwand. */
+.knopf:hover { background: color-mix(in srgb, var(--blue) 82%, #000); }
 .knopf:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
 .knopf.leise {
   background: transparent; color: var(--ink);
@@ -257,11 +259,44 @@ input:focus, select:focus, textarea:focus {
   background: var(--chip); color: var(--ink-2);
 }
 .hinweis.fehler {
-  background: color-mix(in srgb, var(--red) 12%, transparent); color: var(--red);
+  background: color-mix(in srgb, var(--red) 12%, transparent); color: var(--red-ink);
 }
 .hinweis.erfolg {
   background: color-mix(in srgb, var(--green) 12%, transparent); color: var(--green-ink);
 }
+
+/* Rueckmeldung nach einer Aktion (components/Toast.tsx, U16): unten ueber der
+   schwebenden Leiste, wo der Daumen gerade war - nicht oben ausser Sicht.
+   Steht eine Leiste zum Buchen oder Eintragen da, liegt der Toast darueber. */
+.toast-ort {
+  position: fixed; z-index: 30; left: 16px; right: 16px;
+  bottom: calc(26px + 64px + 14px + env(safe-area-inset-bottom));
+  display: flex; justify-content: center; pointer-events: none;
+}
+body:has(.eintragen-leiste, .auswahl-leiste) .toast-ort {
+  bottom: calc(26px + 64px + 14px + 68px + 10px + env(safe-area-inset-bottom));
+}
+.hinweis.toast {
+  pointer-events: auto; width: 100%; max-width: 440px; margin: 0;
+  display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 16px;
+  font-weight: 600; box-shadow: var(--shadow-float); border: 1px solid var(--line);
+  animation: toast-rein .2s ease-out;
+}
+/* Deckend statt durchscheinend, der Toast liegt ueber dem Inhalt */
+.hinweis.toast.erfolg { background: color-mix(in srgb, var(--green) 12%, var(--surf)); }
+.hinweis.toast.fehler { background: color-mix(in srgb, var(--red) 12%, var(--surf)); }
+.hinweis.toast > span { flex: 1; min-width: 0; }
+.hinweis.toast button {
+  flex: 0 0 auto; width: 44px; height: 44px; border: 0; border-radius: 12px; cursor: pointer;
+  display: grid; place-items: center; background: transparent; color: inherit;
+}
+.hinweis.toast button svg { width: 18px; height: 18px; }
+.hinweis.toast button:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+@keyframes toast-rein { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Was die letzte Aktion betroffen hat, ist ein paar Sekunden hervorgehoben (U16) */
+.markiert { outline: 3px solid var(--gold-line); outline-offset: 1px; }
+.fz-zeile.markiert, .zuletzt li.markiert { outline: 0; background: var(--gold-soft); }
 
 /* Ein Ladefehler (components/Fehlerzustand.tsx): nicht wie "nichts da",
    sondern mit Grund und "Erneut versuchen". */
@@ -607,7 +642,7 @@ ul.marken:not(:has(.chip)) { margin-bottom: 9px; gap: 6px; }
    gesamten Formular – bei zwanzig Feldern ist das keine Hilfe. */
 .feldfehler {
   display: block; margin-top: 5px; font-size: 12.5px;
-  font-weight: 600; color: var(--red);
+  font-weight: 600; color: var(--red-ink);
 }
 input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] {
   border-color: var(--red);
@@ -637,7 +672,7 @@ textarea[aria-invalid="true"]:focus {
 }
 .marke-klein.rot {
   background: color-mix(in srgb, var(--red) 14%, transparent);
-  color: color-mix(in srgb, var(--red) 78%, var(--ink));
+  color: var(--red-ink);
 }
 
 /* Breiteres Fenster für Formulare. Das Standardfenster ist auf eine Spalte
@@ -673,9 +708,9 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 .home-kopf .pagetitle { margin-top: 4px; }
 .home section + section, .home .schnellaktionen + section { margin-top: 0; }
 .home .sectionlabel { align-items: baseline; }
-.home .sectionlabel a { font-size: 14px; font-weight: 600; color: var(--blue); }
+.home .sectionlabel a { font-size: 14px; font-weight: 600; color: var(--blue-ink); }
 .leer-klein { color: var(--muted); font-size: var(--font-size-klein); margin: 0; }
-.fehlertext { color: var(--red); }
+.fehlertext { color: var(--red-ink); }
 
 /* Waagerecht wischbar bis an den Rand */
 .naechstes, .frei-reihe {
@@ -917,14 +952,15 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 /* --- Übersicht und Freie Zeiten (Telefon, docs/design/clubhaus/plaetze) ---- */
 .segtoggle.telefon-ansicht { margin: 0; }
 .segtoggle.telefon-ansicht button {
-  min-height: 40px; padding: 0 10px; font-family: var(--font-text); font-size: 15px; font-weight: 600;
+  min-height: 44px; padding: 0 10px; font-family: var(--font-text); font-size: 15px; font-weight: 600;
 }
 .segtoggle.telefon-ansicht button[aria-checked="true"] {
   background: var(--seg-aktiv); color: var(--ink); font-weight: 700; box-shadow: var(--shadow-sm);
 }
 .segtoggle.telefon-ansicht button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
 
-/* Raster: feste Platzspalte, Stunden waagerecht wischbar, 68 px je Stunde */
+/* Raster: feste Platzspalte, Stunden waagerecht wischbar, 88 px je Stunde -
+   eine halbe Stunde ist so 44 px breit, gross genug fuer einen Finger (U18) */
 .tr {
   display: flex; background: var(--surf); border: 1px solid var(--line);
   border-radius: 22px; overflow: hidden;
@@ -944,7 +980,7 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 .tr-kopf span { position: absolute; top: 10px; font-size: 12px; font-weight: 700; color: var(--ink-2); }
 .tr-koerper {
   position: relative;
-  background: repeating-linear-gradient(to right, color-mix(in srgb, var(--ink) 7%, transparent) 0 1px, transparent 1px 68px);
+  background: repeating-linear-gradient(to right, color-mix(in srgb, var(--ink) 7%, transparent) 0 1px, transparent 1px 88px);
 }
 .tr-zeile {
   position: absolute; left: 0; right: 0; height: 52px;
@@ -955,7 +991,8 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 }
 .tr-frei:focus-visible { outline: 2px solid var(--blue); outline-offset: -3px; border-radius: 10px; }
 .tr-block {
-  position: absolute; top: 5px; bottom: 5px; z-index: 1; overflow: hidden;
+  /* Unten 3 statt 4: die Linie der Zeile nimmt 1 px, so bleiben 44 px (U18) */
+  position: absolute; top: 4px; bottom: 3px; z-index: 1; overflow: hidden;
   display: flex; flex-direction: column; justify-content: center;
   padding: 4px 8px; border: 0; border-radius: 10px; text-align: left;
   font: inherit; font-size: 12px; line-height: 1.25; white-space: nowrap;
@@ -1041,7 +1078,8 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 .fz-plaetze { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .fz-plaetze button {
   height: 48px; border: 0; border-radius: 14px; cursor: pointer;
-  background: var(--green); color: var(--bg); font: inherit; font-size: 15px; font-weight: 800;
+  /* green-ink statt green: bg auf green hielt hell nur 3,1:1 (U15) */
+  background: var(--green-ink); color: var(--bg); font: inherit; font-size: 15px; font-weight: 800;
 }
 .fz-plaetze button:focus-visible, .fz-sucht:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .fz-sucht {
@@ -1154,7 +1192,7 @@ button.beleg:hover, button.beleg:focus-visible {
   position: absolute; left: 5px; right: 5px; top: 2px;
   display: none; align-items: flex-start; padding: 6px 9px;
   border: 1.5px dashed var(--blue); border-radius: 11px;
-  background: var(--blue-soft); color: var(--blue); font-size: 12.5px; font-weight: 700;
+  background: var(--blue-soft); color: var(--blue-ink); font-size: 12.5px; font-weight: 700;
   pointer-events: none;
 }
 .frei-slot:hover, .frei-slot:focus-visible { z-index: 4; }
@@ -1279,7 +1317,7 @@ li.chip { padding-right: 4px; }
 .blatt-fuss .hinweis { margin: 0; }
 .knopf.gross { min-height: 58px; border-radius: 18px; font-family: var(--font-text); font-size: 17px; font-weight: 800; }
 .knopf.gefahr-leise {
-  min-height: 52px; background: transparent; color: var(--red); box-shadow: none;
+  min-height: 52px; background: transparent; color: var(--red-ink); box-shadow: none;
   border: 1.5px solid color-mix(in srgb, var(--red) 40%, transparent);
 }
 .knopf.gefahr-leise:hover { background: color-mix(in srgb, var(--red) 8%, transparent); }
@@ -1405,7 +1443,7 @@ li.chip { padding-right: 4px; }
 .gruppe > .gruppen-zeile + .gruppen-zeile { border-top: 1px solid var(--line); }
 .gruppen-zeile:hover { text-decoration: none; background: color-mix(in srgb, var(--ink) 4%, transparent); }
 .gruppen-zeile:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
-.gruppen-zeile.rot { color: var(--red); font-weight: 700; }
+.gruppen-zeile.rot { color: var(--red-ink); font-weight: 700; }
 .gruppen-zeile.eintrag { min-height: 56px; }
 .gruppen-zeile .titel { flex: 1; }
 .gruppen-zeile .pfeil { color: var(--muted); font-size: 20px; line-height: 1; }
@@ -1465,7 +1503,7 @@ li.chip { padding-right: 4px; }
 .zuletzt li.zurueck { opacity: .55; }
 .zuletzt li.zurueck b, .zuletzt li.zurueck .betrag { text-decoration: line-through; }
 .leise-rot {
-  border: 0; background: transparent; color: var(--red); cursor: pointer;
+  border: 0; background: transparent; color: var(--red-ink); cursor: pointer;
   font: inherit; font-size: 14px; font-weight: 700; min-height: 44px; padding: 0 4px;
 }
 .leise-rot:disabled { opacity: .5; }
@@ -1519,7 +1557,7 @@ li.chip { padding-right: 4px; }
   font-size: 11.5px; font-weight: 700; background: var(--surf-2); color: var(--ink-2);
 }
 .statusmarke.gelb { background: var(--gold-soft); color: var(--gold-ink); }
-.statusmarke.rot { background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red); }
+.statusmarke.rot { background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red-ink); }
 details.frueher { margin: 0 0 12px; }
 details.frueher summary, .arbeitsdienst-karte summary {
   cursor: pointer; font-size: 14px; font-weight: 600; color: var(--blue-ink); padding: 6px 0; min-height: 32px;
@@ -1557,6 +1595,12 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   .eintragen-leiste {
     position: sticky; left: auto; right: auto; bottom: 24px; margin-top: 20px;
   }
+}
+/* Ab Tablet gibt es keine schwebende Leiste: unten im Inhalt, rechts der Seitenleiste */
+@media (min-width: 768px) {
+  .toast-ort { left: calc(264px + 24px); right: 24px; bottom: 24px; }
+  body:has(.eintragen-leiste) .toast-ort { bottom: calc(24px + 68px + 12px); }
+  body:has(.auswahl-leiste):not(:has(.eintragen-leiste)) .toast-ort { bottom: 24px; }
 }
 
 /* ---------------------------------------------------------------------------
@@ -1731,7 +1775,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   border-color: color-mix(in srgb, var(--red) 45%, var(--line));
   background: color-mix(in srgb, var(--red) 4%, var(--surf));
 }
-.karte.gefahrenzone > h2 { color: var(--red); }
+.karte.gefahrenzone > h2 { color: var(--red-ink); }
 .abschnittskopf { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
 .abschnittskopf h2 { margin: 0; }
 
@@ -1816,7 +1860,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .zusammenfassung > div:last-child { border-bottom: 0; }
 .zusammenfassung dt { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 .zusammenfassung dd { margin: 0; font-size: 22px; font-weight: 700; }
-.zusammenfassung dd.rot { color: var(--red); }
+.zusammenfassung dd.rot { color: var(--red-ink); }
 @media (max-width: 767px) {
   .kennzahl { padding: 16px; }
   .kennzahl .wert { font-size: 26px; }
@@ -1990,7 +2034,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .listenzeile .kontext { font-size: 13px; color: var(--muted); line-height: 1.35; }
 .hinweis-rechts { flex: 0 0 auto; font-size: 13px; font-weight: 700; text-align: right; }
 .hinweis-rechts.gold { color: var(--gold-ink); }
-.hinweis-rechts.rot { color: color-mix(in srgb, var(--red) 78%, var(--ink)); }
+.hinweis-rechts.rot { color: var(--red-ink); }
 .hinweis-rechts.gruen { color: var(--green-ink); }
 .hinweis-rechts.leise { color: var(--muted); font-weight: 600; }
 .listenzeile > .pfeil { width: 18px; height: 18px; flex: 0 0 auto; color: var(--muted); }
@@ -2006,7 +2050,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .serien-kachel { font-family: var(--font-display); font-weight: 800; font-size: 17px; color: var(--ink); }
 .listenzeile .kontext .zeit { color: var(--ink-2); font-size: 13.5px; }
 /* Rote Textzeile am Ende eines Details (Regel 4) */
-.listenzeile.gefahr .titel { color: color-mix(in srgb, var(--red) 78%, var(--ink)); }
+.listenzeile.gefahr .titel { color: var(--red-ink); }
 
 .liste-abschnitt, .mitgliederliste { display: grid; gap: 12px; min-width: 0; }
 :is(.liste-abschnitt, .mitgliederliste) > .gruppenkopf { margin-bottom: 0; }
@@ -2249,7 +2293,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   margin: 0; padding: 14px 16px; border-radius: var(--radius-feld);
   background: var(--surf-2); border: 1px solid var(--line); color: var(--ink-2);
 }
-.fehlertext { color: var(--red); }
+.fehlertext { color: var(--red-ink); }
 
 /* ---------------------------------------------------------------------------
    Kasse: Einzug vorbereiten, Stand eines Einzugs, Start (Entwurf „Kasse neu“)
@@ -2306,7 +2350,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .einzug-termine dd { margin: 0; font-weight: 700; }
 .statusmarke.blau { background: var(--blue-soft); color: var(--blue-ink); }
 .statusmarke.grau { background: var(--surf-2); color: var(--ink-2); }
-.kennzahl .wert.rot { color: var(--red); }
+.kennzahl .wert.rot { color: var(--red-ink); }
 
 .geld-erklaerung ol {
   list-style: none; margin: 0; padding: 0;

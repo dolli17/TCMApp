@@ -11,12 +11,15 @@ import type { Belegung, Platz } from "@/components/Belegungsplan";
  * Der Belegungsplan am Telefon (docs/design/clubhaus/plaetze, HANDOFF-PLAETZE)
  *
  * Dieselben zwei Ansichten wie in der App: die Übersicht als Raster mit
- * wischbaren Stunden und "Freie Zeiten" als Liste der Startzeiten. Die Wahl
- * bleibt in localStorage. Was frei ist und wie Belegungen heissen, rechnet
+ * wischbaren Stunden und "Freie Zeiten" als Liste der Startzeiten. Ohne
+ * gemerkte Wahl beginnt es mit "Freie Zeiten": dort sind alle Ziele gross,
+ * im Raster muss man eine halbe Stunde treffen (U18). Die Wahl bleibt in
+ * localStorage. Was frei ist und wie Belegungen heissen, rechnet
  * @tcm/core - dieselben Funktionen wie in der App.
  */
 
-const STUNDE_PX = 68;
+// 44 px je halbe Stunde - kleiner trifft man sie mit dem Finger nicht (U18).
+const STUNDE_PX = 88;
 const ZEILE = 52;
 const px = (minuten: number) => (minuten / 60) * STUNDE_PX;
 const alsUhrzeit = minutesToTime;
@@ -42,10 +45,12 @@ export function PlanTelefon(props: {
   /** Buchungsvorlauf in Tagen (lead_days), siehe canStartAt. */
   vorlaufTage: number;
   verwaltbar: (b: Belegung) => boolean;
+  /** Gehoert die Belegung zur letzten Aktion? Dann ist sie kurz hervorgehoben (U16). */
+  markiert: (b: Belegung) => boolean;
   onBuchen: (courtId: string, minute: number) => void;
   onVerwalten: (b: Belegung) => void;
 }) {
-  const [ansicht, setAnsicht] = useState<Ansicht>("uebersicht");
+  const [ansicht, setAnsicht] = useState<Ansicht>("freie-zeiten");
   const [auswahl, setAuswahl] = useState<Auswahl | null>(null);
 
   // Erst nach dem ersten Zeichnen: der Server kennt localStorage nicht.
@@ -54,7 +59,7 @@ export function PlanTelefon(props: {
       const a = localStorage.getItem(SPEICHER);
       if (a === "uebersicht" || a === "freie-zeiten") setAnsicht(a);
     } catch {
-      // Ohne Speicher bleibt die Übersicht.
+      // Ohne Speicher bleiben die freien Zeiten.
     }
   }, []);
 
@@ -133,7 +138,7 @@ export function PlanTelefon(props: {
 
 function Raster({
   datum, jetzt, istHeute, plaetze, belegungen, oeffnung, schluss, raster, dauer, vorlaufTage, auswahl,
-  verwaltbar, onAuswahl, onVerwalten,
+  verwaltbar, markiert, onAuswahl, onVerwalten,
 }: Parameters<typeof PlanTelefon>[0] & { auswahl: Auswahl | null; onAuswahl: (a: Auswahl) => void }) {
   const breite = px(schluss - oeffnung);
   const jetztMin = istHeute ? localMinutes(jetzt) : null;
@@ -214,6 +219,7 @@ function Raster({
                     const bis = Math.min(schluss, minutesOf(b.ends_at));
                     if (bis <= von) return null;
                     const l = occupancyLabel(b);
+                    const klasse = `tr-block ${l.art}${markiert(b) ? " markiert" : ""}`;
                     const stil = { left: px(von - oeffnung) + 3, width: Math.max(px(bis - von) - 6, 12) };
                     const inhalt = (
                       <>
@@ -225,7 +231,7 @@ function Raster({
                       <button
                         key={b.booking_id}
                         type="button"
-                        className={`tr-block ${l.art}`}
+                        className={klasse}
                         style={stil}
                         onClick={() => onVerwalten(b)}
                         aria-label={`${platz.name}, ${l.spoken}`}
@@ -235,7 +241,7 @@ function Raster({
                     ) : (
                       <div
                         key={b.booking_id}
-                        className={`tr-block ${l.art}`}
+                        className={klasse}
                         style={stil}
                         role="img"
                         aria-label={`${platz.name}, ${l.spoken}`}
@@ -271,8 +277,8 @@ function Raster({
 /* --- Freie Zeiten ---------------------------------------------------------- */
 
 function FreieZeiten({
-  datum, jetzt, plaetze, belegungen, oeffnung, schluss, raster, dauer, vorlaufTage, verwaltbar, onBuchen,
-  onVerwalten,
+  datum, jetzt, plaetze, belegungen, oeffnung, schluss, raster, dauer, vorlaufTage, verwaltbar, markiert,
+  onBuchen, onVerwalten,
 }: Parameters<typeof PlanTelefon>[0]) {
   const [offen, setOffen] = useState<number | null>(null);
   const zeilen = freeSlotsOfDay({
@@ -315,8 +321,13 @@ function FreieZeiten({
           ...eigen.map((c) => `du spielst auf ${platzVon(c.courtId).name}`),
         ].join(", ");
 
+        // Die Zeile, in der die gerade gebuchte oder geaenderte Belegung beginnt
+        const neu = z.courts.some(
+          (c) => c.status.belegung && markiert(c.status.belegung) && minutesOf(c.status.belegung.starts_at) === z.minute,
+        );
+
         return (
-          <div key={z.minute} className={`fz-zeile${istOffen ? " offen" : ""}`}>
+          <div key={z.minute} className={`fz-zeile${istOffen ? " offen" : ""}${neu ? " markiert" : ""}`}>
             <button
               type="button"
               className="fz-knopf"

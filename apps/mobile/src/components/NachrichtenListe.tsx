@@ -110,7 +110,7 @@ export function NachrichtenListe({ liste, alleGesehen }: { liste: Nachricht[]; a
                       {n.body}
                     </Text>
                     {ziel && (
-                      <Text style={{ fontSize: 13.5, marginTop: 4, color: farben.blue, fontFamily: "Barlow_600SemiBold" }}>
+                      <Text style={{ fontSize: 13.5, marginTop: 4, color: farben.blueInk, fontFamily: "Barlow_600SemiBold" }}>
                         Zur Veranstaltung ›
                       </Text>
                     )}

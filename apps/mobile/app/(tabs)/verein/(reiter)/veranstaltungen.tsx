@@ -70,7 +70,7 @@ export default function Veranstaltungen() {
           hitSlop={12}
           style={{ alignSelf: "center", paddingVertical: 10 }}
         >
-          <Text style={{ color: farben.blue, fontSize: 14, fontFamily: "Barlow_600SemiBold" }}>
+          <Text style={{ color: farben.blueInk, fontSize: 14, fontFamily: "Barlow_600SemiBold" }}>
             {vergangen ? "Kommende Veranstaltungen" : "Vergangene Veranstaltungen"}
           </Text>
         </Pressable>

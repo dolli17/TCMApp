@@ -46,7 +46,7 @@ export function useHinweisFarbe() {
   return (ton: HinweisTon) =>
     ({
       gold: farben.goldInk,
-      rot: farben.red,
+      rot: farben.redInk,
       gruen: farben.greenInk,
       leise: farben.muted,
       blau: farben.blueInk,
@@ -125,7 +125,7 @@ export function Listenzeile({
       <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
         <Text
           numberOfLines={1}
-          style={{ fontSize: 16, fontFamily: "Barlow_700Bold", color: gefahr ? farben.red : farben.ink }}
+          style={{ fontSize: 16, fontFamily: "Barlow_700Bold", color: gefahr ? farben.redInk : farben.ink }}
         >
           {titel}
         </Text>
@@ -255,7 +255,7 @@ export function Statusmarke({ text, ton = "grau", gross }: { text: string; ton?:
     grau: { bg: farben.surf2, ink: farben.ink2 },
     gelb: { bg: farben.goldSoft, ink: farben.goldInk },
     gruen: { bg: mitDeckkraft(farben.green, 0.16), ink: farben.greenInk },
-    rot: { bg: mitDeckkraft(farben.red, theme === "hell" ? 0.14 : 0.18), ink: farben.red },
+    rot: { bg: mitDeckkraft(farben.red, theme === "hell" ? 0.14 : 0.18), ink: farben.redInk },
     blau: { bg: farben.blueSoft, ink: farben.blueInk },
   }[ton];
   return (

@@ -332,7 +332,7 @@ function Fusszeile() {
     <View style={{ flexDirection: "row", justifyContent: "center", flexWrap: "wrap", gap: 20, marginTop: abstand.l }}>
       {verweise.map((v) => (
         <Pressable key={v.text} onPress={v.onPress} accessibilityRole={v.rot ? "button" : "link"} hitSlop={8} style={{ minHeight: 44, justifyContent: "center" }}>
-          <Text style={{ fontSize: 14, fontFamily: "Barlow_600SemiBold", color: v.rot ? farben.red : farben.ink2 }}>{v.text}</Text>
+          <Text style={{ fontSize: 14, fontFamily: "Barlow_600SemiBold", color: v.rot ? farben.redInk : farben.ink2 }}>{v.text}</Text>
         </Pressable>
       ))}
     </View>
@@ -480,7 +480,7 @@ function SchrittRechtliches({ daten, weiter, zurueck }: SchrittEigenschaften) {
                   accessibilityRole="link"
                   style={{ paddingHorizontal: 16, paddingBottom: 12, marginTop: -4 }}
                 >
-                  <Text style={{ fontSize: 14, fontFamily: "Barlow_700Bold", color: farben.blue }}>{d.title} lesen ›</Text>
+                  <Text style={{ fontSize: 14, fontFamily: "Barlow_700Bold", color: farben.blueInk }}>{d.title} lesen ›</Text>
                 </Pressable>
               )}
             </View>

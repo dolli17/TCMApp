@@ -18,8 +18,9 @@
   --gold-line: #E0B400;
   --on-gold: #0A1624;
   --green: #1E9E6A;
-  --green-ink: #167A52;
-  --red: #D7544B;
+  --green-ink: #126C48;
+  --red: #C4433A;
+  --red-ink: #A8352D;
   --brand: #1466A8;
   --bg: #F3F5F8;
   --surf: #FFFFFF;
@@ -75,7 +76,7 @@
 /* Systemeinstellung, solange niemand von Hand umgeschaltet hat */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="hell"]) {
-    --blue: #3A9BE0;
+    --blue: #2478BE;
     --blue-ink: #8CC6F0;
     --blue-soft: rgba(58,155,224,.18);
     --gold: #FFD21F;
@@ -85,7 +86,8 @@
     --on-gold: #0A1624;
     --green: #3DD68C;
     --green-ink: #3DD68C;
-    --red: #FF6B61;
+    --red: #CF3F35;
+    --red-ink: #FF6B61;
     --brand: #1466A8;
     --bg: #07111D;
     --surf: #0E1A29;
@@ -112,7 +114,7 @@
 
 /* Ausdrueckliche Wahl des Mitglieds - schlaegt die Systemeinstellung */
 :root[data-theme="dunkel"] {
-  --blue: #3A9BE0;
+  --blue: #2478BE;
   --blue-ink: #8CC6F0;
   --blue-soft: rgba(58,155,224,.18);
   --gold: #FFD21F;
@@ -122,7 +124,8 @@
   --on-gold: #0A1624;
   --green: #3DD68C;
   --green-ink: #3DD68C;
-  --red: #FF6B61;
+  --red: #CF3F35;
+  --red-ink: #FF6B61;
   --brand: #1466A8;
   --bg: #07111D;
   --surf: #0E1A29;
@@ -156,8 +159,9 @@
   --gold-line: #E0B400;
   --on-gold: #0A1624;
   --green: #1E9E6A;
-  --green-ink: #167A52;
-  --red: #D7544B;
+  --green-ink: #126C48;
+  --red: #C4433A;
+  --red-ink: #A8352D;
   --brand: #1466A8;
   --bg: #F3F5F8;
   --surf: #FFFFFF;
@@ -184,7 +188,7 @@
 /* Immer dunkel, egal welches Theme gewaehlt ist - die Anmeldeseiten. Die
    Variablen gelten nur innerhalb des Elements mit dieser Klasse. */
 .immer-dunkel {
-  --blue: #3A9BE0;
+  --blue: #2478BE;
   --blue-ink: #8CC6F0;
   --blue-soft: rgba(58,155,224,.18);
   --gold: #FFD21F;
@@ -194,7 +198,8 @@
   --on-gold: #0A1624;
   --green: #3DD68C;
   --green-ink: #3DD68C;
-  --red: #FF6B61;
+  --red: #CF3F35;
+  --red-ink: #FF6B61;
   --brand: #1466A8;
   --bg: #07111D;
   --surf: #0E1A29;
@@ -230,8 +235,9 @@
   --gold-line: #E0B400;
   --on-gold: #0A1624;
   --green: #1E9E6A;
-  --green-ink: #167A52;
-  --red: #D7544B;
+  --green-ink: #126C48;
+  --red: #C4433A;
+  --red-ink: #A8352D;
   --brand: #1466A8;
   --bg: #F3F5F8;
   --surf: #FFFFFF;

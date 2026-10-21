@@ -24,7 +24,9 @@ describe("stilFuer", () => {
     const s = stilFuer(theme);
     expect(s.seite.backgroundColor).toBe(f.bg);
     expect(s.karte.backgroundColor).toBe(f.surf);
-    expect(s.hinweisFehler.color).toBe(f.red);
+    // Text in redInk, die Flaeche aus red getoent (U13)
+    expect(s.hinweisFehler.color).toBe(f.redInk);
+    expect(s.hinweisErfolg.color).toBe(f.greenInk);
     expect(s.hinweisFehler.backgroundColor).toMatch(/^rgba\(\d+, \d+, \d+, 0\.1[26]\)$/);
     expect(s.hinweisErfolg.backgroundColor).toMatch(/^rgba\(\d+, \d+, \d+, 0\.1[26]\)$/);
   });

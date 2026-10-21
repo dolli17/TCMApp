@@ -154,7 +154,7 @@ function Kopfzeile({ titel, link }: { titel: string; link?: { text: string; ziel
           accessibilityRole="link"
           hitSlop={12}
         >
-          <Text style={{ color: farben.blue, fontSize: 14, fontFamily: "Barlow_600SemiBold" }}>
+          <Text style={{ color: farben.blueInk, fontSize: 14, fontFamily: "Barlow_600SemiBold" }}>
             {link.text}
           </Text>
         </Pressable>
@@ -512,7 +512,7 @@ function DeinMonat({ getraenke, dienst }: { getraenke: Abschnitt<Getraenke>; die
         >
           <Text style={titel}>Getränke</Text>
           {getraenke.fehler ? (
-            <Text style={[stil.leise, { color: farben.red }]}>{getraenke.fehler}</Text>
+            <Text style={[stil.leise, { color: farben.redInk }]}>{getraenke.fehler}</Text>
           ) : (
             <>
               <Text style={wert}>{formatCents(sumOpenDrinks(getraenke.wert ?? []))}</Text>
@@ -527,7 +527,7 @@ function DeinMonat({ getraenke, dienst }: { getraenke: Abschnitt<Getraenke>; die
         >
           <Text style={titel}>Arbeitsdienst</Text>
           {dienst.fehler ? (
-            <Text style={[stil.leise, { color: farben.red }]}>{dienst.fehler}</Text>
+            <Text style={[stil.leise, { color: farben.redInk }]}>{dienst.fehler}</Text>
           ) : dienst.wert && soll > 0 ? (
             <>
               <Text style={wert}>{ist} / {soll} h</Text>
@@ -594,7 +594,7 @@ function Neuigkeiten({ neues }: { neues: Abschnitt<Neues> }) {
                     {n.body}
                   </Text>
                   {ziel && (
-                    <Text style={{ fontSize: 13.5, marginTop: 4, color: farben.blue, fontFamily: "Barlow_600SemiBold" }}>
+                    <Text style={{ fontSize: 13.5, marginTop: 4, color: farben.blueInk, fontFamily: "Barlow_600SemiBold" }}>
                       Zur Veranstaltung ›
                     </Text>
                   )}

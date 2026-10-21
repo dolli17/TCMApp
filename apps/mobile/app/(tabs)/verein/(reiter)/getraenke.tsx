@@ -28,6 +28,7 @@ import {
 } from "@tcm/core";
 import { abstand, radius } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
+import { Toast, type Meldung } from "@/components/Toast";
 import { Rundknopf } from "@/components/Rundknopf";
 import {
   bucheGetraenk, ladeEigeneGetraenke, ladeGetraenkekarte, ladeStornoFenster, storniereGetraenk,
@@ -44,11 +45,19 @@ const ZEITPUNKT = new Intl.DateTimeFormat("de-DE", {
 });
 
 const QUELLE: Record<string, string> = { kiosk: "Theke", bar_duty: "Thekendienst", app: "App" };
+const MARKIERT_MS = 5000;
 
 export default function Getraenke() {
   const { stil, farben } = useTheme();
   const rand = useSafeAreaInsets();
-  const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
+  const [meldung, setMeldung] = useState<Meldung | null>(null);
+  /**
+   * Was unter "Zuletzt" kurz hervorgehoben ist (U16): alles, was es vor dem
+   * Eintragen nicht gab, oder die eine zurueckgenommene Zeile.
+   */
+  const [markiert, setMarkiert] = useState<{ vorher: Set<string> } | { id: string } | null>(null);
+  /** Hoehe der Eintragen-Leiste, fuer den Toast darueber */
+  const [leisteHoehe, setLeisteHoehe] = useState(0);
   const korb = useKorb();
   const [laeuft, setLaeuft] = useState(false);
 
@@ -118,7 +127,17 @@ export default function Getraenke() {
     setzeKorb((k) => changeBasket(k, id, um));
   }
 
+  useEffect(() => {
+    if (!markiert) return;
+    const uhr = setTimeout(() => setMarkiert(null), MARKIERT_MS);
+    return () => clearTimeout(uhr);
+  }, [markiert]);
+
+  const istMarkiert = (id: string) =>
+    markiert !== null && ("id" in markiert ? markiert.id === id : !markiert.vorher.has(id));
+
   async function eintragen() {
+    const vorher = new Set(buchungen.map((b) => b.id));
     setLaeuft(true);
     const ergebnisse: (DrinkBatchResult & { id: string })[] = [];
     // Nacheinander, nicht parallel: die Reihenfolge der Meldung soll der
@@ -131,6 +150,7 @@ export default function Getraenke() {
     }
     setLaeuft(false);
     setMeldung(drinkBatchReport(ergebnisse));
+    if (ergebnisse.some((e) => e.ok)) setMarkiert({ vorher });
     // Was geklappt hat, verlaesst den Korb; was nicht, bleibt zum erneuten Versuch.
     setzeKorb(basketAfterBatch(ergebnisse));
     await zustand.erneutHolen();
@@ -141,7 +161,10 @@ export default function Getraenke() {
     const r = await storniereGetraenk(id);
     setLaeuft(false);
     setMeldung({ ok: r.ok, text: r.meldung });
-    if (r.ok) await zustand.erneutHolen();
+    if (r.ok) {
+      setMarkiert({ id });
+      await zustand.erneutHolen();
+    }
   }
 
   return (
@@ -170,12 +193,6 @@ export default function Getraenke() {
             {aktive.length} {aktive.length === 1 ? "Entnahme" : "Entnahmen"} · wird mit der Monatsabrechnung eingezogen
           </Text>
         </View>
-
-        {meldung && (
-          <Text style={meldung.ok ? stil.hinweisErfolg : stil.hinweisFehler} accessibilityLiveRegion="polite">
-            {meldung.text}
-          </Text>
-        )}
 
         {/* --- Die Karte --------------------------------------------------- */}
         <View style={[stil.zeile, { alignItems: "baseline", marginTop: abstand.abschnitt - abstand.m }]}>
@@ -262,6 +279,7 @@ export default function Getraenke() {
                   style={{
                     flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, paddingHorizontal: 16,
                     borderTopWidth: i === 0 ? 0 : 1, borderTopColor: farben.line, opacity: zurueck ? 0.55 : 1,
+                    backgroundColor: istMarkiert(b.id) ? farben.goldSoft : "transparent",
                   }}
                 >
                   <View style={{ flex: 1, minWidth: 0 }}>
@@ -282,7 +300,7 @@ export default function Getraenke() {
                       hitSlop={6}
                       style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 4, opacity: laeuft ? 0.5 : 1 }}
                     >
-                      <Text style={{ color: farben.red, fontSize: 14, fontFamily: "Barlow_700Bold" }}>Zurücknehmen</Text>
+                      <Text style={{ color: farben.redInk, fontSize: 14, fontFamily: "Barlow_700Bold" }}>Zurücknehmen</Text>
                     </Pressable>
                   )}
                   <Text style={[{ fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 17, color: farben.ink }, zeile]}>
@@ -295,22 +313,26 @@ export default function Getraenke() {
         )}
 
         {/* Platz fuer die Eintragen-Leiste, damit sie nichts verdeckt */}
-        {stueck > 0 && <View style={{ height: 84 }} />}
+        {stueck > 0 && <View style={{ height: Math.max(84, leisteHoehe + 16) }} />}
       </Bildschirm>
+
+      <Toast meldung={meldung} onSchliessen={() => setMeldung(null)} leisteHoehe={stueck > 0 ? leisteHoehe : 0} />
 
       {/* --- Eintragen-Leiste ueber der Tab-Leiste -------------------------- */}
       {stueck > 0 && (
         <View
+          onLayout={(e) => setLeisteHoehe(e.nativeEvent.layout.height)}
           style={{
             position: "absolute", left: 16, right: 16,
             bottom: LEISTE_ABSTAND_UNTEN + LEISTE_HOEHE + 14 + rand.bottom,
-            height: 68, borderRadius: 24, paddingLeft: 20, paddingRight: 8,
+            // minHeight wie im Web: mit grosser Systemschrift wird die Leiste zweizeilig
+            minHeight: 68, borderRadius: 24, paddingLeft: 20, paddingRight: 8, paddingVertical: 8, gap: 12,
             flexDirection: "row", alignItems: "center", justifyContent: "space-between",
             backgroundColor: farben.ink,
             shadowColor: "#000", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 12,
           }}
         >
-          <View accessibilityLiveRegion="polite">
+          <View accessibilityLiveRegion="polite" style={{ flex: 1, minWidth: 0 }}>
             <Text style={{ color: farben.bg, fontSize: 15, fontFamily: "Barlow_700Bold" }}>
               {stueck} {stueck === 1 ? "Getränk" : "Getränke"} · {formatCents(korbBetrag)}
             </Text>

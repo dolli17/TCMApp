@@ -19,6 +19,7 @@ import {
   type Belegung, type Blockungsart, type Buchungsart, type Fenster, type Mitglied,
 } from "@/lib/plan";
 import { Bildschirm } from "@/components/Bildschirm";
+import { Toast, type Meldung } from "@/components/Toast";
 import { BuchungsFenster } from "@/components/BuchungsFenster";
 import { FreieZeiten, FreieZeitenLegende } from "@/components/plaetze/FreieZeiten";
 import { PlatzRaster, RasterLegende, type Auswahl } from "@/components/plaetze/PlatzRaster";
@@ -58,6 +59,13 @@ function tageszeile(datum: string, heute: string): string {
 type Ansicht = "uebersicht" | "freie-zeiten";
 const ANSICHT_SPEICHER = "tcm-plaetze-ansicht";
 
+/**
+ * Wohin nach einer Aktion der Blick soll: eine bestehende Buchung oder - bei
+ * einer neuen, deren ID die Datenbank nicht zurueckgibt - Platz und Beginn.
+ */
+type Markierung = { bookingId: string } | { courtId: string; startsAt: number };
+const MARKIERT_MS = 5000;
+
 /** Fuer die Datums-Kachel: "MO" und "28" */
 function kachel(datum: string): { wochentag: string; tag: number } {
   const [j, m, t] = datum.split("-").map(Number);
@@ -73,7 +81,8 @@ type Platz = Awaited<ReturnType<typeof ladePlaetze>>[number];
  *
  * Zwei Ansichten derselben Tagesbelegung, umschaltbar ueber den kleinen
  * Raster/Liste-Schalter rechts in der Datumszeile; die Wahl bleibt in
- * AsyncStorage. Ein zweites Segment unter "Belegung | Meine & offene Spiele"
+ * AsyncStorage. Ohne gemerkte Wahl beginnt es mit Freie Zeiten: dort sind
+ * alle Ziele gross, im Raster muss man eine halbe Stunde treffen (U18). Ein zweites Segment unter "Belegung | Meine & offene Spiele"
  * war eine Leiste zu viel (U34). Die Übersicht
  * ist ein Raster - Plaetze als Zeilen, Stunden zum Wischen -, in dem eine
  * freie Flaeche Platz und Beginn auswaehlt; gebucht wird ueber die Leiste
@@ -88,7 +97,7 @@ export default function Plan() {
   const parameter = useLocalSearchParams<{ buchen?: string }>();
   const rand = useSafeAreaInsets();
   const [datum, setDatum] = useState(heuteInBerlin());
-  const [ansicht, setAnsicht] = useState<Ansicht>("uebersicht");
+  const [ansicht, setAnsicht] = useState<Ansicht>("freie-zeiten");
   const [auswahl, setAuswahl] = useState<Auswahl | null>(null);
   const [tagwahlOffen, setTagwahlOffen] = useState(false);
   const [plaetze, setPlaetze] = useState<Platz[]>([]);
@@ -109,7 +118,10 @@ export default function Plan() {
   const [buchenWartet, setBuchenWartet] = useState(false);
   const [aktualisiert, setAktualisiert] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
-  const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
+  const [meldung, setMeldung] = useState<Meldung | null>(null);
+  const [markiert, setMarkiert] = useState<Markierung | null>(null);
+  /** Hoehe der Buchen-Leiste, fuer den Toast darueber */
+  const [leisteHoehe, setLeisteHoehe] = useState(0);
 
   /**
    * still: ohne Ladekreis nachladen.
@@ -338,13 +350,15 @@ export default function Plan() {
   }
 
   /**
-   * Ergebnis einer Aenderung: klappt es, schliesst das Blatt und die Meldung
-   * steht ueber der Liste. Scheitert es, bleibt das Blatt offen und der Grund
-   * der Datenbank steht ueber dem Knopf.
+   * Ergebnis einer Aenderung: klappt es, schliesst das Blatt, die Meldung
+   * kommt unten als Toast und die betroffene Belegung ist kurz hervorgehoben
+   * (U16). Scheitert es, bleibt das Blatt offen und der Grund der Datenbank
+   * steht ueber dem Knopf.
    */
-  async function ergebnis(r: { ok: boolean; meldung: string }) {
+  async function ergebnis(r: { ok: boolean; meldung: string }, ziel?: Markierung) {
     if (r.ok) {
       setMeldung({ ok: true, text: r.meldung });
+      setMarkiert(ziel ?? null);
       setFenster(null);
       setAuswahl(null);
       setFensterFehler(null);
@@ -374,20 +388,23 @@ export default function Plan() {
     courtId: string, start: number, typ: string, mitglieder: string[], gaeste: string[], sucht: boolean,
   ) =>
     mitLauf(async () =>
-      ergebnis(await bucheplatz(courtId, zeitpunkt(fenster?.tag ?? datum, start), typ, mitglieder, gaeste, sucht)),
+      ergebnis(
+        await bucheplatz(courtId, zeitpunkt(fenster?.tag ?? datum, start), typ, mitglieder, gaeste, sucht),
+        { courtId, startsAt: zeitpunkt(fenster?.tag ?? datum, start).getTime() },
+      ),
     );
   const ausschreiben = (id: string, gesucht: boolean) =>
-    mitLauf(async () => ergebnis(await sucheMitspieler(id, gesucht)));
-  const beitreten = (id: string) => mitLauf(async () => ergebnis(await spieleMit(id)));
+    mitLauf(async () => ergebnis(await sucheMitspieler(id, gesucht), { bookingId: id }));
+  const beitreten = (id: string) => mitLauf(async () => ergebnis(await spieleMit(id), { bookingId: id }));
   const speichern = (id: string, mitglieder: string[], gaeste: string[]) =>
-    mitLauf(async () => ergebnis(await aendereMitspieler(id, mitglieder, gaeste)));
+    mitLauf(async () => ergebnis(await aendereMitspieler(id, mitglieder, gaeste), { bookingId: id }));
   const stornieren = (id: string, grund?: string) =>
     mitLauf(async () => ergebnis(await storniereBuchung(id, grund)));
   const terminAbsagen = (id: string, grund?: string) =>
     mitLauf(async () => ergebnis(await sageSerienterminAb(id, grund)));
   const umsetzen = (id: string, courtId: string, tag: string, minute: number, grund?: string) =>
     mitLauf(async () =>
-      ergebnis(await setzeUm({ bookingId: id, platzId: courtId, tag, minute, grund })),
+      ergebnis(await setzeUm({ bookingId: id, platzId: courtId, tag, minute, grund }), { bookingId: id }),
     );
 
   async function sperren(
@@ -399,7 +416,7 @@ export default function Plan() {
         platzId: courtId, von: zeitpunkt(tag, von), bis: zeitpunkt(tag, bis), typCode, grund, verdraengen,
       }),
     );
-    return kollisionOderErgebnis(r);
+    return kollisionOderErgebnis(r, { courtId, startsAt: zeitpunkt(tag, von).getTime() });
   }
 
   async function sperreAendern(
@@ -412,23 +429,38 @@ export default function Plan() {
         bookingId, platzIds, von: zeitpunkt(tag, von), bis: zeitpunkt(tag, bis), typCode, grund, verdraengen,
       }),
     );
-    return kollisionOderErgebnis(r);
+    return kollisionOderErgebnis(r, { bookingId });
   }
 
   /**
    * Liegen Buchungen im Weg, fragt das Blatt selbst nach ("1 Buchung
    * verdraengen"). Die Meldung der Datenbank dazu waere doppelt.
    */
-  async function kollisionOderErgebnis(r: { ok: boolean; meldung: string; kollisionen?: number }) {
+  async function kollisionOderErgebnis(
+    r: { ok: boolean; meldung: string; kollisionen?: number }, ziel?: Markierung,
+  ) {
     if (r.kollisionen !== undefined) {
       setFensterFehler(null);
       return r.kollisionen;
     }
-    await ergebnis(r);
+    await ergebnis(r, ziel);
     return null;
   }
 
   const sperreAufheben = (id: string) => mitLauf(async () => ergebnis(await hebeSperreAuf(id)));
+
+  useEffect(() => {
+    if (!markiert) return;
+    const uhr = setTimeout(() => setMarkiert(null), MARKIERT_MS);
+    return () => clearTimeout(uhr);
+  }, [markiert]);
+
+  /** Gehoert diese Belegung zur letzten erfolgreichen Aktion? */
+  const istMarkiert = (b: Belegung) => {
+    if (!markiert) return false;
+    if ("bookingId" in markiert) return b.booking_id === markiert.bookingId;
+    return b.court_id === markiert.courtId && Date.parse(b.starts_at) === markiert.startsAt;
+  };
 
   const gewaehlterPlatz = auswahl ? plaetze.find((p) => p.id === auswahl.courtId) : undefined;
   const tagIndex = tage.indexOf(datum);
@@ -518,12 +550,6 @@ export default function Plan() {
           </Text>
         )}
 
-        {meldung && (
-          <Text style={meldung.ok ? stil.hinweisErfolg : stil.hinweisFehler} accessibilityLiveRegion="polite">
-            {meldung.text}
-          </Text>
-        )}
-
         {ansicht === "uebersicht" ? (
           <>
             <PlatzRaster
@@ -538,6 +564,7 @@ export default function Plan() {
               vorlaufTage={vorlauf}
               auswahl={auswahl}
               oeffnebar={oeffnebar}
+              markiert={istMarkiert}
               onAuswahl={setAuswahl}
               onOeffnen={oeffneBelegung}
             />
@@ -558,6 +585,7 @@ export default function Plan() {
               vorlaufTage={vorlauf}
               onBuchen={buchenAuf}
               oeffnebar={oeffnebar}
+              markiert={istMarkiert}
               onOeffnen={oeffneBelegung}
             />
             <FreieZeitenLegende />
@@ -567,6 +595,7 @@ export default function Plan() {
 
       {ansicht === "uebersicht" && auswahl && gewaehlterPlatz && !fenster && (
         <View
+          onLayout={(e) => setLeisteHoehe(e.nativeEvent.layout.height)}
           style={{
             position: "absolute", left: LEISTE_RAND, right: LEISTE_RAND,
             bottom: LEISTE_ABSTAND_UNTEN + rand.bottom + LEISTE_HOEHE + 14,
@@ -598,6 +627,12 @@ export default function Plan() {
           </Pressable>
         </View>
       )}
+
+      <Toast
+        meldung={meldung}
+        onSchliessen={() => setMeldung(null)}
+        leisteHoehe={ansicht === "uebersicht" && auswahl && gewaehlterPlatz && !fenster ? leisteHoehe : 0}
+      />
 
       {fenster && (
         <BuchungsFenster
@@ -657,7 +692,7 @@ function Rundknopf({
       accessibilityLabel={beschriftung}
       accessibilityState={{ disabled: aus }}
       style={{
-        width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center",
+        width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center",
         backgroundColor: farben.surf2, opacity: aus ? 0.4 : 1,
       }}
     >
@@ -689,9 +724,10 @@ function AnsichtSchalter({ wert, onWahl }: { wert: Ansicht; onWahl: (a: Ansicht)
         accessibilityRole="radio"
         accessibilityLabel={label}
         accessibilityState={{ selected: aktiv }}
+        // 40 x 36 sichtbar, mit hitSlop 48 x 44 zum Tippen (U18)
         hitSlop={4}
         style={[
-          { width: 36, height: 32, borderRadius: radius.knopf - 6, alignItems: "center", justifyContent: "center" },
+          { width: 40, height: 36, borderRadius: radius.knopf - 6, alignItems: "center", justifyContent: "center" },
           aktiv && { backgroundColor: farben.segAktiv },
           aktiv && theme === "hell" && schattenRn.hell.klein,
         ]}

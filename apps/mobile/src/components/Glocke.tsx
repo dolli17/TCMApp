@@ -110,7 +110,7 @@ export function Glocke() {
                 </View>
               )}
               {fehler ? (
-                <Text style={{ color: farben.red, fontFamily: "Barlow_600SemiBold" }}>{fehler}</Text>
+                <Text style={{ color: farben.redInk, fontFamily: "Barlow_600SemiBold" }}>{fehler}</Text>
               ) : liste === null ? (
                 <ActivityIndicator color={farben.muted} />
               ) : (
