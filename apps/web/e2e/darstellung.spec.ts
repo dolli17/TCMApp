@@ -95,7 +95,7 @@ test.describe("Layout", () => {
       await expect(page.locator(".seitenleiste")).toBeHidden();
     });
 
-    test("der Belegungsplan beginnt am Telefon mit den freien Zeiten", async ({ page }) => {
+    test("die Plätze beginnen am Telefon mit den freien Zeiten", async ({ page }) => {
       // Ein Raster mit acht Spalten waere auf 390 Pixel unbedienbar. Ohne
       // gemerkte Wahl kommen zuerst die freien Zeiten, dort sind alle Ziele
       // gross (U18); die Übersicht mit wischbaren Stunden ist einen Tipp weiter.
