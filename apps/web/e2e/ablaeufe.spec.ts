@@ -33,6 +33,7 @@ import { FREMDE_BUCHUNG } from "./testbestand-zuruecksetzen";
  *           Platz 8 12:00  fremde Buchung aus dem globalSetup
  *   Tag +2  Platz 1 11:00  Escape schließt (ohne Buchung)
  *           Platz 2 11:00  Admin storniert fremd mit Grund
+ *           Platz 3, 4     buchungsregeln.spec.ts
  *   Tag +3  Platz 1 11:30  :30 buchen und stornieren
  *           Platz 6 11:00  Realtime
  *   Tag +4  Platz 1 11:00  Mitspieler austauschen

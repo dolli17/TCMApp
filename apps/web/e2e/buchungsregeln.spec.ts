@@ -1,6 +1,6 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
-import { anmelden, NUTZER, PASSWORT } from "./hilfen";
+import { anmelden, mitspielerWaehlen, MITSPIELER, NUTZER, oeffneFreieStunde, PASSWORT, tagIn } from "./hilfen";
 
 /**
  * Buchungsregeln im Client (B11, B12, B13): der Plan bietet nur an, was
@@ -29,12 +29,11 @@ function minuteAusLabel(label: string | null): number {
   return Number(h) * 60 + Number(m);
 }
 
-/** Das Suchfeld für Mitspieler - es öffnet sich über "+ Mitglied". */
-async function suchfeld(fenster: Locator) {
-  const feld = fenster.getByLabel("Mitspieler suchen");
-  if (!(await feld.isVisible())) await fenster.getByRole("button", { name: "Mitglied" }).click();
-  return feld;
-}
+/*
+ * Feste Termine im Fenster, das der Seed frei hält (T3, siehe ablaeufe.spec.ts):
+ *   Tag +2  Platz 4 11:00  Doppel mit einem Mitspieler (ohne Buchung)
+ *           Platz 3 11:00  begonnene Buchung
+ */
 
 /** Die Tage, die der Plan als Kacheln anbietet - heute plus lead_days. */
 async function tage(page: Page): Promise<number> {
@@ -45,8 +44,9 @@ test.describe("Buchungsregeln im Plan", () => {
   test("am letzten Vorlauftag ist nur bis zur jetzigen Uhrzeit frei (B11)", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
     await page.goto("/plan");
+    // Sieben Tage aus dem Seed; das globalSetup stellt den Wert wieder her.
     const vorlauf = (await tage(page)) - 1;
-    test.skip(vorlauf < 1, "Kein Vorlauf eingestellt");
+    expect(vorlauf).toBe(7);
 
     // Die Datenbank rechnet in UTC: now() plus lead_days mal 24 Stunden.
     const grenze = berlin(new Date(Date.now() + vorlauf * 86_400_000));
@@ -65,22 +65,10 @@ test.describe("Buchungsregeln im Plan", () => {
 
   test("ein Doppel mit einem Mitspieler sagt, dass einer fehlt (B12)", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
-    await page.goto("/plan");
-    await page.locator(".datums-kacheln a").nth(2).click();
-    await page.waitForURL((u) => u.searchParams.has("tag"));
+    const fenster = await oeffneFreieStunde(page, tagIn(2), "Platz 4", "11:00");
+    await fenster.getByRole("radio", { name: "Doppel" }).check();
 
-    const freieZelle = page.locator(".plan-raster button.frei-slot").first();
-    test.skip((await freieZelle.count()) === 0, "Kein freier Slot an diesem Tag");
-    await freieZelle.click();
-
-    const fenster = page.locator("dialog.fenster");
-    await expect(fenster).toBeVisible();
-    const doppel = fenster.getByRole("radio", { name: "Doppel" });
-    test.skip((await doppel.count()) === 0, "Keine Spielform Doppel");
-    await doppel.check();
-
-    await (await suchfeld(fenster)).fill("a");
-    await fenster.locator(".trefferliste li").first().locator("button").click();
+    await mitspielerWaehlen(fenster, MITSPIELER.mia);
     await expect(fenster.locator(".marken li")).toHaveCount(1);
 
     // Vorher liess der Knopf das zu, und erst die Datenbank lehnte ab.
@@ -95,30 +83,22 @@ test.describe("Buchungsregeln im Plan", () => {
   });
 
   test("eine begonnene Buchung bietet kein Stornieren mehr an (B13)", async ({ page }) => {
-    // Die Uhr im Browser laeuft vor, damit die Buchung beginnt, ohne dass der
-    // Test eine halbe Stunde wartet. Gebucht wird mit echter Zeit.
-    await page.clock.install();
+    // Gebucht wird mit echter Zeit auf einen festen Termin uebermorgen. Danach
+    // springt nur die Uhr im Browser auf eine Minute nach Beginn - der Test
+    // haengt so nicht mehr davon ab, ob heute noch etwas frei ist.
+    const tag = tagIn(2);
+    const platz = "Platz 3";
+    const uhrzeit = "11:00";
+
     await anmelden(page, NUTZER.mitglied);
-    await page.goto("/plan");
-
-    const freieZelle = page.locator(".plan-raster button.frei-slot").first();
-    test.skip((await freieZelle.count()) === 0, "Heute ist nichts mehr frei");
-    const label = (await freieZelle.getAttribute("aria-label")) ?? "";
-    const minute = minuteAusLabel(label);
-    const platz = label.replace(/ um .*$/, "");
-    await freieZelle.click();
-
-    const fenster = page.locator("dialog.fenster");
-    await (await suchfeld(fenster)).fill("e");
-    await fenster.locator(".trefferliste li").first().locator("button").click();
+    const fenster = await oeffneFreieStunde(page, tag, platz, uhrzeit);
+    await mitspielerWaehlen(fenster, MITSPIELER.max);
     await fenster.getByRole("button", { name: /buchen/i }).click();
-    const rueckmeldung = page.locator(".hinweis").first();
-    await expect(rueckmeldung).toBeVisible({ timeout: 15_000 });
-    test.skip(!((await rueckmeldung.textContent()) ?? "").includes("gebucht"), "Buchung abgelehnt");
+    await expect(page.locator(".hinweis.erfolg")).toContainText("gebucht", { timeout: 15_000 });
 
-    const uhrzeit = `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+    const buchung = await eigeneBuchung(tag, minuteAusLabel(uhrzeit));
+    expect(buchung, "Die Buchung steht nicht in my_bookings").not.toBeNull();
     const eigene = page.getByRole("button", { name: `Buchung ${uhrzeit} auf ${platz} verwalten` });
-    const bookingId = await buchungsId(minute);
 
     try {
       // Vor Beginn: Stornieren wird angeboten.
@@ -126,15 +106,14 @@ test.describe("Buchungsregeln im Plan", () => {
       await expect(fenster.getByRole("button", { name: "Buchung stornieren" })).toBeVisible();
       await page.keyboard.press("Escape");
 
-      // Bis kurz nach Beginn vorspulen. In zwei Schritten mit einem Klick
-      // dazwischen, sonst meldet die Inaktivitaet nach 30 Minuten ab. Die
-      // Uhr des Plans tickt einmal je Minute, daher die Minute obendrauf.
-      const bisBeginn = (minute - berlin(new Date(await page.evaluate(() => Date.now()))).minuten) * 60_000;
-      test.skip(bisBeginn > 50 * 60_000, "Die nächste freie Zeit liegt zu weit weg");
-      await page.clock.fastForward(Math.max(Math.floor(bisBeginn / 2), 0));
-      await page.mouse.click(5, 5);
-      await page.clock.fastForward(Math.ceil(bisBeginn / 2) + 61_000);
-      await page.mouse.click(5, 5);
+      // Die Browser-Uhr eine Minute nach Beginn. Der Aktivitaetsstempel zieht
+      // mit, sonst saehe der Browser zwei Tage Pause und meldete ab.
+      const jetzt = new Date(buchung!.startsAt).getTime() + 60_000;
+      await page.clock.install({ time: jetzt });
+      await page.context().addCookies([
+        { name: "tcm_aktiv", value: String(jetzt), url: new URL(page.url()).origin },
+      ]);
+      await page.goto(`/plan?tag=${tag}`);
 
       await eigene.click();
       await expect(fenster).toBeVisible();
@@ -144,7 +123,7 @@ test.describe("Buchungsregeln im Plan", () => {
     } finally {
       // Die Datenbank rechnet mit echter Zeit: dort hat die Buchung noch
       // nicht begonnen, der Bucher kann sie also selbst wieder stornieren.
-      if (bookingId) await stornieren(bookingId);
+      if (buchung) await stornieren(buchung.id);
     }
   });
 });
@@ -161,16 +140,15 @@ async function alsMitglied() {
   return supabase;
 }
 
-/** Die Id der eigenen Buchung um diese Minute heute, aus my_bookings. */
-async function buchungsId(minute: number): Promise<string | null> {
+/** Die eigene Buchung an diesem Tag zu dieser Minute, aus my_bookings. */
+async function eigeneBuchung(tag: string, minute: number): Promise<{ id: string; startsAt: string } | null> {
   const { data } = await (await alsMitglied()).rpc("my_bookings", {});
-  const heute = berlin(new Date()).tag;
   const zeilen = (data ?? []) as { booking_id: string; starts_at: string; bin_bucher: boolean }[];
   const treffer = zeilen.find((b) => {
     const s = berlin(new Date(b.starts_at));
-    return b.bin_bucher && s.tag === heute && s.minuten === minute;
+    return b.bin_bucher && s.tag === tag && s.minuten === minute;
   });
-  return treffer?.booking_id ?? null;
+  return treffer ? { id: treffer.booking_id, startsAt: treffer.starts_at } : null;
 }
 
 async function stornieren(bookingId: string): Promise<void> {
