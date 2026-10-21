@@ -9,15 +9,22 @@
  *
  * "Zuletzt" zeigt die eigenen Entnahmen des Monats; zuruecknehmen geht wie
  * bisher nur im Stornofenster.
+ *
+ * Mit "+" ist noch nichts gebucht (U17). Der Korb liegt deshalb ausserhalb
+ * des Bildschirms (src/lib/getraenkekorb.ts) und ist nach einem Reiter- oder
+ * Tab-Wechsel wieder da; die Leiste sagt "noch nicht eingetragen", und wer
+ * den Bildschirm mit vollem Korb verlaesst, bekommt eine Erinnerung mit dem
+ * Weg zurueck. Waehrend des Sendens ist die Karte gesperrt.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Alert, Platform, Pressable, Text, View } from "react-native";
+import { router, useFocusEffect } from "expo-router";
 import Svg, { Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  canVoidSelf, drinkBatchReport, formatCents, MAX_DRINK_QUANTITY, sumOpenDrinks,
-  type DrinkBatchResult,
+  basketAfterBatch, basketReminder, basketSummary, canVoidSelf, changeBasket, drinkBatchReport,
+  formatCents, MAX_DRINK_QUANTITY, sumOpenDrinks, type DrinkBatchResult,
 } from "@tcm/core";
 import { abstand, radius } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
@@ -25,6 +32,7 @@ import { Rundknopf } from "@/components/Rundknopf";
 import {
   bucheGetraenk, ladeEigeneGetraenke, ladeGetraenkekarte, ladeStornoFenster, storniereGetraenk,
 } from "@/lib/daten";
+import { aktuellerKorb, setzeKorb, useKorb } from "@/lib/getraenkekorb";
 import { useLaden } from "@/lib/laden";
 import { LEISTE_ABSTAND_UNTEN, LEISTE_HOEHE } from "@/lib/masse";
 import { useTheme } from "@/lib/theme";
@@ -41,8 +49,7 @@ export default function Getraenke() {
   const { stil, farben } = useTheme();
   const rand = useSafeAreaInsets();
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
-  /** Gesammelt, noch nicht eingetragen: Artikel-Id -> Menge */
-  const [korb, setKorb] = useState<Record<string, number>>({});
+  const korb = useKorb();
   const [laeuft, setLaeuft] = useState(false);
 
   /**
@@ -76,19 +83,39 @@ export default function Getraenke() {
   const aktive = buchungen.filter((b) => !b.voided_at);
   const summe = sumOpenDrinks(buchungen);
 
-  const gewaehlt = karte.filter((a) => (korb[a.id] ?? 0) > 0);
-  const stueck = gewaehlt.reduce((s, a) => s + (korb[a.id] ?? 0), 0);
-  const korbBetrag = gewaehlt.reduce((s, a) => s + (korb[a.id] ?? 0) * (a.price_cents ?? 0), 0);
+  const { lines: gewaehlt, count: stueck, totalCents: korbBetrag } = basketSummary(karte, korb);
+
+  // Erinnerung beim Verlassen (Reiter- oder Tab-Wechsel) mit vollem Korb.
+  // Der Korb bleibt, die Rueckfrage bietet nur den Weg zurueck an.
+  const karteFuerErinnerung = useRef(karte);
+  karteFuerErinnerung.current = karte;
+  useFocusEffect(
+    useCallback(
+      () => () => {
+        const { count, totalCents } = basketSummary(karteFuerErinnerung.current, aktuellerKorb());
+        if (count === 0) return;
+        const titel = "Noch nicht eingetragen";
+        const text = `${basketReminder(count, totalCents)} Gebucht wird erst mit „Eintragen“ – die Auswahl bleibt gemerkt.`;
+        const zurueck = () => router.navigate("/verein/getraenke");
+        // Alert.alert ist in react-native-web ein leerer Aufruf (siehe bestaetige in Formular.tsx).
+        if (Platform.OS === "web") {
+          if (typeof window !== "undefined" && window.confirm(`${titel}\n\n${text}\n\nZurück zu den Getränken?`)) zurueck();
+          return;
+        }
+        Alert.alert(titel, text, [
+          { text: "Später", style: "cancel" },
+          { text: "Zu den Getränken", onPress: zurueck },
+        ]);
+      },
+      [],
+    ),
+  );
 
   function aendern(id: string, um: number) {
+    // Waehrend des Sendens gesperrt: das Ergebnis setzt den Korb neu.
+    if (laeuft) return;
     setMeldung(null);
-    setKorb((k) => {
-      const neu = Math.max(0, Math.min(MAX_DRINK_QUANTITY, (k[id] ?? 0) + um));
-      const rest = { ...k };
-      if (neu === 0) delete rest[id];
-      else rest[id] = neu;
-      return rest;
-    });
+    setzeKorb((k) => changeBasket(k, id, um));
   }
 
   async function eintragen() {
@@ -105,7 +132,7 @@ export default function Getraenke() {
     setLaeuft(false);
     setMeldung(drinkBatchReport(ergebnisse));
     // Was geklappt hat, verlaesst den Korb; was nicht, bleibt zum erneuten Versuch.
-    setKorb(Object.fromEntries(ergebnisse.filter((e) => !e.ok).map((e) => [e.id, e.quantity])));
+    setzeKorb(basketAfterBatch(ergebnisse));
     await zustand.erneutHolen();
   }
 
@@ -155,6 +182,7 @@ export default function Getraenke() {
           <Text style={[stil.abschnitt, { marginTop: 0 }]} accessibilityRole="header">Was nimmst du?</Text>
           <Text style={[stil.leise, { fontSize: 13 }]}>Karte aus der Verwaltung</Text>
         </View>
+        <Text style={[stil.leise, { marginTop: -4 }]}>Mit + sammelst du. Gebucht ist erst, was du unten einträgst.</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
           {karte.map((a) => {
             const menge = korb[a.id] ?? 0;
@@ -180,11 +208,12 @@ export default function Getraenke() {
                       <Rundknopf
                         zeichen="minus"
                         beschriftung={`${a.name}: eins weniger`}
+                        deaktiviert={laeuft}
                         onPress={() => aendern(a.id, -1)}
                       />
                       <Text
                         style={{ minWidth: 28, textAlign: "center", fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 22, color: farben.ink }}
-                        accessibilityLabel={`${menge} gewählt`}
+                        accessibilityLabel={`${menge} gewählt, noch nicht eingetragen`}
                       >
                         {menge}
                       </Text>
@@ -194,7 +223,7 @@ export default function Getraenke() {
                     zeichen="plus"
                     gelb
                     beschriftung={`${a.name}: eins mehr`}
-                    deaktiviert={menge >= MAX_DRINK_QUANTITY}
+                    deaktiviert={laeuft || menge >= MAX_DRINK_QUANTITY}
                     onPress={() => aendern(a.id, 1)}
                   />
                 </View>
@@ -283,10 +312,10 @@ export default function Getraenke() {
         >
           <View accessibilityLiveRegion="polite">
             <Text style={{ color: farben.bg, fontSize: 15, fontFamily: "Barlow_700Bold" }}>
-              {stueck} {stueck === 1 ? "Getränk" : "Getränke"}
+              {stueck} {stueck === 1 ? "Getränk" : "Getränke"} · {formatCents(korbBetrag)}
             </Text>
-            <Text style={{ color: farben.bg, opacity: 0.7, fontSize: 13, fontFamily: "Barlow_400Regular" }}>
-              {formatCents(korbBetrag)} · aufs Monatskonto
+            <Text style={{ color: farben.bg, fontSize: 13, fontFamily: "Barlow_700Bold" }}>
+              Noch nicht eingetragen
             </Text>
           </View>
           <Pressable

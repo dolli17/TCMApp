@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import logo from "@tcm/ui/logo-weiss.png";
-import { drinkBatchReport, formatCents, MAX_DRINK_QUANTITY, type DrinkBatchResult } from "@tcm/core";
+import {
+  basketAfterBatch, basketSummary, changeBasket, drinkBatchReport, formatCents, MAX_DRINK_QUANTITY,
+  type DrinkBasket, type DrinkBatchResult,
+} from "@tcm/core";
 import { kioskBuchen } from "@/app/verein/getraenke/aktionen";
 
 interface Mitglied {
@@ -56,8 +59,10 @@ const initialen = (m: Mitglied) => (m.first_name.charAt(0) + m.last_name.charAt(
  * Gebucht wird wie bisher je Artikel ueber kioskBuchen - es gibt keinen
  * Sammelauftrag. Die Meldung setzt drinkBatchReport zusammen (wie auf der
  * Getraenkeseite); was nicht geklappt hat, bleibt gewaehlt. Nach einer
- * gelungenen Buchung steht kurz die Bestaetigung, dann geht es von vorn los -
- * der naechste soll nicht versehentlich auf den Vorgaenger buchen.
+ * gelungenen Buchung sind Korb und Person sofort leer, nur die Bestaetigung
+ * steht noch kurz (B8): wer in dieser Zeit schon tippt, beginnt einen neuen
+ * Vorgang, der Timer wird abgebrochen und kann ihm nichts mehr wegnehmen.
+ * Waehrend des Sendens ist die Karte gesperrt.
  */
 export function KioskOberflaeche({
   mitglieder,
@@ -68,14 +73,20 @@ export function KioskOberflaeche({
 }) {
   const [suche, setSuche] = useState("");
   const [gewaehlt, setGewaehlt] = useState<Mitglied | null>(null);
-  const [korb, setKorb] = useState<Record<string, number>>({});
+  const [korb, setKorb] = useState<DrinkBasket>({});
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [zuletzt, setZuletzt] = useState<string[]>([]);
-  const [laeuft, starte] = useTransition();
+  // Eigener Zustand statt useTransition: die Transition bliebe bis nach der
+  // Revalidierung von /kiosk offen, und der Naechste koennte in der
+  // Bestaetigung noch nicht tippen.
+  const [laeuft, setLaeuft] = useState(false);
   const suchfeld = useRef<HTMLInputElement>(null);
   const druck = useRef<{ id: string; timer: ReturnType<typeof setTimeout>; lang: boolean } | null>(null);
+  /** Laeuft, solange nach einer Buchung die Bestaetigung steht. */
+  const bestaetigung = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => setZuletzt(leseZuletzt()), []);
+  useEffect(() => () => bestaetigungAus(), []);
 
   const treffer = useMemo(() => {
     const q = suche.trim().toLowerCase();
@@ -94,10 +105,15 @@ export function KioskOberflaeche({
     .map((id) => mitglieder.find((m) => m.id === id))
     .filter((m): m is Mitglied => Boolean(m));
 
-  const positionen = artikel.filter((a) => (korb[a.id] ?? 0) > 0);
-  const summe = positionen.reduce((s, a) => s + (korb[a.id] ?? 0) * a.price_cents, 0);
+  const { lines: positionen, totalCents: summe } = basketSummary(artikel, korb);
+
+  function bestaetigungAus() {
+    if (bestaetigung.current) clearTimeout(bestaetigung.current);
+    bestaetigung.current = null;
+  }
 
   function vonVorn() {
+    bestaetigungAus();
     setGewaehlt(null);
     setKorb({});
     setSuche("");
@@ -105,20 +121,19 @@ export function KioskOberflaeche({
     suchfeld.current?.focus();
   }
 
+  // Wer waehrend der Bestaetigung tippt, beginnt den naechsten Vorgang.
   function waehle(m: Mitglied) {
+    if (laeuft) return;
+    bestaetigungAus();
     setGewaehlt(m);
     setMeldung(null);
   }
 
   function aendern(id: string, um: number) {
+    if (laeuft) return;
+    bestaetigungAus();
     setMeldung(null);
-    setKorb((k) => {
-      const neu = Math.max(0, Math.min(MAX_DRINK_QUANTITY, (k[id] ?? 0) + um));
-      const rest = { ...k };
-      if (neu === 0) delete rest[id];
-      else rest[id] = neu;
-      return rest;
-    });
+    setKorb((k) => changeBasket(k, id, um));
   }
 
   // Langes Druecken: nach LANG_MS eins weg, und der folgende Klick zaehlt nicht.
@@ -143,25 +158,41 @@ export function KioskOberflaeche({
   function eintragen() {
     if (!gewaehlt || positionen.length === 0) return;
     const fuer = gewaehlt;
-    starte(async () => {
+    setLaeuft(true);
+    void (async () => {
       const ergebnisse: (DrinkBatchResult & { id: string })[] = [];
-      for (const a of positionen) {
-        const menge = korb[a.id] ?? 0;
-        const r = await kioskBuchen(fuer.id, a.id, menge);
-        ergebnisse.push({ id: a.id, name: a.name, quantity: menge, ok: r.ok, message: r.meldung });
+      try {
+        for (const a of positionen) {
+          const menge = korb[a.id] ?? 0;
+          const r = await kioskBuchen(fuer.id, a.id, menge);
+          ergebnisse.push({ id: a.id, name: a.name, quantity: menge, ok: r.ok, message: r.meldung });
+        }
+      } catch {
+        // Netz weg o. ae.: was nicht mehr drankam, gilt als nicht eingetragen.
+        for (const a of positionen.slice(ergebnisse.length)) {
+          ergebnisse.push({ id: a.id, name: a.name, quantity: korb[a.id] ?? 0, ok: false, message: "Keine Verbindung" });
+        }
+      } finally {
+        setLaeuft(false);
       }
       const bericht = drinkBatchReport(ergebnisse);
       merkeZuletzt(fuer.id);
       setZuletzt(leseZuletzt());
       if (bericht.ok) {
+        // Sofort leer, nicht erst nach der Bestaetigung - sonst bucht der
+        // Naechste in den Korb des Vorgaengers (B8).
+        setKorb({});
+        setGewaehlt(null);
+        setSuche("");
         setMeldung({ ok: true, text: `${bericht.text} Für ${fuer.first_name} ${fuer.last_name}.` });
-        setTimeout(vonVorn, BESTAETIGUNG_MS);
+        bestaetigungAus();
+        bestaetigung.current = setTimeout(vonVorn, BESTAETIGUNG_MS);
       } else {
         // Was nicht geklappt hat, bleibt fuer einen neuen Versuch gewaehlt.
         setMeldung(bericht);
-        setKorb(Object.fromEntries(ergebnisse.filter((e) => !e.ok).map((e) => [e.id, e.quantity])));
+        setKorb(basketAfterBatch(ergebnisse));
       }
-    });
+    })();
   }
 
   return (
@@ -191,7 +222,13 @@ export function KioskOberflaeche({
               aria-label="Name eingeben"
               placeholder="Name eingeben…"
               value={suche}
-              onChange={(e) => setSuche(e.target.value)}
+              onChange={(e) => {
+                if (meldung?.ok) {
+                  bestaetigungAus();
+                  setMeldung(null);
+                }
+                setSuche(e.target.value);
+              }}
             />
           </label>
 
@@ -254,7 +291,7 @@ export function KioskOberflaeche({
                     type="button"
                     className="kachel-knopf"
                     aria-label={`${a.name} hinzufügen${menge > 0 ? `, ${menge} gewählt` : ""}`}
-                    disabled={menge >= MAX_DRINK_QUANTITY}
+                    disabled={laeuft || menge >= MAX_DRINK_QUANTITY}
                     onPointerDown={() => druckAn(a.id)}
                     onPointerUp={druckAus}
                     onPointerLeave={druckAus}
@@ -271,6 +308,7 @@ export function KioskOberflaeche({
                         type="button"
                         className="weniger"
                         aria-label={`${a.name}: eins weniger`}
+                        disabled={laeuft}
                         onClick={() => aendern(a.id, -1)}
                       >
                         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

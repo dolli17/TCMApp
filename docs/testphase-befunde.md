@@ -110,7 +110,7 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 | B5 | P2 | Archivieren bei offenem Einzug: Die Lastschrift auf das widerrufene Mandat landet in der Datei | **Erledigt (PR #47):** `archive_member` nimmt das Mitglied aus Einzügen ohne Datei, die Forderungen sind wieder offen. |
 | B6 | P2 | `join_booking` ohne `for update`: Wer gleichzeitig „Mitspielen“ tippt, überbucht | Zeilensperre, auch in `update_booking_players`/`leave_booking` *(Migration)* |
 | B7 | P2 | Lastschriftdatei lässt sich nach einem Teilfehler nie wieder erzeugen (Upsert ohne UPDATE-Policy im Bucket `sepa`) | Eindeutiger Pfad je Versuch |
-| B8 | P2 | Kiosk: Während der 2,5 s Bestätigung bucht der Nächste in den Korb des Vorgängers | Korb sofort leeren, Timer abbrechen |
+| B8 | P2 | Kiosk: Während der 2,5 s Bestätigung bucht der Nächste in den Korb des Vorgängers | **Erledigt (PR #54):** Korb, Person und Suche sind nach der Buchung sofort leer. Tippen in der Bestätigung bricht den Timer ab. Während des Sendens gesperrt. |
 | B9 | P2 | Mails und Pushes gehen nach einem Teilfehler doppelt raus (`release_*` gibt alle IDs frei) | Nur die fehlgeschlagenen Stapel freigeben |
 | B10 | P2 | SEPA-Mandat im Onboarding scheitert zwischen 0 und 2 Uhr: `signed_on` ist das Berliner Datum, die Constraint prüft gegen `current_date` (UTC) | Constraint auf Berliner Datum *(Migration)* |
 | B11 | P2 | Am letzten Vorlauftag zeigt der Plan Zeiten als frei, die der Server ablehnt (`canStartAt` ohne `leadDays`) | **Erledigt (PR #56):** `canStartAt` und alles darauf (`courtStatusAt`, `freeGaps`, `freeSlotsOfDay`, `freeCourtsNow`) prüft `leadDays` wie `create_booking`: jetzt plus lead_days mal 24 Stunden (UTC), über die Zeitumstellung eine Stunde verschoben. Status „buchbar ab …“. Web und App reichen `lead_days` durch. |
@@ -120,7 +120,7 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 | B15 | P3 | `current_drink_price` nutzt das UTC-Datum: Nachts gilt am Umstellungstag noch der alte Preis | `private.heute()` *(Migration)* |
 | B16 | P3 | UTC-Datum als „heute“ in sechs Web-Formularen und mehreren SQL-Vorgaben. In der Neujahrsnacht wird der Beitrag des Vorjahres zugewiesen. | `berlinDay`, `private.heute()` |
 | B17 | P3 | Wird der Anmeldeschluss verschoben, kommt keine neue Erinnerung | `reminder_sent_at` zurücksetzen |
-| B18 | P3 | Web-Getränkekarte verliert Eingaben während des Sendens | Sperren während `laeuft` |
+| B18 | P3 | Web-Getränkekarte verliert Eingaben während des Sendens | **Erledigt (PR #54):** +/− sind während `laeuft` gesperrt, ebenso in der App und am Kiosk. |
 | B19 | P3 | App-Tab „Konto“ lädt bei Fokus nicht nach | `useFocusEffect` |
 | B20 | P3 | Teilfehler bei der E-Mail-Änderung wird als Gesamtfehler gemeldet | Meldung differenzieren |
 | B21 | P2 | `end_membership` setzt den Status sofort auf inaktiv, auch beim Austritt zum Jahresende. Bis zum Austrittsdatum hat das Mitglied Zugang (S12), fehlt aber in `member_directory` (Mitspielerwahl, Kiosk) und `record_purchase` weist es ab. Gefunden bei S12. | Status erst zum Austrittsdatum setzen oder dort `hat_zugang` statt `status = 'active'` prüfen *(Migration)* |
@@ -164,7 +164,7 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 | U14 | P2 | Hauptknopf im Dunkelmodus: Weiß auf `#3A9BE0` = 3,0:1 | dunkleres Blau |
 | U15 | P2 | Grüne Kacheln „Freie Zeiten“ und Gefahr-Knöpfe unter AA | `greenInk`, dunkleres Rot |
 | U16 | P2 | Die Bestätigung nach Buchen oder Getränk erscheint oben außer Sicht | Toast unten, Block hervorheben |
-| U17 | P2 | **Getränke-Korb geht beim Verlassen still verloren.** „+“ wirkt wie gebucht, dem Verein fehlt das Geld. | Hinweis „Noch nicht eingetragen“ und Rückfrage beim Verlassen |
+| U17 | P2 | **Getränke-Korb geht beim Verlassen still verloren.** „+“ wirkt wie gebucht, dem Verein fehlt das Geld. | **Erledigt (PR #54):** Der Korb bleibt erhalten (Web: `sessionStorage` je Konto, App: Speicher außerhalb des Bildschirms) und die Leiste zeigt „Noch nicht eingetragen“. Beim Verlassen mit vollem Korb kommt eine Rückfrage (Web: Links und `beforeunload`, App: Erinnerung beim Verlassen). |
 | U18 | P2 | Platzraster am Telefon schwer zu treffen (34 px je halbe Stunde), Titel abgeschnitten | „Freie Zeiten“ als Standard, Ziele ≥ 44 px |
 | U19 | P2 | Netzwerk- und Rate-Limit-Fehler erscheinen als „Passwort stimmt nicht“ | gesondert melden |
 | U20 | P2 | App „Passwort setzen“: Ladekreis ohne Ende, wenn der Link kein Token hat | PR #53: Meldung mit „Neuen Link anfordern“ und „Zurück zur Anmeldung“, Frist 15 s |
