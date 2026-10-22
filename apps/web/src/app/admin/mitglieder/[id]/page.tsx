@@ -381,7 +381,13 @@ export default async function MitgliedSeite({
             letzte={mitgliedschaften[0] ?? null}
             archiviert={m.status === "archived"}
           />
-          <Gefahrenzone id={id} nachname={m.last_name} archiviert={m.status === "archived"} selbst={istSelbst} />
+          <Gefahrenzone
+            id={id}
+            nachname={m.last_name}
+            archiviert={m.status === "archived"}
+            anonymisiert={!m.auth_user_id && m.last_name.startsWith("Mitglied #")}
+            selbst={istSelbst}
+          />
         </>
       )}
 
@@ -515,6 +521,7 @@ async function Gefahrenzone(props: {
   id: string;
   nachname: string;
   archiviert: boolean;
+  anonymisiert: boolean;
   selbst: boolean;
 }) {
   const supabase = await createServerSupabase();
@@ -536,6 +543,7 @@ async function Gefahrenzone(props: {
       mitgliedId={props.id}
       nachname={props.nachname}
       archiviert={props.archiviert}
+      anonymisiert={props.anonymisiert}
       selbst={props.selbst}
       folgen={folgen}
     />

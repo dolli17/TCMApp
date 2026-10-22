@@ -3141,6 +3141,7 @@ export type Database = {
           starts_at: string
         }[]
       }
+      reactivate_member: { Args: { p_member_id: string }; Returns: undefined }
       reactivate_membership: {
         Args: {
           p_fee_type_ids?: string[]

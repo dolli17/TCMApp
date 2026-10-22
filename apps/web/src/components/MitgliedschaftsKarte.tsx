@@ -119,7 +119,7 @@ export function MitgliedschaftsKarte(props: Props) {
           </button>
           {props.archiviert && (
             <p className="beschreibung">
-              Archivierte Mitglieder müssen zuerst reaktiviert werden.
+              Archivierte Mitglieder zuerst unten unter „Datensatz beenden“ reaktivieren.
             </p>
           )}
         </>
