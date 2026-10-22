@@ -184,6 +184,7 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 | U32 | P3 | Mitgliederliste mit zwei Filtersystemen | **Erledigt (PR #70):** Auswahlfeld „Bestand“ neben der Suche, eine Chipreihe mit Art und Rollen; alte `?filter=trainer`-Links landen beim Chip. |
 | U33 | P2 | Beim Sperren in der App war die Kategorie fest „Platzpflege“. Im Plan stand „gesperrt“ statt der Kategorie. | **Erledigt (PR #50):** Kategorie (Buchungsart mit `applies_to = 'blocking'`) wählbar in App und Web. Im Plan oben die Kategorie, darunter der Grund, falls es einen gibt (`blockingLabel` in `@tcm/core`). |
 | U34 | P2 | App, Tab Plätze: zwei Segmentleisten übereinander, Stundenbeschriftung rechts abgeschnitten, Legende von der Tab-Leiste verdeckt. | **Erledigt (PR #50):** Übersicht/Freie Zeiten über einen Raster/Liste-Umschalter rechts in der Datumszeile. Raster-Schrift wächst nur begrenzt mit (große Schrift ließ die Stunden ineinanderlaufen), Zeilen 46 statt 52 pt, damit die Legende ohne Scrollen über der Leiste steht. Knöpfe im Blatt mit Mindesthöhe. |
+| U36 | P3 | Weiße Schrift auf `green` unter 4,5:1 (hell etwa 3,4:1, dunkel deutlich darunter): erledigter Schritt im Geldweg, Onboarding-Punkt im Web. Gefunden bei U4 (PR #72). | dunkleres Grün für Flächen mit Schrift (z. B. `greenInk`) oder dunkle Schrift auf Grün, im `tokens.test.ts` festhalten |
 
 ### Noch nicht live geprüft
 
