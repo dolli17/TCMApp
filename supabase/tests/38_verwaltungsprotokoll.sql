@@ -4,6 +4,8 @@
 --   1. Eigene Buchungen, eigene Gastgebuehren und eigene Arbeitsstunden
 --      erzeugen keinen Eintrag; dieselbe Aktion durch einen Admin fuer ein
 --      anderes Mitglied schon, mit dem Admin als Urheber. Sperrungen immer.
+--      Ohne Verwaltungsrolle (Einstieg ins offene Spiel, Nachruecken) und
+--      ganz ohne Konto (Seed, Wartung) auch an fremden Zeilen nicht.
 --   2. Ein Massenlauf schreibt je Tabelle einen Sammeleintrag mit Anzahl und
 --      Summe statt einer Zeile je Forderung.
 --   3. tcm.protokoll_sammel kann ein Client nicht setzen: keine erreichbare
@@ -172,6 +174,85 @@ begin
     (select count(*)::integer from public.change_log c join public.bookings b on b.id = c.row_id
       where b.series_id = v_serie),
     0, 'und nicht einzeln');
+end; $f$;
+
+create or replace function tests.test_protokoll_einstieg_offenes_spiel_ohne_eintrag()
+returns setof text language plpgsql as $f$
+declare a record; b record; c record; d record; v_court uuid := tests.fixture_court(); v_id uuid;
+        s1 timestamptz := tests.naechster_slot(3, 17);
+begin
+  select * into a from tests.fixture_user() limit 1;
+  select * into b from tests.fixture_user() limit 1;
+  select * into c from tests.fixture_user() limit 1;
+  select * into d from tests.fixture_user() limit 1;
+  perform tests.act_as(a.auth_id);
+  v_id := public.create_booking(v_court, s1, 'doppel', array[c.member_id, d.member_id], '{}'::text[], true);
+  perform set_config('role', 'postgres', true);
+
+  -- B macht das Doppel voll; dabei faellt partner_wanted an As Buchung.
+  perform tests.act_as(b.auth_id);
+  perform public.join_booking(v_id);
+  perform set_config('role', 'postgres', true);
+
+  return next is((select partner_wanted from public.bookings where id = v_id), false,
+    'Der Einstieg hat As Buchung geaendert');
+  return next is(
+    (select count(*)::integer from public.change_log where table_name = 'bookings' and row_id = v_id),
+    0, 'Ein Mitglied ohne Verwaltungsrolle, das einsteigt, steht nicht im Protokoll');
+end; $f$;
+
+create or replace function tests.test_protokoll_nachruecken_ohne_eintrag()
+returns setof text language plpgsql as $f$
+declare v_event uuid := tests.fixture_event(1000, 2); a record; b record;
+begin
+  select * into a from tests.fixture_user() limit 1;
+  select * into b from tests.fixture_user() limit 1;
+  perform set_config('role', 'postgres', true);
+  perform tests.act_as(a.auth_id);
+  perform public.event_anmelden(v_event, 1);
+  perform set_config('role', 'postgres', true);
+  perform tests.act_as(b.auth_id);
+  perform public.event_anmelden(v_event, 0);
+  perform set_config('role', 'postgres', true);
+
+  -- A meldet sich ab, B rueckt nach und bekommt die Gebuehr.
+  perform tests.act_as(a.auth_id);
+  perform public.event_abmelden(v_event);
+  perform set_config('role', 'postgres', true);
+
+  return next is((tests.event_forderung(v_event, b.member_id)).amount_cents, 1000,
+    'B ist nachgerueckt und hat die Forderung');
+  return next is(
+    (select count(*)::integer from public.change_log
+      where table_name = 'charges' and member_id in (a.member_id, b.member_id)),
+    0, 'Abmeldung und Nachruecken stehen nicht im Protokoll');
+end; $f$;
+
+create or replace function tests.test_protokoll_ohne_konto_nicht_in_modus_tabellen()
+returns setof text language plpgsql as $f$
+declare b record; v_court uuid := tests.fixture_court(); v_id uuid; v_charge uuid;
+        s1 timestamptz := tests.naechster_slot(5, 9);
+begin
+  select * into b from tests.fixture_user() limit 1;
+  perform set_config('role', 'postgres', true);
+  perform set_config('request.jwt.claims', null, true);
+
+  insert into public.bookings (court_id, slot, kind, booking_type_id, member_id)
+  values (v_court, tstzrange(s1, s1 + interval '1 hour', '[)'), 'booking',
+          (select id from public.booking_types where code = 'einzel'), b.member_id)
+  returning id into v_id;
+  insert into public.charges (member_id, payer_id, kind, amount_cents, description)
+  values (b.member_id, b.member_id, 'misc', 100, 'Wartung')
+  returning id into v_charge;
+
+  return next is(
+    (select count(*)::integer from public.change_log where row_id in (v_id, v_charge)),
+    0, 'Aenderungen ohne jedes Konto (Seed, Wartung) stehen in Buchungen und Forderungen nicht im Protokoll');
+
+  insert into public.teams (name) values ('ZZ Ohne Konto');
+  return next ok(
+    exists (select 1 from public.change_log where table_name = 'teams' and kenn ->> 'name' = 'ZZ Ohne Konto'),
+    'in Tabellen ohne Modus schon');
 end; $f$;
 
 create or replace function tests.test_protokoll_sammeln_nicht_vom_client()

@@ -65,9 +65,10 @@ update public.change_log
 --     umgekehrt die einzigen Felder, die protokolliert werden
 --  2  Kennfelder, kommagetrennt
 --  3  Modus: ''                  alles protokollieren
---            'fremd'             nur, wenn jemand anderes handelt als das
---                                Mitglied der Zeile (eigene Buchung, eigene
---                                Gastgebuehr sind keine Verwaltung)
+--            'fremd'             nur, wenn jemand mit einer Rolle ueber
+--                                'member' hinaus fuer ein anderes Mitglied
+--                                handelt, oder ein Konto ohne Mitglied (Kiosk);
+--                                ohne jedes Konto nicht (Seed, Wartung)
 --            'fremd_oder_sperre' wie 'fremd', Sperrungen (kind = 'blocking')
 --                                aber immer
 --
@@ -106,12 +107,22 @@ declare
   v_lauf   jsonb;
   v_id     bigint;
 begin
-  -- Was ein Mitglied fuer sich selbst tut, ist keine Verwaltung.
+  -- Nur Verwaltung: was ein Mitglied fuer sich selbst tut, nicht; ebenso
+  -- wenig, was ein Mitglied ohne Verwaltungsrolle nebenbei an fremden Zeilen
+  -- aendert (Einstieg ins offene Spiel, Nachruecken nach einer Abmeldung);
+  -- und keine reinen Systemaenderungen ohne jedes Konto (Seed, Wartung).
+  -- Ein Konto ohne Mitglied (Kiosk) handelt immer fuer jemand anderen.
   if v_modus in ('fremd', 'fremd_oder_sperre')
-     and not (v_modus = 'fremd_oder_sperre' and v_zeile ->> 'kind' = 'blocking')
-     and v_member is not null
-     and v_member = v_ich then
-    return null;
+     and not (v_modus = 'fremd_oder_sperre' and v_zeile ->> 'kind' = 'blocking') then
+    if v_ich is null then
+      if (select auth.uid()) is null then
+        return null;
+      end if;
+    elsif v_member = v_ich
+       or not exists (select 1 from public.member_roles r
+                       where r.member_id = v_ich and r.role <> 'member') then
+      return null;
+    end if;
   end if;
 
   v_kennw := (select jsonb_object_agg(k, v_zeile -> k) from unnest(v_kenn) as k where v_zeile ? k);
