@@ -424,7 +424,9 @@ export type Database = {
           changed_by: string | null
           changed_by_auth: string | null
           diff: Json
+          ereignis: string | null
           id: number
+          kenn: Json | null
           member_id: string | null
           row_id: string | null
           table_name: string
@@ -435,7 +437,9 @@ export type Database = {
           changed_by?: string | null
           changed_by_auth?: string | null
           diff: Json
+          ereignis?: string | null
           id?: never
+          kenn?: Json | null
           member_id?: string | null
           row_id?: string | null
           table_name: string
@@ -446,7 +450,9 @@ export type Database = {
           changed_by?: string | null
           changed_by_auth?: string | null
           diff?: Json
+          ereignis?: string | null
           id?: never
+          kenn?: Json | null
           member_id?: string | null
           row_id?: string | null
           table_name?: string
@@ -3140,6 +3146,10 @@ export type Database = {
           ends_at: string
           starts_at: string
         }[]
+      }
+      protokoll_zugang: {
+        Args: { p_ereignis: string; p_member_id: string }
+        Returns: undefined
       }
       reactivate_member: { Args: { p_member_id: string }; Returns: undefined }
       reactivate_membership: {

@@ -65,6 +65,10 @@ export default async function SystemSeite() {
           <span className="titel">Merkmale</span>
           <span className="pfeil" aria-hidden="true">›</span>
         </Link>
+        <Link href="/admin/system/protokoll" className="gruppen-zeile">
+          <span className="titel">Protokoll</span>
+          <span className="pfeil" aria-hidden="true">›</span>
+        </Link>
       </nav>
 
       {/* Ein Formular, ein Knopf (U12): gespeichert wird nur, was sich geändert hat. */}

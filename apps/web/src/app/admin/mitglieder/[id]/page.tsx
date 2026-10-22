@@ -1,6 +1,15 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { berlinDay, formatCents, isoDateLabel, rollenMarken, translateDbError } from "@tcm/core";
+import {
+  berlinDay,
+  formatCents,
+  isoDateLabel,
+  PROTOKOLL_BEREICHE,
+  protokollBereich,
+  protokollVorgang,
+  rollenMarken,
+  translateDbError,
+} from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { BankUndMandatKarte, type FinanzZeile } from "@/components/BankUndMandatKarte";
 import { BeitragsartenKarte, type BeitragsZeile } from "@/components/BeitragsartenKarte";
@@ -133,6 +142,12 @@ const TABELLE_LABEL: Record<string, string> = {
   sepa_mandates: "SEPA-Mandat",
   member_attribute_values: "Merkmal",
 };
+
+/** Für Tabellen außerhalb der Stammdaten: der Bereich des Verwaltungsprotokolls. */
+function bereichTitel(tabelle: string): string {
+  const b = protokollBereich(tabelle);
+  return b ? PROTOKOLL_BEREICHE[b].titel : tabelle;
+}
 
 function zeigeWert(wert: unknown): string {
   if (wert === null || wert === undefined) return "leer";
@@ -554,7 +569,7 @@ async function Protokoll({ id }: { id: string }) {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase
     .from("change_log")
-    .select("id, table_name, action, diff, changed_at, changed_by")
+    .select("id, table_name, row_id, member_id, action, ereignis, diff, kenn, changed_at, changed_by")
     .eq("member_id", id)
     .order("changed_at", { ascending: false })
     .limit(200);
@@ -572,6 +587,10 @@ async function Protokoll({ id }: { id: string }) {
     ? await supabase.from("members").select("id, first_name, last_name").in("id", urheber)
     : { data: [] };
   const namen = new Map((personen ?? []).map((p) => [p.id, `${p.first_name} ${p.last_name}`]));
+  const vorgang = (e: (typeof eintraege)[number]) => {
+    const satz = protokollVorgang(e, (id) => namen.get(id) ?? mannschaftsnamen.get(id));
+    return satz.charAt(0).toUpperCase() + satz.slice(1);
+  };
 
   // Mannschaften stehen im Protokoll als Kennung; der Name sagt mehr. Auch
   // geloeschte Mannschaften sollen lesbar bleiben, deshalb nur, was es noch
@@ -587,7 +606,7 @@ async function Protokoll({ id }: { id: string }) {
     <section className="karte protokoll" aria-label="Änderungsprotokoll">
       <h2 className="dpl">Änderungen</h2>
       <p className="unterzeile">
-        Jede Änderung an diesem Mitglied – auch die, die es selbst vorgenommen hat.
+        Jede Änderung an diesem Mitglied und alles, was die Verwaltung für es getan hat – Stammdaten auch dann, wenn es sie selbst geändert hat.
       </p>
 
       <div className="tabellenhuelle">
@@ -612,13 +631,17 @@ async function Protokoll({ id }: { id: string }) {
                     }).format(new Date(e.changed_at))}
                   </td>
                   <td>{e.changed_by ? (namen.get(e.changed_by) ?? "—") : "System"}</td>
-                  <td>{TABELLE_LABEL[e.table_name] ?? e.table_name}</td>
+                  <td>{TABELLE_LABEL[e.table_name] ?? bereichTitel(e.table_name)}</td>
                   <td>
-                    {/* Beim Anlegen stehen sämtliche Felder im Diff. Sie alle
-                        aufzuführen macht das Protokoll unlesbar und sagt nichts
-                        – der Datensatz sieht danach ja genau so aus wie in den
-                        Stammdaten. Ein Satz genügt. */}
-                    {e.action === "insert" ? (
+                    {/* Alles außerhalb der Stammdaten (Forderungen, Buchungen,
+                        Stunden, Zugang) als Satz wie im Verwaltungsprotokoll. */}
+                    {e.action === "event" || !(e.table_name in TABELLE_LABEL) ? (
+                      vorgang(e)
+                    ) : // Beim Anlegen stehen sämtliche Felder im Diff. Sie alle
+                    // aufzuführen macht das Protokoll unlesbar und sagt nichts
+                    // – der Datensatz sieht danach ja genau so aus wie in den
+                    // Stammdaten. Ein Satz genügt.
+                    e.action === "insert" ? (
                       <span className="marke-klein gruen">angelegt</span>
                     ) : e.action === "delete" ? (
                       <span className="marke-klein rot">gelöscht</span>
