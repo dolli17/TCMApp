@@ -87,7 +87,7 @@ begin
   perform tests.act_as(c.auth_id);
   return next throws_ok(
     format('select public.leave_booking(%L)', v_id),
-    '23514', 'Ohne dich waeren es zu wenige Spieler. Bitte sag dem Bucher Bescheid.',
+    '23514', 'Ohne dich wären es zu wenige Spieler. Bitte sag dem Bucher Bescheid.',
     'Wer die Untergrenze reissen wuerde, kommt nicht raus');
   perform set_config('role', 'postgres', true);
 

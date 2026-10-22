@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPain008, escapeXml, lastschriftPfad, painNamespace } from "./pain008";
+import { buildPain008, escapeXml, lastschriftPfad, painNamespace, sepaText } from "./pain008";
 import {
   hasErrors,
   isMandateExpired,
@@ -70,7 +70,40 @@ describe("escapeXml", () => {
   });
 });
 
+describe("sepaText (B27)", () => {
+  it("schreibt Umlaute und ß um", () => {
+    expect(sepaText("Äpfel Öl Übung ärger öde über Straße")).toBe(
+      "Aepfel Oel Uebung aerger oede ueber Strasse",
+    );
+  });
+
+  it("nimmt Akzente weg und ersetzt Zeichen außerhalb des SEPA-Zeichensatzes", () => {
+    expect(sepaText("Café – Gäste & Freunde: 5 € (Juni); \"Fest\"! #2")).toBe(
+      "Cafe - Gaeste + Freunde: 5 EUR (Juni) 'Fest' 2",
+    );
+  });
+
+  it("lässt erlaubte Zeichen stehen", () => {
+    const erlaubt = "abc XYZ 0123 / - ? : ( ) . , ' +";
+    expect(sepaText(erlaubt)).toBe(erlaubt);
+  });
+});
+
 describe("buildPain008", () => {
+  it("schreibt Namen und Verwendungszweck in den SEPA-Zeichensatz um (B27)", () => {
+    const xml = buildPain008(
+      lauf({
+        creditor: { name: "Tennisclub Mückensturm e.V.", creditorId: "DE98ZZZ09999999999", iban: VEREINS_IBAN },
+        items: [posten({ debtorName: "Jürgen Weiß", remittanceInfo: "Gastgebühr 12.05.2026 um 18:00 Uhr auf Platz 1" })],
+      }),
+      HEUTE,
+    );
+    expect(xml).toContain("<Nm>Juergen Weiss</Nm>");
+    expect(xml).toContain("<Ustrd>Gastgebuehr 12.05.2026 um 18:00 Uhr auf Platz 1</Ustrd>");
+    expect(xml).toContain("<Nm>Tennisclub Mueckensturm e.V.</Nm>");
+    expect(xml).not.toMatch(/[äöüÄÖÜß]/);
+  });
+
   it("erzeugt eine Datei mit korrektem Namensraum", () => {
     const xml = buildPain008(lauf(), HEUTE);
     expect(xml).toContain(painNamespace("pain.008.001.08"));
@@ -133,12 +166,12 @@ describe("buildPain008", () => {
     expect(xml).toContain('<InstdAmt Ccy="EUR">0.05</InstdAmt>');
   });
 
-  it("maskiert Sonderzeichen im Namen", () => {
+  it("bringt Sonderzeichen im Namen in den SEPA-Zeichensatz", () => {
     const xml = buildPain008(
       lauf({ items: [posten({ debtorName: "Meyer & Söhne <GmbH>" })] }),
       HEUTE,
     );
-    expect(xml).toContain("Meyer &amp; Söhne &lt;GmbH&gt;");
+    expect(xml).toContain("<Nm>Meyer + Soehne GmbH</Nm>");
     expect(xml).not.toContain("<GmbH>");
   });
 

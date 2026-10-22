@@ -163,12 +163,12 @@ begin
   return next throws_ok(
     format($q$select public.create_member('Fremde', 'Adresse', 'andere@example.org',
                                           p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => %L)$q$, v_fremd),
-    '22023', 'Der Login gehoert zu einer anderen E-Mail-Adresse als das Mitglied.',
+    '22023', 'Der Login gehört zu einer anderen E-Mail-Adresse als das Mitglied.',
     'Login und Mitglied muessen dieselbe Adresse haben');
   return next throws_ok(
     format($q$select public.create_member('Doppelt', 'Login', 'doppelt@example.org',
                                           p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => %L)$q$, b.auth_id),
-    '23514', 'Dieser Zugang gehoert bereits zu einem anderen Mitglied.',
+    '23514', 'Dieser Zugang gehört bereits zu einem anderen Mitglied.',
     'Ein vergebener Login wird nicht noch einmal vergeben');
   return next throws_ok(
     format($q$select public.create_member('Kein', 'Konto', 'kein.konto@example.org',
@@ -223,7 +223,7 @@ begin
   perform tests.act_as(a.auth_id);
   return next throws_ok(
     format($q$select public.link_auth_user(%L, %L)$q$, v_arch, v_kiosk),
-    '23514', 'Dieser Zugang gehoert zu einem Kiosk-Geraet und laesst sich keinem Mitglied zuordnen.',
+    '23514', 'Dieser Zugang gehört zu einem Kiosk-Gerät und lässt sich keinem Mitglied zuordnen.',
     'link_auth_user weist das Kiosk-Konto ab (Admin)');
   perform set_config('role', 'postgres', true);
 

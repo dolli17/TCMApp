@@ -43,7 +43,7 @@ Testern bzw. App Store · **P3** Komfort, Aufräumen.
 | # | Prio | Befund | Was zu tun ist |
 |---|---|---|---|
 | O12 | P2 | **Datenschutz und Impressum** enthalten noch `[[Platzhalter]]`. | Echte Angaben des Vereins eintragen. Die Datenschutzerklärung muss auch Resend als Mail-Dienstleister und Supabase nennen. |
-| O13 | P3 | Beschreibungen von Forderungen sind in ASCII („Getraenke …“, „Gastgebuehr …“). | Entweder beim Erzeugen echte Umlaute schreiben (SQL-Funktionen `charge_billing_period`, Gastgebühr), oder bewusst so lassen. Die Art-Marken machen sie lesbar. |
+| O13 | P3 | Beschreibungen von Forderungen sind in ASCII („Getraenke …“, „Gastgebuehr …“). | **Erledigt (PR #71):** Neue Forderungen schreiben „Getränke …“ und „Gastgebühr …“. Bestehende bleiben, wie sie sind. |
 
 ### Testdaten und Testkonten
 
@@ -129,6 +129,7 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 | B24 | P2 | Eine Sperrung lässt sich in der App weder bearbeiten noch aufheben (vom Nutzer gemeldet). *Geprüft:* `cancel_booking` und das Blatt funktionieren, aber in der Ansicht „Freie Zeiten“ ließ sich eine Sperrung gar nicht öffnen, in Verwaltung → Plätze stand nur „gesperrt bis …“ ohne Weg dorthin, und nach dem Aufheben hieß es „Buchung storniert“. Bearbeiten gab es nirgends. | **Erledigt (PR #50):** Neue RPC `update_blocking` (Zeit, Plätze, Kategorie, Grund; Rechte, Überschneidung und `p_force` wie `create_blocking`). App und Web: „Sperrung bearbeiten“ im Blatt, Sperrungen auch in „Freie Zeiten“ öffnen, eigene Meldung beim Aufheben, gesperrte Plätze in der Platzliste verlinken auf den Plan. |
 | B25 | P3 | Der Grund war beim Sperren Pflicht (`create_blocking`: „Bitte einen Grund angeben.“, Check `bookings_owner_present`). | **Erledigt (PR #50):** Grund freiwillig in `create_blocking` und `update_blocking`, Check gelockert. Ohne Grund nennen Storno und Nachricht die Kategorie. |
 | B26 | P3 | Archivierte Mitglieder lassen sich nicht reaktivieren: Die Oberfläche verweist auf eine Reaktivierung, die es nicht gibt, und seit B23 geht es auch nicht mehr über `update_member`. | **Erledigt (PR #67):** RPC `reactivate_member` und Knopf „Reaktivieren“ im Web. Ohne Zugang, Onboarding wieder offen. |
+| B27 | P2 | Umlaute im Verwendungszweck/Namen der Bankdatei: pain.008 übernahm Namen und Forderungsbeschreibungen ungefiltert, auch Umlaute und Zeichen außerhalb des SEPA-Zeichensatzes. Gefunden bei U21. | **Erledigt (PR #71):** `sepaText` in `pain008.ts` schreibt Namen und Verwendungszweck beim Erzeugen um (Ä→Ae, ß→ss, sonst Leerzeichen). |
 
 Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.12.); Mindestbetrag 5 € je Auswahl; veraltete Antworten beim schnellen Tageswechsel in der App.
 
@@ -169,7 +170,7 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 | U18 | P2 | Platzraster am Telefon schwer zu treffen (34 px je halbe Stunde), Titel abgeschnitten | **Erledigt (PR #63):** „Freie Zeiten“ als Standard, 88 px je Stunde (44 je halbe), Umschalter und Tagesknöpfe ≥ 44 px. Mit E2E-Test. |
 | U19 | P2 | Netzwerk- und Rate-Limit-Fehler erscheinen als „Passwort stimmt nicht“ | Web: PR #55 (Login, Passwort vergessen/setzen; `anmeldeFehlerText` in core) |
 | U20 | P2 | App „Passwort setzen“: Ladekreis ohne Ende, wenn der Link kein Token hat | PR #53: Meldung mit „Neuen Link anfordern“ und „Zurück zur Anmeldung“, Frist 15 s |
-| U21 | P2 | 115 DB-Fehlertexte und Einstellungstexte mit ae/oe/ue (vgl. O13) | Migration mit echten Umlauten *(Migration)* |
+| U21 | P2 | 115 DB-Fehlertexte und Einstellungstexte mit ae/oe/ue (vgl. O13) | **Erledigt (PR #71):** Fehlermeldungen, Benachrichtigungen, Gründe und Einstellungstexte mit echten Umlauten und ß. Gespeicherte Texte bleiben. |
 | U22 | P2 | App-Formulare ohne Autofill und ohne Fehler am Feld. Geburtsdatum als Freitext. | PR #65: textContentType/autoComplete je Feld, Fehler rot am Feld, Geburtsdatum per Datumsauswahl (neuer nativer Build nötig). |
 | U23 | P3 | Aufnahmeantrag: Fehlermeldung oben, außer Sicht. `autoComplete="off"` in den Stammdaten. | **Erledigt (PR #70):** Meldung direkt über dem Absenden-Knopf (`role="alert"`), `autoComplete="bday"` im Antrag, echte Werte in „Meine Daten“. |
 | U24 | P3 | Tippziele 40 statt 44 (Segmente, Chips, Vortag/Folgetag) | **Verworfen:** Entscheidung 22.10.2026: bleibt bei 40 px. |

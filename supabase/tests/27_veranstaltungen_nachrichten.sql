@@ -111,9 +111,9 @@ begin
   perform set_config('role', 'postgres', true);
 
   select * into n from tests.event_nachrichten(v_event, b.member_id, 'event_promoted');
-  return next is(n.title, 'Du bist nachgerueckt', 'Das Mitglied erfaehrt es');
-  return next ok(n.body like 'Fuer ZZTest Fest am % ist ein Platz frei geworden%', 'mit Veranstaltung und Tag');
-  return next ok(n.body like '%Die Gebuehr von 36,00 Euro steht in deinem Konto.', 'und dem Betrag fuer zwei Personen');
+  return next is(n.title, 'Du bist nachgerückt', 'Das Mitglied erfaehrt es');
+  return next ok(n.body like 'Für ZZTest Fest am % ist ein Platz frei geworden%', 'mit Veranstaltung und Tag');
+  return next ok(n.body like '%Die Gebühr von 36,00 Euro steht in deinem Konto.', 'und dem Betrag fuer zwei Personen');
   return next is((select amount_cents from public.charges where event_id = v_event and member_id = b.member_id
                    and status <> 'waived'), 3600, 'Betrag und Forderung stimmen ueberein');
   return next is(n.event_id, v_event, 'Die Nachricht verweist auf die Veranstaltung');
@@ -147,12 +147,12 @@ begin
   perform set_config('role', 'postgres', true);
 
   return next is((select body from tests.event_nachrichten(v_event, a.member_id, 'event_cancelled')),
-    format('ZZTest Fest %s faellt aus. Die Gebuehr entfaellt.',
+    format('ZZTest Fest %s fällt aus. Die Gebühr entfällt.',
            (select private.event_wann(starts_at, ends_at, location) from public.events where id = v_event)),
     'Angemeldete: abgesagt, die Gebuehr entfaellt');
   return next is((select title from tests.event_nachrichten(v_event, b.member_id, 'event_cancelled')),
     'Abgesagt: ZZTest Fest', 'Wartende erfahren es auch');
-  return next ok((select body from tests.event_nachrichten(v_event, b.member_id, 'event_cancelled')) not like '%Gebuehr%',
+  return next ok((select body from tests.event_nachrichten(v_event, b.member_id, 'event_cancelled')) not like '%Gebühr%',
     'ohne Satz zur Gebuehr - sie hatten keine');
   return next is((select count(*)::integer from tests.event_nachrichten(v_event, c.member_id, 'event_cancelled')), 0,
     'Wer schon abgemeldet ist, nicht');
@@ -177,7 +177,7 @@ begin
 
   perform tests.event_umspeichern(adm.auth_id, v_event, 'Halle');
   select * into n from tests.event_nachrichten(v_event, a.member_id, 'event_changed');
-  return next is(n.title, 'Geaendert: ZZTest Fest', 'Ort geaendert: Nachricht');
+  return next is(n.title, 'Geändert: ZZTest Fest', 'Ort geaendert: Nachricht');
   return next ok(n.body like 'ZZTest Fest findet jetzt am %, Halle statt (bisher am %, Clubhaus).', 'mit neuem und altem Ort');
 
   perform tests.event_umspeichern(adm.auth_id, v_event, 'Halle');

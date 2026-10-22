@@ -74,7 +74,7 @@ begin
 
   return next throws_ok(
     $q$select public.create_member('Ohne', 'Daten', 'ohne.daten@example.org')$q$,
-    '22023', 'Pflichtangaben fehlen: Geburtsdatum, Geschlecht, Strasse, PLZ, Ort, Telefon.',
+    '22023', 'Pflichtangaben fehlen: Geburtsdatum, Geschlecht, Straße, PLZ, Ort, Telefon.',
     'create_member nennt alle fehlenden Pflichtangaben');
   return next throws_ok(
     $q$select public.create_member('Ohne', 'Telefon', 'ohne.telefon@example.org',
@@ -101,7 +101,7 @@ begin
     $q$select public.submit_membership_application(jsonb_build_object(
          'first_name','Ohne','last_name','Adresse','email','ohne.a@example.org',
          'birthday','1990-01-01','gender','male'))$q$,
-    '22023', 'Bitte noch angeben: Strasse, PLZ, Ort, Telefon.', 'Adresse und Telefon sind Pflicht');
+    '22023', 'Bitte noch angeben: Straße, PLZ, Ort, Telefon.', 'Adresse und Telefon sind Pflicht');
   return next lives_ok(
     $q$select public.submit_membership_application(jsonb_build_object(
          'first_name','Mit','last_name','Allem','email','mit.allem@example.org',
@@ -175,10 +175,10 @@ begin
   return next is((select count(*)::integer from public.member_directory()), 0, 'Kein Verzeichnis');
   return next throws_ok(
     format($q$select public.create_booking(%L, %L, 'einzel', array[]::uuid[], array['Gast'])$q$, v_court, v_start),
-    '42501', 'Bitte schliesse zuerst die Einrichtung deines Kontos ab.', 'Buchen ist gesperrt');
+    '42501', 'Bitte schließe zuerst die Einrichtung deines Kontos ab.', 'Buchen ist gesperrt');
   return next throws_ok(
     format($q$select public.record_drink_purchase(%L)$q$, v_drink),
-    '42501', 'Bitte schliesse zuerst die Einrichtung deines Kontos ab.', 'Getraenke buchen ist gesperrt');
+    '42501', 'Bitte schließe zuerst die Einrichtung deines Kontos ab.', 'Getraenke buchen ist gesperrt');
 
   -- Was offen bleibt
   return next is((select count(*)::integer from public.members), 1, 'Die eigenen Stammdaten sind lesbar');
@@ -248,7 +248,7 @@ begin
 
   return next throws_ok(
     $q$select public.onboarding_save_stammdaten('Neu', 'Person', '1991-02-03', 'male', '', '70372', 'Stuttgart', '0711 1')$q$,
-    '22023', 'Pflichtangaben fehlen: Strasse.', 'Pflichtfelder werden geprueft');
+    '22023', 'Pflichtangaben fehlen: Straße.', 'Pflichtfelder werden geprueft');
   return next throws_ok(
     $q$select public.onboarding_save_stammdaten('Neu', 'Person', '2999-02-03', 'male', 'Weg 2', '70372', 'Stuttgart', '0711 1')$q$,
     '22023', null, 'Ein Geburtsdatum in der Zukunft wird abgewiesen');
@@ -336,7 +336,7 @@ begin
   return next throws_ok($q$select public.onboarding_save_guardian('Mama', null, ' ', true)$q$,
     '22023', null, 'E-Mail oder Telefon ist Pflicht');
   return next throws_ok($q$select public.onboarding_save_guardian('Mama', 'mama@example.org', null, false)$q$,
-    '22023', 'Die Erziehungsberechtigten muessen der Mitgliedschaft zustimmen.', 'Die Zustimmung ist Pflicht');
+    '22023', 'Die Erziehungsberechtigten müssen der Mitgliedschaft zustimmen.', 'Die Zustimmung ist Pflicht');
   return next lives_ok($q$select public.onboarding_save_guardian('Mama Kind', null, '0711 2', true)$q$,
     'Name, Telefon und Zustimmung reichen');
   perform set_config('role', 'postgres', true);
@@ -363,7 +363,7 @@ begin
 
   perform tests.act_as(k.auth_id);
   return next throws_ok($q$select public.onboarding_save_notfallkontakt('', '')$q$,
-    '22023', 'Bei Minderjaehrigen sind Name und Telefonnummer des Notfallkontakts Pflicht.',
+    '22023', 'Bei Minderjährigen sind Name und Telefonnummer des Notfallkontakts Pflicht.',
     'Minderjaehrig: Notfallkontakt ist Pflicht');
   return next lives_ok($q$select public.onboarding_save_notfallkontakt('Oma', '0711 3', 'Grossmutter')$q$,
     'Mit Name und Telefon geht es');
@@ -413,9 +413,9 @@ begin
   perform tests.act_as(n.auth_id);
 
   return next throws_ok($q$select public.create_my_sepa_mandate('DE89370400440532013000', null, false)$q$,
-    '22023', 'Bitte bestaetige das Mandat ausdruecklich.', 'Ohne ausdrueckliche Zustimmung kein Mandat');
+    '22023', 'Bitte bestätige das Mandat ausdrücklich.', 'Ohne ausdrueckliche Zustimmung kein Mandat');
   return next throws_ok($q$select public.create_my_sepa_mandate('DE00370400440532013000', null, true)$q$,
-    '22023', 'Diese IBAN ist nicht gueltig. Bitte die Ziffern pruefen.', 'Die IBAN wird geprueft');
+    '22023', 'Diese IBAN ist nicht gültig. Bitte die Ziffern prüfen.', 'Die IBAN wird geprueft');
 
   v_ref := public.create_my_sepa_mandate('DE89 3704 0044 0532 0130 00', null, true);
   return next isnt(v_ref, null, 'Das Mandat ist erteilt');
@@ -454,7 +454,7 @@ begin
 
   perform tests.act_as(n.auth_id);
   return next throws_ok($q$select public.create_my_sepa_mandate('DE89370400440532013000', null, true)$q$,
-    '23514', 'Fuer dich besteht bereits ein aktives SEPA-Mandat. Aendern kann es der Vorstand.',
+    '23514', 'Für dich besteht bereits ein aktives SEPA-Mandat. Ändern kann es der Vorstand.',
     'Ein vorhandenes Mandat wird nicht ersetzt');
   perform set_config('role', 'postgres', true);
   return next ok((private.onboarding_status(n.member_id) ->> 'sepa')::boolean,

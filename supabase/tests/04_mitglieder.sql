@@ -684,7 +684,7 @@ begin
 
   select * into v_m from public.members where id = v_neu;
 
-  return next is(v_m.first_name, 'Geloescht', 'Der Vorname ist ersetzt');
+  return next is(v_m.first_name, 'Gelöscht', 'Der Vorname ist ersetzt');
   return next is(v_m.email, null, 'Die E-Mail ist entfernt');
   return next is(v_m.birthday, null, 'Das Geburtsdatum ist entfernt');
   return next is(v_m.status::text, 'archived', 'Das Mitglied ist archiviert');

@@ -96,7 +96,7 @@ begin
   perform tests.act_as(p.auth_id);
   return next throws_ok(
     format('select public.move_booking(%L, %L, %L)', v_id, p2, v_von + interval '1 hour'),
-    '22023', 'Die Buchung laeuft schon - sie kann nur noch den Platz wechseln.',
+    '22023', 'Die Buchung läuft schon - sie kann nur noch den Platz wechseln.',
     'Eine laufende Buchung bekommt keine neue Zeit');
   return next lives_ok(format('select public.move_booking(%L, %L, %L)', v_id, p2, v_von),
     'Eine laufende Buchung wechselt den Platz');
@@ -255,11 +255,11 @@ begin
     'Auf einen stillgelegten Platz wird nicht umgesetzt');
   return next throws_ok(
     format('select public.move_booking(%L, %L, %L)', v_sperre, p2, s1 + interval '2 hours'),
-    '22023', 'Eine Sperrung laesst sich nicht umsetzen.', 'Sperrungen werden nicht umgesetzt');
+    '22023', 'Eine Sperrung lässt sich nicht umsetzen.', 'Sperrungen werden nicht umgesetzt');
   return next throws_ok(
     format('select public.move_booking(%L, %L, (select lower(slot) from public.bookings where id = %L))',
            v_termin, p2, v_termin),
-    '22023', 'Ein Serientermin laesst sich nicht einzeln umsetzen.',
+    '22023', 'Ein Serientermin lässt sich nicht einzeln umsetzen.',
     'Serientermine werden nicht umgesetzt');
   return next throws_ok(
     format('select public.move_booking(%L, %L, (select lower(slot) from public.bookings where id = %L))',
@@ -314,7 +314,7 @@ begin
 
   return next is(
     (select description from public.charges where booking_id = v_id and kind = 'guest'),
-    'Gastgebuehr ' || v_neu, 'Die offene Gastgebuehr nennt den neuen Ort');
+    'Gastgebühr ' || v_neu, 'Die offene Gastgebuehr nennt den neuen Ort');
   return next is(
     (select status::text from public.charges where booking_id = v_id and kind = 'guest'),
     'open', 'Die Gastgebuehr bleibt offen - gespielt wird ja trotzdem');
