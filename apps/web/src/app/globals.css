@@ -953,6 +953,8 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   background: var(--surf-2); color: var(--ink-2); text-decoration: none;
 }
+/* Haelt den sr-only-Text in der Kachel; sonst ragt er aus der Scrollleiste und die Seite wird breiter. */
+.datums-kacheln a { position: relative; }
 .datums-kacheln a:hover { text-decoration: none; background: var(--surf-3); }
 .datums-kacheln a[aria-current="date"] { background: var(--gold); color: var(--on-gold); }
 .datums-kacheln small { font-size: 11px; font-weight: 700; letter-spacing: .08em; }
@@ -1526,7 +1528,8 @@ li.chip { padding-right: 4px; }
 .zuletzt .was b { font-size: 15px; font-weight: 600; }
 .zuletzt .was small { font-size: 12.5px; color: var(--muted); }
 .zuletzt .betrag { font-size: 17px; font-weight: 700; }
-.zuletzt li.zurueck { opacity: .55; }
+/* Zurückgenommen: gedämpft und durchgestrichen, aber lesbar (axe, 4,5:1) - opacity .55 lag darunter. */
+.zuletzt li.zurueck :is(b, small, .betrag) { color: var(--muted); }
 .zuletzt li.zurueck b, .zuletzt li.zurueck .betrag { text-decoration: line-through; }
 .leise-rot {
   border: 0; background: transparent; color: var(--red-ink); cursor: pointer;
