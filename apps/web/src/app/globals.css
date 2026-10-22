@@ -2404,6 +2404,10 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 /* „Zu tun“: der Titel ist die Aufgabe und darf umbrechen; am Telefon fuehrt
    die ganze Zeile weiter, der Text rechts entfaellt. */
 .liste-gruppe.zu-tun .listenzeile .titel { white-space: normal; }
+/* Verwaltungsprotokoll (O27): der ganze Satz ist der Titel, er bricht um. */
+.liste-gruppe.protokoll-liste .listenzeile .titel { white-space: normal; font-size: 15px; font-weight: 600; }
+.protokoll-filter { margin-bottom: 18px; }
+.protokoll-filter .formular-fuss { align-self: end; }
 @media (max-width: 599px) {
   .liste-gruppe.zu-tun .hinweis-rechts { display: none; }
 }

@@ -188,7 +188,7 @@ begin
   perform set_config('role', 'postgres', true);
 end; $f$;
 
-create or replace function tests.test_protokoll_zeigt_nur_eigene_eintraege()
+create or replace function tests.test_protokoll_fuer_mitglieder_gesperrt()
 returns setof text language plpgsql as $f$
 declare a record; b record; v_fremd integer; v_eigen integer;
 begin
@@ -204,7 +204,9 @@ begin
   perform set_config('role', 'postgres', true);
 
   return next is(v_fremd, 0, 'Mitglied A sieht die Protokolleintraege von B nicht');
-  return next cmp_ok(v_eigen, '>', 0, 'Mitglied A sieht seine eigenen Eintraege');
+  -- S29: Auch die eigenen nicht mehr, sonst waeren Notizen ueber das
+  -- Protokoll lesbar. Das Protokoll ist fuer volle Rechte.
+  return next is(v_eigen, 0, 'Mitglied A sieht auch seine eigenen Eintraege nicht');
 end; $f$;
 
 -- ---------------------------------------------------------------------------

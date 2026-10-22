@@ -52,6 +52,7 @@ function vorgaben(): Router {
     .rpc("member_for_login_admin", (a) => ({
       json: (a.koerper as { p_member_id: string }).p_member_id === MITGLIED.id ? [MITGLIED] : [],
     }))
+    .rpc("protokoll_zugang", () => ({ json: null }))
     // Ohne Angabe hat niemand volle Rechte: Sperren und Löschen gehen durch.
     .route("GET", "/rest/v1/member_roles", () => ({ json: [] }));
 }
@@ -169,6 +170,28 @@ Deno.test("passwort_zuruecksetzen: ohne Login 400", async () => {
   assertEquals(r.koerper.meldung, "Dieses Mitglied hat keinen Zugang.");
 });
 
+Deno.test("passwort_zuruecksetzen und einladung_erneut: erst der Protokolleintrag, dann der Versand (O27)", async () => {
+  for (const aktion of ["passwort_zuruecksetzen", "einladung_erneut"] as const) {
+    const router = einladungRouter(null, true);
+    const r = await rufe(router, { aktion, memberId: "m-1" });
+    assertEquals(r.status, 200, aktion);
+    const [eintrag] = router.an("/rest/v1/rpc/protokoll_zugang");
+    assertEquals(eintrag.koerper, { p_member_id: "m-1", p_ereignis: aktion });
+    assertEquals(eintrag.authorization, NUTZER);
+    const reihenfolge = router.aufrufe.map((a) => a.pfad).filter((p) => /protokoll_zugang|recover/.test(p));
+    assertEquals(reihenfolge, ["/rest/v1/rpc/protokoll_zugang", "/auth/v1/recover"]);
+  }
+});
+
+Deno.test("passwort_zuruecksetzen: ohne Protokolleintrag geht nichts raus (O27)", async () => {
+  const router = vorgaben()
+    .rpc("protokoll_zugang", () => pgFehler("Zugänge verwalten dürfen nur Administratoren.", "42501", 403))
+    .route("POST", "/auth/v1/recover", () => ({ json: {} }));
+  const r = await rufe(router, { aktion: "passwort_zuruecksetzen", memberId: "m-1" });
+  assertEquals(r.status, 400);
+  assertEquals(router.an("/auth/v1/recover"), []);
+});
+
 function einladungRouter(onboarding: string | null, bestaetigt: boolean): Router {
   return vorgaben()
     .route("GET", "/rest/v1/members", () => ({ json: [{ onboarding_completed_at: onboarding }] }))
@@ -253,7 +276,8 @@ Deno.test("login_deaktivieren und login_aktivieren: Bann und Kennzeichen", async
     );
     const [kennzeichen] = router.an("/rest/v1/rpc/set_login_disabled");
     assertEquals(kennzeichen.koerper, { p_member_id: "m-1", p_disabled: gesperrt });
-    assertEquals(kennzeichen.schluessel, DIENST);
+    // Mit dem Token des Admins, damit das Protokoll ihn als Urheber kennt (O27).
+    assertEquals(kennzeichen.authorization, NUTZER);
   }
 });
 

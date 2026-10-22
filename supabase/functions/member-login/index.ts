@@ -214,6 +214,7 @@ Deno.serve(async (req) => {
           return antwort(false, TESTADRESSE, 400);
         }
 
+        await protokolliere(alsAufrufer, mitglied.id, aktion);
         const { error } = await alsDienst.auth.resetPasswordForEmail(mitglied.email, {
           redirectTo: `${SITE_URL}/passwort-setzen`,
         });
@@ -264,6 +265,7 @@ Deno.serve(async (req) => {
         //    ("already been registered"). Dann ein Recovery-Link, der auf
         //    dieselbe Seite /passwort-setzen führt.
         const bestaetigt = Boolean(konto.user.email_confirmed_at);
+        await protokolliere(alsAufrufer, mitglied.id, aktion);
         const { error } = bestaetigt
           ? await alsDienst.auth.resetPasswordForEmail(mitglied.email, {
               redirectTo: `${SITE_URL}/passwort-setzen`,
@@ -297,7 +299,9 @@ Deno.serve(async (req) => {
         });
         if (error) return antwort(false, error.message, 400);
 
-        await rpc(alsDienst, "set_login_disabled", {
+        // Mit dem Token des Aufrufers, damit das Protokoll den Admin als
+        // Urheber festhält (O27).
+        await rpc(alsAufrufer, "set_login_disabled", {
           p_member_id: mitglied.id,
           p_disabled: sperren,
         });
@@ -770,6 +774,19 @@ async function istTestadresse(
   email: string,
 ): Promise<boolean> {
   return (await rpc<boolean>(client, "ist_testadresse", { p_email: email })) === true;
+}
+
+/**
+ * Ein Eintrag im Verwaltungsprotokoll für Aktionen, die keine Zeile ändern
+ * (O27). Mit dem Token des Aufrufers: die Datenbank nimmt den Urheber selbst
+ * daraus. Geschrieben wird vor dem Versand, ohne Eintrag geht nichts raus.
+ */
+async function protokolliere(
+  alsAufrufer: ReturnType<typeof createClient>,
+  memberId: string,
+  ereignis: "passwort_zuruecksetzen" | "einladung_erneut",
+): Promise<void> {
+  await rpc(alsAufrufer, "protokoll_zugang", { p_member_id: memberId, p_ereignis: ereignis });
 }
 
 /** Ruft eine RPC auf und wirft, wenn sie einen Fehler meldet. */
