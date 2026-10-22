@@ -6,6 +6,7 @@ import {
   mitgliedAnonymisieren,
   mitgliedArchivieren,
   mitgliedLoeschen,
+  mitgliedReaktivieren,
 } from "@/app/admin/mitglieder/[id]/aktionen";
 
 export interface Loeschfolgen {
@@ -24,6 +25,7 @@ interface Props {
   mitgliedId: string;
   nachname: string;
   archiviert: boolean;
+  anonymisiert: boolean;
   selbst: boolean;
   folgen: Loeschfolgen;
 }
@@ -42,6 +44,7 @@ export function GefahrenzoneKarte(props: Props) {
 
   const [archivGrund, setArchivGrund] = useState("");
   const [archivOffen, setArchivOffen] = useState(false);
+  const [reaktivOffen, setReaktivOffen] = useState(false);
   const [anonGrund, setAnonGrund] = useState("");
   const [anonOffen, setAnonOffen] = useState(false);
   const [tippName, setTippName] = useState("");
@@ -55,6 +58,14 @@ export function GefahrenzoneKarte(props: Props) {
       const e = await mitgliedArchivieren(props.mitgliedId, bestaetigt, archivGrund);
       setMeldung({ ok: e.ok, text: e.meldung });
       if (e.ok) setArchivOffen(false);
+    });
+  }
+
+  function reaktivieren() {
+    starte(async () => {
+      const e = await mitgliedReaktivieren(props.mitgliedId);
+      setMeldung({ ok: e.ok, text: e.meldung });
+      if (e.ok) setReaktivOffen(false);
     });
   }
 
@@ -110,8 +121,32 @@ export function GefahrenzoneKarte(props: Props) {
           Forderungen bleiben bestehen.
         </span>
 
-        {props.archiviert ? (
-          <span className="marke-klein grau">Bereits archiviert</span>
+        {props.archiviert && props.anonymisiert ? (
+          <span className="marke-klein grau">Anonymisiert</span>
+        ) : props.archiviert && !reaktivOffen ? (
+          <>
+            <span className="marke-klein grau">Archiviert</span>
+            <button className="knopf leise klein" disabled={laeuft} onClick={() => setReaktivOffen(true)}>
+              Reaktivieren
+            </button>
+          </>
+        ) : props.archiviert ? (
+          <>
+            <p className="hinweis">
+              Das Mitglied wird wieder aktiv. Der Zugang bleibt gesperrt, bis du unter Zugang die
+              Sperre aufhebst und neu einlädst. Danach geht es noch einmal durchs Onboarding und
+              bestätigt seine Stammdaten. Rollen kommen nicht zurück, die Mitgliedschaft trägst du
+              über „Wieder aufnehmen“ ein.
+            </p>
+            <div className="detailkopf aktionen" style={{ gap: 8, marginTop: 8 }}>
+              <button className="knopf leise klein" disabled={laeuft} onClick={() => setReaktivOffen(false)}>
+                Abbrechen
+              </button>
+              <button className="knopf klein" disabled={laeuft} onClick={reaktivieren}>
+                {laeuft ? "Wird reaktiviert…" : "Wirklich reaktivieren"}
+              </button>
+            </div>
+          </>
         ) : !archivOffen ? (
           <button className="knopf leise klein" disabled={laeuft} onClick={() => setArchivOffen(true)}>
             Archivieren

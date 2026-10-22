@@ -218,6 +218,25 @@ export async function mitgliedArchivieren(
 }
 
 /**
+ * Ein archiviertes Mitglied zurückholen (B26). Der Zugang bleibt gesperrt:
+ * der Admin hebt die Sperre auf und lädt neu ein, das Mitglied geht noch
+ * einmal durchs Onboarding. Die Mitgliedschaft trägt "Wieder aufnehmen" ein.
+ */
+export async function mitgliedReaktivieren(id: string): Promise<AktionsErgebnis> {
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.rpc("reactivate_member", { p_member_id: id });
+
+  if (error) return { ok: false, meldung: translateDbError(error) };
+
+  neuLaden(id);
+  return {
+    ok: true,
+    meldung:
+      "Mitglied reaktiviert. Der Zugang bleibt gesperrt: Unter Zugang die Sperre aufheben und die Einladung erneut senden. Die Mitgliedschaft trägt „Wieder aufnehmen“ ein.",
+  };
+}
+
+/**
  * Anonymisieren. Läuft über die Edge Function, damit der Login mitgeht –
  * ein anonymisiertes Mitglied soll sich nicht mehr anmelden können.
  */
