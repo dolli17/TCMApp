@@ -18,10 +18,11 @@
  */
 
 import type { ReactNode } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, RefreshControl, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { INHALT_LUFT_UNTEN } from "@/lib/masse";
 import { useTheme } from "@/lib/theme";
+import { Fehlerzeile } from "@/components/Fehlerzeile";
 
 type Eigenschaften = {
   children: ReactNode;
@@ -76,7 +77,8 @@ export function Bildschirm({
         ) : undefined
       }
     >
-      {fehler && <Text style={stil.hinweisFehler}>{fehler}</Text>}
+      {/* Erneut versuchen tut dasselbe wie Herunterziehen (U3). */}
+      {fehler && <Fehlerzeile text={fehler} onErneut={onAktualisieren} laeuft={aktualisiert} />}
       {children}
     </ScrollView>
   );

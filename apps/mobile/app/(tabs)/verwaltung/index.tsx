@@ -60,7 +60,17 @@ export default function PlaetzeVerwaltung() {
   const kopf = <GrosserKopf titel="Plätze" kicker="Verwaltung" />;
 
   if (!d) {
-    return <Bildschirm kopf={kopf} laedt={zustand.laedt} fehler={zustand.fehler}>{null}</Bildschirm>;
+    return (
+      <Bildschirm
+        kopf={kopf}
+        laedt={zustand.laedt}
+        aktualisiert={zustand.aktualisiert}
+        onAktualisieren={zustand.neuLaden}
+        fehler={zustand.fehler}
+      >
+        {null}
+      </Bildschirm>
+    );
   }
 
   const aktive = d.plaetze.filter((p) => p.active);

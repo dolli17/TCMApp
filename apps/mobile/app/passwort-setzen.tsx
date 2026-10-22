@@ -137,7 +137,7 @@ export default function PasswortSetzen() {
             beschriftung="Neues Passwort"
             value={passwort}
             onChangeText={setPasswort}
-            secureTextEntry
+            passwort
             autoComplete="new-password"
             textContentType="newPassword"
           />
@@ -146,7 +146,7 @@ export default function PasswortSetzen() {
             accessibilityLabel="Passwort wiederholen"
             value={wiederholung}
             onChangeText={setWiederholung}
-            secureTextEntry
+            passwort
             autoComplete="new-password"
             textContentType="newPassword"
             onSubmitEditing={absenden}

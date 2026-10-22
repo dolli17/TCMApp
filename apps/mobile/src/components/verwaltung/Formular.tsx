@@ -12,10 +12,11 @@
 
 import { Children, Fragment, isValidElement, useState, type ReactNode } from "react";
 import {
-  ActivityIndicator, Alert, Platform, Pressable, Text, TextInput, View, type KeyboardTypeOptions,
+  ActivityIndicator, Platform, Pressable, Text, TextInput, View, type KeyboardTypeOptions,
 } from "react-native";
 import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { Blatt, BlattKopf } from "@/components/Blatt";
+import { PasswortSchalter } from "@/components/PasswortSchalter";
 import { Schalter } from "@/components/Segmente";
 import { feldEigenschaften, type Feldinhalt } from "@/lib/feldinhalt";
 import { datumZuDeutsch, deutschZuDatum } from "@/lib/verwaltung/gemeinsam";
@@ -125,6 +126,7 @@ export function FormFeld({
 }) {
   const { farben } = useTheme();
   const auto = feldEigenschaften(inhalt);
+  const [sichtbar, setSichtbar] = useState(false);
   return (
     <View style={{ paddingHorizontal: 16 }}>
       <View style={{ flexDirection: "row", alignItems: mehrzeilig ? "flex-start" : "center", gap: 12, minHeight: 52 }}>
@@ -145,7 +147,7 @@ export function FormFeld({
           keyboardType={tastatur ?? auto.keyboardType}
           multiline={mehrzeilig}
           autoCapitalize={gross ?? auto.autoCapitalize ?? "sentences"}
-          secureTextEntry={sicher}
+          secureTextEntry={sicher && !sichtbar}
           autoFocus={autoFokus}
           editable={editierbar}
           accessibilityLabel={label}
@@ -156,6 +158,7 @@ export function FormFeld({
             textAlignVertical: mehrzeilig ? "top" : "center",
           }}
         />
+        {sicher && <PasswortSchalter sichtbar={sichtbar} onWechsel={setSichtbar} />}
       </View>
       {fehler ? (
         <Text
@@ -530,31 +533,6 @@ export function Folgen({ children }: { children: ReactNode }) {
       )}
     </View>
   );
-}
-
-/**
- * Rueckfrage vor einer folgenreichen Aktion. Im Web ein confirm() oder ein
- * zweiter Knopf; hier der native Dialog.
- *
- * Alert.alert ist in react-native-web ein leerer Aufruf - im Browser (der
- * Web-Vorschau der App) erschiene keine Rueckfrage, und die Aktion liesse
- * sich nie ausloesen. Dort springt window.confirm ein.
- */
-export function bestaetige(
-  titel: string,
-  text: string,
-  ja: string,
-  aktion: () => void,
-  gefaehrlich = true,
-): void {
-  if (Platform.OS === "web") {
-    if (typeof window !== "undefined" && window.confirm(`${titel}\n\n${text}`)) aktion();
-    return;
-  }
-  Alert.alert(titel, text, [
-    { text: "Abbrechen", style: "cancel" },
-    { text: ja, style: gefaehrlich ? "destructive" : "default", onPress: aktion },
-  ]);
 }
 
 /**

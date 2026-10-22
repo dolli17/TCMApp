@@ -42,8 +42,9 @@ export default function PasswortVergessen() {
         returnKeyType="send"
       />
 
-      {/* Die Meldung ist dieselbe, ob es die Adresse gibt oder nicht. */}
-      {meldung && <AnmeldeHinweis ok text={meldung} />}
+      {/* Die Meldung ist dieselbe, ob es die Adresse gibt oder nicht. Die Mail
+          landet bei manchen Anbietern im Spam (U31). */}
+      {meldung && <AnmeldeHinweis ok text={`${meldung} Schau auch im Spam-Ordner nach.`} />}
 
       <View style={{ marginTop: "auto", gap: 6 }}>
         <GelberKnopf text={laeuft ? "Wird gesendet…" : "Link anfordern"} onPress={absenden} gesperrt={laeuft} />

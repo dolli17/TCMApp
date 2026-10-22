@@ -10,7 +10,7 @@
  * und der gelbe Hauptknopf.
  */
 
-import { forwardRef, type ReactNode } from "react";
+import { forwardRef, useState, type ReactNode } from "react";
 import {
   ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View,
   type TextInputProps,
@@ -19,6 +19,7 @@ import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path } from "react-native-svg";
 import logo from "@tcm/ui/logo-weiss.png";
+import { PasswortSchalter } from "@/components/PasswortSchalter";
 import { mitDeckkraft } from "@/lib/stil";
 import { ImmerDunkel, useTheme } from "@/lib/theme";
 
@@ -98,29 +99,42 @@ function Inhalt({ titel, unterzeile, children }: { titel: string; unterzeile?: s
   );
 }
 
-/** Eingabefeld der Anmeldeseiten: Beschriftung darueber, 54 hoch, Radius 16. */
-export const AnmeldeFeld = forwardRef<TextInput, TextInputProps & { beschriftung: string }>(
-  function AnmeldeFeld({ beschriftung, style, ...rest }, ref) {
+/**
+ * Eingabefeld der Anmeldeseiten: Beschriftung darueber, 54 hoch, Radius 16.
+ * Mit passwort verdeckt es die Eingabe und traegt rechts den Schalter "Anzeigen".
+ */
+export const AnmeldeFeld = forwardRef<TextInput, TextInputProps & { beschriftung: string; passwort?: boolean }>(
+  function AnmeldeFeld({ beschriftung, passwort = false, style, ...rest }, ref) {
     const { farben } = useTheme();
+    const [sichtbar, setSichtbar] = useState(false);
     return (
       <View>
         <Text style={{ fontSize: 13, fontFamily: "Barlow_600SemiBold", color: farben.ink2, marginBottom: 8 }}>
           {beschriftung}
         </Text>
-        <TextInput
-          ref={ref}
-          accessibilityLabel={beschriftung}
-          placeholderTextColor={farben.muted}
-          style={[
-            {
-              minHeight: 54, borderRadius: 16, paddingHorizontal: 16, fontSize: 16,
-              backgroundColor: farben.surf, color: farben.ink, fontFamily: "Barlow_400Regular",
-              borderWidth: 1.5, borderColor: "rgba(255,255,255,.12)",
-            },
-            style,
-          ]}
-          {...rest}
-        />
+        <View>
+          <TextInput
+            ref={ref}
+            accessibilityLabel={beschriftung}
+            placeholderTextColor={farben.muted}
+            secureTextEntry={passwort && !sichtbar}
+            style={[
+              {
+                minHeight: 54, borderRadius: 16, paddingHorizontal: 16, fontSize: 16,
+                backgroundColor: farben.surf, color: farben.ink, fontFamily: "Barlow_400Regular",
+                borderWidth: 1.5, borderColor: "rgba(255,255,255,.12)",
+              },
+              passwort && { paddingRight: 104 },
+              style,
+            ]}
+            {...rest}
+          />
+          {passwort && (
+            <View style={{ position: "absolute", right: 6, top: 0, bottom: 0, justifyContent: "center" }}>
+              <PasswortSchalter sichtbar={sichtbar} onWechsel={setSichtbar} />
+            </View>
+          )}
+        </View>
       </View>
     );
   },

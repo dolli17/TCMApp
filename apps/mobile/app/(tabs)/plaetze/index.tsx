@@ -119,6 +119,8 @@ export default function Plan() {
   const [aktualisiert, setAktualisiert] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<Meldung | null>(null);
+  /** Plan nicht ladbar: steht oben mit "Erneut versuchen" statt als Toast (U3). */
+  const [ladeFehler, setLadeFehler] = useState<string | null>(null);
   const [markiert, setMarkiert] = useState<Markierung | null>(null);
   /** Hoehe der Buchen-Leiste, fuer den Toast darueber */
   const [leisteHoehe, setLeisteHoehe] = useState(0);
@@ -140,6 +142,7 @@ export default function Plan() {
     setArten(a); setBlockungsarten(ba); setVerzeichnis(v); setDarfPlaetze(ich.platzRechte);
     setMeineId(ich.id);
     setGeladenFuer(tag);
+    setLadeFehler(null);
     setLaedt(false);
   }, []);
 
@@ -162,7 +165,7 @@ export default function Plan() {
 
   useEffect(() => {
     laden(datum).catch((f: Error) => {
-      setMeldung({ ok: false, text: f.message });
+      setLadeFehler(f.message);
       setLaedt(false);
     });
   }, [datum, laden]);
@@ -171,7 +174,7 @@ export default function Plan() {
   const vonHand = useCallback(() => {
     setAktualisiert(true);
     laden(datum, true)
-      .catch((f: Error) => setMeldung({ ok: false, text: f.message }))
+      .catch((f: Error) => setLadeFehler(f.message))
       .finally(() => setAktualisiert(false));
   }, [datum, laden]);
 
@@ -467,7 +470,7 @@ export default function Plan() {
 
   return (
     <>
-      <Bildschirm laedt={laedt} aktualisiert={aktualisiert} onAktualisieren={vonHand}>
+      <Bildschirm laedt={laedt} aktualisiert={aktualisiert} onAktualisieren={vonHand} fehler={ladeFehler}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Rundknopf
             richtung="zurueck"
@@ -587,6 +590,9 @@ export default function Plan() {
               oeffnebar={oeffnebar}
               markiert={istMarkiert}
               onOeffnen={oeffneBelegung}
+              onNaechsterTag={
+                tagIndex >= 0 && tagIndex < tage.length - 1 ? () => waehleTag(tage[tagIndex + 1]!) : undefined
+              }
             />
             <FreieZeitenLegende />
           </>

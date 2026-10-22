@@ -7,6 +7,7 @@ import { formatCents, sumOpenDrinks, CHARGE_KIND_LABEL, KONTOLOESCHUNG_TEXT, typ
 import { abstand, radius } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
 import { Blatt, BlattKopf } from "@/components/Blatt";
+import { Fehlerzeile } from "@/components/Fehlerzeile";
 import { Glocke } from "@/components/Glocke";
 import { KontoloeschungFormular } from "@/components/KontoloeschungFormular";
 import { MerkmaleKarte, type MerkmalZeile } from "@/components/MerkmaleKarte";
@@ -18,8 +19,10 @@ import {
   speichereNotfallkontakt, speichereStammdaten,
   type Notfallkontakt, type Stammdaten,
 } from "@/lib/daten";
+import { useNachladenBeiFokus } from "@/lib/fokus";
 import { abschnitt, useLaden } from "@/lib/laden";
 import { istAngemeldet, meldeGeraetAb, registriereGeraet } from "@/lib/push";
+import { bestaetige } from "@/lib/rueckfrage";
 import { mitDeckkraft } from "@/lib/stil";
 import { SCHRIFT_DECKEL } from "@/lib/schrift";
 import { useTheme, type ThemeWahl } from "@/lib/theme";
@@ -73,6 +76,10 @@ export default function Konto() {
 
   const zustand = useLaden(laden);
   const d = zustand.daten;
+  // Zurueck auf den Tab, etwa nach dem Buchen oder einem Getraenk: die
+  // Forderungen und der Arbeitsdienst stimmen sonst nicht mehr (B19).
+  useNachladenBeiFokus(zustand.stillNachladen);
+  const erneut = { onErneut: zustand.neuLaden, laeuft: zustand.aktualisiert };
   const stammdaten = d?.stammdaten.wert ?? null;
   const merkmale = (d?.merkmale.wert ?? []) as unknown as MerkmalZeile[];
   const mannschaft = d?.mannschaft.wert ?? null;
@@ -142,7 +149,9 @@ export default function Konto() {
             {mannschaft?.mannschaftsfuehrer && <Marke gelb>Mannschaftsführer</Marke>}
           </View>
           {d?.stammdaten.fehler && (
-            <Text style={[stil.hinweisFehler, { marginTop: 10 }]}>{d.stammdaten.fehler}</Text>
+            <View style={{ marginTop: 10, alignSelf: "stretch" }}>
+              <Fehlerzeile text={d.stammdaten.fehler} {...erneut} />
+            </View>
           )}
         </View>
 
@@ -150,61 +159,64 @@ export default function Konto() {
 
         {/* --- Offene Forderungen ----------------------------------------- */}
         <Abschnitt titel="Offene Forderungen" />
-        {forderungsFehler && <Text style={stil.hinweisFehler}>{forderungsFehler}</Text>}
+        {forderungsFehler && <Fehlerzeile text={forderungsFehler} {...erneut} />}
         {zurueck.length > 0 && (
           <Text style={stil.hinweisFehler}>
             {zurueck.length === 1 ? "Eine Lastschrift kam zurück" : `${zurueck.length} Lastschriften kamen zurück`}
             {" – die Beträge sind wieder offen. Bitte melde dich beim Verein."}
           </Text>
         )}
-        <Gruppe>
-          {offen.map((f, i) => (
-            <Zeile key={f.id} erste={i === 0} hoehe={64}>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ fontSize: 15.5, fontFamily: "Barlow_600SemiBold", color: farben.ink }} numberOfLines={1}>
-                  {CHARGE_KIND_LABEL[f.kind as ChargeKind] ?? f.kind}
-                  {f.period_label ? ` ${f.period_label}` : ""}
+        {/* Nach einem Ladefehler waere "Nichts offen" falsch beruhigend. */}
+        {(!forderungsFehler || offen.length > 0 || getraenkeLaufend > 0) && (
+          <Gruppe>
+            {offen.map((f, i) => (
+              <Zeile key={f.id} erste={i === 0} hoehe={64}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ fontSize: 15.5, fontFamily: "Barlow_600SemiBold", color: farben.ink }} numberOfLines={1}>
+                    {CHARGE_KIND_LABEL[f.kind as ChargeKind] ?? f.kind}
+                    {f.period_label ? ` ${f.period_label}` : ""}
+                  </Text>
+                  {f.description ? (
+                    <Text style={[stil.leise, { fontSize: 12.5, marginTop: 2 }]} numberOfLines={2}>{f.description}</Text>
+                  ) : null}
+                  <Statusmarke status={f.status} faellig={f.due_date} />
+                </View>
+                <Betrag>{formatCents(f.amount_cents)}</Betrag>
+              </Zeile>
+            ))}
+            {getraenkeLaufend > 0 && (
+              <Zeile erste={offen.length === 0} hoehe={64}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 15.5, fontFamily: "Barlow_600SemiBold", color: farben.ink }}>
+                    Getränke {MONAT.format(new Date())}
+                  </Text>
+                  <Statusmarke status="laufend" />
+                </View>
+                <Betrag>{formatCents(getraenkeLaufend)}</Betrag>
+              </Zeile>
+            )}
+            {offen.length === 0 && getraenkeLaufend === 0 ? (
+              <Zeile erste>
+                <Text style={stil.leise}>Nichts offen.</Text>
+              </Zeile>
+            ) : (
+              <View
+                style={{
+                  flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+                  paddingVertical: 14, paddingHorizontal: 16, backgroundColor: farben.surf2,
+                }}
+              >
+                <Text style={{ fontSize: 14, fontFamily: "Barlow_700Bold", color: farben.ink2 }}>Zusammen</Text>
+                <Text style={{ fontSize: 21, fontFamily: "BarlowSemiCondensed_700Bold", color: farben.ink }}>
+                  {formatCents(summe)}
                 </Text>
-                {f.description ? (
-                  <Text style={[stil.leise, { fontSize: 12.5, marginTop: 2 }]} numberOfLines={2}>{f.description}</Text>
-                ) : null}
-                <Statusmarke status={f.status} faellig={f.due_date} />
               </View>
-              <Betrag>{formatCents(f.amount_cents)}</Betrag>
-            </Zeile>
-          ))}
-          {getraenkeLaufend > 0 && (
-            <Zeile erste={offen.length === 0} hoehe={64}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 15.5, fontFamily: "Barlow_600SemiBold", color: farben.ink }}>
-                  Getränke {MONAT.format(new Date())}
-                </Text>
-                <Statusmarke status="laufend" />
-              </View>
-              <Betrag>{formatCents(getraenkeLaufend)}</Betrag>
-            </Zeile>
-          )}
-          {offen.length === 0 && getraenkeLaufend === 0 ? (
-            <Zeile erste>
-              <Text style={stil.leise}>Nichts offen.</Text>
-            </Zeile>
-          ) : (
-            <View
-              style={{
-                flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-                paddingVertical: 14, paddingHorizontal: 16, backgroundColor: farben.surf2,
-              }}
-            >
-              <Text style={{ fontSize: 14, fontFamily: "Barlow_700Bold", color: farben.ink2 }}>Zusammen</Text>
-              <Text style={{ fontSize: 21, fontFamily: "BarlowSemiCondensed_700Bold", color: farben.ink }}>
-                {formatCents(summe)}
-              </Text>
-            </View>
-          )}
-        </Gruppe>
+            )}
+          </Gruppe>
+        )}
 
         {/* --- Arbeitsdienst ----------------------------------------------- */}
-        {d?.dienst.fehler && <Text style={stil.hinweisFehler}>Arbeitsdienst: {d.dienst.fehler}</Text>}
+        {d?.dienst.fehler && <Fehlerzeile text={`Arbeitsdienst: ${d.dienst.fehler}`} {...erneut} />}
         {dienst && (
           <View style={[stil.listenkarte, { borderRadius: radius.karte, padding: 16, gap: 0 }]}>
             <View style={[stil.zeile, { alignItems: "baseline" }]}>
@@ -264,13 +276,16 @@ export default function Konto() {
           <Verweis
             titel="Abmelden"
             rot
-            onPress={async () => {
-              // Erst das Geraet abmelden, dann die Sitzung: danach fehlt die
-              // Berechtigung, und die Marke bliebe beim Vorbesitzer stehen.
-              await meldeGeraetAb().catch(() => {});
-              await abmelden();
-              router.replace("/anmelden");
-            }}
+            onPress={() =>
+              // Ein Fehltipp am Ende der Liste meldete sofort ab (U28).
+              bestaetige("Wirklich abmelden?", "", "Abmelden", async () => {
+                // Erst das Geraet abmelden, dann die Sitzung: danach fehlt die
+                // Berechtigung, und die Marke bliebe beim Vorbesitzer stehen.
+                await meldeGeraetAb().catch(() => {});
+                await abmelden();
+                router.replace("/anmelden");
+              })
+            }
           />
         </Gruppe>
       </Bildschirm>
@@ -283,9 +298,7 @@ export default function Konto() {
               {(blatt === "daten" || blatt === "notfall") && !stammdaten && (
                 <>
                   <BlattKopf titel={blatt === "daten" ? "Meine Daten" : "Notfallkontakt"} onZu={zu} />
-                  <Text style={stil.hinweisFehler}>
-                    {d?.stammdaten.fehler ?? "Deine Daten konnten nicht geladen werden."}
-                  </Text>
+                  <Fehlerzeile text={d?.stammdaten.fehler ?? "Deine Daten konnten nicht geladen werden."} {...erneut} />
                 </>
               )}
               {blatt === "daten" && stammdaten && (
@@ -341,7 +354,7 @@ export default function Konto() {
                 <>
                   <BlattKopf titel="Einwilligungen" onZu={zu} />
                   {d?.merkmale.fehler ? (
-                    <Text style={stil.hinweisFehler}>{d.merkmale.fehler}</Text>
+                    <Fehlerzeile text={d.merkmale.fehler} {...erneut} />
                   ) : (
                     <MerkmaleKarte imBlatt zeilen={merkmale} onGeaendert={zustand.erneutHolen} />
                   )}
@@ -357,7 +370,7 @@ export default function Konto() {
                 <>
                   <BlattKopf titel="Bankverbindung & Mandat" onZu={zu} />
                   {d?.mandat.fehler ? (
-                    <Text style={stil.hinweisFehler}>{d.mandat.fehler}</Text>
+                    <Fehlerzeile text={d.mandat.fehler} {...erneut} />
                   ) : (
                     <MandatAnsicht mandat={d?.mandat.wert ?? null} />
                   )}

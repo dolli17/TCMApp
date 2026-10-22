@@ -16,9 +16,9 @@
  * (tabs)/index.tsx - die wuerde mit app/index.tsx um "/" konkurrieren.
  */
 
-import { useCallback, useRef, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
-import { router, useFocusEffect, type Href } from "expo-router";
+import { router, type Href } from "expo-router";
 import Svg, { Circle, Path } from "react-native-svg";
 import {
   bookingKicker, dayTag, eventDemnaechst, formatCents, notificationZiel, localMinutes, relativeTimeLabel, sumOpenDrinks,
@@ -27,13 +27,16 @@ import {
 import { abstand, radius, schrift } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
 import { EventKarte } from "@/components/EventKarte";
+import { Fehlerzeile } from "@/components/Fehlerzeile";
 import { GrosserKopf } from "@/components/GrosserKopf";
+import { Leerzustand } from "@/components/Leerzustand";
 import { MiniZeitleiste } from "@/components/MiniZeitleiste";
 import {
   ladeArbeitsdienst, ladeBenachrichtigungen, ladeBuchungsarten, ladeBuchungseinstellungen,
   ladeEigeneGetraenke, ladeMeineBuchungen, ladeMeinenNamen, ladeOffeneSpiele, ladePlaetze,
   ladeTagesplan, ladeVeranstaltungen,
 } from "@/lib/daten";
+import { useNachladenBeiFokus } from "@/lib/fokus";
 import { abschnitt, ersterFehler, useLaden, type Abschnitt } from "@/lib/laden";
 import { alsUhrzeit, jetztFrei, lokaleMinuten, zuMinuten } from "@/lib/plan";
 import { useGrosseSchrift } from "@/lib/schrift";
@@ -98,20 +101,10 @@ export default function Home() {
   const d = zustand.daten;
 
   // Zurueck auf Home, etwa nach dem Buchen: still nachladen, ohne Ladekreis.
-  // Beim ersten Anzeigen laedt useLaden ohnehin.
-  const ersterFokus = useRef(true);
-  const { setzeDaten } = zustand;
-  useFocusEffect(
-    useCallback(() => {
-      if (ersterFokus.current) {
-        ersterFokus.current = false;
-        return;
-      }
-      ladeHome().then(setzeDaten).catch(() => undefined);
-    }, [setzeDaten]),
-  );
+  useNachladenBeiFokus(zustand.stillNachladen);
 
   const vorname = d?.name?.vorname;
+  const erneut = { onErneut: zustand.neuLaden, laeuft: zustand.aktualisiert };
 
   return (
     <Bildschirm
@@ -128,13 +121,13 @@ export default function Home() {
     >
       {d && (
         <>
-          <AlsNaechstes termine={d.termine} />
+          <AlsNaechstes termine={d.termine} erneut={erneut} />
           <Schnellaktionen />
-          <JetztFrei frei={d.frei} />
-          <OffeneSpiele offen={d.offen} />
-          <DemnaechstImVerein events={d.events} />
+          <JetztFrei frei={d.frei} erneut={erneut} />
+          <OffeneSpiele offen={d.offen} erneut={erneut} />
+          <DemnaechstImVerein events={d.events} erneut={erneut} />
           <DeinMonat getraenke={d.getraenke} dienst={d.dienst} />
-          <Neuigkeiten neues={d.neues} />
+          <Neuigkeiten neues={d.neues} erneut={erneut} />
         </>
       )}
       {!d && !zustand.laedt && <Text style={stil.leise}>Die Startseite konnte nicht geladen werden.</Text>}
@@ -144,7 +137,8 @@ export default function Home() {
 
 /* --- Bausteine ------------------------------------------------------------ */
 
-function Kopfzeile({ titel, link }: { titel: string; link?: { text: string; ziel: Href } }) {
+/** link.label sagt dem Screenreader, was "Alle" meint (U6). */
+function Kopfzeile({ titel, link }: { titel: string; link?: { text: string; ziel: Href; label?: string } }) {
   const { stil, farben } = useTheme();
   return (
     <View style={[stil.zeile, { marginTop: abstand.abschnitt - abstand.m, alignItems: "baseline" }]}>
@@ -153,6 +147,7 @@ function Kopfzeile({ titel, link }: { titel: string; link?: { text: string; ziel
         <Pressable
           onPress={() => router.navigate(link.ziel)}
           accessibilityRole="link"
+          accessibilityLabel={link.label}
           hitSlop={12}
         >
           <Text style={{ color: farben.blueInk, fontSize: 14, fontFamily: "Barlow_600SemiBold" }}>
@@ -164,10 +159,8 @@ function Kopfzeile({ titel, link }: { titel: string; link?: { text: string; ziel
   );
 }
 
-function Fehlerzeile({ text }: { text: string }) {
-  const { stil } = useTheme();
-  return <Text style={stil.hinweisFehler}>{text}</Text>;
-}
+/** Was ein Abschnitt braucht, um nach einem Fehler neu zu laden. */
+type Erneut = { onErneut: () => void; laeuft: boolean };
 
 /** Waagerecht wischbar, bis an den Bildschirmrand - der Inhalt hat 20 Rand. */
 function Wischreihe({ children, abstandZwischen = 12 }: { children: ReactNode; abstandZwischen?: number }) {
@@ -204,7 +197,7 @@ const PFAD = {
 
 type Termine = Awaited<ReturnType<typeof ladeMeineBuchungen>>;
 
-function AlsNaechstes({ termine }: { termine: Abschnitt<Termine> }) {
+function AlsNaechstes({ termine, erneut }: { termine: Abschnitt<Termine>; erneut: Erneut }) {
   const { stil, farben } = useTheme();
   const { width } = useWindowDimensions();
   const breite = Math.min(318, width - 2 * abstand.rand - 32);
@@ -213,20 +206,18 @@ function AlsNaechstes({ termine }: { termine: Abschnitt<Termine> }) {
 
   return (
     <>
-      <Kopfzeile titel="Als Nächstes" link={kommende.length > 0 ? { text: "Alle", ziel: "/plaetze/spiele" } : undefined} />
-      {termine.fehler && <Fehlerzeile text={termine.fehler} />}
+      <Kopfzeile titel="Als Nächstes" link={kommende.length > 0 ? { text: "Alle", ziel: "/plaetze/spiele", label: "Alle Termine" } : undefined} />
+      {termine.fehler && <Fehlerzeile text={termine.fehler} {...erneut} />}
       {termine.wert && kommende.length === 0 && (
-        <View style={[stil.karte, { borderRadius: radius.karteGross, padding: 20, gap: 6 }]}>
-          <Text style={[stil.text, { fontFamily: "Barlow_700Bold", fontSize: 18 }]}>Noch nichts geplant</Text>
-          <Text style={stil.leise}>Such dir einen Platz – heute ist noch einiges frei.</Text>
-          <Pressable
-            onPress={() => router.navigate({ pathname: "/plaetze", params: { buchen: "jetzt" } })}
-            accessibilityRole="button"
-            style={[stil.knopf, stil.knopfGold, { alignSelf: "flex-start", marginTop: 10, minHeight: 44 }]}
-          >
-            <Text style={[stil.knopfText, stil.knopfGoldText]}>Platz buchen</Text>
-          </Pressable>
-        </View>
+        <Leerzustand
+          titel="Noch nichts geplant"
+          text="Such dir einen Platz – heute ist noch einiges frei."
+          handlung={{
+            text: "Platz buchen",
+            gold: true,
+            onPress: () => router.navigate({ pathname: "/plaetze", params: { buchen: "jetzt" } }),
+          }}
+        />
       )}
       {kommende.length > 0 && (
         <Wischreihe>
@@ -356,7 +347,7 @@ function Schnellaktionen() {
 
 /* --- Jetzt frei ----------------------------------------------------------- */
 
-function JetztFrei({ frei }: { frei: Abschnitt<FreiDaten> }) {
+function JetztFrei({ frei, erneut }: { frei: Abschnitt<FreiDaten>; erneut: Erneut }) {
   const { stil, farben } = useTheme();
 
   const karten = (() => {
@@ -386,9 +377,12 @@ function JetztFrei({ frei }: { frei: Abschnitt<FreiDaten> }) {
   return (
     <>
       <Kopfzeile titel="Jetzt frei" link={{ text: "Alle Plätze", ziel: "/plaetze" }} />
-      {frei.fehler && <Fehlerzeile text={frei.fehler} />}
+      {frei.fehler && <Fehlerzeile text={frei.fehler} {...erneut} />}
       {frei.wert && karten.length === 0 && (
-        <Text style={stil.leise}>Gerade ist kein Platz frei – schau in die Belegung für später.</Text>
+        <Leerzustand
+          text="Gerade ist kein Platz frei."
+          handlung={{ text: "Belegung ansehen", onPress: () => router.navigate("/plaetze") }}
+        />
       )}
       {karten.length > 0 && (
         <Wischreihe abstandZwischen={10}>
@@ -422,16 +416,16 @@ function JetztFrei({ frei }: { frei: Abschnitt<FreiDaten> }) {
 
 type Offen = Awaited<ReturnType<typeof ladeOffeneSpiele>>;
 
-function OffeneSpiele({ offen }: { offen: Abschnitt<Offen> }) {
+function OffeneSpiele({ offen, erneut }: { offen: Abschnitt<Offen>; erneut: Erneut }) {
   const { stil, farben } = useTheme();
   const liste = (offen.wert ?? []).slice(0, 3);
 
   return (
     <>
-      <Kopfzeile titel="Offene Spiele" link={{ text: "Alle", ziel: "/plaetze/spiele" }} />
-      {offen.fehler && <Fehlerzeile text={offen.fehler} />}
+      <Kopfzeile titel="Offene Spiele" link={{ text: "Alle", ziel: "/plaetze/spiele", label: "Alle offenen Spiele" }} />
+      {offen.fehler && <Fehlerzeile text={offen.fehler} {...erneut} />}
       {offen.wert && liste.length === 0 && (
-        <Text style={stil.leise}>Gerade sucht niemand Mitspieler.</Text>
+        <Leerzustand text="Gerade sucht niemand Mitspieler." />
       )}
       {liste.map((o) => (
         <View key={o.booking_id} style={[stil.listenkarte, { borderRadius: radius.karte, padding: 14, flexDirection: "row", alignItems: "center", gap: 14 }]}>
@@ -478,15 +472,14 @@ function OffeneSpiele({ offen }: { offen: Abschnitt<Offen> }) {
 
 type Events = Awaited<ReturnType<typeof ladeVeranstaltungen>>;
 
-function DemnaechstImVerein({ events }: { events: Abschnitt<Events> }) {
-  const { stil } = useTheme();
+function DemnaechstImVerein({ events, erneut }: { events: Abschnitt<Events>; erneut: Erneut }) {
   const liste = eventDemnaechst(events.wert ?? [], new Date());
 
   return (
     <>
-      <Kopfzeile titel="Demnächst im Verein" link={{ text: "Alle", ziel: "/verein/veranstaltungen" }} />
-      {events.fehler && <Fehlerzeile text={events.fehler} />}
-      {events.wert && liste.length === 0 && <Text style={stil.leise}>Gerade ist nichts geplant.</Text>}
+      <Kopfzeile titel="Demnächst im Verein" link={{ text: "Alle", ziel: "/verein/veranstaltungen", label: "Alle Veranstaltungen" }} />
+      {events.fehler && <Fehlerzeile text={events.fehler} {...erneut} />}
+      {events.wert && liste.length === 0 && <Leerzustand text="Gerade ist nichts geplant." />}
       {liste.map((e) => <EventKarte key={e.id} e={e} aufforderung />)}
     </>
   );
@@ -515,6 +508,11 @@ function DeinMonat({ getraenke, dienst }: { getraenke: Abschnitt<Getraenke>; die
         <Pressable
           onPress={() => router.navigate("/verein/getraenke")}
           accessibilityRole="button"
+          accessibilityLabel={
+            getraenke.fehler
+              ? `Getränke: ${getraenke.fehler}`
+              : `Getränke im ${monat}: ${formatCents(sumOpenDrinks(getraenke.wert ?? []))}, läuft noch. Zu den Getränken`
+          }
           style={[stil.listenkarte, kachel]}
         >
           <Text style={titel}>Getränke</Text>
@@ -530,6 +528,13 @@ function DeinMonat({ getraenke, dienst }: { getraenke: Abschnitt<Getraenke>; die
         <Pressable
           onPress={() => router.navigate("/konto")}
           accessibilityRole="button"
+          accessibilityLabel={
+            dienst.fehler
+              ? `Arbeitsdienst: ${dienst.fehler}`
+              : soll > 0
+                ? `Arbeitsdienst: ${ist} von ${soll} Stunden. Zum Konto`
+                : "Arbeitsdienst: kein Soll für dieses Jahr. Zum Konto"
+          }
           style={[stil.listenkarte, kachel]}
         >
           <Text style={titel}>Arbeitsdienst</Text>
@@ -555,15 +560,15 @@ function DeinMonat({ getraenke, dienst }: { getraenke: Abschnitt<Getraenke>; die
 
 type Neues = Awaited<ReturnType<typeof ladeBenachrichtigungen>>;
 
-function Neuigkeiten({ neues }: { neues: Abschnitt<Neues> }) {
+function Neuigkeiten({ neues, erneut }: { neues: Abschnitt<Neues>; erneut: Erneut }) {
   const { stil, farben } = useTheme();
   const liste = (neues.wert ?? []).slice(0, 3);
 
   return (
     <>
-      <Kopfzeile titel="Neuigkeiten" link={liste.length > 0 ? { text: "Alle", ziel: "/nachrichten" } : undefined} />
-      {neues.fehler && <Fehlerzeile text={neues.fehler} />}
-      {neues.wert && liste.length === 0 && <Text style={stil.leise}>Keine Neuigkeiten.</Text>}
+      <Kopfzeile titel="Neuigkeiten" link={liste.length > 0 ? { text: "Alle", ziel: "/nachrichten", label: "Alle Neuigkeiten" } : undefined} />
+      {neues.fehler && <Fehlerzeile text={neues.fehler} {...erneut} />}
+      {neues.wert && liste.length === 0 && <Leerzustand text="Keine Neuigkeiten." />}
       {liste.length > 0 && (
         <View style={[stil.listenkarte, { borderRadius: radius.karte, padding: 0, overflow: "hidden" }]}>
           {liste.map((n, i) => {
@@ -575,6 +580,8 @@ function Neuigkeiten({ neues }: { neues: Abschnitt<Neues> }) {
                 disabled={!ziel}
                 onPress={ziel ? () => router.push(ziel.app as Href) : undefined}
                 accessibilityRole={ziel ? "link" : undefined}
+                accessibilityLabel={`${ungelesen ? "Neu: " : ""}${n.title}. ${n.body}. ${relativeTimeLabel(n.created_at)}`}
+                accessibilityHint={ziel ? "Öffnet die Veranstaltung" : undefined}
                 style={{
                   flexDirection: "row", gap: 12, paddingVertical: 14, paddingHorizontal: 16,
                   borderTopWidth: i === 0 ? 0 : 1, borderTopColor: farben.line,
