@@ -8,6 +8,7 @@ import { alsEvent } from "@/lib/veranstaltungen";
 import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
 import { Reiter } from "@/components/Reiter";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
+import { Leerzustand } from "@/components/Leerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -92,11 +93,14 @@ export default async function VeranstaltungenSeite({
 
       <section className="liste-abschnitt" aria-label={REITER.find((r) => r.wert === reiter)!.label}>
         {sichtbar.length === 0 ? (
-          <p className="leer-klein">
-            {reiter === "entwuerfe"
-              ? "Keine Entwürfe."
-              : reiter === "vergangen" ? "Noch keine vergangenen Veranstaltungen." : "Nichts geplant."}
-          </p>
+          <Leerzustand
+            text={
+              reiter === "entwuerfe"
+                ? "Keine Entwürfe."
+                : reiter === "vergangen" ? "Noch keine vergangenen Veranstaltungen." : "Nichts geplant."
+            }
+            aktion={reiter === "vergangen" ? undefined : { href: "/admin/veranstaltungen/neu", label: "Veranstaltung anlegen" }}
+          />
         ) : (
           <ul className="liste-gruppe" aria-label="Veranstaltungen">
             {sichtbar.map((e) => {

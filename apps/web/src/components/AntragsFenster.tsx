@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { formatCents } from "@tcm/core";
+import { berlinDay, formatCents } from "@tcm/core";
 import {
   antragAblehnen,
   antragAlsSpam,
@@ -241,7 +241,7 @@ export function AntragsFenster({
                 <input
                   type="date"
                   name="started_on"
-                  defaultValue={new Date().toISOString().slice(0, 10)}
+                  defaultValue={berlinDay(new Date())}
                 />
               </label>
               <label>

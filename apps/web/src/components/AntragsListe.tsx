@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AntragsFenster, type Antrag, type Beitragsart } from "@/components/AntragsFenster";
 import { Listenzeile, type HinweisTon } from "@/components/Listenzeile";
+import { Leerzustand } from "@/components/Leerzustand";
 
 const STATUS_TEXT: Record<string, string> = {
   new: "offen",
@@ -33,7 +34,7 @@ export function AntragsListe({
   const [offen, setOffen] = useState<Antrag | null>(null);
 
   if (antraege.length === 0) {
-    return <p className="leer-klein">Keine Anträge in dieser Ansicht.</p>;
+    return <Leerzustand text="Keine Anträge in dieser Ansicht." />;
   }
 
   return (

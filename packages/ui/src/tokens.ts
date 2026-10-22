@@ -53,6 +53,10 @@ export const farben = {
     muted: "#596A7D",
     line: "#E3E8EE",
     line2: "#CBD5E0",
+    // Rand von Eingabefeldern und Legendenkaestchen. line2 trennt Flaechen
+    // und darf zart sein; ein Feld dagegen muss man finden, also 3:1 auf allen
+    // vier Flaechen (U29, WCAG 1.4.11). line2 lag auf surf bei 1,5:1.
+    rahmen: "#76869A",
     chip: "#EEF2F6",
 
     // Schwebende Tab-Leiste
@@ -96,6 +100,7 @@ export const farben = {
     muted: "#879AAE",
     line: "rgba(255,255,255,.08)",
     line2: "rgba(255,255,255,.16)",
+    rahmen: "#677C93",
     chip: "#152538",
 
     glass: "rgba(22,36,54,.78)",

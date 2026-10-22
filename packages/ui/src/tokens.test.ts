@@ -164,6 +164,17 @@ describe("Kontrast", () => {
     }
   });
 
+  it("Feldränder heben sich von allen Flächen ab (3:1, Bedienelement)", () => {
+    // Ein Eingabefeld erkennt man nur an seinem Rand. line2 reicht dafür
+    // nicht (U29) - Felder und Legendenkästchen nehmen rahmen.
+    for (const theme of ["hell", "dunkel"] as const) {
+      const f = farben[theme];
+      for (const flaeche of ["bg", "surf", "surf2", "surf3"] as const) {
+        expect(verhaeltnis(f.rahmen, f[flaeche]), `${theme}: rahmen auf ${flaeche}`).toBeGreaterThanOrEqual(3);
+      }
+    }
+  });
+
   /**
    * Eine Tokenfarbe mit Deckkraft über eine Fläche gelegt - so entstehen die
    * Hinweisflächen: color-mix(in srgb, var(--red) 12%, transparent) im Web,

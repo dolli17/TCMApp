@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { bookingActions, offenesSpielText } from "@tcm/core";
 import { mitspielen } from "@/app/plan/aktionen";
+import { Leerzustand } from "@/components/Leerzustand";
 
 export interface OffenesSpiel {
   booking_id: string;
@@ -62,10 +63,10 @@ export function OffeneSpiele({
 
   if (spiele.length === 0) {
     return (
-      <p className="unterzeile">
-        Gerade sucht niemand Mitspieler. Wenn du selbst buchst, schalte im Buchungsblatt
-        „Mitspieler gesucht“ ein – dann steht deine Buchung hier.
-      </p>
+      <Leerzustand
+        text="Gerade sucht niemand Mitspieler. Wenn du selbst buchst, schalte im Buchungsblatt „Mitspieler gesucht“ ein – dann steht deine Buchung hier."
+        aktion={{ href: "/plan", label: "Zur Belegung" }}
+      />
     );
   }
 

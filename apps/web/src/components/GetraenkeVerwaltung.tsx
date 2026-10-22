@@ -8,6 +8,7 @@ import {
 } from "@/app/admin/getraenke/aktionen";
 import { FensterKnopf } from "@/components/FensterKnopf";
 import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
+import { SperrGrund } from "@/components/SperrGrund";
 
 export interface GetraenkZeile {
   id: string;
@@ -277,6 +278,11 @@ export function GetraenkFormular({
       >
         {neu ? "Getränk anlegen" : "Änderungen speichern"}
       </button>
+      {!laeuft && (
+        <SperrGrund
+          grund={form.name.trim() === "" ? "Erst einen Namen eingeben." : neu && form.preis.trim() === "" ? "Erst einen Preis eingeben." : null}
+        />
+      )}
     </>
   );
 }

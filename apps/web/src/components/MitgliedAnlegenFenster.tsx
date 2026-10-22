@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { formatCents } from "@tcm/core";
+import { berlinDay, formatCents } from "@tcm/core";
 import { mitgliedAnlegen } from "@/app/admin/mitglieder/aktionen";
 import type { Beitragsart } from "@/lib/beitragsarten";
 
@@ -42,7 +42,7 @@ export function MitgliedAnlegenFenster({
     });
   }
 
-  const heute = new Date().toISOString().slice(0, 10);
+  const heute = berlinDay(new Date());
 
   return (
     <dialog

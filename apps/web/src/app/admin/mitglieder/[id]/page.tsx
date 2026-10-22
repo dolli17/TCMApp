@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { formatCents, isoDateLabel, rollenMarken, translateDbError } from "@tcm/core";
+import { berlinDay, formatCents, isoDateLabel, rollenMarken, translateDbError } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { BankUndMandatKarte, type FinanzZeile } from "@/components/BankUndMandatKarte";
 import { BeitragsartenKarte, type BeitragsZeile } from "@/components/BeitragsartenKarte";
@@ -394,7 +394,7 @@ export default async function MitgliedSeite({
       {teil === "bank" && <BankUndMandat id={id} />}
 
       {teil === "beitraege" && (
-        <Beitraege id={id} jahr={Number(jahrParam) || new Date().getFullYear()} />
+        <Beitraege id={id} jahr={Number(jahrParam) || Number(berlinDay(new Date()).slice(0, 4))} />
       )}
 
       {teil === "forderungen" && <Forderungen id={id} />}

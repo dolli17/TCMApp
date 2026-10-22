@@ -178,7 +178,7 @@ test.describe("Fehlerdarstellung", () => {
   async function versuche(page: Page) {
     await page.goto("/login");
     await page.getByLabel("E-Mail").fill(NUTZER.mitglied);
-    await page.getByLabel("Passwort").fill("irgendwas-falsches");
+    await page.getByLabel("Passwort", { exact: true }).fill("irgendwas-falsches");
     await page.getByRole("button", { name: "Anmelden" }).click();
   }
 

@@ -133,7 +133,7 @@ test.describe("Mitgliederverwaltung", () => {
     // Jedes Mitglied hat einen Login - einen Filter "Ohne Zugang" gibt es
     // nicht mehr.
     await page.getByRole("link", { name: "Trainer", exact: true }).click();
-    await expect(page).toHaveURL(/filter=trainer/);
+    await expect(page).toHaveURL(/art=trainer/);
     await expect(page.getByRole("link", { name: "Ohne Zugang", exact: true })).toHaveCount(0);
   });
 
@@ -784,13 +784,13 @@ test.describe("Mitgliederverwaltung", () => {
     // Das alte Passwort gilt nicht mehr ...
     await page.goto("/login");
     await page.getByLabel("E-Mail").fill(email);
-    await page.getByLabel("Passwort").fill(alt);
+    await page.getByLabel("Passwort", { exact: true }).fill(alt);
     await page.getByRole("button", { name: "Anmelden" }).click();
     await expect(page.locator(".hinweis.fehler")).toBeVisible({ timeout: 20_000 });
     await expect(page).toHaveURL(/\/login/);
 
     // ... das neue schon.
-    await page.getByLabel("Passwort").fill(neu);
+    await page.getByLabel("Passwort", { exact: true }).fill(neu);
     await page.getByRole("button", { name: "Anmelden" }).click();
     await page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 20_000 });
 

@@ -21,7 +21,7 @@ export function BereichSegmente({
   label: string;
   eintraege: Segment[];
   aktiv: string;
-  /** Mehr als drei Teile: am Telefon seitlich scrollbar statt gequetscht */
+  /** Mehr als drei Teile: am Telefon in zwei Zeilen statt gequetscht */
   viele?: boolean;
 }) {
   return (

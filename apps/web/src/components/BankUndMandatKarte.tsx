@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { formatIban, isValidIban, normalizeIban } from "@tcm/core";
+import { berlinDay, formatIban, isValidIban, normalizeIban } from "@tcm/core";
 import {
   bankverbindungAnlegen,
   bankverbindungStilllegen,
@@ -116,7 +116,7 @@ export function BankUndMandatKarte({
     });
   }
 
-  const heute = new Date().toISOString().slice(0, 10);
+  const heute = berlinDay(new Date());
 
   return (
     <section className="karte einstellungen" aria-label="Bankverbindung und Mandat">

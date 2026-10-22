@@ -4,6 +4,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { alsMitgliedEvent } from "@/lib/veranstaltungen";
 import { EventKarte } from "@/components/EventKarte";
 import { VereinSegmente } from "@/components/VereinSegmente";
+import { Leerzustand } from "@/components/Leerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -38,9 +39,7 @@ export default async function VeranstaltungenSeite({
       {error ? (
         <div className="hinweis fehler">Die Veranstaltungen ließen sich nicht laden.</div>
       ) : gruppen.length === 0 ? (
-        <p className="leer-klein">
-          {vergangen ? "Noch keine vergangenen Veranstaltungen." : "Gerade ist nichts geplant."}
-        </p>
+        <Leerzustand text={vergangen ? "Noch keine vergangenen Veranstaltungen." : "Gerade ist nichts geplant."} />
       ) : (
         gruppen.map((g) => (
           <section key={g.schluessel} className="event-monat" aria-labelledby={`h-${g.schluessel}`}>

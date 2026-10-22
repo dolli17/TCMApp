@@ -17,6 +17,7 @@ import { BeitragslaufKarte } from "@/components/BeitragslaufKarte";
 import { BeitragsartenPflege, type BeitragsartZeile } from "@/components/BeitragsartenPflege";
 import { ForderungsListe, type ForderungZeile } from "@/components/ForderungsListe";
 import { GetraenkemonatKarte, type MonatZeile } from "@/components/GetraenkemonatKarte";
+import { Leerzustand } from "@/components/Leerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -68,8 +69,8 @@ export default async function KasseSeite({
   const gewaehlt = ABSCHNITTE.some((a) => a.wert === abschnitt) ? abschnitt! : "start";
   const art = CHARGE_KINDS.includes(artParam as ChargeKind) ? (artParam as ChargeKind) : null;
   const unterseite = SEGMENTE.includes(gewaehlt) ? null : ABSCHNITTE.find((a) => a.wert === gewaehlt)!;
-  const jahr = Number(jahrParam) || new Date().getFullYear();
   const heute = heuteInBerlin();
+  const jahr = Number(jahrParam) || Number(heute.slice(0, 4));
 
   const supabase = await createServerSupabase();
 
@@ -294,6 +295,7 @@ export default async function KasseSeite({
           <StandFilter aktiv={stand ?? ""} art={art} />
           <ForderungsListe
             forderungen={(forderungenRes.data ?? []) as unknown as ForderungZeile[]}
+            gefiltert={Boolean(art || stand)}
           />
         </>
       )}
@@ -362,7 +364,7 @@ function ZuTun({
     <section className="liste-abschnitt" aria-labelledby="h-zutun">
       <Gruppenkopf titel="Zu tun" id="h-zutun" neben="Alles, was gerade wartet – über alle Arten" />
       {todos.length === 0 ? (
-        <p className="leer-klein">Alles erledigt. Gerade wartet nichts in der Kasse.</p>
+        <Leerzustand text="Alles erledigt. Gerade wartet nichts in der Kasse." />
       ) : (
         <ul className="liste-gruppe zu-tun" aria-label="Zu tun">
           {todos.map((t) => (
@@ -444,7 +446,7 @@ function Jahresbeitraege({
             {jahr}
           </Link>
           <Link href={`/admin/kasse?abschnitt=beitraege&jahr=${jahr + 1}`}>{jahr + 1} ›</Link>
-          {jahr !== new Date().getFullYear() && <Link href="/admin/kasse?abschnitt=beitraege">Dieses Jahr</Link>}
+          {jahr !== Number(heuteInBerlin().slice(0, 4)) && <Link href="/admin/kasse?abschnitt=beitraege">Dieses Jahr</Link>}
         </nav>
       </div>
 
