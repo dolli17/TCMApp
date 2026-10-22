@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { serieAendern, serieBeenden } from "@/app/admin/plaetze/aktionen";
 import { Listenzeile } from "@/components/Listenzeile";
+import { Leerzustand } from "@/components/Leerzustand";
 
 export interface SerienZeile {
   id: string;
@@ -36,7 +37,7 @@ export function SerienListe({ serien }: { serien: SerienZeile[] }) {
   const [laeuft, starte] = useTransition();
 
   if (serien.length === 0) {
-    return <p className="leer-klein">Noch keine Serien angelegt.</p>;
+    return <Leerzustand text="Noch keine Serien angelegt." />;
   }
 
   return (

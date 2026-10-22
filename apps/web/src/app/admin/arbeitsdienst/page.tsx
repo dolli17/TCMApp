@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { berlinDay } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import {
@@ -24,7 +25,7 @@ export default async function ArbeitsdienstSeite({
   searchParams: Promise<{ jahr?: string }>;
 }) {
   const { jahr: jahrParam } = await searchParams;
-  const aktuell = new Date().getFullYear();
+  const aktuell = Number(berlinDay(new Date()).slice(0, 4));
   const jahr = Number(jahrParam) || aktuell;
 
   const supabase = await createServerSupabase();

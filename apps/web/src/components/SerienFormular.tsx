@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { berlinDay } from "@tcm/core";
 import { useRouter } from "next/navigation";
 import { serieAnlegen, serieVorschau, type Kollision } from "@/app/admin/plaetze/aktionen";
+import { SperrGrund } from "@/components/SperrGrund";
 
 const WOCHENTAGE = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 
@@ -33,7 +35,7 @@ export function SerienFormular({
   arten: { code: string; name: string }[];
 }) {
   const router = useRouter();
-  const heute = new Date().toISOString().slice(0, 10);
+  const heute = berlinDay(new Date());
 
   const [form, setFormRoh] = useState({
     courtId: plaetze[0]?.id ?? "",
@@ -216,7 +218,9 @@ export function SerienFormular({
         <button className="knopf gold block gross" onClick={pruefen} disabled={laeuft || !form.title.trim()}>
           {laeuft ? "Wird geprüft…" : "Vorschau"}
         </button>
-      ) : (
+      ) : null}
+      {!vorschau && !laeuft && <SperrGrund grund={form.title.trim() === "" ? "Erst einen Titel eingeben." : null} />}
+      {!vorschau ? null : (
         <button className="knopf gold block gross" onClick={() => anlegen(kollisionen.length > 0)} disabled={laeuft}>
           {kollisionen.length === 0
             ? `Serie anlegen · ${vorschau.length} Termine`

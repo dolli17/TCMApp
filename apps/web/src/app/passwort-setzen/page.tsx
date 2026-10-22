@@ -25,6 +25,7 @@ export default function PasswortSetzenSeite() {
   const [gueltig, setGueltig] = useState(false);
   const [passwort, setPasswort] = useState("");
   const [wiederholung, setWiederholung] = useState("");
+  const [zeigen, setZeigen] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
   const [fertig, setFertig] = useState(false);
@@ -221,7 +222,7 @@ export default function PasswortSetzenSeite() {
             <label>
               <span>Neues Passwort</span>
               <input
-                type="password"
+                type={zeigen ? "text" : "password"}
                 value={passwort}
                 onChange={(e) => setPasswort(e.target.value)}
                 autoComplete="new-password"
@@ -233,12 +234,17 @@ export default function PasswortSetzenSeite() {
             <label>
               <span>Noch einmal</span>
               <input
-                type="password"
+                type={zeigen ? "text" : "password"}
                 value={wiederholung}
                 onChange={(e) => setWiederholung(e.target.value)}
                 autoComplete="new-password"
                 required
               />
+            </label>
+            {/* Ein Schalter für beide Felder: wer nachsehen will, will beide sehen. */}
+            <label className="schalter">
+              <input type="checkbox" checked={zeigen} onChange={(e) => setZeigen(e.target.checked)} />
+              <span>Passwort anzeigen</span>
             </label>
 
             {fehler && <div className="hinweis fehler">{fehler}</div>}

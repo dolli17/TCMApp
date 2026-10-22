@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatCents, sumOpenDrinks, translateDbError, CHARGE_KIND_LABEL, KONTOLOESCHUNG_TEXT, type ChargeKind } from "@tcm/core";
+import { berlinDay, formatCents, sumOpenDrinks, translateDbError, CHARGE_KIND_LABEL, KONTOLOESCHUNG_TEXT, type ChargeKind } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { AbmeldeKnopf } from "@/components/AbmeldeKnopf";
 import { Fehlerzustand } from "@/components/Fehlerzustand";
@@ -36,7 +36,7 @@ export default async function KontoSeite() {
     await Promise.all([
       supabase.rpc("my_charges"),
       supabase.rpc("my_work_duty", {}),
-      supabase.rpc("my_work_duty_entries", { p_year: new Date().getFullYear() }),
+      supabase.rpc("my_work_duty_entries", { p_year: Number(berlinDay(new Date()).slice(0, 4)) }),
       meineId
         ? supabase.from("members").select("first_name, last_name, is_team_captain, teams(name)").eq("id", meineId).maybeSingle()
         : Promise.resolve({ data: null }),

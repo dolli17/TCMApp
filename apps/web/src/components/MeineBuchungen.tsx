@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { bookingActions } from "@tcm/core";
 import { austragen, stornieren } from "@/app/plan/aktionen";
+import { Leerzustand } from "@/components/Leerzustand";
 
 export interface MeineBuchung {
   booking_id: string;
@@ -72,9 +73,10 @@ export function MeineBuchungen({ buchungen, jetzt }: {
         fast leer.
       */}
       {buchungen.length === 0 && (
-        <p className="unterzeile">
-          Für dich steht gerade nichts an. In der Belegung findest du die freien Plätze.
-        </p>
+        <Leerzustand
+          text="Für dich steht gerade nichts an."
+          aktion={{ href: "/plan", label: "Freie Plätze ansehen" }}
+        />
       )}
 
       <ul className="terminliste">

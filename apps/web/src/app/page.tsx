@@ -9,6 +9,7 @@ import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { EventKarte } from "@/components/EventKarte";
 import { MiniZeitleiste } from "@/components/MiniZeitleiste";
 import { alsMitgliedEvent } from "@/lib/veranstaltungen";
+import { Leerzustand } from "@/components/Leerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -185,7 +186,7 @@ export default async function Start() {
             {freiFehler ? (
               <div className="hinweis fehler">Die freien Plätze konnten nicht geladen werden.</div>
             ) : frei.length === 0 ? (
-              <p className="leer-klein">Gerade ist kein Platz frei – schau in die Belegung für später.</p>
+              <Leerzustand text="Gerade ist kein Platz frei." aktion={{ href: "/plan", label: "Belegung für später" }} />
             ) : (
               <div className="frei-reihe">
                 {frei.map((f) => (
@@ -214,7 +215,7 @@ export default async function Start() {
             {offenRes.error ? (
               <div className="hinweis fehler">Die offenen Spiele konnten nicht geladen werden.</div>
             ) : offen.length === 0 ? (
-              <p className="leer-klein">Gerade sucht niemand Mitspieler.</p>
+              <Leerzustand text="Gerade sucht niemand Mitspieler." />
             ) : (
               <ul className="offen-liste">
                 {offen.map((o) => {
@@ -251,7 +252,7 @@ export default async function Start() {
             {eventsRes.error ? (
               <div className="hinweis fehler">Die Veranstaltungen konnten nicht geladen werden.</div>
             ) : demnaechst.length === 0 ? (
-              <p className="leer-klein">Gerade ist nichts geplant.</p>
+              <Leerzustand text="Gerade ist nichts geplant." />
             ) : (
               <ul className="event-liste">
                 {demnaechst.map((e) => (
@@ -297,7 +298,7 @@ export default async function Start() {
             {neuesRes.error ? (
               <div className="hinweis fehler">Die Neuigkeiten konnten nicht geladen werden.</div>
             ) : neues.length === 0 ? (
-              <p className="leer-klein">Keine Neuigkeiten.</p>
+              <Leerzustand text="Keine Neuigkeiten." />
             ) : (
               <ul>
                 {neues.map((n) => (

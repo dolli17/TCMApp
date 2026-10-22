@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { translateDbError } from "@tcm/core";
+import { berlinDay, translateDbError } from "@tcm/core";
 import { createServerSupabase, darfPlaetze, getCurrentMember } from "@/lib/supabase/server";
 import { Belegungsplan } from "@/components/Belegungsplan";
 import { PlanAbo } from "@/components/PlanAbo";
@@ -7,10 +7,6 @@ import { PlanSegmente } from "@/components/PlanSegmente";
 import { Fehlerzustand } from "@/components/Fehlerzustand";
 
 export const dynamic = "force-dynamic";
-
-function heuteInBerlin(): string {
-  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
-}
 
 function verschiebe(datum: string, tage: number): string {
   const [j, m, t] = datum.split("-").map(Number);
@@ -36,7 +32,7 @@ export default async function PlanSeite({
   searchParams: Promise<{ tag?: string }>;
 }) {
   const { tag } = await searchParams;
-  const datum = tag && /^\d{4}-\d{2}-\d{2}$/.test(tag) ? tag : heuteInBerlin();
+  const datum = tag && /^\d{4}-\d{2}-\d{2}$/.test(tag) ? tag : berlinDay(new Date());
   const supabase = await createServerSupabase();
 
   const [
@@ -93,7 +89,7 @@ export default async function PlanSeite({
   const belegt = quota?.used ?? 0;
   const erlaubt = quota?.allowed ?? einstellungen.max_open_bookings;
   const unbegrenzt = erlaubt <= 0;
-  const heute = heuteInBerlin();
+  const heute = berlinDay(new Date());
 
   // Solange das Kontingent unbegrenzt ist, sagt die verbrauchte Menge nichts -
   // sie waere dauerhaft eine Zahl ohne Bezugsgroesse. Stattdessen steht unter
@@ -134,10 +130,12 @@ export default async function PlanSeite({
                 key={t}
                 href={t === heute ? "/plan" : `/plan?tag=${t}`}
                 aria-current={t === datum ? "date" : undefined}
-                aria-label={lesbaresDatum(t)}
               >
-                <small>{KURZ.format(tag).replace(".", "").toUpperCase()}</small>
-                <b className="dpl">{tag.getDate()}</b>
+                {/* Vorgelesen wird das ganze Datum statt „DO 22“ - als Text und
+                    nicht als aria-label, sonst weicht der Name vom Sichtbaren ab. */}
+                <small aria-hidden="true">{KURZ.format(tag).replace(".", "").toUpperCase()}</small>
+                <b className="dpl" aria-hidden="true">{tag.getDate()}</b>
+                <span className="sr-only">{lesbaresDatum(t)}</span>
               </Link>
             );
           })}

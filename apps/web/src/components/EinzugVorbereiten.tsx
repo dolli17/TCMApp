@@ -10,6 +10,8 @@ import {
   einzugVorbereiten, einzugVorschau, type VorschauZeile,
 } from "@/app/admin/kasse/lastschriften/aktionen";
 import { ArtMarke } from "@/components/ArtMarke";
+import { Listenzeile } from "@/components/Listenzeile";
+import { SperrGrund } from "@/components/SperrGrund";
 
 export interface GruppeZeile extends EinzugGruppe {
   anzahl: number;
@@ -209,13 +211,13 @@ export function EinzugVorbereiten({
               <ul className="liste-gruppe" aria-label="Ausnahmen">
                 {ausnahmen.map((z) => (
                   <li key={z.member_id}>
-                    <div className="listenzeile">
-                      <span className="text">
-                        <b className="titel">{z.member_name}</b>
-                        <small className="kontext">{z.grund}</small>
-                      </span>
-                      <span className="neben"><span className="betrag tnum">{formatCents(z.amount_cents)}</span></span>
-                    </div>
+                    {/* Zum Mandat des Mitglieds: dort wird die Ausnahme behoben. */}
+                    <Listenzeile
+                      href={`/admin/mitglieder/${z.member_id}?teil=bank`}
+                      titel={z.member_name}
+                      kontext={z.grund}
+                      neben={<span className="neben"><span className="betrag tnum">{formatCents(z.amount_cents)}</span></span>}
+                    />
                   </li>
                 ))}
               </ul>
@@ -249,6 +251,21 @@ export function EinzugVorbereiten({
           <button type="button" className="knopf gold" disabled={!bereit || sendet} onClick={() => setFrage(true)}>
             Ankündigen und Einzug anlegen
           </button>
+        )}
+        {!frage && !sendet && (
+          <SperrGrund
+            grund={
+              auswahl.length === 0
+                ? "Erst eine Gruppe auswählen."
+                : !datumOk
+                  ? "Erst einen gültigen Abbuchungstag wählen."
+                  : titel.trim() === ""
+                    ? "Erst eine Bezeichnung eingeben."
+                    : !laedt && dabei.length === 0
+                      ? "Niemand in der Auswahl kann eingezogen werden."
+                      : null
+            }
+          />
         )}
         {frage && (
           <div className="hinweis rueckfrage" role="group" aria-label="Rückfrage">

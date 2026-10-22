@@ -189,6 +189,16 @@ a.avatar:hover { text-decoration: none; }
 }
 .knopf.leise:hover { border-color: var(--blue); color: var(--blue-ink); background: transparent; }
 .knopf.gold { background: var(--gold); color: var(--on-gold); box-shadow: none; }
+/* Gesperrt ist neutral statt blassgold: ein ausgewaschenes Gelb sieht aus wie
+   "gleich geht's" und nicht wie "es fehlt noch etwas" (U26). Der Grund steht
+   daneben (SperrGrund). */
+.knopf.gold:disabled,
+.auth.immer-dunkel .sheet .knopf.block:not(.leise):disabled {
+  background: var(--surf-3); color: var(--muted); opacity: 1; box-shadow: none;
+}
+.sperrgrund { margin: 8px 0 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
+.fenster-fuss > .sperrgrund { flex: 1 1 180px; align-self: center; margin: 0; }
+.blatt-fuss > .sperrgrund { margin: 0; text-align: center; }
 .knopf.klein {
   font-size: var(--font-size-klein); padding: 7px 11px; border-radius: var(--radius-klein);
 }
@@ -205,7 +215,7 @@ label > span {
 input, select, textarea {
   font: inherit; width: 100%;
   background: var(--surf); color: var(--ink);
-  border: 1.5px solid var(--line-2); border-radius: var(--radius-feld);
+  border: 1.5px solid var(--rahmen); border-radius: var(--radius-feld);
   padding: 13px 14px;
 }
 input:focus, select:focus, textarea:focus {
@@ -472,7 +482,7 @@ table.liste .zahl {
   .seitenleiste .menue-abschnitt { margin: 22px 12px 8px; }
 
   .nutzerkarte {
-    margin-top: auto; display: flex; align-items: center; gap: 10px;
+    margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
     padding: 12px; border-radius: 16px; background: var(--surf-2);
   }
   .nutzerkarte .avatar { width: 38px; height: 38px; border-radius: 19px; font-size: 13px; }
@@ -482,15 +492,19 @@ table.liste .zahl {
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .nutzerkarte .rolle { font-size: 12px; color: var(--muted); }
+  /* Abmelden steht als eigene Zeile unter Avatar und Name. */
   .abmelden {
-    appearance: none; border: 0; cursor: pointer; flex: 0 0 auto;
-    width: 44px; height: 44px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    background: transparent; color: var(--muted);
+    appearance: none; border: 0; cursor: pointer; flex: 1 0 100%;
+    min-height: 44px; padding: 0 10px; border-radius: 10px;
+    display: inline-flex; align-items: center; gap: 10px;
+    background: transparent; color: var(--ink-2);
+    font: inherit; font-size: 14px; font-weight: 600;
   }
   .abmelden:hover { background: var(--surf-3); color: var(--ink); }
-  .abmelden:disabled { opacity: .5; cursor: wait; }
   .abmelden svg { width: 18px; height: 18px; }
+  .abmelden-frage { flex: 1 0 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+  .abmelden-frage p { flex: 1 0 100%; margin: 0; font-size: 14px; font-weight: 700; }
+  .abmelden-frage .knopf { flex: 1 1 0; }
 
   /* Die Nutzerkarte zeigt den Avatar schon - im Seitenkopf bleibt die Glocke. */
   .seitenkopf .avatar { display: none; }
@@ -710,6 +724,15 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 .home .sectionlabel { align-items: baseline; }
 .home .sectionlabel a { font-size: 14px; font-weight: 600; color: var(--blue-ink); }
 .leer-klein { color: var(--muted); font-size: var(--font-size-klein); margin: 0; }
+/* Einheitlicher Leerzustand: Satz links, Handlung daneben oder darunter. */
+.leerzustand {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+  padding: 16px 18px; border-radius: var(--radius-karte);
+  border: 1.5px dashed var(--line-2); color: var(--ink-2);
+}
+.leerzustand p { flex: 1 1 220px; margin: 0; font-size: 15px; line-height: 1.45; }
+.leerzustand .knopf { flex: 0 0 auto; }
+.karte.neuigkeiten .leerzustand { margin: 0 20px 20px; }
 .fehlertext { color: var(--red-ink); }
 
 /* Waagerecht wischbar bis an den Rand */
@@ -1111,10 +1134,12 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
   display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 12.5px; color: var(--ink-2);
 }
 .legende li { display: inline-flex; align-items: center; gap: 6px; }
-.legende i { width: 18px; height: 10px; border-radius: 4px; }
+/* Jedes Kaestchen mit Rand: blue-soft, surf-3 und gold-soft allein liegen
+   unter 3:1 zum Grund (U29). */
+.legende i { width: 18px; height: 10px; border-radius: 4px; box-sizing: border-box; border: 1.5px solid var(--rahmen); }
 .legende i.eigen { background: var(--gold); }
 .legende i.belegt { background: var(--blue); }
-.legende i.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); }
+.legende i.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-ink); }
 .legende i.serie, .beleg.serie {
   background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 12%, transparent) 0 3px, transparent 3px 6px), var(--surf-3);
 }
@@ -1405,7 +1430,7 @@ li.chip { padding-right: 4px; }
 .auth.immer-dunkel .sheet input:not([type="checkbox"]):not([type="radio"]),
 .auth.immer-dunkel .sheet select {
   min-height: 54px; border-radius: 16px; font-size: 16px;
-  border-color: rgba(255,255,255,.12); background: var(--surf);
+  border-color: var(--rahmen); background: var(--surf);
 }
 .auth.immer-dunkel .sheet a { color: var(--ink-2); font-weight: 600; }
 .auth.immer-dunkel .sheet .knopf.block:not(.leise) {
@@ -1413,6 +1438,7 @@ li.chip { padding-right: 4px; }
   min-height: 58px; border-radius: 18px; font-family: var(--font-text); font-size: 17px; font-weight: 800;
 }
 .auth.immer-dunkel .sheet .knopf.block.leise { min-height: 52px; border-radius: 16px; }
+.auth.immer-dunkel .sheet .schalter > span { margin: 0; font-size: 14px; font-weight: 500; color: var(--ink-2); }
 .auth .vergessen { margin: -4px 0 0; text-align: right; font-size: 14px; }
 .auth .antrag-hinweis { margin: 4px 0 0; text-align: center; font-size: 14px; color: var(--muted); }
 .auth.immer-dunkel .antrag-hinweis a { color: var(--gold); font-weight: 700; }
@@ -1686,10 +1712,16 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 
 /* Suche und Filter-Chips */
 .suchleiste { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+/* Mitgliederliste: Suche und Bestand in einer Zeile, darunter die Chips (U32) */
+.mitglieder-suche { width: 100%; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.mitglieder-listenseite .mitglieder-suche .suchfeld { flex: 1 1 160px; max-width: none; }
+.bestand-wahl { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; margin: 0; }
+.bestand-wahl > span { margin: 0; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.bestand-wahl select { width: auto; height: 46px; padding: 0 12px; border-radius: 14px; font-size: 15px; }
 .suchfeld {
   flex: 1 1 260px; max-width: 420px; height: 46px; margin: 0;
   display: flex; align-items: center; gap: 10px; padding: 0 14px;
-  border-radius: 14px; background: var(--surf); border: 1px solid var(--line-2); color: var(--muted);
+  border-radius: 14px; background: var(--surf); border: 1.5px solid var(--rahmen); color: var(--muted);
 }
 .suchfeld:focus-within { border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-soft); }
 .suchfeld svg { width: 18px; height: 18px; flex: 0 0 auto; }
@@ -1842,6 +1874,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .naechster-schritt p { margin: 0; font-size: 14px; line-height: 1.5; opacity: .85; }
 .naechster-schritt .knopf { height: 50px; padding: 0 16px; border-radius: 14px; font-size: 15px; text-decoration: none; }
 .naechster-schritt .knopf.gold { box-shadow: none; }
+/* Auf Blau in Weiss wie der übrige Text der Karte, als eigene Zeile. */
+.naechster-schritt .sperrgrund { color: inherit; flex-basis: 100%; }
 .naechster-schritt.quer { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; }
 .naechster-schritt.quer > div { display: grid; gap: 8px; flex: 1 1 360px; }
 .knopf.auf-blau { background: rgba(255,255,255,.16); color: #fff; box-shadow: none; }
@@ -1908,7 +1942,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .kiosk-suche {
   height: 60px; margin: 0; box-sizing: border-box; flex: 0 0 auto;
   display: flex; align-items: center; gap: 12px; padding: 0 16px;
-  border-radius: 18px; background: var(--surf-2); border: 2px solid var(--line-2); color: var(--muted);
+  border-radius: 18px; background: var(--surf-2); border: 2px solid var(--rahmen); color: var(--muted);
 }
 .kiosk-suche:focus-within { border-color: var(--blue); }
 .kiosk-suche svg { width: 22px; height: 22px; flex: 0 0 auto; }
@@ -2087,7 +2121,9 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .tippfelder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .tippfeld {
   display: grid; gap: 2px; margin: 0; padding: 8px 16px; border-radius: 16px; background: var(--surf-2);
+  border: 1.5px solid var(--rahmen);
 }
+.tippfeld:focus-within { border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-soft); }
 .tippfeld > span { font-size: 12.5px; font-weight: 600; color: var(--muted); }
 .tippfeld input {
   border: 0; padding: 0; background: transparent; box-shadow: none !important;
@@ -2298,7 +2334,9 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 /* ---------------------------------------------------------------------------
    Kasse: Einzug vorbereiten, Stand eines Einzugs, Start (Entwurf „Kasse neu“)
    --------------------------------------------------------------------------- */
-.segtoggle.bereich-segmente.viele { overflow-x: auto; scrollbar-width: none; }
+/* Viele Teile brechen am Telefon in eine zweite Zeile um. Seitlich scrollen
+   hat das letzte Segment abgeschnitten, ohne dass man es merkte (U25). */
+.segtoggle.bereich-segmente.viele { flex-wrap: wrap; }
 .segtoggle.bereich-segmente.viele a { flex: 1 0 auto; white-space: nowrap; }
 @media (min-width: 768px) {
   .segtoggle.bereich-segmente.viele { min-width: 560px; }
@@ -2506,7 +2544,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .event-begleitung > span { display: grid; gap: 2px; }
 .event-begleitung small { color: var(--muted); font-size: 13px; }
 .event-bemerkung { margin: 0; }
-.gebuehr-hinweis { margin: 12px 0 0; font-size: 13px; line-height: 1.5; }
+.gebuehr-hinweis { margin: 0; font-size: 13px; line-height: 1.5; }
 .event-mein .hinweis, .event-anmelden .hinweis { margin: 0 0 12px; }
 
 .home-verein .event-liste { gap: 8px; }

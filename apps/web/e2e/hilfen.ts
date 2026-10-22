@@ -45,7 +45,7 @@ export const ZAHLERIN = "Kira Kasse";
 export async function anmelden(page: Page, email: string) {
   await page.goto("/login");
   await page.getByLabel("E-Mail").fill(email);
-  await page.getByLabel("Passwort").fill(PASSWORT);
+  await page.getByLabel("Passwort", { exact: true }).fill(PASSWORT);
   await page.getByRole("button", { name: "Anmelden" }).click();
   await page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 20_000 });
 }

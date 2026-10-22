@@ -7,6 +7,7 @@ import {
 } from "@/app/admin/plaetze/aktionen";
 import { FensterKnopf } from "@/components/FensterKnopf";
 import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
+import { SperrGrund } from "@/components/SperrGrund";
 
 export interface PlatzZeile {
   id: string;
@@ -250,14 +251,19 @@ function Sperrformular({
       )}
 
       {kollisionen === null ? (
-        <button
-          type="button"
-          className="knopf gold block gross"
-          disabled={laeuft || !vollstaendig}
-          onClick={() => absenden(false)}
-        >
-          {laeuft ? "Wird gesperrt…" : "Sperren"}
-        </button>
+        <>
+          <button
+            type="button"
+            className="knopf gold block gross"
+            disabled={laeuft || !vollstaendig}
+            onClick={() => absenden(false)}
+          >
+            {laeuft ? "Wird gesperrt…" : "Sperren"}
+          </button>
+          {!laeuft && (
+            <SperrGrund grund={gewaehlt.length === 0 ? "Erst einen Platz wählen." : tag === "" ? "Erst einen Tag wählen." : null} />
+          )}
+        </>
       ) : (
         <div className="fenster-fuss">
           <button type="button" className="knopf gefahr" disabled={laeuft} onClick={() => absenden(true)}>
@@ -381,6 +387,11 @@ function Platzliste({
           >
             {form.id ? "Änderungen speichern" : "Platz anlegen"}
           </button>
+          {!laeuft && (
+            <SperrGrund
+              grund={form.name.trim() === "" ? "Erst einen Namen eingeben." : form.kurzname.trim() === "" ? "Erst einen Kurznamen eingeben." : null}
+            />
+          )}
 
           {bearbeitet && (
             <div className="liste-gruppe">
@@ -576,6 +587,11 @@ function Artenliste({
           >
             Speichern
           </button>
+          {!laeuft && (
+            <SperrGrund
+              grund={form.code.trim() === "" ? "Erst einen Code eingeben." : form.name.trim() === "" ? "Erst einen Namen eingeben." : null}
+            />
+          )}
         </FensterKnopf>
       )}
     </section>

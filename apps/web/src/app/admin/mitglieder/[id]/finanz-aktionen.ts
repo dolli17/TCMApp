@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { translateDbError } from "@tcm/core";
+import { berlinDay, translateDbError } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { AktionsErgebnis } from "./aktionen";
 
@@ -90,7 +90,7 @@ export async function mandatWiderrufen(id: string, mandatId: string): Promise<Ak
 export async function beitragsartZuordnen(formData: FormData): Promise<AktionsErgebnis> {
   const id = String(formData.get("mitglied") ?? "");
   const feeTypeId = String(formData.get("fee_type") ?? "");
-  const jahr = Number(formData.get("jahr")) || new Date().getFullYear();
+  const jahr = Number(formData.get("jahr")) || Number(berlinDay(new Date()).slice(0, 4));
   const betrag = String(formData.get("override") ?? "").trim();
   const notiz = String(formData.get("note") ?? "").trim();
 

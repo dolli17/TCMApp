@@ -5,6 +5,7 @@ import {
   CHARGE_KINDS, CHARGE_KIND_LABEL, parseAmountToCents, type ChargeKind,
 } from "@tcm/core";
 import { forderungAnlegen } from "@/app/admin/kasse/aktionen";
+import { SperrGrund } from "@/components/SperrGrund";
 
 /** Veranstaltungsgebuehren entstehen nur mit der Anmeldung, nie von Hand. */
 type HandArt = Exclude<ChargeKind, "event">;
@@ -107,6 +108,19 @@ export function ForderungAnlegen({ mitglieder }: { mitglieder: MitgliedWahl[] })
         >
           {laeuft ? "Wird angelegt…" : "Forderung anlegen"}
         </button>
+        {!laeuft && (
+          <SperrGrund
+            grund={
+              name.trim() === ""
+                ? "Erst ein Mitglied wählen."
+                : betrag.trim() === ""
+                  ? "Erst einen Betrag eingeben."
+                  : beschreibung.trim() === ""
+                    ? "Erst eine Beschreibung eingeben."
+                    : null
+            }
+          />
+        )}
       </div>
     </section>
   );

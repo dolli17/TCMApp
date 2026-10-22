@@ -6,6 +6,7 @@ import { forderungAbhaken, forderungErlassen } from "@/app/admin/kasse/aktionen"
 import { ArtMarke } from "@/components/ArtMarke";
 import { FensterKnopf } from "@/components/FensterKnopf";
 import { Listenzeile } from "@/components/Listenzeile";
+import { Leerzustand } from "@/components/Leerzustand";
 
 export interface ForderungZeile {
   id: string;
@@ -51,7 +52,14 @@ const offen = (f: ForderungZeile) => f.status === "open" || f.status === "notifi
  * Als Listenzeilen (docs/design/clubhaus/verwaltung, Regel 3); beide
  * Handgriffe stehen im Blatt der Forderung.
  */
-export function ForderungsListe({ forderungen }: { forderungen: ForderungZeile[] }) {
+export function ForderungsListe({
+  forderungen,
+  gefiltert = false,
+}: {
+  forderungen: ForderungZeile[];
+  /** Ein Art- oder Standfilter ist gesetzt: dann bietet die leere Liste „Alle“ an. */
+  gefiltert?: boolean;
+}) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [gewaehlt, setGewaehlt] = useState<ForderungZeile | null>(null);
   const [erlassen, setErlassen] = useState(false);
@@ -67,7 +75,10 @@ export function ForderungsListe({ forderungen }: { forderungen: ForderungZeile[]
       )}
 
       {forderungen.length === 0 ? (
-        <p className="leer-klein">Keine Forderungen in dieser Ansicht.</p>
+        <Leerzustand
+          text="Keine Forderungen in dieser Ansicht."
+          aktion={gefiltert ? { href: "/admin/kasse?abschnitt=forderungen", label: "Alle Forderungen zeigen" } : undefined}
+        />
       ) : (
         <ul className="liste-gruppe" aria-label="Forderungen">
           {forderungen.map((f) => (

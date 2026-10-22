@@ -5,6 +5,7 @@ import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { MerkmalsFormular, type MerkmalsDefinition } from "@/components/MerkmalsFormular";
 import { translateDbError } from "@tcm/core";
 import { Fehlerzustand } from "@/components/Fehlerzustand";
+import { Leerzustand } from "@/components/Leerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -75,7 +76,7 @@ export default async function MerkmaleSeite({
       </VerwaltungsKopf>
 
       {merkmale.length === 0 ? (
-        <p className="leer-klein">Noch keine Merkmale angelegt.</p>
+        <Leerzustand text="Noch keine Merkmale angelegt. Das erste legst du oben über „Merkmal anlegen“ an." />
       ) : (
         <ul className="liste-gruppe" aria-label="Merkmale">
           {merkmale.map((m) => (

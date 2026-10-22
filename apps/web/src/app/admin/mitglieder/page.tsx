@@ -10,28 +10,38 @@ import { MitgliedUebersicht } from "@/components/MitgliedUebersicht";
 import { VerwaltungsKopf } from "@/components/VerwaltungsKopf";
 import { ladeBeitragsarten } from "@/lib/beitragsarten";
 import { Fehlerzustand } from "@/components/Fehlerzustand";
+import { AuswahlSofort } from "@/components/AuswahlSofort";
+import { Leerzustand } from "@/components/Leerzustand";
 
 export const dynamic = "force-dynamic";
 
-/** Welche Datensaetze die Datenbank liefert (member_overview) */
+/** Welche Datensaetze die Datenbank liefert (member_overview), als Auswahlfeld neben der Suche */
 const BESTAND = [
-  { wert: "aktiv", label: "Aktuelle Mitglieder" },
-  { wert: "trainer", label: "Trainer" },
-  { wert: "admins", label: "Volle Rechte" },
-  { wert: "vorstand", label: "Vorstand" },
-  { wert: "platzwart", label: "Platzwart" },
+  { wert: "aktiv", label: "Aktuelle" },
   { wert: "archiviert", label: "Archiviert" },
   { wert: "alle", label: "Alle Datensätze" },
 ];
 
-/** Die Chips des Entwurfs: nach Mitgliedschaft und Mandat, dazu neue Mitglieder im Onboarding */
-const ARTEN: { wert: MemberCategory | "ohne-mandat" | "onboarding" | ""; label: string }[] = [
+/** Rollen-Chips, die früher Bestand waren (?filter=trainer): alte Links landen beim Chip. */
+const ROLLEN = ["trainer", "vorstand", "platzwart", "admins"] as const;
+type Rolle = (typeof ROLLEN)[number];
+
+/**
+ * Die eine Chipreihe (U32): Mitgliedschaft und Mandat, neue Mitglieder im
+ * Onboarding und die Rollen. Ein Chip zur Zeit; der Bestand daneben gilt
+ * zusätzlich.
+ */
+const ARTEN: { wert: MemberCategory | "ohne-mandat" | "onboarding" | Rolle | ""; label: string }[] = [
   { wert: "", label: "Alle" },
   { wert: "aktiv", label: "Aktiv" },
   { wert: "jugend", label: "Jugend" },
   { wert: "passiv", label: "Passiv" },
   { wert: "ohne-mandat", label: "Ohne Mandat" },
   { wert: "onboarding", label: "Onboarding offen" },
+  { wert: "trainer", label: "Trainer" },
+  { wert: "vorstand", label: "Vorstand" },
+  { wert: "platzwart", label: "Platzwart" },
+  { wert: "admins", label: "Volle Rechte" },
 ];
 
 const JE_SEITE = 50;
@@ -56,7 +66,8 @@ export default async function MitgliederSeite({
   const auswahl = gewaehlteId && /^[0-9a-f-]{36}$/.test(gewaehlteId) ? gewaehlteId : null;
   // Das Rollenschloss steht im Layout - siehe app/admin/layout.tsx.
   const gewaehlt = BESTAND.some((f) => f.wert === filter) ? filter! : "aktiv";
-  const artWahl = ARTEN.find((a) => a.wert === art)?.wert ?? "";
+  const alteRolle = ROLLEN.find((r) => r === filter);
+  const artWahl = ARTEN.find((a) => a.wert === (art ?? alteRolle))?.wert ?? "";
   const suche = (q ?? "").trim().slice(0, 60);
   const jahr = Number(new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin", year: "numeric" }).format(new Date()));
   const supabase = await createServerSupabase();
@@ -127,7 +138,15 @@ export default async function MitgliederSeite({
         ? !z.mandat
         : artWahl === "onboarding"
           ? z.einladung !== null
-          : z.kategorie === artWahl,
+          : artWahl === "trainer"
+            ? z.is_trainer
+            : artWahl === "admins"
+              ? z.is_admin
+              : artWahl === "vorstand"
+                ? z.roles.includes("board")
+                : artWahl === "platzwart"
+                  ? z.roles.includes("groundskeeper")
+                  : z.kategorie === artWahl,
   );
   const seiten = Math.max(1, Math.ceil(gefiltert.length / JE_SEITE));
   const seiteNr = Math.min(seiten, Math.max(1, Number(seite) || 1));
@@ -159,15 +178,26 @@ export default async function MitgliederSeite({
       <div className={`mitglieder-desk${auswahl ? " mit-auswahl" : ""}`}>
       <section className="mitglieder-listenseite" aria-label="Mitgliederliste">
       <div className="suchleiste">
-        <form className="suchfeld" role="search">
-          {gewaehlt !== "aktiv" && <input type="hidden" name="filter" value={gewaehlt} />}
+        {/* Suche und Bestand in einem Formular: der Bestand schickt beim
+            Wechsel ab, die Suche mit der Eingabetaste - beide behalten den Chip. */}
+        <form className="mitglieder-suche" role="search">
           {artWahl && <input type="hidden" name="art" value={artWahl} />}
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          <input type="search" name="q" defaultValue={suche} placeholder="Name" aria-label="Mitglieder durchsuchen" />
+          <label className="suchfeld">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <input type="search" name="q" defaultValue={suche} placeholder="Name" aria-label="Mitglieder durchsuchen" />
+          </label>
+          <label className="bestand-wahl">
+            <span>Bestand</span>
+            <AuswahlSofort name="filter" defaultValue={gewaehlt}>
+              {BESTAND.map((f) => (
+                <option key={f.wert} value={f.wert}>{f.label}</option>
+              ))}
+            </AuswahlSofort>
+          </label>
         </form>
-        <nav className="filterchips" aria-label="Mitgliedschaft">
+        <nav className="filterchips" aria-label="Filter">
           {ARTEN.map((a) => (
             <Link key={a.label} href={link({ art: a.wert })} aria-current={a.wert === artWahl ? "true" : undefined}>
               {a.label}
@@ -175,13 +205,6 @@ export default async function MitgliederSeite({
           ))}
         </nav>
       </div>
-      <nav className="filterchips leise" aria-label="Bestand">
-        {BESTAND.map((f) => (
-          <Link key={f.wert} href={link({ filter: f.wert })} aria-current={f.wert === gewaehlt ? "true" : undefined}>
-            {f.label}
-          </Link>
-        ))}
-      </nav>
 
       {nebenFehler && (
         <div className="hinweis fehler">
@@ -190,7 +213,10 @@ export default async function MitgliederSeite({
       )}
 
       {sichtbar.length === 0 ? (
-        <p className="leer">Keine Mitglieder gefunden.</p>
+        <Leerzustand
+          text="Keine Mitglieder gefunden."
+          aktion={artWahl || suche || gewaehlt !== "aktiv" ? { href: "/admin/mitglieder", label: "Filter zurücksetzen" } : undefined}
+        />
       ) : (
         <div className="mitgliederliste">
           <div className="gruppenkopf klein">

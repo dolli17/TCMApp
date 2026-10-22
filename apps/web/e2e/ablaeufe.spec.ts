@@ -129,7 +129,7 @@ test.describe("Anmeldung", () => {
   }) => {
     await page.goto("/login");
     await page.getByLabel("E-Mail").fill(NUTZER.mitglied);
-    await page.getByLabel("Passwort").fill("definitiv-falsch");
+    await page.getByLabel("Passwort", { exact: true }).fill("definitiv-falsch");
     await page.getByRole("button", { name: "Anmelden" }).click();
 
     const meldung = page.locator(".hinweis.fehler");
@@ -183,7 +183,9 @@ test.describe("Ein Konto pro Browser", () => {
     await anmelden(page, NUTZER.mitglied);
     const tab2 = await context.newPage();
     await tab2.goto("/konto");
+    // Die Nutzerkarte der Seitenleiste fragt einmal nach (U28).
     await tab2.getByRole("button", { name: "Abmelden" }).first().click();
+    await tab2.getByRole("group", { name: "Wirklich abmelden?" }).getByRole("button", { name: "Abmelden" }).click();
     await expect(tab2).toHaveURL(/\/login/);
 
     await expect(page).toHaveURL(/\/login\?grund=abgemeldet/, { timeout: 10_000 });

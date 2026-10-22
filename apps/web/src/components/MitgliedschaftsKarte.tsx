@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { berlinDay } from "@tcm/core";
 import {
   mitgliedschaftBeenden,
   mitgliedschaftWiederaufnehmen,
@@ -47,7 +48,7 @@ export function MitgliedschaftsKarte(props: Props) {
     });
   }
 
-  const heute = new Date().toISOString().slice(0, 10);
+  const heute = berlinDay(new Date());
 
   return (
     <section className="karte einstellungen" aria-label="Mitgliedschaft">

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { formatCents } from "@tcm/core";
+import { berlinDay, formatCents } from "@tcm/core";
 import { antragEinreichen } from "@/app/antrag/aktionen";
 
 export interface FormularOption {
@@ -43,12 +43,6 @@ export function Antragsformular({ optionen }: { optionen: FormularOption[] }) {
 
   return (
     <form action={abschicken}>
-      {meldung && (
-        <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">
-          {meldung.text}
-        </div>
-      )}
-
       {/* Honigtopf: für Menschen unsichtbar, für Programme verlockend. */}
       <div aria-hidden="true" style={{ position: "absolute", left: "-9999px" }}>
         <label>
@@ -72,7 +66,8 @@ export function Antragsformular({ optionen }: { optionen: FormularOption[] }) {
             type="date"
             name="birthday"
             required
-            max={new Date().toISOString().slice(0, 10)}
+            autoComplete="bday"
+            max={berlinDay(new Date())}
           />
         </label>
         <label>
@@ -137,6 +132,13 @@ export function Antragsformular({ optionen }: { optionen: FormularOption[] }) {
       <p className="beschreibung">
         Nach der Aufnahme richtest du in der App dein Konto und das Lastschriftmandat ein.
       </p>
+
+      {/* Die Meldung steht am Knopf: wer unten absendet, sieht sie sofort. */}
+      {meldung && (
+        <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="alert">
+          {meldung.text}
+        </div>
+      )}
 
       <button className="knopf block" disabled={laeuft}>
         {laeuft ? "Wird gesendet…" : "Antrag absenden"}

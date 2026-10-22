@@ -8,6 +8,7 @@ import { MannschaftsFormular, type Mannschaft } from "@/components/MannschaftsFo
 import type { Person } from "@/components/Personensuche";
 import { translateDbError } from "@tcm/core";
 import { Fehlerzustand } from "@/components/Fehlerzustand";
+import { Leerzustand } from "@/components/Leerzustand";
 
 export const dynamic = "force-dynamic";
 
@@ -55,7 +56,7 @@ export default async function MannschaftenSeite({
       <MitgliederSegmente aktiv="/admin/mitglieder/mannschaften" />
 
       {mannschaften.length === 0 ? (
-        <p className="leer-klein">Noch keine Mannschaften angelegt.</p>
+        <Leerzustand text="Noch keine Mannschaften angelegt. Die erste legst du oben über „Mannschaft anlegen“ an." />
       ) : (
         <ul className="liste-gruppe" aria-label="Mannschaften">
           {mannschaften.map((m) => (

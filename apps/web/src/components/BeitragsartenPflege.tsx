@@ -7,6 +7,7 @@ import {
 } from "@/app/admin/kasse/aktionen";
 import { FensterKnopf } from "@/components/FensterKnopf";
 import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
+import { SperrGrund } from "@/components/SperrGrund";
 
 export interface BeitragsartZeile {
   id: string;
@@ -164,6 +165,11 @@ export function BeitragsartenPflege({
           >
             {neu ? "Beitragsart anlegen" : "Änderungen speichern"}
           </button>
+          {!laeuft && (
+            <SperrGrund
+              grund={neu && form.code.trim() === "" ? "Erst einen Code eingeben." : form.name.trim() === "" ? "Erst einen Namen eingeben." : null}
+            />
+          )}
 
           {preisFuer && (
             <>

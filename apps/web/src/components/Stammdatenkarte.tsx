@@ -14,6 +14,8 @@ export interface Feld {
   /** Nur bei art: "auswahl". */
   optionen?: { wert: string; label: string }[];
   breit?: boolean;
+  /** Nur bei den eigenen Daten; fremde Datensätze füllt der Browser nicht aus. */
+  autoComplete?: string;
 }
 
 interface Props {
@@ -124,7 +126,7 @@ export function Stammdatenkarte(props: Props) {
                     name={`wert:${f.name}`}
                     defaultValue={wert}
                     disabled={props.gesperrt}
-                    autoComplete="off"
+                    autoComplete={f.autoComplete ?? "off"}
                   />
                 )}
 

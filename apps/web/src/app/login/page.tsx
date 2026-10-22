@@ -29,6 +29,7 @@ function Formular() {
 
   const [email, setEmail] = useState("");
   const [passwort, setPasswort] = useState("");
+  const [zeigen, setZeigen] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
 
@@ -91,12 +92,16 @@ function Formular() {
           <label>
             <span>Passwort</span>
             <input
-              type="password"
+              type={zeigen ? "text" : "password"}
               value={passwort}
               onChange={(e) => setPasswort(e.target.value)}
               autoComplete="current-password"
               required
             />
+          </label>
+          <label className="schalter">
+            <input type="checkbox" checked={zeigen} onChange={(e) => setZeigen(e.target.checked)} />
+            <span>Passwort anzeigen</span>
           </label>
 
           <p className="vergessen">

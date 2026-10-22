@@ -10,6 +10,7 @@ import {
   type Belegung, type Blockungsart, type Buchungsart, type Fenster, type Mitglied, type Platz,
 } from "@/components/Belegungsplan";
 import { initialen, Mitspielersuche } from "@/components/Mitspielersuche";
+import { SperrGrund } from "@/components/SperrGrund";
 
 interface Props {
   fenster: Fenster;
@@ -574,6 +575,9 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
               {props.laeuft ? "Wird gespeichert…" : "Mitspieler speichern"}
             </button>
           )}
+          {!nurStorno && darfVerwalten && !props.laeuft && (
+            <SperrGrund grund={geaendert ? null : "Noch nichts geändert."} />
+          )}
 
           {!darfVerwalten ? null : stornoOffen ? (
             <button
@@ -742,7 +746,13 @@ function SperreBearbeiten(props: Props & { sperre: Belegung; onZu: () => void })
           >
             {props.laeuft ? "Wird gespeichert…" : "Änderungen speichern"}
           </button>
-        ) : (
+        ) : null}
+        {kollisionen === null && !props.laeuft && (
+          <SperrGrund
+            grund={plaetze.length === 0 ? "Erst einen Platz wählen." : !zeitOk ? "Das Ende muss nach dem Beginn liegen." : null}
+          />
+        )}
+        {kollisionen === null ? null : (
           <button type="button" className="knopf gefahr block" disabled={props.laeuft} onClick={() => void speichern(true)}>
             {kollisionen} {kollisionen === 1 ? "Buchung" : "Buchungen"} verdrängen
           </button>
@@ -932,6 +942,17 @@ function UmsetzBereich(props: Props & { belegung: Belegung; onZu: () => void }) 
         >
           {props.laeuft ? "Wird umgesetzt…" : "Hierhin umsetzen"}
         </button>
+        {!props.laeuft && (
+          <SperrGrund
+            grund={
+              platz === undefined || minute === null
+                ? "Erst Platz und Uhrzeit wählen."
+                : grundNoetig && grund.trim() === ""
+                  ? "Erst einen Grund eingeben."
+                  : null
+            }
+          />
+        )}
         <button type="button" className="knopf leise" onClick={props.onZu}>
           Doch nicht
         </button>

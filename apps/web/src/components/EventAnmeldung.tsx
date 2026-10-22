@@ -48,6 +48,7 @@ export function EventAnmeldung({
     });
   }
 
+  const gebuehr = eventGebuehrHinweis(e);
   const hinweis = meldung && (
     <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">{meldung.text}</div>
   );
@@ -99,6 +100,8 @@ export function EventAnmeldung({
           und rückst automatisch nach, wenn etwas frei wird.
         </p>
       )}
+      {/* Was es kostet, steht vor dem Knopf und nicht erst danach. */}
+      {!aendern && gebuehr && <p className="unterzeile gebuehr-hinweis">{gebuehr}</p>}
       <button type="submit" className="knopf gold block" disabled={laeuft}>
         {aendern
           ? e.fee_cents && e.mein_status === "registered"
@@ -180,13 +183,11 @@ export function EventAnmeldung({
 
   // --- Anmelden --------------------------------------------------------------
   if (eventAnmeldbar(e, jetzt)) {
-    const gebuehr = eventGebuehrHinweis(e);
     return (
       <section className="karte event-anmelden" aria-labelledby="h-anmelden">
         <h2 id="h-anmelden" className="dpl">Anmelden</h2>
         {hinweis}
         {formular(false)}
-        {gebuehr && <p className="unterzeile gebuehr-hinweis">{gebuehr}</p>}
       </section>
     );
   }
