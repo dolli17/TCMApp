@@ -15,7 +15,7 @@
     "db:test": "supabase test db",
     "test": "pnpm -r test",
     "test:core": "pnpm --filter @tcm/core test",
-    "test:functions": "pnpm dlx deno@2 test --no-lock --node-modules-dir=none --allow-env --allow-read supabase/functions/_tests",
+    "test:functions": "pnpm dlx deno@2.9.6 test --no-lock --node-modules-dir=none --allow-env --allow-read supabase/functions/_tests",
     "e2e": "pnpm --filter @tcm/web e2e",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",

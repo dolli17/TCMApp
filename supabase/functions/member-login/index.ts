@@ -25,6 +25,9 @@
  */
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+// Symlink auf packages/core/src/adresshinweis.ts, dort unter Test - wie
+// mailvorlage.ts in notification-mails.
+import { ADRESSHINWEIS_BETREFF, adresshinweisHtml, adresshinweisText } from "./adresshinweis.ts";
 
 type Aktion =
   | "anlegen"
@@ -91,6 +94,10 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SITE_URL = Deno.env.get("SITE_URL") ?? "http://localhost:3000";
+// Derselbe Versandweg wie notification-mails: Auth verschickt beim Ändern der
+// Adresse durch einen Admin selbst keinen Hinweis (adminUserUpdate).
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
+const MAIL_FROM = Deno.env.get("MAIL_FROM") ?? "TC Muckensturm <noreply@example.org>";
 
 /** Ein Bann, der praktisch nie abläuft – gesperrt bleibt gesperrt, bis jemand aufhebt. */
 const BANN_DAUER = "876000h";
@@ -279,6 +286,9 @@ Deno.serve(async (req) => {
         }
 
         const sperren = aktion === "login_deaktivieren";
+        if (sperren && !(await bleibtEinAdmin(alsAufrufer, mitglied.id))) {
+          return antwort(false, LETZTER_ADMIN, 400);
+        }
 
         // Gesperrt wird, nicht gelöscht: eine Sperre lässt sich zurücknehmen,
         // ein gelöschtes Konto nicht.
@@ -312,35 +322,55 @@ Deno.serve(async (req) => {
         });
         if (dbError) return dbFehler(dbError);
 
-        // Ohne Login sind nur Archivierte: nichts nachzuziehen.
-        if (!mitglied.auth_user_id) {
-          return antwort(true, "E-Mail-Adresse gespeichert.");
-        }
-
-        const { error } = await alsDienst.auth.admin.updateUserById(mitglied.auth_user_id, {
-          email: neu,
-          email_confirm: true,
-        });
-
-        if (error) {
-          // Zurück auf die alte Adresse, damit Mitglied und Login nicht
-          // auseinanderlaufen – genau das soll diese Aktion verhindern.
-          await alsAufrufer.rpc("update_member", {
-            p_member_id: mitglied.id,
-            p_patch: { email: mitglied.email },
+        if (mitglied.auth_user_id) {
+          const { error } = await alsDienst.auth.admin.updateUserById(mitglied.auth_user_id, {
+            email: neu,
+            email_confirm: true,
           });
-          return antwort(
-            false,
-            `Die Adresse ließ sich im Login nicht ändern, deshalb bleibt die alte: ${error.message}`,
-            400,
-          );
+
+          if (error) {
+            // Zurück auf die alte Adresse, damit Mitglied und Login nicht
+            // auseinanderlaufen – genau das soll diese Aktion verhindern.
+            const { error: zurueckFehler } = await alsAufrufer.rpc("update_member", {
+              p_member_id: mitglied.id,
+              p_patch: { email: mitglied.email },
+            });
+            if (zurueckFehler) {
+              // B20: Dann stimmen beide nicht mehr überein, und genau das
+              // muss der Admin erfahren.
+              return antwort(
+                false,
+                `Die neue Adresse steht jetzt beim Mitglied, die Anmeldung läuft aber weiter über die alte. ` +
+                  `Bitte die Adresse noch einmal speichern. (${error.message}; ${zurueckFehler.message})`,
+                400,
+                { teilweise: true },
+              );
+            }
+            return antwort(
+              false,
+              `Die Adresse ließ sich im Login nicht ändern, deshalb bleibt die alte: ${error.message}`,
+              400,
+            );
+          }
         }
 
-        return antwort(true, "E-Mail-Adresse gespeichert, auch für die Anmeldung.");
+        // Ohne Login sind nur Archivierte: dort gibt es keine Anmeldung.
+        const gespeichert = mitglied.auth_user_id
+          ? "E-Mail-Adresse gespeichert, auch für die Anmeldung."
+          : "E-Mail-Adresse gespeichert.";
+
+        // S18: Die alte Adresse erfährt davon. Die Änderung selbst ist da schon
+        // durch; scheitert nur der Hinweis, sagt die Meldung genau das (B20).
+        const hinweis = await hinweisAnAlteAdresse(alsDienst, mitglied);
+        if (hinweis === null) return antwort(true, gespeichert);
+        return antwort(true, `${gespeichert} ${hinweis}`, 200, { teilweise: true, hinweis });
       }
 
       case "loeschen": {
         const anonymisieren = anfrage.art === "anonymisieren";
+        if (!(await bleibtEinAdmin(alsAufrufer, mitglied.id))) {
+          return antwort(false, LETZTER_ADMIN, 400);
+        }
 
         // Die Datenbank entscheidet, ob das geht: Rechte, Bestätigung über den
         // Nachnamen, Buchhaltung. Erst danach geht der Login.
@@ -639,6 +669,90 @@ async function istKiosk(
     .limit(1);
   if (error) throw new Error(error.message);
   return (data ?? []).length > 0;
+}
+
+const LETZTER_ADMIN = "Es muss mindestens ein Admin bleiben.";
+
+/**
+ * Bleibt nach dem Sperren oder Entfernen dieses Mitglieds noch jemand, der
+ * den Verein verwalten kann? (S18) Gezählt wird, wer volle Rechte hat
+ * (admin oder board, wie private.has_full_rights) und sich auch anmelden
+ * kann: mit Login, nicht gesperrt, nicht archiviert. Ist das Mitglied selbst
+ * keiner davon, ändert sich an der Zahl nichts.
+ *
+ * Gelesen mit dem Token des Aufrufers: Administratoren sehen Rollen und
+ * Mitglieder, der Service-Schlüssel hat auf public-Tabellen kein SELECT.
+ * Fehler werfen, statt im Zweifel zu sperren.
+ */
+async function bleibtEinAdmin(
+  alsAufrufer: ReturnType<typeof createClient>,
+  memberId: string,
+): Promise<boolean> {
+  const { data: rollen, error: rollenFehler } = await alsAufrufer
+    .from("member_roles")
+    .select("member_id")
+    .in("role", ["admin", "board"]);
+  if (rollenFehler) throw new Error(rollenFehler.message);
+
+  const ids = [...new Set((rollen ?? []).map((r) => (r as { member_id: string }).member_id))];
+  if (!ids.includes(memberId)) return true;
+
+  const { data: aktive, error } = await alsAufrufer
+    .from("members")
+    .select("id")
+    .in("id", ids)
+    .not("auth_user_id", "is", null)
+    .is("login_disabled_at", null)
+    .neq("status", "archived");
+  if (error) throw new Error(error.message);
+
+  const zugang = (aktive ?? []).map((m) => (m as { id: string }).id);
+  if (!zugang.includes(memberId)) return true;
+  return zugang.some((id) => id !== memberId);
+}
+
+/**
+ * Der Hinweis an die bisherige Adresse, dass sie nicht mehr gilt (S18).
+ * Gibt null zurück, wenn er rausging oder nicht nötig war, sonst den Satz
+ * für die Meldung an den Admin. Wirft nie: die Adresse ist da schon geändert.
+ */
+async function hinweisAnAlteAdresse(
+  alsDienst: ReturnType<typeof createClient>,
+  mitglied: Mitglied,
+): Promise<string | null> {
+  const alt = (mitglied.email ?? "").trim();
+  if (!alt) return null;
+
+  try {
+    if (await istTestadresse(alsDienst, alt)) return null;
+
+    if (!RESEND_API_KEY) {
+      // Trockenlauf wie in notification-mails: lokal geht nichts raus.
+      console.warn(`Trockenlauf: Hinweis zur geänderten Adresse an ${alt}`);
+      return "Der Hinweis an die alte Adresse ging nicht raus: Der Mailversand ist nicht eingerichtet.";
+    }
+
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: MAIL_FROM,
+        to: [alt],
+        subject: ADRESSHINWEIS_BETREFF,
+        html: adresshinweisHtml(mitglied.name, SITE_URL),
+        text: adresshinweisText(mitglied.name, SITE_URL),
+      }),
+    });
+    if (!res.ok) throw new Error(`Resend antwortete mit ${res.status}: ${await res.text()}`);
+    return null;
+  } catch (fehler) {
+    const grund = fehler instanceof Error ? fehler.message : String(fehler);
+    console.error("Hinweis an die alte Adresse gescheitert:", grund);
+    return `Der Hinweis an die alte Adresse ${alt} ließ sich nicht verschicken. Bitte das Mitglied selbst informieren.`;
+  }
 }
 
 const TESTADRESSE =
