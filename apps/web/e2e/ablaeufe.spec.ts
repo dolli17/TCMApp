@@ -716,7 +716,7 @@ test.describe("Offene Spiele und Gäste", () => {
 
     // Die Gastgebühr steht als Forderung im Konto des Buchers.
     await page.goto("/konto");
-    await expect(page.getByText(/Gastgebuehr/).first()).toBeVisible();
+    await expect(page.getByText(/Gastgeb(ue|ü)hr/).first()).toBeVisible();
 
     // Ein anderes Mitglied findet das offene Spiel und trägt sich ein.
     await anmelden(page, NUTZER.mitglied);
@@ -751,7 +751,7 @@ test.describe("Offene Spiele und Gäste", () => {
     // Erlassen, nicht geloescht: dass eine Gebuehr entstanden und wieder
     // weggefallen ist, gehört zur Kontohistorie.
     await page.goto("/konto");
-    await expect(page.locator(".frueher .forderung", { hasText: /Gastgebuehr/ }).first()).toContainText("erlassen");
+    await expect(page.locator(".frueher .forderung", { hasText: /Gastgeb(ue|ü)hr/ }).first()).toContainText("erlassen");
   });
 });
 

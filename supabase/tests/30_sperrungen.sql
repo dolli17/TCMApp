@@ -302,7 +302,7 @@ begin
   return next throws_ok(
     format('select * from public.update_blocking(%L, array[%L, %L]::uuid[], %L, %L, ''platzpflege'', ''Regen'')',
            v_sperre, c1, c2, s1, s1 + interval '2 hours'),
-    '23P01', '1 Buchungen liegen in diesem Zeitraum. Bestaetige das Verdraengen.',
+    '23P01', '1 Buchungen liegen in diesem Zeitraum. Bestätige das Verdrängen.',
     'Ohne Bestaetigung wird nicht verdraengt');
   perform set_config('role', 'postgres', true);
 

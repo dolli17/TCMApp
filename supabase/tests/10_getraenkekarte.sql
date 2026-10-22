@@ -166,7 +166,7 @@ begin
   -- unterscheiden nicht.
   return next throws_ok(
     'select public.upsert_drink_item(null, ''zztest radler'', null, ''drink'', 200)',
-    '23505', 'Ein Getraenk mit diesem Namen gibt es schon.',
+    '23505', 'Ein Getränk mit diesem Namen gibt es schon.',
     'Denselben Namen gibt es nicht zweimal');
   perform set_config('role', 'postgres', true);
 end; $f$;

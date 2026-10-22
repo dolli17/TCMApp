@@ -105,13 +105,13 @@ values
 insert into public.fee_types (code, name, description, sort_order) values
   ('erwachsener',        'Erwachsener',              'Aktives Mitglied ab 18',            1),
   ('erwachsener_passiv', 'Erwachsener Passiv',       'Passive Mitgliedschaft',            2),
-  ('jugend',             'Kinder und Jugendliche',   'Bis einschliesslich 17 Jahre',      3),
-  ('student',            'Student',                  'Mit gueltiger Bescheinigung',       4),
-  ('paare',              'Erwachsener Paare',        'Ermaessigung fuer Paare',           5),
-  ('beitragsbefreit',    'Beitragsbefreit',          'Ehrenmitglieder und Sonderfaelle',  6),
+  ('jugend',             'Kinder und Jugendliche',   'Bis einschließlich 17 Jahre',       3),
+  ('student',            'Student',                  'Mit gültiger Bescheinigung',        4),
+  ('paare',              'Erwachsener Paare',        'Ermäßigung für Paare',              5),
+  ('beitragsbefreit',    'Beitragsbefreit',          'Ehrenmitglieder und Sonderfälle',   6),
   ('trainer',            'Trainer',                  'Beitragsbefreit als Trainer',       7),
   ('schnuppern',         'Erwachsener-Schnuppern',   'Schnuppermitgliedschaft',           8),
-  ('schluesselpfand',    'Schluesselpfand',          'Einmalig, zusaetzlich zum Beitrag', 9);
+  ('schluesselpfand',    'Schlüsselpfand',           'Einmalig, zusätzlich zum Beitrag',  9);
 
 insert into public.fee_prices (fee_type_id, valid_from_year, amount_cents)
 select id, 2026,
@@ -165,7 +165,7 @@ insert into public.drink_items (name, description, category, sort_order) values
   ('Wasser spritzig',   '0,5 l',        'drink', 2),
   ('Apfelschorle',      '0,5 l',        'drink', 3),
   ('Cola',              '0,33 l',       'drink', 4),
-  ('Iso-Getraenk',      '0,5 l',        'drink', 5),
+  ('Iso-Getränk',       '0,5 l',        'drink', 5),
   ('Bier',              '0,33 l',       'drink', 6),
   ('Alkoholfreies Bier','0,33 l',       'drink', 7),
   ('Radler',            '0,33 l',       'drink', 8),
@@ -180,7 +180,7 @@ select id, date '2026-01-01',
     when 'Wasser spritzig'    then 150
     when 'Apfelschorle'       then 180
     when 'Cola'               then 180
-    when 'Iso-Getraenk'       then 200
+    when 'Iso-Getränk'        then 200
     when 'Bier'               then 250
     when 'Alkoholfreies Bier' then 250
     when 'Radler'             then 250
@@ -483,7 +483,7 @@ select
   2026,
   (array[2, 3, 4, 6, 8])[1 + floor(random() * 5)::int],
   (current_date - make_interval(days => floor(random() * 180)::int))::date,
-  (array['Platzpflege Fruehjahr','Thekendienst','Anlagenpflege','Turnierhelfer'])
+  (array['Platzpflege Frühjahr','Thekendienst','Anlagenpflege','Turnierhelfer'])
     [1 + floor(random() * 4)::int],
   (select member_id from public.member_roles where role = 'admin' limit 1),
   now()

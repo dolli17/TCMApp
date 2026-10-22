@@ -61,7 +61,7 @@ begin
 
   perform tests.act_as(c.auth_id);
   return next throws_ok(format('select public.join_booking(%L)', v_id),
-    '23514', 'Fuer diese Buchung werden keine Mitspieler gesucht.',
+    '23514', 'Für diese Buchung werden keine Mitspieler gesucht.',
     'Ohne Ausschreibung kommt niemand in eine fremde Buchung');
   perform set_config('role', 'postgres', true);
 end; $f$;

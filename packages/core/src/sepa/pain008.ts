@@ -17,7 +17,7 @@ import { normalizeIban } from "../iban";
 import type { DirectDebitBatch, PainVersion } from "./types";
 import { hasErrors, validateBatch } from "./validation";
 
-/** XML-Sonderzeichen ersetzen. Umlaute bleiben, die Datei ist UTF-8. */
+/** XML-Sonderzeichen ersetzen. Umlaute schreibt sepaText vorher um. */
 export function escapeXml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -34,6 +34,37 @@ export function escapeXml(value: string): string {
 function field(value: string, maxLength: number): string {
   const clean = value.replace(/[\r\n\t]+/g, " ").replace(/\s{2,}/g, " ").trim();
   return escapeXml(clean.slice(0, maxLength));
+}
+
+const UMLAUTE: Record<string, string> = {
+  Ä: "Ae", Ö: "Oe", Ü: "Ue", ä: "ae", ö: "oe", ü: "ue", ß: "ss",
+};
+
+/** Zeichen mit naheliegendem Ersatz im SEPA-Zeichensatz. */
+const ERSATZ: Record<string, string> = {
+  "&": "+", '"': "'", "–": "-", "—": "-", "_": "-", "€": "EUR",
+};
+
+/**
+ * Text in den SEPA-Grundzeichensatz bringen (B27): a-z A-Z 0-9 / - ? : ( ) . , ' +
+ * und Leerzeichen. Umlaute und ß werden umgeschrieben, Akzente fallen weg,
+ * alles andere wird zum Leerzeichen. Banken weisen Dateien mit anderen
+ * Zeichen ab oder verstümmeln sie.
+ */
+export function sepaText(value: string): string {
+  return value
+    .replace(/[ÄÖÜäöüß]/g, (z) => UMLAUTE[z]!)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[&"–—_€]/g, (z) => ERSATZ[z]!)
+    .replace(/[^a-zA-Z0-9/\-?:().,'+ ]/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+/** Ein Freitextfeld (Name, Verwendungszweck): erst umschreiben, dann kürzen. */
+function textField(value: string, maxLength: number): string {
+  return field(sepaText(value), maxLength);
 }
 
 function isoDate(value: string): string {
@@ -99,7 +130,7 @@ export function buildPain008(
         `        </DrctDbtTx>\n` +
         dbtrAgt +
         `        <Dbtr>\n` +
-        `          <Nm>${field(item.debtorName, nameMax)}</Nm>\n` +
+        `          <Nm>${textField(item.debtorName, nameMax)}</Nm>\n` +
         `        </Dbtr>\n` +
         `        <DbtrAcct>\n` +
         `          <Id>\n` +
@@ -107,7 +138,7 @@ export function buildPain008(
         `          </Id>\n` +
         `        </DbtrAcct>\n` +
         `        <RmtInf>\n` +
-        `          <Ustrd>${field(item.remittanceInfo, 140)}</Ustrd>\n` +
+        `          <Ustrd>${textField(item.remittanceInfo, 140)}</Ustrd>\n` +
         `        </RmtInf>\n` +
         `      </DrctDbtTxInf>\n`
       );
@@ -129,7 +160,7 @@ export function buildPain008(
     `      <NbOfTxs>${anzahl}</NbOfTxs>\n` +
     `      <CtrlSum>${ctrlSum}</CtrlSum>\n` +
     `      <InitgPty>\n` +
-    `        <Nm>${field(batch.creditor.name, nameMax)}</Nm>\n` +
+    `        <Nm>${textField(batch.creditor.name, nameMax)}</Nm>\n` +
     `      </InitgPty>\n` +
     `    </GrpHdr>\n` +
     `    <PmtInf>\n` +
@@ -149,7 +180,7 @@ export function buildPain008(
     `      </PmtTpInf>\n` +
     `      <ReqdColltnDt>${isoDate(batch.collectionDate)}</ReqdColltnDt>\n` +
     `      <Cdtr>\n` +
-    `        <Nm>${field(batch.creditor.name, nameMax)}</Nm>\n` +
+    `        <Nm>${textField(batch.creditor.name, nameMax)}</Nm>\n` +
     `      </Cdtr>\n` +
     `      <CdtrAcct>\n` +
     `        <Id>\n` +

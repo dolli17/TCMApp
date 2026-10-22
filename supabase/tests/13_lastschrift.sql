@@ -99,7 +99,7 @@ begin
   perform set_config('role', 'postgres', true);
 
   return next is(v_faehig, false, 'Eine Forderung in laufender Frist ist nicht einzugsfaehig');
-  return next ok(v_grund like '%Vorabankuendigung%', 'und der Grund sagt, warum');
+  return next ok(v_grund like '%Vorabankündigung%', 'und der Grund sagt, warum');
   return next is(
     (select count(*)::integer from public.debit_items where batch_id = v_batch),
     0, 'Der Lauf bleibt leer');
@@ -141,7 +141,7 @@ begin
   perform set_config('role', 'postgres', true);
 
   return next is(v_faehig, false, 'Vor dem angekuendigten Tag wird nicht eingezogen');
-  return next ok(v_grund like '%Angekuendigt war%', 'und der Grund nennt den Tag');
+  return next ok(v_grund like '%Angekündigt war%', 'und der Grund nennt den Tag');
 end; $f$;
 
 /** Ein belegter Lauf laesst sich nicht vorziehen. */

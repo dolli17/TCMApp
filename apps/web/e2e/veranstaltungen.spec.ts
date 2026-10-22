@@ -311,7 +311,7 @@ test.describe("Nachrichten zu Veranstaltungen", () => {
     await page.goto("/plan");
     await page.locator(".seitenkopf button.glocke").click();
     const eintrag = page.locator("dialog.fenster .nachrichtenliste li", { hasText: `Abgesagt: ${titel}` });
-    await expect(eintrag).toContainText("faellt aus");
+    await expect(eintrag).toContainText(/f(ae|ä)llt aus/);
     await eintrag.getByRole("link", { name: "Zur Veranstaltung" }).click();
     await expect(page).toHaveURL(new RegExp(`/verein/veranstaltungen/${id}$`));
     await expect(page.getByText("Diese Veranstaltung ist abgesagt.")).toBeVisible();
