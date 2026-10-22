@@ -22,6 +22,7 @@
   --red: #C4433A;
   --red-ink: #A8352D;
   --brand: #1466A8;
+  --on-brand: #FFFFFF;
   --bg: #F3F5F8;
   --surf: #FFFFFF;
   --surf-2: #EEF2F6;
@@ -43,6 +44,11 @@
   --shadow: 0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06);
   --shadow-sm: 0 1px 2px rgba(10,22,36,.05);
   --shadow-float: 0 16px 40px rgba(10,22,36,.16);
+
+  --avatar-0: #1466A8;
+  --avatar-1: #105083;
+  --avatar-2: #2370AC;
+  --avatar-3: #2C618F;
 
   --font-text: 'Barlow', system-ui, sans-serif;
   --font-display: 'Barlow Semi Condensed', 'Barlow', sans-serif;
@@ -90,6 +96,7 @@
     --red: #CF3F35;
     --red-ink: #FF6B61;
     --brand: #1466A8;
+    --on-brand: #FFFFFF;
     --bg: #07111D;
     --surf: #0E1A29;
     --surf-2: #152538;
@@ -129,6 +136,7 @@
   --red: #CF3F35;
   --red-ink: #FF6B61;
   --brand: #1466A8;
+  --on-brand: #FFFFFF;
   --bg: #07111D;
   --surf: #0E1A29;
   --surf-2: #152538;
@@ -166,6 +174,7 @@
   --red: #C4433A;
   --red-ink: #A8352D;
   --brand: #1466A8;
+  --on-brand: #FFFFFF;
   --bg: #F3F5F8;
   --surf: #FFFFFF;
   --surf-2: #EEF2F6;
@@ -205,6 +214,7 @@
   --red: #CF3F35;
   --red-ink: #FF6B61;
   --brand: #1466A8;
+  --on-brand: #FFFFFF;
   --bg: #07111D;
   --surf: #0E1A29;
   --surf-2: #152538;
@@ -244,6 +254,7 @@
   --red: #C4433A;
   --red-ink: #A8352D;
   --brand: #1466A8;
+  --on-brand: #FFFFFF;
   --bg: #F3F5F8;
   --surf: #FFFFFF;
   --surf-2: #EEF2F6;

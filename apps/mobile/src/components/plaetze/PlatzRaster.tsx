@@ -332,10 +332,12 @@ function FreieFlaeche({
 /** Kurze Legende unter dem Raster. */
 export function RasterLegende() {
   const { farben } = useTheme();
+  // Jedes Kaestchen mit Rand wie im Web: blueSoft, surf3 und goldSoft allein
+  // liegen unter 3:1 zum Grund (U29).
   const eintraege: { name: string; box: object; schraffur?: boolean }[] = [
     { name: "Du", box: { backgroundColor: farben.gold } },
     { name: "belegt", box: { backgroundColor: farben.blueSoft } },
-    { name: "sucht Mitspieler", box: { backgroundColor: farben.goldSoft, borderWidth: 1.5, borderStyle: "dashed", borderColor: farben.goldLine } },
+    { name: "sucht Mitspieler", box: { backgroundColor: farben.goldSoft, borderStyle: "dashed", borderColor: farben.goldInk } },
     { name: "Training", box: { backgroundColor: farben.surf3 }, schraffur: true },
     { name: "gesperrt", box: { backgroundColor: farben.surf3 } },
   ];
@@ -347,7 +349,7 @@ export function RasterLegende() {
     >
       {eintraege.map((e) => (
         <View key={e.name} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <View style={[{ width: 16, height: 10, borderRadius: 3, overflow: "hidden" }, e.box]}>
+          <View style={[{ width: 16, height: 10, borderRadius: 3, overflow: "hidden", borderWidth: 1.5, borderColor: farben.rahmen }, e.box]}>
             {e.schraffur && <Schraffur farbe={mitDeckkraft(farben.ink, 0.18)} />}
           </View>
           <Text style={{ fontSize: 12.5, color: farben.ink2, fontFamily: "Barlow_400Regular" }}>{e.name}</Text>

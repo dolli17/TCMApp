@@ -38,8 +38,8 @@ const SICHERHEITS_HEADER = [
 ];
 
 const config: NextConfig = {
-  // @tcm/core wird als TypeScript-Quelle eingebunden, nicht als gebautes Paket.
-  transpilePackages: ["@tcm/core"],
+  // @tcm/core und @tcm/ui werden als TypeScript-Quelle eingebunden, nicht als gebaute Pakete.
+  transpilePackages: ["@tcm/core", "@tcm/ui"],
 
   // Fuer das Docker-Image (apps/web/Dockerfile): der Build legt einen
   // eigenstaendigen Server samt der tatsaechlich benoetigten node_modules ab.

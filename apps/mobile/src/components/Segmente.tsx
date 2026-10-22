@@ -109,7 +109,7 @@ export function Schalter({
     >
       <View
         style={{
-          width: 26, height: 26, borderRadius: 13, backgroundColor: "#FFFFFF",
+          width: 26, height: 26, borderRadius: 13, backgroundColor: farben.onBrand,
           shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3,
           shadowRadius: 3, elevation: 2,
         }}

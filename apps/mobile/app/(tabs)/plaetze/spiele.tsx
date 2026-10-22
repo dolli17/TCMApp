@@ -243,7 +243,7 @@ export default function Spiele() {
                       backgroundColor: farben.brand, borderWidth: 2, borderColor: farben.surf,
                     }}
                   >
-                    <Text maxFontSizeMultiplier={SCHRIFT_DECKEL.form} style={{ fontSize: 11.5, fontFamily: "Barlow_700Bold", color: "#FFFFFF" }}>{initialen(n)}</Text>
+                    <Text maxFontSizeMultiplier={SCHRIFT_DECKEL.form} style={{ fontSize: 11.5, fontFamily: "Barlow_700Bold", color: farben.onBrand }}>{initialen(n)}</Text>
                   </View>
                 ))}
                 {Array.from({ length: o.frei }, (_, i) => (

@@ -35,13 +35,13 @@ export function EventKarte({ e, aufforderung = false }: { e: MitgliedEvent; auff
           backgroundColor: vorbei ? farben.surf2 : farben.brand,
         }}
       >
-        <Text style={{ fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 21, color: vorbei ? farben.ink2 : "#FFFFFF" }}>
+        <Text style={{ fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 21, color: vorbei ? farben.ink2 : farben.onBrand }}>
           {k.tag}
         </Text>
         <Text
           style={{
             fontFamily: "Barlow_700Bold", fontSize: 11, letterSpacing: 0.6, textTransform: "uppercase",
-            color: vorbei ? farben.ink2 : "#FFFFFF",
+            color: vorbei ? farben.ink2 : farben.onBrand,
           }}
         >
           {k.monat}

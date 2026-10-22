@@ -9,7 +9,7 @@
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { abstand, alsCssName, farben, radius, schatten, schrift } from "../src/tokens";
+import { abstand, alsCssName, avatarToene, farben, radius, schatten, schrift } from "../src/tokens";
 
 const hier = dirname(fileURLToPath(import.meta.url));
 
@@ -40,6 +40,8 @@ const css = `/* ================================================================
 :root {
 ${block(farben.hell)}
 ${schattenBlock(schatten.hell)}
+
+${avatarToene.map((v, i) => `  --avatar-${i}: ${v};`).join("\n")}
 
   --font-text: ${schrift.text};
   --font-display: ${schrift.display};

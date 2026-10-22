@@ -38,6 +38,10 @@ export const farben = {
     // Monatskarte. Anders als blue in beiden Themes gleich - das helle Blau
     // des dunklen Themes traegt keine weisse Schrift.
     brand: "#1466A8",
+    // Schrift und Symbole auf den farbigen Flaechen: brand, blue, red, green,
+    // die Avatare und der Knauf des Schalters. In beiden Themes Weiss - die
+    // Flaechen darunter sind so gewaehlt, dass Weiss darauf 4,5:1 haelt.
+    onBrand: "#FFFFFF",
 
     bg: "#F3F5F8",
     surf: "#FFFFFF",
@@ -88,6 +92,7 @@ export const farben = {
     red: "#CF3F35",
     redInk: "#FF6B61",
     brand: "#1466A8",
+    onBrand: "#FFFFFF",
 
     bg: "#07111D",
     surf: "#0E1A29",
@@ -112,6 +117,25 @@ export const farben = {
     segAktiv: "#1E3249",
   },
 } as const;
+
+/**
+ * Die vier Blautoene der Avatare, in beiden Themes gleich (wie brand). Ton 0
+ * ist brand selbst, die anderen sind brand mit Schwarz bzw. Graublau gemischt.
+ * Schrift darauf ist onBrand. Web liest sie als --avatar-0 bis --avatar-3,
+ * die App ueber avatarFarbe().
+ */
+export const avatarToene = ["#1466A8", "#105083", "#2370AC", "#2C618F"] as const;
+
+/** Einer der vier Toene, fest je Kennung - dasselbe Mitglied hat ueberall dieselbe Farbe. */
+export function avatarTon(id: string): number {
+  let h = 0;
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return h % avatarToene.length;
+}
+
+export function avatarFarbe(id: string): string {
+  return avatarToene[avatarTon(id)]!;
+}
 
 /**
  * Im Dunkeln liegen Karten ohne Schatten auf dem Grund - Flaeche und Linie

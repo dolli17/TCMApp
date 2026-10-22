@@ -82,7 +82,7 @@ function Avatar() {
         alignItems: "center", justifyContent: "center",
       }}
     >
-      <Text maxFontSizeMultiplier={SCHRIFT_DECKEL.form} style={{ color: "#fff", fontSize: 15, fontFamily: "Barlow_700Bold" }}>
+      <Text maxFontSizeMultiplier={SCHRIFT_DECKEL.form} style={{ color: farben.onBrand, fontSize: 15, fontFamily: "Barlow_700Bold" }}>
         {initialen}
       </Text>
     </Pressable>

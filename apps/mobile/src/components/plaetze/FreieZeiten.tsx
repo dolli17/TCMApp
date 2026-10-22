@@ -271,10 +271,12 @@ function kopfStil(farbe: string) {
 /** Die Legende als eine Zeile unter der Karte. */
 export function FreieZeitenLegende() {
   const { farben } = useTheme();
+  // Jedes Kaestchen mit Rand wie im Web: blueSoft, surf3 und goldSoft allein
+  // liegen unter 3:1 zum Grund (U29).
   const eintraege: { name: string; box: object }[] = [
     { name: "frei", box: { backgroundColor: farben.green } },
     { name: "belegt", box: { backgroundColor: farben.surf3 } },
-    { name: "sucht Mitspieler", box: { backgroundColor: farben.goldSoft, borderWidth: 1.5, borderStyle: "dashed", borderColor: farben.goldLine } },
+    { name: "sucht Mitspieler", box: { backgroundColor: farben.goldSoft, borderStyle: "dashed", borderColor: farben.goldInk } },
     { name: "du", box: { backgroundColor: farben.gold } },
   ];
   return (
@@ -285,7 +287,7 @@ export function FreieZeitenLegende() {
     >
       {eintraege.map((e) => (
         <View key={e.name} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <View style={[{ width: 10, height: 14, borderRadius: 3 }, e.box]} />
+          <View style={[{ width: 10, height: 14, borderRadius: 3, borderWidth: 1.5, borderColor: farben.rahmen }, e.box]} />
           <Text style={{ fontSize: 12.5, color: farben.ink2, fontFamily: "Barlow_400Regular" }}>{e.name}</Text>
         </View>
       ))}

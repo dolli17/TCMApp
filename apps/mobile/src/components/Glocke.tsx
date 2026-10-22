@@ -86,7 +86,7 @@ export function Glocke() {
             <Text
               maxFontSizeMultiplier={SCHRIFT_DECKEL.form}
               style={{
-                color: "#fff", fontSize: 10.5,
+                color: farben.onBrand, fontSize: 10.5,
                 fontFamily: "Barlow_700Bold", fontVariant: ["tabular-nums"],
               }}
             >

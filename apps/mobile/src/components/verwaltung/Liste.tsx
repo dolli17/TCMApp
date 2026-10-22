@@ -12,31 +12,23 @@ import { Children, Fragment, isValidElement, type ReactNode } from "react";
 import { Pressable, Text, View } from "react-native";
 import { router, type Href } from "expo-router";
 import Svg, { Path } from "react-native-svg";
-import { radius, schattenRn } from "@tcm/ui";
+import { avatarFarbe, radius, schattenRn } from "@tcm/ui";
 import { mitDeckkraft } from "@/lib/stil";
 import { useTheme } from "@/lib/theme";
 
 export type HinweisTon = "gold" | "rot" | "gruen" | "leise" | "blau";
 
-/** Einer von vier Blautoenen fuer den Avatar, fest je Kennung - wie im Web. */
-export function avatarTon(id: string): number {
-  let h = 0;
-  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return h % 4;
-}
-
-/** Die vier Avatar-Toene aus der CSS (.avatar.ton-0 bis -3), vorgemischt. */
-const AVATAR_TOENE = ["#1466A8", "#105287", "#2A71AE", "#2F5F8C"] as const;
-
+/** Einer von vier Blautoenen, fest je Kennung - dieselben wie im Web (@tcm/ui). */
 export function Avatar({ kurz, id, groesse = 40 }: { kurz: string; id: string; groesse?: number }) {
+  const { farben } = useTheme();
   return (
     <View
       style={{
         width: groesse, height: groesse, borderRadius: groesse / 2,
-        backgroundColor: AVATAR_TOENE[avatarTon(id)], alignItems: "center", justifyContent: "center",
+        backgroundColor: avatarFarbe(id), alignItems: "center", justifyContent: "center",
       }}
     >
-      <Text style={{ color: "#fff", fontFamily: "Barlow_700Bold", fontSize: groesse * 0.33 }}>{kurz}</Text>
+      <Text style={{ color: farben.onBrand, fontFamily: "Barlow_700Bold", fontSize: groesse * 0.33 }}>{kurz}</Text>
     </View>
   );
 }
