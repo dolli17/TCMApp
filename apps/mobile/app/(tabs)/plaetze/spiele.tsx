@@ -13,10 +13,13 @@
 
 import { useCallback, useState } from "react";
 import { Pressable, Text, View } from "react-native";
+import { router } from "expo-router";
 import Svg, { Circle, Path } from "react-native-svg";
 import { bookingActions, dayLabel, dayTag, offenesSpielText, upcomingBookings } from "@tcm/core";
 import { radius } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
+import { Fehlerzeile } from "@/components/Fehlerzeile";
+import { Leerzustand } from "@/components/Leerzustand";
 import { useJetzt } from "@/components/plaetze/PlatzRaster";
 import {
   ladeMeineBuchungen, ladeOffeneSpiele, spieleMit, storniereBuchung, verlasseBuchung,
@@ -53,6 +56,7 @@ export default function Spiele() {
   const [offenFuer, setOffenFuer] = useState<string | null>(null);
   const [nachfrage, setNachfrage] = useState<string | null>(null);
   const jetzt = useJetzt();
+  const erneut = { onErneut: zustand.neuLaden, laeuft: zustand.aktualisiert };
 
   const { erneutHolen } = zustand;
   const ausfuehren = useCallback(
@@ -88,11 +92,12 @@ export default function Spiele() {
 
       {/* --- Deine Termine ------------------------------------------------ */}
       <Text style={[stil.abschnitt, { marginTop: 4 }]} accessibilityRole="header">Deine Termine</Text>
-      {meine?.fehler && <Text style={stil.hinweisFehler}>{meine.fehler}</Text>}
+      {meine?.fehler && <Fehlerzeile text={meine.fehler} {...erneut} />}
       {meine?.wert && termine.length === 0 && (
-        <Text style={stil.leise}>
-          Für dich steht gerade nichts an. In der Belegung findest du die freien Plätze.
-        </Text>
+        <Leerzustand
+          text="Für dich steht gerade nichts an. In der Belegung findest du die freien Plätze."
+          handlung={{ text: "Belegung ansehen", onPress: () => router.navigate("/plaetze") }}
+        />
       )}
       {termine.map((b, i) => {
         const tag = dayTag(b.starts_at);
@@ -188,12 +193,11 @@ export default function Spiele() {
         <Text style={[stil.abschnitt, { marginTop: 0 }]} accessibilityRole="header">Offene Spiele</Text>
         <Text style={[stil.leise, { fontSize: 14, marginTop: 4 }]}>Hier fehlt noch jemand. Ein Tipp genügt.</Text>
       </View>
-      {offen?.fehler && <Text style={stil.hinweisFehler}>{offen.fehler}</Text>}
+      {offen?.fehler && <Fehlerzeile text={offen.fehler} {...erneut} />}
       {offen?.wert && offen.wert.length === 0 && (
-        <Text style={stil.leise}>
-          Gerade sucht niemand Mitspieler. Wenn du selbst buchst, schalte im Blatt „Mitspieler
-          gesucht“ ein – dann steht dein Spiel hier.
-        </Text>
+        <Leerzustand
+          text="Gerade sucht niemand Mitspieler. Wenn du selbst buchst, schalte im Blatt „Mitspieler gesucht“ ein – dann steht dein Spiel hier."
+        />
       )}
       {(offen?.wert ?? []).map((o) => {
         // players nennt die Mitspieler ohne den Bucher

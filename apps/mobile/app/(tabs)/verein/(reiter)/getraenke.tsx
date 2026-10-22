@@ -28,6 +28,7 @@ import {
 } from "@tcm/core";
 import { abstand, radius } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
+import { Leerzustand } from "@/components/Leerzustand";
 import { Toast, type Meldung } from "@/components/Toast";
 import { Rundknopf } from "@/components/Rundknopf";
 import {
@@ -106,7 +107,7 @@ export default function Getraenke() {
         const titel = "Noch nicht eingetragen";
         const text = `${basketReminder(count, totalCents)} Gebucht wird erst mit „Eintragen“ – die Auswahl bleibt gemerkt.`;
         const zurueck = () => router.navigate("/verein/getraenke");
-        // Alert.alert ist in react-native-web ein leerer Aufruf (siehe bestaetige in Formular.tsx).
+        // Alert.alert ist in react-native-web ein leerer Aufruf (siehe bestaetige in lib/rueckfrage.ts).
         if (Platform.OS === "web") {
           if (typeof window !== "undefined" && window.confirm(`${titel}\n\n${text}\n\nZurück zu den Getränken?`)) zurueck();
           return;
@@ -257,7 +258,7 @@ export default function Getraenke() {
           Eine Entnahme lässt sich {stornoFenster} Minuten lang selbst zurücknehmen.
         </Text>
         {buchungen.length === 0 ? (
-          <Text style={stil.leise}>Noch nichts entnommen.</Text>
+          <Leerzustand text="Noch nichts entnommen." />
         ) : (
           <View style={[stil.listenkarte, { padding: 0, borderRadius: radius.karte, overflow: "hidden" }]}>
             {buchungen.map((b, i) => {

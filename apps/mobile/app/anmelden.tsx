@@ -49,7 +49,7 @@ export default function Anmeldung() {
         beschriftung="Passwort"
         value={passwort}
         onChangeText={setPasswort}
-        secureTextEntry
+        passwort
         autoComplete="current-password"
         textContentType="password"
         onSubmitEditing={absenden}

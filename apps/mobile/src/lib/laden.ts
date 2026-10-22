@@ -21,6 +21,8 @@ export interface Ladezustand<T> {
   neuLaden: () => void;
   /** Nach einer Aenderung, wenn der Aufrufer auf das Ergebnis warten will. */
   erneutHolen: () => Promise<void>;
+  /** Ohne Ladekreis und ohne Drehen oben, etwa bei der Rueckkehr auf den Tab. */
+  stillNachladen: () => void;
   setzeDaten: (daten: T) => void;
 }
 
@@ -36,8 +38,8 @@ export function useLaden<T>(laden: () => Promise<T>): Ladezustand<T> {
   const ladenRef = useRef(laden);
   ladenRef.current = laden;
 
-  const holen = useCallback(async (istNachladen: boolean) => {
-    if (istNachladen) setAktualisiert(true);
+  const holen = useCallback(async (art: "erstes" | "nachladen" | "still") => {
+    if (art === "nachladen") setAktualisiert(true);
     try {
       const ergebnis = await ladenRef.current();
       setDaten(ergebnis);
@@ -51,7 +53,7 @@ export function useLaden<T>(laden: () => Promise<T>): Ladezustand<T> {
   }, []);
 
   useEffect(() => {
-    void holen(false);
+    void holen("erstes");
   }, [holen]);
 
   return {
@@ -59,8 +61,9 @@ export function useLaden<T>(laden: () => Promise<T>): Ladezustand<T> {
     laedt,
     aktualisiert,
     fehler,
-    neuLaden: () => void holen(true),
-    erneutHolen: () => holen(true),
+    neuLaden: () => void holen("nachladen"),
+    erneutHolen: () => holen("nachladen"),
+    stillNachladen: () => void holen("still"),
     setzeDaten: setDaten,
   };
 }

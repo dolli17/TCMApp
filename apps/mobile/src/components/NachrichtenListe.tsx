@@ -18,6 +18,7 @@ import {
 } from "@tcm/core";
 import { radius } from "@tcm/ui";
 import type { ladeBenachrichtigungen } from "@/lib/daten";
+import { Leerzustand } from "@/components/Leerzustand";
 import { useTheme } from "@/lib/theme";
 
 export type Nachricht = Awaited<ReturnType<typeof ladeBenachrichtigungen>>[number];
@@ -49,7 +50,7 @@ export function NachrichtenListe({ liste, alleGesehen }: { liste: Nachricht[]; a
   const { stil, farben } = useTheme();
 
   if (liste.length === 0) {
-    return <Text style={stil.leise}>Es liegt nichts vor.</Text>;
+    return <Leerzustand text="Es liegt nichts vor." />;
   }
 
   return (

@@ -68,6 +68,28 @@ describe("useLaden", () => {
     await z.aktuell.erneutHolen();
     expect(z.aktuell).toMatchObject({ daten: "neu", fehler: null });
   });
+
+  it("laedt still nach: ohne Ladekreis, ohne Drehen, Fehler sichtbar", async () => {
+    let fertig!: (w: string) => void;
+    const laden = vi
+      .fn<() => Promise<string>>()
+      .mockResolvedValueOnce("alt")
+      .mockImplementationOnce(() => new Promise((r) => (fertig = r)))
+      .mockRejectedValueOnce(new Error("Kein Netz."));
+    const z = probe.zeichne(() => useLaden(laden));
+    await ruhe();
+
+    z.aktuell.stillNachladen();
+    expect(z.aktuell).toMatchObject({ daten: "alt", laedt: false, aktualisiert: false });
+    fertig("neu");
+    await ruhe();
+    expect(z.aktuell).toMatchObject({ daten: "neu", aktualisiert: false, fehler: null });
+
+    // Ein Fehler beim stillen Nachladen behaelt den Inhalt und zeigt den Fehler.
+    z.aktuell.stillNachladen();
+    await ruhe();
+    expect(z.aktuell).toMatchObject({ daten: "neu", aktualisiert: false, fehler: "Kein Netz." });
+  });
 });
 
 describe("abschnitt", () => {

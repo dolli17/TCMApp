@@ -14,13 +14,14 @@ import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { freeSlotsOfDay, minutesOf, type CourtStatusKind } from "@tcm/core";
+import { Leerzustand } from "@/components/Leerzustand";
 import { alsUhrzeit, type Belegung } from "@/lib/plan";
 import { useTheme } from "@/lib/theme";
 import { platzNummer, useJetzt, type Platz } from "./PlatzRaster";
 
 export function FreieZeiten({
   datum, plaetze, belegung, oeffnung, schluss, raster, dauer, vorlaufTage, onBuchen, oeffnebar, markiert,
-  onOeffnen,
+  onOeffnen, onNaechsterTag,
 }: {
   datum: string;
   plaetze: Platz[];
@@ -37,6 +38,8 @@ export function FreieZeiten({
   /** Gehoert die Belegung zur letzten Aktion? Dann ist ihre Zeile kurz hervorgehoben (U16). */
   markiert: (b: Belegung) => boolean;
   onOeffnen: (platz: Platz, b: Belegung) => void;
+  /** Ist der Tag voll, fuehrt der Leerzustand dorthin; fehlt am letzten buchbaren Tag. */
+  onNaechsterTag?: () => void;
 }) {
   const { farben } = useTheme();
   const jetzt = useJetzt();
@@ -61,9 +64,10 @@ export function FreieZeiten({
   if (plaetze.length === 0) return null;
   if (zeilen.length === 0) {
     return (
-      <Text style={{ fontSize: 14, color: farben.muted, fontFamily: "Barlow_500Medium" }}>
-        An diesem Tag lässt sich keine Stunde mehr buchen.
-      </Text>
+      <Leerzustand
+        text="An diesem Tag lässt sich keine Stunde mehr buchen."
+        handlung={onNaechsterTag && { text: "Nächster Tag", onPress: onNaechsterTag }}
+      />
     );
   }
 

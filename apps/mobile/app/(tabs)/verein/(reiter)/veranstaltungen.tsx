@@ -6,14 +6,15 @@
  * dieselben wie im Web.
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { useFocusEffect } from "expo-router";
 import { eventMonatsGruppen } from "@tcm/core";
 import { abstand } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
 import { EventKarte } from "@/components/EventKarte";
+import { Leerzustand } from "@/components/Leerzustand";
 import { ladeVeranstaltungen } from "@/lib/daten";
+import { useNachladenBeiFokus } from "@/lib/fokus";
 import { useLaden } from "@/lib/laden";
 import { useTheme } from "@/lib/theme";
 
@@ -23,17 +24,7 @@ export default function Veranstaltungen() {
   const [vergangen, setVergangen] = useState(false);
 
   // Zurueck aus dem Detail, etwa nach dem Anmelden: still nachladen.
-  const ersterFokus = useRef(true);
-  const { setzeDaten } = zustand;
-  useFocusEffect(
-    useCallback(() => {
-      if (ersterFokus.current) {
-        ersterFokus.current = false;
-        return;
-      }
-      ladeVeranstaltungen().then(setzeDaten).catch(() => undefined);
-    }, [setzeDaten]),
-  );
+  useNachladenBeiFokus(zustand.stillNachladen);
 
   const gruppen = eventMonatsGruppen(zustand.daten ?? [], new Date(), vergangen);
 
@@ -48,9 +39,7 @@ export default function Veranstaltungen() {
         <Text style={[stil.abschnitt, { marginTop: 0 }]} accessibilityRole="header">Vergangene Veranstaltungen</Text>
       )}
       {zustand.daten && gruppen.length === 0 && (
-        <Text style={stil.leise}>
-          {vergangen ? "Noch keine vergangenen Veranstaltungen." : "Gerade ist nichts geplant."}
-        </Text>
+        <Leerzustand text={vergangen ? "Noch keine vergangenen Veranstaltungen." : "Gerade ist nichts geplant."} />
       )}
       {gruppen.map((g) => (
         <View key={g.schluessel} style={{ gap: 10, marginBottom: abstand.s }}>

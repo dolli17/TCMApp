@@ -121,7 +121,7 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 | B16 | P3 | UTC-Datum als „heute“ in sechs Web-Formularen und mehreren SQL-Vorgaben. In der Neujahrsnacht wird der Beitrag des Vorjahres zugewiesen. | **SQL-Teil erledigt (PR #67):** Funktionen, Standardwerte und Prüfungen nehmen den Berliner Tag. Web-Formulare: webui. |
 | B17 | P3 | Wird der Anmeldeschluss verschoben, kommt keine neue Erinnerung | **Erledigt (PR #67):** Rückt der Schluss nach hinten, wird `reminder_sent_at` zurückgesetzt. |
 | B18 | P3 | Web-Getränkekarte verliert Eingaben während des Sendens | **Erledigt (PR #54):** +/− sind während `laeuft` gesperrt, ebenso in der App und am Kiosk. |
-| B19 | P3 | App-Tab „Konto“ lädt bei Fokus nicht nach | `useFocusEffect` |
+| B19 | P3 | App-Tab „Konto“ lädt bei Fokus nicht nach | **Erledigt (PR #68):** `useNachladenBeiFokus` lädt still nach (Konto, dazu Start und Veranstaltungen statt eigener Kopien). |
 | B20 | P3 | Teilfehler bei der E-Mail-Änderung wird als Gesamtfehler gemeldet | **Erledigt (PR #66):** Scheitert nur der Hinweis an die alte Adresse, ist die Änderung gespeichert und die Meldung sagt das. Scheitern Login und Rückweg, sagt sie, dass Mitglied und Anmeldung auseinanderliegen. Scheitern nach der E-Mail die übrigen Felder, heißt es „E-Mail-Adresse gespeichert, die übrigen Änderungen nicht“. |
 | B21 | P2 | `end_membership` setzt den Status sofort auf inaktiv, auch beim Austritt zum Jahresende. Bis zum Austrittsdatum hat das Mitglied Zugang (S12), fehlt aber in `member_directory` (Mitspielerwahl, Kiosk) und `record_purchase` weist es ab. Gefunden bei S12. | **Erledigt (PR #58):** `member_directory` und `record_purchase` prüfen `hat_zugang`, gleiche Regel wie Login und Rechte, ohne Zeitgeber. Gesperrte fallen dabei aus dem Verzeichnis. |
 | B22 | P3 | Ausgetretene (Datum vorbei) werden nicht gebannt: Die Anmeldung gelingt, danach sind alle Seiten leer, weil die Datenbank nichts mehr liefert. Gefunden bei S12. | Nach der Anmeldung einen Hinweis „Kein Zugang mehr“ zeigen und abmelden (Web und App) |
@@ -151,10 +151,10 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 |---|---|---|---|
 | U1 | P2 | Im Web gibt es kein `loading.tsx`/`error.tsx`/`not-found.tsx` | PR #55: `error.tsx` für `/`, `/plan`, `/verein`, `/konto`, `/admin`, `not-found`, `global-error`, Komponente `Fehlerzustand`. **Kein `loading.tsx`:** Damit rendert jeder Link-Prefetch Root- und Admin-Layout samt DB-Abfragen (8,8 KB statt 0,2 KB je Prefetch, 24 allein auf der Mitgliederliste). In der CI hingen dadurch die Navigationen. Ladeanzeige erst nach einem schlankeren Layout oder mit `prefetch={false}` in Listen. |
 | U2 | P2 | Rohe Supabase-Meldungen (`admin/mitglieder/page.tsx:86` u. a.), App `useLaden` | Web: PR #55 (`translateDbError` erkennt auch Verbindungsfehler, kein Rohtext). Offen: App `useLaden` |
-| U3 | P3 | Nirgends „Erneut versuchen“, Pull-to-Refresh nur in 2 Dateien | Retry und Pull-to-Refresh |
+| U3 | P3 | Nirgends „Erneut versuchen“, Pull-to-Refresh nur in 2 Dateien | **App erledigt (PR #68):** `Fehlerzeile` mit „Erneut versuchen“ im Bildschirm-Rahmen und an den Abschnittsfehlern (Start, Konto, Spiele). Plätze zeigt Ladefehler oben statt als Toast. Pull-to-Refresh auf allen ladenden Bildschirmen. |
 | U4 | P3 | ~50× `#fff` statt Token, Avatarfarben doppelt | `onBrand`-Token, Avatarfarben nach `@tcm/ui` |
 | U5 | P2 | App: feste Schriftgrößen, keine Prüfung großer Systemschrift | PR #65: `minHeight` statt fester Höhen, Schnellaktionen stapeln sich ab fontScale 1.2, Kürzel/Glocke/Tabs gedeckelt. Native Prüfung bei größter Stufe steht noch aus (Simulator). |
-| U6 | P3 | App: Tipp-Elemente ohne `accessibilityLabel`. Im Web keine axe-Prüfung. | Labels, `@axe-core/playwright` |
+| U6 | P3 | App: Tipp-Elemente ohne `accessibilityLabel`. Im Web keine axe-Prüfung. | **App erledigt (PR #68):** alle Tippflächen durchgesehen, Labels für „Alle“-Links, Monatskacheln und Neuigkeiten auf Start (Liste im PR). Offen: Web, `@axe-core/playwright`. |
 | U7 | P3 | Begriffe: Admin/Verwaltung, Belegungsplan/Plätze, Konto/Mein Konto, Home/Start | **Erledigt (PR #64):** `docs/begriffe.md`. Start, Plätze (Ansicht „Belegung“), Konto, Verwaltung, auch als Telefon-Tab in Web und App. Rollenname in der Seitenleiste, Sperrtexte ohne „Administratoren“. |
 | U8 | P3 | Durchklick-Protokoll | Screenshots aller Routen (begonnen im Audit) |
 | U9 | P1 | **„Einzug abschließen“ geht mit einem Klick, auch vor Ablauf der Rückläuferfrist.** Danach lassen sich Rückläufer nicht mehr erfassen (`LastschriftLauf.tsx:166-176, 227-229`). | **Erledigt (PR #48):** Vor Ablauf der Frist (Abbuchung + 56 Tage, `RUECKLAUF_TAGE`) ist der Knopf gesperrt und zeigt „Abschließen ab …“. Die Server-Aktion prüft die Frist ebenfalls. Rückläufer lassen sich auch nach dem Abschluss erfassen; die DB erlaubte das schon. |
@@ -175,11 +175,11 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 | U24 | P3 | Tippziele 40 statt 44 (Segmente, Chips, Vortag/Folgetag) | **Verworfen:** Entscheidung 22.10.2026: bleibt bei 40 px. |
 | U25 | P3 | Kasse am Telefon: Segmentleiste abgeschnitten, „Ausnahmen“ ohne Link | Umbruch, Links |
 | U26 | P3 | Deaktivierter Gold-Knopf ohne Begründung | neutrale Optik, Grund daneben |
-| U27 | P3 | Leerzustände ohne Handlung | einheitliche Leer-Komponente |
-| U28 | P3 | Doppelte Einstiege (zweimal „Platz buchen“ plus FAB). Abmelden ohne Text und ohne Rückfrage. | aufräumen |
+| U27 | P3 | Leerzustände ohne Handlung | **App erledigt (PR #68):** Komponente `Leerzustand`, mit Handlung wo sinnvoll („Platz buchen“, „Belegung ansehen“, „Nächster Tag“). |
+| U28 | P3 | Doppelte Einstiege (zweimal „Platz buchen“ plus FAB). Abmelden ohne Text und ohne Rückfrage. | Einstiege bleiben (Entscheidung). **App: Abmelden fragt nach (PR #68).** |
 | U29 | P3 | Legende und Feldränder unter 3:1 | kräftigere Rahmen |
 | U30 | P3 | Englische Reste und Fachbegriffe: „Home“, „Login“, „LK“, „nuLiga-ID“ | **Verworfen:** Entscheidung 22.10.2026: Begriffe bleiben. |
-| U31 | P3 | Gebührenhinweis steht unter dem Anmeldeknopf. App „Passwort vergessen“ ohne Spam-Hinweis. Kein Passwort-anzeigen-Schalter. | angleichen |
+| U31 | P3 | Gebührenhinweis steht unter dem Anmeldeknopf. App „Passwort vergessen“ ohne Spam-Hinweis. Kein Passwort-anzeigen-Schalter. | **App erledigt (PR #68):** Spam-Hinweis, Schalter „Anzeigen“ in Anmelden, Passwort setzen und Onboarding. |
 | U32 | P3 | Mitgliederliste mit zwei Filtersystemen | zusammenführen |
 | U33 | P2 | Beim Sperren in der App war die Kategorie fest „Platzpflege“. Im Plan stand „gesperrt“ statt der Kategorie. | **Erledigt (PR #50):** Kategorie (Buchungsart mit `applies_to = 'blocking'`) wählbar in App und Web. Im Plan oben die Kategorie, darunter der Grund, falls es einen gibt (`blockingLabel` in `@tcm/core`). |
 | U34 | P2 | App, Tab Plätze: zwei Segmentleisten übereinander, Stundenbeschriftung rechts abgeschnitten, Legende von der Tab-Leiste verdeckt. | **Erledigt (PR #50):** Übersicht/Freie Zeiten über einen Raster/Liste-Umschalter rechts in der Datumszeile. Raster-Schrift wächst nur begrenzt mit (große Schrift ließ die Stunden ineinanderlaufen), Zeilen 46 statt 52 pt, damit die Legende ohne Scrollen über der Leiste steht. Knöpfe im Blatt mit Mindesthöhe. |
