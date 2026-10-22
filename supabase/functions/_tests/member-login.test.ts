@@ -51,11 +51,18 @@ function vorgaben(): Router {
     }))
     .rpc("member_for_login_admin", (a) => ({
       json: (a.koerper as { p_member_id: string }).p_member_id === MITGLIED.id ? [MITGLIED] : [],
-    }));
+    }))
+    // Ohne Angabe hat niemand volle Rechte: Sperren und Löschen gehen durch.
+    .route("GET", "/rest/v1/member_roles", () => ({ json: [] }));
 }
 
-async function rufe(router: Router, koerper: unknown, optionen?: Parameters<typeof anfrage>[1]) {
-  const handler = await ladeFunction(MODUL, router);
+async function rufe(
+  router: Router,
+  koerper: unknown,
+  optionen?: Parameters<typeof anfrage>[1],
+  umgebung?: Record<string, string>,
+) {
+  const handler = await ladeFunction(MODUL, router, umgebung);
   return lies(await handler(anfrage(koerper, optionen)));
 }
 
@@ -298,6 +305,86 @@ Deno.test("email_aendern: scheitert der Login, geht die Adresse zurück", async 
   assertEquals(patches, ["neu@tcm.test", MITGLIED.email]);
 });
 
+function emailRouter(): Router {
+  return vorgaben()
+    .rpc("update_member", () => ({ json: null }))
+    .route("PUT", `/auth/v1/admin/users/${KIRA_LOGIN}`, () => ({ json: benutzer(KIRA_LOGIN) }))
+    .route("POST", "/emails", () => ({ json: { id: "mail-1" } }));
+}
+
+const RESEND = { RESEND_API_KEY: "re_test", MAIL_FROM: "TC <noreply@tcm.test>" };
+
+Deno.test("email_aendern: Hinweis an die alte Adresse, ohne die neue zu nennen (S18)", async () => {
+  const router = emailRouter();
+  const r = await rufe(router, { aktion: "email_aendern", memberId: "m-1", email: "neu@tcm.test" }, undefined, RESEND);
+  assertEquals(r.status, 200);
+  assertEquals(r.koerper.meldung, "E-Mail-Adresse gespeichert, auch für die Anmeldung.");
+  assertEquals(r.koerper.teilweise, undefined);
+  const [mail] = router.an("/emails");
+  assertEquals(mail.authorization, "Bearer re_test");
+  const koerper = mail.koerper as { from: string; to: string[]; subject: string; html: string; text: string };
+  assertEquals(koerper.from, "TC <noreply@tcm.test>");
+  assertEquals(koerper.to, [MITGLIED.email]);
+  assertMatch(koerper.subject, /geändert/);
+  assertMatch(koerper.text, /Hallo Kira Kasse,/);
+  assert(!koerper.html.includes("neu@tcm.test") && !koerper.text.includes("neu@tcm.test"));
+  // Erst nach der Änderung: Datenbank und Login sind schon durch.
+  const reihenfolge = router.aufrufe.map((a) => a.pfad).filter((p) => /update_member|admin\/users|emails/.test(p));
+  assertEquals(reihenfolge, ["/rest/v1/rpc/update_member", `/auth/v1/admin/users/${KIRA_LOGIN}`, "/emails"]);
+});
+
+Deno.test("email_aendern: auch ohne Login geht der Hinweis raus", async () => {
+  const router = emailRouter().rpc("member_for_login_admin", () => ({
+    json: [{ ...MITGLIED, auth_user_id: null }],
+  }));
+  const r = await rufe(router, { aktion: "email_aendern", memberId: "m-1", email: "neu@tcm.test" }, undefined, RESEND);
+  assertEquals(r.koerper.meldung, "E-Mail-Adresse gespeichert.");
+  assertEquals(router.an(/admin\/users/), []);
+  assertEquals(router.an("/emails").length, 1);
+});
+
+Deno.test("email_aendern: scheitert nur der Hinweis, ist die Adresse trotzdem gespeichert (B20)", async () => {
+  const router = emailRouter().route("POST", "/emails", () => ({ status: 500, json: { message: "kaputt" } }));
+  const r = await rufe(router, { aktion: "email_aendern", memberId: "m-1", email: "neu@tcm.test" }, undefined, RESEND);
+  assertEquals(r.status, 200);
+  assertEquals(r.koerper.ok, true);
+  assertEquals(r.koerper.teilweise, true);
+  assertMatch(String(r.koerper.meldung), /^E-Mail-Adresse gespeichert, auch für die Anmeldung\. Der Hinweis an die alte Adresse kira@tcm\.test ließ sich nicht verschicken/);
+  assertMatch(String(r.koerper.hinweis), /^Der Hinweis an die alte Adresse/);
+  // Nichts wird zurückgedreht.
+  assertEquals(router.an("/rest/v1/rpc/update_member").length, 1);
+});
+
+Deno.test("email_aendern: ohne RESEND_API_KEY sagt die Meldung, dass kein Hinweis rausging", async () => {
+  const router = emailRouter();
+  const r = await rufe(router, { aktion: "email_aendern", memberId: "m-1", email: "neu@tcm.test" });
+  assertEquals(r.status, 200);
+  assertEquals(r.koerper.teilweise, true);
+  assertMatch(String(r.koerper.meldung), /Mailversand ist nicht eingerichtet/);
+  assertEquals(router.an("/emails"), []);
+});
+
+Deno.test("email_aendern: an eine alte Testadresse geht kein Hinweis", async () => {
+  const router = emailRouter().rpc("member_for_login_admin", () => ({
+    json: [{ ...MITGLIED, email: "kira@example.org" }],
+  }));
+  const r = await rufe(router, { aktion: "email_aendern", memberId: "m-1", email: "neu@tcm.test" }, undefined, RESEND);
+  assertEquals(r.koerper.meldung, "E-Mail-Adresse gespeichert, auch für die Anmeldung.");
+  assertEquals(router.an("/emails"), []);
+});
+
+Deno.test("email_aendern: scheitern Login und Rückweg, sagt die Meldung, wo was steht (B20)", async () => {
+  let aufruf = 0;
+  const router = emailRouter()
+    .rpc("update_member", () => (++aufruf === 1 ? { json: null } : pgFehler("weg")))
+    .route("PUT", `/auth/v1/admin/users/${KIRA_LOGIN}`, () => authFehler("email_exists"));
+  const r = await rufe(router, { aktion: "email_aendern", memberId: "m-1", email: "neu@tcm.test" }, undefined, RESEND);
+  assertEquals(r.status, 400);
+  assertEquals(r.koerper.teilweise, true);
+  assertMatch(String(r.koerper.meldung), /steht jetzt beim Mitglied, die Anmeldung läuft aber weiter über die alte/);
+  assertEquals(router.an("/emails"), []);
+});
+
 Deno.test("email_aendern: gleiche oder leere Adresse", async () => {
   const router = vorgaben();
   assertEquals(
@@ -309,6 +396,92 @@ Deno.test("email_aendern: gleiche oder leere Adresse", async () => {
     400,
   );
   assertEquals(router.an("/rest/v1/rpc/update_member"), []);
+});
+
+// ---------------------------------------------------------------------------
+// Der letzte Admin (S18)
+// ---------------------------------------------------------------------------
+
+/**
+ * Ein Router mit Rollen und den Mitgliedern, die davon noch Zugang haben.
+ * Die Function filtert in der Abfrage; die Attrappe liefert, was die
+ * Datenbank nach dem Filter liefern würde.
+ */
+function adminRouter(mitVollenRechten: string[], mitZugang: string[]): Router {
+  return vorgaben()
+    .route("GET", "/rest/v1/member_roles", () => ({
+      json: mitVollenRechten.map((member_id) => ({ member_id })),
+    }))
+    .route("GET", "/rest/v1/members", () => ({ json: mitZugang.map((id) => ({ id })) }))
+    .route("PUT", `/auth/v1/admin/users/${KIRA_LOGIN}`, () => ({ json: benutzer(KIRA_LOGIN) }))
+    .route("DELETE", `/auth/v1/admin/users/${KIRA_LOGIN}`, () => ({ json: {} }))
+    .rpc("set_login_disabled", () => ({ json: null }))
+    .rpc("delete_member", () => ({ json: null }))
+    .rpc("anonymize_member", () => ({ json: null }));
+}
+
+const SPERREN_UND_ENTFERNEN = [
+  { aktion: "login_deaktivieren", memberId: "m-1" },
+  { aktion: "loeschen", memberId: "m-1", art: "loeschen", nachname: "Kasse" },
+  { aktion: "loeschen", memberId: "m-1", art: "anonymisieren" },
+];
+
+Deno.test("letzter Admin: Sperren und Entfernen werden abgelehnt, bevor sich etwas ändert", async () => {
+  // Kira ist die einzige mit vollen Rechten und Zugang; m-2 hat die Rolle,
+  // ist aber gesperrt oder archiviert (fehlt deshalb in der zweiten Liste).
+  for (const koerper of SPERREN_UND_ENTFERNEN) {
+    const router = adminRouter(["m-1", "m-2", "m-1"], ["m-1"]);
+    const r = await rufe(router, koerper);
+    assertEquals(r.status, 400, JSON.stringify(koerper));
+    assertEquals(r.koerper.meldung, "Es muss mindestens ein Admin bleiben.");
+    assertEquals(router.an(/\/auth\/v1\/admin\/users\//), []);
+    assertEquals(router.an(/\/rest\/v1\/rpc\/(set_login_disabled|delete_member|anonymize_member)/), []);
+  }
+});
+
+Deno.test("letzter Admin: die Abfrage zählt nur, wer sich anmelden kann, mit dem Token des Aufrufers", async () => {
+  const router = adminRouter(["m-1", "m-2"], ["m-1"]);
+  await rufe(router, { aktion: "login_deaktivieren", memberId: "m-1" });
+  const [rollen] = router.an("/rest/v1/member_roles");
+  assertEquals(rollen.suche.get("role"), "in.(admin,board)");
+  assertEquals(rollen.authorization, NUTZER);
+  const [mitglieder] = router.an("/rest/v1/members");
+  assertEquals(mitglieder.suche.get("id"), "in.(m-1,m-2)");
+  assertEquals(mitglieder.suche.get("auth_user_id"), "not.is.null");
+  assertEquals(mitglieder.suche.get("login_disabled_at"), "is.null");
+  assertEquals(mitglieder.suche.get("status"), "neq.archived");
+  assertEquals(mitglieder.authorization, NUTZER);
+});
+
+Deno.test("letzter Admin: mit einem zweiten aktiven Admin geht es", async () => {
+  for (const koerper of SPERREN_UND_ENTFERNEN) {
+    const r = await rufe(adminRouter(["m-1", "m-2"], ["m-1", "m-2"]), koerper);
+    assertEquals(r.status, 200, JSON.stringify(koerper));
+  }
+});
+
+Deno.test("letzter Admin: wer selbst keinen Zugang mehr hat oder kein Admin ist, zählt nicht", async () => {
+  // Kira hat die Rolle, ist aber schon gesperrt: Löschen geht.
+  const gesperrt = adminRouter(["m-1"], []);
+  assertEquals((await rufe(gesperrt, SPERREN_UND_ENTFERNEN[1])).status, 200);
+  // Kira ist kein Admin, der einzige Admin m-2 bleibt unberührt.
+  const keinAdmin = adminRouter(["m-2"], ["m-2"]);
+  assertEquals((await rufe(keinAdmin, SPERREN_UND_ENTFERNEN[0])).status, 200);
+  assertEquals(keinAdmin.an("/rest/v1/members"), []);
+});
+
+Deno.test("letzter Admin: Freigeben prüft nichts", async () => {
+  const router = adminRouter(["m-1"], ["m-1"]);
+  const r = await rufe(router, { aktion: "login_aktivieren", memberId: "m-1" });
+  assertEquals(r.status, 200);
+  assertEquals(router.an("/rest/v1/member_roles"), []);
+});
+
+Deno.test("letzter Admin: lässt sich das nicht lesen, wird nichts gesperrt", async () => {
+  const router = adminRouter(["m-1"], ["m-1"]).route("GET", "/rest/v1/member_roles", () => pgFehler("kaputt"));
+  const r = await rufe(router, { aktion: "login_deaktivieren", memberId: "m-1" });
+  assertEquals(r.status, 400);
+  assertEquals(router.an(`/auth/v1/admin/users/${KIRA_LOGIN}`, "PUT"), []);
 });
 
 Deno.test("loeschen: erst die Datenbank, dann der Login", async () => {

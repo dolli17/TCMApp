@@ -56,9 +56,17 @@ export async function stammdatenSpeichern(formData: FormData): Promise<AktionsEr
   // Die E-Mail ist zugleich die Anmeldung. Sie geht über die Edge Function,
   // die Mitglied und Login gemeinsam ändert – zuerst, damit bei einem Fehler
   // gar nichts gespeichert ist und die Meldung eindeutig bleibt.
+  let emailGespeichert = false;
+  let hinweis: string | undefined;
   if (typeof patch.email === "string") {
     const e = await memberLogin({ aktion: "email_aendern", memberId: id, email: patch.email });
-    if (!e.ok) return { ok: false, meldung: e.meldung };
+    if (!e.ok) {
+      // Teilweise gescheitert: am Mitglied hat sich doch etwas geändert.
+      if (e.teilweise) neuLaden(id);
+      return { ok: false, meldung: e.meldung };
+    }
+    emailGespeichert = true;
+    hinweis = e.hinweis;
     delete patch.email;
   }
 
@@ -71,12 +79,20 @@ export async function stammdatenSpeichern(formData: FormData): Promise<AktionsEr
 
     if (error) {
       neuLaden(id);
-      return { ok: false, meldung: translateDbError(error) };
+      // B20: Die Adresse ist da schon durch. Das muss in der Meldung stehen,
+      // sonst sieht es aus, als wäre gar nichts gespeichert.
+      const grund = translateDbError(error);
+      return {
+        ok: false,
+        meldung: emailGespeichert
+          ? `Die E-Mail-Adresse ist gespeichert, die übrigen Änderungen nicht: ${grund}${hinweis ? ` ${hinweis}` : ""}`
+          : grund,
+      };
     }
   }
 
   neuLaden(id);
-  return { ok: true, meldung: "Gespeichert." };
+  return { ok: true, meldung: hinweis ? `Gespeichert. ${hinweis}` : "Gespeichert." };
 }
 
 /** Mitgliedschaftsdaten ändern (Nummer, Eintritt, Notiz). */

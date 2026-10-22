@@ -51,6 +51,14 @@ export interface LoginErgebnis {
   id?: string;
   /** Bei einladung_status: je Mitglied der Stand aus auth.users. */
   status?: Record<string, EinladungRoh>;
+  /**
+   * Nur ein Teil hat geklappt (B20). Bei ok: die Adresse ist geändert, aber
+   * der Hinweis an die alte ging nicht raus. Ohne ok: Mitglied und Login
+   * stehen auf verschiedenen Adressen.
+   */
+  teilweise?: boolean;
+  /** Bei ok und teilweise: der Satz zum Hinweis an die alte Adresse. */
+  hinweis?: string;
 }
 
 function funktionsAdresse(): string | null {
@@ -105,6 +113,8 @@ export async function memberLogin(anfrage: LoginAnfrage): Promise<LoginErgebnis>
     code?: string;
     details?: string;
     status?: Record<string, EinladungRoh>;
+    teilweise?: boolean;
+    hinweis?: string;
   };
   try {
     ergebnis = await antwort.json();
@@ -128,5 +138,7 @@ export async function memberLogin(anfrage: LoginAnfrage): Promise<LoginErgebnis>
         : translateDbError({ message: meldung, code: ergebnis.code, details: ergebnis.details }),
     id: ergebnis.id,
     status: ergebnis.status,
+    teilweise: ergebnis.teilweise,
+    hinweis: ergebnis.hinweis,
   };
 }
