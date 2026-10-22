@@ -1,4 +1,4 @@
--- O25: Verwaltungsprotokoll. S29: Notizen nicht mehr ueber change_log lesbar.
+-- O27: Verwaltungsprotokoll. S29: Notizen nicht mehr ueber change_log lesbar.
 --
 -- Wer hat in der Verwaltung was getan? Grundlage bleibt public.change_log mit
 -- dem Trigger private.log_change, keine zweite Tabelle. Neu:

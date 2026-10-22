@@ -1,5 +1,5 @@
 /**
- * Verwaltungsprotokoll (O25): ein Eintrag aus change_log als Satz.
+ * Verwaltungsprotokoll (O27): ein Eintrag aus change_log als Satz.
  *
  * Die Datenbank speichert je Eintrag Tabelle, Aktion, die Kennfelder der Zeile
  * (kenn) und bei Ereignissen eine Kennung (ereignis). Hier wird daraus

@@ -1,5 +1,5 @@
 -- ===========================================================================
--- Verwaltungsprotokoll (O25) und Notizen im Protokoll (S29)
+-- Verwaltungsprotokoll (O27) und Notizen im Protokoll (S29)
 --
 --   1. Eigene Buchungen, eigene Gastgebuehren und eigene Arbeitsstunden
 --      erzeugen keinen Eintrag; dieselbe Aktion durch einen Admin fuer ein
@@ -305,4 +305,4 @@ begin
 end; $f$;
 
 select plan(1);
-select pass('Verwaltungsprotokoll (O25, S29): Testfunktionen definiert');
+select pass('Verwaltungsprotokoll (O27, S29): Testfunktionen definiert');

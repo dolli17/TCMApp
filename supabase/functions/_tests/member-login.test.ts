@@ -170,7 +170,7 @@ Deno.test("passwort_zuruecksetzen: ohne Login 400", async () => {
   assertEquals(r.koerper.meldung, "Dieses Mitglied hat keinen Zugang.");
 });
 
-Deno.test("passwort_zuruecksetzen und einladung_erneut: erst der Protokolleintrag, dann der Versand (O25)", async () => {
+Deno.test("passwort_zuruecksetzen und einladung_erneut: erst der Protokolleintrag, dann der Versand (O27)", async () => {
   for (const aktion of ["passwort_zuruecksetzen", "einladung_erneut"] as const) {
     const router = einladungRouter(null, true);
     const r = await rufe(router, { aktion, memberId: "m-1" });
@@ -183,7 +183,7 @@ Deno.test("passwort_zuruecksetzen und einladung_erneut: erst der Protokolleintra
   }
 });
 
-Deno.test("passwort_zuruecksetzen: ohne Protokolleintrag geht nichts raus (O25)", async () => {
+Deno.test("passwort_zuruecksetzen: ohne Protokolleintrag geht nichts raus (O27)", async () => {
   const router = vorgaben()
     .rpc("protokoll_zugang", () => pgFehler("Zugänge verwalten dürfen nur Administratoren.", "42501", 403))
     .route("POST", "/auth/v1/recover", () => ({ json: {} }));
@@ -276,7 +276,7 @@ Deno.test("login_deaktivieren und login_aktivieren: Bann und Kennzeichen", async
     );
     const [kennzeichen] = router.an("/rest/v1/rpc/set_login_disabled");
     assertEquals(kennzeichen.koerper, { p_member_id: "m-1", p_disabled: gesperrt });
-    // Mit dem Token des Admins, damit das Protokoll ihn als Urheber kennt (O25).
+    // Mit dem Token des Admins, damit das Protokoll ihn als Urheber kennt (O27).
     assertEquals(kennzeichen.authorization, NUTZER);
   }
 });

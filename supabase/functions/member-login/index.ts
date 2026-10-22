@@ -300,7 +300,7 @@ Deno.serve(async (req) => {
         if (error) return antwort(false, error.message, 400);
 
         // Mit dem Token des Aufrufers, damit das Protokoll den Admin als
-        // Urheber festhält (O25).
+        // Urheber festhält (O27).
         await rpc(alsAufrufer, "set_login_disabled", {
           p_member_id: mitglied.id,
           p_disabled: sperren,
@@ -778,7 +778,7 @@ async function istTestadresse(
 
 /**
  * Ein Eintrag im Verwaltungsprotokoll für Aktionen, die keine Zeile ändern
- * (O25). Mit dem Token des Aufrufers: die Datenbank nimmt den Urheber selbst
+ * (O27). Mit dem Token des Aufrufers: die Datenbank nimmt den Urheber selbst
  * daraus. Geschrieben wird vor dem Versand, ohne Eintrag geht nichts raus.
  */
 async function protokolliere(

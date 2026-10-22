@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { anmelden, NUTZER, PASSWORT } from "./hilfen";
 
 /**
- * Verwaltungsprotokoll (O25): eine Aktion des Admins steht danach als Satz
+ * Verwaltungsprotokoll (O27): eine Aktion des Admins steht danach als Satz
  * auf Verwaltung → System → Protokoll, und die Filter grenzen richtig ein.
  *
  * Die Aktion läuft über die RPC mit dem Token des Admins, wie aus der

@@ -33,7 +33,7 @@ function folgetag(tag: string): string {
 }
 
 /**
- * Verwaltungsprotokoll (O25): wer hat in der Verwaltung was getan.
+ * Verwaltungsprotokoll (O27): wer hat in der Verwaltung was getan.
  *
  * Grundlage ist change_log; sehen dürfen es nur volle Rechte (RLS). Eigene
  * Buchungen, Getränke und Anmeldungen der Mitglieder stehen nicht darin,
