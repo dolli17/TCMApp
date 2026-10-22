@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { alsCssName, farben, paletteFuer, schatten, schattenRn } from "./tokens";
+import { alsCssName, avatarFarbe, avatarTon, avatarToene, farben, paletteFuer, schatten, schattenRn } from "./tokens";
 
 const hier = dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(join(hier, "tokens.css"), "utf-8");
@@ -66,6 +66,11 @@ describe("tokens.css stimmt mit tokens.ts überein", () => {
     );
   });
 
+  it("Avatartöne decken sich", () => {
+    const ausCss = werteAus(":root");
+    avatarToene.forEach((wert, i) => expect(ausCss[`--avatar-${i}`], `--avatar-${i}`).toBe(wert));
+  });
+
   it("beide Themes haben dieselben Token-Namen", () => {
     // Fehlt im dunklen Theme ein Token, erbt es den hellen Wert - und ein
     // weisser Kartenhintergrund im Dunkelmodus faellt sofort auf.
@@ -113,6 +118,18 @@ describe("schattenRn", () => {
         expect(Object.keys(werte).sort(), `${theme}.${stufe}`).toEqual(erwartet);
       }
     }
+  });
+});
+
+describe("avatarTon", () => {
+  // Web und App rechnen den Ton aus derselben Funktion - dasselbe Mitglied
+  // hat in der Mitgliederliste und in der App dieselbe Farbe.
+  it("liefert fest je Kennung einen der vier Töne", () => {
+    const id = "3f2b9c1e-0000-4000-8000-000000000001";
+    expect(avatarTon(id)).toBe(avatarTon(id));
+    expect(avatarToene).toContain(avatarFarbe(id));
+    const toene = new Set(Array.from({ length: 40 }, (_, i) => avatarTon(`mitglied-${i}`)));
+    expect([...toene].sort()).toEqual([0, 1, 2, 3]);
   });
 });
 
@@ -187,14 +204,14 @@ describe("Kontrast", () => {
     return "#" + a.map((v, i) => Math.round(v * anteil + b[i]! * (1 - anteil)).toString(16).padStart(2, "0")).join("");
   }
 
-  it("Knöpfe mit weißer Schrift erfüllen AA (4.5:1) in beiden Themes", () => {
+  it("Knöpfe mit onBrand-Schrift erfüllen AA (4.5:1) in beiden Themes", () => {
     // Die Schrift der Knöpfe ist 16px fett - keine "große Schrift" im Sinne
     // der WCAG (ab 18,66px fett), also gilt 4,5:1. Im Dunkeln lag der
     // Hauptknopf vorher bei 3,0:1 (U14), der Gefahr-Knopf bei 2,8:1 (U15).
     for (const theme of ["hell", "dunkel"] as const) {
       const f = farben[theme];
-      expect(verhaeltnis("#FFFFFF", f.blue), `${theme}: Weiß auf blue`).toBeGreaterThanOrEqual(4.5);
-      expect(verhaeltnis("#FFFFFF", f.red), `${theme}: Weiß auf red`).toBeGreaterThanOrEqual(4.5);
+      expect(verhaeltnis(f.onBrand, f.blue), `${theme}: onBrand auf blue`).toBeGreaterThanOrEqual(4.5);
+      expect(verhaeltnis(f.onBrand, f.red), `${theme}: onBrand auf red`).toBeGreaterThanOrEqual(4.5);
     }
   });
 
@@ -241,7 +258,13 @@ describe("Kontrast", () => {
     for (const theme of ["hell", "dunkel"] as const) {
       const f = farben[theme];
       expect(verhaeltnis(f.onGold, f.gold), `${theme}: onGold auf gold`).toBeGreaterThanOrEqual(4.5);
-      expect(verhaeltnis("#FFFFFF", f.brand), `${theme}: Weiß auf brand`).toBeGreaterThanOrEqual(4.5);
+      // onBrand traegt Schrift auf brand, blue, red und den Avataren (U4).
+      for (const flaeche of ["brand", "blue", "red"] as const) {
+        expect(verhaeltnis(f.onBrand, f[flaeche]), `${theme}: onBrand auf ${flaeche}`).toBeGreaterThanOrEqual(4.5);
+      }
+      avatarToene.forEach((ton, i) => {
+        expect(verhaeltnis(f.onBrand, ton), `${theme}: onBrand auf avatar-${i}`).toBeGreaterThanOrEqual(4.5);
+      });
     }
     // Im Dunkeln ist tabAktiv ein durchscheinender Schimmer; dort traegt die
     // Leiste selbst den Kontrast, und gold auf dunklem Grund liegt weit ueber 4,5.

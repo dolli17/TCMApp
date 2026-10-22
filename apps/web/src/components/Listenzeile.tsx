@@ -1,14 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { avatarTon } from "@tcm/ui";
 
 export type HinweisTon = "gold" | "rot" | "gruen" | "leise" | "blau";
-
-/** Eine von vier Blautoenen fuer den Avatar, fest je Kennung. */
-export function avatarTon(id: string): number {
-  let h = 0;
-  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return h % 4;
-}
 
 /**
  * Die Listenzeile der Verwaltung (docs/design/clubhaus/verwaltung, Regel 3)

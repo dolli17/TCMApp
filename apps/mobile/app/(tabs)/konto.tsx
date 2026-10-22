@@ -135,7 +135,7 @@ export default function Konto() {
             }}
             accessibilityElementsHidden
           >
-            <Text maxFontSizeMultiplier={SCHRIFT_DECKEL.form} style={{ color: "#FFFFFF", fontSize: 30, fontFamily: "Barlow_800ExtraBold" }}>{initialen}</Text>
+            <Text maxFontSizeMultiplier={SCHRIFT_DECKEL.form} style={{ color: farben.onBrand, fontSize: 30, fontFamily: "Barlow_800ExtraBold" }}>{initialen}</Text>
           </View>
           <Text
             accessibilityRole="header"

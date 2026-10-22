@@ -37,6 +37,7 @@ import {
 import { aktuellerKorb, setzeKorb, useKorb } from "@/lib/getraenkekorb";
 import { useLaden } from "@/lib/laden";
 import { LEISTE_ABSTAND_UNTEN, LEISTE_HOEHE } from "@/lib/masse";
+import { mitDeckkraft } from "@/lib/stil";
 import { useTheme } from "@/lib/theme";
 
 const MONAT = new Intl.DateTimeFormat("de-DE", { month: "long", timeZone: "Europe/Berlin" });
@@ -179,18 +180,18 @@ export default function Getraenke() {
         {/* --- Der laufende Monat ------------------------------------------ */}
         <View style={{ backgroundColor: farben.brand, borderRadius: radius.karteGross, padding: 20, overflow: "hidden" }}>
           <Svg width={350} height={150} viewBox="0 0 350 150" style={{ position: "absolute", right: 0, top: 0 }}>
-            <Path d="M200 150 L250 0 M350 40 L260 150 M230 80 H350" stroke="rgba(255,255,255,.12)" strokeWidth={2} fill="none" />
+            <Path d="M200 150 L250 0 M350 40 L260 150 M230 80 H350" stroke={mitDeckkraft(farben.onBrand, 0.12)} strokeWidth={2} fill="none" />
           </Svg>
-          <Text style={[stil.kicker, { color: "#FFFFFF", opacity: 0.85 }]}>
+          <Text style={[stil.kicker, { color: farben.onBrand, opacity: 0.85 }]}>
             {MONAT.format(new Date())} · läuft noch
           </Text>
           <Text
-            style={{ color: "#FFFFFF", fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 44, lineHeight: 46, marginTop: 8 }}
+            style={{ color: farben.onBrand, fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 44, lineHeight: 46, marginTop: 8 }}
             accessibilityLabel={`Summe diesen Monat: ${formatCents(summe)}`}
           >
             {formatCents(summe)}
           </Text>
-          <Text style={{ color: "#FFFFFF", opacity: 0.9, fontSize: 14, marginTop: 8, fontFamily: "Barlow_400Regular" }}>
+          <Text style={{ color: farben.onBrand, opacity: 0.9, fontSize: 14, marginTop: 8, fontFamily: "Barlow_400Regular" }}>
             {aktive.length} {aktive.length === 1 ? "Entnahme" : "Entnahmen"} · wird mit der Monatsabrechnung eingezogen
           </Text>
         </View>

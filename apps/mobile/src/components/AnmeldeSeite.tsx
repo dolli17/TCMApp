@@ -54,10 +54,10 @@ function Inhalt({ titel, unterzeile, children }: { titel: string; unterzeile?: s
             width="100%" height="100%" viewBox="0 0 390 360" preserveAspectRatio="xMidYMax slice"
             style={{ position: "absolute" }}
           >
-            <Path d="M40 360 L130 110 H260 L350 360" stroke="rgba(255,255,255,.22)" strokeWidth={2.5} fill="none" />
-            <Path d="M78 255 H312" stroke="rgba(255,255,255,.22)" strokeWidth={2.5} fill="none" />
-            <Path d="M100 195 H290 M60 305 H330 M195 195 V305" stroke="rgba(255,255,255,.22)" strokeWidth={2.5} fill="none" />
-            <Path d="M0 110 H390" stroke="rgba(255,255,255,.4)" strokeWidth={2.5} strokeDasharray="3 5" fill="none" />
+            <Path d="M40 360 L130 110 H260 L350 360" stroke={mitDeckkraft(farben.onBrand, 0.22)} strokeWidth={2.5} fill="none" />
+            <Path d="M78 255 H312" stroke={mitDeckkraft(farben.onBrand, 0.22)} strokeWidth={2.5} fill="none" />
+            <Path d="M100 195 H290 M60 305 H330 M195 195 V305" stroke={mitDeckkraft(farben.onBrand, 0.22)} strokeWidth={2.5} fill="none" />
+            <Path d="M0 110 H390" stroke={mitDeckkraft(farben.onBrand, 0.4)} strokeWidth={2.5} strokeDasharray="3 5" fill="none" />
           </Svg>
           <View
             style={{
@@ -79,7 +79,7 @@ function Inhalt({ titel, unterzeile, children }: { titel: string; unterzeile?: s
           <View style={{ position: "absolute", left: 24, right: 24, bottom: 22 }}>
             <Text
               accessibilityRole="header"
-              style={{ color: "#FFFFFF", fontSize: 36, lineHeight: 37, letterSpacing: -0.7, fontFamily: "Barlow_800ExtraBold" }}
+              style={{ color: farben.onBrand, fontSize: 36, lineHeight: 37, letterSpacing: -0.7, fontFamily: "Barlow_800ExtraBold" }}
             >
               {titel}
             </Text>
@@ -122,7 +122,7 @@ export const AnmeldeFeld = forwardRef<TextInput, TextInputProps & { beschriftung
               {
                 minHeight: 54, borderRadius: 16, paddingHorizontal: 16, fontSize: 16,
                 backgroundColor: farben.surf, color: farben.ink, fontFamily: "Barlow_400Regular",
-                borderWidth: 1.5, borderColor: "rgba(255,255,255,.12)",
+                borderWidth: 1.5, borderColor: farben.rahmen,
               },
               passwort && { paddingRight: 104 },
               style,

@@ -1036,7 +1036,7 @@ function Chip({
           maxFontSizeMultiplier={SCHRIFT_DECKEL.form}
           style={{
             fontSize: 12, fontFamily: "Barlow_700Bold",
-            color: gelb ? farben.onGold : gast ? farben.goldInk : "#FFFFFF",
+            color: gelb ? farben.onGold : gast ? farben.goldInk : farben.onBrand,
           }}
         >
           {kuerzel}

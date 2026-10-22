@@ -473,7 +473,7 @@ export function Knopf({
     : art === "gefahr" ? { backgroundColor: farben.red }
     : null;
   const textFarbe =
-    art === "gold" ? farben.onGold : art === "leise" ? farben.ink : "#fff";
+    art === "gold" ? farben.onGold : art === "leise" ? farben.ink : farben.onBrand;
 
   return (
     <Pressable

@@ -87,7 +87,7 @@ export function stilFuer(theme: ThemeName) {
       paddingVertical: 13, paddingHorizontal: 18, alignItems: "center",
     },
     knopfText: {
-      color: "#fff", fontSize: schrift.groesse.normal,
+      color: f.onBrand, fontSize: schrift.groesse.normal,
       fontFamily: "BarlowSemiCondensed_700Bold",
     },
     knopfLeise: {
@@ -105,8 +105,9 @@ export function stilFuer(theme: ThemeName) {
     knopfKlein: { paddingVertical: 7, paddingHorizontal: 11, borderRadius: radius.klein },
     knopfKleinText: { fontSize: schrift.groesse.klein },
 
+    // Rand in rahmen statt line2: ein Feld muss man finden (U29, 3:1).
     feld: {
-      borderWidth: 1.5, borderColor: f.line2, borderRadius: radius.feld,
+      borderWidth: 1.5, borderColor: f.rahmen, borderRadius: radius.feld,
       padding: 13, fontSize: schrift.groesse.normal,
       backgroundColor: f.surf, color: f.ink, fontFamily: "Barlow_400Regular",
     },

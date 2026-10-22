@@ -147,7 +147,7 @@ a:hover { text-decoration: underline; }
 .avatar {
   width: 44px; height: 44px; border-radius: 22px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--brand); color: #fff; font-weight: 700; font-size: 15px;
+  background: var(--brand); color: var(--on-brand); font-weight: 700; font-size: 15px;
   text-decoration: none;
 }
 a.avatar:hover { text-decoration: none; }
@@ -176,7 +176,7 @@ a.avatar:hover { text-decoration: none; }
   font-family: var(--font-display); font-weight: 700; font-size: 16px;
   border-radius: var(--radius-knopf); padding: 13px 16px;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  background: var(--blue); color: #fff;
+  background: var(--blue); color: var(--on-brand);
   box-shadow: 0 8px 18px color-mix(in srgb, var(--blue) 34%, transparent);
 }
 /* Abdunkeln statt blue-ink: das ist im Dunkeln ein helles Blau, auf dem die
@@ -404,7 +404,7 @@ table.liste .zahl {
 .glocke-zahl {
   position: absolute; top: -3px; right: -3px; min-width: 17px; height: 17px;
   padding: 0 4px; border-radius: 99px;
-  background: var(--red); color: #fff;
+  background: var(--red); color: var(--on-brand);
   font-size: 10.5px; font-weight: 700; line-height: 17px; text-align: center;
 }
 
@@ -594,7 +594,7 @@ ul.marken:not(:has(.chip)) { margin-bottom: 9px; gap: 6px; }
 
 .gasthinweis { margin: 8px 0 0; color: var(--ink-2); }
 
-.knopf.gefahr { background: var(--red); border-color: var(--red); color: #fff; }
+.knopf.gefahr { background: var(--red); border-color: var(--red); color: var(--on-brand); }
 
 /* --- Admin-Dashboard: Einstellungen --------------------------------------- */
 .karte.einstellungen { margin-bottom: 20px; }
@@ -754,12 +754,12 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 }
 .termin-karte:hover { text-decoration: none; }
 .termin-karte.gross {
-  background: var(--brand); border-color: transparent; color: #fff;
+  background: var(--brand); border-color: transparent; color: var(--on-brand);
   box-shadow: 0 18px 40px color-mix(in srgb, var(--brand) 35%, transparent);
 }
 .termin-karte .termin-inhalt { position: relative; display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .termin-karte .kicker { color: var(--muted); }
-.termin-karte.gross .kicker { color: #fff; opacity: .85; padding-right: 40px; }
+.termin-karte.gross .kicker { color: var(--on-brand); opacity: .85; padding-right: 40px; }
 .termin-karte .zeit {
   font-family: var(--font-display); font-weight: 700; font-size: var(--font-size-hero);
   line-height: 1; margin-top: 8px; white-space: nowrap;
@@ -775,11 +775,11 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 .termin-karte .details {
   flex: 0 0 auto; height: 40px; padding: 0 16px; border-radius: 20px;
   display: inline-flex; align-items: center; font-size: 14px; font-weight: 700;
-  background: rgba(255,255,255,.18);
+  background: color-mix(in srgb, var(--on-brand) 18%, transparent);
 }
 .termin-karte .platzlinien {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  fill: none; stroke: rgba(255,255,255,.13); stroke-width: 2;
+  fill: none; stroke: color-mix(in srgb, var(--on-brand) 13%, transparent); stroke-width: 2;
 }
 .termin-karte .ball {
   position: absolute; right: 20px; top: 20px; width: 26px; height: 26px;
@@ -906,7 +906,7 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
   .termin-karte.gross { flex-direction: row; gap: 28px; height: 220px; padding: 28px; }
   .termin-karte.gross .zeit { font-size: 56px; margin-top: 10px; }
   .termin-karte.gross .ort { font-size: 18px; margin-top: 8px; }
-  .termin-karte.gross .details { background: #fff; color: var(--on-gold); }
+  .termin-karte.gross .details { background: var(--on-brand); color: var(--on-gold); }
   .termin-karte.gross .weitere {
     position: relative; display: flex; flex-direction: column; justify-content: flex-end;
     gap: 10px; width: 230px; flex: 0 0 auto; padding-top: 34px;
@@ -1232,7 +1232,7 @@ button.beleg:hover, button.beleg:focus-visible {
 }
 .jetzt-linie span {
   position: absolute; left: -50px; top: -9px; height: 20px; padding: 0 6px;
-  border-radius: 10px; background: var(--red); color: #fff;
+  border-radius: 10px; background: var(--red); color: var(--on-brand);
   font-size: 11px; font-weight: 700; display: inline-flex; align-items: center;
 }
 
@@ -1332,7 +1332,7 @@ li.chip { padding-right: 4px; }
 }
 .schalter-feld::after {
   content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px;
-  border-radius: 13px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.3);
+  border-radius: 13px; background: var(--on-brand); box-shadow: 0 2px 6px rgba(0,0,0,.3);
   transition: left .15s ease;
 }
 .schalter-feld:checked { background: var(--green); box-shadow: none; }
@@ -1382,13 +1382,13 @@ li.chip { padding-right: 4px; }
 .auth.immer-dunkel { background: var(--bg); color: var(--ink); }
 .auth .buehne {
   position: relative; height: 360px; flex: 0 0 auto; overflow: hidden;
-  background: var(--brand); color: #fff;
+  background: var(--brand); color: var(--on-brand);
 }
 .auth .buehne .platz {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  fill: none; stroke: rgba(255,255,255,.22); stroke-width: 2.5;
+  fill: none; stroke: color-mix(in srgb, var(--on-brand) 22%, transparent); stroke-width: 2.5;
 }
-.auth .buehne .platz .netz { stroke: rgba(255,255,255,.4); stroke-dasharray: 3 5; }
+.auth .buehne .platz .netz { stroke: color-mix(in srgb, var(--on-brand) 40%, transparent); stroke-dasharray: 3 5; }
 .auth .buehne .ball {
   position: absolute; right: max(54px, calc(50% - 141px)); top: 96px; width: 38px; height: 38px;
   border-radius: 19px; background: var(--gold); box-shadow: 0 10px 24px rgba(0,0,0,.25);
@@ -1487,13 +1487,13 @@ li.chip { padding-right: 4px; }
    --------------------------------------------------------------------------- */
 .monatskarte {
   position: relative; overflow: hidden; margin: 8px 0 4px; padding: 20px;
-  border-radius: var(--radius-kartegross); background: var(--brand); color: #fff;
+  border-radius: var(--radius-kartegross); background: var(--brand); color: var(--on-brand);
 }
 .monatskarte .platzlinien {
   position: absolute; right: 0; top: 0; width: 350px; height: 150px;
-  fill: none; stroke: rgba(255,255,255,.12); stroke-width: 2;
+  fill: none; stroke: color-mix(in srgb, var(--on-brand) 12%, transparent); stroke-width: 2;
 }
-.monatskarte .kicker { position: relative; color: #fff; opacity: .85; }
+.monatskarte .kicker { position: relative; color: var(--on-brand); opacity: .85; }
 .monatskarte .summe { position: relative; font-size: 44px; font-weight: 700; line-height: 1; margin-top: 8px; }
 .monatskarte p { position: relative; margin: 8px 0 0; font-size: 14px; opacity: .9; }
 
@@ -1675,7 +1675,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 800; background: var(--surf-2); color: var(--muted);
 }
-.geldweg li.erledigt .nr { background: var(--green); color: #fff; }
+.geldweg li.erledigt .nr { background: var(--green); color: var(--on-brand); }
 .geldweg li.aktuell .nr { background: var(--gold); color: var(--on-gold); }
 .geldweg li.offen .nr { background: transparent; box-shadow: inset 0 0 0 1.5px var(--surf-3); }
 .geldweg li.offen b { color: var(--muted); }
@@ -1746,9 +1746,10 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 /* Marken im Entwurf: gruen liegt vor, rot fehlt */
 .statusmarke { height: 24px; padding: 0 9px; border-radius: 12px; font-size: 12px; }
 .statusmarke.gruen { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green-ink); }
-.avatar.ton-1 { background: color-mix(in srgb, var(--brand) 78%, #000); }
-.avatar.ton-2 { background: color-mix(in srgb, var(--brand) 82%, #6A9CC0); }
-.avatar.ton-3 { background: color-mix(in srgb, var(--brand) 55%, #4A5A70); }
+/* Die Toene kommen aus @tcm/ui (avatarToene), die App nimmt dieselben. */
+.avatar.ton-1 { background: var(--avatar-1); }
+.avatar.ton-2 { background: var(--avatar-2); }
+.avatar.ton-3 { background: var(--avatar-3); }
 .zugang { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
 .zugang::before { content: ""; width: 8px; height: 8px; border-radius: 4px; background: var(--muted); }
 .zugang.aktiv::before { background: var(--green); }
@@ -1864,15 +1865,15 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .je-zahler .leer-klein { padding: 0 20px 20px; }
 .naechster-schritt {
   display: flex; flex-direction: column; gap: 12px; padding: 22px;
-  border-radius: var(--radius-karte); background: var(--brand); color: #fff;
+  border-radius: var(--radius-karte); background: var(--brand); color: var(--on-brand);
 }
 .naechster-schritt { position: relative; overflow: hidden; border-radius: 26px; }
 .naechster-schritt > :not(.linien) { position: relative; }
 .naechster-schritt .linien {
   position: absolute; right: 0; top: 0; width: 350px; height: 196px;
-  fill: none; stroke: rgba(255,255,255,.13); stroke-width: 2;
+  fill: none; stroke: color-mix(in srgb, var(--on-brand) 13%, transparent); stroke-width: 2;
 }
-.naechster-schritt .kicker { color: #fff; opacity: .7; }
+.naechster-schritt .kicker { color: var(--on-brand); opacity: .7; }
 .naechster-schritt .titel { font-size: 24px; font-weight: 800; letter-spacing: -.3px; line-height: 1.15; }
 .naechster-schritt p { margin: 0; font-size: 14px; line-height: 1.5; opacity: .85; }
 .naechster-schritt .knopf { height: 50px; padding: 0 16px; border-radius: 14px; font-size: 15px; text-decoration: none; }
@@ -1881,10 +1882,10 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .naechster-schritt .sperrgrund { color: inherit; flex-basis: 100%; }
 .naechster-schritt.quer { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; }
 .naechster-schritt.quer > div { display: grid; gap: 8px; flex: 1 1 360px; }
-.knopf.auf-blau { background: rgba(255,255,255,.16); color: #fff; box-shadow: none; }
-.knopf.auf-blau:hover { background: rgba(255,255,255,.24); }
+.knopf.auf-blau { background: color-mix(in srgb, var(--on-brand) 16%, transparent); color: var(--on-brand); box-shadow: none; }
+.knopf.auf-blau:hover { background: color-mix(in srgb, var(--on-brand) 24%, transparent); }
 .knopf.gesperrt, .knopf.gesperrt:disabled {
-  background: rgba(255,255,255,.14); color: rgba(255,255,255,.8); opacity: 1; box-shadow: none;
+  background: color-mix(in srgb, var(--on-brand) 14%, transparent); color: color-mix(in srgb, var(--on-brand) 80%, transparent); opacity: 1; box-shadow: none;
 }
 .sperrgrund { margin: -2px 0 0; padding: 0 0 0 18px; font-size: 13px; line-height: 1.45; }
 .sperrgrund li + li { margin-top: 4px; }
@@ -2159,14 +2160,14 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .aufgabe-gross {
   position: relative; overflow: hidden; min-height: 196px; box-sizing: border-box;
   display: flex; flex-direction: column; gap: 6px; padding: 20px;
-  border-radius: 26px; background: var(--brand); color: #fff;
+  border-radius: 26px; background: var(--brand); color: var(--on-brand);
 }
 .aufgabe-gross > :not(.linien) { position: relative; }
 .aufgabe-gross .linien {
   position: absolute; right: 0; top: 0; width: 350px; height: 196px;
-  fill: none; stroke: rgba(255,255,255,.13); stroke-width: 2;
+  fill: none; stroke: color-mix(in srgb, var(--on-brand) 13%, transparent); stroke-width: 2;
 }
-.aufgabe-gross .kicker { color: #fff; opacity: .85; }
+.aufgabe-gross .kicker { color: var(--on-brand); opacity: .85; }
 .aufgabe-gross .titel { font-size: 28px; font-weight: 800; letter-spacing: -.4px; line-height: 1.08; margin-top: 2px; }
 .aufgabe-gross p { margin: 0; font-size: 14.5px; opacity: .9; }
 .aufgabe-gross .knopf { margin-top: auto; align-self: flex-start; min-height: 44px; padding: 0 18px; border-radius: 22px; font-family: var(--font-text); font-size: 15px; font-weight: 800; text-decoration: none; }
@@ -2323,8 +2324,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   display: inline-flex; align-items: center; justify-content: center; font-size: 10px; line-height: 1;
 }
 .onboarding-schritte li.erledigt > :is(a, span) { color: var(--ink); }
-.onboarding-schritte li.erledigt .punkt { background: var(--green); border-color: transparent; color: #fff; }
-.onboarding-schritte li.aktuell > :is(a, span) { background: var(--blue); color: #fff; font-weight: 700; }
+.onboarding-schritte li.erledigt .punkt { background: var(--green); border-color: transparent; color: var(--on-brand); }
+.onboarding-schritte li.aktuell > :is(a, span) { background: var(--blue); color: var(--on-brand); font-weight: 700; }
 .onboarding-schritte li.aktuell small { color: inherit; }
 .onboarding-knoepfe { display: grid; gap: 10px; margin-top: 6px; }
 .mandatstext {
@@ -2353,7 +2354,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .einzug-kopf .nr {
   flex: none; width: 32px; height: 32px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--brand); color: #fff; font-weight: 700;
+  background: var(--brand); color: var(--on-brand); font-weight: 700;
 }
 .einzug-gruppen { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; }
 .einzug-gruppe {
@@ -2497,7 +2498,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .event-karte:hover { text-decoration: none; border-color: color-mix(in srgb, var(--blue) 35%, var(--line)); }
 .event-karte > .datum-kachel {
   flex: 0 0 auto; width: 52px; height: 56px; align-content: center; border-radius: 14px;
-  background: var(--brand); color: #fff;
+  background: var(--brand); color: var(--on-brand);
 }
 .event-karte > .datum-kachel.vorbei { background: var(--surf-2); color: var(--ink-2); }
 .event-karte-text { display: grid; gap: 3px; min-width: 0; }
@@ -2510,15 +2511,15 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 
 .event-kopf {
   position: relative; overflow: hidden; margin: 0 0 16px; padding: 18px 20px 22px;
-  border-radius: var(--radius-kartegross); background: var(--brand); color: #fff;
+  border-radius: var(--radius-kartegross); background: var(--brand); color: var(--on-brand);
 }
 .event-kopf > :not(.platzlinien) { position: relative; }
 .event-kopf .platzlinien {
   position: absolute; right: 0; top: 0; width: 350px; height: 150px;
-  fill: none; stroke: rgba(255,255,255,.12); stroke-width: 2;
+  fill: none; stroke: color-mix(in srgb, var(--on-brand) 12%, transparent); stroke-width: 2;
 }
-.event-kopf .zurueck { color: #fff; opacity: .85; display: inline-block; margin-bottom: 10px; }
-.event-kopf .pagetitle { color: #fff; margin: 8px 0 4px; overflow-wrap: anywhere; }
+.event-kopf .zurueck { color: var(--on-brand); opacity: .85; display: inline-block; margin-bottom: 10px; }
+.event-kopf .pagetitle { color: var(--on-brand); margin: 8px 0 4px; overflow-wrap: anywhere; }
 .event-kopf p { margin: 0; opacity: .9; }
 
 .event-raster { display: grid; gap: 16px; }

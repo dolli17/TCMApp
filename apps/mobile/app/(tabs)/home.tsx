@@ -40,6 +40,7 @@ import { useNachladenBeiFokus } from "@/lib/fokus";
 import { abschnitt, ersterFehler, useLaden, type Abschnitt } from "@/lib/laden";
 import { alsUhrzeit, jetztFrei, lokaleMinuten, zuMinuten } from "@/lib/plan";
 import { useGrosseSchrift } from "@/lib/schrift";
+import { mitDeckkraft } from "@/lib/stil";
 import { useTheme } from "@/lib/theme";
 
 const BERLIN = "Europe/Berlin";
@@ -225,7 +226,7 @@ function AlsNaechstes({ termine, erneut }: { termine: Abschnitt<Termine>; erneut
             const erste = i === 0;
             const zeit = `${alsUhrzeit(lokaleMinuten(t.starts_at))} – ${alsUhrzeit(lokaleMinuten(t.ends_at))}`;
             const mit = t.players.filter((p) => p && p !== t.owner_name);
-            const tinte = erste ? "#FFFFFF" : farben.ink;
+            const tinte = erste ? farben.onBrand : farben.ink;
             return (
               <Pressable
                 key={t.booking_id}
@@ -247,7 +248,7 @@ function AlsNaechstes({ termine, erneut }: { termine: Abschnitt<Termine>; erneut
                     {/* Platzlinien in Perspektive, dezent */}
                     <Path
                       d={`M${breite * 0.47} 216 L${breite * 0.66} 0 M${breite} 60 L${breite * 0.6} 216 M${breite * 0.57} 100 H${breite} M${breite * 0.63} 40 H${breite}`}
-                      stroke="rgba(255,255,255,.13)" strokeWidth={2} fill="none"
+                      stroke={mitDeckkraft(farben.onBrand, 0.13)} strokeWidth={2} fill="none"
                     />
                     <Circle cx={breite - 33} cy={33} r={13} fill={farben.gold} />
                   </Svg>
@@ -255,7 +256,7 @@ function AlsNaechstes({ termine, erneut }: { termine: Abschnitt<Termine>; erneut
                 <Text
                   style={[
                     stil.kicker,
-                    erste ? { color: "#FFFFFF", opacity: 0.85 } : null,
+                    erste ? { color: farben.onBrand, opacity: 0.85 } : null,
                     { paddingRight: erste ? 40 : 0 },
                   ]}
                 >
@@ -280,7 +281,7 @@ function AlsNaechstes({ termine, erneut }: { termine: Abschnitt<Termine>; erneut
                 </Text>
                 <View style={{ marginTop: "auto", flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                   <Text
-                    style={{ flex: 1, fontSize: 13, color: erste ? "#FFFFFF" : farben.ink2, opacity: erste ? 0.9 : 1, fontFamily: "Barlow_400Regular" }}
+                    style={{ flex: 1, fontSize: 13, color: erste ? farben.onBrand : farben.ink2, opacity: erste ? 0.9 : 1, fontFamily: "Barlow_400Regular" }}
                     numberOfLines={1}
                   >
                     {mit.length > 0 ? `mit ${mit.join(", ")}` : t.bin_bucher ? "Du hast gebucht" : `von ${t.owner_name}`}
@@ -288,7 +289,7 @@ function AlsNaechstes({ termine, erneut }: { termine: Abschnitt<Termine>; erneut
                   <View
                     style={{
                       minHeight: 40, paddingHorizontal: 16, borderRadius: 20, justifyContent: "center",
-                      backgroundColor: erste ? "rgba(255,255,255,.18)" : farben.surf2,
+                      backgroundColor: erste ? mitDeckkraft(farben.onBrand, 0.18) : farben.surf2,
                     }}
                   >
                     <Text style={{ color: tinte, fontSize: 14, fontFamily: "Barlow_700Bold" }}>Details</Text>
