@@ -1,5 +1,5 @@
 -- ===========================================================================
--- Verwaltungsprotokoll (O25) und Notizen im Protokoll (S28)
+-- Verwaltungsprotokoll (O25) und Notizen im Protokoll (S29)
 --
 --   1. Eigene Buchungen, eigene Gastgebuehren und eigene Arbeitsstunden
 --      erzeugen keinen Eintrag; dieselbe Aktion durch einen Admin fuer ein
@@ -10,7 +10,7 @@
 --      Funktion ausser den Laeufen setzt es, set_config liegt nicht in einem
 --      Schema der API, und der Wert gilt nur in der eigenen Transaktion.
 --   4. Mitglieder sehen das Protokoll nicht mehr, auch nicht ihre eigenen
---      Eintraege (S28). Notizen und Antragsangaben stehen nicht darin, die
+--      Eintraege (S29). Notizen und Antragsangaben stehen nicht darin, die
 --      IBAN des Vereins in den Einstellungen nur maskiert.
 --   5. protokoll_zugang: nur fuer Admins, Urheber aus dem Token.
 --
@@ -217,7 +217,7 @@ begin
   return next cmp_ok(
     (select count(*)::integer from public.change_log where member_id = a.member_id), '>', 0,
     'Die Änderung steht im Protokoll');
-  return next is(v_anzahl, 0, 'Ein Mitglied sieht keinen Eintrag, auch nicht die eigenen (S28)');
+  return next is(v_anzahl, 0, 'Ein Mitglied sieht keinen Eintrag, auch nicht die eigenen (S29)');
 end; $f$;
 
 create or replace function tests.test_protokoll_ohne_notizen()
@@ -236,7 +236,7 @@ begin
   return next ok(
     not exists (select 1 from public.change_log
                  where member_id = b.member_id and (diff ? 'notes' or diff ? 'import_notes')),
-    'Notizen nicht (S28)');
+    'Notizen nicht (S29)');
 end; $f$;
 
 create or replace function tests.test_protokoll_iban_maskiert()
@@ -305,4 +305,4 @@ begin
 end; $f$;
 
 select plan(1);
-select pass('Verwaltungsprotokoll (O25, S28): Testfunktionen definiert');
+select pass('Verwaltungsprotokoll (O25, S29): Testfunktionen definiert');

@@ -204,7 +204,7 @@ begin
   perform set_config('role', 'postgres', true);
 
   return next is(v_fremd, 0, 'Mitglied A sieht die Protokolleintraege von B nicht');
-  -- S28: Auch die eigenen nicht mehr, sonst waeren Notizen ueber das
+  -- S29: Auch die eigenen nicht mehr, sonst waeren Notizen ueber das
   -- Protokoll lesbar. Das Protokoll ist fuer volle Rechte.
   return next is(v_eigen, 0, 'Mitglied A sieht auch seine eigenen Eintraege nicht');
 end; $f$;

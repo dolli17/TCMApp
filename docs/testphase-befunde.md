@@ -98,8 +98,8 @@ Vier Audits, nur lesend, am Stand `e4dd27b`: Security, Bugs, Testing, UI/UX. Pla
 | S25 | P3 | **Schema `tests` mit 53 pgTAP-Funktionen liegt auf Dev.** Die Tests liefen also einmal gegen die Cloud. | Bereinigung mit Lucas abstimmen (kein DDL von Claude). Für Prod ausschließen. |
 | S26 | P3 | `register_push_token` hängt ein fremdes Token auf das eigene Konto um | **Erledigt (PR #61):** Umhängen nur bei stillgelegtem Gerät oder wenn der Besitzer keinen Zugang mehr hat. |
 | S27 | P3 | Kinder erteilen die Elternzustimmung und das SEPA-Mandat selbst | Bestätigung per Mail an die Eltern |
-| S28 | P2 | Notizen über `change_log` an S17 vorbei lesbar: Der Trigger an `members` schrieb `notes` und `import_notes` mit altem und neuem Wert ins Protokoll, und die Policy `change_log_own_select` gab Mitgliedern ihre eigenen Einträge frei. | **Erledigt (PR #74):** `notes` und `import_notes` vom Protokoll ausgeschlossen, vorhandene Einträge bereinigt (nur aus Notizen bestehende gelöscht), Policy entfernt: das Protokoll sehen nur volle Rechte. |
 | S28 | P3 | `pnpm audit`: kritische/hohe Lücken in Expo-Build-Werkzeugen (nur zur Build-Zeit) | Expo-Patchupdate, `pnpm.overrides` |
+| S29 | P2 | Notizen über `change_log` an S17 vorbei lesbar: Der Trigger an `members` schrieb `notes` und `import_notes` mit altem und neuem Wert ins Protokoll, und die Policy `change_log_own_select` gab Mitgliedern ihre eigenen Einträge frei. | **Erledigt (PR #74):** `notes` und `import_notes` vom Protokoll ausgeschlossen, vorhandene Einträge bereinigt (nur aus Notizen bestehende gelöscht), Policy entfernt: das Protokoll sehen nur volle Rechte. |
 
 #### Bugs
 

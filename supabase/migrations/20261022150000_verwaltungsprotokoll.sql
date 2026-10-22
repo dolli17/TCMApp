@@ -1,4 +1,4 @@
--- O25: Verwaltungsprotokoll. S28: Notizen nicht mehr ueber change_log lesbar.
+-- O25: Verwaltungsprotokoll. S29: Notizen nicht mehr ueber change_log lesbar.
 --
 -- Wer hat in der Verwaltung was getan? Grundlage bleibt public.change_log mit
 -- dem Trigger private.log_change, keine zweite Tabelle. Neu:
@@ -12,7 +12,7 @@
 --  - Trigger an den Tabellen der Verwaltung, mit Ausschlussfeldern.
 --  - Massenlaeufe (Beitragslauf, Einzug, Serien ...) schreiben je Lauf und
 --    Tabelle einen Sammeleintrag statt einer Zeile je Forderung/Buchung.
---  - S28: members.notes und import_notes landen nicht mehr im Protokoll, die
+--  - S29: members.notes und import_notes landen nicht mehr im Protokoll, die
 --    vorhandenen werden entfernt, und Mitglieder lesen change_log nicht mehr.
 --
 -- Abwaertskompatibel: nur neue Spalten, der Check wird weiter, die
@@ -40,7 +40,7 @@ create index if not exists change_log_zeit_tabelle_person_idx
   on public.change_log (changed_at desc, table_name, changed_by);
 
 -- ---------------------------------------------------------------------------
--- S28: Das Protokoll ist nur fuer volle Rechte. Ueber die Policy fuer das eigene
+-- S29: Das Protokoll ist nur fuer volle Rechte. Ueber die Policy fuer das eigene
 -- Mitglied liessen sich bisher alte und neue Notizen lesen, an S17 vorbei.
 -- ---------------------------------------------------------------------------
 drop policy if exists change_log_own_select on public.change_log;
@@ -200,7 +200,7 @@ $$;
 -- ---------------------------------------------------------------------------
 -- Trigger
 -- ---------------------------------------------------------------------------
--- S28: Notizen nicht mehr ins Protokoll.
+-- S29: Notizen nicht mehr ins Protokoll.
 drop trigger if exists members_log_change on public.members;
 create trigger members_log_change
   after insert or update or delete on public.members
