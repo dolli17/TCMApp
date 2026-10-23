@@ -6,6 +6,7 @@ import { rolleSetzen, trainerSetzen } from "@/app/admin/mitglieder/[id]/aktionen
 
 interface Props {
   mitgliedId: string;
+  vorname: string;
   hatLogin: boolean;
   /** Rollen aus member_roles */
   rollen: string[];
@@ -27,7 +28,8 @@ interface Props {
 export function ZugehoerigkeitKarte(props: Props) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
-  const [entziehenOffen, setEntziehenOffen] = useState<AppRole | null>(null);
+  // Volle Rechte gehen nur über eine Rückfrage, in beide Richtungen.
+  const [frage, setFrage] = useState<{ rolle: AppRole; erteilen: boolean } | null>(null);
   // Die Schalter springen sofort um und gehen bei einem Fehler zurück.
   const [rollen, setRollen] = useState<string[]>(props.rollen);
   const [istTrainer, setIstTrainer] = useState(props.istTrainer);
@@ -37,8 +39,9 @@ export function ZugehoerigkeitKarte(props: Props) {
     setRollen(erteilen ? [...vorher, r] : vorher.filter((x) => x !== r));
     starte(async () => {
       const e = await rolleSetzen(props.mitgliedId, r, erteilen);
-      setMeldung({ ok: e.ok, text: e.meldung });
-      setEntziehenOffen(null);
+      const voll = erteilen && e.ok && hatVolleRechte([r]);
+      setMeldung({ ok: e.ok, text: voll ? `${e.meldung} ${props.vorname} hat jetzt volle Rechte.` : e.meldung });
+      setFrage(null);
       if (!e.ok) setRollen(vorher);
     });
   }
@@ -73,15 +76,32 @@ export function ZugehoerigkeitKarte(props: Props) {
               ? "Braucht einen Login. Archivierte Mitglieder haben keinen."
               : r.beschreibung}
         </span>
-        {entziehenOffen === r.rolle ? (
-          <span className="detailkopf aktionen" style={{ gap: 8 }}>
-            <button className="knopf leise klein" disabled={laeuft} onClick={() => setEntziehenOffen(null)}>
-              Abbrechen
-            </button>
-            <button className="knopf gefahr klein" disabled={laeuft} onClick={() => rolle(r.rolle, false)}>
-              {laeuft ? "Wird entzogen…" : "Wirklich entziehen"}
-            </button>
-          </span>
+        {frage?.rolle === r.rolle ? (
+          <div
+            className={`hinweis rueckfrage${frage.erteilen ? "" : " fehler"}`}
+            role="group"
+            aria-label={`${r.label} ${frage.erteilen ? "erteilen" : "entziehen"}`}
+          >
+            <span>
+              {frage.erteilen
+                ? `${props.vorname} bekommt volle Rechte: Mitglieder, Kasse, Einstellungen.`
+                : `${props.vorname} verliert die vollen Rechte als ${r.label}.`}
+            </span>
+            <span className="knopfreihe">
+              <button className="knopf leise klein" disabled={laeuft} onClick={() => setFrage(null)} autoFocus>
+                Abbrechen
+              </button>
+              {frage.erteilen ? (
+                <button className="knopf klein" disabled={laeuft} onClick={() => rolle(r.rolle, true)}>
+                  {laeuft ? "Wird erteilt…" : "Wirklich erteilen"}
+                </button>
+              ) : (
+                <button className="knopf gefahr klein" disabled={laeuft} onClick={() => rolle(r.rolle, false)}>
+                  {laeuft ? "Wird entzogen…" : "Wirklich entziehen"}
+                </button>
+              )}
+            </span>
+          </div>
         ) : (
           <input
             type="checkbox"
@@ -90,10 +110,13 @@ export function ZugehoerigkeitKarte(props: Props) {
             checked={hat}
             disabled={laeuft || sperre || ohneLogin}
             onChange={(e) => {
-              // Volle Rechte zu entziehen sperrt womöglich jemanden aus,
-              // deshalb mit Rückfrage. Alles andere geht sofort.
-              if (!e.target.checked && r.vollRechte) setEntziehenOffen(r.rolle);
-              else rolle(r.rolle, e.target.checked);
+              // Volle Rechte erteilen oder entziehen nur mit Rückfrage:
+              // das eine öffnet Mitglieder und Kasse, das andere sperrt
+              // womöglich jemanden aus. Alles andere geht sofort.
+              if (r.vollRechte) {
+                setMeldung(null);
+                setFrage({ rolle: r.rolle, erteilen: e.target.checked });
+              } else rolle(r.rolle, e.target.checked);
             }}
           />
         )}

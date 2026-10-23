@@ -1801,6 +1801,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
     column-gap: 20px; align-items: center; margin-bottom: 0;
   }
   .einstellung > :not(input, select) { grid-column: 1; }
+  .einstellung > .knopf { justify-self: start; }
   .einstellung > :is(input:not([type="hidden"]), select) { grid-column: 2; grid-row: 1 / span 3; max-width: none; }
   .einstellung.liste { display: block; }
 }
@@ -2429,6 +2430,11 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .veranstaltung-aktionen { display: grid; gap: 10px; justify-items: end; }
 .veranstaltung-aktionen .knopfreihe, .rueckfrage .knopfreihe { display: flex; flex-wrap: wrap; gap: 8px; }
 .rueckfrage { display: grid; gap: 10px; max-width: 460px; }
+/* Aufgeklappt in einer Einstellungszeile: Felder untereinander, linksbündig (U39) */
+.einstellung .rueckfrage { margin-top: 4px; }
+.rueckfrage > label { margin: 0; }
+.einstellung .rueckfrage input { max-width: none; }
+.rueckfrage > .hinweis { margin: 0; }
 /* Im blauen "Nächster Schritt" (Kasse): Abstand kommt dort vom gap */
 .naechster-schritt .rueckfrage { margin: 0; }
 @media (min-width: 900px) {
