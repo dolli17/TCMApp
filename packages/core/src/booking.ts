@@ -209,6 +209,19 @@ export function missingPlayers(
 }
 
 /**
+ * Wie viele Leute neben dem Bucher mitspielen, fuer die Ueberschrift
+ * "Wer spielt mit?": "1 weitere Person" beim Einzel, "2–3 weitere Personen"
+ * beim Doppel. Untergrenze wie missingPlayers, Obergrenze aus max_players.
+ */
+export function otherPlayersLabel(type: BookingTypeInfo): string {
+  const bis = type.maxPlayers - 1;
+  if (bis <= 0) return "";
+  const von = Math.min(Math.max(type.minPlayers, type.requiresPartner ? 2 : 1) - 1, bis);
+  const zahl = von === bis ? `${bis}` : von === 0 ? `bis zu ${bis}` : `${von}–${bis}`;
+  return `${zahl} ${bis === 1 ? "weitere Person" : "weitere Personen"}`;
+}
+
+/**
  * Passt die Besetzung zur Spielform? Dieselben Grenzen wie create_booking:
  * wer Mitspieler sucht, darf unterbesetzt buchen, die Obergrenze gilt immer.
  */

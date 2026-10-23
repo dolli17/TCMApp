@@ -74,11 +74,19 @@ test.describe("Buchungsregeln im Plan", () => {
     // Vorher liess der Knopf das zu, und erst die Datenbank lehnte ab.
     const knopf = fenster.getByRole("button", { name: /buchen/i });
     await expect(knopf).toBeDisabled();
-    await expect(fenster.locator(".fussnote")).toContainText("es fehlt noch ein Mitspieler");
+    await expect(fenster.locator(".hinweis.besetzung")).toContainText("Noch 1 Mitspieler wählen");
+    await expect(knopf).toHaveAccessibleDescription(/Noch 1 Mitspieler wählen/);
+    await expect(fenster.locator(".fussnote")).toHaveText("Stornieren geht bis Spielbeginn");
+
+    // Der gesperrte Knopf bucht nicht, sondern fuehrt zur Mitspielersuche (U40).
+    // force: Playwright wartet sonst, bis der Knopf nicht mehr aria-disabled ist.
+    await knopf.click({ force: true });
+    await expect(fenster.getByLabel("Mitspieler suchen")).toBeFocused();
 
     // Wer Mitspieler sucht, darf unterbesetzt buchen - wie create_booking.
     await fenster.getByRole("switch").check();
     await expect(knopf).toBeEnabled();
+    await expect(fenster.locator(".hinweis.besetzung")).toHaveCount(0);
     await expect(fenster.locator(".fussnote")).toHaveText("Stornieren geht bis Spielbeginn");
   });
 

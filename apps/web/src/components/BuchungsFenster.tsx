@@ -2,14 +2,15 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
-  berlinTime, blockingLabel, bookingActions, bookingTypeInfo, checkPlayers, timeToMinutes, umsetzZiele,
+  berlinTime, blockingLabel, bookingActions, bookingTypeInfo, checkPlayers, missingPlayers, otherPlayersLabel,
+  timeToMinutes, umsetzZiele,
 } from "@tcm/core";
 import type { AktionsErgebnis, TagesBelegung } from "@/app/plan/aktionen";
 import {
   alsUhrzeit, lokaleMinuten,
   type Belegung, type Blockungsart, type Buchungsart, type Fenster, type Mitglied, type Platz,
 } from "@/components/Belegungsplan";
-import { initialen, Mitspielersuche } from "@/components/Mitspielersuche";
+import { initialen, Mitspielersuche, type MitspielerHandle } from "@/components/Mitspielersuche";
 import { SperrGrund } from "@/components/SperrGrund";
 
 interface Props {
@@ -198,6 +199,16 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
     ? checkPlayers(bookingTypeInfo(gewaehlt), mitglieder.length, gaeste.length, sucheMitspieler && nochPlatz)
     : null;
   const besetzungFehlt = besetzung !== null && !besetzung.ok ? besetzung.reason : null;
+  const fehlen = gewaehlt && !(sucheMitspieler && nochPlatz)
+    ? missingPlayers(bookingTypeInfo(gewaehlt), mitglieder.length, gaeste.length)
+    : 0;
+  // Der Grund steht ueber dem Knopf (HANDOFF: Meldungen ueber dem Knopf) und
+  // sagt, was als Naechstes zu tun ist - nicht, gegen welche Regel man verstoesst.
+  const sperrHinweis = fehlen > 0
+    ? `Noch ${fehlen} Mitspieler wählen${nochPlatz ? " – oder „Mitspieler gesucht“ einschalten" : ""}.`
+    : besetzungFehlt;
+  const hinweisId = useId();
+  const suche = useRef<MitspielerHandle>(null);
 
   function spielformWechseln(neu: string) {
     setArt(neu);
@@ -276,24 +287,35 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
           mitglieder={mitglieder}
           gaeste={gaeste}
           maxWeitere={maxWeitere}
-          pflicht={Boolean(gewaehlt?.requires_partner) && !sucheMitspieler}
+          umfang={gewaehlt ? otherPlayersLabel(bookingTypeInfo(gewaehlt)) : ""}
+          gefragt={fehlen > 0}
           gastgebuehrCents={props.gastgebuehrCents}
           onMitglieder={setMitglieder}
           onGaeste={setGaeste}
+          ref={suche}
         />
 
         {nochPlatz && <GesuchtKarte an={sucheMitspieler} onWechsel={setSucheMitspieler} />}
 
         <div className="blatt-fuss">
           <Fehler text={props.fehler} />
-          <button className="knopf gold gross block" disabled={props.laeuft || besetzungFehlt !== null}>
+          {sperrHinweis && !props.laeuft && <p className="hinweis besetzung" id={hinweisId}>{sperrHinweis}</p>}
+          {/* aria-disabled statt disabled: ein gesperrter Knopf nimmt dann noch
+              Klicks an und fuehrt zur Mitspielersuche, statt stumm zu bleiben. */}
+          <button
+            className="knopf gold gross block"
+            disabled={props.laeuft}
+            aria-disabled={sperrHinweis !== null || undefined}
+            aria-describedby={sperrHinweis && !props.laeuft ? hinweisId : undefined}
+            onClick={(e) => {
+              if (sperrHinweis === null) return;
+              e.preventDefault();
+              suche.current?.suchen();
+            }}
+          >
             {props.laeuft ? "Wird gebucht…" : `${platz?.name ?? "Platz"} buchen`}
           </button>
-          <p className="fussnote">
-            {besetzungFehlt
-              ? `${besetzungFehlt}${nochPlatz ? " Oder schalte „Mitspieler gesucht“ ein." : ""}`
-              : "Stornieren geht bis Spielbeginn"}
-          </p>
+          <p className="fussnote">Stornieren geht bis Spielbeginn</p>
         </div>
       </form>
 
@@ -478,7 +500,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
             mitglieder={mitglieder}
             gaeste={gaeste}
             maxWeitere={maxWeitere}
-            pflicht={Boolean(art?.requires_partner) && !b.partner_wanted}
+            umfang={art ? otherPlayersLabel(bookingTypeInfo(art)) : ""}
             gastgebuehrCents={props.gastgebuehrCents}
             onMitglieder={setMitglieder}
             onGaeste={setGaeste}

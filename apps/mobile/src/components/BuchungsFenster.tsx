@@ -13,11 +13,12 @@
  * Das Blatt selbst (Fahrt, Abdunklung, Griff) steht in Blatt.tsx.
  */
 
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { forwardRef, useImperativeHandle, useMemo, useRef, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import {
-  blockingLabel, bookingActions, bookingTypeInfo, checkPlayers, umsetzZiele, type OccupiedSlot,
+  blockingLabel, bookingActions, bookingTypeInfo, checkPlayers, missingPlayers, otherPlayersLabel, umsetzZiele,
+  type OccupiedSlot,
 } from "@tcm/core";
 import { Blatt, BlattKopf } from "@/components/Blatt";
 import { Schalter, Segmente } from "@/components/Segmente";
@@ -131,22 +132,37 @@ function Feldname({ children }: { children: ReactNode }) {
 
 /* --- Knoepfe -------------------------------------------------------------- */
 
-function Hauptknopf({ text, onPress, gesperrt }: { text: string; onPress: () => void; gesperrt?: boolean }) {
+/**
+ * Gesperrt ist neutral statt blassgold, wie im Web (U26): ein ausgewaschenes
+ * Gelb sieht aus wie "gleich geht's" und nicht wie "es fehlt noch etwas".
+ * Mit onGesperrt nimmt der gesperrte Knopf das Tippen noch an und fuehrt zum
+ * naechsten Schritt; grund liest VoiceOver als Hinweis vor.
+ */
+function Hauptknopf({ text, onPress, gesperrt, grund, onGesperrt }: {
+  text: string; onPress: () => void; gesperrt?: boolean; grund?: string | null; onGesperrt?: () => void;
+}) {
   const { farben } = useTheme();
   return (
     <Pressable
-      onPress={onPress}
-      disabled={gesperrt}
+      onPress={gesperrt ? onGesperrt : onPress}
+      disabled={gesperrt && !onGesperrt}
       accessibilityRole="button"
       accessibilityState={{ disabled: gesperrt }}
+      accessibilityHint={gesperrt && grund ? grund : undefined}
       style={({ pressed }) => ({
         // Mindesthoehe statt fester Hoehe: mit grosser Schrift bricht der Text um.
         minHeight: 58, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 18,
         alignItems: "center", justifyContent: "center",
-        backgroundColor: farben.gold, opacity: gesperrt ? 0.5 : pressed ? 0.85 : 1,
+        backgroundColor: gesperrt ? farben.surf3 : farben.gold, opacity: pressed ? 0.85 : 1,
       })}
     >
-      <Text style={{ color: farben.onGold, fontSize: 17, fontFamily: "Barlow_800ExtraBold", textAlign: "center" }}>{text}</Text>
+      <Text
+        style={{
+          color: gesperrt ? farben.muted : farben.onGold, fontSize: 17, fontFamily: "Barlow_800ExtraBold", textAlign: "center",
+        }}
+      >
+        {text}
+      </Text>
     </Pressable>
   );
 }
@@ -191,6 +207,21 @@ function Fussnote({ children }: { children: ReactNode }) {
   return (
     <Text style={{ textAlign: "center", fontSize: 12.5, color: farben.muted, fontFamily: "Barlow_400Regular", marginTop: -6 }}>
       {children}
+    </Text>
+  );
+}
+
+/** Was zum Buchen noch fehlt - neutral, es ist kein Fehler. */
+function Besetzungshinweis({ text }: { text: string }) {
+  const { farben } = useTheme();
+  return (
+    <Text
+      style={{
+        paddingVertical: 12, paddingHorizontal: 14, borderRadius: 14, backgroundColor: farben.chip,
+        fontSize: 14, lineHeight: 19, color: farben.ink2, fontFamily: "Barlow_400Regular",
+      }}
+    >
+      {text}
     </Text>
   );
 }
@@ -249,6 +280,15 @@ function BuchenInhalt(
     ? checkPlayers(bookingTypeInfo(gewaehlt), mitglieder.length, gaeste.length, sucht && nochPlatz)
     : null;
   const besetzungFehlt = besetzung !== null && !besetzung.ok ? besetzung.reason : null;
+  const fehlen = gewaehlt && !(sucht && nochPlatz)
+    ? missingPlayers(bookingTypeInfo(gewaehlt), mitglieder.length, gaeste.length)
+    : 0;
+  // Der Grund steht ueber dem Knopf (HANDOFF: Meldungen ueber dem Knopf) und
+  // sagt, was als Naechstes zu tun ist - nicht, gegen welche Regel man verstoesst.
+  const sperrHinweis = fehlen > 0
+    ? `Noch ${fehlen} Mitspieler wählen${nochPlatz ? " – oder „Mitspieler gesucht“ einschalten" : ""}.`
+    : besetzungFehlt;
+  const suche = useRef<MitspielerHandle>(null);
   const ich = props.verzeichnis.find((m) => m.id === props.meineId);
 
   const beginn = (
@@ -309,26 +349,27 @@ function BuchenInhalt(
         mitglieder={mitglieder}
         gaeste={gaeste}
         maxWeitere={maxWeitere}
-        pflicht={Boolean(gewaehlt?.requires_partner) && !sucht}
+        umfang={gewaehlt ? otherPlayersLabel(bookingTypeInfo(gewaehlt)) : ""}
+        gefragt={fehlen > 0}
         gastgebuehrCents={props.gastgebuehrCents}
         onMitglieder={setMitglieder}
         onGaeste={setGaeste}
+        ref={suche}
       />
 
       {nochPlatz && <GesuchtKarte an={sucht} onWechsel={setSucht} />}
 
       <View style={{ gap: 10 }}>
         <Fehlerzeile text={props.fehler} />
+        {sperrHinweis && !props.laeuft && <Besetzungshinweis text={sperrHinweis} />}
         <Hauptknopf
           text={props.laeuft ? "Wird gebucht …" : `${props.fenster.platzName} buchen`}
-          gesperrt={props.laeuft || besetzungFehlt !== null}
+          gesperrt={props.laeuft || sperrHinweis !== null}
+          grund={sperrHinweis}
+          onGesperrt={props.laeuft ? undefined : () => suche.current?.suchen()}
           onPress={() => props.onBuchen(f.courtId, start, art, mitglieder, gaeste, sucht)}
         />
-        <Fussnote>
-          {besetzungFehlt
-            ? `${besetzungFehlt}${nochPlatz ? " Oder schalte „Mitspieler gesucht“ ein." : ""}`
-            : "Stornieren geht bis Spielbeginn"}
-        </Fussnote>
+        <Fussnote>Stornieren geht bis Spielbeginn</Fussnote>
       </View>
 
       {props.darfPlaetze && <SperrBereich {...props} />}
@@ -513,7 +554,7 @@ function VerwaltenInhalt(
           mitglieder={mitglieder}
           gaeste={gaeste}
           maxWeitere={maxWeitere}
-          pflicht={Boolean(art?.requires_partner) && b.partner_wanted !== true}
+          umfang={art ? otherPlayersLabel(bookingTypeInfo(art)) : ""}
           gastgebuehrCents={props.gastgebuehrCents}
           onMitglieder={setMitglieder}
           onGaeste={setGaeste}
@@ -1075,26 +1116,45 @@ const TREFFER_MAX = 6;
  * eigenen Knopf: sie kosten Geld, und das soll eine bewusste Handlung sein
  * und kein Nebeneffekt davon, dass die Suche nichts gefunden hat.
  */
-function Mitspieler({
-  kopf, verzeichnis, mitglieder, gaeste, maxWeitere, pflicht, gastgebuehrCents,
-  onMitglieder, onGaeste,
-}: {
+/** Damit der gesperrte Buchen-Knopf zur Suche fuehren kann, statt nichts zu tun. */
+interface MitspielerHandle {
+  suchen: () => void;
+}
+
+const Mitspieler = forwardRef<MitspielerHandle, {
   /** Der Bucher, fest vorn */
   kopf: { initialen: string; name: string; gelb?: boolean };
   verzeichnis: Mitglied[];
   mitglieder: string[];
   gaeste: string[];
   maxWeitere: number;
-  pflicht: boolean;
+  /** Wie viele mitspielen, aus der Buchungsart: "1 weitere Person". */
+  umfang: string;
+  /** Es fehlt noch jemand: "+ Mitglied" ist dann der naechste Schritt. */
+  gefragt?: boolean;
   gastgebuehrCents: number;
   onMitglieder: (ids: string[]) => void;
   onGaeste: (namen: string[]) => void;
-}) {
+}>(function Mitspieler({
+  kopf, verzeichnis, mitglieder, gaeste, maxWeitere, umfang, gefragt, gastgebuehrCents,
+  onMitglieder, onGaeste,
+}, ref) {
   const { stil, farben } = useTheme();
   const [suchen, setSuchen] = useState(false);
   const [suche, setSuche] = useState("");
+  const feld = useRef<TextInput>(null);
 
   const voll = mitglieder.length + gaeste.length >= maxWeitere;
+
+  useImperativeHandle(ref, () => ({
+    suchen() {
+      if (voll) return;
+      // Ist das Feld schon offen, holt focus() es zurueck; sonst fokussiert
+      // es sich beim Erscheinen selbst (autoFocus).
+      setSuchen(true);
+      feld.current?.focus();
+    },
+  }), [voll]);
 
   const gewaehlt = useMemo(
     () =>
@@ -1127,10 +1187,18 @@ function Mitspieler({
       <Path d="M12 5v14M5 12h14" stroke={farben.ink} strokeWidth={2.4} strokeLinecap="round" />
     </Svg>
   );
+  const plusBlau = (
+    <Svg width={16} height={16} viewBox="0 0 24 24">
+      <Path d="M12 5v14M5 12h14" stroke={farben.blueInk} strokeWidth={2.4} strokeLinecap="round" />
+    </Svg>
+  );
 
   return (
     <View>
-      <Feldname>Wer spielt mit?{pflicht ? " (mindestens eine Person)" : ""}</Feldname>
+      <Feldname>
+        Wer spielt mit?
+        {umfang ? <Text style={{ fontFamily: "Barlow_500Medium", color: farben.muted }}> · {umfang}</Text> : null}
+      </Feldname>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         <Chip {...kopf} />
         {gewaehlt.map((m) => (
@@ -1158,14 +1226,19 @@ function Mitspieler({
         <Text style={[stil.leise, { marginTop: 10 }]}>Für diese Spielform sind alle Plätze besetzt.</Text>
       ) : (
         <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+          {/* Es fehlt noch jemand: "+ Mitglied" ist der naechste Schritt, nicht der Gast. */}
           <Pressable
-            style={gestrichelt}
+            style={gefragt
+              ? { ...gestrichelt, borderStyle: "solid", borderColor: farben.blue, backgroundColor: mitDeckkraft(farben.blue, 0.07) }
+              : gestrichelt}
             accessibilityRole="button"
             accessibilityState={{ expanded: suchen }}
             onPress={() => setSuchen(!suchen)}
           >
-            {plus}
-            <Text style={{ fontSize: 15, fontFamily: "Barlow_600SemiBold", color: farben.ink }}>Mitglied</Text>
+            {gefragt ? plusBlau : plus}
+            <Text style={{ fontSize: 15, fontFamily: "Barlow_600SemiBold", color: gefragt ? farben.blueInk : farben.ink }}>
+              Mitglied
+            </Text>
           </Pressable>
           <Pressable
             style={gestrichelt}
@@ -1186,6 +1259,7 @@ function Mitspieler({
       {suchen && !voll && (
         <View style={{ gap: 6, marginTop: 10 }}>
           <TextInput
+            ref={feld}
             style={stil.feld}
             value={suche}
             onChangeText={setSuche}
@@ -1226,4 +1300,4 @@ function Mitspieler({
       )}
     </View>
   );
-}
+});
