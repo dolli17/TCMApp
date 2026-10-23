@@ -85,3 +85,6 @@ tmp/
 
 # Playwright-Artefakte
 apps/web/test-results/
+
+# Impeccable (Design-Critiques, lokal)
+.impeccable/
