@@ -111,7 +111,7 @@ async function aufraeumen(page: Page, adresse: string, nachname: string) {
   try {
     await page.goto(`${adresse.split("?")[0]}?teil=austritt`);
     const zone = page.locator('section[aria-label="Datensatz beenden"]');
-    const feld = zone.getByLabel(/Nachnamen eingeben/);
+    const feld = zone.getByLabel(/Nachnamen .* eintippen/);
     if (await feld.isVisible()) {
       await feld.fill(nachname);
       await zone.getByRole("button", { name: "Endgültig löschen" }).click();
@@ -210,10 +210,10 @@ test.describe("Mitgliederverwaltung", () => {
     const loeschen = zone.getByRole("button", { name: "Endgültig löschen" });
     await expect(loeschen).toBeDisabled();
 
-    await zone.getByLabel(/Nachnamen eingeben/).fill("Falsch");
+    await zone.getByLabel(/Nachnamen .* eintippen/).fill("Falsch");
     await expect(loeschen).toBeDisabled();
 
-    await zone.getByLabel(/Nachnamen eingeben/).fill(nachname);
+    await zone.getByLabel(/Nachnamen .* eintippen/).fill(nachname);
     await expect(loeschen).toBeEnabled();
     await loeschen.click();
 
@@ -255,6 +255,13 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(karte.getByLabel("Vorstand")).toBeEnabled();
     await expect(karte.getByLabel("App Admin")).toBeEnabled();
     await expect(karte).not.toContainText("Braucht einen Login");
+
+    // Volle Rechte gehen nicht mit einem Klick: erst die Rückfrage (U37).
+    await karte.getByLabel("Vorstand").click();
+    const frage = karte.getByRole("group", { name: "Vorstand erteilen" });
+    await expect(frage).toContainText("bekommt volle Rechte");
+    await frage.getByRole("button", { name: "Abbrechen" }).click();
+    await expect(karte.getByLabel("Vorstand")).not.toBeChecked();
 
     await karte.getByLabel("Platzwart").check();
     await expect(karte.locator(".hinweis.erfolg")).toContainText("Platzwart vergeben");
@@ -314,7 +321,7 @@ test.describe("Mitgliederverwaltung", () => {
     const zone = page.locator('section[aria-label="Datensatz beenden"]');
     await expect(zone).toBeVisible();
     await expect(zone.locator(".hinweis.fehler")).toContainText("Löschen ist hier nicht möglich");
-    await expect(zone.getByLabel(/Nachnamen eingeben/)).toHaveCount(0);
+    await expect(zone.getByLabel(/Nachnamen .* eintippen/)).toHaveCount(0);
 
     const text = await page.locator("body").innerText();
     expect(text).not.toContain("violates");
@@ -648,6 +655,8 @@ test.describe("Mitgliederverwaltung", () => {
 
     // Sperren bleibt, und ist umkehrbar.
     await karte.getByRole("button", { name: "Zugang sperren" }).click();
+    await expect(karte.getByRole("group", { name: "Zugang sperren" })).toContainText("nicht mehr anmelden");
+    await karte.getByRole("button", { name: "Wirklich sperren" }).click();
     await expect(karte.locator(".hinweis.erfolg")).toContainText("gesperrt", { timeout: 20_000 });
     await page.reload();
     await expect(karte.locator(".marke-klein.rot")).toContainText("gesperrt");

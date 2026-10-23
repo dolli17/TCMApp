@@ -47,11 +47,12 @@ export function GefahrenzoneKarte(props: Props) {
   const [reaktivOffen, setReaktivOffen] = useState(false);
   const [anonGrund, setAnonGrund] = useState("");
   const [anonOffen, setAnonOffen] = useState(false);
+  const [anonName, setAnonName] = useState("");
   const [tippName, setTippName] = useState("");
 
   const f = props.folgen;
   const offeneForderungen = f.charges > 0;
-  const nameStimmt = tippName.trim().toLowerCase() === props.nachname.trim().toLowerCase();
+  const stimmt = (getippt: string) => getippt.trim().toLowerCase() === props.nachname.trim().toLowerCase();
 
   function archivieren(bestaetigt: boolean) {
     starte(async () => {
@@ -73,7 +74,10 @@ export function GefahrenzoneKarte(props: Props) {
     starte(async () => {
       const e = await mitgliedAnonymisieren(props.mitgliedId, anonGrund);
       setMeldung({ ok: e.ok, text: e.meldung });
-      if (e.ok) setAnonOffen(false);
+      if (e.ok) {
+        setAnonOffen(false);
+        setAnonName("");
+      }
     });
   }
 
@@ -131,41 +135,45 @@ export function GefahrenzoneKarte(props: Props) {
             </button>
           </>
         ) : props.archiviert ? (
-          <>
+          <div className="rueckfrage" role="group" aria-label="Reaktivieren bestätigen">
             <p className="hinweis">
               Das Mitglied wird wieder aktiv. Der Zugang bleibt gesperrt, bis du unter Zugang die
               Sperre aufhebst und neu einlädst. Danach geht es noch einmal durchs Onboarding und
               bestätigt seine Stammdaten. Rollen kommen nicht zurück, die Mitgliedschaft trägst du
               über „Wieder aufnehmen“ ein.
             </p>
-            <div className="detailkopf aktionen" style={{ gap: 8, marginTop: 8 }}>
+            <span className="knopfreihe">
               <button className="knopf leise klein" disabled={laeuft} onClick={() => setReaktivOffen(false)}>
                 Abbrechen
               </button>
               <button className="knopf klein" disabled={laeuft} onClick={reaktivieren}>
                 {laeuft ? "Wird reaktiviert…" : "Wirklich reaktivieren"}
               </button>
-            </div>
-          </>
+            </span>
+          </div>
         ) : !archivOffen ? (
           <button className="knopf leise klein" disabled={laeuft} onClick={() => setArchivOffen(true)}>
             Archivieren
           </button>
         ) : (
-          <>
-            <input
-              type="text"
-              value={archivGrund}
-              placeholder="Grund, z. B. Austritt zum Jahresende"
-              onChange={(e) => setArchivGrund(e.target.value)}
-            />
+          <div className="rueckfrage" role="group" aria-label="Archivieren bestätigen">
+            <label>
+              <span>Grund</span>
+              <input
+                type="text"
+                value={archivGrund}
+                autoFocus
+                placeholder="z. B. Austritt zum Jahresende"
+                onChange={(e) => setArchivGrund(e.target.value)}
+              />
+            </label>
             {offeneForderungen && (
               <p className="hinweis fehler">
                 {f.charges} Forderungen sind noch offen. Sie bleiben bestehen und müssen weiterhin
                 eingezogen werden.
               </p>
             )}
-            <div className="detailkopf aktionen" style={{ gap: 8, marginTop: 8 }}>
+            <span className="knopfreihe">
               <button className="knopf leise klein" disabled={laeuft} onClick={() => setArchivOffen(false)}>
                 Abbrechen
               </button>
@@ -176,8 +184,8 @@ export function GefahrenzoneKarte(props: Props) {
               >
                 {laeuft ? "Wird archiviert…" : "Wirklich archivieren"}
               </button>
-            </div>
-          </>
+            </span>
+          </div>
         )}
       </div>
 
@@ -195,22 +203,31 @@ export function GefahrenzoneKarte(props: Props) {
             Anonymisieren
           </button>
         ) : (
-          <>
-            <input
-              type="text"
-              value={anonGrund}
-              placeholder="Grund, z. B. Löschersuchen vom 06.08.2026"
-              onChange={(e) => setAnonGrund(e.target.value)}
-            />
-            <div className="detailkopf aktionen" style={{ gap: 8, marginTop: 8 }}>
+          <div className="rueckfrage" role="group" aria-label="Anonymisieren bestätigen">
+            <label>
+              <span>Grund</span>
+              <input
+                type="text"
+                value={anonGrund}
+                autoFocus
+                placeholder="z. B. Löschersuchen vom 06.08.2026"
+                onChange={(e) => setAnonGrund(e.target.value)}
+              />
+            </label>
+            <NachnameBestaetigen nachname={props.nachname} wert={anonName} setWert={setAnonName} />
+            <span className="knopfreihe">
               <button className="knopf leise klein" disabled={laeuft} onClick={() => setAnonOffen(false)}>
                 Abbrechen
               </button>
-              <button className="knopf gefahr klein" disabled={laeuft} onClick={anonymisieren}>
+              <button
+                className="knopf gefahr klein"
+                disabled={laeuft || !stimmt(anonName)}
+                onClick={anonymisieren}
+              >
                 {laeuft ? "Wird anonymisiert…" : "Wirklich anonymisieren"}
               </button>
-            </div>
-          </>
+            </span>
+          </div>
         )}
       </div>
 
@@ -231,25 +248,37 @@ export function GefahrenzoneKarte(props: Props) {
             anonymisieren.
           </div>
         ) : (
-          <>
-            <label>
-              <span>
-                Zur Bestätigung den Nachnamen eingeben: <strong>{props.nachname}</strong>
-              </span>
-              <input
-                type="text"
-                value={tippName}
-                autoComplete="off"
-                placeholder={props.nachname}
-                onChange={(e) => setTippName(e.target.value)}
-              />
-            </label>
-            <button className="knopf gefahr klein" disabled={laeuft || !nameStimmt} onClick={loeschen}>
-              {laeuft ? "Wird gelöscht…" : "Endgültig löschen"}
-            </button>
-          </>
+          <div className="rueckfrage">
+            <NachnameBestaetigen nachname={props.nachname} wert={tippName} setWert={setTippName} />
+            <span className="knopfreihe">
+              <button className="knopf gefahr klein" disabled={laeuft || !stimmt(tippName)} onClick={loeschen}>
+                {laeuft ? "Wird gelöscht…" : "Endgültig löschen"}
+              </button>
+            </span>
+          </div>
         )}
       </div>
     </section>
+  );
+}
+
+/**
+ * Nicht umkehrbares wird mit dem getippten Nachnamen bestätigt. Ohne
+ * Platzhalter: ein vorausgefüllt wirkendes Feld verleitet zum Durchklicken.
+ */
+function NachnameBestaetigen(props: { nachname: string; wert: string; setWert: (w: string) => void }) {
+  return (
+    <label>
+      <span>
+        Zum Bestätigen den Nachnamen <strong>{props.nachname}</strong> eintippen
+      </span>
+      <input
+        type="text"
+        value={props.wert}
+        autoComplete="off"
+        spellCheck={false}
+        onChange={(e) => props.setWert(e.target.value)}
+      />
+    </label>
   );
 }

@@ -349,6 +349,7 @@ export default async function MitgliedSeite({
 
           <ZugehoerigkeitKarte
             mitgliedId={id}
+            vorname={m.first_name}
             hatLogin={Boolean(m.auth_user_id)}
             rollen={rollen}
             istTrainer={m.is_trainer}
@@ -416,14 +417,14 @@ export default async function MitgliedSeite({
 
       {teil === "merkmale" && <Merkmale id={id} />}
 
-      {teil === "zugang" && <Zugang id={id} selbst={istSelbst} />}
+      {teil === "zugang" && <Zugang id={id} vorname={m.first_name} selbst={istSelbst} />}
 
       {teil === "protokoll" && <Protokoll id={id} />}
     </div>
   );
 }
 
-async function Zugang({ id, selbst }: { id: string; selbst: boolean }) {
+async function Zugang({ id, vorname, selbst }: { id: string; vorname: string; selbst: boolean }) {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.rpc("member_login_state", { p_member_id: id });
 
@@ -439,6 +440,7 @@ async function Zugang({ id, selbst }: { id: string; selbst: boolean }) {
   return (
     <LoginKarte
       mitgliedId={id}
+      vorname={vorname}
       zustand={zustand as LoginZustand}
       selbst={selbst}
       einladung={einladung}

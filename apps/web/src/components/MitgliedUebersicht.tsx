@@ -242,6 +242,7 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
         <Listenzeile
           href={teil("zugang")}
           titel={gesperrt ? "Sperre aufheben" : hatLogin ? "Zugang sperren" : "Zugang"}
+          gefahr={hatLogin && !gesperrt}
           pfeil={false}
         />
         <Listenzeile href={teil("austritt")} titel="Austritt eintragen" gefahr pfeil={false} />

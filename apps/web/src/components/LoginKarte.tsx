@@ -36,11 +36,13 @@ function zeitpunkt(wert: string | null): string {
  */
 export function LoginKarte({
   mitgliedId,
+  vorname,
   zustand,
   selbst,
   einladung = null,
 }: {
   mitgliedId: string;
+  vorname: string;
   zustand: LoginZustand;
   selbst: boolean;
   /** Nur bei offenem Onboarding: wo die Einladung steht. */
@@ -48,11 +50,15 @@ export function LoginKarte({
 }) {
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
+  // Sperren und Zurücksetzen wirken nach außen, deshalb mit Rückfrage.
+  // Sperre aufheben und neu einladen gehen sofort.
+  const [frage, setFrage] = useState<"sperren" | "zuruecksetzen" | null>(null);
 
   function fuehreAus(aktion: LoginAktion) {
     starte(async () => {
       const e = await loginVerwalten(mitgliedId, aktion);
       setMeldung({ ok: e.ok, text: e.meldung });
+      setFrage(null);
     });
   }
 
@@ -112,32 +118,61 @@ export function LoginKarte({
         {zustand.grund && <p className="hinweis">{zustand.grund}</p>}
       </div>
 
-      {zustand.hat_zugang && (
+      {zustand.hat_zugang && frage === null && (
         <div className="detailkopf aktionen">
           {einladung && !gesperrt && (
             <button className="knopf" disabled={laeuft} onClick={() => fuehreAus("einladung_erneut")}>
               Einladung erneut senden
             </button>
           )}
-          <button
-            className="knopf leise"
-            disabled={laeuft}
-            onClick={() => fuehreAus("passwort_zuruecksetzen")}
-          >
+          <button className="knopf leise" disabled={laeuft} onClick={() => setFrage("zuruecksetzen")}>
             Passwort zurücksetzen lassen
           </button>
 
           {selbst ? (
             <span className="beschreibung">Den eigenen Zugang kannst du hier nicht sperren.</span>
+          ) : gesperrt ? (
+            <button className="knopf leise" disabled={laeuft} onClick={() => fuehreAus("login_aktivieren")}>
+              Sperre aufheben
+            </button>
           ) : (
-            <button
-              className="knopf leise"
-              disabled={laeuft}
-              onClick={() => fuehreAus(gesperrt ? "login_aktivieren" : "login_deaktivieren")}
-            >
-              {gesperrt ? "Sperre aufheben" : "Zugang sperren"}
+            <button className="knopf gefahr-leise" disabled={laeuft} onClick={() => setFrage("sperren")}>
+              Zugang sperren
             </button>
           )}
+        </div>
+      )}
+
+      {frage === "zuruecksetzen" && (
+        <div className="hinweis rueckfrage" role="group" aria-label="Passwort zurücksetzen">
+          <span>
+            Mail mit Link an <strong>{zustand.email ?? "die hinterlegte Adresse"}</strong> senden?
+          </span>
+          <span className="knopfreihe">
+            <button className="knopf leise klein" disabled={laeuft} onClick={() => setFrage(null)} autoFocus>
+              Abbrechen
+            </button>
+            <button className="knopf klein" disabled={laeuft} onClick={() => fuehreAus("passwort_zuruecksetzen")}>
+              {laeuft ? "Wird gesendet…" : "Mail senden"}
+            </button>
+          </span>
+        </div>
+      )}
+
+      {frage === "sperren" && (
+        <div className="hinweis fehler rueckfrage" role="group" aria-label="Zugang sperren">
+          <span>
+            {vorname} kann sich danach nicht mehr anmelden, auch nicht in der App. Lässt sich wieder
+            aufheben.
+          </span>
+          <span className="knopfreihe">
+            <button className="knopf leise klein" disabled={laeuft} onClick={() => setFrage(null)} autoFocus>
+              Abbrechen
+            </button>
+            <button className="knopf gefahr klein" disabled={laeuft} onClick={() => fuehreAus("login_deaktivieren")}>
+              {laeuft ? "Wird gesperrt…" : "Wirklich sperren"}
+            </button>
+          </span>
         </div>
       )}
 
