@@ -238,9 +238,10 @@ export default function Getraenke() {
                       </Text>
                     </>
                   )}
+                  {/* Gelb erst, wenn schon etwas gesammelt ist (U43). */}
                   <Rundknopf
                     zeichen="plus"
-                    gelb
+                    gelb={menge > 0}
                     beschriftung={`${a.name}: eins mehr`}
                     deaktiviert={laeuft || menge >= MAX_DRINK_QUANTITY}
                     onPress={() => aendern(a.id, 1)}

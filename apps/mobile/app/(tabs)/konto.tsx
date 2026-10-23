@@ -146,7 +146,7 @@ export default function Konto() {
           <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 6, marginTop: 10 }}>
             {mitgliedschaft && <Marke>Mitglied seit {mitgliedschaft.seit.slice(0, 4)}</Marke>}
             {mannschaft && <Marke>{mannschaft.name}</Marke>}
-            {mannschaft?.mannschaftsfuehrer && <Marke gelb>Mannschaftsführer</Marke>}
+            {mannschaft?.mannschaftsfuehrer && <Marke>Mannschaftsführer</Marke>}
           </View>
           {d?.stammdaten.fehler && (
             <View style={{ marginTop: 10, alignSelf: "stretch" }}>
@@ -269,11 +269,6 @@ export default function Konto() {
           )}
           <Verweis
             erste={!DATENSCHUTZ}
-            titel={KONTOLOESCHUNG_TEXT.titel}
-            knopf
-            onPress={() => setBlatt("loeschen")}
-          />
-          <Verweis
             titel="Abmelden"
             rot
             onPress={() =>
@@ -288,6 +283,13 @@ export default function Konto() {
             }
           />
         </Gruppe>
+
+        {/* --- Kuendigung: abgesetzt, damit niemand sie beim Abmelden streift (U44) */}
+        <View style={{ marginTop: abstand.abschnitt - abstand.m }}>
+          <Gruppe>
+            <Verweis erste titel={KONTOLOESCHUNG_TEXT.titel} knopf pfeil onPress={() => setBlatt("loeschen")} />
+          </Gruppe>
+        </View>
       </Bildschirm>
 
       {/* --- Die Blaetter ---------------------------------------------------- */}
@@ -442,11 +444,11 @@ function Betrag({ children }: { children: ReactNode }) {
   );
 }
 
-function Marke({ children, gelb }: { children: ReactNode; gelb?: boolean }) {
+function Marke({ children }: { children: ReactNode }) {
   const { farben } = useTheme();
   return (
-    <View style={{ minHeight: 26, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 13, justifyContent: "center", backgroundColor: gelb ? farben.goldSoft : farben.surf2 }}>
-      <Text style={{ fontSize: 12.5, fontFamily: "Barlow_600SemiBold", color: gelb ? farben.goldInk : farben.ink2 }}>{children}</Text>
+    <View style={{ minHeight: 26, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 13, justifyContent: "center", backgroundColor: farben.surf2 }}>
+      <Text style={{ fontSize: 12.5, fontFamily: "Barlow_600SemiBold", color: farben.ink2 }}>{children}</Text>
     </View>
   );
 }
@@ -503,22 +505,28 @@ function Eintrag({ titel, symbol, onPress, erste }: { titel: string; symbol: str
 
 /** Ein Verweis ins Web ist ein Link; was ein Blatt oeffnet oder etwas tut, ein Knopf. */
 function Verweis({
-  titel, onPress, rot, erste, knopf,
-}: { titel: string; onPress: () => void; rot?: boolean; erste?: boolean; knopf?: boolean }) {
+  titel, onPress, rot, erste, knopf, pfeil,
+}: { titel: string; onPress: () => void; rot?: boolean; erste?: boolean; knopf?: boolean; pfeil?: boolean }) {
   const { farben } = useTheme();
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole={rot || knopf ? "button" : "link"}
       style={({ pressed }) => ({
-        minHeight: 52, justifyContent: "center", paddingHorizontal: 16,
+        flexDirection: "row", alignItems: "center", gap: 12,
+        minHeight: pfeil ? 56 : 52, paddingHorizontal: 16,
         borderTopWidth: erste ? 0 : 1, borderTopColor: farben.line,
         backgroundColor: pressed ? mitDeckkraft(farben.ink, 0.04) : "transparent",
       })}
     >
-      <Text style={{ fontSize: 15.5, fontFamily: rot ? "Barlow_700Bold" : "Barlow_600SemiBold", color: rot ? farben.redInk : farben.ink }}>
+      <Text style={{ flex: 1, fontSize: 15.5, fontFamily: rot ? "Barlow_700Bold" : "Barlow_600SemiBold", color: rot ? farben.redInk : farben.ink }}>
         {titel}
       </Text>
+      {pfeil && (
+        <Svg width={16} height={16} viewBox="0 0 24 24">
+          <Path d="M9 6l6 6-6 6" stroke={farben.muted} strokeWidth={2.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+      )}
     </Pressable>
   );
 }

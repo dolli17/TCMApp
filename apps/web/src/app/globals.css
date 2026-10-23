@@ -99,11 +99,12 @@ a:hover { text-decoration: underline; }
 }
 
 /* --- Schwebende Leiste: nur am Telefon ------------------------------------
-   Pille ueber dem Inhalt, rechts daneben der runde Buchen-Knopf - dieselbe
-   Leiste wie in der App (docs/design/clubhaus, Abschnitt 4). */
+   Pille ueber dem Inhalt - dieselbe Leiste wie in der App
+   (docs/design/clubhaus, Abschnitt 4). Den runden Buchen-Knopf daneben gibt
+   es nicht mehr (U43); gebucht wird ueber Plaetze und die Kachel auf Home. */
 .schwebeleiste {
   position: fixed; z-index: 20;
-  left: 16px; right: 92px; bottom: calc(26px + env(safe-area-inset-bottom));
+  left: 16px; right: 16px; bottom: calc(26px + env(safe-area-inset-bottom));
   height: 64px; border-radius: 32px; padding: 0 6px;
   display: flex; align-items: center; gap: 2px;
   background: var(--glass); border: 1px solid var(--glass-line);
@@ -127,17 +128,6 @@ a:hover { text-decoration: underline; }
 .schwebeleiste a[aria-current="page"] { background: var(--tab-aktiv); color: var(--tab-aktiv-ink); }
 .schwebeleiste a:hover { text-decoration: none; }
 .schwebeleiste svg { width: 22px; height: 22px; flex: 0 0 auto; }
-
-.buchknopf {
-  position: fixed; z-index: 20;
-  right: 16px; bottom: calc(26px + env(safe-area-inset-bottom));
-  width: 64px; height: 64px; border-radius: 32px;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--gold); color: var(--on-gold);
-  box-shadow: 0 10px 28px color-mix(in srgb, var(--gold) 35%, transparent);
-}
-.buchknopf:hover { text-decoration: none; filter: brightness(.96); }
-.buchknopf svg { width: 26px; height: 26px; }
 
 /* --- Kopf jeder Seite: Glocke und (am Telefon) Avatar ---------------------- */
 .seitenkopf {
@@ -510,7 +500,7 @@ table.liste .zahl {
   /* Die Nutzerkarte zeigt den Avatar schon - im Seitenkopf bleibt die Glocke. */
   .seitenkopf .avatar { display: none; }
 
-  .schwebeleiste, .buchknopf { display: none; }
+  .schwebeleiste { display: none; }
   .inhalt { padding: 24px 32px 48px; }
 
   .pagetitle { font-size: 42px; }
@@ -1470,8 +1460,9 @@ li.chip { padding-right: 4px; }
   border-color: var(--rahmen); background: var(--surf);
 }
 .auth.immer-dunkel .sheet a { color: var(--ink-2); font-weight: 600; }
+/* Ohne Schatten: im Dunkeln traegt die Flaeche, ein Goldschein waere Deko. */
 .auth.immer-dunkel .sheet .knopf.block:not(.leise) {
-  background: var(--gold); color: var(--on-gold); box-shadow: 0 10px 28px color-mix(in srgb, var(--gold) 30%, transparent);
+  background: var(--gold); color: var(--on-gold); box-shadow: none;
   min-height: 58px; border-radius: 18px; font-family: var(--font-text); font-size: 17px; font-weight: 800;
 }
 .auth.immer-dunkel .sheet .knopf.block.leise { min-height: 52px; border-radius: 16px; }
@@ -1508,6 +1499,7 @@ li.chip { padding-right: 4px; }
 .gruppen-zeile:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
 .gruppen-zeile.rot { color: var(--red-ink); font-weight: 700; }
 .gruppen-zeile.eintrag { min-height: 56px; }
+.gruppe.getrennt { margin-top: 28px; }
 .gruppen-zeile .titel { flex: 1; }
 .gruppen-zeile .pfeil { color: var(--muted); font-size: 20px; line-height: 1; }
 .symbolkachel {
@@ -1603,7 +1595,6 @@ li.chip { padding-right: 4px; }
   height: 26px; padding: 0 10px; border-radius: 13px; display: inline-flex; align-items: center;
   background: var(--surf-2); color: var(--ink-2); font-size: 12.5px; font-weight: 600;
 }
-.profil-marken span.gelb { background: var(--gold-soft); color: var(--gold-ink); }
 
 .forderung { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; }
 .forderung .was { min-width: 0; display: grid; justify-items: start; gap: 4px; }
@@ -2084,9 +2075,10 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .kiosk-eintragen .zusammen span { font-size: 17px; font-weight: 700; }
 .kiosk-eintragen .zusammen b { font-size: 30px; }
 .kiosk-eintragen .hinweis { margin: 4px 0; }
+/* Der neutrale Kartenschatten der hellen Spalte statt eines Goldscheins. */
 .kiosk-los {
   margin-top: auto; min-height: 76px; border-radius: 22px; font-size: 21px; font-weight: 800;
-  box-shadow: 0 10px 28px color-mix(in srgb, var(--gold) 35%, transparent);
+  box-shadow: var(--shadow);
 }
 .kiosk-los:disabled { box-shadow: none; }
 .kiosk-eintragen .fussnote { margin-top: 8px; }

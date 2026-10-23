@@ -1,11 +1,12 @@
 /**
  * Die schwebende Tab-Leiste
  *
- * Eine Pille ueber dem Inhalt statt der festen Leiste am unteren Rand, rechts
- * daneben der runde gelbe Knopf "Platz buchen" (docs/design/clubhaus,
- * Abschnitt 4). Sie wird ueber die tabBar-Prop von <Tabs> eingesetzt. Der
- * Knopf oeffnet das Buchungsblatt mit der naechsten freien Zeit
- * (plaetze/index.tsx, ?buchen=jetzt).
+ * Eine Pille ueber dem Inhalt statt der festen Leiste am unteren Rand
+ * (docs/design/clubhaus, Abschnitt 4). Sie wird ueber die tabBar-Prop von
+ * <Tabs> eingesetzt. Den runden gelben Knopf "Platz buchen" daneben gibt es
+ * nicht mehr (U43): auf Getraenke hiess "+" dort eins mehr, und Gelb gehoert
+ * der einen Hauptaktion des Screens. Gebucht wird ueber den Tab Plaetze und
+ * die Kachel auf Start.
  *
  * Die Eintraege kommen aus den Tabs.Screen-Angaben (title, tabBarLabel,
  * tabBarIcon), nicht aus einer eigenen Liste: ein weiterer Tab braucht nur
@@ -25,8 +26,7 @@
 import type { ComponentProps } from "react";
 import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { BlurView } from "expo-blur";
-import { router, type Tabs } from "expo-router";
-import Svg, { Path } from "react-native-svg";
+import type { Tabs } from "expo-router";
 import { schattenRn } from "@tcm/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LEISTE_ABSTAND_UNTEN, LEISTE_HOEHE, LEISTE_RAND } from "@/lib/masse";
@@ -120,27 +120,6 @@ export function SchwebendeLeiste({ state, descriptors, navigation }: LeistenEige
           );
         })}
       </View>
-
-      <Pressable
-        onPress={() => router.navigate({ pathname: "/plaetze", params: { buchen: "jetzt" } })}
-        accessibilityRole="button"
-        accessibilityLabel="Platz buchen"
-        style={({ pressed }) => [
-          stile.buchen,
-          { backgroundColor: farben.gold, shadowColor: farben.gold },
-          pressed && { opacity: 0.85 },
-        ]}
-      >
-        <Svg width={26} height={26} viewBox="0 0 24 24">
-          <Path
-            d="M12 5v14M5 12h14"
-            stroke={farben.onGold}
-            strokeWidth={2.4}
-            strokeLinecap="round"
-            fill="none"
-          />
-        </Svg>
-      </Pressable>
     </View>
   );
 }
@@ -150,7 +129,6 @@ const stile = StyleSheet.create({
     position: "absolute",
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
   },
   pille: {
     flex: 1,
@@ -179,15 +157,4 @@ const stile = StyleSheet.create({
   tabSchmal: { paddingHorizontal: 2 },
   tabText: { fontSize: 11, fontFamily: "Barlow_600SemiBold" },
   tabTextSchmal: { fontSize: 10 },
-  buchen: {
-    width: LEISTE_HOEHE,
-    height: LEISTE_HOEHE,
-    borderRadius: LEISTE_HOEHE / 2,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    elevation: 10,
-  },
 });

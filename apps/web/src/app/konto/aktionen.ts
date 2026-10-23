@@ -138,7 +138,7 @@ export async function notfallkontaktSpeichern(formData: FormData): Promise<Aktio
 }
 
 /**
- * Konto löschen beantragen (O9). Gelöscht wird hier nichts: die RPC meldet
+ * Mitgliedschaft kündigen beantragen (O9, U44). Gelöscht wird hier nichts: die RPC meldet
  * den Antrag an Vorstand und Admins. false heißt, aus den letzten 24 Stunden
  * liegt schon einer vor - für das Mitglied kein Fehler. Dieselbe Logik wie in
  * der App (apps/mobile/src/lib/daten.ts, beantrageKontoloeschung).

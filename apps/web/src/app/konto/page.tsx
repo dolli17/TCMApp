@@ -89,7 +89,7 @@ export default async function KontoSeite() {
         <p className="profil-marken">
           {seit && <span>Mitglied seit {seit}</span>}
           {ich?.teams && <span>{ich.teams.name}</span>}
-          {ich?.teams && ich.is_team_captain && <span className="gelb">Mannschaftsführer</span>}
+          {ich?.teams && ich.is_team_captain && <span>Mannschaftsführer</span>}
         </p>
       </header>
 
@@ -238,8 +238,15 @@ export default async function KontoSeite() {
           <div className="gruppe">
             <Link href="/datenschutz" className="gruppen-zeile">Datenschutz</Link>
             <Link href="/impressum" className="gruppen-zeile">Impressum</Link>
-            <Link href="/konto/loeschen" className="gruppen-zeile">{KONTOLOESCHUNG_TEXT.titel}</Link>
             <AbmeldeKnopf alsZeile />
+          </div>
+
+          {/* Abgesetzt, damit niemand sie beim Abmelden streift (U44). */}
+          <div className="gruppe getrennt">
+            <Link href="/konto/loeschen" className="gruppen-zeile eintrag">
+              <span className="titel">{KONTOLOESCHUNG_TEXT.titel}</span>
+              <span className="pfeil" aria-hidden="true">›</span>
+            </Link>
           </div>
         </div>
       </div>

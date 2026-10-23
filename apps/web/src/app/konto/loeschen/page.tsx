@@ -5,7 +5,7 @@ import { kontoloeschungBeantragen } from "../aktionen";
 
 export const dynamic = "force-dynamic";
 
-/** Konto löschen beantragen (O9) - dieselben Sätze wie im Konto-Tab der App. */
+/** Mitgliedschaft kündigen beantragen (O9, U44) - dieselben Sätze wie im Konto-Tab der App. */
 export default function KontoLoeschenSeite() {
   return (
     <KontoUnterseite titel={KONTOLOESCHUNG_TEXT.titel}>

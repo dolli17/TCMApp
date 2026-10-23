@@ -291,7 +291,7 @@ export default function Plan() {
   );
 
   /**
-   * Der gelbe "+"-Knopf und "Platz buchen" auf Home kommen mit ?buchen=jetzt
+   * "Platz buchen" auf Home (Kachel und Leerkarte) kommt mit ?buchen=jetzt
    * hierher: das Blatt geht mit der naechsten freien Zeit auf - heute, auf
    * dem ersten Platz aus freeCourtsNow.
    */

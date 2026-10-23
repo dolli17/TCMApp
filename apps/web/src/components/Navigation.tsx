@@ -122,18 +122,13 @@ export function Seitenmenue({
 }
 
 /**
- * Schwebende Leiste unter 768 px, rechts daneben der runde Buchen-Knopf.
- * Die Haupteintraege wie in der App, fuer Admins dazu der Tab "Verwaltung".
+ * Schwebende Leiste unter 768 px. Die Haupteintraege wie in der App, fuer
+ * Admins dazu der Tab "Verwaltung". Ohne runden Buchen-Knopf (U43).
  */
 export function Fussmenue({ eintraege }: { eintraege: NavEintrag[] }) {
   return (
-    <>
-      <nav className="schwebeleiste" aria-label="Hauptmenü">
-        <Eintraege eintraege={eintraege} kurz />
-      </nav>
-      <Link href="/plan" className="buchknopf" aria-label="Platz buchen">
-        <Symbol name="plus" />
-      </Link>
-    </>
+    <nav className="schwebeleiste" aria-label="Hauptmenü">
+      <Eintraege eintraege={eintraege} kurz />
+    </nav>
   );
 }
