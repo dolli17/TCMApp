@@ -972,7 +972,9 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
   background: var(--seg-aktiv); color: var(--ink); font-weight: 700; box-shadow: var(--shadow-sm);
 }
 
-.plan-raster { display: none; }
+/* Vergangene Zeit trägt den Seitengrund: in beiden Themes dunkler als die
+   Rasterfläche, also zurückgenommen statt frei. */
+.plan-raster { display: none; --vorbei: var(--bg); }
 .plan-listen { display: flex; flex-direction: column; gap: 12px; }
 
 /* --- Übersicht und Freie Zeiten (Telefon, docs/design/clubhaus/plaetze) ---- */
@@ -1156,7 +1158,13 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 .raster-oben .legende { font-size: 13px; font-weight: 600; gap: 8px 18px; }
 .raster-oben .legende i { width: 20px; height: 12px; }
 .raster-oben .legende i.belegt { background: var(--blue-soft); }
-.raster-hinweis { font-size: 13px; color: var(--muted); }
+.raster-oben .legende i.frei {
+  border: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--muted);
+}
+.raster-oben .legende i.frei .plus { width: 10px; height: 10px; }
+.raster-oben .legende i.vorbei { background: var(--vorbei); }
+/* Die Bedienanleitung steht unter dem Titel; das Telefon hat eigene Listen. */
+.plan-hinweis { display: none; margin: 6px 0 0; max-width: 62ch; font-size: 14px; color: var(--ink-2); }
 
 .raster {
   background: var(--surf); border: 1px solid var(--line); border-radius: 24px;
@@ -1208,12 +1216,26 @@ button.beleg:hover, button.beleg:focus-visible {
   background: var(--gold); color: var(--on-gold); font-size: 10.5px; font-weight: 700;
 }
 
-/* Freie Zeit: unsichtbare Schaltfläche je Startzeit; beim Überfahren und beim
-   Tastatur-Fokus erscheint der gestrichelte Block "+ HH:MM buchen" über die
+/* Vergangene Zeit heute: eine ruhige, flache Tönung über die ganze Breite,
+   unter Spalten und Blöcken. Kantig und ohne Schraffur, damit sie weder wie Training
+   noch wie eine Sperrung aussieht. */
+.vorbei-flaeche {
+  position: absolute; left: 64px; right: 0; top: 0; z-index: 0; pointer-events: none;
+  background: var(--vorbei); border-bottom: 1px solid var(--line-2);
+}
+
+/* Freie Zeit: Schaltfläche je Startzeit mit einem feinen Plus, damit buchbare
+   Zeiten auch ohne Maus zu sehen sind. Beim Überfahren, beim Tastatur-Fokus
+   und beim Antippen erscheint der gestrichelte Block "+ HH:MM buchen" über die
    volle Spieldauer. */
 .frei-slot {
   position: absolute; left: 0; right: 0; z-index: 1;
   padding: 0; border: 0; background: transparent; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.frei-slot .plus {
+  position: absolute; left: 50%; top: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px;
+  color: var(--muted); opacity: .5; pointer-events: none;
 }
 .frei-slot:focus-visible { outline: none; }
 .frei-slot .vorschau {
@@ -1226,6 +1248,11 @@ button.beleg:hover, button.beleg:focus-visible {
 .frei-slot:hover, .frei-slot:focus-visible { z-index: 4; }
 .frei-slot:hover .vorschau, .frei-slot:focus-visible .vorschau { display: flex; }
 .frei-slot:focus-visible .vorschau { outline: 2px solid var(--blue); outline-offset: 1px; }
+/* Ohne Maus gibt es kein Überfahren: der Block zeigt sich beim Antippen. */
+@media (hover: none) {
+  .frei-slot:active { z-index: 4; }
+  .frei-slot:active .vorschau { display: flex; }
+}
 
 .jetzt-linie {
   position: absolute; left: 58px; right: 0; height: 2px; z-index: 5;
@@ -1376,6 +1403,7 @@ li.chip { padding-right: 4px; }
   /* Ab Tablet das Raster statt der Liste */
   .plan-listen { display: none; }
   .plan-raster { display: block; }
+  .plan-hinweis { display: block; }
 
   .datums-kacheln a { width: 54px; height: 62px; border-radius: 16px; background: var(--surf); border: 1px solid var(--line); }
   .datums-kacheln a[aria-current="date"] { border-color: transparent; }
@@ -1962,6 +1990,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   border: 0; padding: 0; height: 100%; background: transparent; box-shadow: none !important;
   font-size: 20px; font-weight: 600; color: var(--ink);
 }
+/* Eigene Farbe statt der Browser-Vorgabe, die auf surf-2 nur 3,4:1 hielt. */
+.kiosk-suche input::placeholder { color: var(--muted); opacity: 1; }
 .kiosk-treffer { flex: 1; min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 10px; }
 .kiosk-treffer button {
   height: 72px; display: flex; align-items: center; gap: 14px; padding: 0 14px; cursor: pointer;
@@ -1985,36 +2015,52 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 
 /* 2 Was? */
 .kiosk-was { min-height: 0; display: flex; flex-direction: column; gap: 14px; padding-top: 22px; }
+/* Alle Artikel auf einen Blick: die Zeilen teilen sich die Höhe (--zeilen
+   setzt die Oberfläche, mindestens drei). Erst unter 88 px Zeilenhöhe wird
+   gescrollt, dann zeigt .kiosk-mehr, wie viele darunter liegen. */
+.kiosk-kachelrahmen { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .kiosk-kacheln {
+  --luecke: 10px;
   flex: 1; min-height: 0; list-style: none; margin: 0; padding: 0; overflow-y: auto;
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: minmax(max(96px, calc((100% - 28px) / 3)), auto); gap: 14px;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--luecke);
+  grid-auto-rows: minmax(max(88px, calc((100% - (var(--zeilen) - 1) * var(--luecke)) / var(--zeilen))), auto);
 }
 .kiosk-kacheln li { position: relative; }
 .kiosk-kacheln .kachel-knopf {
-  width: 100%; height: 100%; min-height: 96px; cursor: pointer; touch-action: manipulation;
-  display: flex; flex-direction: column; justify-content: space-between; gap: 8px;
-  padding: 18px 20px; border-radius: 24px; text-align: left; font: inherit; color: var(--ink);
+  width: 100%; height: 100%; min-height: 88px; cursor: pointer; touch-action: manipulation;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 4px;
+  padding: 12px 16px 14px; border-radius: 20px; text-align: left; font: inherit; color: var(--ink);
   border: 1px solid var(--line); background: var(--surf);
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
 }
 .kiosk-kacheln li.an .kachel-knopf { border: 2px solid var(--gold); background: var(--surf-2); }
-.kiosk-kacheln .name { font-size: 22px; font-weight: 700; }
-.kiosk-kacheln li.an .name { padding-right: 72px; }
-.kiosk-kacheln .preis { font-size: 16px; color: var(--ink-2); }
+.kiosk-kacheln .name { font-size: 20px; font-weight: 700; line-height: 1.15; }
+.kiosk-kacheln .preis { font-size: 18px; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+/* Gewählt: Anzahl und "eins weniger" unten rechts nebeneinander, der Name behält die volle Breite. */
 .kiosk-kacheln .zahl {
-  position: absolute; right: 16px; top: 50%; margin-top: -28px; pointer-events: none;
-  width: 56px; height: 56px; border-radius: 28px;
+  position: absolute; right: 66px; bottom: 10px; pointer-events: none;
+  width: 48px; height: 48px; border-radius: 24px;
   display: flex; align-items: center; justify-content: center;
-  background: var(--gold); color: var(--on-gold); font-size: 30px; font-weight: 700;
+  background: var(--gold); color: var(--on-gold); font-size: 26px; font-weight: 700;
 }
 .kiosk-kacheln .weniger {
-  position: absolute; right: 14px; bottom: 12px; width: 48px; height: 48px; border-radius: 24px; cursor: pointer;
+  position: absolute; right: 10px; bottom: 10px; width: 48px; height: 48px; border-radius: 24px; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
   border: 1px solid var(--line-2); background: var(--surf); color: var(--ink);
 }
 .kiosk-kacheln .weniger svg { width: 20px; height: 20px; }
-.kiosk-kacheln li.an .zahl { top: 16px; margin-top: 0; }
+.kiosk-mehr {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 0 6px; pointer-events: none;
+  display: flex; justify-content: center;
+  background: linear-gradient(to bottom, transparent, var(--bg) 70%);
+}
+.kiosk-mehr button {
+  pointer-events: auto; min-height: 48px; padding: 0 20px; border-radius: 24px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line-2); background: var(--surf-2); color: var(--ink);
+  font: inherit; font-size: 16px; font-weight: 700; box-shadow: var(--shadow-sm);
+}
+.kiosk-mehr svg { width: 20px; height: 20px; }
 
 /* 3 Eintragen: die helle Spalte */
 .kiosk-eintragen {

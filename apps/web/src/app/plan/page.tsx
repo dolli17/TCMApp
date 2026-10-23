@@ -108,6 +108,7 @@ export default async function PlanSeite({
   // Adresse erreicht) kommt dazu, damit die Auswahl sichtbar bleibt.
   const tage = Array.from({ length: einstellungen.lead_days + 1 }, (_, i) => verschiebe(heute, i));
   if (!tage.includes(datum)) tage.unshift(datum);
+  const dauer = artenRes.data?.[0]?.duration_minutes ?? 60;
   const anzahlPlaetze = plaetzeRes.data?.length ?? 0;
   const oeffnet = String(einstellungen.opening_time).slice(0, 2);
   const schliesst = String(einstellungen.closing_time).slice(0, 2);
@@ -120,6 +121,11 @@ export default async function PlanSeite({
             {anzahlPlaetze} Plätze · {oeffnet} bis {schliesst} Uhr
           </div>
           <h1 className="pagetitle">Plätze</h1>
+          {/* Nur über dem Raster ab Tablet; das Telefon führt mit eigenen Listen. */}
+          <p className="plan-hinweis">
+            Zum Buchen eine freie Zeit (+) antippen oder anklicken · {dauer} Minuten, Start zur
+            vollen oder halben Stunde
+          </p>
         </div>
         <nav className="datums-kacheln" aria-label="Tag wählen">
           {tage.map((t) => {
@@ -179,7 +185,7 @@ export default async function PlanSeite({
         schluss={String(einstellungen.closing_time).slice(0, 5)}
         rasterMinuten={einstellungen.slot_minutes}
         anzeigeMinuten={einstellungen.display_minutes}
-        dauerMinuten={artenRes.data?.[0]?.duration_minutes ?? 60}
+        dauerMinuten={dauer}
         vorlaufTage={einstellungen.lead_days}
         kontingentFrei={unbegrenzt ? null : Math.max(erlaubt - belegt, 0)}
         gastgebuehrCents={einstellungen.guest_fee_cents ?? 0}
