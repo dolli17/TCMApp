@@ -8,6 +8,12 @@
  *
  * Die Zeilen rechnet @tcm/core (freeSlotsOfDay, also courtStatusAt und
  * canStartAt).
+ *
+ * Grosse Systemschrift (U52): die Uhrzeit hat nur eine Mindestbreite, sonst
+ * liefe "12:00" in 22 pt mal 1,35 aus ihren 64 Pixeln in die Kaestchen. Ab
+ * GROSSE_SCHRIFT_AB fallen die Kaestchen weg und es bleibt "n frei" - acht
+ * Kaestchen neben einer grossen Uhrzeit passen auf kein Telefon, und welcher
+ * Platz frei ist, steht ohnehin in der aufgeklappten Zeile.
  */
 
 import { useState } from "react";
@@ -16,6 +22,7 @@ import Svg, { Path } from "react-native-svg";
 import { freeSlotsOfDay, minutesOf, type CourtStatusKind } from "@tcm/core";
 import { Leerzustand } from "@/components/Leerzustand";
 import { alsUhrzeit, type Belegung } from "@/lib/plan";
+import { useGrosseSchrift } from "@/lib/schrift";
 import { useTheme } from "@/lib/theme";
 import { platzNummer, useJetzt, type Platz } from "./PlatzRaster";
 
@@ -43,6 +50,7 @@ export function FreieZeiten({
 }) {
   const { farben } = useTheme();
   const jetzt = useJetzt();
+  const gross = useGrosseSchrift();
   const [offen, setOffen] = useState<number | null>(null);
 
   const zeilen = freeSlotsOfDay({
@@ -86,15 +94,18 @@ export function FreieZeiten({
           borderBottomWidth: 1, borderBottomColor: farben.line,
         }}
       >
-        <Text style={[kopfStil(farben.muted), { width: 64 }]}>BEGINN</Text>
-        <View style={{ flexDirection: "row", gap: 4 }}>
-          {plaetze.map((p) => (
-            <Text key={p.id} style={[kopfStil(farben.muted), { width: 18, textAlign: "center", letterSpacing: 0 }]}>
-              {platzNummer(p)}
-            </Text>
-          ))}
-        </View>
-        <Text style={[kopfStil(farben.muted), { marginLeft: "auto" }]}>PLATZ</Text>
+        <Text style={[kopfStil(farben.muted), { minWidth: 64 }]}>BEGINN</Text>
+        {!gross && (
+          <View style={{ flexDirection: "row", gap: 4 }}>
+            {plaetze.map((p) => (
+              // Die Nummer bleibt ueber ihrem 18 Pixel breiten Kaestchen
+              <Text key={p.id} maxFontSizeMultiplier={1} style={[kopfStil(farben.muted), { width: 18, textAlign: "center", letterSpacing: 0 }]}>
+                {platzNummer(p)}
+              </Text>
+            ))}
+          </View>
+        )}
+        <Text style={[kopfStil(farben.muted), { marginLeft: "auto" }]}>FREI</Text>
       </View>
 
       {zeilen.map((z, i) => {
@@ -137,21 +148,23 @@ export function FreieZeiten({
             >
               <Text
                 style={{
-                  width: 64, fontSize: 22, fontFamily: "BarlowSemiCondensed_700Bold",
+                  minWidth: 64, paddingRight: 8, fontSize: 22, fontFamily: "BarlowSemiCondensed_700Bold",
                   color: farben.ink, fontVariant: ["tabular-nums"],
                 }}
               >
                 {alsUhrzeit(z.minute)}
               </Text>
-              <View
-                style={{ flexDirection: "row", gap: 4 }}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-              >
-                {z.courts.map((c) => (
-                  <View key={c.courtId} style={[{ width: 18, height: 24, borderRadius: 5 }, kaestchen(c.status.art)]} />
-                ))}
-              </View>
+              {!gross && (
+                <View
+                  style={{ flexDirection: "row", gap: 4 }}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                >
+                  {z.courts.map((c) => (
+                    <View key={c.courtId} style={[{ width: 18, height: 24, borderRadius: 5 }, kaestchen(c.status.art)]} />
+                  ))}
+                </View>
+              )}
               <Text
                 style={{
                   marginLeft: "auto", fontSize: 14, fontFamily: "Barlow_700Bold",
@@ -268,9 +281,10 @@ function kopfStil(farbe: string) {
   return { fontSize: 11, letterSpacing: 1.1, fontFamily: "Barlow_700Bold", color: farbe } as const;
 }
 
-/** Die Legende als eine Zeile unter der Karte. */
+/** Die Legende als eine Zeile unter der Karte; ohne Kaestchen (grosse Schrift) entfaellt sie. */
 export function FreieZeitenLegende() {
   const { farben } = useTheme();
+  const gross = useGrosseSchrift();
   // Jedes Kaestchen mit Rand wie im Web: blueSoft, surf3 und goldSoft allein
   // liegen unter 3:1 zum Grund (U29).
   const eintraege: { name: string; box: object }[] = [
@@ -279,6 +293,7 @@ export function FreieZeitenLegende() {
     { name: "sucht Mitspieler", box: { backgroundColor: farben.goldSoft, borderStyle: "dashed", borderColor: farben.goldInk } },
     { name: "du", box: { backgroundColor: farben.gold } },
   ];
+  if (gross) return null;
   return (
     <View
       style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 16, rowGap: 6 }}

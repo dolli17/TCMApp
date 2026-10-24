@@ -3,7 +3,6 @@ import { AppState, Pressable, ScrollView, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import Svg, { Path, Rect } from "react-native-svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { berlinTime, occupancyKind } from "@tcm/core";
 import { abstand, radius, schattenRn } from "@tcm/ui";
 import { supabase } from "@/lib/supabase";
@@ -19,11 +18,12 @@ import {
   type Belegung, type Blockungsart, type Buchungsart, type Fenster, type Mitglied,
 } from "@/lib/plan";
 import { Bildschirm } from "@/components/Bildschirm";
+import { PlaetzeReiter } from "@/components/Bereichsreiter";
+import { GrosserKopf } from "@/components/GrosserKopf";
 import { Toast, type Meldung } from "@/components/Toast";
 import { BuchungsFenster } from "@/components/BuchungsFenster";
 import { FreieZeiten, FreieZeitenLegende } from "@/components/plaetze/FreieZeiten";
 import { PlatzRaster, RasterLegende, type Auswahl } from "@/components/plaetze/PlatzRaster";
-import { LEISTE_ABSTAND_UNTEN, LEISTE_HOEHE, LEISTE_RAND } from "@/lib/masse";
 import { mitDeckkraft } from "@/lib/stil";
 
 const heuteInBerlin = () =>
@@ -45,7 +45,7 @@ function lesbar(datum: string): string {
 /**
  * Fuer die Tageszeile: "Heute, 13.10.", "Morgen, 14.10." oder
  * "Donnerstag 15.10.". Heute und Morgen ersetzen den Wochentag - neben
- * Pfeilen und Ansichtsschalter ist fuer beides kein Platz.
+ * den Pfeilen ist fuer beides kein Platz.
  */
 function tageszeile(datum: string, heute: string): string {
   const [j, m, t] = datum.split("-").map(Number);
@@ -80,7 +80,7 @@ type Platz = Awaited<ReturnType<typeof ladePlaetze>>[number];
  * Die Plaetze (docs/design/clubhaus/plaetze, HANDOFF-PLAETZE).
  *
  * Zwei Ansichten derselben Tagesbelegung, umschaltbar ueber den kleinen
- * Raster/Liste-Schalter rechts in der Datumszeile; die Wahl bleibt in
+ * Schalter Übersicht/Freie Zeiten unter der Datumszeile; die Wahl bleibt in
  * AsyncStorage. Ohne gemerkte Wahl beginnt es mit Freie Zeiten: dort sind
  * alle Ziele gross, im Raster muss man eine halbe Stunde treffen (U18). Ein zweites Segment unter "Belegung | Meine & offene Spiele"
  * war eine Leiste zu viel (U34). Die Übersicht
@@ -94,8 +94,7 @@ type Platz = Awaited<ReturnType<typeof ladePlaetze>>[number];
  */
 export default function Plan() {
   const { stil, farben } = useTheme();
-  const parameter = useLocalSearchParams<{ buchen?: string }>();
-  const rand = useSafeAreaInsets();
+  const parameter = useLocalSearchParams<{ buchen?: string; platz?: string; buchung?: string; tag?: string }>();
   const [datum, setDatum] = useState(heuteInBerlin());
   const [ansicht, setAnsicht] = useState<Ansicht>("freie-zeiten");
   const [auswahl, setAuswahl] = useState<Auswahl | null>(null);
@@ -115,7 +114,9 @@ export default function Plan() {
   const [laedt, setLaedt] = useState(true);
   /** Fuer welchen Tag die Daten gerade stehen - erst danach darf das Blatt aufgehen. */
   const [geladenFuer, setGeladenFuer] = useState<string | null>(null);
-  const [buchenWartet, setBuchenWartet] = useState(false);
+  /** Von Home: Blatt oeffnen, sobald der Tag geladen ist - mit Wunschplatz oder fuer eine Buchung. */
+  const [buchenWartet, setBuchenWartet] = useState<{ platz?: string } | null>(null);
+  const [buchungWartet, setBuchungWartet] = useState<string | null>(null);
   const [aktualisiert, setAktualisiert] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<Meldung | null>(null);
@@ -293,27 +294,32 @@ export default function Plan() {
   /**
    * "Platz buchen" auf Home (Kachel und Leerkarte) kommt mit ?buchen=jetzt
    * hierher: das Blatt geht mit der naechsten freien Zeit auf - heute, auf
-   * dem ersten Platz aus freeCourtsNow.
+   * dem ersten Platz aus freeCourtsNow. Eine Karte unter "Jetzt frei" gibt
+   * mit &platz= ihren Platz mit (U54); ist der inzwischen belegt, gilt
+   * wieder der erste freie.
    */
   useEffect(() => {
     if (parameter.buchen !== "jetzt") return;
-    router.setParams({ buchen: undefined });
+    const platz = parameter.platz;
+    router.setParams({ buchen: undefined, platz: undefined });
     setDatum(heute);
-    setBuchenWartet(true);
-  }, [parameter.buchen, heute]);
+    setBuchenWartet({ platz });
+  }, [parameter.buchen, parameter.platz, heute]);
 
   useEffect(() => {
     if (!buchenWartet || laedt || geladenFuer !== heute || datum !== heute) return;
-    setBuchenWartet(false);
+    const wunsch = buchenWartet.platz;
+    setBuchenWartet(null);
     if (kontingentAus) {
       setMeldung({ ok: false, text: "Dein Kontingent ist ausgeschöpft." });
       return;
     }
-    const [erster] = jetztFrei({
+    const freie = jetztFrei({
       day: heute, courtIds: plaetze.map((p) => p.id), openingMinutes: oeffnung,
       closingMinutes: schluss, slotMinutes: raster, durationMinutes: dauer, occupied: belegung,
       leadDays: vorlauf,
     });
+    const erster = freie.find((f) => f.courtId === wunsch) ?? freie[0];
     const platz = erster && plaetze.find((p) => p.id === erster.courtId);
     if (!erster || !platz) {
       setMeldung({ ok: false, text: "Heute ist gerade kein Platz mehr frei – wähle einen anderen Tag." });
@@ -324,6 +330,34 @@ export default function Plan() {
     buchenWartet, laedt, geladenFuer, datum, heute, kontingentAus, plaetze, oeffnung, schluss,
     raster, dauer, belegung, oeffneBuchen, vorlauf,
   ]);
+
+  /**
+   * "Als Nächstes" auf Home kommt mit ?buchung=…&tag=… hierher (U54): der Plan
+   * springt auf den Tag, und die Buchung geht im Blatt auf - dort, wo sie
+   * sich auch aendern und stornieren laesst, statt nur in der Spiele-Liste.
+   */
+  useEffect(() => {
+    const id = parameter.buchung;
+    const tag = parameter.tag;
+    if (!id || !tag) return;
+    router.setParams({ buchung: undefined, tag: undefined });
+    setDatum(tag);
+    setAuswahl(null);
+    setBuchungWartet(id);
+  }, [parameter.buchung, parameter.tag]);
+
+  useEffect(() => {
+    if (!buchungWartet || laedt || geladenFuer !== datum) return;
+    setBuchungWartet(null);
+    const b = belegung.find((x) => x.booking_id === buchungWartet);
+    const platz = b && plaetze.find((p) => p.id === b.court_id);
+    if (!b || !platz) {
+      setMeldung({ ok: false, text: "Die Buchung steht nicht mehr im Plan." });
+      return;
+    }
+    setFensterFehler(null);
+    setFenster({ modus: "verwalten", belegung: b, platzName: platz.name, tag: datum });
+  }, [buchungWartet, laedt, geladenFuer, datum, belegung, plaetze]);
 
   /**
    * Welche Belegung laesst sich im Blatt oeffnen?
@@ -467,10 +501,52 @@ export default function Plan() {
 
   const gewaehlterPlatz = auswahl ? plaetze.find((p) => p.id === auswahl.courtId) : undefined;
   const tagIndex = tage.indexOf(datum);
+  const buchenLeiste = ansicht === "uebersicht" && auswahl && gewaehlterPlatz && !fenster;
 
   return (
     <>
-      <Bildschirm laedt={laedt} aktualisiert={aktualisiert} onAktualisieren={vonHand} fehler={ladeFehler}>
+      <Bildschirm
+        laedt={laedt}
+        aktualisiert={aktualisiert}
+        onAktualisieren={vonHand}
+        fehler={ladeFehler}
+        kopf={<GrosserKopf titel="Plätze" />}
+        reiter={<PlaetzeReiter wert="/plaetze" />}
+        fuss={
+          buchenLeiste ? (
+            <View
+              onLayout={(e) => setLeisteHoehe(e.nativeEvent.layout.height)}
+              style={{
+                minHeight: 64, borderRadius: 22, paddingLeft: 18, paddingRight: 8,
+                flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+                backgroundColor: farben.ink,
+                shadowColor: "#000", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.35, shadowRadius: 20,
+                elevation: 8,
+              }}
+            >
+              <View style={{ flex: 1, minWidth: 0 }} accessible accessibilityLiveRegion="polite">
+                <Text numberOfLines={1} style={{ fontSize: 15, fontFamily: "Barlow_800ExtraBold", color: farben.bg }}>
+                  {gewaehlterPlatz.name} · {alsUhrzeit(auswahl.minute)} – {alsUhrzeit(auswahl.minute + dauer)}
+                </Text>
+                <Text numberOfLines={1} style={{ fontSize: 12.5, fontFamily: "Barlow_500Medium", color: mitDeckkraft(farben.bg, 0.7) }}>
+                  frei bis {alsUhrzeit(auswahl.bis)}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => buchenAuf(gewaehlterPlatz, auswahl.minute)}
+                accessibilityRole="button"
+                accessibilityLabel={`${gewaehlterPlatz.name} um ${alsUhrzeit(auswahl.minute)} Uhr buchen`}
+                style={({ pressed }) => ({
+                  minHeight: 48, paddingHorizontal: 22, borderRadius: 16, justifyContent: "center",
+                  backgroundColor: farben.gold, opacity: pressed ? 0.85 : 1,
+                })}
+              >
+                <Text style={{ fontSize: 15.5, fontFamily: "Barlow_800ExtraBold", color: farben.onGold }}>Buchen</Text>
+              </Pressable>
+            </View>
+          ) : undefined
+        }
+      >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Rundknopf
             richtung="zurueck"
@@ -506,8 +582,8 @@ export default function Plan() {
             aus={tagIndex < 0 || tagIndex >= tage.length - 1}
             onPress={() => waehleTag(tage[tagIndex + 1]!)}
           />
-          <AnsichtSchalter wert={ansicht} onWahl={waehleAnsicht} />
         </View>
+        <AnsichtSchalter wert={ansicht} onWahl={waehleAnsicht} />
 
         {tagwahlOffen && (
           <ScrollView
@@ -572,8 +648,6 @@ export default function Plan() {
               onOeffnen={oeffneBelegung}
             />
             <RasterLegende />
-            {/* Luft, damit die Leiste unten die Legende nicht verdeckt */}
-            {auswahl && <View style={{ height: 76 }} />}
           </>
         ) : (
           <>
@@ -599,45 +673,10 @@ export default function Plan() {
         )}
       </Bildschirm>
 
-      {ansicht === "uebersicht" && auswahl && gewaehlterPlatz && !fenster && (
-        <View
-          onLayout={(e) => setLeisteHoehe(e.nativeEvent.layout.height)}
-          style={{
-            position: "absolute", left: LEISTE_RAND, right: LEISTE_RAND,
-            bottom: LEISTE_ABSTAND_UNTEN + rand.bottom + LEISTE_HOEHE + 14,
-            minHeight: 64, borderRadius: 22, paddingLeft: 18, paddingRight: 8,
-            flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-            backgroundColor: farben.ink,
-            shadowColor: "#000", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.35, shadowRadius: 20,
-            elevation: 8,
-          }}
-        >
-          <View style={{ flex: 1, minWidth: 0 }} accessible accessibilityLiveRegion="polite">
-            <Text numberOfLines={1} style={{ fontSize: 15, fontFamily: "Barlow_800ExtraBold", color: farben.bg }}>
-              {gewaehlterPlatz.name} · {alsUhrzeit(auswahl.minute)} – {alsUhrzeit(auswahl.minute + dauer)}
-            </Text>
-            <Text numberOfLines={1} style={{ fontSize: 12.5, fontFamily: "Barlow_500Medium", color: mitDeckkraft(farben.bg, 0.7) }}>
-              frei bis {alsUhrzeit(auswahl.bis)}
-            </Text>
-          </View>
-          <Pressable
-            onPress={() => buchenAuf(gewaehlterPlatz, auswahl.minute)}
-            accessibilityRole="button"
-            accessibilityLabel={`${gewaehlterPlatz.name} um ${alsUhrzeit(auswahl.minute)} Uhr buchen`}
-            style={({ pressed }) => ({
-              minHeight: 48, paddingHorizontal: 22, borderRadius: 16, justifyContent: "center",
-              backgroundColor: farben.gold, opacity: pressed ? 0.85 : 1,
-            })}
-          >
-            <Text style={{ fontSize: 15.5, fontFamily: "Barlow_800ExtraBold", color: farben.onGold }}>Buchen</Text>
-          </Pressable>
-        </View>
-      )}
-
       <Toast
         meldung={meldung}
         onSchliessen={() => setMeldung(null)}
-        leisteHoehe={ansicht === "uebersicht" && auswahl && gewaehlterPlatz && !fenster ? leisteHoehe : 0}
+        leisteHoehe={buchenLeiste ? leisteHoehe : 0}
       />
 
       {fenster && (
@@ -715,30 +754,37 @@ function Rundknopf({
 /* --- Raster oder Liste --------------------------------------------------- */
 
 /**
- * Klein und rechts in der Datumszeile: Übersicht (Raster) oder Freie Zeiten
+ * Unter der Datumszeile, rechtsbuendig: Übersicht (Raster) oder Freie Zeiten
  * (Liste). Zwei Knoepfe statt eines Wechselknopfs, damit man sieht, was
- * gerade gilt, und der Screenreader beide Namen hoert.
+ * gerade gilt. Mit sichtbarem Namen neben dem Symbol (U55) - nur die zwei
+ * Symbole in der Datumszeile musste man erraten.
  */
 function AnsichtSchalter({ wert, onWahl }: { wert: Ansicht; onWahl: (a: Ansicht) => void }) {
   const { farben, theme } = useTheme();
   const knopf = (a: Ansicht, label: string, symbol: (farbe: string) => ReactNode) => {
     const aktiv = wert === a;
-    const farbe = aktiv ? farben.ink : farben.muted;
+    const farbe = aktiv ? farben.ink : farben.ink2;
     return (
       <Pressable
         onPress={() => onWahl(a)}
         accessibilityRole="radio"
         accessibilityLabel={label}
         accessibilityState={{ selected: aktiv }}
-        // 40 x 36 sichtbar, mit hitSlop 48 x 44 zum Tippen (U18)
+        // 36 hoch sichtbar, mit hitSlop 44 zum Tippen (U18)
         hitSlop={4}
         style={[
-          { width: 40, height: 36, borderRadius: radius.knopf - 6, alignItems: "center", justifyContent: "center" },
+          {
+            minHeight: 36, borderRadius: radius.knopf - 6, paddingHorizontal: 12,
+            flexDirection: "row", alignItems: "center", gap: 6,
+          },
           aktiv && { backgroundColor: farben.segAktiv },
           aktiv && theme === "hell" && schattenRn.hell.klein,
         ]}
       >
-        <Svg width={18} height={18} viewBox="0 0 24 24">{symbol(farbe)}</Svg>
+        <Svg width={16} height={16} viewBox="0 0 24 24">{symbol(farbe)}</Svg>
+        <Text style={{ fontSize: 13.5, fontFamily: aktiv ? "Barlow_700Bold" : "Barlow_600SemiBold", color: farbe }}>
+          {label}
+        </Text>
       </Pressable>
     );
   };
@@ -746,7 +792,10 @@ function AnsichtSchalter({ wert, onWahl }: { wert: Ansicht; onWahl: (a: Ansicht)
     <View
       accessibilityRole="radiogroup"
       accessibilityLabel="Darstellung"
-      style={{ flexDirection: "row", gap: 2, padding: 4, borderRadius: radius.knopf - 2, backgroundColor: farben.surf2 }}
+      style={{
+        alignSelf: "flex-end", flexDirection: "row", gap: 2, padding: 4,
+        borderRadius: radius.knopf - 2, backgroundColor: farben.surf2,
+      }}
     >
       {knopf("uebersicht", "Übersicht", (f) => (
         <>

@@ -47,7 +47,7 @@ function Navigation() {
         {/* Kein Zurueck: dahinter liegt nur die Weiche, und die schickt wieder her. */}
         <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="nachrichten" options={{ title: "Benachrichtigungen" }} />
+        <Stack.Screen name="nachrichten" options={{ headerShown: false, title: "Neuigkeiten" }} />
       </Stack>
     </>
   );

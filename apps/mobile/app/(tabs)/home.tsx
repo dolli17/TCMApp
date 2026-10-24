@@ -21,7 +21,7 @@ import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-na
 import { router, type Href } from "expo-router";
 import Svg, { Circle, Path } from "react-native-svg";
 import {
-  bookingKicker, dayTag, eventDemnaechst, formatCents, notificationZiel, localMinutes, relativeTimeLabel, sumOpenDrinks,
+  berlinDay, bookingKicker, dayTag, eventDemnaechst, formatCents, notificationZiel, localMinutes, relativeTimeLabel, sumOpenDrinks,
   timelinePosition, timelineSegments, upcomingBookings,
 } from "@tcm/core";
 import { abstand, radius, schrift } from "@tcm/ui";
@@ -231,7 +231,13 @@ function AlsNaechstes({ termine, erneut }: { termine: Abschnitt<Termine>; erneut
             return (
               <Pressable
                 key={t.booking_id}
-                onPress={() => router.navigate("/plaetze/spiele")}
+                // Direkt in die Buchung im Blatt, nicht in die Spiele-Liste (U54)
+                onPress={() =>
+                  router.navigate({
+                    pathname: "/plaetze",
+                    params: { buchung: t.booking_id, tag: berlinDay(new Date(t.starts_at)) },
+                  })
+                }
                 accessibilityRole="button"
                 accessibilityLabel={`${bookingKicker(t.starts_at, t.ends_at)}, ${zeit}, ${t.court_name}, Details`}
                 style={{
@@ -391,9 +397,10 @@ function JetztFrei({ frei, erneut }: { frei: Abschnitt<FreiDaten>; erneut: Erneu
           {karten.map((k) => (
             <Pressable
               key={k.id}
-              onPress={() => router.navigate("/plaetze")}
+              // Das Blatt fuer genau diesen Platz zur naechsten Halbstunde (U54)
+              onPress={() => router.navigate({ pathname: "/plaetze", params: { buchen: "jetzt", platz: k.id } })}
               accessibilityRole="button"
-              accessibilityLabel={`${k.name}, frei bis ${k.bis}`}
+              accessibilityLabel={`${k.name}, frei bis ${k.bis}, buchen`}
               style={[stil.listenkarte, { width: 150, borderRadius: radius.karte, padding: 14, gap: 10 }]}
             >
               <View style={stil.zeile}>
@@ -497,6 +504,8 @@ function DeinMonat({ getraenke, dienst }: { getraenke: Abschnitt<Getraenke>; die
   const monat = MONAT.format(new Date());
   const ist = Number(dienst.wert?.completed_hours ?? 0);
   const soll = Number(dienst.wert?.required_hours ?? 0);
+  // Der Arbeitsdienst zaehlt aufs Jahr, nicht auf den Monat darueber (U55).
+  const jahr = dienst.wert?.year ?? new Date().getFullYear();
   const anteil = soll > 0 ? Math.min(1, ist / soll) : 0;
 
   const kachel = { flex: 1, borderRadius: radius.karte, padding: 16, gap: 4 } as const;
@@ -534,12 +543,12 @@ function DeinMonat({ getraenke, dienst }: { getraenke: Abschnitt<Getraenke>; die
             dienst.fehler
               ? `Arbeitsdienst: ${dienst.fehler}`
               : soll > 0
-                ? `Arbeitsdienst: ${ist} von ${soll} Stunden. Zum Konto`
-                : "Arbeitsdienst: kein Soll für dieses Jahr. Zum Konto"
+                ? `Arbeitsdienst ${jahr}: ${ist} von ${soll} Stunden. Zum Konto`
+                : `Arbeitsdienst ${jahr}: kein Soll. Zum Konto`
           }
           style={[stil.listenkarte, kachel]}
         >
-          <Text style={titel}>Arbeitsdienst</Text>
+          <Text style={titel}>Arbeitsdienst {jahr}</Text>
           {dienst.fehler ? (
             <Text style={[stil.leise, { color: farben.redInk }]}>{dienst.fehler}</Text>
           ) : dienst.wert && soll > 0 ? (

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Linking, Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import Svg, { Path } from "react-native-svg";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { formatCents, sumOpenDrinks, CHARGE_KIND_LABEL, KONTOLOESCHUNG_TEXT, type ChargeKind } from "@tcm/core";
 import { abstand, radius } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
@@ -44,7 +43,6 @@ type Blattart = "daten" | "notfall" | "einwilligungen" | "bank" | "loeschen";
  */
 export default function Konto() {
   const { stil, farben } = useTheme();
-  const rand = useSafeAreaInsets();
   const [blatt, setBlatt] = useState<Blattart | null>(null);
   const [meldung, setMeldung] = useState<string | null>(null);
 
@@ -120,8 +118,10 @@ export default function Konto() {
         onAktualisieren={zustand.neuLaden}
         fehler={zustand.fehler}
         kopf={
-          // Kein grosser Titel: oben steht, wer man ist. Die Glocke bleibt rechts.
-          <View style={{ paddingTop: rand.top + 12, paddingHorizontal: abstand.rand, alignItems: "flex-end" }}>
+          // Kein grosser Titel: oben steht, wer man ist. Die Glocke bleibt rechts
+          // und scrollt mit dem Profil weg, statt allein ueber leerer Flaeche
+          // stehen zu bleiben (U53).
+          <View style={{ paddingTop: 12, paddingHorizontal: abstand.rand, alignItems: "flex-end" }}>
             <Glocke />
           </View>
         }
