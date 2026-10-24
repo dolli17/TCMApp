@@ -128,7 +128,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <Image src={logoWeiss} alt="TC Muckensturm" height={34} priority className="logo-dunkel" />
               </Link>
 
-              <Link href="/plan" className="knopf gold block buchen-gross">
+              <Link href="/plan?buchen=jetzt" className="knopf gold block buchen-gross">
                 <Symbol name="plus" />
                 Platz buchen
               </Link>

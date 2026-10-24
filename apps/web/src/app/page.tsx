@@ -120,7 +120,7 @@ export default async function Start() {
                 <b>Noch nichts geplant</b>
                 <p className="unterzeile">Such dir einen Platz – heute ist noch einiges frei.</p>
                 {/* Leise: die gelbe Kachel „Platz buchen“ steht direkt darunter (U43). */}
-                <Link href="/plan" className="knopf leise">Platz buchen</Link>
+                <Link href="/plan?buchen=jetzt" className="knopf leise">Platz buchen</Link>
               </div>
             ) : (
               <div className="naechstes">
@@ -164,7 +164,8 @@ export default async function Start() {
 
           {/* --- Schnellaktionen ------------------------------------------- */}
           <nav className="schnellaktionen" aria-label="Schnellaktionen">
-            <Link href="/plan" className="gelb">
+            {/* Das Blatt geht zur nächsten freien Zeit auf, wie in der App (U68) */}
+            <Link href="/plan?buchen=jetzt" className="gelb">
               <Pfad d="M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM12 12v6M9 15h6" />
               Platz buchen
             </Link>
@@ -191,7 +192,7 @@ export default async function Start() {
             ) : (
               <div className="frei-reihe">
                 {frei.map((f) => (
-                  <Link key={f.courtId} href="/plan" className="frei-karte">
+                  <Link key={f.courtId} href={`/plan?buchen=jetzt&platz=${f.courtId}`} className="frei-karte">
                     <span className="kopf">
                       <b className="dpl">{plaetze.find((p) => p.id === f.courtId)?.name}</b>
                       <i aria-hidden="true" />

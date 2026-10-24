@@ -996,17 +996,31 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 /* Vergangene Zeit trägt den Seitengrund: in beiden Themes dunkler als die
    Rasterfläche, also zurückgenommen statt frei. */
 .plan-raster { display: none; --vorbei: var(--bg); }
+/* Freie Zeit, überall dieselbe Fläche: grün über der Rasterfläche getönt,
+   der grüne Rand hält 3:1 zum Grund (HANDOFF §2). */
+.plan-raster, .plan-listen { --frei-flaeche: color-mix(in srgb, var(--green) 13%, var(--surf)); }
 .plan-listen { display: flex; flex-direction: column; gap: 12px; }
 
 /* --- Übersicht und Freie Zeiten (Telefon, docs/design/clubhaus/plaetze) ---- */
-.segtoggle.telefon-ansicht { margin: 0; }
-.segtoggle.telefon-ansicht button {
-  min-height: 44px; padding: 0 10px; font-family: var(--font-text); font-size: 15px; font-weight: 600;
+/* Klein und rechtsbündig mit Symbol wie in der App (U34) - keine zweite volle
+   Segmentleiste unter "Belegung | Meine & offene Spiele". */
+.telefon-ansicht {
+  align-self: flex-end; display: flex; gap: 2px; padding: 3px;
+  background: var(--surf-2); border-radius: calc(var(--radius-knopf) - 2px);
 }
-.segtoggle.telefon-ansicht button[aria-checked="true"] {
+.telefon-ansicht button {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px;
+  border: 0; border-radius: calc(var(--radius-knopf) - 5px); background: transparent; cursor: pointer;
+  font-family: var(--font-text); font-size: 14px; font-weight: 600; color: var(--ink-2);
+}
+.telefon-ansicht svg {
+  width: 16px; height: 16px; flex: 0 0 auto;
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.telefon-ansicht button[aria-checked="true"] {
   background: var(--seg-aktiv); color: var(--ink); font-weight: 700; box-shadow: var(--shadow-sm);
 }
-.segtoggle.telefon-ansicht button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+.telefon-ansicht button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
 
 /* Raster: feste Platzspalte, Stunden waagerecht wischbar, 88 px je Stunde -
    eine halbe Stunde ist so 44 px breit, gross genug fuer einen Finger (U18) */
@@ -1035,8 +1049,10 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
   position: absolute; left: 0; right: 0; height: 52px;
   border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
 }
+/* Frei ist eine grüne Fläche mit Rand, wie im Raster ab Tablet (U66) */
 .tr-frei {
-  position: absolute; top: 0; bottom: 0; padding: 0; border: 0; background: transparent; cursor: pointer;
+  position: absolute; top: 4px; bottom: 3px; padding: 0; cursor: pointer;
+  border: 1px solid var(--green); border-radius: 10px; background: var(--frei-flaeche);
 }
 .tr-frei:focus-visible { outline: 2px solid var(--blue); outline-offset: -3px; border-radius: 10px; }
 .tr-block {
@@ -1051,13 +1067,13 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 button.tr-block { cursor: pointer; }
 button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; z-index: 3; }
 .tr-block.eigen { background: var(--gold); color: var(--on-gold); }
-.tr-block.belegt { background: var(--blue-soft); color: var(--blue-ink); }
+.tr-block.belegt { background: var(--blue-soft); color: var(--blue-ink); border: 1px solid var(--blue); }
 .tr-block.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); color: var(--gold-ink); }
 .tr-block.serie {
   background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 10%, transparent) 0 5px, transparent 5px 10px), var(--surf-3);
-  color: var(--ink-2);
+  color: var(--ink-2); border: 1px solid var(--rahmen);
 }
-.tr-block.gesperrt { background: var(--surf-3); color: var(--muted); }
+.tr-block.gesperrt { background: var(--surf-3); color: var(--muted); border: 1px solid var(--rahmen); }
 .tr-block.wahl {
   z-index: 2; pointer-events: none; background: var(--gold-soft); color: var(--gold-ink);
   border: 2px solid var(--gold);
@@ -1066,11 +1082,9 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 
 .telefon-legende { gap: 6px 14px; }
 .telefon-legende i { width: 16px; height: 10px; border-radius: 3px; }
-.telefon-legende i.belegt { background: var(--blue-soft); }
 .telefon-legende.kaestchen { gap: 6px 16px; }
 .telefon-legende.kaestchen i { width: 10px; height: 14px; }
-.telefon-legende i.frei { background: var(--green); }
-.telefon-legende i.voll { background: var(--surf-3); }
+.telefon-legende.kaestchen i.frei { background: var(--green); border-color: var(--green); }
 
 /* Die Leiste über der schwebenden Navigation, sobald eine Stelle gewählt ist */
 .auswahl-leiste {
@@ -1101,7 +1115,7 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 .fz-beginn { width: 64px; flex: 0 0 auto; }
 .fz-nummern { display: flex; gap: 4px; letter-spacing: 0; }
 .fz-nummern span { width: 18px; text-align: center; }
-.fz-platz { margin-left: auto; }
+.fz-platz { margin-left: auto; margin-right: 22px; }
 .fz-zeile { border-bottom: 1px solid var(--line); }
 .fz-zeile:last-child { border-bottom: 0; }
 .fz-zeile.offen { background: var(--surf-2); }
@@ -1112,9 +1126,16 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 .fz-knopf:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
 .fz-zeit { width: 64px; flex: 0 0 auto; font-size: 22px; font-weight: 700; }
 .fz-kaestchen { display: flex; gap: 4px; }
-.fz-kaestchen i { width: 18px; height: 24px; border-radius: 5px; background: var(--surf-3); }
-.fz-kaestchen i.frei { background: var(--green); }
-.fz-kaestchen i.eigen { background: var(--gold); }
+/* Nach der Statustabelle (HANDOFF §2): frei die volle grüne Fläche, belegt
+   blau, nicht buchbar grau - jedes mit Rand, wo die Fläche allein unter 3:1
+   zum Grund läge. */
+.fz-kaestchen i {
+  width: 18px; height: 24px; border-radius: 5px; box-sizing: border-box;
+  background: var(--surf-3); border: 1px solid var(--rahmen);
+}
+.fz-kaestchen i.frei { background: var(--green); border-color: var(--green); }
+.fz-kaestchen i.belegt { background: var(--blue-soft); border-color: var(--blue); }
+.fz-kaestchen i.eigen { background: var(--gold); border-color: var(--gold-line); }
 .fz-kaestchen i.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); }
 .fz-zahl { margin-left: auto; font-size: 14px; font-weight: 700; white-space: nowrap; }
 .fz-zahl.viele { color: var(--green-ink); }
@@ -1163,8 +1184,9 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 /* Jedes Kaestchen mit Rand: blue-soft, surf-3 und gold-soft allein liegen
    unter 3:1 zum Grund (U29). */
 .legende i { width: 18px; height: 10px; border-radius: 4px; box-sizing: border-box; border: 1.5px solid var(--rahmen); }
+.legende i.frei { background: var(--frei-flaeche); border: 1px solid var(--green); }
 .legende i.eigen { background: var(--gold); }
-.legende i.belegt { background: var(--blue); }
+.legende i.belegt { background: var(--blue-soft); border: 1px solid var(--blue); }
 .legende i.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-ink); }
 .legende i.serie, .beleg.serie {
   background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 12%, transparent) 0 3px, transparent 3px 6px), var(--surf-3);
@@ -1178,12 +1200,7 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 }
 .raster-oben .legende { font-size: 13px; font-weight: 600; gap: 8px 18px; }
 .raster-oben .legende i { width: 20px; height: 12px; }
-.raster-oben .legende i.belegt { background: var(--blue-soft); }
-.raster-oben .legende i.frei {
-  border: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--muted);
-}
-.raster-oben .legende i.frei .plus { width: 10px; height: 10px; }
-.raster-oben .legende i.vorbei { background: var(--vorbei); }
+.raster-oben .legende i.vorbei { background: var(--vorbei); border-color: var(--line-2); }
 /* Die Bedienanleitung steht unter dem Titel; das Telefon hat eigene Listen. */
 .plan-hinweis { display: none; margin: 6px 0 0; max-width: 62ch; font-size: 14px; color: var(--ink-2); }
 
@@ -1204,6 +1221,8 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
   position: absolute; right: 10px; margin-top: 4px;
   font-size: 12px; font-weight: 600; color: var(--muted);
 }
+/* Unter der roten Jetzt-Marke: nur die Marke zeigt die Zeit (U67) */
+.raster-zeiten .stunde.verdeckt { visibility: hidden; }
 .spalte {
   position: relative; border-left: 1px solid var(--line); min-width: 0;
   background: repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px 44px);
@@ -1223,11 +1242,11 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 .beleg .wer { font-weight: 600; opacity: .9; }
 .beleg .mit { font-size: 11.5px; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .beleg .wer, .beleg .zeit { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.beleg.belegt { background: var(--blue-soft); color: var(--blue-ink); }
+.beleg.belegt { background: var(--blue-soft); color: var(--blue-ink); border: 1px solid var(--blue); }
 .beleg.eigen { background: var(--gold); color: var(--on-gold); }
 .beleg.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); color: var(--gold-ink); }
-.beleg.serie { color: var(--ink-2); }
-.beleg.gesperrt { background: var(--surf-3); color: var(--muted); }
+.beleg.serie { color: var(--ink-2); border: 1px solid var(--rahmen); }
+.beleg.gesperrt { background: var(--surf-3); color: var(--muted); border: 1px solid var(--rahmen); }
 button.beleg { cursor: pointer; }
 button.beleg:hover, button.beleg:focus-visible {
   outline: 2px solid var(--blue); outline-offset: 1px; z-index: 3;
@@ -1245,30 +1264,35 @@ button.beleg:hover, button.beleg:focus-visible {
   background: var(--vorbei); border-bottom: 1px solid var(--line-2);
 }
 
-/* Freie Zeit: Schaltfläche je Startzeit mit einem feinen Plus, damit buchbare
-   Zeiten auch ohne Maus zu sehen sind. Beim Überfahren, beim Tastatur-Fokus
-   und beim Antippen erscheint der gestrichelte Block "+ HH:MM buchen" über die
-   volle Spieldauer. */
+/* Freie Zeit: eine grüne Fläche über die ganze Lücke, wie am Telefon (U66).
+   Statt über hundert gleich gewichteter Plus-Zeichen (U41) zeigt sie, wo und
+   bis wann frei ist. Kein Plus im Ruhezustand; der Block "+ HH:MM buchen"
+   erscheint beim Überfahren, beim Tastatur-Fokus und beim Antippen. */
+.frei-flaeche {
+  position: absolute; left: 5px; right: 5px; z-index: 1; pointer-events: none; overflow: hidden;
+  border: 1px solid var(--green); border-radius: 11px; background: var(--frei-flaeche);
+}
+.frei-flaeche span {
+  display: block; padding: 5px 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 12px; font-weight: 600; color: var(--green-ink);
+}
+/* Die Knöpfe je Startzeit liegen unsichtbar über der Fläche. */
 .frei-slot {
   position: absolute; left: 0; right: 0; z-index: 1;
   padding: 0; border: 0; background: transparent; cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.frei-slot .plus {
-  position: absolute; left: 50%; top: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px;
-  color: var(--muted); opacity: .5; pointer-events: none;
-}
 .frei-slot:focus-visible { outline: none; }
 .frei-slot .vorschau {
   position: absolute; left: 5px; right: 5px; top: 2px;
-  display: none; align-items: flex-start; padding: 6px 9px;
-  border: 1.5px dashed var(--blue); border-radius: 11px;
-  background: var(--blue-soft); color: var(--blue-ink); font-size: 12.5px; font-weight: 700;
-  pointer-events: none;
+  display: none; align-items: flex-start; padding: 6px 9px; border-radius: 11px;
+  /* Wie die Platzknöpfe unter "Freie Zeiten": green-ink mit Seitengrund */
+  background: var(--green-ink); color: var(--bg); font-size: 12.5px; font-weight: 700;
+  box-shadow: var(--shadow-sm); pointer-events: none;
 }
 .frei-slot:hover, .frei-slot:focus-visible { z-index: 4; }
 .frei-slot:hover .vorschau, .frei-slot:focus-visible .vorschau { display: flex; }
-.frei-slot:focus-visible .vorschau { outline: 2px solid var(--blue); outline-offset: 1px; }
+.frei-slot:focus-visible .vorschau { outline: 2px solid var(--blue); outline-offset: 2px; }
 /* Ohne Maus gibt es kein Überfahren: der Block zeigt sich beim Antippen. */
 @media (hover: none) {
   .frei-slot:active { z-index: 4; }
@@ -1397,6 +1421,9 @@ li.chip { padding-right: 4px; }
 
 .blatt-fuss { display: grid; gap: 10px; }
 .blatt-fuss .hinweis { margin: 0; }
+/* Der nächste Schritt über dem gesperrten Knopf: in Schrift, nicht im
+   Grau des Knopfs, damit klar ist, was fehlt (U65). */
+.blatt-fuss .hinweis.besetzung { font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--ink); }
 .knopf.gross { min-height: 58px; border-radius: 18px; font-family: var(--font-text); font-size: 17px; font-weight: 800; }
 .knopf.gefahr-leise {
   min-height: 52px; background: transparent; color: var(--red-ink); box-shadow: none;
@@ -1404,7 +1431,8 @@ li.chip { padding-right: 4px; }
 }
 .knopf.gefahr-leise:hover { background: color-mix(in srgb, var(--red) 8%, transparent); }
 .knopf.gefahr.block { min-height: 52px; }
-.fussnote { margin: 0; text-align: center; font-size: 12.5px; color: var(--muted); }
+/* 14 statt 12,5 px: "Stornieren geht bis Spielbeginn" gehört zur Entscheidung (U65) */
+.fussnote { margin: 0; text-align: center; font-size: 14px; color: var(--muted); }
 
 /* Am Telefon fährt das Blatt von unten herein */
 @media (max-width: 767px) {

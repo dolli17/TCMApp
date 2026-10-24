@@ -14,7 +14,9 @@ import type { Belegung, Platz } from "@/components/Belegungsplan";
  * wischbaren Stunden und "Freie Zeiten" als Liste der Startzeiten. Ohne
  * gemerkte Wahl beginnt es mit "Freie Zeiten": dort sind alle Ziele gross,
  * im Raster muss man eine halbe Stunde treffen (U18). Die Wahl bleibt in
- * localStorage. Was frei ist und wie Belegungen heissen, rechnet
+ * localStorage. Der Schalter ist klein und rechtsbuendig mit Symbolen, wie
+ * in der App (U34): als zweite volle Segmentleiste unter "Belegung | Meine &
+ * offene Spiele" sah er aus wie eine zweite Ebene derselben Wahl. Was frei ist und wie Belegungen heissen, rechnet
  * @tcm/core - dieselben Funktionen wie in der App.
  */
 
@@ -79,7 +81,7 @@ export function PlanTelefon(props: {
 
   return (
     <div className="plan-listen">
-      <div className="segtoggle telefon-ansicht" role="radiogroup" aria-label="Darstellung">
+      <div className="telefon-ansicht" role="radiogroup" aria-label="Darstellung">
         {(["uebersicht", "freie-zeiten"] as const).map((a) => (
           <button
             key={a}
@@ -88,6 +90,13 @@ export function PlanTelefon(props: {
             aria-checked={ansicht === a}
             onClick={() => waehle(a)}
           >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              {a === "uebersicht" ? (
+                <path d="M5.3 3.5h3.4a1.8 1.8 0 0 1 1.8 1.8v3.4a1.8 1.8 0 0 1-1.8 1.8H5.3a1.8 1.8 0 0 1-1.8-1.8V5.3a1.8 1.8 0 0 1 1.8-1.8zM15.3 3.5h3.4a1.8 1.8 0 0 1 1.8 1.8v3.4a1.8 1.8 0 0 1-1.8 1.8h-3.4a1.8 1.8 0 0 1-1.8-1.8V5.3a1.8 1.8 0 0 1 1.8-1.8zM5.3 13.5h3.4a1.8 1.8 0 0 1 1.8 1.8v3.4a1.8 1.8 0 0 1-1.8 1.8H5.3a1.8 1.8 0 0 1-1.8-1.8v-3.4a1.8 1.8 0 0 1 1.8-1.8zM15.3 13.5h3.4a1.8 1.8 0 0 1 1.8 1.8v3.4a1.8 1.8 0 0 1-1.8 1.8h-3.4a1.8 1.8 0 0 1-1.8-1.8v-3.4a1.8 1.8 0 0 1 1.8-1.8z" />
+              ) : (
+                <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />
+              )}
+            </svg>
             {a === "uebersicht" ? "Übersicht" : "Freie Zeiten"}
           </button>
         ))}
@@ -97,6 +106,7 @@ export function PlanTelefon(props: {
         <>
           <Raster {...props} auswahl={auswahl} onAuswahl={setAuswahl} />
           <ul className="legende telefon-legende" aria-hidden="true">
+            <li><i className="frei" />frei</li>
             <li><i className="eigen" />Du</li>
             <li><i className="belegt" />belegt</li>
             <li><i className="sucht" />sucht Mitspieler</li>
@@ -124,9 +134,10 @@ export function PlanTelefon(props: {
           <FreieZeiten {...props} />
           <ul className="legende telefon-legende kaestchen" aria-hidden="true">
             <li><i className="frei" />frei</li>
-            <li><i className="voll" />belegt</li>
+            <li><i className="belegt" />belegt</li>
             <li><i className="sucht" />sucht Mitspieler</li>
             <li><i className="eigen" />du</li>
+            <li><i className="gesperrt" />Training, gesperrt</li>
           </ul>
         </>
       )}
@@ -206,7 +217,7 @@ function Raster({
                     key={l.from}
                     type="button"
                     className="tr-frei"
-                    style={{ left: px(l.from - oeffnung), width: px(l.until - l.from) }}
+                    style={{ left: px(l.from - oeffnung) + 3, width: px(l.until - l.from) - 6 }}
                     onClick={(e) => tippen(platz, l, e)}
                     aria-label={`${platz.name}, frei von ${alsUhrzeit(l.from)} bis ${alsUhrzeit(l.until)} Uhr, auswählen`}
                   />
@@ -286,8 +297,10 @@ function FreieZeiten({
     slotMinutes: raster, durationMinutes: dauer, occupied: belegungen, leadDays: vorlaufTage, now: jetzt,
   });
   const platzVon = (id: string) => plaetze.find((p) => p.id === id)!;
+  // Belegt ist blau wie im Raster; alles andere, was nicht buchbar ist
+  // (Training, Sperrung, zu kurze Luecke), grau (U66).
   const klasse = (art: CourtStatusKind) =>
-    art === "frei" || art === "eigen" || art === "sucht" ? art : "voll";
+    art === "frei" || art === "eigen" || art === "sucht" || art === "belegt" ? art : "gesperrt";
 
   if (plaetze.length === 0) return null;
   if (zeilen.length === 0) {
@@ -301,7 +314,7 @@ function FreieZeiten({
         <span className="fz-nummern">
           {plaetze.map((p) => <span key={p.id}>{nummer(p)}</span>)}
         </span>
-        <span className="fz-platz">PLATZ</span>
+        <span className="fz-platz">FREI</span>
       </div>
 
       {zeilen.map((z) => {

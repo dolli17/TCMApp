@@ -90,15 +90,26 @@ Schwebende Leiste: hell `0 16px 40px rgba(10,22,36,.16)`, dunkel
 
 ## 2. Status auf dem Platz (überall gleich)
 
-| Status | Darstellung |
-|---|---|
-| Frei | leere Spur (`surf2`), Text in `greenInk` |
-| Deine Buchung | Fläche `gold`, Text `onGold` |
-| Belegt | Fläche `blue` (Balken) bzw. `blueSoft` + `blueInk` (Raster-Block) |
-| Mitspieler gesucht | `goldSoft` + 1,5 px gestrichelter Rand `goldLine` |
-| Training / Serie | Schraffur 135° über `surf3` |
-| Gesperrt | `surf3`, Schloss-Symbol, Text `muted` |
-| Jetzt | 2 px Linie in `red` (Web/Admin) bzw. `ink` (App-Zeitleiste) |
+Eine Bildsprache auf Telefon und Desktop, in Web und App (U66). Jede
+Zustandsfläche hält 3:1 zum Grund oder trägt einen Rand, der es tut.
+
+| Status | Fläche | Rand | Schrift |
+|---|---|---|---|
+| Frei | `green` 13 % über `surf` (Raster, Liste); Kästchen unter „Freie Zeiten“ voll `green` | 1 px `green` | `greenInk` („frei bis 18:00“) |
+| Deine Buchung | `gold` | – (Kästchen: 1 px `goldLine`) | `onGold` |
+| Belegt | `blueSoft` (Raster-Block, Kästchen); `blue` als Balken der Mini-Zeitleiste | 1 px `blue` | `blueInk` |
+| Mitspieler gesucht | `goldSoft` | 1,5 px gestrichelt `goldLine` | `goldInk` |
+| Training / Serie | Schraffur 135° über `surf3` | 1 px `rahmen` | `ink2` |
+| Gesperrt (und im Kästchen alles nicht Buchbare) | `surf3`, Schloss-Symbol | 1 px `rahmen` | `muted` |
+| Vorbei | flach in `bg`, keine Schraffur, kein Rand | – | – |
+| Jetzt | 2 px Linie in `red` (Web/Admin) bzw. `ink` (App-Zeitleiste) | – | Marke `onBrand` auf `red` |
+
+Frei ist eine zusammenhängende Fläche über die ganze Lücke (`freeGaps`),
+keine Zeichen je Halbstunde. Was sich buchen lässt, zeigt sich beim
+Überfahren, beim Fokus oder beim Antippen als Block „+ 14:30 buchen“ in
+`greenInk` mit `bg`-Schrift über die volle Spieldauer. Die Mini-Zeitleiste
+(Start, Verwaltung) bleibt eine leere Spur in `surf2`: sie zeigt nur die
+Belegung, „frei bis …“ steht daneben als Text.
 
 Die Farben unterscheiden sich auch in der Helligkeit; Serien haben zusätzlich
 das Muster, gesuchte Spiele die gestrichelte Kante.
