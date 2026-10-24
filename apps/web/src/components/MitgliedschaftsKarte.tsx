@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { berlinDay } from "@tcm/core";
+import { berlinDay, isoDateLabel } from "@tcm/core";
 import {
   mitgliedschaftBeenden,
   mitgliedschaftWiederaufnehmen,
@@ -33,6 +33,12 @@ export function MitgliedschaftsKarte(props: Props) {
   const [laeuft, starte] = useTransition();
   const [beendenOffen, setBeendenOffen] = useState(false);
 
+  const heute = berlinDay(new Date());
+  // Der Regelfall im Verein ist der Austritt zum Jahresende (U46). Bis dahin
+  // behält das Mitglied seinen Zugang (B21), danach greift hat_zugang.
+  const jahresende = `${heute.slice(0, 4)}-12-31`;
+  const [ende, setEnde] = useState(jahresende);
+
   function beenden(fd: FormData) {
     starte(async () => {
       const e = await mitgliedschaftBeenden(fd);
@@ -47,8 +53,6 @@ export function MitgliedschaftsKarte(props: Props) {
       setMeldung({ ok: e.ok, text: e.meldung });
     });
   }
-
-  const heute = berlinDay(new Date());
 
   return (
     <section className="karte einstellungen" aria-label="Mitgliedschaft">
@@ -78,10 +82,26 @@ export function MitgliedschaftsKarte(props: Props) {
             <form action={beenden}>
               <input type="hidden" name="mitglied" value={props.mitgliedId} />
               <div className="formraster">
-                <label>
-                  <span>Austritt zum</span>
-                  <input type="date" name="ende" defaultValue={heute} />
-                </label>
+                <div className="austritt-datum">
+                  <label>
+                    <span>Austritt zum</span>
+                    <input
+                      type="date"
+                      name="ende"
+                      required
+                      value={ende}
+                      onChange={(e) => setEnde(e.target.value)}
+                    />
+                  </label>
+                  <div className="filterchips" role="group" aria-label="Austritt vorbelegen">
+                    <button type="button" aria-pressed={ende === jahresende} onClick={() => setEnde(jahresende)}>
+                      zum Jahresende
+                    </button>
+                    <button type="button" aria-pressed={ende === heute} onClick={() => setEnde(heute)}>
+                      sofort
+                    </button>
+                  </div>
+                </div>
                 <label>
                   <span>Grund</span>
                   <input type="text" name="grund" placeholder="z. B. Umzug" />
@@ -100,7 +120,7 @@ export function MitgliedschaftsKarte(props: Props) {
                   Abbrechen
                 </button>
                 <button className="knopf gefahr" disabled={laeuft}>
-                  {laeuft ? "Wird beendet…" : "Wirklich beenden"}
+                  {laeuft ? "Wird beendet…" : ende ? `Zum ${isoDateLabel(ende)} beenden` : "Wirklich beenden"}
                 </button>
               </div>
             </form>

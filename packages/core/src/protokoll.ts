@@ -8,6 +8,7 @@
  * Aufrufer über `name`, weil nur er die Tabellen lesen kann.
  */
 import { formatCents } from "./money";
+import { rollenLabel } from "./rollen";
 
 export type ProtokollBereich = "finanzen" | "plaetze" | "mitglieder" | "verein" | "system";
 
@@ -154,7 +155,8 @@ function gegenstand(tabelle: string, k: Werte, name: Namen): string {
     case "memberships":
       return verbinde("Mitgliedschaft", text(k.number));
     case "member_roles":
-      return verbinde("Rolle", zitat(text(k.role)));
+      // Der Schlüssel (member, admin) sagt niemandem etwas, das Label schon.
+      return verbinde("Rolle", zitat(k.role ? rollenLabel(text(k.role)) : ""));
     case "member_fees":
       return verbinde("Beitragszuordnung", verbinde(name(text(k.fee_type_id)) ?? "", text(k.year)));
     case "bank_accounts":

@@ -89,6 +89,14 @@ describe("protokollSatz", () => {
       .toBe("Kira Kasse hat Mitglied Max Muster wieder freigegeben");
   });
 
+  it("Rollen mit Bezeichnung statt Schlüssel (U49)", () => {
+    const e = { table_name: "member_roles", action: "insert", member_id: "m-max" };
+    expect(protokollSatz({ ...e, kenn: { role: "admin" } }, "System", name))
+      .toBe("System hat Rolle „App Admin“ für Max Muster angelegt");
+    expect(protokollSatz({ ...e, kenn: { role: "member" } }, "System", name))
+      .toBe("System hat Rolle „Spieler“ für Max Muster angelegt");
+  });
+
   it("Ereignisse der Zugangsverwaltung", () => {
     const e = { table_name: "members", action: "event", member_id: "m-max" };
     expect(protokollSatz({ ...e, ereignis: "einladung_erneut" }, "Kira Kasse", name))

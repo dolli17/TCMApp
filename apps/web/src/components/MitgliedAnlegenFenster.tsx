@@ -27,6 +27,8 @@ export function MitgliedAnlegenFenster({
   const router = useRouter();
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
+  // Mit Adresse geht die Einladung gleich mit raus – das sagt der Knopf (U47).
+  const [email, setEmail] = useState("");
 
   useEffect(() => {
     const el = dialog.current;
@@ -103,7 +105,14 @@ export function MitgliedAnlegenFenster({
             </label>
             <label>
               <span>E-Mail</span>
-              <input type="email" name="email" required autoComplete="off" />
+              <input
+                type="email"
+                name="email"
+                required
+                autoComplete="off"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
               <span className="beschreibung">Bekommt sofort eine Einladung zur App.</span>
             </label>
             <label>
@@ -123,15 +132,15 @@ export function MitgliedAnlegenFenster({
               <input name="city" required autoComplete="off" />
             </label>
             <label>
-              <span>Mitgliedsnummer</span>
+              <span>Mitgliedsnummer <small className="freiwillig">(freiwillig)</small></span>
               <input name="number" placeholder="automatisch" autoComplete="off" />
             </label>
             <label>
-              <span>Eintritt</span>
+              <span>Eintritt <small className="freiwillig">(freiwillig)</small></span>
               <input type="date" name="started_on" defaultValue={heute} />
             </label>
             <label>
-              <span>Beitragsart</span>
+              <span>Beitragsart <small className="freiwillig">(freiwillig)</small></span>
               <select name="fee_type" defaultValue="">
                 <option value="">später festlegen</option>
                 {beitragsarten.map((b) => (
@@ -145,7 +154,7 @@ export function MitgliedAnlegenFenster({
           </div>
         </div>
 
-        <div className="fenster-fuss">
+        <div className="fenster-fuss haftend">
           <button
             type="button"
             className="knopf leise"
@@ -155,7 +164,7 @@ export function MitgliedAnlegenFenster({
             Abbrechen
           </button>
           <button className="knopf" disabled={laeuft}>
-            {laeuft ? "Wird angelegt…" : "Anlegen"}
+            {laeuft ? "Wird angelegt…" : email.trim() ? "Anlegen und einladen" : "Anlegen"}
           </button>
         </div>
       </form>

@@ -84,8 +84,8 @@ export default async function MerkmaleSeite({
               <Listenzeile
                 href={`/admin/system/merkmale?bearbeiten=${m.code}`}
                 titel={m.name}
+                // Der Code steht im Bearbeiten-Fenster; in der Liste genügt der Name (U49).
                 kontext={[
-                  m.code,
                   `${ART_TEXT[m.value_kind] ?? m.value_kind}${m.multiple ? ", mehrfach" : ""}`,
                   m.self_editable ? "Mitglied selbst" : "Vorstand",
                   m.in_application ? "im Antrag" : null,

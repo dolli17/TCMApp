@@ -424,6 +424,22 @@ function Platzliste({
   );
 }
 
+/** "2–4 Spieler", "2 Spieler" – Blockungen haben keine, dort steht nichts (U49). */
+function spielerText(min: number, max: number): string | null {
+  if (max <= 0) return null;
+  return min === max || min <= 0 ? `${max} Spieler` : `${min}–${max} Spieler`;
+}
+
+/** Eine Zeile zur Art, ohne den Code: der steht im Bearbeiten-Fenster. */
+function artKontext(a: ArtZeile): string {
+  return [
+    a.applies_to === "booking" ? "Buchung" : "Blockung",
+    `${a.duration_minutes} min`,
+    a.applies_to === "booking" ? spielerText(a.min_players, a.max_players) : null,
+    a.applies_to === "booking" ? (a.counts_towards_quota ? "zählt aufs Kontingent" : "zählt nicht aufs Kontingent") : null,
+  ].filter(Boolean).join(" · ");
+}
+
 const LEERE_ART = {
   code: "",
   name: "",
@@ -475,7 +491,7 @@ function Artenliste({
           <li key={a.code}>
             <Listenzeile
               titel={a.name}
-              kontext={`${a.code} · ${a.applies_to === "booking" ? "Buchung" : "Blockung"} · ${a.duration_minutes} min · ${a.min_players}–${a.max_players} Spieler · ${a.counts_towards_quota ? "zählt aufs Kontingent" : "zählt nicht"}`}
+              kontext={artKontext(a)}
               hinweis={a.active ? undefined : "still"}
               onClick={() => oeffnen(a)}
             />
@@ -488,7 +504,7 @@ function Artenliste({
 
       {offen && (
         <FensterKnopf
-          titel={vorhanden ? `„${form.code}" bearbeiten` : "Neue Buchungsart"}
+          titel={vorhanden ? `„${arten.find((a) => a.code === form.code)?.name ?? form.code}“ bearbeiten` : "Neue Buchungsart"}
           offen
           onSchliessen={() => setOffen(false)}
         >
