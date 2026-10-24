@@ -193,6 +193,7 @@ a.avatar:hover { text-decoration: none; }
    "gleich geht's" und nicht wie "es fehlt noch etwas" (U26). Der Grund steht
    daneben (SperrGrund). */
 .knopf.gold:disabled,
+.knopf.gold[aria-disabled="true"],
 .auth.immer-dunkel .sheet .knopf.block:not(.leise):disabled {
   background: var(--surf-3); color: var(--muted); opacity: 1; box-shadow: none;
 }
@@ -1288,6 +1289,7 @@ fieldset.segmente legend { padding: 0; margin-bottom: 8px; font-size: 13px; font
 .umsetz-zeiten .segment { flex: 0 0 auto; min-width: 64px; }
 
 .mitspieler .feldname { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.mitspieler .feldname .umfang { font-weight: 500; color: var(--muted); }
 .chips, .marken { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .marken { list-style: none; margin: 0; padding: 0; }
 .chip {
@@ -1313,6 +1315,11 @@ li.chip { padding-right: 4px; }
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
 }
 .gestrichelt:hover { border-color: var(--blue); }
+/* Es fehlt noch jemand: "+ Mitglied" ist der naechste Schritt, nicht der Gast. */
+.gestrichelt.gefragt {
+  border-style: solid; border-color: var(--blue); color: var(--blue-ink);
+  background: color-mix(in srgb, var(--blue) 7%, transparent);
+}
 .gestrichelt svg { width: 16px; height: 16px; }
 .mitspieler .suche { margin-top: 10px; }
 .mitspieler .gasthinweis { margin: 10px 0 0; color: var(--muted); font-size: 13px; }

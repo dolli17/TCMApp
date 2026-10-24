@@ -12,6 +12,7 @@ import {
   missingPlayers,
   minutesOf,
   minutesToTime,
+  otherPlayersLabel,
   slotsForDay,
   timeToMinutes,
   umsetzZiele,
@@ -177,6 +178,19 @@ describe("missingPlayers", () => {
   it("verlangt einen Partner auch dann, wenn min_players 1 waere", () => {
     expect(missingPlayers({ ...EINZEL, minPlayers: 1 }, 0, 0)).toBe(1);
     expect(missingPlayers({ ...EINZEL, minPlayers: 1, requiresPartner: false }, 0, 0)).toBe(0);
+  });
+});
+
+describe("otherPlayersLabel", () => {
+  it("nennt die Spanne neben dem Bucher aus der Buchungsart", () => {
+    expect(otherPlayersLabel(EINZEL)).toBe("1 weitere Person");
+    expect(otherPlayersLabel(DOPPEL)).toBe("2–3 weitere Personen");
+    expect(otherPlayersLabel({ ...DOPPEL, minPlayers: 4 })).toBe("3 weitere Personen");
+    expect(otherPlayersLabel({ ...DOPPEL, minPlayers: 1, requiresPartner: false })).toBe("bis zu 3 weitere Personen");
+  });
+
+  it("bleibt leer, wenn niemand mitspielen kann", () => {
+    expect(otherPlayersLabel({ ...EINZEL, minPlayers: 1, maxPlayers: 1, requiresPartner: false })).toBe("");
   });
 });
 

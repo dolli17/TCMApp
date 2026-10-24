@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useId, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react";
 import type { Mitglied } from "@/components/Belegungsplan";
 
 interface Props {
@@ -11,11 +11,20 @@ interface Props {
   gaeste: string[];
   /** Wie viele Mitspieler die Buchungsart neben dem Bucher noch zulaesst. */
   maxWeitere: number;
-  pflicht: boolean;
+  /** Wie viele mitspielen, aus der Buchungsart: "1 weitere Person". */
+  umfang: string;
+  /** Es fehlt noch jemand: "+ Mitglied" ist dann der naechste Schritt. */
+  gefragt?: boolean;
   /** Betrag je Gast in Cent. */
   gastgebuehrCents: number;
   onMitglieder: (ids: string[]) => void;
   onGaeste: (namen: string[]) => void;
+  ref?: Ref<MitspielerHandle>;
+}
+
+/** Damit der gesperrte Buchen-Knopf zur Suche fuehren kann, statt nichts zu tun. */
+export interface MitspielerHandle {
+  suchen: () => void;
 }
 
 /**
@@ -48,6 +57,7 @@ export function Mitspielersuche(props: Props) {
   const [suche, setSuche] = useState("");
   const feldId = useId();
   const titelId = useId();
+  const feld = useRef<HTMLInputElement>(null);
 
   const gewaehlteMitglieder = useMemo(
     () =>
@@ -58,6 +68,16 @@ export function Mitspielersuche(props: Props) {
   );
 
   const voll = props.mitglieder.length + props.gaeste.length >= props.maxWeitere;
+
+  useImperativeHandle(props.ref, () => ({
+    suchen() {
+      if (voll) return;
+      // Ist das Feld schon offen, holt focus() es zurueck; sonst fokussiert
+      // es sich beim Erscheinen selbst (autoFocus).
+      setSuchen(true);
+      feld.current?.focus();
+    },
+  }), [voll]);
 
   const treffer = useMemo(() => {
     const q = suche.trim().toLowerCase();
@@ -86,7 +106,7 @@ export function Mitspielersuche(props: Props) {
   return (
     <div className="mitspieler" role="group" aria-labelledby={titelId}>
       <p className="feldname" id={titelId}>
-        Wer spielt mit?{props.pflicht ? " (mindestens eine Person)" : ""}
+        Wer spielt mit?{props.umfang && <span className="umfang"> · {props.umfang}</span>}
       </p>
 
       <div className="chips">
@@ -134,7 +154,7 @@ export function Mitspielersuche(props: Props) {
         <div className="hinzu">
           <button
             type="button"
-            className="gestrichelt"
+            className={props.gefragt ? "gestrichelt gefragt" : "gestrichelt"}
             aria-expanded={suchen}
             aria-controls={feldId}
             onClick={() => setSuchen(!suchen)}
@@ -156,6 +176,7 @@ export function Mitspielersuche(props: Props) {
         <div className="suche">
           <input
             id={feldId}
+            ref={feld}
             type="text"
             value={suche}
             autoComplete="off"
