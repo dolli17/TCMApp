@@ -20,6 +20,7 @@ import {
   blockingLabel, bookingActions, bookingTypeInfo, checkPlayers, missingPlayers, otherPlayersLabel, umsetzZiele,
   type OccupiedSlot,
 } from "@tcm/core";
+import { schrift } from "@tcm/ui";
 import { Blatt, BlattKopf } from "@/components/Blatt";
 import { Schalter, Segmente } from "@/components/Segmente";
 import { Chipwahl } from "@/components/verwaltung/Formular";
@@ -205,7 +206,7 @@ function Fehlerzeile({ text }: { text: string | null }) {
 function Fussnote({ children }: { children: ReactNode }) {
   const { farben } = useTheme();
   return (
-    <Text style={{ textAlign: "center", fontSize: 12.5, color: farben.muted, fontFamily: "Barlow_400Regular", marginTop: -6 }}>
+    <Text style={{ textAlign: "center", fontSize: schrift.groesse.klein, color: farben.muted, fontFamily: "Barlow_400Regular", marginTop: -6 }}>
       {children}
     </Text>
   );
@@ -630,25 +631,44 @@ function VerwaltenInhalt(
           </View>
         )}
 
+        {/* Im zweiten Schritt steht "Abbrechen" daneben: zurueck, ohne das
+            ganze Blatt ueber das X zu schliessen (U76). Mit grosser Schrift
+            rutscht es darunter. */}
         {darfVerwalten && (
-          <Nebenknopf
-            gefahr
-            gesperrt={props.laeuft || (stornoOffen && grundNoetig && grund.trim() === "")}
-            text={
-              stornoOffen
-                ? serientermin ? "Termin wirklich absagen" : nurStorno ? "Wirklich aufheben" : "Wirklich stornieren"
-                : serientermin ? "Fällt diese Woche aus" : nurStorno ? "Sperrung aufheben" : "Buchung stornieren"
-            }
-            onPress={() => {
-              if (!stornoOffen) {
-                setStornoOffen(true);
-                setUmsetzOffen(false);
-              }
-              else if (serientermin) props.onTerminAbsagen(b.booking_id, grund);
-              else if (nurStorno) props.onSperreAufheben(b.booking_id);
-              else props.onStornieren(b.booking_id, grund);
-            }}
-          />
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+            {stornoOffen && (
+              <View style={{ flexGrow: 1, flexBasis: 120 }}>
+                <Nebenknopf
+                  text="Abbrechen"
+                  gesperrt={props.laeuft}
+                  onPress={() => {
+                    setStornoOffen(false);
+                    setGrund("");
+                  }}
+                />
+              </View>
+            )}
+            <View style={{ flexGrow: 1, flexBasis: 160 }}>
+              <Nebenknopf
+                gefahr
+                gesperrt={props.laeuft || (stornoOffen && grundNoetig && grund.trim() === "")}
+                text={
+                  stornoOffen
+                    ? serientermin ? "Termin wirklich absagen" : nurStorno ? "Wirklich aufheben" : "Wirklich stornieren"
+                    : serientermin ? "Fällt diese Woche aus" : nurStorno ? "Sperrung aufheben" : "Buchung stornieren"
+                }
+                onPress={() => {
+                  if (!stornoOffen) {
+                    setStornoOffen(true);
+                    setUmsetzOffen(false);
+                  }
+                  else if (serientermin) props.onTerminAbsagen(b.booking_id, grund);
+                  else if (nurStorno) props.onSperreAufheben(b.booking_id);
+                  else props.onStornieren(b.booking_id, grund);
+                }}
+              />
+            </View>
+          </View>
         )}
 
         {b.is_own === true && !nurStorno && !laeuftSchon && <Fussnote>Stornieren geht bis Spielbeginn</Fussnote>}
@@ -956,7 +976,10 @@ function UmsetzBereich(
                     backgroundColor: aktiv ? farben.gold : farben.surf2,
                   }}
                 >
-                  <Text style={{ fontSize: 10.5, letterSpacing: 0.6, fontFamily: "Barlow_700Bold", color: aktiv ? farben.onGold : farben.ink2 }}>
+                  <Text
+                    maxFontSizeMultiplier={SCHRIFT_DECKEL.form}
+                    style={{ fontSize: schrift.groesse.kicker, letterSpacing: 0.6, fontFamily: "BarlowSemiCondensed_700Bold", color: aktiv ? farben.onGold : farben.ink2 }}
+                  >
                     {k.wochentag}
                   </Text>
                   <Text style={{ fontSize: 21, lineHeight: 23, fontFamily: "BarlowSemiCondensed_700Bold", color: aktiv ? farben.onGold : farben.ink2 }}>
@@ -1076,7 +1099,7 @@ function Chip({
         <Text
           maxFontSizeMultiplier={SCHRIFT_DECKEL.form}
           style={{
-            fontSize: 12, fontFamily: "Barlow_700Bold",
+            fontSize: schrift.groesse.kicker, fontFamily: "Barlow_700Bold",
             color: gelb ? farben.onGold : gast ? farben.goldInk : farben.onBrand,
           }}
         >

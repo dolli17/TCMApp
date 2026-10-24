@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { useFocusEffect } from "expo-router";
+import { schrift } from "@tcm/ui";
 import { Blatt, BlattKopf } from "@/components/Blatt";
 import { AlleGelesenKnopf, NachrichtenListe, type Nachricht } from "@/components/NachrichtenListe";
 import { Symbol } from "@/components/Symbol";
@@ -77,7 +78,7 @@ export function Glocke() {
           <View
             style={{
               position: "absolute", top: -3, right: -3,
-              minWidth: 17, height: 17, borderRadius: 99,
+              minWidth: 18, height: 18, borderRadius: 99,
               backgroundColor: farben.red,
               alignItems: "center", justifyContent: "center",
               paddingHorizontal: 4,
@@ -86,7 +87,7 @@ export function Glocke() {
             <Text
               maxFontSizeMultiplier={SCHRIFT_DECKEL.form}
               style={{
-                color: farben.onBrand, fontSize: 10.5,
+                color: farben.onBrand, fontSize: schrift.groesse.kicker, lineHeight: 14,
                 fontFamily: "Barlow_700Bold", fontVariant: ["tabular-nums"],
               }}
             >

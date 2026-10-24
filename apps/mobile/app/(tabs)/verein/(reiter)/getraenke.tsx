@@ -25,7 +25,7 @@ import {
   basketAfterBatch, basketReminder, basketSummary, canVoidSelf, changeBasket, drinkBatchReport,
   formatCents, MAX_DRINK_QUANTITY, sumOpenDrinks, type DrinkBatchResult,
 } from "@tcm/core";
-import { abstand, radius } from "@tcm/ui";
+import { abstand, radius, schrift } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
 import { VereinReiterwahl } from "@/components/Bereichsreiter";
 import { GrosserKopf } from "@/components/GrosserKopf";
@@ -36,6 +36,7 @@ import {
   bucheGetraenk, ladeEigeneGetraenke, ladeGetraenkekarte, ladeStornoFenster, storniereGetraenk,
 } from "@/lib/daten";
 import { aktuellerKorb, setzeKorb, useKorb } from "@/lib/getraenkekorb";
+import { haptik } from "@/lib/haptik";
 import { useLaden } from "@/lib/laden";
 import { mitDeckkraft } from "@/lib/stil";
 import { useTheme } from "@/lib/theme";
@@ -125,6 +126,7 @@ export default function Getraenke() {
     // Waehrend des Sendens gesperrt: das Ergebnis setzt den Korb neu.
     if (laeuft) return;
     setMeldung(null);
+    if (um > 0) haptik.tippen();
     setzeKorb((k) => changeBasket(k, id, um));
   }
 
@@ -151,6 +153,8 @@ export default function Getraenke() {
     }
     setLaeuft(false);
     setMeldung(drinkBatchReport(ergebnisse));
+    if (ergebnisse.every((e) => e.ok)) haptik.erfolg();
+    else haptik.fehler();
     if (ergebnisse.some((e) => e.ok)) setMarkiert({ vorher });
     // Was geklappt hat, verlaesst den Korb; was nicht, bleibt zum erneuten Versuch.
     setzeKorb(basketAfterBatch(ergebnisse));
@@ -162,6 +166,7 @@ export default function Getraenke() {
     const r = await storniereGetraenk(id);
     setLaeuft(false);
     setMeldung({ ok: r.ok, text: r.meldung });
+    if (!r.ok) haptik.fehler();
     if (r.ok) {
       setMarkiert({ id });
       await zustand.erneutHolen();
@@ -294,7 +299,7 @@ export default function Getraenke() {
                     <Text style={[{ fontSize: 15, fontFamily: "Barlow_600SemiBold", color: farben.ink }, zeile]}>
                       {b.quantity > 1 ? `${b.quantity}× ` : ""}{b.item_name}
                     </Text>
-                    <Text style={{ fontSize: 12.5, color: farben.muted, marginTop: 2, fontFamily: "Barlow_400Regular" }}>
+                    <Text style={{ fontSize: schrift.groesse.klein, color: farben.muted, marginTop: 2, fontFamily: "Barlow_400Regular" }}>
                       {ZEITPUNKT.format(new Date(b.created_at))} · {QUELLE[b.source] ?? "App"}
                       {zurueck ? " · zurückgenommen" : ""}
                     </Text>

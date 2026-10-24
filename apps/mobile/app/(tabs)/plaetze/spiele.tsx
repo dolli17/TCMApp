@@ -16,7 +16,7 @@ import { Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import Svg, { Circle, Path } from "react-native-svg";
 import { bookingActions, dayLabel, dayTag, offenesSpielText, upcomingBookings } from "@tcm/core";
-import { radius } from "@tcm/ui";
+import { radius, schrift } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
 import { PlaetzeReiter } from "@/components/Bereichsreiter";
 import { Fehlerzeile } from "@/components/Fehlerzeile";
@@ -26,6 +26,7 @@ import { useJetzt } from "@/components/plaetze/PlatzRaster";
 import {
   ladeMeineBuchungen, ladeOffeneSpiele, spieleMit, storniereBuchung, verlasseBuchung,
 } from "@/lib/daten";
+import { haptik } from "@/lib/haptik";
 import { useLaden } from "@/lib/laden";
 import { alsUhrzeit, lokaleMinuten } from "@/lib/plan";
 import { SCHRIFT_DECKEL } from "@/lib/schrift";
@@ -69,7 +70,10 @@ export default function Spiele() {
       setNachfrage(null);
       setOffenFuer(null);
       setMeldung({ ok: r.ok, text: r.meldung });
-      if (r.ok) await erneutHolen();
+      if (r.ok) {
+        haptik.erfolg();
+        await erneutHolen();
+      } else haptik.fehler();
     },
     [erneutHolen],
   );
@@ -124,7 +128,10 @@ export default function Spiele() {
                   backgroundColor: ersteHeute ? farben.gold : farben.surf2,
                 }}
               >
-                <Text style={{ fontSize: 10.5, letterSpacing: 0.8, fontFamily: "Barlow_700Bold", color: ersteHeute ? farben.onGold : farben.ink }}>
+                <Text
+                  maxFontSizeMultiplier={SCHRIFT_DECKEL.form}
+                  style={{ fontSize: schrift.groesse.kicker, letterSpacing: 0.8, fontFamily: "BarlowSemiCondensed_700Bold", color: ersteHeute ? farben.onGold : farben.ink }}
+                >
                   {tag === "HEUTE" || tag === "MORGEN" ? tag : `${tag} ${TAGMONAT.format(new Date(b.starts_at))}.`}
                 </Text>
                 <Text style={{ fontSize: 21, fontFamily: "BarlowSemiCondensed_700Bold", color: ersteHeute ? farben.onGold : farben.ink }}>
@@ -234,7 +241,7 @@ export default function Spiele() {
                 )}
               </View>
               <View style={{ minHeight: 28, paddingHorizontal: 10, borderRadius: 14, justifyContent: "center", backgroundColor: farben.goldSoft }}>
-                <Text style={{ fontSize: 12.5, fontFamily: "Barlow_700Bold", color: farben.goldInk }}>sucht {o.frei}</Text>
+                <Text style={{ fontSize: schrift.groesse.klein, fontFamily: "Barlow_700Bold", color: farben.goldInk }}>sucht {o.frei}</Text>
               </View>
             </View>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
@@ -247,7 +254,7 @@ export default function Spiele() {
                       backgroundColor: farben.brand, borderWidth: 2, borderColor: farben.surf,
                     }}
                   >
-                    <Text maxFontSizeMultiplier={SCHRIFT_DECKEL.form} style={{ fontSize: 11.5, fontFamily: "Barlow_700Bold", color: farben.onBrand }}>{initialen(n)}</Text>
+                    <Text maxFontSizeMultiplier={SCHRIFT_DECKEL.form} style={{ fontSize: schrift.groesse.kicker, fontFamily: "Barlow_700Bold", color: farben.onBrand }}>{initialen(n)}</Text>
                   </View>
                 ))}
                 {Array.from({ length: o.frei }, (_, i) => (

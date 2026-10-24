@@ -39,7 +39,7 @@ import {
 import { useNachladenBeiFokus } from "@/lib/fokus";
 import { abschnitt, ersterFehler, useLaden, type Abschnitt } from "@/lib/laden";
 import { alsUhrzeit, jetztFrei, lokaleMinuten, zuMinuten } from "@/lib/plan";
-import { useGrosseSchrift } from "@/lib/schrift";
+import { SCHRIFT_DECKEL, useGrosseSchrift } from "@/lib/schrift";
 import { mitDeckkraft } from "@/lib/stil";
 import { useTheme } from "@/lib/theme";
 
@@ -127,7 +127,7 @@ export default function Home() {
           <JetztFrei frei={d.frei} erneut={erneut} />
           <OffeneSpiele offen={d.offen} erneut={erneut} />
           <DemnaechstImVerein events={d.events} erneut={erneut} />
-          <DeinMonat getraenke={d.getraenke} dienst={d.dienst} />
+          <DeinStand getraenke={d.getraenke} dienst={d.dienst} />
           <Neuigkeiten neues={d.neues} erneut={erneut} />
         </>
       )}
@@ -345,7 +345,7 @@ function Schnellaktionen() {
             })}
           >
             <Symbolpfad d={k.pfad} farbe={tinte} staerke={k.gelb ? 2 : 1.8} />
-            <Text style={{ color: tinte, fontSize: 15, lineHeight: 17, fontFamily: "Barlow_700Bold", flexShrink: 1 }}>{k.text}</Text>
+            <Text style={{ color: tinte, fontSize: 15, fontFamily: "Barlow_700Bold", flexShrink: 1 }}>{k.text}</Text>
           </Pressable>
         );
       })}
@@ -444,7 +444,10 @@ function OffeneSpiele({ offen, erneut }: { offen: Abschnitt<Offen>; erneut: Erne
               backgroundColor: farben.goldSoft, borderWidth: 1.5, borderStyle: "dashed", borderColor: farben.goldLine,
             }}
           >
-            <Text style={{ fontSize: 10.5, fontFamily: "Barlow_700Bold", letterSpacing: 0.8, color: farben.ink2 }}>
+            <Text
+              maxFontSizeMultiplier={SCHRIFT_DECKEL.form}
+              style={{ fontSize: schrift.groesse.kicker, fontFamily: "BarlowSemiCondensed_700Bold", letterSpacing: 0.8, color: farben.ink2 }}
+            >
               {dayTag(o.starts_at)}
             </Text>
             <Text style={{ fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 19, color: farben.ink }}>
@@ -494,17 +497,18 @@ function DemnaechstImVerein({ events, erneut }: { events: Abschnitt<Events>; ern
   );
 }
 
-/* --- Dein Monat ----------------------------------------------------------- */
+/* --- Dein Stand ----------------------------------------------------------- */
 
 type Getraenke = Awaited<ReturnType<typeof ladeEigeneGetraenke>>;
 type Dienst = Awaited<ReturnType<typeof ladeArbeitsdienst>>;
 
-function DeinMonat({ getraenke, dienst }: { getraenke: Abschnitt<Getraenke>; dienst: Abschnitt<Dienst> }) {
+function DeinStand({ getraenke, dienst }: { getraenke: Abschnitt<Getraenke>; dienst: Abschnitt<Dienst> }) {
   const { stil, farben } = useTheme();
   const monat = MONAT.format(new Date());
   const ist = Number(dienst.wert?.completed_hours ?? 0);
   const soll = Number(dienst.wert?.required_hours ?? 0);
-  // Der Arbeitsdienst zaehlt aufs Jahr, nicht auf den Monat darueber (U55).
+  // Der Arbeitsdienst zaehlt aufs Jahr, nicht auf den Monat (U55) - darum
+  // traegt jede Kachel ihren Zeitraum selbst und die Ueberschrift keinen (U76).
   const jahr = dienst.wert?.year ?? new Date().getFullYear();
   const anteil = soll > 0 ? Math.min(1, ist / soll) : 0;
 
@@ -514,7 +518,7 @@ function DeinMonat({ getraenke, dienst }: { getraenke: Abschnitt<Getraenke>; die
 
   return (
     <>
-      <Kopfzeile titel={`Dein ${monat}`} />
+      <Kopfzeile titel="Dein Stand" />
       <View style={{ flexDirection: "row", gap: 10 }}>
         <Pressable
           onPress={() => router.navigate("/verein/getraenke")}
@@ -526,13 +530,13 @@ function DeinMonat({ getraenke, dienst }: { getraenke: Abschnitt<Getraenke>; die
           }
           style={[stil.listenkarte, kachel]}
         >
-          <Text style={titel}>Getränke</Text>
+          <Text style={titel}>Getränke {monat}</Text>
           {getraenke.fehler ? (
             <Text style={[stil.leise, { color: farben.redInk }]}>{getraenke.fehler}</Text>
           ) : (
             <>
               <Text style={wert}>{formatCents(sumOpenDrinks(getraenke.wert ?? []))}</Text>
-              <Text style={[stil.leise, { fontSize: 12.5 }]}>läuft noch</Text>
+              <Text style={stil.leise}>läuft noch</Text>
             </>
           )}
         </Pressable>
@@ -611,7 +615,7 @@ function Neuigkeiten({ neues, erneut }: { neues: Abschnitt<Neues>; erneut: Erneu
                     <Text style={{ flex: 1, fontSize: 15, fontFamily: "Barlow_700Bold", color: farben.ink }} numberOfLines={2}>
                       {n.title}
                     </Text>
-                    <Text style={{ fontSize: 12, color: farben.muted, fontFamily: "Barlow_400Regular" }}>
+                    <Text style={{ fontSize: schrift.groesse.klein, color: farben.muted, fontFamily: "Barlow_400Regular" }}>
                       {relativeTimeLabel(n.created_at)}
                     </Text>
                   </View>

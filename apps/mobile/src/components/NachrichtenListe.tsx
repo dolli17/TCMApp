@@ -16,7 +16,7 @@ import Svg, { Path } from "react-native-svg";
 import {
   groupNotifications, notificationSymbol, notificationZiel, relativeTimeLabel, type NotificationSymbol,
 } from "@tcm/core";
-import { radius } from "@tcm/ui";
+import { radius, schrift } from "@tcm/ui";
 import type { ladeBenachrichtigungen } from "@/lib/daten";
 import { Leerzustand } from "@/components/Leerzustand";
 import { useTheme } from "@/lib/theme";
@@ -50,7 +50,8 @@ export function NachrichtenListe({ liste, alleGesehen }: { liste: Nachricht[]; a
   const { stil, farben } = useTheme();
 
   if (liste.length === 0) {
-    return <Leerzustand text="Es liegt nichts vor." />;
+    // Derselbe Satz wie auf Start und im Web (U76).
+    return <Leerzustand text="Keine Neuigkeiten." />;
   }
 
   return (
@@ -101,7 +102,7 @@ export function NachrichtenListe({ liste, alleGesehen }: { liste: Nachricht[]; a
                       <Text style={{ flex: 1, fontSize: 15, fontFamily: "Barlow_700Bold", color: farben.ink }}>
                         {n.title}
                       </Text>
-                      <Text style={{ fontSize: 12, color: farben.muted, fontFamily: "Barlow_400Regular" }}>
+                      <Text style={{ fontSize: schrift.groesse.klein, color: farben.muted, fontFamily: "Barlow_400Regular" }}>
                         {relativeTimeLabel(n.created_at)}
                       </Text>
                     </View>
