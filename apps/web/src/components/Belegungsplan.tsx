@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
 import {
-  berlinTime, blockingLabel, canStartAt, courtStatusAt, localMinutes, minutesOf, minutesToTime,
-  nextSlotMinute, occupancyKind, timeToMinutes, type TimelineKind,
+  berlinTime, blockingLabel, canStartAt, courtStatusAt, freeCourtsNow, freeGaps, localMinutes, minutesOf,
+  minutesToTime, nextSlotMinute, occupancyKind, timeToMinutes, type TimelineKind,
 } from "@tcm/core";
 import {
   belegungAm, buchen, mitspielen, mitspielerAendern, mitspielerSuchen, serienterminAbsagen,
@@ -350,6 +351,42 @@ export function Belegungsplan(props: Props) {
     el?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
   }, [markiert, props.belegungen]);
 
+  /**
+   * "Platz buchen" (Seitenleiste, Kachel und Leerkarte auf Start) kommt mit
+   * ?buchen=jetzt hierher, eine Karte unter "Jetzt frei" mit &platz= ihrem
+   * Platz - wie in der App (U54). Das Blatt geht zur naechsten freien Zeit
+   * auf; ist der Wunschplatz inzwischen belegt, gilt der erste freie. Danach
+   * verschwinden die Parameter aus der Adresse, damit Neuladen das Blatt
+   * nicht wieder oeffnet.
+   */
+  const parameter = useSearchParams();
+  const buchenJetzt = parameter.get("buchen") === "jetzt";
+  const wunschPlatz = parameter.get("platz");
+  useEffect(() => {
+    if (!buchenJetzt) return;
+    const adresse = new URL(window.location.href);
+    adresse.searchParams.delete("buchen");
+    adresse.searchParams.delete("platz");
+    window.history.replaceState(null, "", adresse.pathname + adresse.search);
+    if (!istHeute) return;
+    if (kontingentAus) {
+      setMeldung({ ok: false, text: "Dein Kontingent ist ausgeschöpft." });
+      return;
+    }
+    const freie = freeCourtsNow({
+      day: props.datum, courtIds: props.plaetze.map((p) => p.id), openingMinutes: oeffnungMin,
+      closingMinutes: schlussMin, slotMinutes: props.rasterMinuten, durationMinutes: props.dauerMinuten,
+      occupied: props.belegungen, leadDays: props.vorlaufTage, now: jetzt,
+    });
+    const erster = freie.find((f) => f.courtId === wunschPlatz) ?? freie[0];
+    if (!erster) {
+      setMeldung({ ok: false, text: "Heute ist gerade kein Platz mehr frei – wähle einen anderen Tag." });
+      return;
+    }
+    oeffneBuchen(erster.courtId, erster.fromMinute);
+    // Nur beim Ankommen mit dem Parameter, nicht bei jeder neuen Belegung.
+  }, [buchenJetzt, wunschPlatz]);
+
   const legende = <Legende />;
 
   return (
@@ -385,7 +422,6 @@ export function Belegungsplan(props: Props) {
         <div className="raster-oben">
           {legende}
           <ul className="legende raster-legende" aria-hidden="true">
-            <li><i className="frei"><Plus /></i>Frei</li>
             <li><i className="vorbei" />Vorbei</li>
           </ul>
         </div>
@@ -428,7 +464,11 @@ export function Belegungsplan(props: Props) {
 
             <div className="raster-zeiten" aria-hidden="true">
               {stundenmarken(oeffnungMin, schlussMin).map((m) => (
-                <span key={m} className="stunde tnum" style={{ top: px(m - oeffnungMin) }}>
+                <span
+                  key={m}
+                  className={`stunde tnum${istHeute && verdecktVonJetzt(m, lokaleJetzt(jetzt)) ? " verdeckt" : ""}`}
+                  style={{ top: px(m - oeffnungMin) }}
+                >
                   {alsUhrzeit(m)}
                 </span>
               ))}
@@ -446,9 +486,27 @@ export function Belegungsplan(props: Props) {
               }
               // Nach der Zeit sortiert, damit die Tabulatortaste von oben nach unten laeuft.
               const eintraege = [...belegt, ...frei].sort((a, b) => a.minute - b.minute);
+              // Freie Zeit als gruene Flaeche ueber die ganze Luecke, wie am
+              // Telefon (U66) - dieselbe Rechnung (freeGaps). Die Knoepfe je
+              // Startzeit liegen unsichtbar darueber.
+              const luecken = kontingentAus ? [] : freeGaps({
+                day: props.datum, courtId: platz.id, openingMinutes: oeffnungMin, closingMinutes: schlussMin,
+                slotMinutes: props.rasterMinuten, durationMinutes: props.dauerMinuten, occupied: props.belegungen,
+                leadDays: props.vorlaufTage, now: jetzt,
+              });
 
               return (
                 <div key={platz.id} className="spalte" role="group" aria-label={platz.name}>
+                  {luecken.map((l) => (
+                    <div
+                      key={`l${l.from}`}
+                      className="frei-flaeche"
+                      style={{ top: px(l.from - oeffnungMin) + 2, height: px(l.until - l.from) - 4 }}
+                      aria-hidden="true"
+                    >
+                      {l.until - l.from >= props.dauerMinuten && <span>frei bis {alsUhrzeit(l.until)}</span>}
+                    </div>
+                  ))}
                   {eintraege.map((e) => {
                     if (e.art === "frei") {
                       return (
@@ -460,7 +518,6 @@ export function Belegungsplan(props: Props) {
                           onClick={() => oeffneBuchen(platz.id, e.minute)}
                           aria-label={`${platz.name} um ${alsUhrzeit(e.minute)} buchen`}
                         >
-                          <Plus />
                           <span className="vorschau" style={{ height: px(props.dauerMinuten) - 4 }}>
                             + {alsUhrzeit(e.minute)} buchen
                           </span>
@@ -573,19 +630,22 @@ function stundenmarken(oeffnung: number, schluss: number): number[] {
   return out;
 }
 
-/* --- Legende --------------------------------------------------------------- */
-
-/** Feines Plus fuer freie, buchbare Startzeiten im Raster. */
-function Plus() {
-  return (
-    <svg className="plus" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
-      <path d="M6 1.5v9M1.5 6h9" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
+/**
+ * Liegt die Jetzt-Marke ueber der Stundenbeschriftung? Die Marke ist 20 px
+ * hoch und mittig auf der Linie, die Beschriftung steht 4 bis 20 px unter
+ * ihrer Stunde - dann bleibt nur die Marke stehen, sie nennt die Zeit ja
+ * selbst (U67: "13:11 0").
+ */
+function verdecktVonJetzt(stunde: number, jetzt: number): boolean {
+  const abstand = px(jetzt - stunde);
+  return abstand > -8 && abstand < 30;
 }
 
+/* --- Legende --------------------------------------------------------------- */
+
 function Legende() {
-  const eintraege: { name: string; art: TimelineKind }[] = [
+  const eintraege: { name: string; art: TimelineKind | "frei" }[] = [
+    { name: "Frei", art: "frei" },
     { name: "Deine", art: "eigen" },
     { name: "Belegt", art: "belegt" },
     { name: "Sucht Mitspieler", art: "sucht" },

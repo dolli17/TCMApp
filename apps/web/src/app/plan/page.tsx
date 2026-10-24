@@ -123,8 +123,8 @@ export default async function PlanSeite({
           <h1 className="pagetitle">Plätze</h1>
           {/* Nur über dem Raster ab Tablet; das Telefon führt mit eigenen Listen. */}
           <p className="plan-hinweis">
-            Zum Buchen eine freie Zeit (+) antippen oder anklicken · {dauer} Minuten, Start zur
-            vollen oder halben Stunde
+            Zum Buchen in eine grüne, freie Zeit klicken · {dauer} Minuten, Start zur vollen oder
+            halben Stunde
           </p>
         </div>
         <nav className="datums-kacheln" aria-label="Tag wählen">

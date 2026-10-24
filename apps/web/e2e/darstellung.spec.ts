@@ -327,6 +327,26 @@ test.describe("Layout", () => {
       await expect(fenster).toHaveCount(0);
     });
 
+    test("„Jetzt frei“ öffnet das Blatt für genau diesen Platz (U68)", async ({ page }) => {
+      await anmelden(page);
+      await page.goto("/");
+
+      // Am späten Abend ist heute nichts mehr frei - dann gibt es keine Karte.
+      // Ab 768 px stehen nur die ersten vier Karten da.
+      const karten = page.locator(".frei-reihe a:visible");
+      test.skip((await karten.count()) === 0, "heute ist kein Platz mehr frei");
+      const karte = karten.last();
+      expect(await karte.getAttribute("href")).toMatch(/^\/plan\?buchen=jetzt&platz=/);
+      const name = await karte.locator("b").first().innerText();
+
+      await karte.click();
+      const fenster = page.locator("dialog.fenster");
+      await expect(fenster).toBeVisible();
+      await expect(fenster.locator(".fenster-kopf")).toContainText(name);
+      // Die Parameter sind aus der Adresse verschwunden: Neuladen öffnet nichts.
+      await expect(page).toHaveURL(/\/plan$/);
+    });
+
     for (const pfad of SEITEN) {
       test(`${pfad} scrollt nicht waagerecht`, async ({ page }) => {
         await anmelden(page);
