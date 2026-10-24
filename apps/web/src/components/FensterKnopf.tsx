@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useVerwerfenFrage } from "@/components/VerwerfenFrage";
 
 /**
  * Ein Formular als Blatt (docs/design/clubhaus/verwaltung, Regel 5)
@@ -64,6 +65,7 @@ export function FensterKnopf({
     onSchliessen?.();
     if (zurueck) router.push(zurueck);
   }
+  const { fenster, rueckfrage } = useVerwerfenFrage(dialog, geschlossen);
 
   return (
     <>
@@ -87,10 +89,7 @@ export function FensterKnopf({
           ref={dialog}
           className={`fenster blatt${breit ? " breit" : ""}`}
           aria-label={titel}
-          onClose={geschlossen}
-          onClick={(e) => {
-            if (e.target === dialog.current) dialog.current?.close();
-          }}
+          {...fenster}
         >
           <span className="griff" aria-hidden="true" />
           <div className="fenster-kopf">
@@ -104,6 +103,7 @@ export function FensterKnopf({
               </svg>
             </button>
           </div>
+          {rueckfrage}
           <div className="fenster-inhalt">{children}</div>
         </dialog>
       )}

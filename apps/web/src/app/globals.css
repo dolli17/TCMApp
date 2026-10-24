@@ -553,7 +553,7 @@ dialog.fenster::backdrop { background: rgba(3,8,14,.62); backdrop-filter: blur(2
   font-family: var(--font-display); font-weight: 700; font-size: 26px;
   margin: 0; line-height: 1.1; letter-spacing: -.3px;
 }
-.fenster-kopf p { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); }
+.fenster-kopf p { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); text-wrap: pretty; }
 .fenster-zu {
   margin-left: auto; flex: 0 0 auto; width: 40px; height: 40px; line-height: 1;
   font-size: 22px; border-radius: 20px; cursor: pointer;
@@ -2200,15 +2200,30 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .blatt .formraster > label + label { border-top: 1px solid var(--line); }
 .blatt .formraster > label > span:first-child {
   flex: 0 0 104px; margin: 0; font-size: 15px; font-weight: 600; color: var(--ink-2);
+  hyphens: auto;
 }
-.blatt .formraster > label > :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
-  flex: 1 1 140px; min-width: 0; margin: 0; padding: 14px 0;
-  border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 16px;
+/* Am Desktop passt "Straße und Hausnummer" in eine Zeile (U61) */
+@media (min-width: 768px) {
+  .blatt .formraster > label > span:first-child { flex-basis: 168px; }
 }
+/* Jedes Feld als Fläche mit Rand wie in den Stammdaten, sonst wirkt das leere
+   Formular wie eine Liste von Bezeichnungen (U61) */
+.blatt .formraster > label > :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
+.blatt .formraster .feldpaar > input {
+  flex: 1 1 140px; min-width: 0; margin: 6px 0; padding: 7px 12px; min-height: 40px;
+  border: 1.5px solid var(--rahmen); border-radius: var(--radius-feld); background: var(--surf); box-shadow: none; font-size: 16px;
+}
+/* Zwei Felder in einer Zeile, etwa PLZ und Ort */
+.blatt .formraster > label > .feldpaar { flex: 1 1 140px; min-width: 0; display: flex; gap: 8px; margin: 0; }
+.blatt .formraster .feldpaar > input:first-child { flex: 0 1 5.5em; }
+.blatt .formraster .feldpaar > input:last-child { flex: 1 1 0; }
 .blatt .formraster > label > .feldfehler, .blatt .formraster > label > .beschreibung { flex-basis: 100%; margin: -6px 0 10px; }
 .blatt .formraster > label > .beschreibung { font-size: 14px; font-weight: 500; color: var(--muted); }
-/* Die Zeile ist das Feld: Fokus als Ring innen, die Gruppe schneidet ihn rund ab */
-.blatt .formraster > label:focus-within { background: var(--surf); box-shadow: inset 0 0 0 2px var(--blue); }
+/* Fokus am Feld wie überall (U47) */
+.blatt .formraster > label > :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus,
+.blatt .formraster .feldpaar > input:focus {
+  border-color: var(--blue); box-shadow: 0 0 0 1.5px var(--blue), 0 0 0 5px var(--blue-soft);
+}
 /* "(freiwillig)" unter der Bezeichnung, damit die Spalte schmal bleibt */
 .freiwillig { display: block; font-size: 13px; font-weight: 500; color: var(--muted); }
 /* Langes Formular im Blatt: Abbrechen und Absenden bleiben unten stehen.
@@ -2342,7 +2357,12 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 /* Ein Mitglied wie das eigene Konto */
 .mitglied-detail > .kopfleiste { display: flex; justify-content: space-between; align-items: center; }
 .mitglied-detail > .kopfleiste .zurueck { margin: 0; min-height: 44px; display: inline-flex; align-items: center; color: var(--blue-ink); font-size: 15px; font-weight: 600; }
-.mitglied-uebersicht { display: grid; gap: 28px; }
+/* Die Abschnitte richten sich nach der eigenen Breite, nicht nach dem Fenster:
+   rechts neben der Liste ist das Mitglied schmaler als direkt aufgerufen (U59). */
+.mitglied-uebersicht { display: grid; gap: 28px; container-type: inline-size; }
+/* Direkt aufgerufen: nicht über die ganze Seite, sonst stehen Bezeichnung und
+   Wert einen Bildschirm weit auseinander */
+.mitglied-detail:has(> .mitglied-uebersicht) { max-width: 760px; }
 .mitglied-profil { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
 .mitglied-profil .avatar.gross { width: 88px; height: 88px; border-radius: 44px; font-size: 30px; font-weight: 800; background: var(--brand); }
 .mitglied-profil h1, .mitglied-profil h2 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -.4px; line-height: 1.1; }
@@ -2357,8 +2377,12 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 .schnellaktion:hover { text-decoration: none; border-color: var(--line-2); }
 .schnellaktion svg { width: 20px; height: 20px; }
-.schnellaktion.aus { color: var(--muted); opacity: .6; }
+.schnellaktion.aus { color: var(--muted); background: var(--surf-2); box-shadow: none; cursor: default; }
 .mitglied-gruppen { display: grid; gap: 28px; }
+/* Die Bezeichnung wird nie gekürzt; ein langer Wert bricht rechts um. */
+.mitglied-gruppen .listenzeile .text { flex: 0 0 auto; }
+.mitglied-gruppen .listenzeile .titel { overflow: visible; }
+.mitglied-gruppen .hinweis-rechts { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 .dienst-karte { display: grid; gap: 12px; padding: 16px; color: var(--ink); text-decoration: none; }
 .dienst-karte:hover { text-decoration: none; border-color: var(--line-2); }
 .dienst-karte .zeile { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 15.5px; font-weight: 600; }
@@ -2392,7 +2416,10 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .kompakt .schnellaktion { width: 48px; min-height: 48px; border-radius: 16px; background: var(--surf-2); border: 0; box-shadow: none; }
 .kompakt .schnellaktion span { display: none; }
 .kompakt .mitglied-profil .knopf.leise { min-height: 48px; border-radius: 16px; background: var(--surf-2); border: 0; }
-.kompakt .mitglied-gruppen { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.kompakt .mitglied-gruppen { gap: 18px; align-items: start; }
+@container (min-width: 640px) {
+  .kompakt .mitglied-gruppen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .kompakt .gruppenkopf h2 { font-size: 18px; }
 .kompakt .liste-gruppe { background: var(--surf-2); box-shadow: none; border: 0; border-radius: 18px; }
 .kompakt .listenzeile { min-height: 50px; }
@@ -2561,6 +2588,9 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .rueckfrage > .hinweis { margin: 0; }
 /* Im blauen "Nächster Schritt" (Kasse): Abstand kommt dort vom gap */
 .naechster-schritt .rueckfrage { margin: 0; }
+/* Im Fenster unter dem Kopf: "Eingaben verwerfen?" (U60) */
+.fenster-rueckfrage { max-width: none; margin: 0 0 16px; }
+dialog.fenster:not(.blatt) > .fenster-rueckfrage { margin: 8px 22px 0; }
 @media (min-width: 900px) {
   .kennzahlen.vier { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { berlinDay } from "@tcm/core";
 import {
   mitgliedAnonymisieren,
   mitgliedArchivieren,
@@ -27,7 +28,25 @@ interface Props {
   archiviert: boolean;
   anonymisiert: boolean;
   selbst: boolean;
+  /** Läuft die Mitgliedschaft noch ohne Austrittsdatum? */
+  mitgliedschaftLaeuft: boolean;
+  /** Eingetragenes Austrittsdatum der letzten Mitgliedschaft */
+  austrittZum: string | null;
   folgen: Loeschfolgen;
+}
+
+/** "1 Forderung", "3 Forderungen" */
+function anzahl(n: number, eins: string, viele: string): string {
+  return `${n} ${n === 1 ? eins : viele}`;
+}
+
+/** Nur die Posten, die es gibt: "1 Forderung und 3 Getränkebuchungen" */
+function aufzaehlung(teile: string[]): string {
+  return teile.length > 1 ? `${teile.slice(0, -1).join(", ")} und ${teile.at(-1)}` : (teile[0] ?? "");
+}
+
+function datum(iso: string): string {
+  return new Intl.DateTimeFormat("de-DE").format(new Date(iso));
 }
 
 /**
@@ -51,7 +70,18 @@ export function GefahrenzoneKarte(props: Props) {
   const [tippName, setTippName] = useState("");
 
   const f = props.folgen;
+  const posten = [
+    f.charges ? anzahl(f.charges, "Forderung", "Forderungen") : null,
+    f.drink_purchases ? anzahl(f.drink_purchases, "Getränkebuchung", "Getränkebuchungen") : null,
+    f.bookings ? anzahl(f.bookings, "Platzbuchung", "Platzbuchungen") : null,
+  ].filter((x): x is string => x !== null);
+  // "gehört 1 Forderung", sonst "gehören …"
+  const einzeln = posten.length === 1 && posten[0]?.startsWith("1 ");
+  const historie = posten.length ? `${einzeln ? "gehört" : "gehören"} ${aufzaehlung(posten)}` : "";
   const offeneForderungen = f.charges > 0;
+  // Archivieren ist der zweite Schritt beim Austritt, erst nach dem Datum (U62).
+  // Vorher geht es auch, sperrt dann aber sofort.
+  const vorzeitig = props.mitgliedschaftLaeuft || (props.austrittZum !== null && props.austrittZum > berlinDay(new Date()));
   const stimmt = (getippt: string) => getippt.trim().toLowerCase() === props.nachname.trim().toLowerCase();
 
   function archivieren(bestaetigt: boolean) {
@@ -120,9 +150,17 @@ export function GefahrenzoneKarte(props: Props) {
       <div className="einstellung">
         <span className="titel">Archivieren</span>
         <span className="beschreibung">
-          Der Regelfall beim Austritt. Alle Daten bleiben erhalten, das Mitglied verschwindet aus
-          den laufenden Listen. Künftige Buchungen werden abgesagt, Mandate widerrufen, offene
-          Forderungen bleiben bestehen.
+          {props.archiviert
+            ? ""
+            : props.mitgliedschaftLaeuft
+              ? "Der zweite Schritt beim Austritt: erst oben den Austritt eintragen, archivieren nach diesem Tag. "
+              : props.austrittZum && vorzeitig
+                ? `Nach dem Austritt am ${datum(props.austrittZum)} der nächste Schritt. `
+                : props.austrittZum
+                  ? `Der Austritt am ${datum(props.austrittZum)} ist vorbei, jetzt kann archiviert werden. `
+                  : ""}
+          Alle Daten bleiben erhalten, das Mitglied verschwindet aus den laufenden Listen. Künftige
+          Buchungen werden abgesagt, Mandate widerrufen, offene Forderungen bleiben bestehen.
         </span>
 
         {props.archiviert && props.anonymisiert ? (
@@ -167,10 +205,17 @@ export function GefahrenzoneKarte(props: Props) {
                 onChange={(e) => setArchivGrund(e.target.value)}
               />
             </label>
+            {vorzeitig && (
+              <p className="hinweis">
+                {props.mitgliedschaftLaeuft
+                  ? "Die Mitgliedschaft läuft noch. Archivieren beendet sie heute, sperrt sofort den Zugang und sagt künftige Buchungen ab. Für einen Austritt zu einem späteren Tag erst oben das Datum eintragen."
+                  : `Der Austritt ist erst am ${datum(props.austrittZum!)}. Archivieren sperrt schon heute den Zugang und sagt künftige Buchungen ab.`}
+              </p>
+            )}
             {offeneForderungen && (
               <p className="hinweis fehler">
-                {f.charges} Forderungen sind noch offen. Sie bleiben bestehen und müssen weiterhin
-                eingezogen werden.
+                {f.charges === 1 ? "1 Forderung ist" : `${f.charges} Forderungen sind`} noch offen. Sie
+                bleiben bestehen und müssen weiterhin eingezogen werden.
               </p>
             )}
             <span className="knopfreihe">
@@ -242,10 +287,9 @@ export function GefahrenzoneKarte(props: Props) {
 
         {!f.can_delete ? (
           <div className="hinweis fehler">
-            <strong>Löschen ist hier nicht möglich.</strong> Zu diesem Mitglied gehören{" "}
-            {f.charges} Forderungen, {f.drink_purchases} Getränkebuchungen und {f.bookings}{" "}
-            Platzbuchungen. Ein Löschen würde die Buchhaltung zerreißen – bitte archivieren oder
-            anonymisieren.
+            <strong>Löschen ist hier nicht möglich.</strong>{" "}
+            {historie ? `Zu diesem Mitglied ${historie}. ` : ""}Ein Löschen würde die Buchhaltung
+            zerreißen – bitte archivieren oder anonymisieren.
           </div>
         ) : (
           <div className="rueckfrage">
