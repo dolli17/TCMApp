@@ -404,6 +404,8 @@ export default async function MitgliedSeite({
             archiviert={m.status === "archived"}
             anonymisiert={!m.auth_user_id && m.last_name.startsWith("Mitglied #")}
             selbst={istSelbst}
+            mitgliedschaftLaeuft={Boolean(laufend)}
+            austrittZum={laufend ? null : (mitgliedschaften[0]?.ended_on ?? null)}
           />
         </>
       )}
@@ -541,6 +543,8 @@ async function Gefahrenzone(props: {
   archiviert: boolean;
   anonymisiert: boolean;
   selbst: boolean;
+  mitgliedschaftLaeuft: boolean;
+  austrittZum: string | null;
 }) {
   const supabase = await createServerSupabase();
   const { data } = await supabase.rpc("member_delete_impact", { p_member_id: props.id });
@@ -563,6 +567,8 @@ async function Gefahrenzone(props: {
       archiviert={props.archiviert}
       anonymisiert={props.anonymisiert}
       selbst={props.selbst}
+      mitgliedschaftLaeuft={props.mitgliedschaftLaeuft}
+      austrittZum={props.austrittZum}
       folgen={folgen}
     />
   );

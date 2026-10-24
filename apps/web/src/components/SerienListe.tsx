@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { serieAendern, serieBeenden } from "@/app/admin/plaetze/aktionen";
 import { Listenzeile } from "@/components/Listenzeile";
 import { Leerzustand } from "@/components/Leerzustand";
+import { useVerwerfenFrage } from "@/components/VerwerfenFrage";
 
 export interface SerienZeile {
   id: string;
@@ -110,6 +111,7 @@ function SerienFenster({
 }) {
   const [beendenFrage, setBeendenFrage] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
+  const { fenster, rueckfrage } = useVerwerfenFrage(dialog, onSchliessen);
   const [von, setVon] = useState(String(serie.start_time).slice(0, 5));
   const [bis, setBis] = useState(String(serie.end_time).slice(0, 5));
   const [titel, setTitel] = useState(serie.title);
@@ -141,11 +143,7 @@ function SerienFenster({
     <dialog
       ref={dialog}
       className="fenster blatt"
-      onClose={onSchliessen}
-      onCancel={onSchliessen}
-      onClick={(e) => {
-        if (e.target === dialog.current) dialog.current?.close();
-      }}
+      {...fenster}
       aria-label="Serie bearbeiten"
     >
       <span className="griff" aria-hidden="true" />
@@ -165,6 +163,7 @@ function SerienFenster({
           ×
         </button>
       </div>
+      {rueckfrage}
 
       <div className="fenster-inhalt">
         <p className="unterzeile">

@@ -9,6 +9,7 @@ import {
   antragAnnehmen,
 } from "@/app/admin/mitglieder/antraege/aktionen";
 import type { Beitragsart } from "@/lib/beitragsarten";
+import { useVerwerfenFrage } from "@/components/VerwerfenFrage";
 
 export type { Beitragsart };
 
@@ -80,6 +81,12 @@ export function AntragsFenster({
   }, []);
 
   const [aufgenommen, setAufgenommen] = useState<string | null>(null);
+  const { fenster, rueckfrage } = useVerwerfenFrage(dialog, () => {
+    // Erst jetzt auffrischen: währenddessen würde der Teilbau samt
+    // Fenster ersetzt.
+    if (aufgenommen) router.refresh();
+    onSchliessen();
+  });
 
   function annehmen(fd: FormData) {
     starte(async () => {
@@ -117,16 +124,7 @@ export function AntragsFenster({
     <dialog
       ref={dialog}
       className="fenster blatt breit"
-      onClose={() => {
-        // Erst jetzt auffrischen: währenddessen würde der Teilbau samt
-        // Fenster ersetzt.
-        if (aufgenommen) router.refresh();
-        onSchliessen();
-      }}
-      onCancel={onSchliessen}
-      onClick={(e) => {
-        if (e.target === dialog.current) dialog.current?.close();
-      }}
+      {...fenster}
       aria-label={`Antrag von ${antrag.first_name} ${antrag.last_name}`}
     >
       <span className="griff" aria-hidden="true" />
@@ -144,6 +142,8 @@ export function AntragsFenster({
           ×
         </button>
       </div>
+
+      {rueckfrage}
 
       {/* Ein Formular über Inhalt und Fuß statt eines Knopfes mit form-Attribut:
           das ist dieselbe Struktur wie im Anlegen-Fenster und kommt ohne

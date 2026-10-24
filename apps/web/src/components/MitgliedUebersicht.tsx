@@ -79,15 +79,16 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
   const gesperrt = hatLogin && Boolean(m.login_disabled_at);
   // Neue Mitglieder: wo hängt die Einladung bzw. das Onboarding? (O24)
   const einladung = m.onboarding_completed_at ? null : (await ladeEinladungsstatus([id])).get(id) ?? null;
-  const telefon = m.mobile ?? m.phone;
+  // Leere Felder zählen nicht als Nummer.
+  const telefon = m.mobile?.trim() || m.phone?.trim() || null;
   const name = `${m.first_name} ${m.last_name}`;
   const kurz = (m.first_name[0] ?? "") + (m.last_name[0] ?? "");
   const teil = (t: MitgliedTeil) => `/admin/mitglieder/${id}?teil=${t}`;
   const datum = (iso: string) => new Intl.DateTimeFormat("de-DE").format(new Date(iso));
 
   const schnell = [
-    { name: "Anrufen", href: telefon ? `tel:${telefon.replace(/\s/g, "")}` : null, d: TELEFON },
-    { name: kompakt ? "E-Mail schreiben" : "E-Mail", href: m.email ? `mailto:${m.email}` : null, d: POST },
+    { name: "Anrufen", href: telefon ? `tel:${telefon.replace(/\s/g, "")}` : null, fehlt: "Keine Nummer", d: TELEFON },
+    { name: kompakt ? "E-Mail schreiben" : "E-Mail", href: m.email ? `mailto:${m.email}` : null, fehlt: "Keine E-Mail", d: POST },
   ];
 
   return (
@@ -127,11 +128,18 @@ export async function MitgliedUebersicht({ id, kompakt = false }: { id: string; 
                 <span>{x.name}</span>
               </a>
             ) : (
-              <span key={x.name} className="schnellaktion aus" aria-disabled="true" aria-label={kompakt ? x.name : undefined}>
+              // Aus nur mit Grund: der steht statt des Namens da, kompakt im Titel.
+              <span
+                key={x.name}
+                className="schnellaktion aus"
+                aria-disabled="true"
+                aria-label={`${x.name}: ${x.fehlt} hinterlegt`}
+                title={`${x.fehlt} hinterlegt`}
+              >
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                   <path d={x.d} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                <span>{x.name}</span>
+                <span>{x.fehlt}</span>
               </span>
             ),
           )}

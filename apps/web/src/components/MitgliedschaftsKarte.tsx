@@ -23,6 +23,9 @@ function datum(wert: string | null): string {
 /**
  * Austritt und Wiedereintritt.
  *
+ * Beim Austritt der erste Schritt: hier das Datum, archiviert wird erst danach
+ * in der Karte darunter (U62).
+ *
  * Das Beenden ist zweistufig wie das Stornieren im Buchungsfenster: erst
  * erscheint das Formular, dann der Knopf, der es wirklich tut. Kein
  * window.confirm – der Browserdialog lässt sich nicht gestalten und sagt nicht,
@@ -38,6 +41,7 @@ export function MitgliedschaftsKarte(props: Props) {
   // behält das Mitglied seinen Zugang (B21), danach greift hat_zugang.
   const jahresende = `${heute.slice(0, 4)}-12-31`;
   const [ende, setEnde] = useState(jahresende);
+  const grund = props.letzte?.cancellation_reason ? ` (${props.letzte.cancellation_reason})` : "";
 
   function beenden(fd: FormData) {
     starte(async () => {
@@ -67,7 +71,8 @@ export function MitgliedschaftsKarte(props: Props) {
       {props.laufend ? (
         <>
           <p className="unterzeile">
-            Nummer {props.laufend.number}, Eintritt {datum(props.laufend.started_on)}.
+            Nummer {props.laufend.number}, Eintritt {datum(props.laufend.started_on)}. Beim Austritt
+            zuerst hier das Datum eintragen; archiviert wird erst nach diesem Tag.
           </p>
 
           {!beendenOffen ? (
@@ -76,7 +81,7 @@ export function MitgliedschaftsKarte(props: Props) {
               disabled={laeuft || props.archiviert}
               onClick={() => setBeendenOffen(true)}
             >
-              Mitgliedschaft beenden
+              Austritt eintragen
             </button>
           ) : (
             <form action={beenden}>
@@ -129,11 +134,11 @@ export function MitgliedschaftsKarte(props: Props) {
       ) : (
         <>
           <p className="unterzeile">
-            {props.letzte
-              ? `Keine laufende Mitgliedschaft. Zuletzt Nummer ${props.letzte.number}, beendet ${datum(props.letzte.ended_on)}${
-                  props.letzte.cancellation_reason ? ` (${props.letzte.cancellation_reason})` : ""
-                }.`
-              : "Keine Mitgliedschaft erfasst."}
+            {!props.letzte
+              ? "Keine Mitgliedschaft erfasst."
+              : props.letzte.ended_on && props.letzte.ended_on > heute
+                ? `Austritt zum ${datum(props.letzte.ended_on)} eingetragen${grund}. Bis dahin bleibt alles, wie es ist; archivieren erst danach.`
+                : `Keine laufende Mitgliedschaft. Zuletzt Nummer ${props.letzte.number}, beendet ${datum(props.letzte.ended_on)}${grund}.`}
           </p>
           <button className="knopf" disabled={laeuft || props.archiviert} onClick={wiederaufnehmen}>
             {laeuft ? "Wird aufgenommen…" : "Wieder aufnehmen"}

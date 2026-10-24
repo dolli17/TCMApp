@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { berlinDay, formatCents } from "@tcm/core";
 import { mitgliedAnlegen } from "@/app/admin/mitglieder/aktionen";
 import type { Beitragsart } from "@/lib/beitragsarten";
+import { useVerwerfenFrage } from "@/components/VerwerfenFrage";
 
 /**
  * Neues Mitglied anlegen.
@@ -29,10 +30,13 @@ export function MitgliedAnlegenFenster({
   const [laeuft, starte] = useTransition();
   // Mit Adresse geht die Einladung gleich mit raus – das sagt der Knopf (U47).
   const [email, setEmail] = useState("");
+  const { fenster, rueckfrage } = useVerwerfenFrage(dialog, onSchliessen);
 
   useEffect(() => {
     const el = dialog.current;
     if (el && !el.open) el.showModal();
+    // Sonst stünde der Fokus auf dem Schließen-Knopf oben (U61).
+    el?.querySelector<HTMLInputElement>("input[name=first_name]")?.focus();
   }, []);
 
   function abschicken(fd: FormData) {
@@ -50,26 +54,25 @@ export function MitgliedAnlegenFenster({
     <dialog
       ref={dialog}
       className="fenster blatt breit"
-      onClose={onSchliessen}
-      onCancel={onSchliessen}
-      onClick={(e) => {
-        if (e.target === dialog.current) dialog.current?.close();
-      }}
+      {...fenster}
       aria-label="Mitglied anlegen"
     >
       <span className="griff" aria-hidden="true" />
       <div className="fenster-kopf">
         <div>
           <h2 className="dpl">Mitglied anlegen</h2>
+          {/* Kurz, damit die Beitragsart am Desktop ohne Rollen sichtbar bleibt (U61).
+              Nummer und Eintritt erklären sich über "freiwillig" und den Platzhalter. */}
           <p>
-            Mitgliedsnummer und Eintritt werden gesetzt, wenn du nichts angibst. Jedes Mitglied
-            braucht eine eigene E-Mail-Adresse, auch Kinder.
+            Jedes Mitglied braucht eine eigene E-Mail-Adresse, auch Kinder. Dorthin geht sofort
+            die Einladung zur App.
           </p>
         </div>
         <button className="fenster-zu" aria-label="Schließen" onClick={() => dialog.current?.close()}>
           ×
         </button>
       </div>
+      {rueckfrage}
 
       <form action={abschicken}>
         <div className="fenster-inhalt">
@@ -113,7 +116,6 @@ export function MitgliedAnlegenFenster({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <span className="beschreibung">Bekommt sofort eine Einladung zur App.</span>
             </label>
             <label>
               <span>Telefon</span>
@@ -123,13 +125,13 @@ export function MitgliedAnlegenFenster({
               <span>Straße und Hausnummer</span>
               <input name="street" required autoComplete="off" />
             </label>
+            {/* PLZ und Ort in einer Zeile, damit die Beitragsart ohne Rollen sichtbar bleibt */}
             <label>
-              <span>PLZ</span>
-              <input name="postcode" required autoComplete="off" inputMode="numeric" />
-            </label>
-            <label>
-              <span>Ort</span>
-              <input name="city" required autoComplete="off" />
+              <span>PLZ und Ort</span>
+              <span className="feldpaar">
+                <input name="postcode" required autoComplete="off" inputMode="numeric" aria-label="PLZ" />
+                <input name="city" required autoComplete="off" aria-label="Ort" />
+              </span>
             </label>
             <label>
               <span>Mitgliedsnummer <small className="freiwillig">(freiwillig)</small></span>
