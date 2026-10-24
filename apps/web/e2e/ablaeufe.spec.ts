@@ -1140,15 +1140,18 @@ test.describe("Verwaltung", () => {
     await page.goto("/admin/kasse");
 
     // Gelb ist genau ein Knopf im Kopf: „Einzug vorbereiten“, wenn es etwas
-    // einzuziehen gibt, sonst die erste Aufgabe aus „Zu tun“ (U50).
+    // einzuziehen gibt, sonst die erste Aufgabe aus „Zu tun“ (U50). Deren
+    // Zeile nennt die Aktion dann nicht noch einmal (U63).
     const kopf = page.locator(".verwaltung-kopf .aktionen .knopf.gold");
-    const aktionen = await page
-      .locator('.liste-gruppe[aria-label="Zu tun"] .hinweis-rechts')
-      .allTextContents();
+    const zeilen = page.locator('.liste-gruppe[aria-label="Zu tun"] li');
+    const aktionen = await zeilen.locator(".hinweis-rechts").allTextContents();
     if (aktionen.includes("Einzug vorbereiten")) {
       await expect(kopf).toHaveText("Einzug vorbereiten");
-    } else if (aktionen.length > 0) {
-      await expect(kopf).toHaveText(aktionen[0]!);
+    } else if ((await zeilen.count()) > 0) {
+      const erste = zeilen.first();
+      await expect(kopf).toHaveCount(1);
+      await expect(erste.locator(".hinweis-rechts")).toHaveCount(0);
+      expect(await kopf.getAttribute("href")).toBe(await erste.locator("a").first().getAttribute("href"));
     } else {
       await expect(kopf).toHaveCount(0);
     }
@@ -1235,9 +1238,10 @@ test.describe("Verwaltung", () => {
 
     // Ein neues Getränk ohne Preis waere unsichtbar und unbuchbar - der Knopf
     // bleibt deshalb gesperrt, bis ein Preis dasteht.
-    await page.getByRole("button", { name: "Anlegen" }).click();
-    await page.locator("dialog.fenster").getByLabel("Name").fill("ZZTest Limonade");
-    await expect(page.getByRole("button", { name: "Getränk anlegen" })).toBeDisabled();
+    await page.getByRole("button", { name: "Getränk anlegen" }).click();
+    const fenster = page.locator("dialog.fenster");
+    await fenster.getByLabel("Name").fill("ZZTest Limonade");
+    await expect(fenster.getByRole("button", { name: "Getränk anlegen" })).toBeDisabled();
   });
 
   test("ein geplanter Preis ist sichtbar und lässt sich zurücknehmen", async ({ page }) => {

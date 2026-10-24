@@ -65,7 +65,7 @@ export default async function GetraenkeSeite() {
         titel="Getränke"
         unterzeile="Die Karte an der Theke und die Regeln, nach denen abgerechnet wird."
       >
-        <FensterKnopf titel="Getränk anlegen" knopf="Anlegen">
+        <FensterKnopf titel="Getränk anlegen" knopf="Getränk anlegen" knopfKurz="Anlegen">
           <GetraenkFormular />
         </FensterKnopf>
       </VerwaltungsKopf>

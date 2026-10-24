@@ -69,6 +69,16 @@ const PFLICHT = [
   { key: "sepa.creditor_iban", text: "die IBAN des Vereinskontos", anker: "iban" },
 ] as const;
 
+/**
+ * Die Lastschriftfelder kommen nach Schlüssel sortiert, die BIC also vor der
+ * IBAN. Gelesen wird andersherum: erst das Konto, dann das Freiwillige.
+ */
+const LASTSCHRIFT_ZUERST = ["sepa.creditor_iban", "sepa.creditor_bic"];
+function lastschriftRang(key: string): number {
+  const i = LASTSCHRIFT_ZUERST.indexOf(key);
+  return i === -1 ? LASTSCHRIFT_ZUERST.length : i;
+}
+
 function heuteInBerlin(): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
 }
@@ -176,7 +186,8 @@ export default async function KasseSeite({
   // Nächstes dran ist: „Einzug vorbereiten“ nur, wenn es etwas einzuziehen
   // gibt, sonst die erste Aufgabe – etwa einen Getränkemonat schließen (U50).
   const naechste = todos[0];
-  const hauptaktion = gruppen.some((g) => g.anzahl > 0) ? (
+  const einziehbar = gruppen.some((g) => g.anzahl > 0);
+  const hauptaktion = einziehbar ? (
     <Link className="knopf gold" href="/admin/kasse/einzug">Einzug vorbereiten</Link>
   ) : naechste ? (
     <Link className="knopf gold" href={naechste.href}>{naechste.action}</Link>
@@ -186,8 +197,8 @@ export default async function KasseSeite({
     <div className="verwaltung">
       {unterseite ? (
         <VerwaltungsKopf
-          kicker="Verwaltung · Kasse"
-          titel={unterseite.label}
+          // Das Jahr steht im Titel statt in einer zweiten Überschrift darunter (U63)
+          titel={gewaehlt === "beitraege" ? `${unterseite.label} ${jahr}` : unterseite.label}
           zurueck={{ href: ZURUECK[gewaehlt] ?? "/admin/kasse", text: "Kasse" }}
         />
       ) : (
@@ -210,7 +221,7 @@ export default async function KasseSeite({
 
           {!ladefehler && (
             <>
-              <ZuTun todos={todos} />
+              <ZuTun todos={todos} imKopf={einziehbar ? undefined : naechste?.key} />
               <KassenKennzahlen />
             </>
           )}
@@ -348,7 +359,9 @@ export default async function KasseSeite({
           <EinstellungsGruppe
             titel="Lastschrift"
             text="Gläubiger-ID, Format und Vorabankündigung."
-            eintraege={einstellungen.filter((e) => e.key.startsWith("sepa."))}
+            eintraege={einstellungen
+              .filter((e) => e.key.startsWith("sepa."))
+              .sort((a, b) => lastschriftRang(a.key) - lastschriftRang(b.key))}
           />
         </>
       )}
@@ -380,7 +393,7 @@ export default async function KasseSeite({
 }
 
 /** Was gerade auf den Vorstand wartet, über alle Arten (kasseTodos). */
-function ZuTun({ todos }: { todos: KasseTodo[] }) {
+function ZuTun({ todos, imKopf }: { todos: KasseTodo[]; imKopf?: string }) {
   return (
     <section className="liste-abschnitt" aria-labelledby="h-zutun">
       <Gruppenkopf titel="Zu tun" id="h-zutun" neben="Alles, was gerade wartet – über alle Arten" />
@@ -399,7 +412,9 @@ function ZuTun({ todos }: { todos: KasseTodo[] }) {
                   </>
                 }
                 kontext={t.text}
-                hinweis={t.action}
+                // Steht die Aufgabe schon als gelber Knopf im Kopf, nennt die
+                // Zeile sie nicht ein zweites Mal (U63).
+                hinweis={t.key === imKopf ? undefined : t.action}
                 hinweisTon={t.urgent ? "gold" : "leise"}
               />
             </li>
@@ -460,7 +475,6 @@ function Jahresbeitraege({
   return (
     <>
       <div className="abschnittskopf">
-        <h2 className="dpl">Jahresbeiträge {jahr}</h2>
         <nav className="filterchips" aria-label="Jahr">
           <Link href={`/admin/kasse?abschnitt=beitraege&jahr=${jahr - 1}`}>‹ {jahr - 1}</Link>
           <Link href={`/admin/kasse?abschnitt=beitraege&jahr=${jahr}`} aria-current="true">

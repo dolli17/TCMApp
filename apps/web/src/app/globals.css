@@ -635,7 +635,63 @@ ul.marken:not(:has(.chip)) { margin-bottom: 9px; gap: 6px; }
 .haken-raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px 16px; margin-top: 4px; }
 .haken-raster label.wahl { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 1.35; }
 .haken-raster label.wahl > input { width: auto; flex: none; margin: 2px 0 0; padding: 0; accent-color: var(--blue); }
-.einstellungs-fuss { display: grid; gap: 12px; justify-items: start; margin-top: 20px; }
+/* Der eine Knopf der Systemseite haftet unten, solange das Formular zu sehen
+   ist (U64): nah an jedem Feld, immer an derselben Stelle. */
+.einstellungs-fuss {
+  position: sticky; z-index: 5; bottom: 16px; margin-top: 20px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
+  padding: 10px 10px 10px 18px; border-radius: 22px;
+  background: var(--glass); border: 1px solid var(--glass-line);
+  -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+  box-shadow: var(--shadow-float);
+}
+.einstellungs-fuss .meldung { flex: 1 1 240px; min-width: 0; font-size: 14px; color: var(--ink-2); }
+.einstellungs-fuss .meldung .hinweis { margin: 0; padding: 8px 12px; }
+/* Hilfetexte sind Fließtext, nicht fett wie die Bezeichnung (U64) */
+.einstellung .beschreibung { font-weight: 400; }
+
+/* Benachrichtigungen: Zeile je Ereignis, Spalte je Weg (U64) */
+.matrix-karte { padding: 4px 0 0; }
+.benachrichtigungs-matrix { width: 100%; border-collapse: collapse; font-size: 15px; }
+.benachrichtigungs-matrix th, .benachrichtigungs-matrix td { padding: 0 16px; text-align: left; }
+.benachrichtigungs-matrix thead th {
+  position: sticky; top: 0; height: 44px; font-size: 13px; font-weight: 700; color: var(--muted);
+}
+.benachrichtigungs-matrix :is(thead th, td):not(:first-child) { width: 96px; text-align: center; padding: 0; }
+.benachrichtigungs-matrix tbody th[scope="row"] { font-weight: 500; color: var(--ink); padding-block: 10px; line-height: 1.35; }
+.benachrichtigungs-matrix tbody tr:not(.bereich) { border-top: 1px solid var(--line); }
+.benachrichtigungs-matrix tbody tr:not(.bereich):hover { background: var(--surf-2); }
+.benachrichtigungs-matrix tr.bereich th {
+  padding: 22px 16px 8px; font-size: 13px; font-weight: 700; color: var(--ink-2);
+  border-top: 1px solid var(--line);
+}
+.benachrichtigungs-matrix tbody:first-of-type tr.bereich th { padding-top: 10px; }
+.benachrichtigungs-matrix label.haken {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 44px; min-height: 44px; margin: 0; cursor: pointer;
+}
+.benachrichtigungs-matrix label.haken input {
+  width: 20px; height: 20px; margin: 0; padding: 0; accent-color: var(--blue); cursor: pointer;
+}
+.matrix-erklaerung {
+  display: grid; gap: 8px; margin: 0; padding: 14px 16px 16px;
+  border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); line-height: 1.45;
+}
+.matrix-erklaerung div { display: flex; gap: 8px; }
+.matrix-erklaerung dt { flex: none; min-width: 52px; font-weight: 700; color: var(--ink-2); }
+.matrix-erklaerung dd { margin: 0; max-width: 72ch; }
+@media (max-width: 767px) {
+  /* Über der schwebenden Leiste, nicht unter ihr */
+  body:has(.schwebeleiste) .einstellungs-fuss { bottom: calc(26px + 64px + 12px + env(safe-area-inset-bottom)); }
+  .einstellungs-fuss .meldung .still { display: none; }
+  .einstellungs-fuss .meldung:not(:has(.hinweis)) { display: none; }
+  .einstellungs-fuss { padding-left: 10px; }
+  .einstellungs-fuss .knopf { flex: 1 1 auto; }
+  .benachrichtigungs-matrix th, .benachrichtigungs-matrix td { padding: 0 12px; }
+  .benachrichtigungs-matrix :is(thead th, td):not(:first-child) { width: 64px; }
+  .benachrichtigungs-matrix tbody th[scope="row"] { font-size: 14.5px; }
+  .matrix-erklaerung div { display: block; }
+}
 
 /* ---------------------------------------------------------------------------
    Mitgliederverwaltung
@@ -1735,6 +1791,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 .verwaltung { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
 .verwaltung > header .pagetitle { margin-top: 4px; }
+/* Ein Satz unter dem Segmentschalter gehört zu ihm (U63) */
+.verwaltung > .segtoggle + .unterzeile { margin: -12px 4px 0; }
 
 .kennzahlen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .kennzahl {
@@ -1869,6 +1927,11 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 /* Bausteine der uebrigen Verwaltungsseiten (Phase 6b) */
 .verwaltung-kopf .titelzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
 .verwaltung-kopf .zurueck { display: inline-block; margin-bottom: 8px; }
+/* Unterseiten: derselbe Rückweg wie beim Mitglied (.unterseite-kopf, U63) */
+.verwaltung-kopf.unterseite .zurueck {
+  display: inline-flex; align-items: center; min-height: 44px; margin: 0;
+  color: var(--blue-ink); font-size: 15px; font-weight: 600;
+}
 .verwaltung-kopf .unterzeile { margin: 8px 0 0; max-width: 720px; }
 .verwaltung .karte.einstellungen, .verwaltung section.karte { margin-bottom: 0; }
 .je-zahler td.kennung { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--muted); }
@@ -1888,6 +1951,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .einstellungs-raster { display: grid; gap: 24px; align-items: start; }
 @media (min-width: 1100px) {
   .einstellungs-raster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .einstellungs-raster > .mit-matrix { grid-column: 1 / -1; }
 }
 @media (min-width: 768px) {
   .einstellung {
@@ -2355,6 +2419,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   .text-kurz { display: inline; }
   .verwaltung-kopf { flex-wrap: nowrap; align-items: flex-end; }
   .verwaltung-kopf .zurueck { color: var(--blue-ink); font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .verwaltung-kopf.unterseite .zurueck { margin: 0; }
   .verwaltung-kopf .pagetitle { font-size: 34px; }
   .verwaltung-kopf .aktionen .knopf.gold {
     min-height: 40px; padding: 0 14px 0 10px; border-radius: 20px; font-family: var(--font-text);

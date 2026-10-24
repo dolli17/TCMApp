@@ -61,7 +61,6 @@ export default async function EinzugSeite({
   return (
     <div className="verwaltung einzug-vorbereiten">
       <VerwaltungsKopf
-        kicker="Verwaltung · Kasse"
         titel="Einzug vorbereiten"
         zurueck={{ href: "/admin/kasse", text: "Kasse" }}
         unterzeile="Wähle aus, was eingezogen wird, und lege den Abbuchungstag fest. Mit einem Klick bekommen alle Mitglieder ihre Ankündigung, und der Einzug ist angelegt."

@@ -47,13 +47,17 @@ export default async function MannschaftenSeite({
       <VerwaltungsKopf
         kicker="Verwaltung · Mitglieder"
         titel="Mannschaften"
-        unterzeile="Wer spielt in welcher Mannschaft, und wer führt sie. Ein Spieler steht in höchstens einer Mannschaft – die meisten Mitglieder in keiner."
       >
         <FensterKnopf titel="Mannschaft anlegen" knopf="Mannschaft anlegen">
           <MannschaftsFormular key="neu" />
         </FensterKnopf>
       </VerwaltungsKopf>
+      {/* Unter dem Schalter, damit er nicht springt (U63) */}
       <MitgliederSegmente aktiv="/admin/mitglieder/mannschaften" />
+      <p className="unterzeile">
+        Wer spielt in welcher Mannschaft, und wer führt sie. Ein Spieler steht in höchstens einer
+        Mannschaft – die meisten Mitglieder in keiner.
+      </p>
 
       {mannschaften.length === 0 ? (
         <Leerzustand text="Noch keine Mannschaften angelegt. Die erste legst du oben über „Mannschaft anlegen“ an." />
