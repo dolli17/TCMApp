@@ -11,7 +11,9 @@ import { Pressable, Text, View } from "react-native";
 import { eventMonatsGruppen } from "@tcm/core";
 import { abstand } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
+import { VereinReiterwahl } from "@/components/Bereichsreiter";
 import { EventKarte } from "@/components/EventKarte";
+import { GrosserKopf } from "@/components/GrosserKopf";
 import { Leerzustand } from "@/components/Leerzustand";
 import { ladeVeranstaltungen } from "@/lib/daten";
 import { useNachladenBeiFokus } from "@/lib/fokus";
@@ -34,6 +36,8 @@ export default function Veranstaltungen() {
       aktualisiert={zustand.aktualisiert}
       onAktualisieren={zustand.neuLaden}
       fehler={zustand.fehler}
+      kopf={<GrosserKopf titel="Verein" />}
+      reiter={<VereinReiterwahl wert="/verein/veranstaltungen" />}
     >
       {vergangen && (
         <Text style={[stil.abschnitt, { marginTop: 0 }]} accessibilityRole="header">Vergangene Veranstaltungen</Text>

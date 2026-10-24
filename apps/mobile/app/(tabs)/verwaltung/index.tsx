@@ -8,6 +8,9 @@
  * mit dem, was gerade auf ihnen liegt. Alles andere verweist die Fusskarte
  * ins Web: Admins auf /admin, den Platzwart, der dort nur die Plaetze sieht,
  * auf /admin/plaetze.
+ *
+ * Der Titel heisst wie der Tab, "Verwaltung" (U55): als "Plätze" stand er
+ * zweimal in der Leiste, neben dem Tab Plätze zum Buchen.
  */
 
 import { useEffect, useState } from "react";
@@ -57,7 +60,7 @@ export default function PlaetzeVerwaltung() {
   const melde = (e: Ergebnis) => setMeldung({ ok: e.ok, text: e.meldung });
   const neuLaden = zustand.erneutHolen;
   const serien = ansicht === "serien";
-  const kopf = <GrosserKopf titel="Plätze" kicker="Verwaltung" />;
+  const kopf = <GrosserKopf titel="Verwaltung" />;
 
   if (!d) {
     return (
@@ -179,16 +182,19 @@ export default function PlaetzeVerwaltung() {
  * Mitglieder, Kasse, Getraenke, System und die Plaetze selbst gibt es nur im
  * Web. Der Platzwart sieht dort nur Plaetze & Serien und wird direkt dorthin
  * geschickt.
+ *
+ * Die Adresse kommt aus EXPO_PUBLIC_SITE_URL (lib/web.ts). Fehlt sie, steht
+ * nur der Satz da - "unter /admin" als Text half niemandem weiter (U55).
  */
 function WebHinweis({ admin }: { admin: boolean }) {
   const { farben, stil } = useTheme();
   const link = admin ? ADMIN : PLAETZE;
-  const adresse = link ? link.replace(/^https?:\/\//, "") : admin ? "/admin" : "/admin/plaetze";
   return (
     <Pressable
       disabled={!link}
       onPress={() => link && void Linking.openURL(link)}
       accessibilityRole={link ? "link" : undefined}
+      accessibilityHint={link ? "Öffnet die Verwaltung im Browser" : undefined}
       style={({ pressed }) => [stil.karte, { gap: 4 }, pressed && { borderColor: farben.line2 }]}
     >
       <Text style={{ fontSize: 15, fontFamily: "Barlow_700Bold", color: farben.ink }}>
@@ -196,10 +202,14 @@ function WebHinweis({ admin }: { admin: boolean }) {
       </Text>
       <Text style={{ fontSize: 14, lineHeight: 19.5, color: farben.ink2, fontFamily: "Barlow_400Regular" }}>
         {admin
-          ? "Mitglieder, Kasse, Getränke, Plätze und Buchungsregeln pflegst du im Web unter "
-          : "Sperren und Serien pflegst du bequemer im Web unter "}
-        <Text style={{ fontFamily: "Barlow_600SemiBold", color: link ? farben.blueInk : farben.ink2 }}>{adresse}</Text>.
+          ? "Mitglieder, Kasse, Getränke, Plätze und Buchungsregeln pflegst du in der Verwaltung im Web."
+          : "Sperren und Serien pflegst du bequemer in der Verwaltung im Web."}
       </Text>
+      {link && (
+        <Text style={{ marginTop: 4, fontSize: 14.5, fontFamily: "Barlow_700Bold", color: farben.blueInk }}>
+          Im Browser öffnen ›
+        </Text>
+      )}
     </Pressable>
   );
 }

@@ -112,6 +112,8 @@ export function SchwebendeLeiste({ state, descriptors, navigation }: LeistenEige
               <Text
                 style={[stile.tabText, schmal && stile.tabTextSchmal, { color: farbe }]}
                 numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
                 maxFontSizeMultiplier={SCHRIFT_DECKEL.leiste}
               >
                 {label}
@@ -155,6 +157,7 @@ const stile = StyleSheet.create({
     gap: 3,
   },
   tabSchmal: { paddingHorizontal: 2 },
-  tabText: { fontSize: 11, fontFamily: "Barlow_600SemiBold" },
-  tabTextSchmal: { fontSize: 10 },
+  // 12 statt 11 (U52), schmal eins weniger; Deckel siehe lib/schrift.ts
+  tabText: { fontSize: 12, fontFamily: "Barlow_600SemiBold" },
+  tabTextSchmal: { fontSize: 11 },
 });

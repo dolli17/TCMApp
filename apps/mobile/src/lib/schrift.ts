@@ -7,7 +7,10 @@
  *
  *  - Text in einer festen Form (Initialen im Kreis, Zaehler an der Glocke,
  *    Beschriftung der Tab-Leiste) waechst nur bis zu einem Deckel. Sonst
- *    laeuft er aus der Form, ohne dass er lesbarer wird.
+ *    laeuft er aus der Form, ohne dass er lesbarer wird. Die Tab-Leiste
+ *    darf bis 1,5 (U52): 12 pt mal 1,5 mit Symbol darueber passen noch in
+ *    die 52 Punkte eines Tabs; was dann in der Breite nicht passt, verkleinert
+ *    iOS selbst (adjustsFontSizeToFit), statt "Verwal…" zu zeigen.
  *  - Ab einer grossen Stufe stellen sich Layouts um, die nebeneinander keinen
  *    Platz mehr haben (etwa die drei Schnellkacheln auf Start) - statt Woerter
  *    mitten im Wort zu brechen.
@@ -23,7 +26,7 @@ export const SCHRIFT_DECKEL = {
   /** Text in Kreisen und Plaketten fester Groesse. */
   form: 1.2,
   /** Beschriftung der schwebenden Tab-Leiste. */
-  leiste: 1.3,
+  leiste: 1.5,
 } as const;
 
 /** Ab dieser Stufe stellen sich enge Layouts um. */

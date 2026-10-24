@@ -3,7 +3,7 @@
  *
  * Oben der laufende Monat, darunter die Karte als Kacheln mit Zaehler: man
  * sammelt, was man genommen hat, und traegt es ueber die Leiste unten auf
- * einmal ein. Gebucht wird dabei weiter je Artikel ueber bucheGetraenk -
+ * einmal ein (Korbleiste, unter dem Scrollbereich). Gebucht wird dabei weiter je Artikel ueber bucheGetraenk -
  * es gibt keinen Sammelauftrag in der Datenbank. Schlaegt einer fehl, sagt
  * die Meldung welcher, und er bleibt zum erneuten Versuch gewaehlt.
  *
@@ -21,13 +21,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Platform, Pressable, Text, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import Svg, { Path } from "react-native-svg";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   basketAfterBatch, basketReminder, basketSummary, canVoidSelf, changeBasket, drinkBatchReport,
   formatCents, MAX_DRINK_QUANTITY, sumOpenDrinks, type DrinkBatchResult,
 } from "@tcm/core";
 import { abstand, radius } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
+import { VereinReiterwahl } from "@/components/Bereichsreiter";
+import { GrosserKopf } from "@/components/GrosserKopf";
 import { Leerzustand } from "@/components/Leerzustand";
 import { Toast, type Meldung } from "@/components/Toast";
 import { Rundknopf } from "@/components/Rundknopf";
@@ -36,7 +37,6 @@ import {
 } from "@/lib/daten";
 import { aktuellerKorb, setzeKorb, useKorb } from "@/lib/getraenkekorb";
 import { useLaden } from "@/lib/laden";
-import { LEISTE_ABSTAND_UNTEN, LEISTE_HOEHE } from "@/lib/masse";
 import { mitDeckkraft } from "@/lib/stil";
 import { useTheme } from "@/lib/theme";
 
@@ -51,7 +51,6 @@ const MARKIERT_MS = 5000;
 
 export default function Getraenke() {
   const { stil, farben } = useTheme();
-  const rand = useSafeAreaInsets();
   const [meldung, setMeldung] = useState<Meldung | null>(null);
   /**
    * Was unter "Zuletzt" kurz hervorgehoben ist (U16): alles, was es vor dem
@@ -176,6 +175,13 @@ export default function Getraenke() {
         aktualisiert={zustand.aktualisiert}
         onAktualisieren={zustand.neuLaden}
         fehler={zustand.fehler}
+        kopf={<GrosserKopf titel="Verein" />}
+        reiter={<VereinReiterwahl wert="/verein/getraenke" />}
+        fuss={
+          stueck > 0 ? (
+            <Korbleiste stueck={stueck} betrag={korbBetrag} laeuft={laeuft} onEintragen={eintragen} onHoehe={setLeisteHoehe} />
+          ) : undefined
+        }
       >
         {/* --- Der laufende Monat ------------------------------------------ */}
         <View style={{ backgroundColor: farben.brand, borderRadius: radius.karteGross, padding: 20, overflow: "hidden" }}>
@@ -197,10 +203,9 @@ export default function Getraenke() {
         </View>
 
         {/* --- Die Karte --------------------------------------------------- */}
-        <View style={[stil.zeile, { alignItems: "baseline", marginTop: abstand.abschnitt - abstand.m }]}>
-          <Text style={[stil.abschnitt, { marginTop: 0 }]} accessibilityRole="header">Was nimmst du?</Text>
-          <Text style={[stil.leise, { fontSize: 13 }]}>Karte aus der Verwaltung</Text>
-        </View>
+        <Text style={[stil.abschnitt, { marginTop: abstand.abschnitt - abstand.m }]} accessibilityRole="header">
+          Was nimmst du?
+        </Text>
         <Text style={[stil.leise, { marginTop: -4 }]}>Mit + sammelst du. Gebucht ist erst, was du unten einträgst.</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
           {karte.map((a) => {
@@ -314,50 +319,62 @@ export default function Getraenke() {
             })}
           </View>
         )}
-
-        {/* Platz fuer die Eintragen-Leiste, damit sie nichts verdeckt */}
-        {stueck > 0 && <View style={{ height: Math.max(84, leisteHoehe + 16) }} />}
       </Bildschirm>
 
       <Toast meldung={meldung} onSchliessen={() => setMeldung(null)} leisteHoehe={stueck > 0 ? leisteHoehe : 0} />
+    </View>
+  );
+}
 
-      {/* --- Eintragen-Leiste ueber der Tab-Leiste -------------------------- */}
-      {stueck > 0 && (
-        <View
-          onLayout={(e) => setLeisteHoehe(e.nativeEvent.layout.height)}
-          style={{
-            position: "absolute", left: 16, right: 16,
-            bottom: LEISTE_ABSTAND_UNTEN + LEISTE_HOEHE + 14 + rand.bottom,
-            // minHeight wie im Web: mit grosser Systemschrift wird die Leiste zweizeilig
-            minHeight: 68, borderRadius: 24, paddingLeft: 20, paddingRight: 8, paddingVertical: 8, gap: 12,
-            flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-            backgroundColor: farben.ink,
-            shadowColor: "#000", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 12,
-          }}
-        >
-          <View accessibilityLiveRegion="polite" style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ color: farben.bg, fontSize: 15, fontFamily: "Barlow_700Bold" }}>
-              {stueck} {stueck === 1 ? "Getränk" : "Getränke"} · {formatCents(korbBetrag)}
-            </Text>
-            <Text style={{ color: farben.bg, fontSize: 13, fontFamily: "Barlow_700Bold" }}>
-              Noch nicht eingetragen
-            </Text>
-          </View>
-          <Pressable
-            onPress={eintragen}
-            disabled={laeuft}
-            accessibilityRole="button"
-            style={({ pressed }) => ({
-              minHeight: 52, paddingHorizontal: 24, borderRadius: 18, justifyContent: "center",
-              backgroundColor: farben.gold, opacity: laeuft ? 0.6 : pressed ? 0.85 : 1,
-            })}
-          >
-            <Text style={{ color: farben.onGold, fontSize: 16, fontFamily: "Barlow_800ExtraBold" }}>
-              {laeuft ? "Wird eingetragen …" : "Eintragen"}
-            </Text>
-          </Pressable>
-        </View>
-      )}
+/* --- Eintragen-Leiste ------------------------------------------------------ */
+
+/**
+ * Ueber der Tab-Leiste, aber nicht mehr ueber dem Inhalt: Bildschirm setzt
+ * sie als Fuss unter den Scrollbereich (U53). Vorher lag sie absolut darueber
+ * und verdeckte beim Scrollen das -/+ der Kachel direkt darueber.
+ */
+function Korbleiste({
+  stueck, betrag, laeuft, onEintragen, onHoehe,
+}: {
+  stueck: number;
+  betrag: number;
+  laeuft: boolean;
+  onEintragen: () => void;
+  onHoehe: (hoehe: number) => void;
+}) {
+  const { farben } = useTheme();
+  return (
+    <View
+      onLayout={(e) => onHoehe(e.nativeEvent.layout.height)}
+      style={{
+        // minHeight wie im Web: mit grosser Systemschrift wird die Leiste zweizeilig
+        minHeight: 68, borderRadius: 24, paddingLeft: 20, paddingRight: 8, paddingVertical: 8, gap: 12,
+        flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+        backgroundColor: farben.ink,
+        shadowColor: "#000", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 12,
+      }}
+    >
+      <View accessibilityLiveRegion="polite" style={{ flex: 1, minWidth: 0 }}>
+        <Text style={{ color: farben.bg, fontSize: 15, fontFamily: "Barlow_700Bold" }}>
+          {stueck} {stueck === 1 ? "Getränk" : "Getränke"} · {formatCents(betrag)}
+        </Text>
+        <Text style={{ color: farben.bg, fontSize: 13, fontFamily: "Barlow_700Bold" }}>
+          Noch nicht eingetragen
+        </Text>
+      </View>
+      <Pressable
+        onPress={onEintragen}
+        disabled={laeuft}
+        accessibilityRole="button"
+        style={({ pressed }) => ({
+          minHeight: 52, paddingHorizontal: 24, borderRadius: 18, justifyContent: "center",
+          backgroundColor: farben.gold, opacity: laeuft ? 0.6 : pressed ? 0.85 : 1,
+        })}
+      >
+        <Text style={{ color: farben.onGold, fontSize: 16, fontFamily: "Barlow_800ExtraBold" }}>
+          {laeuft ? "Wird eingetragen …" : "Eintragen"}
+        </Text>
+      </Pressable>
     </View>
   );
 }

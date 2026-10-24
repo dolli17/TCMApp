@@ -50,7 +50,7 @@ export default function VerwaltungLayout() {
         contentStyle: { backgroundColor: farben.bg },
       }}
     >
-      <Stack.Screen name="index" options={{ headerShown: false, title: "Plätze" }} />
+      <Stack.Screen name="index" options={{ headerShown: false, title: "Verwaltung" }} />
     </Stack>
   );
 }

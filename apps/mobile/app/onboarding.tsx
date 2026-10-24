@@ -18,7 +18,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Linking, Platform, Pressable, Text, View } from "react-native";
 import { Redirect, router } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   LETZTER_PFLICHTSCHRITT, mandatstext, onboardingSchritte, naechsterPflichtschritt,
   type OnboardingSchrittKey, type OnboardingZustand,
@@ -229,9 +228,9 @@ function Kopf({
   fortschritt?: ("erledigt" | "jetzt" | "offen")[];
 }) {
   const { stil, farben } = useTheme();
-  const rand = useSafeAreaInsets();
+  // Den Sicherheitsabstand oben zieht Bildschirm ein.
   return (
-    <View style={{ backgroundColor: farben.bg, paddingTop: rand.top + 16, paddingHorizontal: abstand.rand, paddingBottom: abstand.m, gap: 6 }}>
+    <View style={{ backgroundColor: farben.bg, paddingTop: 16, paddingHorizontal: abstand.rand, paddingBottom: abstand.m, gap: 6 }}>
       <Text style={stil.kicker}>{kicker}</Text>
       <Text accessibilityRole="header" style={[stil.titel, { fontSize: 30, lineHeight: 34 }]}>{titel}</Text>
       {fortschritt && (

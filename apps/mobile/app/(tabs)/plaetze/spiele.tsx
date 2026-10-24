@@ -18,7 +18,9 @@ import Svg, { Circle, Path } from "react-native-svg";
 import { bookingActions, dayLabel, dayTag, offenesSpielText, upcomingBookings } from "@tcm/core";
 import { radius } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
+import { PlaetzeReiter } from "@/components/Bereichsreiter";
 import { Fehlerzeile } from "@/components/Fehlerzeile";
+import { GrosserKopf } from "@/components/GrosserKopf";
 import { Leerzustand } from "@/components/Leerzustand";
 import { useJetzt } from "@/components/plaetze/PlatzRaster";
 import {
@@ -83,6 +85,8 @@ export default function Spiele() {
       aktualisiert={zustand.aktualisiert}
       onAktualisieren={zustand.neuLaden}
       fehler={zustand.fehler}
+      kopf={<GrosserKopf titel="Plätze" />}
+      reiter={<PlaetzeReiter wert="/plaetze/spiele" />}
     >
       {meldung && (
         <Text style={meldung.ok ? stil.hinweisErfolg : stil.hinweisFehler} accessibilityLiveRegion="polite">
