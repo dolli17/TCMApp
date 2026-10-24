@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { KontoUnterseite } from "@/components/KontoUnterseite";
 
@@ -30,9 +31,13 @@ export default async function BankSeite() {
   return (
     <KontoUnterseite titel="Bankverbindung & Mandat">
       {!mandat ? (
-        <p className="karte">
-          Es liegt noch kein SEPA-Mandat vor. Bitte wende dich an den Vorstand.
-        </p>
+        // Kein Mandat ist kein Fehler, aber das Mitglied braucht einen Weg
+        // dorthin (U56). Eine Vereinsadresse kennt die App nicht; sie steht im
+        // Impressum, das der Vorstand pflegt.
+        <div className="karte bank-ohne-mandat">
+          <p>Es liegt noch kein SEPA-Mandat vor. Das Mandat legt der Vorstand mit dir an – schreib ihm oder sprich ihn im Verein an.</p>
+          <p><Link href="/impressum#kontakt">So erreichst du den Vorstand</Link></p>
+        </div>
       ) : (
         <dl className="gruppe angaben">
           <div><dt>Kontoinhaber</dt><dd>{konto?.holder ?? "–"}</dd></div>
@@ -45,7 +50,12 @@ export default async function BankSeite() {
           </div>
         </dl>
       )}
-      <p className="beschreibung">Die Bankverbindung ändert der Vorstand – schreib ihm, wenn sich etwas geändert hat.</p>
+      {mandat && (
+        <p className="beschreibung">
+          Die Bankverbindung ändert der Vorstand – <Link href="/impressum#kontakt">schreib ihm</Link>, wenn sich
+          etwas geändert hat.
+        </p>
+      )}
     </KontoUnterseite>
   );
 }

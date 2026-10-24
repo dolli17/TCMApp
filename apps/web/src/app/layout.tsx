@@ -112,6 +112,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: THEME_SKRIPT }} />
       </head>
       <body>
+        {/* Erstes fokussierbares Element: an Seitenleiste und Menü vorbei
+            direkt zum Inhalt. Sichtbar erst bei Fokus (U57). */}
+        <a href="#inhalt" className="sprunglink">Zum Inhalt springen</a>
         {/* Ein Konto pro Browser (lib/konto-kanal.ts) - auch am Kiosk. Nicht
             auf den Anmeldeseiten: dort findet der Wechsel gerade statt. */}
         {angemeldet && !ANMELDESEITEN.includes(pfad) && <KontoWaechter kontoId={angemeldet.user.id} />}
@@ -154,12 +157,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   {initialen}
                 </Link>
               </div>
-              {children}
+              <main id="inhalt" tabIndex={-1}>{children}</main>
             </div>
             <Fussmenue eintraege={telefon} />
           </div>
         ) : (
-          children
+          // Auch ohne Menü genau ein main - Anmeldung, Kiosk, Rechtstexte.
+          <main id="inhalt" tabIndex={-1}>{children}</main>
         )}
       </body>
     </html>

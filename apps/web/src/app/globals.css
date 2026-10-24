@@ -41,6 +41,24 @@ body {
 
 a { color: var(--blue-ink); text-decoration: none; }
 a:hover { text-decoration: underline; }
+/* Ein Link mitten im Text ist auch ohne Farbe als Link zu erkennen (U58,
+   axe link-in-text-block). Links mit eigener Klasse - Knöpfe, Zeilen,
+   Kacheln - gestalten sich selbst. */
+:where(p, .unterzeile, .beschreibung, .hinweis) a:not([class]) {
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .18em;
+}
+:where(p, .unterzeile, .beschreibung, .hinweis) a:not([class]):hover { text-decoration-thickness: 2px; }
+
+/* Sprunglink (U57): erst bei Tastaturfokus sichtbar, dann oben links über allem. */
+.sprunglink {
+  position: absolute; left: 12px; top: -100px; z-index: 1000;
+  padding: 12px 16px; border-radius: var(--radius-feld);
+  background: var(--surf); color: var(--blue-ink); font-weight: 700;
+  box-shadow: var(--shadow-float);
+}
+.sprunglink:focus { top: 12px; outline: 2px solid var(--blue); outline-offset: 2px; text-decoration: none; }
+/* Das Ziel bekommt den Fokus nur per Skript; ein Rahmen um die ganze Seite hilft niemandem. */
+main#inhalt:focus { outline: none; }
 
 /* ---------------------------------------------------------------------------
    Grundgerüst
@@ -594,6 +612,8 @@ ul.marken:not(:has(.chip)) { margin-bottom: 9px; gap: 6px; }
 .einstellungs-felder > .einstellung { padding: 14px 16px; }
 .einstellungs-felder > .einstellung:first-child { border-top: 0; }
 .karte.einstellungen > .unterzeile { margin-bottom: 14px; }
+/* Ohne Überschrift beginnt die Karte mit der ersten Zeile - dann ohne Trennlinie (U56). */
+.karte.einstellungen > .einstellung:first-child { border-top: 0; padding-top: 0; }
 .einstellung {
   display: block; padding: 12px 0; border-top: 1px solid var(--line);
 }
@@ -603,6 +623,12 @@ ul.marken:not(:has(.chip)) { margin-bottom: 9px; gap: 6px; }
   max-width: 62ch;
 }
 .einstellung :is(input, select) { max-width: 260px; }
+/* Rückmeldung an der Zeile, die gerade gespeichert wurde (U56). Der Behälter
+   bleibt immer da, damit Screenreader die Meldung ansagen. */
+.zeilen-meldung .hinweis {
+  display: inline-block; margin: 8px 0 0; padding: 6px 10px;
+  font-size: 13.5px; font-weight: 600;
+}
 /* Listen von Benachrichtigungsarten: Häkchen im Raster */
 .haken-raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px 16px; margin-top: 4px; }
 .haken-raster label.wahl { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 1.35; }
@@ -1641,6 +1667,10 @@ dl.angaben dt { color: var(--muted); font-size: 14px; }
 dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 
 .konto-unterseite { max-width: 720px; }
+/* Abstand zwischen Kopf und Karte: Luft, damit die Karte nicht am Titel klebt (U56). */
+.konto-unterseite > .unterseite-kopf { margin-bottom: 22px; }
+.bank-ohne-mandat p { margin: 0; }
+.bank-ohne-mandat p + p { margin-top: 10px; }
 @media (min-width: 900px) {
   .konto-raster { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px; align-items: start; }
   .getraenke-kacheln { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -2312,8 +2342,13 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .dienst-karte .balken i { display: block; height: 100%; border-radius: 4px; background: var(--green); }
 .gold-ink { color: var(--gold-ink); font-weight: 700; }
 .mitglied-ende .listenzeile { min-height: 52px; }
-.unterseite-kopf .zurueck { color: var(--blue-ink); font-size: 15px; font-weight: 600; }
+/* Der Zurück-Link ist ein volles Tippziel (44 px), auch am Telefon (U56). */
+.unterseite-kopf .zurueck {
+  display: inline-flex; align-items: center; min-height: 44px; margin: 0;
+  color: var(--blue-ink); font-size: 15px; font-weight: 600;
+}
 .unterseite-kopf .pagetitle { margin: 4px 0 0; }
+.unterseite-kopf > .unterzeile { margin: 8px 0 0; }
 .unterseite-kopf .marken-reihe { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 
 /* Am Desktop rechts neben der Liste: kompakter Kopf, Abschnitte zweispaltig */

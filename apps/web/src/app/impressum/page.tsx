@@ -25,7 +25,7 @@ export default function ImpressumSeite() {
       <h2>Vertreten durch</h2>
       <p>[[Vorsitzende/r, ggf. weitere Vorstandsmitglieder]]</p>
 
-      <h2>Kontakt</h2>
+      <h2 id="kontakt">Kontakt</h2>
       <p>
         E-Mail: [[info@…]]
         <br />

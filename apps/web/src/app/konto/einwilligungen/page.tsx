@@ -15,13 +15,16 @@ export default async function EinwilligungenSeite() {
     : { data: null };
 
   return (
-    <KontoUnterseite titel="Einwilligungen">
+    <KontoUnterseite
+      titel="Einwilligungen"
+      text="Du entscheidest, was der Verein darf. Jede Angabe gilt sofort und lässt sich jederzeit widerrufen."
+    >
       {meineId && (
         <MerkmaleKarte
           mitgliedId={meineId}
           zeilen={(data ?? []) as MerkmalZeile[]}
           titel="Einwilligungen"
-          text="Du entscheidest, was der Verein darf. Jede Angabe lässt sich jederzeit widerrufen."
+          ohneTitel
           nurSelbstpflege
         />
       )}
