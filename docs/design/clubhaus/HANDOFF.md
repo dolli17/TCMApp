@@ -151,7 +151,10 @@ Kicker (Datum) über dem Titel (34/800), rechts Glocke und Avatar (Initialen auf
 `brand`).
 
 **Segment-Schalter:** Container `surf2`, Radius 16, Innenabstand 4; aktives
-Segment `surf3` (dunkel) bzw. `surf` mit Schatten (hell). Ersetzt die
+Segment `surf3` (dunkel) bzw. `surf` mit Schatten (hell), dazu immer ein Rand
+1,5 in `segAktivRand` (U71, 24.10.2026) – die Fläche allein lag dunkel bei
+1,2:1 zum Grund. Auch Einzelwahl-Listen (etwa „E-Mails zu Buchungen“) sind
+Segmente, kein Auswahlfeld; mit drei oder mehr Möglichkeiten untereinander. Ersetzt die
 Reiterleiste unter Plätze: nur noch **„Belegung“ | „Meine & offene Spiele“**.
 
 **Datums-Kacheln:** 58×70, Radius 18, Wochentag (11/700) über Tageszahl (26,
@@ -161,6 +164,10 @@ Semi Condensed 700). Gewählt: `gold`/`onGold`. Sonst `surf2`/`ink2`.
 `bg`-Text). Sonst `surf2`/`ink2`.
 
 **Knöpfe:** Primär `gold`/`onGold`, Höhe 52–58, Radius 16–18, 800.
+„Speichern“ in Formularen (Konto, Verwaltung) ist `blue`/`onBrand`: es
+bestätigt eine Eingabe und ist nicht die Hauptaktion des Screens. Auf
+Getränke ist allein „Eintragen“ gelb – Plus, gewählte Kachel (Rand `ink2`)
+und, solange der Korb steht, der aktive Tab bleiben neutral (U72).
 Sekundär `surf2` + `line`. Gefahr: Text `red`, Rand `red` 40 %. Klein: Höhe 38–40, Radius 19–20.
 
 **Karten:** `surf`, 1 px `line`, Radius 22. Gruppierte Listen (iOS-Stil):

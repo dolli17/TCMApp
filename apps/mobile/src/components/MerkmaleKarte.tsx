@@ -11,6 +11,7 @@
 
 import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
+import { merkmalBeschreibung } from "@tcm/core";
 import { abstand } from "@tcm/ui";
 import { entferneMerkmal, setzeMerkmal } from "@/lib/daten";
 import { useTheme } from "@/lib/theme";
@@ -127,11 +128,17 @@ export function MerkmaleKarte({
       {merkmale.map((m) => {
         const gesetzt = m.werte.length > 0;
         const jaNein = m.art === "boolean";
+        // Eine Liste mit genau einem Wert ist eine Wahl wie Ja/Nein und sieht
+        // auch so aus (U71) - untereinander, weil „Alle Benachrichtigungen“
+        // nebeneinander nicht passt.
+        const einzelwahl = m.art === "list" && !m.multiple && m.optionen.length > 1 && m.optionen.length <= 4;
 
         return (
           <View key={m.code} style={{ gap: abstand.xs, marginTop: abstand.m }}>
             <Text style={[stil.text, { fontFamily: "Barlow_600SemiBold" }]}>{m.name}</Text>
-            {m.description ? <Text style={stil.leise}>{m.description}</Text> : null}
+            {m.description ? (
+              <Text style={stil.leise}>{merkmalBeschreibung(m.code, m.description, "mitglied")}</Text>
+            ) : null}
 
             {!m.darfIch ? (
               <Text style={stil.leise}>
@@ -169,6 +176,24 @@ export function MerkmaleKarte({
                   <Text style={stil.leise}>erteilt am {alsDatum(m.werte[0].seit)}</Text>
                 )}
               </>
+            ) : einzelwahl ? (
+              <View style={[stil.segment, { flexDirection: "column" }]} accessibilityRole="radiogroup">
+                {m.optionen.map((o) => {
+                  const aktiv = m.werte[0]?.option === o.value;
+                  return (
+                    <Pressable
+                      key={o.value}
+                      style={[stil.segmentKnopf, { flexGrow: 0, flexBasis: "auto" }, aktiv && stil.segmentAktiv]}
+                      disabled={laeuft}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: aktiv }}
+                      onPress={() => !aktiv && ausfuehren(() => setzeMerkmal(m.code, o.value))}
+                    >
+                      <Text style={[stil.segmentText, aktiv && stil.segmentTextAktiv]}>{o.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             ) : m.art === "list" ? (
               <>
                 {m.werte.length > 0 && (

@@ -132,16 +132,17 @@ main#inhalt:focus { outline: none; }
 /* Gleich breit, aber nie schmaler als der Text: „Verwaltung“ (U7) braucht
    am Telefon mehr als die anderen. Der Innenabstand hält den Text aus den
    runden Ecken der Markierung; abgeschnitten wird nichts, die Breite reicht
-   immer. Unter 380 px wird die Schrift kleiner, damit die fünf Tabs eines
-   Admins auch bei 320 px in der Pille bleiben. */
+   immer. 13 px wie die Tab-Leiste der App (U69); unter 380 px 12 px, damit
+   die fünf Tabs eines Admins auch bei 320 px in der Pille bleiben
+   (Start+Plätze+Verein+Konto+Verwaltung sind dort rund 200 von 276 px). */
 .schwebeleiste a {
   flex: 1 1 0; min-width: max-content; height: 52px; border-radius: 26px; padding: 0 5px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-  color: var(--muted); font-size: 11px; font-weight: 600; text-decoration: none;
+  color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none;
   white-space: nowrap;
 }
 @media (max-width: 379px) {
-  .schwebeleiste a { font-size: 10px; padding: 0 2px; }
+  .schwebeleiste a { font-size: 12px; padding: 0 2px; }
 }
 .schwebeleiste a[aria-current="page"] { background: var(--tab-aktiv); color: var(--tab-aktiv-ink); }
 .schwebeleiste a:hover { text-decoration: none; }
@@ -205,7 +206,7 @@ a.avatar:hover { text-decoration: none; }
 .auth.immer-dunkel .sheet .knopf.block:not(.leise):disabled {
   background: var(--surf-3); color: var(--muted); opacity: 1; box-shadow: none;
 }
-.sperrgrund { margin: 8px 0 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
+.sperrgrund { margin: 8px 0 0; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
 .fenster-fuss > .sperrgrund { flex: 1 1 180px; align-self: center; margin: 0; }
 .blatt-fuss > .sperrgrund { margin: 0; text-align: center; }
 .knopf.klein {
@@ -217,10 +218,14 @@ a.avatar:hover { text-decoration: none; }
    Formulare
    --------------------------------------------------------------------------- */
 label { display: block; margin-bottom: 14px; }
+/* Feldnamen in 15 px, Hilfe darunter in 14 px ink-2: der Verein hat
+   Mitglieder bis 92, 12 px waren zu klein (U69). Ein Hinweis im label ist
+   leichter als der Feldname, nicht fetter. */
 label > span {
-  display: block; font-size: 12px; font-weight: 600;
+  display: block; font-size: 15px; font-weight: 600;
   color: var(--ink-2); margin-bottom: 7px;
 }
+label > span.beschreibung { font-size: 14px; font-weight: 400; margin: 6px 0 0; }
 input, select, textarea {
   font: inherit; width: 100%;
   background: var(--surf); color: var(--ink);
@@ -245,7 +250,23 @@ input:focus, select:focus, textarea:focus {
   background: transparent; color: var(--muted);
 }
 .segtoggle button[aria-pressed="true"] {
-  background: var(--surf); color: var(--ink); box-shadow: var(--shadow-sm);
+  background: var(--seg-aktiv); color: var(--ink); box-shadow: var(--shadow-sm);
+}
+/* Das aktive Segment trägt einen Rand in seg-aktiv-rand (U71): die Fläche
+   allein lag im Dunkeln bei 1,2:1 zum Grund, hell bei Ja/Nein war das weisse
+   „Nein“ nicht als gewählt zu erkennen. Ein Block für alle Segmentarten -
+   body davor und die spezifischste Form in der Liste heben ihn über die
+   einzelnen Regeln weiter unten, die nur Fläche und Schatten setzen. Ohne
+   --shadow-sm dazu: der ist im Dunkeln „none“, und „inset …, none“ ist
+   ungültig - dann fiel der Rand ganz weg. */
+body :is(
+  .segtoggle button[aria-pressed="true"],
+  .segtoggle a[aria-current="page"],
+  .telefon-ansicht button[aria-checked="true"],
+  .segtoggle.bereich-segmente a[aria-current="page"],
+  .segment:has(input:checked)
+) {
+  box-shadow: inset 0 0 0 1.5px var(--seg-aktiv-rand);
 }
 
 .marke-klein {
@@ -395,7 +416,7 @@ table.liste .zahl {
 }
 .schalter input { width: 18px; height: 18px; margin-top: 2px; flex: 0 0 auto; }
 .schalter span { display: grid; gap: 2px; font-weight: 600; }
-.schalter small { font-weight: 500; font-size: 12.5px; color: var(--muted); }
+.schalter small { font-weight: 500; font-size: 14px; color: var(--ink-2); }
 
 /* ---------------------------------------------------------------------------
    Benachrichtigungen: Glocke im Menue, Liste im Fenster
@@ -553,7 +574,7 @@ dialog.fenster::backdrop { background: rgba(3,8,14,.62); backdrop-filter: blur(2
   font-family: var(--font-display); font-weight: 700; font-size: 26px;
   margin: 0; line-height: 1.1; letter-spacing: -.3px;
 }
-.fenster-kopf p { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); text-wrap: pretty; }
+.fenster-kopf p { margin: 4px 0 0; font-size: 14px; color: var(--ink-2); text-wrap: pretty; }
 .fenster-zu {
   margin-left: auto; flex: 0 0 auto; width: 40px; height: 40px; line-height: 1;
   font-size: 22px; border-radius: 20px; cursor: pointer;
@@ -621,10 +642,15 @@ ul.marken:not(:has(.chip)) { margin-bottom: 9px; gap: 6px; }
 }
 .einstellung .titel { display: block; font-weight: 600; font-size: 15px; }
 .einstellung .beschreibung {
-  display: block; font-size: 12.5px; color: var(--muted); margin: 2px 0 7px;
+  display: block; font-size: 14px; color: var(--ink-2); margin: 2px 0 8px;
   max-width: 62ch;
 }
 .einstellung input { max-width: 260px; }
+/* Drei oder vier Möglichkeiten („Alle Benachrichtigungen“, U71) stehen
+   untereinander - nebeneinander brachen sie schon in der Spalte am Desktop
+   um („Keine E-|Mails“). Wie in der App. */
+.segtoggle.mehrere { flex-direction: column; }
+.einstellung .segtoggle.mehrere { margin-bottom: 8px; }
 /* Rückmeldung an der Zeile, die gerade gespeichert wurde (U56). Der Behälter
    bleibt immer da, damit Screenreader die Meldung ansagen. */
 .zeilen-meldung .hinweis {
@@ -730,8 +756,19 @@ ul.marken:not(:has(.chip)) { margin-bottom: 9px; gap: 6px; }
 /* Fehler am einzelnen Feld. Bisher gab es nur .hinweis.fehler über dem
    gesamten Formular – bei zwanzig Feldern ist das keine Hilfe. */
 .feldfehler {
-  display: block; margin-top: 5px; font-size: 12.5px;
+  display: block; margin-top: 6px; font-size: 14px;
   font-weight: 600; color: var(--red-ink);
+}
+/* Feld mit Fehler oder Hinweis daneben: beides steht außerhalb des label,
+   sonst gehört es zum Feldnamen (Antrag, U70). */
+.feld { margin-bottom: 14px; min-width: 0; }
+.feld > label { margin-bottom: 0; }
+.feldhinweis { display: block; margin-top: 6px; font-size: 14px; color: var(--ink-2); max-width: 62ch; }
+.formraster > .feld { margin-bottom: 0; }
+.formraster > .feld.breit { grid-column: 1 / -1; }
+.formraster > .plz-ort {
+  grid-column: 1 / -1; display: grid; gap: 12px 14px;
+  grid-template-columns: minmax(110px, 1fr) minmax(0, 3fr);
 }
 input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] {
   border-color: var(--red);
@@ -1398,7 +1435,7 @@ dialog.fenster.blatt.breit { width: min(680px, calc(100vw - 24px)); }
 .segment-paar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .segment-stapel { display: grid; gap: 12px; }
 fieldset.segmente { border: 0; padding: 0; margin: 0; min-width: 0; }
-fieldset.segmente legend { padding: 0; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+fieldset.segmente legend { padding: 0; margin-bottom: 8px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
 .segment-leiste { display: flex; gap: 4px; padding: 4px; border-radius: var(--radius-knopf); background: var(--surf-2); }
 .segment {
   position: relative; flex: 1 1 0; min-width: 0; height: 40px; border-radius: calc(var(--radius-knopf) - 4px);
@@ -1416,7 +1453,7 @@ fieldset.segmente legend { padding: 0; margin-bottom: 8px; font-size: 13px; font
 .umsetz-zeiten .segment-leiste { flex-wrap: wrap; }
 .umsetz-zeiten .segment { flex: 0 0 auto; min-width: 64px; }
 
-.mitspieler .feldname { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.mitspieler .feldname { margin: 0 0 8px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
 .mitspieler .feldname .umfang { font-weight: 500; color: var(--muted); }
 .chips, .marken { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .marken { list-style: none; margin: 0; padding: 0; }
@@ -1573,12 +1610,14 @@ li.chip { padding-right: 4px; }
 .auth.immer-dunkel .sheet.rechtstext h2:first-of-type { margin-top: 14px; }
 .auth.immer-dunkel .sheet form { max-width: none; display: flex; flex-direction: column; gap: 14px; }
 .auth.immer-dunkel .sheet label { margin-bottom: 0; }
-.auth.immer-dunkel .sheet label > span { font-size: 13px; color: var(--ink-2); margin-bottom: 8px; }
+.auth.immer-dunkel .sheet label > span { font-size: 15px; color: var(--ink-2); margin-bottom: 8px; }
 .auth.immer-dunkel .sheet input:not([type="checkbox"]):not([type="radio"]),
 .auth.immer-dunkel .sheet select {
   min-height: 54px; border-radius: 16px; font-size: 16px;
   border-color: var(--rahmen); background: var(--surf);
 }
+/* Der Rand oben setzt rahmen und überdeckte den roten Fehlerrand (U70). */
+.auth.immer-dunkel .sheet :is(input, select, textarea)[aria-invalid="true"] { border-color: var(--red); }
 .auth.immer-dunkel .sheet a { color: var(--ink-2); font-weight: 600; }
 /* Ohne Schatten: im Dunkeln traegt die Flaeche, ein Goldschein waere Deko. */
 .auth.immer-dunkel .sheet .knopf.block:not(.leise) {
@@ -1653,7 +1692,10 @@ li.chip { padding-right: 4px; }
   display: flex; flex-direction: column; justify-content: space-between; gap: 10px;
   background: var(--surf); border: 1px solid var(--line); box-shadow: var(--shadow);
 }
-.getraenke-kacheln li.gewaehlt { border: 2px solid var(--gold-line); padding: 13px; }
+/* Gewählt: kräftiger neutraler Rand statt Gelb - gelb ist allein „Eintragen“ (U72).
+   scroll-margin hält die angetippte Kachel über Korb- und Tab-Leiste. */
+.getraenke-kacheln li { scroll-margin-bottom: calc(26px + 64px + 14px + 68px + 16px + env(safe-area-inset-bottom)); }
+.getraenke-kacheln li.gewaehlt { border: 2px solid var(--ink-2); padding: 13px; }
 .getraenke-kacheln b { display: block; font-size: 17px; }
 .getraenke-kacheln small { display: block; font-size: 13.5px; color: var(--muted); margin-top: 2px; }
 .zaehler { display: flex; justify-content: flex-end; align-items: center; gap: 4px; }
@@ -1662,7 +1704,6 @@ li.chip { padding-right: 4px; }
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--surf-2); color: var(--ink);
 }
-.zaehler button.gelb { background: var(--gold); color: var(--on-gold); }
 .zaehler button:disabled { opacity: .4; cursor: not-allowed; }
 .zaehler button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .zaehler svg { width: 16px; height: 16px; }
@@ -1696,6 +1737,14 @@ li.chip { padding-right: 4px; }
 .eintragen-leiste b { display: block; font-size: 15px; }
 .eintragen-leiste small { display: block; font-size: 13px; opacity: .7; }
 .eintragen-leiste .knopf { min-height: 52px; border-radius: 18px; padding: 0 24px; font-family: var(--font-text); font-size: 16px; font-weight: 800; }
+/* Am Telefon liegt die Leiste über dem Inhalt: unten so viel Platz mehr, dass
+   die letzten Kacheln darüber zu stehen kommen (U72). Solange sie da ist,
+   tritt die gelbe Markierung des Tabs zurück - die eine gelbe Fläche ist
+   dann „Eintragen“. */
+@media (max-width: 767px) {
+  .inhalt:has(.eintragen-leiste) { padding-bottom: calc(110px + 68px + 14px + env(safe-area-inset-bottom)); }
+  body:has(.eintragen-leiste) .schwebeleiste a[aria-current="page"] { background: var(--surf-3); color: var(--ink); }
+}
 /* U17: Der Korb ist noch nicht gebucht - das soll man sehen, nicht nur lesen. */
 .eintragen-leiste small.offen { opacity: 1; font-weight: 700; }
 .eintragen-leiste .knopf:not(:disabled) { animation: eintragen-ruf 1.6s ease-out 2; }

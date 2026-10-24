@@ -431,11 +431,13 @@ test.describe("Mitgliederverwaltung", () => {
     await page.goto(`${adresse.split("?")[0]}?teil=merkmale`);
 
     const karte = page.locator('section[aria-label="Merkmale"]');
-    await karte.getByLabel(name).selectOption("rot");
+    // Eine Liste mit einem Wert ist eine Wahl aus Segmenten (U71).
+    const wahl = karte.getByRole("group", { name });
+    await wahl.getByRole("button", { name: "Rot" }).click();
     await expect(karte.locator(".hinweis.erfolg")).toContainText("Gespeichert");
 
     await page.reload();
-    await expect(karte.locator(".marken li")).toContainText("Rot");
+    await expect(wahl.getByRole("button", { name: "Rot" })).toHaveAttribute("aria-pressed", "true");
 
     // Und im Protokoll
     await page.goto(`${adresse.split("?")[0]}?teil=protokoll`);
@@ -983,7 +985,9 @@ test.describe("Mitgliederverwaltung", () => {
     await page.getByLabel("Nachname").fill(nachname);
     await page.getByLabel("E-Mail", { exact: true }).fill(email);
     await pflichtfelderFuellen(page, "1991-03-03");
-    await page.locator("form").first().evaluate((f) => ((f as HTMLFormElement).noValidate = true));
+    // Das Formular prüft die Adresse selbst (U70) und hielte den Punkt am
+    // Ende auf. Als Textfeld geht sie durch - geprüft wird hier der Server.
+    await page.getByLabel("E-Mail", { exact: true }).evaluate((f) => ((f as HTMLInputElement).type = "text"));
     await page.getByRole("button", { name: "Antrag absenden" }).click();
     await expect(page.getByRole("heading", { name: "Danke!" })).toBeVisible({ timeout: 20_000 });
 
@@ -1067,9 +1071,9 @@ test.describe("Mitgliederverwaltung", () => {
 /**
  * Die Abmeldung von den Buchungsmails.
  *
- * Sie läuft über die vorhandene Einwilligungskarte — deshalb prüft dieser Test
- * nicht neue Oberfläche, sondern dass das neue Merkmal dort ankommt und der
- * gewählte Wert das Neuladen überlebt.
+ * Sie läuft über die vorhandene Einwilligungskarte — deshalb prüft dieser Test,
+ * dass das Merkmal dort als Wahl ankommt und der gewählte Wert das Neuladen
+ * überlebt.
  */
 test.describe("E-Mails zu Buchungen", () => {
   test("Mitglied stellt die Buchungsmails ab, und es bleibt so", async ({ page }) => {
@@ -1079,30 +1083,25 @@ test.describe("E-Mails zu Buchungen", () => {
     const karte = page.locator(".karte", { hasText: "E-Mails zu Buchungen" }).first();
     await expect(karte).toBeVisible();
 
-    // Ausgangszustand herstellen: hat ein früherer Lauf einen Wert
-    // hinterlassen, ist das Auswahlfeld gar nicht da – das Merkmal lässt nur
-    // einen Wert zu.
-    const marke = karte.locator("ul[aria-label='E-Mails zu Buchungen: gewählt'] li");
-    if ((await marke.count()) > 0) {
-      await marke.first().getByRole("button").click();
-      await expect(marke).toHaveCount(0, { timeout: 15_000 });
+    // Ein Listen-Merkmal mit einem Wert ist eine Wahl wie Ja/Nein (U71):
+    // Segmente, von denen eines gedrückt ist - kein Auswahlfeld.
+    const gruppe = karte.getByRole("group", { name: "E-Mails zu Buchungen" });
+    // Hat ein abgebrochener Lauf „Keine E-Mails“ stehen lassen, löst ein
+    // Klick darauf nichts aus - erst zurückstellen.
+    if ((await gruppe.getByRole("button", { name: "Keine E-Mails" }).getAttribute("aria-pressed")) === "true") {
+      await gruppe.getByRole("button", { name: "Nur Wichtiges" }).click();
+      await expect(gruppe.getByRole("button", { name: "Nur Wichtiges" })).toHaveAttribute("aria-pressed", "true", { timeout: 15_000 });
     }
-
-    // Ein Listen-Merkmal erscheint als Auswahlfeld, nicht als Ja/Nein.
-    const wahl = karte.getByLabel("E-Mails zu Buchungen");
-    await wahl.selectOption({ label: "Keine E-Mails" });
+    await gruppe.getByRole("button", { name: "Keine E-Mails" }).click();
     await expect(page.locator(".hinweis.erfolg")).toBeVisible({ timeout: 15_000 });
 
-    // Nach dem Speichern steht der Wert als Marke da; das Auswahlfeld
-    // verschwindet, weil das Merkmal nur einen Wert zulässt.
     await page.reload();
-    const nachher = page.locator(".karte", { hasText: "E-Mails zu Buchungen" });
-    await expect(
-      nachher.locator("ul[aria-label='E-Mails zu Buchungen: gewählt'] li"),
-    ).toContainText("Keine E-Mails");
+    await expect(gruppe.getByRole("button", { name: "Keine E-Mails" })).toHaveAttribute("aria-pressed", "true");
+    await expect(gruppe.getByRole("button", { name: "Nur Wichtiges" })).toHaveAttribute("aria-pressed", "false");
 
-    // Zurücksetzen, damit der nächste Lauf denselben Ausgangszustand findet.
-    await nachher.getByRole("button", { name: "Keine E-Mails entfernen" }).click();
+    // Zurück auf „Nur Wichtiges“ - das gilt auch ohne Wert, der nächste Lauf
+    // findet also dasselbe Verhalten vor.
+    await gruppe.getByRole("button", { name: "Nur Wichtiges" }).click();
     await expect(page.locator(".hinweis.erfolg")).toBeVisible({ timeout: 15_000 });
   });
 });
