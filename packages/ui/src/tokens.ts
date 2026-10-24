@@ -73,6 +73,10 @@ export const farben = {
     navAktivInk: "#FFFFFF",
     // Aktives Segment eines Segment-Schalters: hell surf (mit Schatten), dunkel surf3
     segAktiv: "#FFFFFF",
+    // Rand des aktiven Segments. Die Fläche allein hob sich kaum ab - dunkel
+    // surf3 auf surf2 1,2:1, hell Weiss auf surf2 1,1:1 -, bei Ja/Nein war
+    // nicht zu sagen, was gewählt ist (U71). Der Rand hält 6,7:1 auf surf2.
+    segAktivRand: "#44566B",
   },
   dunkel: {
     // Vorher #3A9BE0: Weiss darauf nur 3,0:1, der Hauptknopf fiel durch (U14).
@@ -115,6 +119,8 @@ export const farben = {
     navAktiv: "rgba(255,210,31,.12)",
     navAktivInk: "#FFD21F",
     segAktiv: "#1E3249",
+    // 8,5:1 auf surf2
+    segAktivRand: "#B3C2D2",
   },
 } as const;
 
@@ -228,7 +234,8 @@ export const schrift = {
   display: "'Barlow Semi Condensed', 'Barlow', sans-serif",
   groesse: {
     /** Semi Condensed 700, Grossbuchstaben, Laufweite laufweiteKicker */
-    kicker: 12,
+    // vorher 12 - Datum über dem Gruss, Kopf der Blätter (U69)
+    kicker: 13,
     klein: 13,
     // vorher 15 - am Platz, in der Sonne, liest sich 16 spuerbar besser
     normal: 16,

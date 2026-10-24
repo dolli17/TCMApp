@@ -41,6 +41,7 @@
   --nav-aktiv: #0A1624;
   --nav-aktiv-ink: #FFFFFF;
   --seg-aktiv: #FFFFFF;
+  --seg-aktiv-rand: #44566B;
   --shadow: 0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06);
   --shadow-sm: 0 1px 2px rgba(10,22,36,.05);
   --shadow-float: 0 16px 40px rgba(10,22,36,.16);
@@ -57,7 +58,7 @@
   --tracking-kicker: 0.14em;
   --tracking-title: -0.6px;
 
-  --font-size-kicker: 12px;
+  --font-size-kicker: 13px;
   --font-size-klein: 13px;
   --font-size-normal: 16px;
   --font-size-titel: 22px;
@@ -115,6 +116,7 @@
     --nav-aktiv: rgba(255,210,31,.12);
     --nav-aktiv-ink: #FFD21F;
     --seg-aktiv: #1E3249;
+    --seg-aktiv-rand: #B3C2D2;
     --shadow: none;
     --shadow-sm: none;
     --shadow-float: 0 16px 40px rgba(0,0,0,.5);
@@ -155,6 +157,7 @@
   --nav-aktiv: rgba(255,210,31,.12);
   --nav-aktiv-ink: #FFD21F;
   --seg-aktiv: #1E3249;
+  --seg-aktiv-rand: #B3C2D2;
   --shadow: none;
   --shadow-sm: none;
   --shadow-float: 0 16px 40px rgba(0,0,0,.5);
@@ -193,6 +196,7 @@
   --nav-aktiv: #0A1624;
   --nav-aktiv-ink: #FFFFFF;
   --seg-aktiv: #FFFFFF;
+  --seg-aktiv-rand: #44566B;
   --shadow: 0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06);
   --shadow-sm: 0 1px 2px rgba(10,22,36,.05);
   --shadow-float: 0 16px 40px rgba(10,22,36,.16);
@@ -233,6 +237,7 @@
   --nav-aktiv: rgba(255,210,31,.12);
   --nav-aktiv-ink: #FFD21F;
   --seg-aktiv: #1E3249;
+  --seg-aktiv-rand: #B3C2D2;
   --shadow: none;
   --shadow-sm: none;
   --shadow-float: 0 16px 40px rgba(0,0,0,.5);
@@ -273,6 +278,7 @@
   --nav-aktiv: #0A1624;
   --nav-aktiv-ink: #FFFFFF;
   --seg-aktiv: #FFFFFF;
+  --seg-aktiv-rand: #44566B;
   --shadow: 0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06);
   --shadow-sm: 0 1px 2px rgba(10,22,36,.05);
   --shadow-float: 0 16px 40px rgba(10,22,36,.16);

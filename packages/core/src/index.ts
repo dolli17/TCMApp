@@ -24,6 +24,7 @@ export * from "./einladung";
 export * from "./weiterleitung";
 export * from "./kontoloeschung";
 export * from "./einstellungen";
+export * from "./merkmaltexte";
 export type { Database, Json } from "./database.types";
 export * from "./sepa/types";
 export * from "./sepa/validation";

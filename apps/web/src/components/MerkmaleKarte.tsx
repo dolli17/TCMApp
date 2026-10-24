@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { merkmalBeschreibung } from "@tcm/core";
 import { merkmalEntfernen, merkmalSetzen } from "@/app/merkmale-aktionen";
 
 export interface MerkmalZeile {
@@ -124,11 +125,17 @@ export function MerkmaleKarte(props: Props) {
 
       {merkmale.map((m) => {
         const gesetzt = m.werte.length > 0;
+        // Eine Liste mit genau einem Wert und wenigen Möglichkeiten ist eine
+        // Wahl wie Ja/Nein und sieht auch so aus - kein Auswahlfeld
+        // „Auswählen…“ zwischen lauter Segmenten, das nicht zeigt, was gilt (U71).
+        const einzelwahl = m.art === "list" && !m.multiple && m.optionen.length > 1 && m.optionen.length <= 4;
 
         return (
           <div key={m.code} className="einstellung">
             <span className="titel">{m.name}</span>
-            <span className="beschreibung">{m.description}</span>
+            <span className="beschreibung">
+              {merkmalBeschreibung(m.code, m.description, props.nurSelbstpflege ? "mitglied" : "verwaltung")}
+            </span>
 
             {m.art === "boolean" ? (
               <>
@@ -153,6 +160,26 @@ export function MerkmaleKarte(props: Props) {
                 {gesetzt && m.werte[0]?.seit && (
                   <span className="beschreibung">Erteilt am {datum(m.werte[0].seit)}</span>
                 )}
+              </>
+            ) : einzelwahl ? (
+              <>
+                <div className={`segtoggle${m.optionen.length > 2 ? " mehrere" : ""}`} role="group" aria-label={m.name}>
+                  {m.optionen.map((o) => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      aria-pressed={m.werte[0]?.option === o.value}
+                      disabled={laeuft || !m.darfIch}
+                      onClick={() =>
+                        m.werte[0]?.option !== o.value &&
+                        fuehreAus(m.code, () => merkmalSetzen(props.mitgliedId, m.code, o.value))
+                      }
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+                {!gesetzt && <span className="beschreibung">Noch nichts gewählt.</span>}
               </>
             ) : m.art === "list" ? (
               <>

@@ -18,6 +18,7 @@ const HEUTE_LANG = new Intl.DateTimeFormat("de-DE", {
   weekday: "long", day: "numeric", month: "long", timeZone: BERLIN,
 });
 const MONAT = new Intl.DateTimeFormat("de-DE", { month: "long", timeZone: BERLIN });
+const JAHR = new Intl.DateTimeFormat("de-DE", { year: "numeric", timeZone: BERLIN });
 
 function heuteInBerlin(): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: BERLIN }).format(new Date());
@@ -277,8 +278,10 @@ export default async function Start() {
                 <b className="dpl tnum">{formatCents(sumOpenDrinks(getraenkeRes.data ?? []))}</b>
               )}
             </Link>
+            {/* Die Stunden gelten fürs Jahr, nicht für den Monat darüber -
+                das Jahr steht deshalb dabei, wie in der App (U72). */}
             <Link href="/konto" className="zeile arbeitsdienst">
-              <span>Arbeitsdienst</span>
+              <span>Arbeitsdienst {dienst?.year ?? JAHR.format(jetzt)}</span>
               {dienstRes.error ? (
                 <small className="fehlertext">nicht geladen</small>
               ) : dienst && soll > 0 ? (

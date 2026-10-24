@@ -124,7 +124,11 @@ export function stilFuer(theme: ThemeName) {
     segmentKnopf: {
       flex: 1, paddingVertical: 11, borderRadius: radius.knopf - 4, alignItems: "center",
     },
-    segmentAktiv: { backgroundColor: f.surf },
+    // Rand wie im Web (U71): die Fläche allein hob sich vom Grund kaum ab.
+    // Der Innenabstand gleicht den Rand aus, damit nichts springt.
+    segmentAktiv: {
+      backgroundColor: f.segAktiv, borderWidth: 1.5, borderColor: f.segAktivRand, paddingVertical: 9.5,
+    },
     segmentText: { color: f.muted, fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 15 },
     segmentTextAktiv: { color: f.ink },
 

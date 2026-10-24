@@ -130,11 +130,21 @@ export function Getraenkekarte({
     };
   }, [stueck, betrag]);
 
-  function aendern(id: string, um: number) {
+  function aendern(id: string, um: number, knopf?: HTMLElement) {
     // Waehrend des Sendens gesperrt: das Ergebnis setzt den Korb neu (B18).
     if (laeuft) return;
     setMeldung(null);
     setKorb((k) => changeBasket(k, id, um));
+    // Mit dem ersten Getraenk erscheint unten die Leiste und kann die Kachel
+    // verdecken, die man gerade angetippt hat. Nach dem Zeichnen rueckt sie
+    // darueber - scroll-margin-bottom haelt den Abstand zur Leiste (U72).
+    const kachel = knopf?.closest("li");
+    if (kachel) {
+      requestAnimationFrame(() => {
+        const ruhig = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        kachel.scrollIntoView({ block: "nearest", behavior: ruhig ? "auto" : "smooth" });
+      });
+    }
   }
 
   useEffect(() => {
@@ -178,7 +188,6 @@ export function Getraenkekarte({
       <section aria-labelledby="h-karte">
         <div className="sectionlabel">
           <h2 id="h-karte">Was nimmst du?</h2>
-          <span className="mit">Karte aus der Verwaltung</span>
         </div>
         <p className="mit" style={{ margin: "-4px 0 12px" }}>
           Mit + sammelst du. Gebucht ist erst, was du unten einträgst.
@@ -202,20 +211,20 @@ export function Getraenkekarte({
                         type="button"
                         aria-label={`${a.name}: eins weniger`}
                         disabled={laeuft}
-                        onClick={() => aendern(a.id, -1)}
+                        onClick={(e) => aendern(a.id, -1, e.currentTarget)}
                       >
                         <Zeichen d="M5 12h14" />
                       </button>
                       <output className="dpl" aria-label={`${menge} gewählt, noch nicht eingetragen`}>{menge}</output>
                     </>
                   )}
-                  {/* Gelb erst, wenn schon etwas gesammelt ist (U43). */}
+                  {/* Gelb ist nur „Eintragen“ unten (U72) - Plus, Kachel und
+                      Leiste daneben blieben sonst viermal gleichzeitig gelb. */}
                   <button
                     type="button"
-                    className={menge > 0 ? "gelb" : undefined}
                     aria-label={`${a.name}: eins mehr`}
                     disabled={laeuft || menge >= MAX_DRINK_QUANTITY}
-                    onClick={() => aendern(a.id, 1)}
+                    onClick={(e) => aendern(a.id, 1, e.currentTarget)}
                   >
                     <Zeichen d="M12 5v14M5 12h14" />
                   </button>

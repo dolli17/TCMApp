@@ -2,7 +2,8 @@
  * Segment-Schalter und Schalter (docs/design/clubhaus, Abschnitt 4)
  *
  * Segmente: Container surf2, Radius 16, Innenabstand 4; das aktive Segment
- * im Dunkeln in surf3, im Hellen in surf mit leichtem Schatten. Die Hoehe ist
+ * im Dunkeln in surf3, im Hellen in surf mit leichtem Schatten, in beiden mit
+ * Rand segAktivRand - die Fläche allein hob sich kaum ab (U71). Die Hoehe ist
  * eine Mindesthoehe: mit grosser Systemschrift waechst das Segment mit und
  * bricht notfalls um, statt die Schrift unter lesbar zu stauchen (U77).
  *
@@ -58,7 +59,7 @@ export function Segmente<T extends string | number>({
                 flex: 1, minHeight: hoehe, borderRadius: radius.knopf - 4,
                 alignItems: "center", justifyContent: "center", paddingHorizontal: 6, paddingVertical: 4,
               },
-              aktiv && { backgroundColor: farben.segAktiv },
+              aktiv && { backgroundColor: farben.segAktiv, borderWidth: 1.5, borderColor: farben.segAktivRand },
               aktiv && theme === "hell" && schattenRn.hell.klein,
               o.deaktiviert && { opacity: 0.4 },
             ]}
