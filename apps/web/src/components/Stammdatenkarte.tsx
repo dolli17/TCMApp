@@ -28,6 +28,8 @@ interface Props {
   /** Ist die Karte nur zum Ansehen? Etwa bei archivierten Mitgliedern. */
   gesperrt?: boolean;
   gesperrtGrund?: string;
+  /** Den Titel nur als Namen der Karte führen, wenn die Seite ihn schon als Überschrift trägt. */
+  ohneTitel?: boolean;
 }
 
 function eingabetyp(art: FeldArt): string {
@@ -73,14 +75,8 @@ export function Stammdatenkarte(props: Props) {
 
   return (
     <section className="karte einstellungen" aria-label={props.titel}>
-      <h2 className="dpl">{props.titel}</h2>
+      {!props.ohneTitel && <h2 className="dpl">{props.titel}</h2>}
       {props.text && <p className="unterzeile">{props.text}</p>}
-
-      {meldung && (
-        <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">
-          {meldung.text}
-        </div>
-      )}
 
       {props.gesperrt && props.gesperrtGrund && (
         <div className="hinweis">{props.gesperrtGrund}</div>
@@ -136,6 +132,14 @@ export function Stammdatenkarte(props: Props) {
             );
           })}
         </div>
+
+        {/* Die Rückmeldung steht am Knopf, nicht über dem Formular - am
+            Telefon wäre sie dort längst aus dem Bild (U56). */}
+        {meldung && (
+          <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">
+            {meldung.text}
+          </div>
+        )}
 
         {!props.gesperrt && (
           <button className="knopf" disabled={laeuft}>

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
+import { berlinTime } from "@tcm/core";
 import { anmelden, mitspielerWaehlen, MITSPIELER, NUTZER, oeffneFreieStunde, PASSWORT, tagIn } from "./hilfen";
 
 /**
@@ -48,10 +49,18 @@ test.describe("Buchungsregeln im Plan", () => {
     const vorlauf = (await tage(page)) - 1;
     expect(vorlauf).toBe(7);
 
-    // Die Datenbank rechnet in UTC: now() plus lead_days mal 24 Stunden.
-    const grenze = berlin(new Date(Date.now() + vorlauf * 86_400_000));
+    // Die Kacheln sind Berliner Tage, die Datenbank rechnet die Grenze als
+    // now() plus lead_days mal 24 Stunden. Beides fällt nicht immer auf
+    // denselben Tag: in der Woche vor der Umstellung auf Winterzeit liegt die
+    // Grenze zwischen 0 und 1 Uhr noch auf dem Vortag der letzten Kachel, vor
+    // der Umstellung auf Sommerzeit zwischen 23 und 24 Uhr schon hinter ihr
+    // (T9). Darum zählt hier der Zeitpunkt, nicht das Datum: auf der letzten
+    // Kachel darf kein freier Beginn hinter der Grenze liegen - egal, ob das
+    // alle Zeiten, keine oder die bis zur jetzigen Uhrzeit sind.
     await page.locator(".datums-kacheln a").last().click();
-    await page.waitForURL((u) => u.searchParams.get("tag") === grenze.tag);
+    await page.waitForURL((u) => u.searchParams.has("tag"));
+    const tag = new URL(page.url()).searchParams.get("tag")!;
+    const grenze = Date.now() + vorlauf * 86_400_000;
 
     const labels = await page.locator(".plan-raster button.frei-slot").evaluateAll((els) =>
       els.map((e) => e.getAttribute("aria-label")),
@@ -59,7 +68,7 @@ test.describe("Buchungsregeln im Plan", () => {
     // Die Grenze darf zwischen dem Lesen der Uhr und dem Zeichnen nicht
     // weiterlaufen und dabei eine Halbstunde mitnehmen - eine Minute Luft.
     for (const label of labels) {
-      expect(minuteAusLabel(label), label ?? "").toBeLessThanOrEqual(grenze.minuten + 1);
+      expect(berlinTime(tag, minuteAusLabel(label)).getTime(), label ?? "").toBeLessThanOrEqual(grenze + 60_000);
     }
   });
 

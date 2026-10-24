@@ -34,11 +34,14 @@ export default async function MeineDatenSeite() {
     : [];
 
   return (
-    <KontoUnterseite titel="Meine Daten">
+    <KontoUnterseite
+      titel="Meine Daten"
+      text="Adresse und Rufnummern pflegst du selbst. E-Mail und Geburtsdatum ändert der Vorstand – sie hängen am Zugang und an den Beiträgen."
+    >
       {ich && (
         <Stammdatenkarte
           titel="Meine Daten"
-          text="Adresse und Rufnummern pflegst du selbst. E-Mail und Geburtsdatum ändert der Vorstand – sie hängen am Zugang und an den Beiträgen."
+          ohneTitel
           felder={felder}
           aktion={eigeneDatenSpeichern}
         />

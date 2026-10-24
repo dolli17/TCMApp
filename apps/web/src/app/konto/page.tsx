@@ -95,13 +95,15 @@ export default async function KontoSeite() {
 
       <div className="konto-raster">
         <div>
-          {/* --- Offene Forderungen ---------------------------------------- */}
+          {/* --- Abrechnung ------------------------------------------------- */}
+          {/* "Abrechnung" statt "Offene Forderungen": der laufende Getränkemonat
+              steht hier als Normalfall ("läuft noch") und ist keine Schuld (U56). */}
           <section aria-labelledby="h-offen">
-            <div className="sectionlabel"><h2 id="h-offen">Offene Forderungen</h2></div>
+            <div className="sectionlabel"><h2 id="h-offen">Abrechnung</h2></div>
             {forderungenFehler && (
               <Fehlerzustand
                 kompakt
-                titel="Deine Forderungen ließen sich nicht laden."
+                titel="Deine Abrechnung ließ sich nicht laden."
                 text={translateDbError(forderungenFehler)}
               />
             )}
@@ -148,7 +150,7 @@ export default async function KontoSeite() {
 
             {frueher.length > 0 && (
               <details className="frueher">
-                <summary>Frühere Forderungen ({frueher.length})</summary>
+                <summary>Frühere Posten ({frueher.length})</summary>
                 <ul className="gruppe forderungen">
                   {frueher.map((f) => (
                     <li key={f.id} className="forderung">

@@ -34,11 +34,11 @@ export default async function NotfallkontaktSeite() {
     : [];
 
   return (
-    <KontoUnterseite titel="Notfallkontakt">
+    <KontoUnterseite titel="Notfallkontakt" text="Wen sollen wir anrufen, wenn auf der Anlage etwas passiert?">
       {ich && (
         <Stammdatenkarte
           titel="Notfallkontakt"
-          text="Wen sollen wir anrufen, wenn auf der Anlage etwas passiert?"
+          ohneTitel
           felder={felder}
           aktion={notfallkontaktSpeichern}
         />

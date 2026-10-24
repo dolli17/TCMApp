@@ -74,6 +74,8 @@ interface Props {
   text?: string;
   /** Nur Merkmale zeigen, die das Mitglied selbst setzen darf (Konto-Ansicht). */
   nurSelbstpflege?: boolean;
+  /** Den Titel nur als Namen der Karte führen, wenn die Seite ihn schon als Überschrift trägt. */
+  ohneTitel?: boolean;
 }
 
 /**
@@ -84,7 +86,9 @@ interface Props {
  * Datenbank – `darf_ich` kommt fertig aus der RPC, hier wird es nur angezeigt.
  */
 export function MerkmaleKarte(props: Props) {
-  const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
+  // Die Rückmeldung gehört zu dem Merkmal, das gerade gespeichert wurde, und
+  // steht an seiner Zeile. Oben in der Karte sähe sie am Telefon niemand (U56).
+  const [meldung, setMeldung] = useState<{ code: string; ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
   const [entwuerfe, setEntwuerfe] = useState<Record<string, string>>({});
 
@@ -92,17 +96,18 @@ export function MerkmaleKarte(props: Props) {
     props.nurSelbstpflege ? props.zeilen.some((z) => z.code === m.code && z.self_editable) : true,
   );
 
-  function fuehreAus(auf: () => Promise<{ ok: boolean; meldung: string }>) {
+  function fuehreAus(code: string, auf: () => Promise<{ ok: boolean; meldung: string }>) {
+    setMeldung(null);
     starte(async () => {
       const e = await auf();
-      setMeldung({ ok: e.ok, text: e.meldung });
+      setMeldung({ code, ok: e.ok, text: e.meldung });
     });
   }
 
   if (merkmale.length === 0) {
     return (
       <section className="karte einstellungen" aria-label={props.titel ?? "Merkmale"}>
-        <h2 className="dpl">{props.titel ?? "Merkmale"}</h2>
+        {!props.ohneTitel && <h2 className="dpl">{props.titel ?? "Merkmale"}</h2>}
         <p className="leer">
           {props.nurSelbstpflege
             ? "Zurzeit sind keine Einwilligungen zu erteilen."
@@ -114,14 +119,8 @@ export function MerkmaleKarte(props: Props) {
 
   return (
     <section className="karte einstellungen" aria-label={props.titel ?? "Merkmale"}>
-      <h2 className="dpl">{props.titel ?? "Merkmale"}</h2>
+      {!props.ohneTitel && <h2 className="dpl">{props.titel ?? "Merkmale"}</h2>}
       {props.text && <p className="unterzeile">{props.text}</p>}
-
-      {meldung && (
-        <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">
-          {meldung.text}
-        </div>
-      )}
 
       {merkmale.map((m) => {
         const gesetzt = m.werte.length > 0;
@@ -138,7 +137,7 @@ export function MerkmaleKarte(props: Props) {
                     type="button"
                     aria-pressed={gesetzt}
                     disabled={laeuft || !m.darfIch}
-                    onClick={() => fuehreAus(() => merkmalSetzen(props.mitgliedId, m.code))}
+                    onClick={() => fuehreAus(m.code, () => merkmalSetzen(props.mitgliedId, m.code))}
                   >
                     Ja
                   </button>
@@ -146,7 +145,7 @@ export function MerkmaleKarte(props: Props) {
                     type="button"
                     aria-pressed={!gesetzt}
                     disabled={laeuft || !m.darfIch}
-                    onClick={() => fuehreAus(() => merkmalEntfernen(props.mitgliedId, m.code))}
+                    onClick={() => fuehreAus(m.code, () => merkmalEntfernen(props.mitgliedId, m.code))}
                   >
                     Nein
                   </button>
@@ -168,7 +167,7 @@ export function MerkmaleKarte(props: Props) {
                             aria-label={`${w.label ?? w.option} entfernen`}
                             disabled={laeuft}
                             onClick={() =>
-                              fuehreAus(() =>
+                              fuehreAus(m.code, () =>
                                 merkmalEntfernen(props.mitgliedId, m.code, w.option ?? undefined),
                               )
                             }
@@ -188,7 +187,7 @@ export function MerkmaleKarte(props: Props) {
                     disabled={laeuft}
                     onChange={(e) => {
                       const wert = e.target.value;
-                      if (wert) fuehreAus(() => merkmalSetzen(props.mitgliedId, m.code, wert));
+                      if (wert) fuehreAus(m.code, () => merkmalSetzen(props.mitgliedId, m.code, wert));
                     }}
                   >
                     <option value="">Auswählen…</option>
@@ -216,7 +215,7 @@ export function MerkmaleKarte(props: Props) {
                     className="knopf klein"
                     disabled={laeuft || (entwuerfe[m.code] ?? "") === (m.werte[0]?.text ?? "")}
                     onClick={() =>
-                      fuehreAus(() =>
+                      fuehreAus(m.code, () =>
                         merkmalSetzen(props.mitgliedId, m.code, undefined, entwuerfe[m.code] ?? ""),
                       )
                     }
@@ -230,6 +229,12 @@ export function MerkmaleKarte(props: Props) {
             {!m.darfIch && (
               <span className="beschreibung">Dieses Merkmal pflegt der Vorstand.</span>
             )}
+
+            <div className="zeilen-meldung" role="status">
+              {meldung?.code === m.code && (
+                <span className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`}>{meldung.text}</span>
+              )}
+            </div>
           </div>
         );
       })}
