@@ -9,11 +9,16 @@
  * Der Unterschied zwischen "gebucht" und "eingetragen" bestimmt, was man tun
  * darf: der Bucher storniert die ganze Buchung, ein Mitspieler traegt nur
  * sich selbst aus.
+ *
+ * Die Kachel "Mitspielen" auf Home kommt mit ?zeige=offen: dann stehen die
+ * offenen Spiele oben (U75). Vorher landete man bei den eigenen Terminen und
+ * musste die - oft leere - Liste darunter erst suchen. Ist sie leer, fuehrt
+ * der Leerzustand zum Buchen, denn ein offenes Spiel entsteht nur so.
  */
 
 import { useCallback, useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import Svg, { Circle, Path } from "react-native-svg";
 import { bookingActions, dayLabel, dayTag, offenesSpielText, upcomingBookings } from "@tcm/core";
 import { radius, schrift } from "@tcm/ui";
@@ -59,6 +64,7 @@ export default function Spiele() {
   const [offenFuer, setOffenFuer] = useState<string | null>(null);
   const [nachfrage, setNachfrage] = useState<string | null>(null);
   const jetzt = useJetzt();
+  const offeneZuerst = useLocalSearchParams<{ zeige?: string }>().zeige === "offen";
   const erneut = { onErneut: zustand.neuLaden, laeuft: zustand.aktualisiert };
 
   const { erneutHolen } = zustand;
@@ -83,23 +89,10 @@ export default function Spiele() {
   const termine = meine?.wert ? upcomingBookings(meine.wert, jetzt) : [];
   const eigene = new Set((meine?.wert ?? []).filter((b) => b.bin_bucher).map((b) => b.booking_id));
 
-  return (
-    <Bildschirm
-      laedt={zustand.laedt}
-      aktualisiert={zustand.aktualisiert}
-      onAktualisieren={zustand.neuLaden}
-      fehler={zustand.fehler}
-      kopf={<GrosserKopf titel="Plätze" />}
-      reiter={<PlaetzeReiter wert="/plaetze/spiele" />}
-    >
-      {meldung && (
-        <Text style={meldung.ok ? stil.hinweisErfolg : stil.hinweisFehler} accessibilityLiveRegion="polite">
-          {meldung.text}
-        </Text>
-      )}
-
+  const deineTermine = (
+    <>
       {/* --- Deine Termine ------------------------------------------------ */}
-      <Text style={[stil.abschnitt, { marginTop: 4 }]} accessibilityRole="header">Deine Termine</Text>
+      <Text style={[stil.abschnitt, { marginTop: offeneZuerst ? 16 : 4 }]} accessibilityRole="header">Deine Termine</Text>
       {meine?.fehler && <Fehlerzeile text={meine.fehler} {...erneut} />}
       {meine?.wert && termine.length === 0 && (
         <Leerzustand
@@ -198,9 +191,13 @@ export default function Spiele() {
           </View>
         );
       })}
+    </>
+  );
 
+  const offeneSpiele = (
+    <>
       {/* --- Offene Spiele ------------------------------------------------ */}
-      <View style={{ marginTop: 16 }}>
+      <View style={{ marginTop: offeneZuerst ? 4 : 16 }}>
         <Text style={[stil.abschnitt, { marginTop: 0 }]} accessibilityRole="header">Offene Spiele</Text>
         <Text style={[stil.leise, { fontSize: 14, marginTop: 4 }]}>Hier fehlt noch jemand. Ein Tipp genügt.</Text>
       </View>
@@ -208,6 +205,10 @@ export default function Spiele() {
       {offen?.wert && offen.wert.length === 0 && (
         <Leerzustand
           text="Gerade sucht niemand Mitspieler. Wenn du selbst buchst, schalte im Blatt „Mitspieler gesucht“ ein – dann steht dein Spiel hier."
+          handlung={{
+            text: "Platz buchen",
+            onPress: () => router.navigate({ pathname: "/plaetze", params: { buchen: "jetzt" } }),
+          }}
         />
       )}
       {(offen?.wert ?? []).map((o) => {
@@ -289,6 +290,35 @@ export default function Spiele() {
           </View>
         );
       })}
+    </>
+  );
+
+  return (
+    <Bildschirm
+      laedt={zustand.laedt}
+      aktualisiert={zustand.aktualisiert}
+      onAktualisieren={zustand.neuLaden}
+      fehler={zustand.fehler}
+      kopf={<GrosserKopf titel="Plätze" />}
+      reiter={<PlaetzeReiter wert="/plaetze/spiele" />}
+    >
+      {meldung && (
+        <Text style={meldung.ok ? stil.hinweisErfolg : stil.hinweisFehler} accessibilityLiveRegion="polite">
+          {meldung.text}
+        </Text>
+      )}
+
+      {offeneZuerst ? (
+        <>
+          {offeneSpiele}
+          {deineTermine}
+        </>
+      ) : (
+        <>
+          {deineTermine}
+          {offeneSpiele}
+        </>
+      )}
     </Bildschirm>
   );
 }

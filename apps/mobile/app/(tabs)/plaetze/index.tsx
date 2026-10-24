@@ -45,8 +45,9 @@ function lesbar(datum: string): string {
 
 /**
  * Fuer die Tageszeile: "Heute, 13.10.", "Morgen, 14.10." oder
- * "Donnerstag 15.10.". Heute und Morgen ersetzen den Wochentag - neben
- * den Pfeilen ist fuer beides kein Platz.
+ * "Do., 15.10.". Heute und Morgen ersetzen den Wochentag - neben den
+ * Pfeilen und dem Ansichtsschalter ist fuer beides kein Platz, und auch der
+ * Wochentag steht deshalb kurz.
  */
 function tageszeile(datum: string, heute: string): string {
   const [j, m, t] = datum.split("-").map(Number);
@@ -54,7 +55,7 @@ function tageszeile(datum: string, heute: string): string {
   const kurz = `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.`;
   if (datum === heute) return `Heute, ${kurz}`;
   if (datum === verschiebe(heute, 1)) return `Morgen, ${kurz}`;
-  return `${new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(d)} ${kurz}`;
+  return `${new Intl.DateTimeFormat("de-DE", { weekday: "short" }).format(d)}, ${kurz}`;
 }
 
 type Ansicht = "uebersicht" | "freie-zeiten";
@@ -81,7 +82,7 @@ type Platz = Awaited<ReturnType<typeof ladePlaetze>>[number];
  * Die Plaetze (docs/design/clubhaus/plaetze, HANDOFF-PLAETZE).
  *
  * Zwei Ansichten derselben Tagesbelegung, umschaltbar ueber den kleinen
- * Schalter Übersicht/Freie Zeiten unter der Datumszeile; die Wahl bleibt in
+ * Schalter Übersicht/Freie Zeiten rechts in der Datumszeile; die Wahl bleibt in
  * AsyncStorage. Ohne gemerkte Wahl beginnt es mit Freie Zeiten: dort sind
  * alle Ziele gross, im Raster muss man eine halbe Stunde treffen (U18). Ein zweites Segment unter "Belegung | Meine & offene Spiele"
  * war eine Leiste zu viel (U34). Die Übersicht
@@ -585,8 +586,8 @@ export default function Plan() {
             aus={tagIndex < 0 || tagIndex >= tage.length - 1}
             onPress={() => waehleTag(tage[tagIndex + 1]!)}
           />
+          <AnsichtSchalter wert={ansicht} onWahl={waehleAnsicht} />
         </View>
-        <AnsichtSchalter wert={ansicht} onWahl={waehleAnsicht} />
 
         {tagwahlOffen && (
           <ScrollView
@@ -757,10 +758,15 @@ function Rundknopf({
 /* --- Raster oder Liste --------------------------------------------------- */
 
 /**
- * Unter der Datumszeile, rechtsbuendig: Übersicht (Raster) oder Freie Zeiten
- * (Liste). Zwei Knoepfe statt eines Wechselknopfs, damit man sieht, was
- * gerade gilt. Mit sichtbarem Namen neben dem Symbol (U55) - nur die zwei
- * Symbole in der Datumszeile musste man erraten.
+ * Rechts in der Datumszeile: Übersicht (Raster) oder Freie Zeiten (Liste).
+ * Zwei Knoepfe statt eines Wechselknopfs, damit man sieht, was gerade gilt.
+ *
+ * U55 hatte den Schalter mit Namen in eine eigene Zeile gestellt; mit Segment
+ * und Datumszeile waren das drei Stufen vor dem ersten Platz (U75). Jetzt
+ * steht er wieder in der Datumszeile, als Segment mit erkennbar aktivem
+ * Feld - fuer beide Namen ist dort kein Platz. Der Name steht im Label, und
+ * die Tabelle darunter sagt, was gilt: Raster mit Plaetzen oder Liste mit
+ * Uhrzeiten.
  */
 function AnsichtSchalter({ wert, onWahl }: { wert: Ansicht; onWahl: (a: Ansicht) => void }) {
   const { farben, theme } = useTheme();
@@ -773,21 +779,15 @@ function AnsichtSchalter({ wert, onWahl }: { wert: Ansicht; onWahl: (a: Ansicht)
         accessibilityRole="radio"
         accessibilityLabel={label}
         accessibilityState={{ selected: aktiv }}
-        // 36 hoch sichtbar, mit hitSlop 44 zum Tippen (U18)
+        // 36 sichtbar, mit hitSlop 44 zum Tippen (U18)
         hitSlop={4}
         style={[
-          {
-            minHeight: 36, borderRadius: radius.knopf - 6, paddingHorizontal: 12,
-            flexDirection: "row", alignItems: "center", gap: 6,
-          },
+          { width: 36, height: 36, borderRadius: radius.knopf - 6, alignItems: "center", justifyContent: "center" },
           aktiv && { backgroundColor: farben.segAktiv },
           aktiv && theme === "hell" && schattenRn.hell.klein,
         ]}
       >
-        <Svg width={16} height={16} viewBox="0 0 24 24">{symbol(farbe)}</Svg>
-        <Text style={{ fontSize: 13.5, fontFamily: aktiv ? "Barlow_700Bold" : "Barlow_600SemiBold", color: farbe }}>
-          {label}
-        </Text>
+        <Svg width={18} height={18} viewBox="0 0 24 24">{symbol(farbe)}</Svg>
       </Pressable>
     );
   };
@@ -796,7 +796,7 @@ function AnsichtSchalter({ wert, onWahl }: { wert: Ansicht; onWahl: (a: Ansicht)
       accessibilityRole="radiogroup"
       accessibilityLabel="Darstellung"
       style={{
-        alignSelf: "flex-end", flexDirection: "row", gap: 2, padding: 4,
+        flexDirection: "row", gap: 2, padding: 4,
         borderRadius: radius.knopf - 2, backgroundColor: farben.surf2,
       }}
     >

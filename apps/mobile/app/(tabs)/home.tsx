@@ -321,7 +321,7 @@ function Schnellaktionen() {
   const kacheln: { text: string; pfad: string; ziel: Href; gelb?: boolean }[] = [
     { text: "Platz buchen", pfad: PFAD.buchen, ziel: { pathname: "/plaetze", params: { buchen: "jetzt" } }, gelb: true },
     { text: "Getränk eintragen", pfad: PFAD.getraenk, ziel: "/verein/getraenke" },
-    { text: "Mitspielen", pfad: PFAD.mitspielen, ziel: "/plaetze/spiele" },
+    { text: "Mitspielen", pfad: PFAD.mitspielen, ziel: { pathname: "/plaetze/spiele", params: { zeige: "offen" } } },
   ];
 
   return (
