@@ -11,7 +11,7 @@ import {
   EVENT_KIND_LABEL, EVENT_KIND_TON, eventDatumKachel, eventKartenZeile, eventKartenZeit, eventMeineMarke,
   eventVorbei, type EventTon, type MitgliedEvent,
 } from "@tcm/core";
-import { radius } from "@tcm/ui";
+import { radius, schrift } from "@tcm/ui";
 import { mitDeckkraft } from "@/lib/stil";
 import { useTheme } from "@/lib/theme";
 
@@ -40,7 +40,7 @@ export function EventKarte({ e, aufforderung = false }: { e: MitgliedEvent; auff
         </Text>
         <Text
           style={{
-            fontFamily: "Barlow_700Bold", fontSize: 11, letterSpacing: 0.6, textTransform: "uppercase",
+            fontFamily: "BarlowSemiCondensed_700Bold", fontSize: schrift.groesse.kicker, letterSpacing: 0.6, textTransform: "uppercase",
             color: vorbei ? farben.ink2 : farben.onBrand,
           }}
         >
@@ -76,7 +76,7 @@ export function MarkeKlein({ text, ton }: { text: string; ton: EventTon }) {
   };
   return (
     <View style={{ alignSelf: "flex-start", borderRadius: radius.chip, paddingVertical: 3, paddingHorizontal: 8, backgroundColor: farbe[ton].bg }}>
-      <Text style={{ fontSize: 11, fontFamily: "Barlow_600SemiBold", color: farbe[ton].ink }}>{text}</Text>
+      <Text style={{ fontSize: schrift.groesse.klein, fontFamily: "Barlow_600SemiBold", color: farbe[ton].ink }}>{text}</Text>
     </View>
   );
 }

@@ -27,7 +27,7 @@ import type { ComponentProps } from "react";
 import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { BlurView } from "expo-blur";
 import type { Tabs } from "expo-router";
-import { schattenRn } from "@tcm/ui";
+import { schattenRn, schrift } from "@tcm/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LEISTE_ABSTAND_UNTEN, LEISTE_HOEHE, LEISTE_RAND } from "@/lib/masse";
 import { SCHRIFT_DECKEL } from "@/lib/schrift";
@@ -110,7 +110,7 @@ export function SchwebendeLeiste({ state, descriptors, navigation }: LeistenEige
             >
               {optionen.tabBarIcon?.({ focused: aktiv, color: farbe, size: 22 })}
               <Text
-                style={[stile.tabText, schmal && stile.tabTextSchmal, { color: farbe }]}
+                style={[stile.tabText, { color: farbe }]}
                 numberOfLines={1}
                 adjustsFontSizeToFit
                 minimumFontScale={0.75}
@@ -157,7 +157,8 @@ const stile = StyleSheet.create({
     gap: 3,
   },
   tabSchmal: { paddingHorizontal: 2 },
-  // 12 statt 11 (U52), schmal eins weniger; Deckel siehe lib/schrift.ts
-  tabText: { fontSize: 12, fontFamily: "Barlow_600SemiBold" },
-  tabTextSchmal: { fontSize: 11 },
+  // 12 statt 11 (U52), auch auf schmalen Geraeten: dort verkleinert
+  // adjustsFontSizeToFit nur, was wirklich nicht passt (U77). Deckel siehe
+  // lib/schrift.ts
+  tabText: { fontSize: schrift.groesse.kicker, fontFamily: "Barlow_600SemiBold" },
 });

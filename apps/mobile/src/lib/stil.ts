@@ -114,7 +114,7 @@ export function stilFuer(theme: ThemeName) {
     // fontWeight bleibt wirkungslos, sobald eine benannte Familie gesetzt ist -
     // der Schnitt muss ueber den Namen kommen.
     feldLabel: {
-      fontSize: 12, fontFamily: "Barlow_600SemiBold", color: f.ink2, marginBottom: 7,
+      fontSize: schrift.groesse.klein, fontFamily: "Barlow_600SemiBold", color: f.ink2, marginBottom: 7,
     },
 
     segment: {
@@ -156,7 +156,7 @@ export function stilFuer(theme: ThemeName) {
       backgroundColor: f.blueSoft, borderRadius: radius.chip,
       paddingVertical: 3, paddingHorizontal: 8,
     },
-    markeKleinText: { fontSize: 11, fontFamily: "Barlow_600SemiBold", color: f.blueInk },
+    markeKleinText: { fontSize: schrift.groesse.klein, fontFamily: "Barlow_600SemiBold", color: f.blueInk },
     markeKleinGrau: { backgroundColor: f.chip },
     markeKleinGrauText: { color: f.ink2 },
 

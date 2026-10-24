@@ -3,7 +3,7 @@ import { Linking, Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import Svg, { Path } from "react-native-svg";
 import { formatCents, sumOpenDrinks, CHARGE_KIND_LABEL, KONTOLOESCHUNG_TEXT, type ChargeKind } from "@tcm/core";
-import { abstand, radius } from "@tcm/ui";
+import { abstand, radius, schrift } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
 import { Blatt, BlattKopf } from "@/components/Blatt";
 import { Fehlerzeile } from "@/components/Fehlerzeile";
@@ -157,8 +157,11 @@ export default function Konto() {
 
         {meldung && <Text style={stil.hinweisErfolg} accessibilityLiveRegion="polite">{meldung}</Text>}
 
-        {/* --- Offene Forderungen ----------------------------------------- */}
-        <Abschnitt titel="Offene Forderungen" />
+        {/* --- Abrechnung ------------------------------------------------- */}
+        {/* "Abrechnung" statt "Offene Forderungen" wie im Web: der laufende
+            Getraenkemonat steht hier als Normalfall ("läuft noch") und ist
+            keine Schuld (U76). */}
+        <Abschnitt titel="Abrechnung" />
         {forderungsFehler && <Fehlerzeile text={forderungsFehler} {...erneut} />}
         {zurueck.length > 0 && (
           <Text style={stil.hinweisFehler}>
@@ -177,7 +180,7 @@ export default function Konto() {
                     {f.period_label ? ` ${f.period_label}` : ""}
                   </Text>
                   {f.description ? (
-                    <Text style={[stil.leise, { fontSize: 12.5, marginTop: 2 }]} numberOfLines={2}>{f.description}</Text>
+                    <Text style={[stil.leise, { marginTop: 2 }]} numberOfLines={2}>{f.description}</Text>
                   ) : null}
                   <Statusmarke status={f.status} faellig={f.due_date} />
                 </View>
@@ -294,7 +297,11 @@ export default function Konto() {
 
       {/* --- Die Blaetter ---------------------------------------------------- */}
       {blatt && (
-        <Blatt onSchliessen={() => setBlatt(null)}>
+        <Blatt
+          onSchliessen={() => setBlatt(null)}
+          // Die Formulare heften Speichern unter die Felder (U76).
+          eigenerScroll={(blatt === "daten" || blatt === "notfall") && !!stammdaten}
+        >
           {(zu) => (
             <>
               {(blatt === "daten" || blatt === "notfall") && !stammdaten && (
@@ -448,7 +455,7 @@ function Marke({ children }: { children: ReactNode }) {
   const { farben } = useTheme();
   return (
     <View style={{ minHeight: 26, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 13, justifyContent: "center", backgroundColor: farben.surf2 }}>
-      <Text style={{ fontSize: 12.5, fontFamily: "Barlow_600SemiBold", color: farben.ink2 }}>{children}</Text>
+      <Text style={{ fontSize: schrift.groesse.klein, fontFamily: "Barlow_600SemiBold", color: farben.ink2 }}>{children}</Text>
     </View>
   );
 }
@@ -466,7 +473,7 @@ function Statusmarke({ status, faellig }: { status: string; faellig?: string | n
           : { text: "offen", bg: farben.surf2, fg: farben.ink2 };
   return (
     <View style={{ alignSelf: "flex-start", minHeight: 22, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 11, marginTop: 5, justifyContent: "center", backgroundColor: art.bg }}>
-      <Text style={{ fontSize: 11.5, fontFamily: "Barlow_700Bold", color: art.fg }}>{art.text}</Text>
+      <Text style={{ fontSize: schrift.groesse.klein, fontFamily: "Barlow_700Bold", color: art.fg }}>{art.text}</Text>
     </View>
   );
 }

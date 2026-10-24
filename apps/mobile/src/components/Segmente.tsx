@@ -2,7 +2,9 @@
  * Segment-Schalter und Schalter (docs/design/clubhaus, Abschnitt 4)
  *
  * Segmente: Container surf2, Radius 16, Innenabstand 4; das aktive Segment
- * im Dunkeln in surf3, im Hellen in surf mit leichtem Schatten.
+ * im Dunkeln in surf3, im Hellen in surf mit leichtem Schatten. Die Hoehe ist
+ * eine Mindesthoehe: mit grosser Systemschrift waechst das Segment mit und
+ * bricht notfalls um, statt die Schrift unter lesbar zu stauchen (U77).
  *
  * Schalter: 52 x 32, an in green, Knopf weiss, mit role="switch".
  */
@@ -53,8 +55,8 @@ export function Segmente<T extends string | number>({
             accessibilityState={{ selected: aktiv, disabled: o.deaktiviert }}
             style={[
               {
-                flex: 1, height: hoehe, borderRadius: radius.knopf - 4,
-                alignItems: "center", justifyContent: "center", paddingHorizontal: 6,
+                flex: 1, minHeight: hoehe, borderRadius: radius.knopf - 4,
+                alignItems: "center", justifyContent: "center", paddingHorizontal: 6, paddingVertical: 4,
               },
               aktiv && { backgroundColor: farben.segAktiv },
               aktiv && theme === "hell" && schattenRn.hell.klein,
@@ -62,11 +64,8 @@ export function Segmente<T extends string | number>({
             ]}
           >
             <Text
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.6}
               style={{
-                fontSize: 15, color: aktiv ? farben.ink : farben.muted,
+                fontSize: 15, textAlign: "center", color: aktiv ? farben.ink : farben.muted,
                 fontFamily: aktiv ? "Barlow_700Bold" : "Barlow_600SemiBold",
               }}
             >

@@ -15,6 +15,7 @@ import {
   ActivityIndicator, Platform, Pressable, Text, TextInput, View, type KeyboardTypeOptions,
 } from "react-native";
 import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+import { schrift } from "@tcm/ui";
 import { Blatt, BlattKopf } from "@/components/Blatt";
 import { PasswortSchalter } from "@/components/PasswortSchalter";
 import { Schalter } from "@/components/Segmente";
@@ -168,7 +169,7 @@ export function FormFeld({
           {fehler}
         </Text>
       ) : beschreibung ? (
-        <Text style={{ fontSize: 12.5, color: farben.muted, fontFamily: "Barlow_400Regular", marginTop: -6, marginBottom: 10 }}>
+        <Text style={{ fontSize: schrift.groesse.klein, color: farben.muted, fontFamily: "Barlow_400Regular", marginTop: -6, marginBottom: 10 }}>
           {beschreibung}
         </Text>
       ) : null}
@@ -196,7 +197,7 @@ export function FormSchalter({
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={{ fontSize: 15, fontFamily: "Barlow_600SemiBold", color: farben.ink2 }}>{label}</Text>
         {beschreibung && (
-          <Text style={{ fontSize: 12.5, color: farben.muted, fontFamily: "Barlow_400Regular" }}>{beschreibung}</Text>
+          <Text style={{ fontSize: schrift.groesse.klein, color: farben.muted, fontFamily: "Barlow_400Regular" }}>{beschreibung}</Text>
         )}
       </View>
       <Schalter an={an} onWechsel={onWechsel} beschriftung={label} deaktiviert={deaktiviert} />
@@ -270,7 +271,7 @@ export function FormAuswahl<T extends string>({
                 <Text style={{ fontSize: 15, fontFamily: aktiv ? "Barlow_700Bold" : "Barlow_500Medium", color: farben.ink }}>
                   {o.label}
                 </Text>
-                {o.info && <Text style={{ fontSize: 12.5, color: farben.muted, fontFamily: "Barlow_400Regular" }}>{o.info}</Text>}
+                {o.info && <Text style={{ fontSize: schrift.groesse.klein, color: farben.muted, fontFamily: "Barlow_400Regular" }}>{o.info}</Text>}
               </Pressable>
             );
           })}

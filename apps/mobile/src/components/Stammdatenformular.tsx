@@ -13,6 +13,7 @@
 import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { abstand } from "@tcm/ui";
+import { BlattScroll } from "@/components/Blatt";
 import { useTheme } from "@/lib/theme";
 import type { Ergebnis } from "@/lib/daten";
 import { feldEigenschaften, type Feldinhalt } from "@/lib/feldinhalt";
@@ -56,6 +57,8 @@ type Eigenschaften = {
   /**
    * Im Blatt des Kontos: kein eigener Rahmen und Titel (die bringt das Blatt
    * mit), die Felder stehen gleich offen, gespeichert wird mit dem gelben Knopf.
+   * Der steht angeheftet unter den Feldern, nicht am Ende der Liste (U76) -
+   * das Blatt dazu mit eigenerScroll oeffnen.
    */
   imBlatt?: boolean;
 };
@@ -98,9 +101,61 @@ export function Stammdatenformular({
     }
   }
 
+  const meldungsZeile = meldung && !(fehlerFeld && offen) && (
+    // Ein Fehler mit Feld steht am Feld, nicht noch einmal hier.
+    <Text style={meldung.ok ? stil.hinweisErfolg : stil.hinweisFehler}>{meldung.text}</Text>
+  );
+
+  const eingaben = felder.map((f) => {
+    const auto = feldEigenschaften(inhaltVon(f));
+    const fehler = fehlerFeld === f.name ? meldung?.text : undefined;
+    return (
+      <View key={f.name}>
+        <Text style={[stil.feldLabel, fehler ? { color: farben.red } : null]}>{f.label}</Text>
+        <TextInput
+          style={[stil.feld, fehler ? { borderColor: farben.red } : null]}
+          value={entwurf[f.name] ?? ""}
+          onChangeText={(t) => {
+            if (fehlerFeld === f.name) setFehlerFeld(null);
+            setEntwurf((e) => ({ ...e, [f.name]: t }));
+          }}
+          accessibilityLabel={f.label}
+          accessibilityHint={fehler}
+          {...auto}
+          autoCapitalize={auto.autoCapitalize ?? "sentences"}
+        />
+        {fehler && (
+          <Text style={[stil.hinweisFehler, { marginTop: 6 }]} accessibilityLiveRegion="polite">{fehler}</Text>
+        )}
+      </View>
+    );
+  });
+
+  if (imBlatt) {
+    return (
+      <>
+        <BlattScroll gap={abstand.s}>
+          {erklaerung && <Text style={stil.leise}>{erklaerung}</Text>}
+          {meldungsZeile}
+          {eingaben}
+        </BlattScroll>
+        <View style={{ marginTop: -abstand.s }}>
+          <Pressable
+            style={[stil.knopf, stil.knopfGold, { minHeight: 52, justifyContent: "center" }, laeuft && { opacity: 0.5 }]}
+            onPress={speichern}
+            disabled={laeuft}
+            accessibilityRole="button"
+          >
+            <Text style={[stil.knopfText, stil.knopfGoldText]}>{laeuft ? "Speichert…" : "Speichern"}</Text>
+          </Pressable>
+        </View>
+      </>
+    );
+  }
+
   return (
-    <View style={imBlatt ? { gap: abstand.s } : stil.karte}>
-      {!imBlatt && <View style={stil.zeile}>
+    <View style={stil.karte}>
+      <View style={stil.zeile}>
         <Text style={[stil.text, { fontFamily: "BarlowSemiCondensed_700Bold", fontSize: 18 }]}>
           {titel}
         </Text>
@@ -113,59 +168,32 @@ export function Stammdatenformular({
             <Text style={[stil.knopfLeiseText, stil.knopfKleinText]}>Bearbeiten</Text>
           </Pressable>
         )}
-      </View>}
+      </View>
 
       {erklaerung && <Text style={stil.leise}>{erklaerung}</Text>}
-
-      {/* Ein Fehler mit Feld steht am Feld, nicht noch einmal hier. */}
-      {meldung && !(fehlerFeld && offen) && (
-        <Text style={meldung.ok ? stil.hinweisErfolg : stil.hinweisFehler}>{meldung.text}</Text>
-      )}
+      {meldungsZeile}
 
       {offen ? (
         <>
-          {felder.map((f) => {
-            const auto = feldEigenschaften(inhaltVon(f));
-            const fehler = fehlerFeld === f.name ? meldung?.text : undefined;
-            return (
-              <View key={f.name}>
-                <Text style={[stil.feldLabel, fehler ? { color: farben.red } : null]}>{f.label}</Text>
-                <TextInput
-                  style={[stil.feld, fehler ? { borderColor: farben.red } : null]}
-                  value={entwurf[f.name] ?? ""}
-                  onChangeText={(t) => {
-                    if (fehlerFeld === f.name) setFehlerFeld(null);
-                    setEntwurf((e) => ({ ...e, [f.name]: t }));
-                  }}
-                  accessibilityLabel={f.label}
-                  accessibilityHint={fehler}
-                  {...auto}
-                  autoCapitalize={auto.autoCapitalize ?? "sentences"}
-                />
-                {fehler && (
-                  <Text style={[stil.hinweisFehler, { marginTop: 6 }]} accessibilityLiveRegion="polite">{fehler}</Text>
-                )}
-              </View>
-            );
-          })}
+          {eingaben}
 
           <View style={{ flexDirection: "row", gap: abstand.s, marginTop: abstand.s }}>
             <Pressable
-              style={[stil.knopf, imBlatt && stil.knopfGold, { flex: 1 }, imBlatt && { minHeight: 52, justifyContent: "center" }, laeuft && { opacity: 0.5 }]}
+              style={[stil.knopf, { flex: 1 }, laeuft && { opacity: 0.5 }]}
               onPress={speichern}
               disabled={laeuft}
               accessibilityRole="button"
             >
-              <Text style={[stil.knopfText, imBlatt && stil.knopfGoldText]}>{laeuft ? "Speichert…" : "Speichern"}</Text>
+              <Text style={stil.knopfText}>{laeuft ? "Speichert…" : "Speichern"}</Text>
             </Pressable>
-            {!imBlatt && <Pressable
+            <Pressable
               style={[stil.knopfLeise, { flex: 1 }]}
               onPress={() => setOffen(false)}
               disabled={laeuft}
               accessibilityRole="button"
             >
               <Text style={stil.knopfLeiseText}>Abbrechen</Text>
-            </Pressable>}
+            </Pressable>
           </View>
         </>
       ) : (

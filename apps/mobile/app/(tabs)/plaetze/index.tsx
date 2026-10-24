@@ -4,7 +4,8 @@ import { router, useLocalSearchParams } from "expo-router";
 import Svg, { Path, Rect } from "react-native-svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { berlinTime, occupancyKind } from "@tcm/core";
-import { abstand, radius, schattenRn } from "@tcm/ui";
+import { abstand, radius, schattenRn, schrift } from "@tcm/ui";
+import { haptik } from "@/lib/haptik";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme";
 import {
@@ -394,6 +395,7 @@ export default function Plan() {
    */
   async function ergebnis(r: { ok: boolean; meldung: string }, ziel?: Markierung) {
     if (r.ok) {
+      haptik.erfolg();
       setMeldung({ ok: true, text: r.meldung });
       setMarkiert(ziel ?? null);
       setFenster(null);
@@ -401,6 +403,7 @@ export default function Plan() {
       setFensterFehler(null);
       await laden(datum, true);
     } else {
+      haptik.fehler();
       setFensterFehler(r.meldung);
     }
   }
@@ -528,7 +531,7 @@ export default function Plan() {
                 <Text numberOfLines={1} style={{ fontSize: 15, fontFamily: "Barlow_800ExtraBold", color: farben.bg }}>
                   {gewaehlterPlatz.name} · {alsUhrzeit(auswahl.minute)} – {alsUhrzeit(auswahl.minute + dauer)}
                 </Text>
-                <Text numberOfLines={1} style={{ fontSize: 12.5, fontFamily: "Barlow_500Medium", color: mitDeckkraft(farben.bg, 0.7) }}>
+                <Text numberOfLines={1} style={{ fontSize: schrift.groesse.klein, fontFamily: "Barlow_500Medium", color: mitDeckkraft(farben.bg, 0.7) }}>
                   frei bis {alsUhrzeit(auswahl.bis)}
                 </Text>
               </View>
@@ -610,7 +613,7 @@ export default function Plan() {
                     backgroundColor: aktiv ? farben.gold : farben.surf2,
                   }}
                 >
-                  <Text style={{ fontSize: 10.5, letterSpacing: 0.6, fontFamily: "Barlow_700Bold", color: aktiv ? farben.onGold : farben.ink2 }}>
+                  <Text style={{ fontSize: schrift.groesse.kicker, letterSpacing: 0.6, fontFamily: "BarlowSemiCondensed_700Bold", color: aktiv ? farben.onGold : farben.ink2 }}>
                     {t === heute ? "HEUTE" : k.wochentag}
                   </Text>
                   <Text style={{ fontSize: 21, lineHeight: 23, fontFamily: "BarlowSemiCondensed_700Bold", color: aktiv ? farben.onGold : farben.ink2 }}>
