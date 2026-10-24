@@ -327,12 +327,11 @@ function Preisbereich({
           </select>
         </label>
         <label>
-          <span>Neuer Preis</span>
+          <span>Neuer Preis in €</span>
           <input
             type="text"
             inputMode="decimal"
             value={preis}
-            placeholder="2,80"
             onChange={(e) => setPreis(e.target.value)}
           />
         </label>

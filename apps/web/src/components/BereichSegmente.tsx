@@ -16,16 +16,13 @@ export function BereichSegmente({
   label,
   eintraege,
   aktiv,
-  viele,
 }: {
   label: string;
   eintraege: Segment[];
   aktiv: string;
-  /** Mehr als drei Teile: am Telefon in zwei Zeilen statt gequetscht */
-  viele?: boolean;
 }) {
   return (
-    <nav className={`segtoggle bereich-segmente${viele ? " viele" : ""}`} aria-label={label}>
+    <nav className="segtoggle bereich-segmente" aria-label={label}>
       {eintraege.map((e) => (
         <Link key={e.href} href={e.href} aria-current={e.href === aktiv ? "page" : undefined}>
           {e.label}

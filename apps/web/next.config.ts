@@ -75,7 +75,7 @@ const config: NextConfig = {
       // Die Läufe sind ein Segment der Kasse; die Seite eines Laufs bleibt.
       {
         source: "/admin/kasse/lastschriften",
-        destination: "/admin/kasse?abschnitt=einzuege",
+        destination: "/admin/kasse?abschnitt=lastschriften",
         permanent: true,
       },
       { source: "/admin/serien", destination: "/admin/plaetze", permanent: true },

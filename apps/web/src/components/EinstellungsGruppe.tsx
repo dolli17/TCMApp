@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
 import { centsAlsEingabe, einstellungsText, listeAusWert, listenOptionen } from "@tcm/core";
 import { einstellungenSpeichern } from "@/app/admin/einstellungs-aktionen";
 import { Gruppenkopf } from "@/components/Listenzeile";
@@ -42,6 +42,13 @@ function feldTyp(valueType: string): string {
 function EinstellungsFeld({ e }: { e: Einstellung }) {
   const t = einstellungsText(e);
   const wert = alsText(e.value);
+  const feld = useRef<HTMLInputElement & HTMLSelectElement>(null);
+
+  // Ein Hinweis wie „Es fehlt noch die IBAN“ führt mit #iban hierher: dann
+  // steht der Cursor gleich im Feld (U50).
+  useEffect(() => {
+    if (t.anker && window.location.hash === `#${t.anker}`) feld.current?.focus();
+  }, [t.anker]);
   const alt = <input type="hidden" name={`alt:${e.key}`} value={wert} />;
 
   if (t.art === "liste") {
@@ -83,7 +90,7 @@ function EinstellungsFeld({ e }: { e: Einstellung }) {
       ? t.optionen
       : [...t.optionen, { wert, label: wert }];
     eingabe = (
-      <select name={`wert:${e.key}`} defaultValue={wert} aria-label={t.label}>
+      <select ref={feld} id={t.anker} name={`wert:${e.key}`} defaultValue={wert} aria-label={t.label}>
         {optionen.map((o) => (
           <option key={o.wert} value={o.wert}>{o.label}</option>
         ))}
@@ -92,6 +99,8 @@ function EinstellungsFeld({ e }: { e: Einstellung }) {
   } else {
     eingabe = (
       <input
+        ref={feld}
+        id={t.anker}
         type={feldTyp(e.value_type)}
         name={`wert:${e.key}`}
         defaultValue={wert}

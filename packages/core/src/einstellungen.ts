@@ -30,12 +30,20 @@ export interface EinstellungsText {
   beschreibung?: string;
   art?: EinstellungsArt;
   optionen?: readonly { wert: string; label: string }[];
+  /** id des Felds, damit ein Hinweis direkt dorthin führt (?abschnitt=regeln#iban) */
+  anker?: string;
 }
 
 const PAIN_VERSIONEN: readonly { wert: PainVersion; label: string }[] = [
   { wert: "pain.008.001.08", label: "Aktuelle Fassung (pain.008.001.08)" },
   { wert: "pain.008.001.02", label: "Ältere Fassung (pain.008.001.02)" },
 ];
+
+/** Der Monat steht als Zahl in der Tabelle, gewählt wird er beim Namen. */
+const MONATE: readonly { wert: string; label: string }[] = [
+  "Januar", "Februar", "März", "April", "Mai", "Juni",
+  "Juli", "August", "September", "Oktober", "November", "Dezember",
+].map((label, i) => ({ wert: String(i + 1), label }));
 
 export const EINSTELLUNGS_TEXTE: Readonly<Record<string, EinstellungsText>> = {
   "booking.max_open_bookings": {
@@ -95,10 +103,13 @@ export const EINSTELLUNGS_TEXTE: Readonly<Record<string, EinstellungsText>> = {
     label: "Gläubiger-Identifikationsnummer",
     beschreibung:
       "Aus dem bisherigen Vereinsprogramm eBuSy übernehmen. Sie muss unverändert bleiben, damit die bestehenden Mandate gültig bleiben.",
+
+    anker: "glaeubiger-id",
   },
   "sepa.creditor_iban": {
     label: "IBAN des Vereinskontos",
     beschreibung: "Auf dieses Konto gehen die Lastschriften. Ohne sie lässt sich keine Bankdatei erzeugen.",
+    anker: "iban",
   },
   "sepa.creditor_bic": {
     label: "BIC des Vereinskontos",
@@ -126,6 +137,8 @@ export const EINSTELLUNGS_TEXTE: Readonly<Record<string, EinstellungsText>> = {
   "fees.annual_run_month": {
     label: "Monat des Beitragslaufs",
     beschreibung: "Der Lauf wird trotzdem von Hand gestartet.",
+    art: "auswahl",
+    optionen: MONATE,
   },
   "fees.annual_run_day": {
     label: "Tag des Beitragslaufs",

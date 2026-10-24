@@ -92,7 +92,7 @@ export default async function VerwaltungSeite() {
         today: heute,
       })
     : null;
-  const laufHref = lauf ? `/admin/kasse/lastschriften/${lauf.id}` : "/admin/kasse?abschnitt=einzuege";
+  const laufHref = lauf ? `/admin/kasse/lastschriften/${lauf.id}` : "/admin/kasse?abschnitt=lastschriften";
 
   // Was in keinem Einzug steckt und noch eingezogen werden kann.
   const imEinzug = (f: (typeof forderungen)[number]) =>
@@ -234,7 +234,7 @@ export default async function VerwaltungSeite() {
             <Gruppenkopf
               titel={lauf ? `Einzug · ${lauf.title}` : "Einzug"}
               id="h-geldweg"
-              neben={<Link href={laufHref}>{lauf ? "Öffnen" : "Einzüge"}</Link>}
+              neben={<Link href={laufHref}>{lauf ? "Öffnen" : "Lastschriften"}</Link>}
             />
             {forderungenRes.error || laeufeRes.error ? (
               <div className="hinweis fehler">Der Stand der Einzüge konnte nicht geladen werden.</div>
@@ -259,7 +259,7 @@ export default async function VerwaltungSeite() {
             ) : (
               <div className="liste-gruppe">
                 <Listenzeile
-                  href={ohneEinzug.length > 0 ? "/admin/kasse/einzug" : "/admin/kasse?abschnitt=einzuege"}
+                  href={ohneEinzug.length > 0 ? "/admin/kasse/einzug" : "/admin/kasse?abschnitt=lastschriften"}
                   punkt="info"
                   titel="Gerade läuft kein Einzug"
                   kontext={

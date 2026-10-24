@@ -13,7 +13,7 @@
 import { CHARGE_KIND_LABEL } from "./forderungen";
 import type { ChargeKind } from "./sepa/types";
 import type { DebitBatchStatus } from "./admin";
-import { isoDateLabel } from "./admin";
+import { getraenkemonatHref, isoDateLabel } from "./admin";
 import { formatCents } from "./money";
 
 /** Rueckbuchungen einer SEPA-Basislastschrift sind acht Wochen lang moeglich. */
@@ -314,14 +314,14 @@ export function kasseTodos(input: KasseTodoInput): KasseTodo[] {
         key: `getraenke-${p.year}-${p.month}`, marke: { text: "Getränke", ton: "gold" },
         title: `Getränke ${name} abrechnen`,
         text: "Der Monat ist geschlossen. Abrechnen macht daraus die Forderungen.",
-        action: "Zur Abrechnung", href: "/admin/kasse?abschnitt=abrechnen", urgent: false,
+        action: `${name} abrechnen`, href: getraenkemonatHref(p), urgent: false,
       });
     } else if (reihe(p) < jahr * 12 + monat) {
       liste.push({
         key: `getraenke-${p.year}-${p.month}`, marke: { text: "Getränke", ton: "gold" },
         title: `Getränkemonat ${name} abschließen`,
         text: "Der Monat ist vorbei. Danach entstehen die Forderungen.",
-        action: "Zur Abrechnung", href: "/admin/kasse?abschnitt=abrechnen", urgent: false,
+        action: `${name} schließen`, href: getraenkemonatHref(p), urgent: false,
       });
     }
   }

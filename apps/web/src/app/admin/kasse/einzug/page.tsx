@@ -41,9 +41,9 @@ export default async function EinzugSeite({
   const frist = Number(wert("sepa.prenotification_days") || 14);
   const frueheste = isoPlusTage(heuteInBerlin(), frist);
   const fehlend = [
-    wert("sepa.creditor_id") === "" ? "die Gläubiger-Identifikationsnummer" : null,
-    wert("sepa.creditor_iban") === "" ? "die IBAN des Vereinskontos" : null,
-  ].filter(Boolean);
+    { key: "sepa.creditor_id", text: "die Gläubiger-Identifikationsnummer", anker: "glaeubiger-id" },
+    { key: "sepa.creditor_iban", text: "die IBAN des Vereinskontos", anker: "iban" },
+  ].filter((f) => wert(f.key) === "");
 
   const gruppen: GruppeZeile[] = (gruppenRes.data ?? []).map((g) => ({
     kind: g.kind as ChargeKind,
@@ -67,11 +67,12 @@ export default async function EinzugSeite({
         unterzeile="Wähle aus, was eingezogen wird, und lege den Abbuchungstag fest. Mit einem Klick bekommen alle Mitglieder ihre Ankündigung, und der Einzug ist angelegt."
       />
 
+      {/* Ein Hinweis, kein Fehler: ankündigen geht auch so (U50) */}
       {fehlend.length > 0 && (
-        <div className="hinweis fehler">
-          Es fehlt noch {fehlend.join(" und ")}. Ankündigen geht trotzdem, aber ohne diese Angaben
-          lässt sich danach keine Bankdatei erzeugen – sie stehen unter{" "}
-          <Link href="/admin/kasse?abschnitt=regeln">Kasse → Einstellungen → Regeln</Link>.
+        <div className="hinweis gold">
+          Es fehlt noch {fehlend.map((f) => f.text).join(" und ")}. Ankündigen geht trotzdem, aber
+          ohne diese Angabe lässt sich danach keine Bankdatei erzeugen.{" "}
+          <Link href={`/admin/kasse?abschnitt=regeln#${fehlend[0]!.anker}`}>Jetzt eintragen</Link>
         </div>
       )}
       {gruppenRes.error && <div className="hinweis fehler">Die Forderungen ließen sich nicht laden.</div>}
