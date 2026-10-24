@@ -5,6 +5,10 @@ import type { ReactNode } from "react";
  * Der Kopf einer Verwaltungsseite (docs/design/clubhaus/verwaltung):
  * Rueckweg (am Telefon "‹ Verwaltung"), Titel, eine Unterzeile; rechts die
  * eine Hauptaktion in Gelb (Regel 4) - am Telefon kompakt in der Titelzeile.
+ *
+ * Eine Unterseite (mit `zurueck`) sieht aus wie die des Mitglieds: blauer
+ * Rueckweg mit vollem Tippziel, keine Kennzeile darueber - der Rueckweg sagt
+ * schon, wo man ist (U63).
  */
 export function VerwaltungsKopf({
   kicker = "Verwaltung",
@@ -26,7 +30,7 @@ export function VerwaltungsKopf({
   children?: ReactNode;
 }) {
   return (
-    <header className="verwaltung-kopf">
+    <header className={`verwaltung-kopf${zurueck ? " unterseite" : ""}`}>
       <div>
         {ohneZurueck ? null : zurueck ? (
           <Link href={zurueck.href} className="zurueck">
@@ -38,7 +42,7 @@ export function VerwaltungsKopf({
             ‹ Verwaltung
           </Link>
         )}
-        <div className="kicker nur-ab-tablet">{kicker}</div>
+        {!zurueck && <div className="kicker nur-ab-tablet">{kicker}</div>}
         <div className="titelzeile">
           <h1 className="pagetitle">{titel}</h1>
           {marke}

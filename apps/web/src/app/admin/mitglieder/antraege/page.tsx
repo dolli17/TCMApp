@@ -45,20 +45,20 @@ export default async function AntraegeSeite({
   }
 
   const antraege = (antraegeRes.data ?? []) as unknown as Antrag[];
-  const offene = antraege.filter((a) => a.status === "new").length;
 
   return (
     <div className="verwaltung">
       <VerwaltungsKopf
         kicker="Verwaltung · Mitglieder"
         titel="Aufnahmeanträge"
-        unterzeile={
-          gewaehlt === "offen" && offene === 0
-            ? "Zurzeit liegt nichts vor."
-            : `${antraege.length} Anträge in dieser Ansicht.`
-        }
       />
+      {/* Die Unterzeile steht unter dem Schalter: so sitzt er auf allen drei
+          Teilen an derselben Stelle (U63). */}
       <MitgliederSegmente aktiv="/admin/mitglieder/antraege" />
+      {/* Ist die Ansicht leer, sagt das der Leerzustand darunter. */}
+      {antraege.length > 0 && (
+        <p className="unterzeile">{antraege.length} Anträge in dieser Ansicht.</p>
+      )}
 
       <nav className="filterchips" aria-label="Filter">
         {FILTER.map((f) => (

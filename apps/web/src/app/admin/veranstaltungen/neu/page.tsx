@@ -8,7 +8,6 @@ export default function NeueVeranstaltungSeite() {
   return (
     <div className="verwaltung veranstaltung-bearbeiten">
       <VerwaltungsKopf
-        kicker="Verwaltung · Veranstaltungen"
         titel="Neue Veranstaltung"
         zurueck={{ href: "/admin/veranstaltungen", text: "Veranstaltungen" }}
       />

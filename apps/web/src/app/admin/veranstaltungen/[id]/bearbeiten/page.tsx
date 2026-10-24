@@ -18,7 +18,6 @@ export default async function VeranstaltungBearbeitenSeite({ params }: { params:
   return (
     <div className="verwaltung veranstaltung-bearbeiten">
       <VerwaltungsKopf
-        kicker="Verwaltung · Veranstaltungen"
         titel={`${e.title} bearbeiten`}
         zurueck={{ href: `/admin/veranstaltungen/${id}`, text: e.title }}
       />

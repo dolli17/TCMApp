@@ -65,7 +65,6 @@ export default async function MerkmaleSeite({
   return (
     <div className="verwaltung">
       <VerwaltungsKopf
-        kicker="Verwaltung · System"
         titel="Merkmale"
         zurueck={{ href: "/admin/system", text: "System" }}
         unterzeile="Alles, was der Verein am Mitglied festhalten will, ohne dass jemand Code ändern muss – Einwilligungen, Ehrungen, eigene Kennzeichnungen. Fachlich Wichtiges wie Trainer oder Leistungsklasse steht dagegen fest in den Stammdaten."

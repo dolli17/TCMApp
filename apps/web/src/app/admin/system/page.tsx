@@ -18,11 +18,6 @@ export const dynamic = "force-dynamic";
  */
 const GRUPPEN = [
   {
-    praefix: "notifications",
-    titel: "Benachrichtigungen",
-    text: "Welche Benachrichtigungen zusätzlich per E-Mail oder als Push gehen.",
-  },
-  {
     praefix: "work_duty",
     titel: "Arbeitsdienst",
     text: "Stundensatz für die Abrechnung.",
@@ -31,6 +26,11 @@ const GRUPPEN = [
     praefix: "privacy",
     titel: "Datenschutz",
     text: "Wie lange Protokolle aufbewahrt werden.",
+  },
+  {
+    praefix: "notifications",
+    titel: "Benachrichtigungen",
+    text: "In der App erscheint jede Benachrichtigung. Hier steht, welche zusätzlich per E-Mail oder als Push gehen.",
   },
 ] as const;
 

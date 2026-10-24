@@ -4,7 +4,8 @@ import { anmelden, NUTZER, PASSWORT } from "./hilfen";
 
 /**
  * Die Systemseite (U12): deutsche Namen statt Schlüssel, Euro statt Cent,
- * Häkchen statt Kommaliste und ein einziger Knopf zum Speichern.
+ * Häkchen statt Kommaliste und ein einziger Knopf zum Speichern. Die Häkchen
+ * stehen als Matrix, eine Zeile je Ereignis, Spalten E-Mail und Push (U64).
  *
  * Geprüft wird, was in der Datenbank ankommt, nicht nur, was die Seite nach
  * dem Neuladen zeigt - eine falsche Umrechnung in beide Richtungen sähe auf
@@ -59,7 +60,8 @@ test.describe("Systemseite", () => {
     await page.goto("/admin/system");
 
     await expect(page.getByLabel("Stundensatz Arbeitsdienst (€)")).toBeVisible();
-    await expect(page.getByRole("group", { name: "Auch als Push" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Push" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "E-Mail" })).toBeVisible();
     const text = (await page.locator(".einstellungs-formular").textContent()) ?? "";
     expect(text).not.toMatch(/\b(work_duty|notifications|privacy)\.|_cents|booking_\w+|Kommagetrennt/);
     await expect(page.locator(".einstellungs-formular button")).toHaveCount(1);
@@ -109,8 +111,7 @@ test.describe("Systemseite", () => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/system");
 
-    const gruppe = page.getByRole("group", { name: "Auch als Push" });
-    const haken = gruppe.getByLabel("Erinnerung an eine Veranstaltung");
+    const haken = page.getByRole("checkbox", { name: "Erinnerung an eine Veranstaltung – Push" });
     const warAn = await haken.isChecked();
     await haken.setChecked(!warAn);
     await speichern(page);

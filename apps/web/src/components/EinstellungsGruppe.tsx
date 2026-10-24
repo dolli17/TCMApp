@@ -153,6 +153,16 @@ function useSpeichern() {
   return { abschicken, stand, laeuft, hinweis };
 }
 
+/**
+ * Die geladenen Werte als Schlüssel fürs Formular. `stand` allein reicht
+ * nicht: das Formular baut sich nach dem Speichern neu auf, bevor die frischen
+ * Werte vom Server da sind, und die Felder behielten den alten Stand. Ändern
+ * sich die Werte, baut es sich noch einmal auf.
+ */
+function fassung(eintraege: Einstellung[]): string {
+  return eintraege.map((e) => `${e.key}=${alsText(e.value)}`).join("|");
+}
+
 function Felder({ eintraege }: { eintraege: Einstellung[] }) {
   return (
     <div className="liste-gruppe einstellungs-felder">
@@ -183,7 +193,7 @@ export function EinstellungsGruppe({
       <p className="unterzeile">{text}</p>
       {hinweis}
 
-      <form key={stand} onSubmit={abschicken}>
+      <form key={`${stand}:${fassung(eintraege)}`} onSubmit={abschicken}>
         <Felder eintraege={eintraege} />
         <button className="knopf" disabled={laeuft}>
           {laeuft ? "Wird gespeichert…" : "Speichern"}
@@ -193,11 +203,110 @@ export function EinstellungsGruppe({
   );
 }
 
+/** Die Spalte einer Liste: „notifications.mail_kinds“ heißt „E-Mail“. */
+const SPALTE: Record<string, string> = {
+  "notifications.mail_kinds": "E-Mail",
+  "notifications.push_kinds": "Push",
+};
+
+/** Die Zeilen der Matrix nach Bereich, erkannt am Anfang der Art. */
+const BEREICHE: { titel: string; praefixe: string[] }[] = [
+  { titel: "Buchung", praefixe: ["booking_", "player_"] },
+  { titel: "Veranstaltung", praefixe: ["event_"] },
+  { titel: "Kasse", praefixe: ["charge_"] },
+  { titel: "Verwaltung", praefixe: ["application_", "account_"] },
+];
+
 /**
- * Mehrere Gruppen in einem Formular mit einem Knopf am Ende (Systemseite,
- * U12). Dort stehen lauter kleine, unabhängige Werte; drei Knöpfe ließen
- * offen, welcher was speichert. Gespeichert wird ohnehin nur, was sich
- * geändert hat.
+ * Listen von Benachrichtigungsarten als eine Tabelle (U64): eine Zeile je
+ * Ereignis, eine Spalte je Liste (E-Mail, Push), nach Bereich gruppiert.
+ * Vorher standen zweimal dieselben 16 Häkchen untereinander, und wer wissen
+ * wollte, was mit „Buchung storniert“ geschieht, musste beide Listen absuchen.
+ *
+ * Die Felder bleiben dieselben wie bei EinstellungsFeld (`liste:`, `art:`,
+ * `alt:`), die Aktion merkt keinen Unterschied.
+ */
+function BenachrichtigungsMatrix({ titel, listen }: { titel: string; listen: Einstellung[] }) {
+  const spalten = listen.map((e) => ({
+    e,
+    name: SPALTE[e.key] ?? einstellungsText(e).label,
+    an: new Set(listeAusWert(e.value)),
+  }));
+
+  // Alle Arten aller Listen, jede einmal - auch eine, die nur in einer steht.
+  const arten = new Map<string, string>();
+  for (const e of listen) for (const o of listenOptionen(e.value)) arten.set(o.kind, o.label);
+  const bereich = (kind: string) =>
+    BEREICHE.find((b) => b.praefixe.some((p) => kind.startsWith(p)))?.titel ?? "Weitere";
+  const gruppen = [...BEREICHE.map((b) => b.titel), "Weitere"]
+    .map((b) => ({ titel: b, arten: [...arten].filter(([kind]) => bereich(kind) === b) }))
+    .filter((g) => g.arten.length > 0);
+
+  return (
+    <div className="liste-gruppe matrix-karte">
+      <table className="benachrichtigungs-matrix">
+        <caption className="sr-only">{titel}</caption>
+        <thead>
+          <tr>
+            <th scope="col">Ereignis</th>
+            {spalten.map((s) => <th key={s.e.key} scope="col">{s.name}</th>)}
+          </tr>
+        </thead>
+        {gruppen.map((g) => (
+          <tbody key={g.titel}>
+            <tr className="bereich">
+              <th scope="colgroup" colSpan={spalten.length + 1}>{g.titel}</th>
+            </tr>
+            {g.arten.map(([kind, label]) => (
+              <tr key={kind}>
+                <th scope="row">{label}</th>
+                {spalten.map((s) => (
+                  <td key={s.e.key}>
+                    <label className="haken">
+                      <input
+                        type="checkbox"
+                        name={`art:${s.e.key}`}
+                        value={kind}
+                        defaultChecked={s.an.has(kind)}
+                      />
+                      <span className="sr-only">{`${label} – ${s.name}`}</span>
+                    </label>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        ))}
+      </table>
+      {spalten.map((s) => (
+        <span key={s.e.key}>
+          <input type="hidden" name={`liste:${s.e.key}`} value="" />
+          <input type="hidden" name={`alt:${s.e.key}`} value={alsText(s.e.value)} />
+        </span>
+      ))}
+      <dl className="matrix-erklaerung">
+        {spalten.map((s) => {
+          const t = einstellungsText(s.e);
+          return t.beschreibung ? (
+            <div key={s.e.key}>
+              <dt>{s.name}</dt>
+              <dd>{t.beschreibung}</dd>
+            </div>
+          ) : null;
+        })}
+      </dl>
+    </div>
+  );
+}
+
+/**
+ * Mehrere Gruppen in einem Formular mit einem Knopf (Systemseite, U12). Dort
+ * stehen lauter kleine, unabhängige Werte; drei Knöpfe ließen offen, welcher
+ * was speichert. Gespeichert wird ohnehin nur, was sich geändert hat.
+ *
+ * Die einzelnen Werte stehen oben, die Benachrichtigungen als Matrix
+ * darunter über die volle Breite. Der Knopf haftet unten am Bildschirm, solange
+ * das Formular zu sehen ist - nah an jedem Feld, an einer Stelle (U64).
  */
 export function EinstellungsFormular({
   gruppen,
@@ -205,20 +314,37 @@ export function EinstellungsFormular({
   gruppen: { titel: string; text: string; eintraege: Einstellung[] }[];
 }) {
   const { abschicken, stand, laeuft, hinweis } = useSpeichern();
+  const istListe = (e: Einstellung) => einstellungsText(e).art === "liste";
 
   return (
-    <form key={stand} onSubmit={abschicken} className="einstellungs-formular">
+    <form
+      key={`${stand}:${fassung(gruppen.flatMap((g) => g.eintraege))}`}
+      onSubmit={abschicken}
+      className="einstellungs-formular"
+    >
       <div className="einstellungs-raster">
-        {gruppen.map((g) => (
-          <section key={g.titel} className="liste-abschnitt einstellungen" aria-label={g.titel}>
-            <Gruppenkopf titel={g.titel} />
-            <p className="unterzeile">{g.text}</p>
-            <Felder eintraege={g.eintraege} />
-          </section>
-        ))}
+        {/* Erst die einzelnen Werte, dann die Matrix über die volle Breite */}
+        {[...gruppen.filter((g) => !g.eintraege.some(istListe)), ...gruppen.filter((g) => g.eintraege.some(istListe))].map((g) => {
+          const listen = g.eintraege.filter(istListe);
+          const werte = g.eintraege.filter((e) => !istListe(e));
+          return (
+            <section
+              key={g.titel}
+              className={`liste-abschnitt einstellungen${listen.length > 0 ? " mit-matrix" : ""}`}
+              aria-label={g.titel}
+            >
+              <Gruppenkopf titel={g.titel} />
+              <p className="unterzeile">{g.text}</p>
+              {werte.length > 0 && <Felder eintraege={werte} />}
+              {listen.length > 0 && <BenachrichtigungsMatrix titel={g.titel} listen={listen} />}
+            </section>
+          );
+        })}
       </div>
       <div className="einstellungs-fuss">
-        {hinweis}
+        <div className="meldung">
+          {hinweis ?? <span className="still">Änderungen wirken nach dem Speichern sofort für alle.</span>}
+        </div>
         <button className="knopf" disabled={laeuft}>
           {laeuft ? "Wird gespeichert…" : "Alle Änderungen speichern"}
         </button>

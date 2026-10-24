@@ -20,6 +20,7 @@ import { ladeEinladungsstatus } from "@/lib/einladungen";
 import { MerkmaleKarte, type MerkmalZeile } from "@/components/MerkmaleKarte";
 import { MitgliedschaftsKarte } from "@/components/MitgliedschaftsKarte";
 import { Gruppenkopf, Listenzeile } from "@/components/Listenzeile";
+import { Leerzustand } from "@/components/Leerzustand";
 import { Stammdatenkarte, type Feld } from "@/components/Stammdatenkarte";
 import { ZugehoerigkeitKarte } from "@/components/ZugehoerigkeitKarte";
 import { MannschaftKarte } from "@/components/MannschaftKarte";
@@ -481,12 +482,12 @@ async function Forderungen({ id }: { id: string }) {
 
   return (
     <>
-      <section className="liste-abschnitt" aria-labelledby="h-forderungen">
-        <Gruppenkopf titel="Forderungen" id="h-forderungen" />
+      {/* Die Seite heißt schon „Forderungen“: keine zweite Überschrift (U63) */}
+      <section className="liste-abschnitt" aria-label="Forderungen">
         {forderungenRes.error ? (
           <Fehlerzustand text={translateDbError(forderungenRes.error)} />
         ) : (forderungenRes.data ?? []).length === 0 ? (
-          <p className="leer-klein">Noch keine Forderung.</p>
+          <Leerzustand text="Noch keine Forderung." />
         ) : (
           <ul className="liste-gruppe" aria-label="Forderungen">
             {(forderungenRes.data ?? []).map((f) => {
