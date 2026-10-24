@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import logo from "@tcm/ui/logo-weiss.png";
 import {
@@ -87,6 +87,30 @@ export function KioskOberflaeche({
 
   useEffect(() => setZuletzt(leseZuletzt()), []);
   useEffect(() => () => bestaetigungAus(), []);
+
+  // Passen nicht alle Kacheln auf den Schirm, zeigt ein Hinweis unten, wie
+  // viele noch darunter liegen - ein Scrollbereich allein faellt am Tresen
+  // niemandem auf.
+  const kacheln = useRef<HTMLUListElement>(null);
+  const [weitere, setWeitere] = useState(0);
+  useEffect(() => {
+    const liste = kacheln.current;
+    if (!liste) return;
+    const zaehlen = () => {
+      const unten = liste.getBoundingClientRect().bottom;
+      setWeitere(
+        [...liste.children].filter((li) => li.getBoundingClientRect().bottom > unten + 1).length,
+      );
+    };
+    zaehlen();
+    liste.addEventListener("scroll", zaehlen, { passive: true });
+    const beobachter = new ResizeObserver(zaehlen);
+    beobachter.observe(liste);
+    return () => {
+      liste.removeEventListener("scroll", zaehlen);
+      beobachter.disconnect();
+    };
+  }, [artikel.length]);
 
   const treffer = useMemo(() => {
     const q = suche.trim().toLowerCase();
@@ -282,45 +306,64 @@ export function KioskOberflaeche({
 
         <section className="kiosk-was" aria-labelledby="k2">
           <h2 id="k2"><span className="schritt">2</span>Was?</h2>
-          <ul className="kiosk-kacheln">
-            {artikel.map((a) => {
-              const menge = korb[a.id] ?? 0;
-              return (
-                <li key={a.id} className={menge > 0 ? "an" : undefined}>
-                  <button
-                    type="button"
-                    className="kachel-knopf"
-                    aria-label={`${a.name} hinzufügen${menge > 0 ? `, ${menge} gewählt` : ""}`}
-                    disabled={laeuft || menge >= MAX_DRINK_QUANTITY}
-                    onPointerDown={() => druckAn(a.id)}
-                    onPointerUp={druckAus}
-                    onPointerLeave={druckAus}
-                    onContextMenu={(e) => e.preventDefault()}
-                    onClick={() => tippen(a.id)}
-                  >
-                    <span className="name">{a.name}</span>
-                    <span className="preis">{formatCents(a.price_cents)}</span>
-                  </button>
-                  {menge > 0 && (
-                    <>
-                      <output className="zahl dpl" aria-hidden="true">{menge}</output>
-                      <button
-                        type="button"
-                        className="weniger"
-                        aria-label={`${a.name}: eins weniger`}
-                        disabled={laeuft}
-                        onClick={() => aendern(a.id, -1)}
-                      >
-                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                          <path d="M5 12h14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
-                        </svg>
-                      </button>
-                    </>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          <div className="kiosk-kachelrahmen">
+            <ul
+              ref={kacheln}
+              className="kiosk-kacheln"
+              style={{ "--zeilen": Math.max(3, Math.ceil(artikel.length / 2)) } as CSSProperties}
+            >
+              {artikel.map((a) => {
+                const menge = korb[a.id] ?? 0;
+                return (
+                  <li key={a.id} className={menge > 0 ? "an" : undefined}>
+                    <button
+                      type="button"
+                      className="kachel-knopf"
+                      aria-label={`${a.name} hinzufügen${menge > 0 ? `, ${menge} gewählt` : ""}`}
+                      disabled={laeuft || menge >= MAX_DRINK_QUANTITY}
+                      onPointerDown={() => druckAn(a.id)}
+                      onPointerUp={druckAus}
+                      onPointerLeave={druckAus}
+                      onContextMenu={(e) => e.preventDefault()}
+                      onClick={() => tippen(a.id)}
+                    >
+                      <span className="name">{a.name}</span>
+                      <span className="preis">{formatCents(a.price_cents)}</span>
+                    </button>
+                    {menge > 0 && (
+                      <>
+                        <output className="zahl dpl" aria-hidden="true">{menge}</output>
+                        <button
+                          type="button"
+                          className="weniger"
+                          aria-label={`${a.name}: eins weniger`}
+                          disabled={laeuft}
+                          onClick={() => aendern(a.id, -1)}
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M5 12h14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            {weitere > 0 && (
+              <div className="kiosk-mehr">
+                <button
+                  type="button"
+                  onClick={() => kacheln.current?.scrollBy({ top: kacheln.current.clientHeight * 0.8, behavior: "smooth" })}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  {weitere === 1 ? "1 weiterer" : `${weitere} weitere`}
+                </button>
+              </div>
+            )}
+          </div>
         </section>
 
         <section className="kiosk-eintragen immer-hell" aria-labelledby="k3">

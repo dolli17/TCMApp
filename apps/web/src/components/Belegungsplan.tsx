@@ -153,6 +153,13 @@ export function Belegungsplan(props: Props) {
   );
   const istHeute = props.datum === heute;
 
+  // Bis wohin der Tag schon vorbei ist: an frueheren Tagen ganz, heute bis
+  // jetzt. Die Flaeche darueber sieht sonst aus wie freie Zeit.
+  const vorbeiBis =
+    props.datum < heute ? schlussMin
+    : istHeute ? Math.min(Math.max(lokaleJetzt(jetzt), oeffnungMin), schlussMin)
+    : oeffnungMin;
+
   const zeitpunkt = (minute: number) => berlinTime(props.datum, minute);
   const vergangen = (minute: number) => zeitpunkt(minute).getTime() < jetzt.getTime();
 
@@ -377,9 +384,10 @@ export function Belegungsplan(props: Props) {
       <div className="plan-raster">
         <div className="raster-oben">
           {legende}
-          <span className="raster-hinweis">
-            Freie Zeit anklicken zum Buchen · {props.dauerMinuten} Minuten, Start zur vollen oder halben Stunde
-          </span>
+          <ul className="legende raster-legende" aria-hidden="true">
+            <li><i className="frei"><Plus /></i>Frei</li>
+            <li><i className="vorbei" />Vorbei</li>
+          </ul>
         </div>
 
         <div className="raster" role="region" aria-label="Belegung nach Plätzen">
@@ -414,6 +422,10 @@ export function Belegungsplan(props: Props) {
               height: px(schlussMin - oeffnungMin),
             }}
           >
+            {vorbeiBis > oeffnungMin && (
+              <div className="vorbei-flaeche" style={{ height: px(vorbeiBis - oeffnungMin) }} aria-hidden="true" />
+            )}
+
             <div className="raster-zeiten" aria-hidden="true">
               {stundenmarken(oeffnungMin, schlussMin).map((m) => (
                 <span key={m} className="stunde tnum" style={{ top: px(m - oeffnungMin) }}>
@@ -448,6 +460,7 @@ export function Belegungsplan(props: Props) {
                           onClick={() => oeffneBuchen(platz.id, e.minute)}
                           aria-label={`${platz.name} um ${alsUhrzeit(e.minute)} buchen`}
                         >
+                          <Plus />
                           <span className="vorschau" style={{ height: px(props.dauerMinuten) - 4 }}>
                             + {alsUhrzeit(e.minute)} buchen
                           </span>
@@ -561,6 +574,15 @@ function stundenmarken(oeffnung: number, schluss: number): number[] {
 }
 
 /* --- Legende --------------------------------------------------------------- */
+
+/** Feines Plus fuer freie, buchbare Startzeiten im Raster. */
+function Plus() {
+  return (
+    <svg className="plus" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+      <path d="M6 1.5v9M1.5 6h9" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 function Legende() {
   const eintraege: { name: string; art: TimelineKind }[] = [
