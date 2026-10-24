@@ -7,6 +7,7 @@ import {
   PROTOKOLL_BEREICHE,
   protokollBereich,
   protokollVorgang,
+  rollenLabel,
   rollenMarken,
   translateDbError,
 } from "@tcm/core";
@@ -602,7 +603,9 @@ async function Protokoll({ id }: { id: string }) {
   const zeige = (feld: string, wert: unknown) =>
     feld === "team_id" && typeof wert === "string"
       ? (mannschaftsnamen.get(wert) ?? zeigeWert(wert))
-      : zeigeWert(wert);
+      : feld === "role" && typeof wert === "string"
+        ? rollenLabel(wert)
+        : zeigeWert(wert);
 
   return (
     <section className="karte protokoll" aria-label="Änderungsprotokoll">

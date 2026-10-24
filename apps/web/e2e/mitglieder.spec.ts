@@ -164,6 +164,16 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(page.locator(".mitglied-profil h1")).toBeVisible();
   });
 
+  test("die Suche filtert schon beim Tippen und behält den Chip", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/mitglieder?art=aktiv");
+    // Ohne Eingabetaste (U48): nach kurzer Pause steht der Begriff in der Adresse.
+    await page.getByLabel("Mitglieder durchsuchen").pressSequentially("Brandt");
+    await page.waitForURL(/q=Brandt/);
+    expect(page.url()).toContain("art=aktiv");
+    await expect(page.locator('.liste-gruppe[aria-label="Mitglieder"]')).toContainText("Brandt");
+  });
+
   test("Suche verträgt Sonderzeichen, ohne einen Datenbankfehler zu zeigen", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
     // Ein Komma zerlegte den PostgREST-Filterausdruck, bevor die Eingabe
@@ -294,8 +304,10 @@ test.describe("Mitgliederverwaltung", () => {
     const karte = page.locator('section[aria-label="Mitgliedschaft"]');
 
     await karte.getByRole("button", { name: "Mitgliedschaft beenden" }).click();
+    // Vorbelegt ist der Austritt zum Jahresende (U46), der Knopf nennt das Datum.
+    await expect(karte.getByRole("button", { name: "zum Jahresende" })).toHaveAttribute("aria-pressed", "true");
     await karte.getByLabel("Grund").fill("Testlauf");
-    await karte.getByRole("button", { name: "Wirklich beenden" }).click();
+    await karte.getByRole("button", { name: /^Zum 31\.12\.\d{4} beenden$/ }).click();
     await expect(karte.locator(".hinweis.erfolg")).toContainText("Mitgliedschaft beendet");
 
     await page.reload();

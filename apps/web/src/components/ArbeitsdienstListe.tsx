@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { formatCents } from "@tcm/core";
 import {
   jahrAbrechnen, sollStundenSetzen, stundenEintragen,
@@ -35,14 +35,20 @@ export interface SollZeile {
  * Bestätigungsliste, und was dort liegen bleibt, zählt nicht: gezählt werden
  * ausschließlich bestätigte Stunden.
  *
- * Die Liste ist nach fehlenden Stunden sortiert. Wer sein Soll erfüllt hat,
- * steht unten — die Arbeit des Vorstands beginnt oben.
+ * Die Liste steht nach Nachnamen wie die Mitgliederliste, mit Suche und den
+ * Chips „Offen“ / „Erledigt“ (U48). Suche, Chips und Seiten baut die Seite,
+ * weil sie über die Adresse laufen; hier kommt nur der sichtbare Ausschnitt an.
+ * Kennzahlen und Jahresausgleich rechnen weiter mit allen Zeilen.
  */
 export function ArbeitsdienstListe({
-  jahr, zeilen, arten, stundensatzCents, abrechenbar,
+  jahr, zeilen, liste, filter, fuss, leer, arten, stundensatzCents, abrechenbar,
 }: {
   jahr: number;
   zeilen: DienstZeile[];
+  liste: DienstZeile[];
+  filter: ReactNode;
+  fuss: ReactNode;
+  leer: ReactNode;
   arten: SollZeile[];
   stundensatzCents: number;
   abrechenbar: boolean;
@@ -103,8 +109,11 @@ export function ArbeitsdienstListe({
             schuldet niemand Arbeitsdienst.
           </p>
         ) : (
+          <>
+          {filter}
+          {liste.length === 0 ? leer : (
           <ul className="liste-gruppe" aria-label={`Arbeitsdienst ${jahr}`}>
-            {zeilen.map((z) => {
+            {liste.map((z) => {
               const fehlt = Number(z.missing_hours);
               return (
                 <li key={z.member_id}>
@@ -138,6 +147,9 @@ export function ArbeitsdienstListe({
               );
             })}
           </ul>
+          )}
+          {liste.length > 0 && fuss}
+          </>
         )}
       </section>
 

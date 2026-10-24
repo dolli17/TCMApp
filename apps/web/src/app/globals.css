@@ -227,9 +227,11 @@ input, select, textarea {
   border: 1.5px solid var(--rahmen); border-radius: var(--radius-feld);
   padding: 13px 14px;
 }
+/* Fokus: der Rand wird kräftig blau, der Hof darum hebt ihn ab. Nur der
+   Hof in blue-soft war auf hellem Grund kaum zu sehen (U47). */
 input:focus, select:focus, textarea:focus {
   outline: 0; border-color: var(--blue);
-  box-shadow: 0 0 0 4px var(--blue-soft);
+  box-shadow: 0 0 0 1.5px var(--blue), 0 0 0 5px var(--blue-soft);
 }
 
 /* Chips und Segment-Umschalter */
@@ -680,8 +682,11 @@ input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="
 }
 input[aria-invalid="true"]:focus, select[aria-invalid="true"]:focus,
 textarea[aria-invalid="true"]:focus {
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--red) 18%, transparent);
+  box-shadow: 0 0 0 1.5px var(--red), 0 0 0 5px color-mix(in srgb, var(--red) 18%, transparent);
 }
+
+/* Austritt: Datum mit Schnellwahl darunter (U46) */
+.austritt-datum > label { margin-bottom: 8px; }
 
 /* Kopf einer Detailseite: Name und Status links, Aktionen rechts. */
 .detailkopf {
@@ -1403,13 +1408,18 @@ li.chip { padding-right: 4px; }
 
 /* Am Telefon fährt das Blatt von unten herein */
 @media (max-width: 767px) {
-  dialog.fenster.blatt {
+  dialog.fenster.blatt, dialog.fenster.blatt.breit {
     width: 100%; max-width: 100%; margin: auto 0 0; max-height: 92dvh;
     border-radius: var(--radius-blatt) var(--radius-blatt) 0 0; border-bottom: 0;
     padding-bottom: calc(22px + env(safe-area-inset-bottom));
     animation: blatt-rein .26s cubic-bezier(.2, .8, .3, 1);
   }
   .blatt .griff { display: block; width: 38px; height: 5px; border-radius: 3px; background: var(--line-2); margin: 0 auto 6px; }
+  .blatt .fenster-fuss.haftend {
+    bottom: calc(-22px - env(safe-area-inset-bottom));
+    margin-bottom: calc(-22px - env(safe-area-inset-bottom));
+    padding-bottom: calc(22px + env(safe-area-inset-bottom));
+  }
   .datums-kacheln { margin: 0 calc(-1 * var(--space-rand)); padding: 0 var(--space-rand); width: calc(100% + 2 * var(--space-rand)); }
   .plan-kopf { flex-direction: column; align-items: stretch; }
 }
@@ -1782,7 +1792,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   display: flex; align-items: center; gap: 10px; padding: 0 14px;
   border-radius: 14px; background: var(--surf); border: 1.5px solid var(--rahmen); color: var(--muted);
 }
-.suchfeld:focus-within { border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-soft); }
+.suchfeld:focus-within { border-color: var(--blue); box-shadow: 0 0 0 1.5px var(--blue), 0 0 0 5px var(--blue-soft); }
 .suchfeld svg { width: 18px; height: 18px; flex: 0 0 auto; }
 .suchfeld input { border: 0; padding: 0; height: 100%; background: transparent; box-shadow: none !important; font-size: 15px; }
 .filterchips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -2178,6 +2188,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .blatt .formraster {
   display: block; margin: 0; overflow: hidden;
   background: var(--surf-2); border-radius: 18px;
+  /* Ohne Rand verschwand die Gruppe auf hellem Grund (U47) */
+  border: 1.5px solid var(--rahmen);
 }
 .blatt .formraster > label {
   display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px;
@@ -2192,6 +2204,19 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 16px;
 }
 .blatt .formraster > label > .feldfehler, .blatt .formraster > label > .beschreibung { flex-basis: 100%; margin: -6px 0 10px; }
+.blatt .formraster > label > .beschreibung { font-size: 14px; font-weight: 500; color: var(--muted); }
+/* Die Zeile ist das Feld: Fokus als Ring innen, die Gruppe schneidet ihn rund ab */
+.blatt .formraster > label:focus-within { background: var(--surf); box-shadow: inset 0 0 0 2px var(--blue); }
+/* "(freiwillig)" unter der Bezeichnung, damit die Spalte schmal bleibt */
+.freiwillig { display: block; font-size: 13px; font-weight: 500; color: var(--muted); }
+/* Langes Formular im Blatt: Abbrechen und Absenden bleiben unten stehen.
+   Der negative Rand zieht den Fuß über das Polster des Blatts; sticky misst
+   ab dessen Innenkante, daher bottom ebenfalls negativ. */
+.blatt .fenster-fuss.haftend {
+  position: sticky; bottom: -22px; z-index: 2;
+  margin: 18px -20px -22px; padding: 14px 20px 22px;
+  background: var(--surf); border-top: 1px solid var(--line);
+}
 /* Folgen vor dem Absenden (Regel 5) */
 .folgen {
   display: flex; gap: 12px; padding: 12px 14px; border-radius: 16px;
@@ -2203,7 +2228,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   display: grid; gap: 2px; margin: 0; padding: 8px 16px; border-radius: 16px; background: var(--surf-2);
   border: 1.5px solid var(--rahmen);
 }
-.tippfeld:focus-within { border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-soft); }
+.tippfeld:focus-within { border-color: var(--blue); box-shadow: 0 0 0 1.5px var(--blue), 0 0 0 5px var(--blue-soft); }
 .tippfeld > span { font-size: 12.5px; font-weight: 600; color: var(--muted); }
 .tippfeld input {
   border: 0; padding: 0; background: transparent; box-shadow: none !important;

@@ -1181,6 +1181,12 @@ test.describe("Verwaltung", () => {
       page.getByRole("heading", { name: "Soll-Stunden je Beitragsart" }),
     ).toBeVisible();
 
+    // Suche und Stand-Chips (U48)
+    const stand = page.getByRole("navigation", { name: "Stand" });
+    await stand.getByRole("link", { name: "Offen" }).click();
+    await expect(page).toHaveURL(/stand=offen/);
+    await expect(page.getByLabel("Arbeitsdienst durchsuchen")).toBeVisible();
+
     // Das laufende Jahr lässt sich nicht abrechnen: es können noch Stunden kommen.
     await expect(
       page.locator("section.karte", { hasText: "Jahresausgleich" }),

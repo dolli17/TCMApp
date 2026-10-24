@@ -12,6 +12,7 @@ import { ladeBeitragsarten } from "@/lib/beitragsarten";
 import { Fehlerzustand } from "@/components/Fehlerzustand";
 import { AuswahlSofort } from "@/components/AuswahlSofort";
 import { Leerzustand } from "@/components/Leerzustand";
+import { LiveSuche } from "@/components/LiveSuche";
 
 export const dynamic = "force-dynamic";
 
@@ -179,14 +180,14 @@ export default async function MitgliederSeite({
       <section className="mitglieder-listenseite" aria-label="Mitgliederliste">
       <div className="suchleiste">
         {/* Suche und Bestand in einem Formular: der Bestand schickt beim
-            Wechsel ab, die Suche mit der Eingabetaste - beide behalten den Chip. */}
+            Wechsel ab, die Suche schon beim Tippen (U48) - beide behalten den Chip. */}
         <form className="mitglieder-suche" role="search">
           {artWahl && <input type="hidden" name="art" value={artWahl} />}
           <label className="suchfeld">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
-            <input type="search" name="q" defaultValue={suche} placeholder="Name" aria-label="Mitglieder durchsuchen" />
+            <LiveSuche defaultValue={suche} placeholder="Name" aria-label="Mitglieder durchsuchen" />
           </label>
           <label className="bestand-wahl">
             <span>Bestand</span>
