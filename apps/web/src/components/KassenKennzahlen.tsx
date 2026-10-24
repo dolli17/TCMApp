@@ -24,13 +24,13 @@ export async function KassenKennzahlen() {
   const r = anzahl(zurueck);
 
   return (
-    <div className="kennzahlen drei">
+    <div className="kennzahlen drei kasse-kennzahlen">
       <Link href="/admin/kasse?abschnitt=forderungen&stand=open" className="kennzahl">
         <span className="label">Noch nicht eingezogen</span>
         <span className="wert dpl tnum">{gruppenRes.error ? "–" : formatCents(summe(offen))}</span>
         <span className="info">{n} {n === 1 ? "Forderung" : "Forderungen"}</span>
       </Link>
-      <Link href="/admin/kasse?abschnitt=einzuege" className="kennzahl">
+      <Link href="/admin/kasse?abschnitt=lastschriften" className="kennzahl">
         <span className="label">In laufenden Einzügen</span>
         <span className="wert dpl tnum">
           {laeufeRes.error ? "–" : formatCents(laeufe.reduce((s, l) => s + l.total_cents, 0))}

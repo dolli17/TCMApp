@@ -68,6 +68,11 @@ export const DRINK_MONTH_NOTICE_DAYS = 3;
  * Nur echte offene Punkte, je mit einem Ziel. Was zu handeln ist, steht
  * vorn; was nur zur Kenntnis ist, danach. Leer heisst: alles erledigt.
  */
+/** Der Getränkemonat in der Kasse, mit offenem Blatt für seinen nächsten Schritt. */
+export function getraenkemonatHref(p: { year: number; month: number }): string {
+  return `/admin/kasse?abschnitt=getraenkemonate&monat=${p.year}-${String(p.month).padStart(2, "0")}`;
+}
+
 export function adminTodos(input: AdminTodoInput): AdminTodo[] {
   const { today } = input;
   const [jahr, monat, tag] = today.split("-").map(Number) as [number, number, number];
@@ -106,7 +111,7 @@ export function adminTodos(input: AdminTodoInput): AdminTodo[] {
       title: `Getränkemonat ${MONATE[p.month - 1]} abschließen`,
       text: "Der Monat ist vorbei. Abschließen, damit die Abrechnung in den Einzug kann.",
       action: "Zur Getränkeabrechnung",
-      href: "/admin/kasse?abschnitt=abrechnen",
+      href: getraenkemonatHref(p),
       urgent: true,
     });
   }
@@ -153,7 +158,7 @@ export function adminTodos(input: AdminTodoInput): AdminTodo[] {
       title: `Getränkemonat ${MONATE[monat - 1]}`,
       text: `Endet am ${String(letzter).padStart(2, "0")}.${String(monat).padStart(2, "0")}. Danach wird die Abrechnung erzeugt.`,
       action: "Zur Getränkeabrechnung",
-      href: "/admin/kasse?abschnitt=abrechnen",
+      href: "/admin/kasse?abschnitt=getraenkemonate",
       urgent: false,
     });
   }

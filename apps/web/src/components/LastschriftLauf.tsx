@@ -156,7 +156,7 @@ export function LastschriftLauf({
                   starte(async () => {
                     const e = await einzugLoeschen(lauf.id);
                     melde(e);
-                    if (e.ok) router.push("/admin/kasse?abschnitt=einzuege");
+                    if (e.ok) router.push("/admin/kasse?abschnitt=lastschriften");
                   })
                 }
               >

@@ -1096,39 +1096,62 @@ test.describe("Verwaltung", () => {
     await expect(page.getByRole("heading", { name: `Jahresbeiträge ${jahr - 1}` })).toBeVisible();
   });
 
-  test("die Kasse führt über fünf Segmente und ihre Unterseiten", async ({ page }) => {
+  test("die Kasse führt über drei Segmente, Zu tun steht darüber", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/kasse");
 
-    // Start sagt, was zu tun ist, und erklärt den Weg des Geldes
+    // Drei Teile (Regel 1); was zu tun ist und die Kennzahlen stehen darüber (U50)
     const segmente = page.getByRole("navigation", { name: "Kasse", exact: true });
-    for (const name of ["Start", "Einzüge", "Forderungen", "Abrechnen", "Einstellungen"]) {
+    for (const name of ["Forderungen", "Lastschriften", "Getränkemonate"]) {
       await expect(segmente.getByRole("link", { name })).toBeVisible();
     }
-    await expect(segmente.getByRole("link", { name: "Start" })).toHaveAttribute("aria-current", "page");
+    await expect(segmente.getByRole("link")).toHaveCount(3);
+    await expect(segmente.getByRole("link", { name: "Forderungen" })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("heading", { name: "Zu tun" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "So läuft das Geld" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Einzug vorbereiten" }).first()).toBeVisible();
+    await expect(page.getByText("Noch nicht eingezogen")).toBeVisible();
 
-    // Unter „Abrechnen“ stehen alle Quellen von Forderungen und die Getränkemonate
-    await segmente.getByRole("link", { name: "Abrechnen" }).click();
+    // Unter „Forderungen“ stehen auch alle Quellen von Forderungen
     const quellen = page.locator('.liste-gruppe[aria-label="Abrechnungen"]');
     for (const name of [/^Jahresbeiträge \d{4}/, /^Arbeitsdienst \d{4}/, /^Gastgebühren/]) {
       await expect(quellen.getByRole("link", { name })).toBeVisible();
     }
+    await expect(quellen.getByRole("button", { name: /Forderung anlegen/ })).toBeVisible();
+
+    await segmente.getByRole("link", { name: "Getränkemonate" }).click();
     await expect(page.getByRole("heading", { name: "Getränkemonate" })).toBeVisible();
 
-    // Beitragsarten und Regeln stehen unter „Einstellungen“
-    await segmente.getByRole("link", { name: "Einstellungen" }).click();
-    const einrichtung = page.getByRole("navigation", { name: "Einrichtung der Kasse" });
-    for (const name of ["Beitragsarten", "Regeln"]) {
+    await segmente.getByRole("link", { name: "Lastschriften" }).click();
+    await expect(page.getByRole("heading", { name: "So läuft das Geld" })).toBeVisible();
+
+    // Beitragsarten und Regeln stehen als Zeilen am Ende
+    const einrichtung = page.locator('.liste-gruppe[aria-label="Einrichtung der Kasse"]');
+    for (const name of [/^Beitragsarten/, /^Regeln/]) {
       await expect(einrichtung.getByRole("link", { name })).toBeVisible();
     }
-    await einrichtung.getByRole("link", { name: "Beitragsarten" }).click();
+    await einrichtung.getByRole("link", { name: /^Beitragsarten/ }).click();
     await expect(page.getByRole("heading", { name: "Beitragsarten" })).toBeVisible();
     // Ohne diese Tabelle liessen sich keine Jahresbeitraege erzeugen - sie war der
     // fehlende Unterbau.
     await expect(page.locator('.liste-gruppe[aria-label="Beitragsarten"] li').first()).toBeVisible();
+  });
+
+  test("der Hauptknopf der Kasse ist der nächste Schritt", async ({ page }) => {
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/admin/kasse");
+
+    // Gelb ist genau ein Knopf im Kopf: „Einzug vorbereiten“, wenn es etwas
+    // einzuziehen gibt, sonst die erste Aufgabe aus „Zu tun“ (U50).
+    const kopf = page.locator(".verwaltung-kopf .aktionen .knopf.gold");
+    const aktionen = await page
+      .locator('.liste-gruppe[aria-label="Zu tun"] .hinweis-rechts')
+      .allTextContents();
+    if (aktionen.includes("Einzug vorbereiten")) {
+      await expect(kopf).toHaveText("Einzug vorbereiten");
+    } else if (aktionen.length > 0) {
+      await expect(kopf).toHaveText(aktionen[0]!);
+    } else {
+      await expect(kopf).toHaveCount(0);
+    }
   });
 
   test("die Jahresbeiträge erzeugen Forderungen, ein zweites Mal nicht", async ({ page }) => {
@@ -1162,10 +1185,10 @@ test.describe("Verwaltung", () => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/kasse?abschnitt=forderungen");
 
-    const stand = page.getByRole("navigation", { name: "Stand" });
-    await expect(stand.getByRole("link", { name: "Offen" })).toBeVisible();
-    await stand.getByRole("link", { name: "Zurückgebucht" }).click();
+    // Der Stand ist ein Auswahlfeld, die Art die eine Chipreihe (U51)
+    await page.getByLabel("Stand").selectOption("returned");
     await expect(page).toHaveURL(/stand=returned/);
+    await expect(page.getByLabel("Stand")).toHaveValue("returned");
   });
 
   test("der Arbeitsdienst ist ein eigener Bereich", async ({ page }) => {
@@ -1255,15 +1278,24 @@ test.describe("Verwaltung", () => {
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/kasse/lastschriften");
 
-    // Die Einzüge sind ein Segment der Kasse; alte Adressen leiten dorthin.
-    await expect(page).toHaveURL(/\/admin\/kasse\?abschnitt=einzuege/);
+    // Die Lastschriften sind ein Segment der Kasse; alte Adressen leiten dorthin.
+    await expect(page).toHaveURL(/\/admin\/kasse\?abschnitt=lastschriften/);
     await expect(page.getByRole("heading", { name: "Laufend" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Abgeschlossen" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Einzug vorbereiten" })).toHaveAttribute("href", "/admin/kasse/einzug");
+    // „Einzug vorbereiten“ steht nur im Kopf, wenn es etwas einzuziehen gibt
+    // (U50); das prüft „der Hauptknopf der Kasse ist der nächste Schritt“.
 
     // Ohne Gläubiger-ID und Vereins-IBAN lässt sich keine Datei bauen. Das muss
-    // hier stehen und nicht erst beim Klick auf „erzeugen".
-    await expect(page.locator(".hinweis.fehler")).toContainText(/Gläubiger|IBAN/);
+    // hier stehen und nicht erst beim Klick auf „erzeugen" - einmal, als
+    // Hinweis mit dem Weg ins Feld (U50).
+    const fehlt = page.locator(".hinweis.gold");
+    if (await fehlt.count()) {
+      await expect(fehlt).toHaveCount(1);
+      await expect(fehlt).toContainText(/Gläubiger|IBAN/);
+      await fehlt.getByRole("link", { name: "Jetzt eintragen" }).click();
+      await expect(page).toHaveURL(/abschnitt=regeln#(iban|glaeubiger-id)$/);
+      await expect(page.locator(":focus")).toHaveAttribute("id", /^(iban|glaeubiger-id)$/);
+    }
   });
 
   test("alte Kassen-Adressen führen zu den neuen Abschnitten", async ({ page }) => {
@@ -1272,6 +1304,11 @@ test.describe("Verwaltung", () => {
     await expect(page.getByRole("heading", { name: /^Jahresbeiträge \d{4}/ })).toBeVisible();
     await page.goto("/admin/kasse?abschnitt=getraenke");
     await expect(page.getByRole("heading", { name: "Getränkemonate" })).toBeVisible();
+    // Die fünf Segmente von früher landen bei den drei neuen (U50)
+    for (const [alt, neu] of [["start", /\/admin\/kasse$/], ["einzuege", /abschnitt=lastschriften/], ["abrechnen", /abschnitt=forderungen/], ["einstellungen", /\/admin\/kasse#einstellungen$/]] as const) {
+      await page.goto(`/admin/kasse?abschnitt=${alt}`);
+      await expect(page).toHaveURL(neu);
+    }
   });
 
   test("Forderungen zeigen ihre Art und lassen sich danach filtern", async ({ page }) => {
@@ -1296,8 +1333,8 @@ test.describe("Verwaltung", () => {
     await anmelden(page, NUTZER.admin);
 
     // Eine eigene Forderung, damit der Test nicht vom Bestand abhängt
-    await page.goto("/admin/kasse?abschnitt=abrechnen");
-    await page.getByRole("button", { name: "Forderung anlegen" }).first().click();
+    await page.goto("/admin/kasse?abschnitt=forderungen");
+    await page.getByRole("button", { name: /Forderung anlegen/ }).first().click();
     const fenster = page.locator("dialog.fenster");
     await fenster.getByLabel("Mitglied").fill(ZAHLERIN);
     await fenster.getByLabel("Art").selectOption("deposit");
@@ -1336,15 +1373,15 @@ test.describe("Verwaltung", () => {
 
     // Ein leerer Einzug lässt sich löschen
     await page.getByRole("button", { name: "Leeren Einzug löschen" }).click();
-    await page.waitForURL(/abschnitt=einzuege/, { timeout: 20_000 });
+    await page.waitForURL(/abschnitt=lastschriften/, { timeout: 20_000 });
   });
 
   test("eine Forderung im Einzugsentwurf erlassen nimmt sie aus dem Einzug (B1)", async ({ page }) => {
     await anmelden(page, NUTZER.admin);
     const beschreibung = `ZZTest Pfand Erlassen ${Date.now().toString().slice(-6)}`;
 
-    await page.goto("/admin/kasse?abschnitt=abrechnen");
-    await page.getByRole("button", { name: "Forderung anlegen" }).first().click();
+    await page.goto("/admin/kasse?abschnitt=forderungen");
+    await page.getByRole("button", { name: /Forderung anlegen/ }).first().click();
     const fenster = page.locator("dialog.fenster");
     await fenster.getByLabel("Mitglied").fill(ZAHLERIN);
     await fenster.getByLabel("Art").selectOption("deposit");
@@ -1391,8 +1428,8 @@ test.describe("Verwaltung", () => {
     await setzeGlaeubigerIban();
     await anmelden(page, NUTZER.admin);
 
-    await page.goto("/admin/kasse?abschnitt=abrechnen");
-    await page.getByRole("button", { name: "Forderung anlegen" }).first().click();
+    await page.goto("/admin/kasse?abschnitt=forderungen");
+    await page.getByRole("button", { name: /Forderung anlegen/ }).first().click();
     const fenster = page.locator("dialog.fenster");
     await fenster.getByLabel("Mitglied").fill(ZAHLERIN);
     await fenster.getByLabel("Art").selectOption("deposit");

@@ -112,7 +112,7 @@ export function EinzugVorbereiten({
         </div>
         {gruppen.length === 0 ? (
           <p className="leer-klein">
-            Gerade ist nichts einzuziehen. Neue Forderungen entstehen unter Kasse → Abrechnen.
+            Gerade ist nichts einzuziehen. Neue Forderungen entstehen unter Kasse → Forderungen.
           </p>
         ) : (
           <fieldset className="einzug-gruppen">

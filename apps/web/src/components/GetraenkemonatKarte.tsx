@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { formatCents } from "@tcm/core";
 import { monatAbrechnen, monatSchliessen } from "@/app/admin/kasse/aktionen";
@@ -39,17 +40,17 @@ function naechsterSchritt(m: MonatZeile, jetzt: number) {
   if (m.status === "open") {
     return m.year * 12 + m.month >= jetzt
       ? null
-      : { marke: "schließen", knopf: "Monat schließen", text: "Schließen friert die Summe ein; danach nimmt die Theke für diesen Monat nichts mehr an." };
+      : { marke: "Schließen", knopf: "Monat schließen", text: "Schließen friert die Summe ein; danach nimmt die Theke für diesen Monat nichts mehr an." };
   }
   if (m.status === "closed") {
-    return { marke: "abrechnen", knopf: "Forderungen erzeugen", text: "Die Summe steht fest. Das Abrechnen macht daraus Forderungen je Mitglied." };
+    return { marke: "Abrechnen", knopf: "Forderungen erzeugen", text: "Die Summe steht fest. Das Abrechnen macht daraus Forderungen je Mitglied." };
   }
   if (m.offen > 0) {
     // Angekuendigt wird mit dem Einzug, nicht hier: dort steht der Tag fest,
     // an dem abgebucht wird, und wer mitgeht.
     const gruppe = `drinks|${m.year}-${String(m.month).padStart(2, "0")}|`;
     return {
-      marke: "einziehen",
+      marke: "Einziehen",
       knopf: "Einzug vorbereiten",
       text: `${m.offen} ${m.offen === 1 ? "Forderung ist" : "Forderungen sind"} noch nicht eingezogen.`,
       href: `/admin/kasse/einzug?gruppe=${encodeURIComponent(gruppe)}`,
@@ -66,10 +67,17 @@ function naechsterSchritt(m: MonatZeile, jetzt: number) {
  * Abrechnen macht Forderungen daraus. Dazwischen kann der Vorstand die Zahlen
  * ansehen — was nach dem Abrechnen niemandem mehr hilft.
  */
-export function GetraenkemonatKarte({ monate }: { monate: MonatZeile[] }) {
+export function GetraenkemonatKarte({
+  monate,
+  vorgewaehlt,
+}: {
+  monate: MonatZeile[];
+  /** „2026-09“: das Blatt dieses Monats steht gleich offen (Hauptaktion der Kasse) */
+  vorgewaehlt?: string;
+}) {
+  const router = useRouter();
   const [meldung, setMeldung] = useState<{ ok: boolean; text: string } | null>(null);
   const [laeuft, starte] = useTransition();
-  const [gewaehlt, setGewaehlt] = useState<MonatZeile | null>(null);
 
   // Numerisch vergleichen statt über Date: `new Date("2026-08-01")` ist
   // UTC-Mitternacht, `new Date(2026, 7, 1)` Ortszeit-Mitternacht — der laufende
@@ -77,6 +85,17 @@ export function GetraenkemonatKarte({ monate }: { monate: MonatZeile[] }) {
   // Datenbank ohnehin abweist.
   const heute = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
   const jetzt = Number(heute.slice(0, 4)) * 12 + Number(heute.slice(5, 7));
+
+  const [gewaehlt, setGewaehlt] = useState<MonatZeile | null>(() => {
+    const m = monate.find((z) => `${z.year}-${String(z.month).padStart(2, "0")}` === vorgewaehlt);
+    return m && naechsterSchritt(m, jetzt) ? m : null;
+  });
+
+  function schliessen() {
+    setGewaehlt(null);
+    // Sonst öffnet ein Neuladen das Blatt wieder
+    if (vorgewaehlt) router.replace("/admin/kasse?abschnitt=getraenkemonate", { scroll: false });
+  }
 
   return (
     <section className="liste-abschnitt" id="getraenkemonate" aria-labelledby="h-getraenkemonate">
@@ -107,11 +126,17 @@ export function GetraenkemonatKarte({ monate }: { monate: MonatZeile[] }) {
                   neben={
                     <span className="neben">
                       <span className="betrag tnum">{formatCents(m.summe_cents)}</span>
-                      <span className={`statusmarke ${schritt ? "gelb" : STAND_TON[m.status]}`}>
-                        {schritt?.marke ?? STAND[m.status]}
-                      </span>
+                      {/* Der nächste Schritt sieht aus wie ein Knopf, der Stand wie eine
+                          Marke - vorher lagen „schließen“ und „offen“ gleich da (U51). */}
+                      {schritt ? (
+                        <span className="knopf leise klein" aria-hidden="true">{schritt.marke}</span>
+                      ) : (
+                        <span className={`statusmarke ${STAND_TON[m.status]}`}>{STAND[m.status]}</span>
+                      )}
                     </span>
                   }
+                  pfeil={false}
+                  label={schritt ? `${MONAT.format(new Date(m.year, m.month - 1, 1))}, ${formatCents(m.summe_cents)}: ${schritt.knopf}` : undefined}
                   onClick={schritt ? () => setGewaehlt(m) : undefined}
                 />
               </li>
@@ -128,7 +153,7 @@ export function GetraenkemonatKarte({ monate }: { monate: MonatZeile[] }) {
             titel={MONAT.format(new Date(gewaehlt.year, gewaehlt.month - 1, 1))}
             unterzeile={STAND[gewaehlt.status]}
             offen
-            onSchliessen={() => setGewaehlt(null)}
+            onSchliessen={schliessen}
           >
             <dl className="angaben gruppe">
               <div><dt>Entnahmen</dt><dd className="tnum">{gewaehlt.buchungen}</dd></div>
@@ -152,7 +177,7 @@ export function GetraenkemonatKarte({ monate }: { monate: MonatZeile[] }) {
                         ? await monatSchliessen(gewaehlt.year, gewaehlt.month)
                         : await monatAbrechnen(gewaehlt.year, gewaehlt.month, null);
                     setMeldung({ ok: e.ok, text: e.meldung });
-                    if (e.ok) setGewaehlt(null);
+                    if (e.ok) schliessen();
                   })
                 }
               >

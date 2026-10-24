@@ -624,7 +624,7 @@ ul.marken:not(:has(.chip)) { margin-bottom: 9px; gap: 6px; }
   display: block; font-size: 12.5px; color: var(--muted); margin: 2px 0 7px;
   max-width: 62ch;
 }
-.einstellung :is(input, select) { max-width: 260px; }
+.einstellung input { max-width: 260px; }
 /* Rückmeldung an der Zeile, die gerade gespeichert wurde (U56). Der Behälter
    bleibt immer da, damit Screenreader die Meldung ansagen. */
 .zeilen-meldung .hinweis {
@@ -1863,13 +1863,15 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 @media (min-width: 768px) {
   .einstellung {
-    display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, 220px);
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, 320px);
     column-gap: 20px; align-items: center; margin-bottom: 0;
   }
   .einstellung > :not(input, select) { grid-column: 1; }
   .einstellung > .knopf { justify-self: start; }
   .einstellung > :is(input:not([type="hidden"]), select) { grid-column: 2; grid-row: 1 / span 3; max-width: none; }
   .einstellung.liste { display: block; }
+  /* In der halben Breite der Systemseite bleibt das Feld schmaler */
+  .einstellungs-raster .einstellung { grid-template-columns: minmax(0, 1fr) minmax(140px, 220px); }
 }
 .karte.einstellungen form > .knopf { margin-top: 14px; }
 
@@ -2444,12 +2446,29 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 /* ---------------------------------------------------------------------------
    Kasse: Einzug vorbereiten, Stand eines Einzugs, Start (Entwurf „Kasse neu“)
    --------------------------------------------------------------------------- */
-/* Viele Teile brechen am Telefon in eine zweite Zeile um. Seitlich scrollen
-   hat das letzte Segment abgeschnitten, ohne dass man es merkte (U25). */
-.segtoggle.bereich-segmente.viele { flex-wrap: wrap; }
-.segtoggle.bereich-segmente.viele a { flex: 1 0 auto; white-space: nowrap; }
-@media (min-width: 768px) {
-  .segtoggle.bereich-segmente.viele { min-width: 560px; }
+/* Drei Teile passen am Telefon in eine Zeile, ohne Umbruch und ohne
+   seitliches Scrollen, das das letzte Segment abschnitt (U25, U50). */
+@media (max-width: 767px) {
+  .segtoggle.bereich-segmente a { flex: 1 1 auto; min-width: 0; padding: 0 6px; white-space: nowrap; }
+}
+
+/* Kasse: der Hinweis auf fehlende Bankangaben ist kein Fehler (U50) */
+.hinweis.gold { background: var(--gold-soft); color: var(--ink); }
+.hinweis.gold a { color: var(--gold-ink); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Forderungen: eine Chipreihe für die Art, der Stand als Auswahlfeld (U51) */
+.forderungs-filter { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+.forderungs-filter .filterchips { flex: 1 1 320px; }
+.forderungs-filter form { flex: 0 0 auto; margin: 0; }
+
+/* Die Kennzahlen stehen über den Reitern der Kasse: am Telefon drei schmale
+   Spalten statt zwei Reihen, damit der Schalter nicht unter die Falz rutscht. */
+@media (max-width: 767px) {
+  .kasse-kennzahlen { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .kasse-kennzahlen .kennzahl { padding: 12px; gap: 2px; border-radius: 18px; }
+  .kasse-kennzahlen .label { font-size: 12px; line-height: 1.25; min-height: 2.5em; }
+  .kasse-kennzahlen .wert { font-size: 18px; }
+  .kasse-kennzahlen .info { font-size: 11.5px; }
 }
 
 .einzug-vorbereiten { display: grid; gap: 20px; }

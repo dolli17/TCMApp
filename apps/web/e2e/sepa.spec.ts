@@ -149,8 +149,8 @@ test.describe("SEPA-Datei", () => {
     // Eine eigene Forderung mit einem Betrag, den sonst niemand hat.
     const beschreibung = `ZZTest SEPA-Datei ${Date.now().toString().slice(-6)}`;
     await anmelden(page, NUTZER.admin);
-    await page.goto("/admin/kasse?abschnitt=abrechnen");
-    await page.getByRole("button", { name: "Forderung anlegen" }).first().click();
+    await page.goto("/admin/kasse?abschnitt=forderungen");
+    await page.getByRole("button", { name: /Forderung anlegen/ }).first().click();
     const fenster = page.locator("dialog.fenster");
     await fenster.getByLabel("Mitglied").fill(ZAHLERIN);
     await fenster.getByLabel("Art").selectOption("deposit");
