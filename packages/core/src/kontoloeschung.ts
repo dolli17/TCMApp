@@ -1,5 +1,9 @@
 /**
- * Konto löschen beantragen (Befund O9, Apple-Regel 5.1.1(v))
+ * Mitgliedschaft kündigen beantragen (Befund O9, Apple-Regel 5.1.1(v); U44)
+ *
+ * Der Eintrag heißt nach der Kündigung, weil Mitglieder so danach suchen.
+ * Die Erklärung muss trotzdem klar sagen, dass damit auch Konto und Login
+ * gelöscht werden - darüber findet ein App-Prüfer die Kontolöschung.
  *
  * App und Web zeigen dieselben Sätze und prüfen gleich. Gelöscht wird nicht
  * sofort: Die RPC konto_loeschung_beantragen benachrichtigt Vorstand und
@@ -11,14 +15,14 @@
 export const KONTOLOESCHUNG_NACHRICHT_MAX = 1000;
 
 export const KONTOLOESCHUNG_TEXT = {
-  titel: "Konto löschen beantragen",
+  titel: "Mitgliedschaft kündigen beantragen",
   erklaerung: [
-    "Dein Antrag geht an den Vorstand. Er löscht dein Konto oder anonymisiert es und meldet sich bei dir, falls noch etwas zu klären ist.",
+    "Dein Antrag geht an den Vorstand. Er kümmert sich um die Kündigung deiner Mitgliedschaft und löscht dabei auch dein Konto samt Login für App und Web – oder anonymisiert es. Falls noch etwas zu klären ist, meldet er sich bei dir.",
     "Daten, die der Verein aufbewahren muss – etwa Beiträge und Lastschriften –, bleiben so lange wie vorgeschrieben erhalten.",
   ],
   nachrichtLabel: "Nachricht an den Vorstand (freiwillig)",
-  absenden: "Antrag senden",
-  bestaetigungFrage: "Möchtest du die Löschung deines Kontos wirklich beantragen?",
+  absenden: "Kündigung beantragen",
+  bestaetigungFrage: "Möchtest du die Kündigung deiner Mitgliedschaft und die Löschung deines Kontos wirklich beantragen?",
   bestaetigen: "Ja, beantragen",
   abbrechen: "Abbrechen",
   eingegangen: "Dein Antrag ist eingegangen. Der Vorstand meldet sich bei dir.",

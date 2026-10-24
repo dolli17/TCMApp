@@ -209,9 +209,10 @@ export function Getraenkekarte({
                       <output className="dpl" aria-label={`${menge} gewählt, noch nicht eingetragen`}>{menge}</output>
                     </>
                   )}
+                  {/* Gelb erst, wenn schon etwas gesammelt ist (U43). */}
                   <button
                     type="button"
-                    className="gelb"
+                    className={menge > 0 ? "gelb" : undefined}
                     aria-label={`${a.name}: eins mehr`}
                     disabled={laeuft || menge >= MAX_DRINK_QUANTITY}
                     onClick={() => aendern(a.id, 1)}

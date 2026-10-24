@@ -213,9 +213,10 @@ function AlsNaechstes({ termine, erneut }: { termine: Abschnitt<Termine>; erneut
         <Leerzustand
           titel="Noch nichts geplant"
           text="Such dir einen Platz – heute ist noch einiges frei."
+          // Sekundaer: die gelbe Kachel "Platz buchen" steht direkt darunter,
+          // und Gelb gibt es je Screen nur einmal (U43).
           handlung={{
             text: "Platz buchen",
-            gold: true,
             onPress: () => router.navigate({ pathname: "/plaetze", params: { buchen: "jetzt" } }),
           }}
         />

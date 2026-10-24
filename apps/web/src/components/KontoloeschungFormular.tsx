@@ -62,9 +62,10 @@ export function KontoloeschungFormular({ aktion }: { aktion: (fd: FormData) => P
               </button>
             </div>
           ) : (
+            // Gefahr statt Blau: der Antrag beendet die Mitgliedschaft (U44).
             <button
               type="button"
-              className="knopf"
+              className="knopf gefahr-leise"
               onClick={() => {
                 setMeldung(null);
                 setRueckfrage(true);

@@ -37,8 +37,9 @@ Vereinsfarben: **Blau** trägt die Marke, **Ballgelb** heißt „hier handeln“
 Gelb nur für die eine Hauptaktion eines Screens, eigene Termine und aktive
 Auswahl – nicht als Deko.
 
-Dunkel ist in der App der neue Standard, hell in der Verwaltung. Die
-Nutzerwahl System/Hell/Dunkel bleibt (`ThemeAnbieter`, `data-theme`).
+Standard ist in App und Web die Systemeinstellung (U45, 23.10.2026); der
+Entwurf sah in der App Dunkel vor. Die Nutzerwahl System/Hell/Dunkel bleibt
+(`ThemeAnbieter`, `data-theme`). Die Anmeldeseiten sind immer dunkel.
 
 ### Neue Werte für `farben` in `tokens.ts`
 
@@ -126,8 +127,10 @@ das Muster, gesuchte Spiele die gestrichelte Kante.
   (`expo-blur` BlurView; ohne Blur: `glass` mit höherer Deckkraft), Rand `glassLine`.
 - 4 Tabs: **Home, Plätze, Getränke, Konto**. Aktiver Tab: eigene Pille
   (52 hoch) in `tabAktiv`, Icon + Label `tabAktivInk`. Inaktiv `muted`.
-- Rechts daneben ein runder Knopf 64×64 in `gold` mit „+“ (`onGold`),
-  `accessibilityLabel="Platz buchen"` → öffnet das Buchungsblatt.
+- ~~Rechts daneben ein runder Knopf 64×64 in `gold` mit „+“~~ – entfallen
+  (U43, 23.10.2026): auf Getränke hieß „+“ dort eins mehr, und Gelb gehört
+  der einen Hauptaktion. Gebucht wird über Plätze und die Kachel auf Home;
+  die Leiste nimmt die volle Breite.
 - Die Glocke wandert in den Kopf der Screens (rund, 44, neben dem Avatar).
 - Inhalte brauchen unten ~110 px Luft, damit nichts unter der Leiste liegt.
 - Umsetzung über `tabBar`-Prop von `expo-router` `<Tabs>` mit eigener Komponente.

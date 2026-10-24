@@ -226,7 +226,7 @@ function Anmeldung({
               {begleitung}
             </Text>
             <Rundknopf
-              zeichen="plus" gelb beschriftung="Eine Begleitperson mehr" deaktiviert={begleitung >= MAX_BEGLEITUNG}
+              zeichen="plus" gelb={begleitung > 0} beschriftung="Eine Begleitperson mehr" deaktiviert={begleitung >= MAX_BEGLEITUNG}
               onPress={() => setBegleitung((b) => Math.min(MAX_BEGLEITUNG, b + 1))}
             />
           </View>

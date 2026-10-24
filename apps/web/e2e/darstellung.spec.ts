@@ -210,6 +210,7 @@ test.describe("Layout", () => {
       // Start, Plätze, Verein, Konto, Verwaltung
       await expect(page.locator(".schwebeleiste a")).toHaveCount(5);
       await expect(page.locator(".seitenkopf .glocke")).toHaveCount(1);
+      await expect(page.locator('a[aria-label="Platz buchen"]')).toHaveCount(0);
       const ueberbreite = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       );
@@ -218,7 +219,8 @@ test.describe("Layout", () => {
 
     test("die Tabs eines Admins bleiben auch bei 320 px in der Leiste", async ({ page }) => {
       // „Verwaltung“ ist der längste Tab (U7). Er darf weder abgeschnitten
-      // werden noch unter den Buchen-Knopf ragen.
+      // werden noch aus dem Bildschirm ragen. Einen runden Buchen-Knopf
+      // neben der Leiste gibt es nicht mehr (U43).
       await anmelden(page, ADMIN);
       await page.goto("/plan");
       for (const breite of [320, 360, 390]) {
@@ -229,12 +231,12 @@ test.describe("Layout", () => {
           return {
             leisteRechts: leiste.right,
             tabRechts: Math.max(...tabs.map((a) => a.getBoundingClientRect().right)),
-            knopfLinks: document.querySelector(".buchknopf")!.getBoundingClientRect().left,
+            fensterRechts: document.documentElement.clientWidth,
             beschnitten: tabs.filter((a) => a.scrollWidth > a.clientWidth).map((a) => a.textContent),
           };
         });
         expect(mass.tabRechts, `${breite}px: Tab ragt aus der Leiste`).toBeLessThanOrEqual(mass.leisteRechts);
-        expect(mass.leisteRechts, `${breite}px: Leiste unter dem Buchen-Knopf`).toBeLessThanOrEqual(mass.knopfLinks);
+        expect(mass.leisteRechts, `${breite}px: Leiste ragt aus dem Bildschirm`).toBeLessThanOrEqual(mass.fensterRechts);
         expect(mass.beschnitten, `${breite}px`).toEqual([]);
       }
     });

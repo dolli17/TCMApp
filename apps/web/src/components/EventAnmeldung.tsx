@@ -79,7 +79,7 @@ export function EventAnmeldung({
             </button>
             <output className="dpl" aria-label={`${begleitung} ${begleitung === 1 ? "Begleitperson" : "Begleitpersonen"}`}>{begleitung}</output>
             <button
-              type="button" className="gelb" aria-label="Eine Begleitperson mehr" disabled={begleitung >= MAX_BEGLEITUNG}
+              type="button" className={begleitung > 0 ? "gelb" : undefined} aria-label="Eine Begleitperson mehr" disabled={begleitung >= MAX_BEGLEITUNG}
               onClick={() => setBegleitung((b) => Math.min(MAX_BEGLEITUNG, b + 1))}
             >
               <Zeichen d="M12 5v14M5 12h14" />

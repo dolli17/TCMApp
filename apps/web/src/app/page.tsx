@@ -119,7 +119,8 @@ export default async function Start() {
               <div className="karte termin-leer">
                 <b>Noch nichts geplant</b>
                 <p className="unterzeile">Such dir einen Platz – heute ist noch einiges frei.</p>
-                <Link href="/plan" className="knopf gold">Platz buchen</Link>
+                {/* Leise: die gelbe Kachel „Platz buchen“ steht direkt darunter (U43). */}
+                <Link href="/plan" className="knopf leise">Platz buchen</Link>
               </div>
             ) : (
               <div className="naechstes">

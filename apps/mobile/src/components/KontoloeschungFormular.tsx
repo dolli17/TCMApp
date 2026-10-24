@@ -1,5 +1,5 @@
 /**
- * Konto loeschen beantragen (O9, Apple-Regel 5.1.1(v))
+ * Mitgliedschaft kuendigen beantragen (O9, Apple-Regel 5.1.1(v); U44)
  *
  * Erklaerung, freiwillige Nachricht, dann eine Rueckfrage im Blatt selbst -
  * kein Alert, der im Browser (Expo-Web) anders aussieht als auf dem Telefon.
@@ -72,7 +72,7 @@ export function KontoloeschungFormular() {
                 disabled={laeuft}
                 accessibilityRole="button"
               >
-                <Text style={[stil.knopfLeiseText, { color: farben.red }]}>{laeuft ? "Wird gesendet…" : T.bestaetigen}</Text>
+                <Text style={[stil.knopfLeiseText, { color: farben.redInk }]}>{laeuft ? "Wird gesendet…" : T.bestaetigen}</Text>
               </Pressable>
               <Pressable
                 style={stil.knopfLeise}
@@ -84,15 +84,19 @@ export function KontoloeschungFormular() {
               </Pressable>
             </View>
           ) : (
+            // Gefahr statt Gelb: der Antrag beendet die Mitgliedschaft (U44).
             <Pressable
-              style={[stil.knopf, stil.knopfGold, { minHeight: 52, justifyContent: "center", marginTop: abstand.s }]}
+              style={[
+                stil.knopfLeise,
+                { borderColor: mitDeckkraft(farben.red, 0.5), minHeight: 52, justifyContent: "center", marginTop: abstand.s },
+              ]}
               onPress={() => {
                 setMeldung(null);
                 setRueckfrage(true);
               }}
               accessibilityRole="button"
             >
-              <Text style={[stil.knopfText, stil.knopfGoldText]}>{T.absenden}</Text>
+              <Text style={[stil.knopfLeiseText, { color: farben.redInk }]}>{T.absenden}</Text>
             </Pressable>
           )}
         </>

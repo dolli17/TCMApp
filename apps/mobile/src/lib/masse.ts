@@ -11,7 +11,7 @@
  * weil er vom Modell abhaengt.
  */
 
-/** Hoehe der Pille und Kantenlaenge des runden Buchen-Knopfs */
+/** Hoehe der Pille */
 export const LEISTE_HOEHE = 64;
 
 /** Abstand der Leiste zum unteren Sicherheitsrand */
