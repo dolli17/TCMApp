@@ -834,7 +834,7 @@ test.describe("Mitgliederverwaltung", () => {
     // Das Formular verlangt die Adresse schon im Browser ...
     const email = fenster.getByLabel("E-Mail");
     await expect(email).toHaveAttribute("required", "");
-    await expect(fenster).toContainText("Bekommt sofort eine Einladung");
+    await expect(fenster).toContainText("Dorthin geht sofort die Einladung");
     await fenster.getByRole("button", { name: "Anlegen" }).click();
     await expect(fenster).toBeVisible();
     await expect(page).toHaveURL(/\/admin\/mitglieder$/);
