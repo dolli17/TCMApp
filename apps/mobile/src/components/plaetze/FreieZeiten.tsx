@@ -14,12 +14,21 @@
  * GROSSE_SCHRIFT_AB fallen die Kaestchen weg und es bleibt "n frei" - acht
  * Kaestchen neben einer grossen Uhrzeit passen auf kein Telefon, und welcher
  * Platz frei ist, steht ohnehin in der aufgeklappten Zeile.
+ *
+ * Belegt ist ein Kaestchen mit Rand in rahmen (U74): surf3 allein lag hell
+ * bei 1,25:1, dunkel bei 1,4:1 auf der Karte und war von "leer" kaum zu
+ * unterscheiden. Frei bleibt die gruene Flaeche, wie im Web und im Raster.
+ * Der Kopf mit den Platznummern klebt unter dem Reiter mit, solange die
+ * Tabelle im Bild ist - vorher scrollten die Nummern weg und die Kaestchen
+ * standen ohne Spalte da. Nach dem Buchen klappt die Zeile zu; die neue
+ * Buchung leuchtet in ihr kurz auf.
  */
 
-import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Animated, Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { freeSlotsOfDay, minutesOf, type CourtStatusKind } from "@tcm/core";
+import { useBildschirmScroll } from "@/components/Bildschirm";
 import { Leerzustand } from "@/components/Leerzustand";
 import { alsUhrzeit, type Belegung } from "@/lib/plan";
 import { useGrosseSchrift } from "@/lib/schrift";
@@ -52,6 +61,8 @@ export function FreieZeiten({
   const jetzt = useJetzt();
   const gross = useGrosseSchrift();
   const [offen, setOffen] = useState<number | null>(null);
+  const scroll = useBildschirmScroll();
+  const [masse, setMasse] = useState({ oben: 0, hoehe: 0, kopf: 0 });
 
   const zeilen = freeSlotsOfDay({
     day: datum, courtIds: plaetze.map((p) => p.id), openingMinutes: oeffnung, closingMinutes: schluss,
@@ -65,8 +76,29 @@ export function FreieZeiten({
     if (art === "sucht") {
       return { backgroundColor: farben.goldSoft, borderWidth: 1.5, borderStyle: "dashed", borderColor: farben.goldLine };
     }
-    return { backgroundColor: farben.surf3 };
+    return { backgroundColor: farben.surf3, borderWidth: 1.5, borderColor: farben.rahmen };
   };
+
+  // Die Zeile mit der gerade gebuchten Belegung - dorthin geht der Blick,
+  // die aufgeklappte Platzwahl hat ihren Dienst getan.
+  const neuMinute = zeilen.find((z) =>
+    z.courts.some(
+      (c) => c.status.belegung && markiert(c.status.belegung) && minutesOf(c.status.belegung.starts_at) === z.minute,
+    ),
+  )?.minute;
+  useEffect(() => {
+    if (neuMinute !== undefined) setOffen(null);
+  }, [neuMinute]);
+
+  // Der Kopf wandert mit, sobald die Tabelle unter den Reiter scrollt, und
+  // bleibt stehen, bevor er die letzte Zeile verdeckt.
+  // + 1 fuer den Rand der Karte, in dem der Kopf liegt
+  const ab = scroll ? scroll.inhaltOben + masse.oben + 1 - scroll.reiterHoehe : 0;
+  const weg = masse.hoehe - masse.kopf - 60;
+  const kopfVersatz =
+    scroll && weg > 0
+      ? scroll.scrollY.interpolate({ inputRange: [ab, ab + weg], outputRange: [0, weg], extrapolate: "clamp" })
+      : 0;
 
   // Ohne Plaetze (noch nicht geladen) stuende ueberall "voll".
   if (plaetze.length === 0) return null;
@@ -81,19 +113,30 @@ export function FreieZeiten({
 
   return (
     <View
+      onLayout={(e) => {
+        const { y, height } = e.nativeEvent.layout;
+        setMasse((m) => ({ ...m, oben: y, hoehe: height }));
+      }}
       style={{
         borderRadius: 22, overflow: "hidden", backgroundColor: farben.surf,
         borderWidth: 1, borderColor: farben.line,
       }}
     >
-      <View
+      <Animated.View
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
+        onLayout={(e) => {
+          const kopf = e.nativeEvent.layout.height;
+          setMasse((m) => ({ ...m, kopf }));
+        }}
         style={{
           flexDirection: "row", alignItems: "center", minHeight: 40, paddingLeft: 16, paddingRight: 12,
-          borderBottomWidth: 1, borderBottomColor: farben.line,
+          borderBottomWidth: 1, borderBottomColor: farben.line2, backgroundColor: farben.surf,
+          zIndex: 1, transform: [{ translateY: kopfVersatz }],
         }}
       >
+        {/* Deckt beim Mitkleben den Spalt zum Reiter ab; in Ruhe schneidet ihn die Karte weg. */}
+        <View style={{ position: "absolute", left: 0, right: 0, top: -12, height: 12, backgroundColor: farben.surf }} />
         <Text style={[kopfStil(farben.muted), { minWidth: 64 }]}>BEGINN</Text>
         {!gross && (
           <View style={{ flexDirection: "row", gap: 4 }}>
@@ -106,7 +149,7 @@ export function FreieZeiten({
           </View>
         )}
         <Text style={[kopfStil(farben.muted), { marginLeft: "auto" }]}>FREI</Text>
-      </View>
+      </Animated.View>
 
       {zeilen.map((z, i) => {
         const istOffen = offen === z.minute;
@@ -127,9 +170,7 @@ export function FreieZeiten({
         ].join(", ");
 
         // Die Zeile, in der die gerade gebuchte oder geaenderte Belegung beginnt
-        const neu = z.courts.some(
-          (c) => c.status.belegung && markiert(c.status.belegung) && minutesOf(c.status.belegung.starts_at) === z.minute,
-        );
+        const neu = z.minute === neuMinute;
 
         return (
           <View

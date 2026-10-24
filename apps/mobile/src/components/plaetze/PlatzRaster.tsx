@@ -9,6 +9,10 @@
  * Was frei ist, rechnet @tcm/core (freeGaps, also canStartAt); die
  * Beschriftung der Bloecke ebenfalls (occupancyLabel), damit das Web
  * dasselbe sagt.
+ *
+ * Freie Startzeiten sind eine gruene Flaeche mit "frei" (U75), wie unter
+ * Freie Zeiten und im Web. Vorher war frei nur die leere Spur, und ein Tag
+ * ohne Buchungen sah aus, als lade das Raster noch.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -209,6 +213,7 @@ export function PlatzRaster({
                     platz={platz}
                     luecke={l}
                     oeffnung={oeffnung}
+                    farben={{ flaeche: mitDeckkraft(farben.green, 0.16), rand: farben.green, text: farben.greenInk }}
                     onWahl={(minute) =>
                       onAuswahl({ courtId: platz.id, minute: startInGap(l, minute, raster, dauer), bis: l.until })}
                   />
@@ -299,16 +304,18 @@ export function PlatzRaster({
 }
 
 /**
- * Eine freie Flaeche: unsichtbar, aber antippbar. Die Stelle des Fingers
- * bestimmt den Beginn; ein Screenreader tippt ohne Stelle und bekommt den
- * fruehesten.
+ * Eine freie Flaeche: gruen getoent mit gruenem Rand, antippbar. Die Stelle
+ * des Fingers bestimmt den Beginn; ein Screenreader tippt ohne Stelle und
+ * bekommt den fruehesten. Der Rand haelt 3:1 zur Karte, die Toenung allein
+ * nicht.
  */
 function FreieFlaeche({
-  platz, luecke, oeffnung, onWahl,
+  platz, luecke, oeffnung, farben, onWahl,
 }: {
   platz: Platz;
   luecke: FreeGap;
   oeffnung: number;
+  farben: { flaeche: string; rand: string; text: string };
   onWahl: (minute: number) => void;
 }) {
   function tippen(e: GestureResponderEvent) {
@@ -321,11 +328,18 @@ function FreieFlaeche({
       accessibilityRole="button"
       accessibilityLabel={`${platz.name}, frei von ${alsUhrzeit(luecke.from)} bis ${alsUhrzeit(luecke.until)} Uhr`}
       accessibilityHint={`Wählt ${alsUhrzeit(luecke.from)} Uhr zum Buchen aus`}
-      style={{
-        position: "absolute", top: 0, bottom: 0,
-        left: px(luecke.from - oeffnung), width: px(luecke.until - luecke.from),
-      }}
-    />
+      hitSlop={{ top: BLOCK_ABSTAND, bottom: BLOCK_ABSTAND }}
+      style={({ pressed }) => ({
+        position: "absolute", top: BLOCK_ABSTAND, bottom: BLOCK_ABSTAND,
+        left: px(luecke.from - oeffnung) + 3, width: Math.max(px(luecke.until - luecke.from) - 6, 12),
+        borderRadius: 10, borderWidth: 1.5, borderColor: farben.rand, backgroundColor: farben.flaeche,
+        paddingHorizontal: 7, justifyContent: "center", opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      <Text maxFontSizeMultiplier={RASTER_SCHRIFT} numberOfLines={1} style={{ fontSize: 12, fontFamily: "Barlow_700Bold", color: farben.text }}>
+        frei
+      </Text>
+    </Pressable>
   );
 }
 
@@ -335,6 +349,7 @@ export function RasterLegende() {
   // Jedes Kaestchen mit Rand wie im Web: blueSoft, surf3 und goldSoft allein
   // liegen unter 3:1 zum Grund (U29).
   const eintraege: { name: string; box: object; schraffur?: boolean }[] = [
+    { name: "frei", box: { backgroundColor: mitDeckkraft(farben.green, 0.16), borderColor: farben.green } },
     { name: "Du", box: { backgroundColor: farben.gold } },
     { name: "belegt", box: { backgroundColor: farben.blueSoft } },
     { name: "sucht Mitspieler", box: { backgroundColor: farben.goldSoft, borderStyle: "dashed", borderColor: farben.goldInk } },

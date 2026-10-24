@@ -11,11 +11,15 @@
  *
  * Der Titel heisst wie der Tab, "Verwaltung" (U55): als "Plätze" stand er
  * zweimal in der Leiste, neben dem Tab Plätze zum Buchen.
+ *
+ * Das Segment klebt beim Scrollen oben wie in Plätze und Verein (U74); der
+ * gelbe Knopf steht darunter, er gehoert zum gewaehlten Segment.
  */
 
 import { useEffect, useState } from "react";
-import { Linking, Pressable, Text } from "react-native";
+import { Linking, Pressable, Text, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import { abstand } from "@tcm/ui";
 import { Bildschirm } from "@/components/Bildschirm";
 import { GrosserKopf } from "@/components/GrosserKopf";
 import { Segmente } from "@/components/Segmente";
@@ -81,6 +85,22 @@ export default function PlaetzeVerwaltung() {
   return (
     <Bildschirm
       kopf={kopf}
+      reiter={
+        <View style={{ paddingHorizontal: abstand.rand, paddingBottom: abstand.m }}>
+          <Segmente
+            beschriftung="Plätze und Serien"
+            optionen={[
+              { wert: "plaetze", label: "Plätze" },
+              { wert: "serien", label: "Serien" },
+            ]}
+            wert={ansicht}
+            onWahl={(w) => {
+              setAnsicht(w);
+              setMeldung(null);
+            }}
+          />
+        </View>
+      }
       aktualisiert={zustand.aktualisiert}
       onAktualisieren={zustand.neuLaden}
       fehler={zustand.fehler}
@@ -90,20 +110,7 @@ export default function PlaetzeVerwaltung() {
           text: serien ? "Serie anlegen" : "Plätze sperren",
           onPress: () => setBlatt(serien ? "serie" : "sperren"),
         }}
-      >
-        <Segmente
-          beschriftung="Plätze und Serien"
-          optionen={[
-            { wert: "plaetze", label: "Plätze" },
-            { wert: "serien", label: "Serien" },
-          ]}
-          wert={ansicht}
-          onWahl={(w) => {
-            setAnsicht(w);
-            setMeldung(null);
-          }}
-        />
-      </VerwaltungsKopf>
+      />
 
       <Meldung meldung={meldung} />
 
