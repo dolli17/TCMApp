@@ -10,7 +10,9 @@ export const PFAD_KOPF = "x-tcm-pfad";
  * Einladungslink fuer sein Admin-Konto oeffnet. Mit Menue darum waere die
  * Seite ein Bild im Bild.
  */
-export const ANMELDESEITEN = ["/login", "/passwort-setzen", "/passwort-vergessen"];
+export const ANMELDESEITEN = [
+  "/login", "/passwort-setzen", "/passwort-vergessen", "/kein-zugang",
+];
 
 /**
  * Ohne das Menue der App: die Anmeldeseiten und das Onboarding. Wer das
@@ -22,3 +24,6 @@ export const OHNE_RAHMEN = [...ANMELDESEITEN, "/onboarding"];
 
 /** Das Onboarding, solange es offen ist. Die Middleware leitet dorthin um. */
 export const ONBOARDING = "/onboarding";
+
+/** Der Hinweis "Kein Zugang mehr" (B22). Die Middleware meldet ab und leitet dorthin um. */
+export const KEIN_ZUGANG = "/kein-zugang";

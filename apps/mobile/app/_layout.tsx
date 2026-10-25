@@ -46,6 +46,8 @@ function Navigation() {
         <Stack.Screen name="passwort-setzen" options={{ headerShown: false }} />
         {/* Kein Zurueck: dahinter liegt nur die Weiche, und die schickt wieder her. */}
         <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
+        {/* Ebenso: das Konto ist dort schon abgemeldet. */}
+        <Stack.Screen name="kein-zugang" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="nachrichten" options={{ headerShown: false, title: "Neuigkeiten" }} />
       </Stack>

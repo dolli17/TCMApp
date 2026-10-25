@@ -1629,6 +1629,9 @@ li.chip { padding-right: 4px; }
 .auth .vergessen { margin: -4px 0 0; text-align: right; font-size: 14px; }
 .auth .antrag-hinweis { margin: 4px 0 0; text-align: center; font-size: 14px; color: var(--muted); }
 .auth.immer-dunkel .antrag-hinweis a { color: var(--gold); font-weight: 700; }
+/* Kein Zugang mehr (B22): ein Satz, dann die beiden Wege */
+.auth .kein-zugang { display: flex; flex-direction: column; gap: 14px; }
+.auth .kein-zugang p { margin: 0 0 10px; font-size: 16px; line-height: 1.5; color: var(--ink-2); max-width: 60ch; }
 .auth .rechtliches { margin: 16px 0 0; text-align: center; font-size: 13px; color: var(--muted); }
 .auth.immer-dunkel .rechtliches a { color: var(--muted); font-weight: 500; }
 @media (min-width: 768px) {

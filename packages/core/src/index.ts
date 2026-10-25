@@ -30,3 +30,4 @@ export * from "./sepa/types";
 export * from "./sepa/validation";
 export * from "./sepa/pain008";
 export * from "./protokoll";
+export * from "./zugang";
