@@ -11,6 +11,9 @@
  *
  * Mit zurueck steht darueber ein Zurueck-Knopf, fuer Seiten ausserhalb der
  * Tabs wie /nachrichten; Glocke und Avatar fehlen dort.
+ *
+ * Den Titel meldet er dem Bildschirm fuer die kompakte Kopfzeile (U80),
+ * dazu, wo er endet - darunter kann noch eine Reiterleiste stehen.
  */
 
 import { useEffect, useState, type ReactNode } from "react";
@@ -18,6 +21,7 @@ import { Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { router } from "expo-router";
 import { abstand, schrift } from "@tcm/ui";
+import { useKompakterTitel } from "@/components/Bildschirm";
 import { Glocke } from "@/components/Glocke";
 import { ladeMeinenNamen } from "@/lib/daten";
 import { SCHRIFT_DECKEL } from "@/lib/schrift";
@@ -34,6 +38,8 @@ type Eigenschaften = {
 
 export function GrosserKopf({ titel, kicker, children, zurueck }: Eigenschaften) {
   const { farben, stil } = useTheme();
+  const [titelUnten, setTitelUnten] = useState<number | undefined>();
+  useKompakterTitel(titel, titelUnten);
 
   return (
     <View style={{ backgroundColor: farben.bg, paddingTop: zurueck ? 4 : 16 }}>
@@ -55,6 +61,8 @@ export function GrosserKopf({ titel, kicker, children, zurueck }: Eigenschaften)
         </Pressable>
       )}
       <View
+        // Unterkante des Titels ohne den Abstand darunter
+        onLayout={(e) => setTitelUnten(e.nativeEvent.layout.y + e.nativeEvent.layout.height - abstand.m)}
         style={{
           flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between",
           gap: abstand.m, paddingHorizontal: abstand.rand, paddingBottom: abstand.m,

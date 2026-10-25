@@ -15,9 +15,10 @@
  * Kaestchen neben einer grossen Uhrzeit passen auf kein Telefon, und welcher
  * Platz frei ist, steht ohnehin in der aufgeklappten Zeile.
  *
- * Belegt ist ein Kaestchen mit Rand in rahmen (U74): surf3 allein lag hell
- * bei 1,25:1, dunkel bei 1,4:1 auf der Karte und war von "leer" kaum zu
- * unterscheiden. Frei bleibt die gruene Flaeche, wie im Web und im Raster.
+ * Kaestchen nach der Statustabelle (HANDOFF §2) wie im Web: frei die volle
+ * gruene Flaeche, belegt blueSoft mit Rand blue (U79), alles nicht Buchbare
+ * surf3 mit Rand rahmen (U74: surf3 allein lag hell bei 1,25:1, dunkel bei
+ * 1,4:1 auf der Karte und war von "leer" kaum zu unterscheiden).
  * Der Kopf mit den Platznummern klebt unter dem Reiter mit, solange die
  * Tabelle im Bild ist - vorher scrollten die Nummern weg und die Kaestchen
  * standen ohne Spalte da. Nach dem Buchen klappt die Zeile zu; die neue
@@ -71,12 +72,13 @@ export function FreieZeiten({
   const platzVon = (id: string) => plaetze.find((p) => p.id === id)!;
 
   const kaestchen = (art: CourtStatusKind): object => {
-    if (art === "frei") return { backgroundColor: farben.green };
-    if (art === "eigen") return { backgroundColor: farben.gold };
+    if (art === "frei") return { backgroundColor: farben.green, borderWidth: 1, borderColor: farben.green };
+    if (art === "eigen") return { backgroundColor: farben.gold, borderWidth: 1, borderColor: farben.goldLine };
+    if (art === "belegt") return { backgroundColor: farben.blueSoft, borderWidth: 1, borderColor: farben.blue };
     if (art === "sucht") {
       return { backgroundColor: farben.goldSoft, borderWidth: 1.5, borderStyle: "dashed", borderColor: farben.goldLine };
     }
-    return { backgroundColor: farben.surf3, borderWidth: 1.5, borderColor: farben.rahmen };
+    return { backgroundColor: farben.surf3, borderWidth: 1, borderColor: farben.rahmen };
   };
 
   // Die Zeile mit der gerade gebuchten Belegung - dorthin geht der Blick,
@@ -329,10 +331,11 @@ export function FreieZeitenLegende() {
   // Jedes Kaestchen mit Rand wie im Web: blueSoft, surf3 und goldSoft allein
   // liegen unter 3:1 zum Grund (U29).
   const eintraege: { name: string; box: object }[] = [
-    { name: "frei", box: { backgroundColor: farben.green } },
-    { name: "belegt", box: { backgroundColor: farben.surf3 } },
+    { name: "frei", box: { backgroundColor: farben.green, borderWidth: 1, borderColor: farben.green } },
+    { name: "belegt", box: { backgroundColor: farben.blueSoft, borderWidth: 1, borderColor: farben.blue } },
     { name: "sucht Mitspieler", box: { backgroundColor: farben.goldSoft, borderStyle: "dashed", borderColor: farben.goldInk } },
     { name: "du", box: { backgroundColor: farben.gold } },
+    { name: "Training, gesperrt", box: { backgroundColor: farben.surf3 } },
   ];
   if (gross) return null;
   return (

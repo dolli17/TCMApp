@@ -28,6 +28,11 @@ export const farben = {
     // Vorher #167A52: auf den gruen getoenten Hinweisflaechen nur 4,3:1 (U15).
     // Zugleich die Flaeche der Platzkacheln unter "Freie Zeiten" (bg darauf).
     greenInk: "#126C48",
+    // Gruene Flaechen mit Schrift oder Ziffer in onBrand: erledigter Schritt
+    // im Geldweg und im Onboarding. Weiss auf green hielt hell nur 3,4:1, im
+    // Dunkeln 1,9:1 (U36). Wie brand in beiden Themes gleich; green bleibt
+    // fuer Flaechen ohne Schrift (frei, Balken, Schalter).
+    greenSatt: "#168259",
     // Rot ist wie blue eine Flaeche: Gefahr-Knoepfe mit weisser Schrift, die
     // Jetzt-Linie, Raender. Vorher #D7544B, darauf hielt Weiss nur 4,0:1 (U15).
     // Als Text auf hellem Grund reicht auch der neue Wert nicht ueberall -
@@ -91,6 +96,7 @@ export const farben = {
     onGold: "#0A1624",
     green: "#3DD68C",
     greenInk: "#3DD68C",
+    greenSatt: "#168259",
     // Wie im hellen Theme: red ist die Flaeche (vorher #FF6B61, Weiss darauf
     // 2,8:1), das helle Rot bleibt fuer Text.
     red: "#CF3F35",

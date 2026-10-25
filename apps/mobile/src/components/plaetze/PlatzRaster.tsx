@@ -109,15 +109,17 @@ export function PlatzRaster({
   const stunden: number[] = [];
   for (let m = Math.ceil(oeffnung / 60) * 60; m < schluss; m += 60) stunden.push(m);
 
+  // Nach der Statustabelle (HANDOFF §2) wie .tr-block im Web: belegt blau mit
+  // Rand blue, Training und gesperrt grau mit Rand rahmen (U79).
   const flaeche: Record<TimelineKind, { box: object; text: string }> = {
     eigen: { box: { backgroundColor: farben.gold }, text: farben.onGold },
-    belegt: { box: { backgroundColor: farben.blueSoft }, text: farben.blueInk },
+    belegt: { box: { backgroundColor: farben.blueSoft, borderWidth: 1, borderColor: farben.blue }, text: farben.blueInk },
     sucht: {
       box: { backgroundColor: farben.goldSoft, borderWidth: 1.5, borderStyle: "dashed", borderColor: farben.goldLine },
       text: farben.goldInk,
     },
-    serie: { box: { backgroundColor: farben.surf3 }, text: farben.ink2 },
-    gesperrt: { box: { backgroundColor: farben.surf3 }, text: farben.muted },
+    serie: { box: { backgroundColor: farben.surf3, borderWidth: 1, borderColor: farben.rahmen }, text: farben.ink2 },
+    gesperrt: { box: { backgroundColor: farben.surf3, borderWidth: 1, borderColor: farben.rahmen }, text: farben.muted },
   };
 
   return (
@@ -349,9 +351,9 @@ export function RasterLegende() {
   // Jedes Kaestchen mit Rand wie im Web: blueSoft, surf3 und goldSoft allein
   // liegen unter 3:1 zum Grund (U29).
   const eintraege: { name: string; box: object; schraffur?: boolean }[] = [
-    { name: "frei", box: { backgroundColor: mitDeckkraft(farben.green, 0.16), borderColor: farben.green } },
+    { name: "frei", box: { backgroundColor: mitDeckkraft(farben.green, 0.16), borderWidth: 1, borderColor: farben.green } },
     { name: "Du", box: { backgroundColor: farben.gold } },
-    { name: "belegt", box: { backgroundColor: farben.blueSoft } },
+    { name: "belegt", box: { backgroundColor: farben.blueSoft, borderWidth: 1, borderColor: farben.blue } },
     { name: "sucht Mitspieler", box: { backgroundColor: farben.goldSoft, borderStyle: "dashed", borderColor: farben.goldInk } },
     { name: "Training", box: { backgroundColor: farben.surf3 }, schraffur: true },
     { name: "gesperrt", box: { backgroundColor: farben.surf3 } },

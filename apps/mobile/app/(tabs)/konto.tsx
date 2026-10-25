@@ -117,6 +117,7 @@ export default function Konto() {
         aktualisiert={zustand.aktualisiert}
         onAktualisieren={zustand.neuLaden}
         fehler={zustand.fehler}
+        titel="Konto"
         kopf={
           // Kein grosser Titel: oben steht, wer man ist. Die Glocke bleibt rechts
           // und scrollt mit dem Profil weg, statt allein ueber leerer Flaeche

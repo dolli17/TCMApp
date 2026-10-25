@@ -22,7 +22,7 @@ import {
   eventStatusMarke, eventTagKurz, eventVorbei, eventWartelisteText, eventZeitText, formatCents, stundenText,
 } from "@tcm/core";
 import { abstand, radius } from "@tcm/ui";
-import { Bildschirm } from "@/components/Bildschirm";
+import { Bildschirm, useKompakterTitel } from "@/components/Bildschirm";
 import { MarkeKlein } from "@/components/EventKarte";
 import { Rundknopf } from "@/components/Rundknopf";
 import {
@@ -122,6 +122,7 @@ export default function Veranstaltung() {
 function Kopf({ titel }: { titel?: string }) {
   const { farben } = useTheme();
   const rand = useSafeAreaInsets();
+  useKompakterTitel(titel);
   return (
     <View
       style={{

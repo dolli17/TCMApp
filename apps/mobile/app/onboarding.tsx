@@ -23,7 +23,7 @@ import {
   type OnboardingSchrittKey, type OnboardingZustand,
 } from "@tcm/core";
 import { abstand, radius } from "@tcm/ui";
-import { Bildschirm } from "@/components/Bildschirm";
+import { Bildschirm, useKompakterTitel } from "@/components/Bildschirm";
 import {
   Chipwahl, FormDatum, FormFeld, FormGruppe, FormSchalter, Knopf, Meldung,
 } from "@/components/verwaltung/Formular";
@@ -228,6 +228,7 @@ function Kopf({
   fortschritt?: ("erledigt" | "jetzt" | "offen")[];
 }) {
   const { stil, farben } = useTheme();
+  useKompakterTitel(titel);
   // Den Sicherheitsabstand oben zieht Bildschirm ein.
   return (
     <View style={{ backgroundColor: farben.bg, paddingTop: 16, paddingHorizontal: abstand.rand, paddingBottom: abstand.m, gap: 6 }}>

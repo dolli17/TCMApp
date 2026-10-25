@@ -27,6 +27,8 @@ export const SCHRIFT_DECKEL = {
   form: 1.2,
   /** Beschriftung der schwebenden Tab-Leiste. */
   leiste: 1.5,
+  /** Kompakter Titel in der Kopfzeile, sobald der grosse weggescrollt ist. */
+  kopfzeile: 1.5,
 } as const;
 
 /** Ab dieser Stufe stellen sich enge Layouts um. */
