@@ -32,13 +32,24 @@
  * Klebt der Reiter, zieht eine feine Linie die Grenze zum Inhalt darunter
  * (U74); in Ruhe steht er ohne. Tabellen, deren Kopf unter dem Reiter
  * mitkleben soll, holen sich Scrollstand und Masse aus useBildschirmScroll.
+ *
+ * Ist der grosse Titel weggescrollt, stand oben nichts mehr (U80). Wie unter
+ * iOS blendet dann eine Kopfzeile mit dem Titel in klein ein; mit "Bewegung
+ * reduzieren" ohne Uebergang. Den Titel meldet der Kopf ueber
+ * useKompakterTitel (GrosserKopf tut das selbst). Ein Reiter klebt dann unter
+ * der Kopfzeile statt am oberen Rand: er wird beim Einblenden um ihre Hoehe
+ * nach unten geschoben, Kopfzeile und Reiter stehen als ein Block, die Linie
+ * sitzt unter dem Reiter. Ohne Reiter traegt die Kopfzeile die Linie.
  */
 
-import { createContext, useContext, useRef, useState, type ReactNode } from "react";
-import { ActivityIndicator, Animated, RefreshControl, View, type ScrollView } from "react-native";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  AccessibilityInfo, ActivityIndicator, Animated, Easing, RefreshControl, Text, View, type ScrollView,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { abstand } from "@tcm/ui";
 import { INHALT_LUFT_UNTEN, LEISTE_ABSTAND_UNTEN, LEISTE_HOEHE, LEISTE_RAND } from "@/lib/masse";
+import { SCHRIFT_DECKEL } from "@/lib/schrift";
 import { useTheme } from "@/lib/theme";
 import { Fehlerzeile } from "@/components/Fehlerzeile";
 
@@ -57,16 +68,38 @@ type Eigenschaften = {
   reiter?: ReactNode;
   /** Liegt unter dem Scrollbereich ueber der Tab-Leiste. */
   fuss?: ReactNode;
+  /** Titel der Kopfzeile, wenn der Kopf keinen meldet (useKompakterTitel). */
+  titel?: string;
 };
 
 /**
  * Fuer einen Kopf, der unter dem Reiter mitklebt: der Scrollstand (laeuft
  * ueber den nativen Treiber), wo der Inhalt im Scrollbereich beginnt und wie
- * hoch der Reiter ist.
+ * hoch der Reiter ist - samt der Kopfzeile darueber, er klebt unter beiden.
  */
 type BildschirmScroll = { scrollY: Animated.Value; inhaltOben: number; reiterHoehe: number };
 const ScrollKontext = createContext<BildschirmScroll | null>(null);
 export const useBildschirmScroll = () => useContext(ScrollKontext);
+
+/** Der Titel fuer die Kopfzeile und wo der grosse Titel im Kopf endet. */
+type KompakterTitel = { titel: string; unten?: number };
+const TitelKontext = createContext<((t: KompakterTitel | null) => void) | null>(null);
+
+/**
+ * Meldet dem Bildschirm den Titel fuer die Kopfzeile (U80). unten ist die
+ * Unterkante des grossen Titels im Kopf; fehlt sie, gilt das Ende des Kopfs.
+ */
+export function useKompakterTitel(titel: string | undefined, unten?: number) {
+  const melde = useContext(TitelKontext);
+  useEffect(() => {
+    if (!melde || !titel) return;
+    melde({ titel, unten });
+    return () => melde(null);
+  }, [melde, titel, unten]);
+}
+
+/** Hoehe der Kopfzeile, bis sie sich selbst gemessen hat. */
+const KOPFZEILE = 44;
 
 /** So viel Luft bleibt unter der zuletzt angetippten Stelle, wenn die Fussleiste erscheint. */
 const LUFT_UEBER_FUSS = 40;
@@ -81,6 +114,7 @@ export function Bildschirm({
   kopf,
   reiter,
   fuss,
+  titel,
 }: Eigenschaften) {
   const { farben, stil } = useTheme();
   const rand = useSafeAreaInsets();
@@ -99,15 +133,61 @@ export function Bildschirm({
   const [reiterHoehe, setReiterHoehe] = useState(0);
   const [inhaltOben, setInhaltOben] = useState(0);
 
-  // Die Linie blendet ein, sobald der Kopf weggescrollt ist und der Reiter klebt.
+  const [gemeldet, setKompakt] = useState<KompakterTitel | null>(null);
+  const kompakt = gemeldet ?? (titel ? { titel } : null);
+  const [zeileHoehe, setZeileHoehe] = useState(KOPFZEILE);
+  const [zeileDa, setZeileDa] = useState(false);
+  const zeileDaRef = useRef(false);
+  const einblenden = useRef(new Animated.Value(0)).current;
+  const ruhig = useRef(false);
+  // Nur mit Kopf: ohne ihn gibt es keinen grossen Titel, der verschwinden koennte.
+  const mitZeile = Boolean(kopf && kompakt);
+  const zeile = mitZeile ? zeileHoehe : 0;
+  // Die Kopfzeile erscheint, sobald der grosse Titel unter ihr liegt.
+  const schwelle = useRef(0);
+  schwelle.current = (kompakt?.unten ?? kopfHoehe) - zeileHoehe;
+
+  useEffect(() => {
+    let ab = true;
+    void AccessibilityInfo.isReduceMotionEnabled().then((r) => {
+      if (ab) ruhig.current = r;
+    });
+    return () => {
+      ab = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const ziel = zeileDa ? 1 : 0;
+    if (ruhig.current) einblenden.setValue(ziel);
+    else Animated.timing(einblenden, { toValue: ziel, duration: 180, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [zeileDa, einblenden]);
+
+  function pruefeZeile(y: number) {
+    const da = y > schwelle.current;
+    if (da === zeileDaRef.current) return;
+    zeileDaRef.current = da;
+    setZeileDa(da);
+  }
+
+  // Die Linie blendet ein, sobald der Kopf weggescrollt ist und der Reiter
+  // klebt - mit Kopfzeile schon um deren Hoehe frueher.
   const linie = scrollY.interpolate({
-    inputRange: [kopfHoehe - 1, kopfHoehe + 8],
+    inputRange: [kopfHoehe - zeile - 1, kopfHoehe - zeile + 8],
     outputRange: [0, 1],
     extrapolate: "clamp",
   });
+  // Der Reiter haelt unter der Kopfzeile an: im letzten Stueck bis zum
+  // Kleben wandert er um ihre Hoehe nach unten mit.
+  const reiterVersatz = mitZeile
+    ? scrollY.interpolate({ inputRange: [kopfHoehe - zeile, kopfHoehe], outputRange: [0, zeile], extrapolate: "clamp" })
+    : 0;
   const reiterFlaeche = (mitLinie: boolean) =>
     reiter ? (
-      <View style={{ backgroundColor: farben.bg }} onLayout={(e) => setReiterHoehe(e.nativeEvent.layout.height)}>
+      <Animated.View
+        style={{ backgroundColor: farben.bg, zIndex: 1, transform: [{ translateY: mitLinie ? reiterVersatz : 0 }] }}
+        onLayout={(e) => setReiterHoehe(e.nativeEvent.layout.height)}
+      >
         {reiter}
         {mitLinie && (
           <Animated.View
@@ -115,8 +195,32 @@ export function Bildschirm({
             style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 1, backgroundColor: farben.line2, opacity: linie }}
           />
         )}
-      </View>
+      </Animated.View>
     ) : null;
+
+  const kopfzeile = mitZeile && (
+    <Animated.View
+      // Der grosse Titel bleibt die Ueberschrift fuer VoiceOver; die Zeile ist nur fuers Auge.
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      pointerEvents={zeileDa ? "auto" : "none"}
+      onLayout={(e) => setZeileHoehe(e.nativeEvent.layout.height)}
+      style={{
+        position: "absolute", top: 0, left: 0, right: 0, zIndex: 2, minHeight: KOPFZEILE,
+        justifyContent: "center", paddingHorizontal: abstand.rand,
+        backgroundColor: farben.bg, opacity: einblenden,
+        borderBottomWidth: reiter ? 0 : 1, borderBottomColor: farben.line2,
+      }}
+    >
+      <Text
+        numberOfLines={1}
+        maxFontSizeMultiplier={SCHRIFT_DECKEL.kopfzeile}
+        style={{ textAlign: "center", fontSize: 17, fontFamily: "Barlow_700Bold", color: farben.ink }}
+      >
+        {kompakt?.titel}
+      </Text>
+    </Animated.View>
+  );
 
   function merkeBeruehrung(e: { nativeEvent: { pageY: number } }) {
     letzteBeruehrung.current = e.nativeEvent.pageY;
@@ -140,7 +244,7 @@ export function Bildschirm({
   if (laedt) {
     return (
       <View style={seite}>
-        {kopf}
+        <TitelKontext.Provider value={setKompakt}>{kopf}</TitelKontext.Provider>
         {reiterFlaeche(false)}
         <View style={{ flex: 1, justifyContent: "center" }}>
           <ActivityIndicator color={farben.blue} />
@@ -160,6 +264,7 @@ export function Bildschirm({
         useNativeDriver: true,
         listener: (e: { nativeEvent: { contentOffset: { y: number } } }) => {
           scrollStand.current = e.nativeEvent.contentOffset.y;
+          if (mitZeile) pruefeZeile(e.nativeEvent.contentOffset.y);
         },
       })}
       contentContainerStyle={kopf || reiter ? { paddingBottom: unten } : [stil.inhalt, { paddingBottom: unten }]}
@@ -181,7 +286,9 @@ export function Bildschirm({
       <Inhalt mitRand={Boolean(kopf || reiter)} onOben={setInhaltOben}>
         {/* Erneut versuchen tut dasselbe wie Herunterziehen (U3). */}
         {fehler && <Fehlerzeile text={fehler} onErneut={onAktualisieren} laeuft={aktualisiert} />}
-        <ScrollKontext.Provider value={{ scrollY, inhaltOben, reiterHoehe }}>{children}</ScrollKontext.Provider>
+        <ScrollKontext.Provider value={{ scrollY, inhaltOben, reiterHoehe: reiterHoehe + zeile }}>
+          {children}
+        </ScrollKontext.Provider>
       </Inhalt>
     </Animated.ScrollView>
   );
@@ -189,7 +296,13 @@ export function Bildschirm({
   if (!kopf && !reiter && !fuss) return inhalt;
   return (
     <View style={seite}>
-      {inhalt}
+      {/* Immer dieselbe Huelle: wechselte sie mit der Kopfzeile, finge der ScrollView neu an. */}
+      <TitelKontext.Provider value={setKompakt}>
+        <View style={{ flex: 1 }}>
+          {inhalt}
+          {kopfzeile}
+        </View>
+      </TitelKontext.Provider>
       {fuss && (
         <View
           ref={fussRef}

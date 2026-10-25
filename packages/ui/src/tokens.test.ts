@@ -235,6 +235,18 @@ describe("Kontrast", () => {
     }
   });
 
+  it("die satte grüne Fläche trägt Schrift und hebt sich vom Grund ab", () => {
+    // Erledigte Schritte (Geldweg, Onboarding): Ziffer oder Haken in onBrand
+    // auf greenSatt (U36). green selbst trägt keine Schrift.
+    for (const theme of ["hell", "dunkel"] as const) {
+      const f = farben[theme];
+      expect(verhaeltnis(f.onBrand, f.greenSatt), `${theme}: onBrand auf greenSatt`).toBeGreaterThanOrEqual(4.5);
+      for (const flaeche of ["bg", "surf", "surf2"] as const) {
+        expect(verhaeltnis(f.greenSatt, f[flaeche]), `${theme}: greenSatt auf ${flaeche}`).toBeGreaterThanOrEqual(3);
+      }
+    }
+  });
+
   it("Fehler- und Erfolgstexte erfüllen AA auch auf den getönten Hinweisflächen", () => {
     // Die Anteile sind die höchsten, die Web (color-mix) und App
     // (mitDeckkraft) für Hinweise und Marken benutzen.
@@ -259,7 +271,7 @@ describe("Kontrast", () => {
       const f = farben[theme];
       expect(verhaeltnis(f.onGold, f.gold), `${theme}: onGold auf gold`).toBeGreaterThanOrEqual(4.5);
       // onBrand traegt Schrift auf brand, blue, red und den Avataren (U4).
-      for (const flaeche of ["brand", "blue", "red"] as const) {
+      for (const flaeche of ["brand", "blue", "red", "greenSatt"] as const) {
         expect(verhaeltnis(f.onBrand, f[flaeche]), `${theme}: onBrand auf ${flaeche}`).toBeGreaterThanOrEqual(4.5);
       }
       avatarToene.forEach((ton, i) => {

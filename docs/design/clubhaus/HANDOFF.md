@@ -72,6 +72,7 @@ Entwurf sah in der App Dunkel vor. Die Nutzerwahl System/Hell/Dunkel bleibt
 | `goldInk` | `#7A5C00` | `#FFD21F` | gelber Text auf hellem/dunklem Grund |
 | `goldLine` | `#E0B400` | `#FFD21F` | gestrichelter Rand „Mitspieler gesucht“ |
 | `greenInk` | `#167A52` | `#3DD68C` | grüner Text („frei bis …“) |
+| `greenSatt` | `#168259` | `#168259` | grüne Fläche mit Schrift in `onBrand` (erledigter Schritt im Geldweg/Onboarding, U36); `green` trägt keine Schrift |
 | `glass` | `rgba(255,255,255,.82)` | `rgba(22,36,54,.78)` | schwebende Leiste |
 | `glassLine` | `rgba(10,22,36,.08)` | `rgba(255,255,255,.12)` | Rand der Leiste |
 | `tabAktiv` | `#FFD21F` | `rgba(255,210,31,.14)` | Hintergrund des aktiven Tabs |
