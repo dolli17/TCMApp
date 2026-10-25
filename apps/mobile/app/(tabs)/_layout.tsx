@@ -16,29 +16,35 @@
  * wer sich abmeldet, verlaesst die Tabs ohnehin.
  *
  * Im selben Zug der Schutz: ist das Onboarding offen, geht es nach
- * /onboarding. Die Weiche (app/index.tsx) leitet schon dorthin; hier landet
- * nur, wer einen Tab direkt aufruft, etwa ueber einen Link oder im Web.
+ * /onboarding, ohne Zugang nach /kein-zugang (B22). Die Weiche
+ * (app/index.tsx) leitet schon dorthin; hier landet nur, wer einen Tab direkt
+ * aufruft, etwa ueber einen Link oder im Web.
  */
 
 import { useEffect, useState } from "react";
-import { Redirect, Tabs } from "expo-router";
+import { Redirect, Tabs, type Href } from "expo-router";
 import { SchwebendeLeiste } from "@/components/SchwebendeLeiste";
 import { Symbol } from "@/components/Symbol";
-import { ladeIchSelbst } from "@/lib/daten";
+import { ladeIchSelbst, ladeZugang } from "@/lib/daten";
 import { useTheme } from "@/lib/theme";
 
 export default function TabLayout() {
   const { farben } = useTheme();
   const [platzRechte, setPlatzRechte] = useState(false);
-  const [onboardingOffen, setOnboardingOffen] = useState(false);
+  const [umleitung, setUmleitung] = useState<Href | null>(null);
 
   useEffect(() => {
     let aktiv = true;
     ladeIchSelbst()
       .then((ich) => {
+        if (aktiv) setPlatzRechte(ich.platzRechte);
+      })
+      .catch(() => undefined);
+    ladeZugang()
+      .then((z) => {
         if (!aktiv) return;
-        setPlatzRechte(ich.platzRechte);
-        setOnboardingOffen(!ich.onboardingErledigt);
+        if (!z.zugang) setUmleitung({ pathname: "/kein-zugang", params: { grund: z.grund ?? "unbekannt" } });
+        else if (z.onboardingOffen) setUmleitung("/onboarding");
       })
       .catch(() => undefined);
     return () => {
@@ -46,7 +52,7 @@ export default function TabLayout() {
     };
   }, []);
 
-  if (onboardingOffen) return <Redirect href="/onboarding" />;
+  if (umleitung) return <Redirect href={umleitung} />;
 
   return (
     <Tabs

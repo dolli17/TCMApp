@@ -2889,6 +2889,14 @@ export type Database = {
         Returns: undefined
       }
       mark_notifications_read: { Args: { p_ids?: string[] }; Returns: number }
+      mein_zugang: {
+        Args: never
+        Returns: {
+          grund: string
+          onboarding_offen: boolean
+          zugang: boolean
+        }[]
+      }
       member_attributes: {
         Args: { p_member_id: string }
         Returns: {

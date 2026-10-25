@@ -8,9 +8,9 @@
 
 import {
   berlinTime, hatPlatzRechte, hatVolleRechte, isValidIban, kontoloeschungMeldung, kontoloeschungPruefen,
-  memberProfileSchema, translateDbError,
+  memberProfileSchema, translateDbError, zugangsGrund,
   type Database, type EventKind, type EventRegistrationStatus, type EventStatus, type MitgliedEvent,
-  type OnboardingSchrittKey, type OnboardingZustand,
+  type OnboardingSchrittKey, type OnboardingZustand, type ZugangsGrund,
 } from "@tcm/core";
 import { leereKorb } from "./getraenkekorb";
 import { supabase } from "./supabase";
@@ -176,18 +176,13 @@ export async function ladeBuchungsarten() {
  * zu streichen. admin heisst volle Rechte (App Admin oder Vorstand),
  * platzRechte haben zusaetzlich die Platzwarte (Sperren, Serien, fremde
  * Buchungen).
- *
- * onboardingErledigt entscheidet die Weiche (app/index.tsx) und der Schutz der
- * Tabs: solange es false ist, geht es nach /onboarding. Ohne Mitglied gibt es
- * kein Onboarding, dann ist es true - die Datenbank sperrt ohnehin selbst.
  */
 export async function ladeIchSelbst(): Promise<{
   id: string | null;
   admin: boolean;
   platzRechte: boolean;
-  onboardingErledigt: boolean;
 }> {
-  const leer = { id: null, admin: false, platzRechte: false, onboardingErledigt: true };
+  const leer = { id: null, admin: false, platzRechte: false };
 
   const { data: sitzung } = await supabase.auth.getUser();
   const authId = sitzung.user?.id;
@@ -195,7 +190,7 @@ export async function ladeIchSelbst(): Promise<{
 
   const { data: mitglied } = await supabase
     .from("members")
-    .select("id, onboarding_completed_at")
+    .select("id")
     .eq("auth_user_id", authId)
     .maybeSingle();
   if (!mitglied) return leer;
@@ -210,7 +205,30 @@ export async function ladeIchSelbst(): Promise<{
     id: mitglied.id,
     admin: hatVolleRechte(r),
     platzRechte: hatPlatzRechte(r),
-    onboardingErledigt: mitglied.onboarding_completed_at != null,
+  };
+}
+
+/**
+ * Hat das Konto noch Zugang, und ist das Onboarding offen? (mein_zugang, B22)
+ *
+ * Das entscheidet die Weiche (app/index.tsx) und der Schutz der Tabs: ohne
+ * Zugang geht es nach /kein-zugang, mit offenem Onboarding nach /onboarding.
+ * Ohne Mitglied (Kiosk) hat das Konto Zugang und kein Onboarding - die
+ * Datenbank sperrt ohnehin selbst.
+ */
+export async function ladeZugang(): Promise<{
+  zugang: boolean;
+  grund: ZugangsGrund | null;
+  onboardingOffen: boolean;
+}> {
+  const { data, error } = await supabase.rpc("mein_zugang");
+  if (error) throw new Error(translateDbError(error));
+  const z = data?.[0];
+  if (!z) return { zugang: true, grund: null, onboardingOffen: false };
+  return {
+    zugang: z.zugang,
+    grund: z.zugang ? null : zugangsGrund(z.grund),
+    onboardingOffen: z.onboarding_offen,
   };
 }
 

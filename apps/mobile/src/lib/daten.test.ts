@@ -71,6 +71,7 @@ const {
   ladeIchSelbst,
   ladeKontingent,
   ladeOnboarding,
+  ladeZugang,
   sageSerienterminAb,
   schliesseOnboardingAb,
   setzeMerkmal,
@@ -138,7 +139,7 @@ describe("anmelden", () => {
 describe("ladeIchSelbst", () => {
   it("liefert ohne Rolle weder volle noch Platzrechte", async () => {
     expect(await ladeIchSelbst()).toEqual({
-      id: "m-1", admin: false, platzRechte: false, onboardingErledigt: true,
+      id: "m-1", admin: false, platzRechte: false,
     });
   });
 
@@ -155,21 +156,44 @@ describe("ladeIchSelbst", () => {
   it("liefert ohne Anmeldung nichts", async () => {
     getUser.mockResolvedValue({ data: { user: null } });
     expect(await ladeIchSelbst()).toEqual({
-      id: null, admin: false, platzRechte: false, onboardingErledigt: true,
+      id: null, admin: false, platzRechte: false,
     });
-  });
-
-  it("meldet ein offenes Onboarding", async () => {
-    einzelne.members = { data: { id: "m-1", onboarding_completed_at: null }, error: null };
-    expect(await ladeIchSelbst()).toMatchObject({ id: "m-1", onboardingErledigt: false });
   });
 
   it("liefert ohne Mitglied nichts, etwa am Kiosk", async () => {
     einzelne.members = { data: null, error: null };
     listen.member_roles = { data: [{ role: "admin" }], error: null };
     expect(await ladeIchSelbst()).toEqual({
-      id: null, admin: false, platzRechte: false, onboardingErledigt: true,
+      id: null, admin: false, platzRechte: false,
     });
+  });
+});
+
+describe("ladeZugang", () => {
+  it("meldet Zugang und ein offenes Onboarding", async () => {
+    rpc.mockResolvedValue({ data: [{ zugang: true, grund: null, onboarding_offen: true }], error: null });
+    expect(await ladeZugang()).toEqual({ zugang: true, grund: null, onboardingOffen: true });
+    expect(rpc).toHaveBeenCalledWith("mein_zugang");
+  });
+
+  it("meldet keinen Zugang mit Grund", async () => {
+    rpc.mockResolvedValue({ data: [{ zugang: false, grund: "ausgetreten", onboarding_offen: false }], error: null });
+    expect(await ladeZugang()).toEqual({ zugang: false, grund: "ausgetreten", onboardingOffen: false });
+  });
+
+  it("macht aus einem fremden Grund einen allgemeinen", async () => {
+    rpc.mockResolvedValue({ data: [{ zugang: false, grund: "neu", onboarding_offen: false }], error: null });
+    expect(await ladeZugang()).toMatchObject({ zugang: false, grund: "unbekannt" });
+  });
+
+  it("laesst ohne Antwort herein - die Datenbank sperrt selbst", async () => {
+    rpc.mockResolvedValue({ data: [], error: null });
+    expect(await ladeZugang()).toEqual({ zugang: true, grund: null, onboardingOffen: false });
+  });
+
+  it("wirft bei einem Fehler", async () => {
+    rpc.mockResolvedValue({ data: null, error: { message: "Failed to fetch" } });
+    await expect(ladeZugang()).rejects.toThrow();
   });
 });
 

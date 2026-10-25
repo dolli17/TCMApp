@@ -5,21 +5,22 @@
  * zeigt selbst nichts an. Angemeldet geht es auf Home - bewusst /home und
  * nicht (tabs)/index.tsx, das mit dieser Datei um "/" konkurrieren wuerde.
  * Ist das Onboarding noch offen, geht es stattdessen nach /onboarding; bis
- * dahin sperrt die Datenbank ohnehin alles Vereinsweite.
+ * dahin sperrt die Datenbank ohnehin alles Vereinsweite. Hat das Konto keinen
+ * Zugang mehr (ausgetreten, archiviert, gesperrt), geht es nach /kein-zugang
+ * statt auf leere Seiten (B22) - gleich nach der Anmeldung wie beim Start mit
+ * einer alten Sitzung.
  */
 
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
-import { Redirect } from "expo-router";
-import { ladeIchSelbst } from "@/lib/daten";
+import { Redirect, type Href } from "expo-router";
+import { ladeZugang } from "@/lib/daten";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme";
 
-type Ziel = "/home" | "/onboarding" | "/anmelden";
-
 export default function Start() {
   const { stil, farben } = useTheme();
-  const [ziel, setZiel] = useState<Ziel | null>(null);
+  const [ziel, setZiel] = useState<Href | null>(null);
 
   useEffect(() => {
     let aktiv = true;
@@ -31,8 +32,10 @@ export default function Start() {
       }
       // Faellt das Lesen aus, geht es auf Home: die Tabs pruefen noch einmal,
       // und die Datenbank weist ein offenes Konto selbst ab.
-      const ich = await ladeIchSelbst().catch(() => null);
-      if (aktiv) setZiel(ich && !ich.onboardingErledigt ? "/onboarding" : "/home");
+      const z = await ladeZugang().catch(() => null);
+      if (!aktiv) return;
+      if (z && !z.zugang) setZiel({ pathname: "/kein-zugang", params: { grund: z.grund ?? "unbekannt" } });
+      else setZiel(z?.onboardingOffen ? "/onboarding" : "/home");
     }
 
     supabase.auth.getSession().then(({ data }) => entscheide(Boolean(data.session)));

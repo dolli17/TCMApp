@@ -5,8 +5,9 @@
  * Mitglied mitten im Buchen abgemeldet. Hier wird das Token erneuert und die
  * Cookies werden weitergereicht.
  *
- * Ausserdem zwei Weichen: ohne Anmeldung zur Loginseite, und solange das
- * Onboarding offen ist, auf /onboarding.
+ * Ausserdem drei Weichen: ohne Anmeldung zur Loginseite, ohne Zugang
+ * (ausgetreten, archiviert, gesperrt) abmelden und auf /kein-zugang, und
+ * solange das Onboarding offen ist, auf /onboarding.
  *
  * Und die Content-Security-Policy mit einer Nonce je Anfrage
  * (lib/sicherheit.ts).
@@ -14,9 +15,9 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { sichererWeiterPfad } from "@tcm/core";
+import { sichererWeiterPfad, zugangsGrund, type Database } from "@tcm/core";
 import { AKTIV_COOKIE, istAbgelaufen } from "@/lib/inaktivitaet";
-import { ONBOARDING, PFAD_KOPF } from "@/lib/pfad";
+import { KEIN_ZUGANG, ONBOARDING, PFAD_KOPF } from "@/lib/pfad";
 import { NONCE_KOPF, inhaltsRichtlinie, neueNonce } from "@/lib/sicherheit";
 
 /**
@@ -42,6 +43,8 @@ const OEFFENTLICH = [
   // darauf, und die App verlinkt sie ebenfalls.
   "/satzung",
   "/beitragsordnung",
+  // Der Hinweis fuer Ausgeschiedene: sie sind dort schon abgemeldet.
+  "/kein-zugang",
 ];
 
 /**
@@ -82,7 +85,7 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  const supabase = createServerClient(url, key, {
+  const supabase = createServerClient<Database>(url, key, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (list) => {
@@ -131,18 +134,32 @@ export async function middleware(request: NextRequest) {
     return umleitung;
   }
 
-  // Die Sperre bis zum Ende des Onboardings: alles ausser den oeffentlichen
-  // Seiten und dem Onboarding selbst fuehrt dorthin. Die Datenbank sperrt
-  // ohnehin (is_member() ist bis dahin false); das hier erspart leere Seiten
-  // und Fehlermeldungen. Kiosk-Konten haben kein Mitglied und bleiben frei.
-  const imOnboarding = pfad === ONBOARDING || pfad.startsWith(ONBOARDING + "/");
-  if (!oeffentlich && !imOnboarding) {
-    const { data: mitglied } = await supabase
-      .from("members")
-      .select("onboarding_completed_at")
-      .eq("auth_user_id", user.id)
-      .maybeSingle();
-    if (mitglied && !mitglied.onboarding_completed_at) {
+  // Zugang und Onboarding in einem Aufruf (mein_zugang, B22). Faellt er aus,
+  // geht es weiter wie ohne die Weichen - die Datenbank sperrt ohnehin selbst.
+  if (!oeffentlich) {
+    const { data: zugang } = await supabase.rpc("mein_zugang").maybeSingle();
+
+    // Ausgetreten, archiviert oder gesperrt: die Datenbank liefert nichts
+    // mehr, jede Seite waere leer. Stattdessen abmelden und sagen, warum.
+    // Kiosk-Konten haben kein Mitglied und behalten den Zugang.
+    if (zugang && !zugang.zugang) {
+      await supabase.auth.signOut({ scope: "local" });
+      const ziel = request.nextUrl.clone();
+      ziel.pathname = KEIN_ZUGANG;
+      ziel.search = "";
+      ziel.searchParams.set("grund", zugangsGrund(zugang.grund));
+      const umleitung = NextResponse.redirect(ziel);
+      for (const c of response.cookies.getAll()) umleitung.cookies.set(c);
+      umleitung.cookies.delete(AKTIV_COOKIE);
+      return umleitung;
+    }
+
+    // Die Sperre bis zum Ende des Onboardings: alles ausser den oeffentlichen
+    // Seiten und dem Onboarding selbst fuehrt dorthin. Die Datenbank sperrt
+    // ohnehin (is_member() ist bis dahin false); das hier erspart leere Seiten
+    // und Fehlermeldungen.
+    const imOnboarding = pfad === ONBOARDING || pfad.startsWith(ONBOARDING + "/");
+    if (zugang?.onboarding_offen && !imOnboarding) {
       const ziel = request.nextUrl.clone();
       ziel.pathname = ONBOARDING;
       ziel.search = "";
