@@ -139,7 +139,7 @@ test.describe("CSP auf allen Seitenarten", () => {
 
   test("öffentliche Seiten", async ({ page }) => {
     for (const pfad of [
-      "/login", "/passwort-vergessen", "/passwort-setzen", "/antrag",
+      "/login", "/passwort-vergessen", "/passwort-setzen", "/antrag", "/antrag/bestaetigen",
       "/impressum", "/datenschutz", "/satzung", "/beitragsordnung",
     ]) {
       await pruefeSeite(page, pfad);

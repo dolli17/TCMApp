@@ -148,7 +148,7 @@ export async function ladeFunction(
     SITE_URL: "https://tcm.test",
     ...umgebung,
   };
-  for (const name of ["RESEND_API_KEY", "MAIL_FROM"]) Deno.env.delete(name);
+  for (const name of ["RESEND_API_KEY", "MAIL_FROM", "MAILPIT_URL"]) Deno.env.delete(name);
   for (const [k, v] of Object.entries(env)) Deno.env.set(k, v);
 
   globalThis.fetch = router.fetch;

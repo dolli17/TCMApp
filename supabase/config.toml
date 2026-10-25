@@ -479,8 +479,20 @@ verify_jwt = true
 [functions.notification-pushes]
 verify_jwt = true
 
-# Kein [edge_runtime.secrets]-Block: steht dort ein env(...) auf eine Variable,
+# Im [edge_runtime.secrets]-Block unten nie ein env(...): zeigt es auf eine Variable,
 # die es nicht gibt, startet die gesamte Edge-Runtime nicht mehr - und damit
 # auch member-login nicht, das mit dem Mailversand gar nichts zu tun hat.
 # Produktiv kommen die Werte ueber "supabase secrets set", lokal bleiben sie
 # leer und der Versand laeuft im Trockenlauf. Genau so ist es gedacht.
+
+# Mitgliedsantrag (S22). Ohne Anmeldung aufrufbar: das Formular ist
+# oeffentlich, und ob der Aufrufer ein gueltiges Token hat, sagt hier nichts.
+# Die Function ruft nur begin_membership_application auf, mit allen Sperren.
+[functions.mitgliedsantrag]
+verify_jwt = false
+
+# Lokal geht die Bestaetigungsmail an Mailpit, ueber dessen HTTP-API im
+# Docker-Netz des Stacks. Ein fester Wert und kein env(...), siehe oben; in
+# Dev und Prod ist MAILPIT_URL nicht gesetzt, dort versendet Resend.
+[edge_runtime.secrets]
+MAILPIT_URL = "http://supabase_inbucket_TCMApp:8025"

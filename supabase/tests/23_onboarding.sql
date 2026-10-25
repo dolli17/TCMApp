@@ -89,27 +89,24 @@ end; $f$;
 create or replace function tests.test_onboarding_antrag_pflichtfelder()
 returns setof text language plpgsql as $f$
 begin
-  perform tests.act_as_anon();
-
   return next throws_ok(
-    $q$select public.submit_membership_application(jsonb_build_object(
+    $q$select public.begin_membership_application(jsonb_build_object(
          'first_name','Ohne','last_name','Geschlecht','email','ohne.g@example.org',
          'birthday','1990-01-01','street','Weg 1','postcode','70372','city','Stuttgart',
          'phone','0711 1'))$q$,
     '22023', 'Bitte noch angeben: Geschlecht.', 'Ohne Geschlecht kein Antrag');
   return next throws_ok(
-    $q$select public.submit_membership_application(jsonb_build_object(
+    $q$select public.begin_membership_application(jsonb_build_object(
          'first_name','Ohne','last_name','Adresse','email','ohne.a@example.org',
          'birthday','1990-01-01','gender','male'))$q$,
     '22023', 'Bitte noch angeben: Straße, PLZ, Ort, Telefon.', 'Adresse und Telefon sind Pflicht');
   return next lives_ok(
-    $q$select public.submit_membership_application(jsonb_build_object(
+    $q$select public.begin_membership_application(jsonb_build_object(
          'first_name','Mit','last_name','Allem','email','mit.allem@example.org',
          'birthday','1990-01-01','gender','male','street','Weg 1','postcode','70372',
          'city','Stuttgart','phone','0711 1','message','Hallo Vorstand'))$q$,
     'Mit allen Pflichtangaben geht der Antrag durch');
 
-  perform set_config('role', 'postgres', true);
 
   return next is(
     (select salutation::text || '/' || message from public.membership_applications
@@ -127,11 +124,11 @@ begin
   insert into public.fee_types (code, name) values ('t_wunsch', 'Wunsch') returning id into v_art;
   insert into public.fee_types (code, name) values ('t_andere', 'Andere') returning id into v_andere;
 
-  perform public.submit_membership_application(
+  perform tests.antrag_stellen(
     tests.antrag_daten('wahl.leer@example.org') || jsonb_build_object('desired_fee_type_id', v_art));
-  perform public.submit_membership_application(
+  perform tests.antrag_stellen(
     tests.antrag_daten('wahl.null@example.org') || jsonb_build_object('desired_fee_type_id', v_art));
-  perform public.submit_membership_application(
+  perform tests.antrag_stellen(
     tests.antrag_daten('wahl.andere@example.org') || jsonb_build_object('desired_fee_type_id', v_art));
   select id into v_a1 from public.membership_applications where email = 'wahl.leer@example.org';
   select id into v_a2 from public.membership_applications where email = 'wahl.null@example.org';

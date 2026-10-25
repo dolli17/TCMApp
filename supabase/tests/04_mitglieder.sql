@@ -1408,31 +1408,50 @@ returns jsonb language sql immutable as $f$
     'mobile', '0170 1234567');
 $f$;
 
+/**
+ * Ein Antrag, wie ihn die Edge Function mitgliedsantrag stellt, gleich
+ * bestaetigt - so, als haette der Absender den Link aus der Mail geklickt
+ * (S22). Gibt die Id zurueck.
+ */
+create or replace function tests.antrag_stellen(p_data jsonb, p_ip text default null)
+returns uuid language plpgsql as $f$
+declare v record;
+begin
+  select * into v from public.begin_membership_application(p_data, p_ip);
+  if v.token is not null then
+    perform public.confirm_membership_application(v.token);
+  end if;
+  return v.application_id;
+end; $f$;
+
 create or replace function tests.test_anon_kann_antrag_stellen()
 returns setof text language plpgsql as $f$
-declare v_anzahl integer;
+declare v_anzahl integer; v_daten jsonb := tests.antrag_daten('nina.neu@example.org', 'Nina');
 begin
+  -- Eingereicht wird ueber die Edge Function mit dem Dienstschluessel (S22).
+  -- anon direkt bekaeme sonst das Token und koennte ohne Postfach bestaetigen.
   perform tests.act_as_anon();
-
-  return next lives_ok(
-    $q$select public.submit_membership_application(
-        jsonb_build_object('first_name','Nina','last_name','Neu',
-                           'email','nina.neu@example.org','birthday','1995-03-02',
-                           'gender','female','street','Teststr. 1','postcode','70372','city','Stuttgart','mobile','0170 1234567'))$q$,
-    'Ein Antrag laesst sich ohne Anmeldung stellen');
-
+  return next throws_ok(
+    format($q$select public.begin_membership_application(%L::jsonb)$q$, v_daten),
+    '42501', null, 'anon kann nicht direkt einreichen');
+  -- Die alte Einreichung legt nichts mehr an, sie bittet um einen neuen
+  -- Versuch (das alte Web waehrend des Deploys).
+  return next throws_ok(
+    format($q$select public.submit_membership_application(%L::jsonb)$q$, v_daten),
+    '0A000', null, 'Die alte Einreichung nimmt nichts mehr an');
   perform set_config('role', 'postgres', true);
 
+  perform tests.antrag_stellen(v_daten);
   select count(*)::integer into v_anzahl from public.membership_applications
    where email = 'nina.neu@example.org';
-  return next is(v_anzahl, 1, 'Er landet in der Tabelle');
+  return next is(v_anzahl, 1, 'Ueber die Function landet er in der Tabelle');
 end; $f$;
 
 create or replace function tests.test_anon_kommt_nicht_an_die_tabelle()
 returns setof text language plpgsql as $f$
 declare v_anzahl integer; v_daten jsonb := tests.antrag_daten('sichtbar@example.org');
 begin
-  perform public.submit_membership_application(v_daten);
+  perform tests.antrag_stellen(v_daten);
   perform tests.act_as_anon();
 
   return next throws_ok(
@@ -1455,7 +1474,7 @@ end; $f$;
 
 create or replace function tests.test_antrag_verraet_keine_bestehende_mail()
 returns setof text language plpgsql as $f$
-declare admin record; v_neu uuid;
+declare admin record; v_neu uuid; v_zeilen integer;
 begin
   select * into admin from tests.fixture_user('admin') limit 1;
   perform tests.fixture_login('schon.mitglied@example.org', 'a8230f75-56a7-505e-b762-6171b3f850e6');
@@ -1463,18 +1482,11 @@ begin
   v_neu := public.create_member('Schon', 'Mitglied', 'schon.mitglied@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => 'a8230f75-56a7-505e-b762-6171b3f850e6');
   perform set_config('role', 'postgres', true);
 
-  perform tests.act_as_anon();
-
-  -- Genau derselbe Ausgang wie bei einer unbekannten Adresse: kein Fehler,
-  -- keine abweichende Meldung.
-  return next lives_ok(
-    $q$select public.submit_membership_application(
-        jsonb_build_object('first_name','Schon','last_name','Mitglied',
-                           'email','schon.mitglied@example.org','birthday','1990-01-01',
-                           'gender','female','street','Teststr. 1','postcode','70372','city','Stuttgart','mobile','0170 1234567'))$q$,
-    'Eine Adresse, die schon Mitglied ist, wird nicht verraten');
-
-  perform set_config('role', 'postgres', true);
+  -- Genau derselbe Ausgang wie bei einer unbekannten Adresse: eine Mail mit
+  -- Link, kein Fehler.
+  select count(*)::integer into v_zeilen
+  from public.begin_membership_application(tests.antrag_daten('schon.mitglied@example.org', 'Schon'));
+  return next is(v_zeilen, 1, 'Eine Adresse, die schon Mitglied ist, wird nicht verraten');
 
   return next ok(
     (select possible_duplicate from public.membership_applications
@@ -1484,76 +1496,54 @@ end; $f$;
 
 create or replace function tests.test_zweiter_antrag_gleicher_mail_still()
 returns setof text language plpgsql as $f$
-declare v_anzahl integer; v_daten jsonb := tests.antrag_daten('doppelt@example.org');
+declare v_anzahl integer; v_zeilen integer; v_daten jsonb := tests.antrag_daten('doppelt@example.org');
 begin
-  -- Testdaten vor dem Rollenwechsel holen: als anon ist das Schema tests
-  -- nicht mehr erreichbar.
-  perform tests.act_as_anon();
-  perform public.submit_membership_application(v_daten);
+  perform tests.antrag_stellen(v_daten);
 
-  return next lives_ok(
-    $q$select public.submit_membership_application(
-        jsonb_build_object('first_name','Doppelt','last_name','Interessent',
-                           'email','doppelt@example.org','birthday','1990-06-15',
-                           'gender','female','street','Teststr. 1','postcode','70372','city','Stuttgart','mobile','0170 1234567'))$q$,
-    'Ein zweiter Antrag derselben Adresse laeuft ohne Fehler durch');
-
-  perform set_config('role', 'postgres', true);
+  select count(*)::integer into v_zeilen from public.begin_membership_application(v_daten);
+  return next is(v_zeilen, 0, 'Ein zweiter Antrag zu einer bestaetigten Adresse laeuft still ins Leere');
 
   select count(*)::integer into v_anzahl from public.membership_applications
    where email = 'doppelt@example.org';
-  return next is(v_anzahl, 1, 'Angelegt wird er aber nicht');
+  return next is(v_anzahl, 1, 'Angelegt wird er nicht');
 end; $f$;
 
 create or replace function tests.test_ratelimit_greift_bei_gleicher_herkunft()
 returns setof text language plpgsql as $f$
 declare
-  v_daten jsonb[];
   i integer;
 begin
-  -- Zehn Antraege je Herkunft und Stunde sind erlaubt; der elfte faellt
-  -- durch. Alle Testdaten vor dem Rollenwechsel holen, danach ist das Schema
-  -- tests nicht mehr erreichbar.
-  v_daten := array(select tests.antrag_daten('r' || g || '@example.org')
-                   from generate_series(1, 12) g);
-
+  -- Zehn Antraege je Herkunft und Stunde sind erlaubt, bestaetigt oder nicht;
+  -- der elfte faellt durch.
+  --
   -- Von einem leeren Stand ausgehen. Der Test zaehlt Antraege der letzten
   -- Stunde; was ein E2E-Lauf oder die Entwicklung hinterlassen hat, wuerde
   -- ihn sonst verfaelschen. Die Loeschung faellt mit der Transaktion des
   -- Tests wieder weg.
   delete from public.membership_applications;
 
-  -- Die Herkunft kommt aus dem Anfragekopf, wie PostgREST ihn ablegt (S6).
-  perform set_config('request.headers', '{"x-forwarded-for": "203.0.113.7"}', true);
-  perform tests.act_as_anon();
-
   for i in 1..10 loop
-    perform public.submit_membership_application(v_daten[i]);
+    perform public.begin_membership_application(
+      tests.antrag_daten('r' || i || '@example.org'), '203.0.113.7');
   end loop;
 
   return next throws_ok(
-    format($q$select public.submit_membership_application(%L::jsonb)$q$,
-           v_daten[11]),
+    format($q$select public.begin_membership_application(%L::jsonb, '203.0.113.7')$q$,
+           tests.antrag_daten('r11@example.org')),
     'P0003', null, 'Der elfte Antrag aus derselben Herkunft wird abgewiesen');
 
   -- Aus einer anderen Herkunft geht es weiter.
-  perform set_config('request.headers', '{"x-forwarded-for": "198.51.100.4"}', true);
   return next lives_ok(
-    format($q$select public.submit_membership_application(%L::jsonb)$q$,
-           v_daten[12]),
+    format($q$select public.begin_membership_application(%L::jsonb, '198.51.100.4')$q$,
+           tests.antrag_daten('r12@example.org')),
     'Von woanders her ist weiterhin ein Antrag moeglich');
-
-  perform set_config('role', 'postgres', true);
 end; $f$;
 
 create or replace function tests.test_ip_wird_nur_gehasht_abgelegt()
 returns setof text language plpgsql as $f$
-declare v_hash text; v_daten jsonb := tests.antrag_daten('hash@example.org');
+declare v_hash text;
 begin
-  perform set_config('request.headers', '{"x-forwarded-for": "203.0.113.9"}', true);
-  perform tests.act_as_anon();
-  perform public.submit_membership_application(v_daten);
-  perform set_config('role', 'postgres', true);
+  perform public.begin_membership_application(tests.antrag_daten('hash@example.org'), '203.0.113.9');
 
   select ip_hash into v_hash from public.membership_applications where email = 'hash@example.org';
 
@@ -1565,42 +1555,36 @@ end; $f$;
 create or replace function tests.test_antrag_braucht_pflichtangaben()
 returns setof text language plpgsql as $f$
 begin
-  perform tests.act_as_anon();
-
   return next throws_ok(
-    $q$select public.submit_membership_application(
+    $q$select public.begin_membership_application(
         jsonb_build_object('first_name','','last_name','Ohne','email','a@example.org',
                            'birthday','1990-01-01',
                            'gender','female','street','Teststr. 1','postcode','70372','city','Stuttgart','mobile','0170 1234567'))$q$,
     '22023', null, 'Ohne Vornamen geht es nicht');
 
   return next throws_ok(
-    $q$select public.submit_membership_application(
+    $q$select public.begin_membership_application(
         jsonb_build_object('first_name','Ohne','last_name','Mail','email','keine-mail',
                            'birthday','1990-01-01',
                            'gender','female','street','Teststr. 1','postcode','70372','city','Stuttgart','mobile','0170 1234567'))$q$,
     '22023', null, 'Und ohne gueltige Adresse auch nicht');
 
-  perform set_config('role', 'postgres', true);
 end; $f$;
 
 create or replace function tests.test_antrag_ignoriert_fremde_felder()
 returns setof text language plpgsql as $f$
 declare v_a public.membership_applications;
 begin
-  perform tests.act_as_anon();
-
   -- Wer versucht, sich den Status gleich mitzugeben, wird nicht abgewiesen -
   -- das Feld wird still uebergangen.
   return next lives_ok(
-    $q$select public.submit_membership_application(
+    $q$select public.begin_membership_application(
         jsonb_build_object('first_name','Schlau','last_name','Versuch',
                            'email','schlau@example.org','birthday','1990-01-01',
                            'gender','female','street','Teststr. 1','postcode','70372','city','Stuttgart','mobile','0170 1234567',
                            'status','accepted','possible_duplicate',false))$q$,
     'Unbekannte Felder fuehren nicht zu einer Fehlermeldung');
 
-  perform set_config('role', 'postgres', true);
 
   select * into v_a from public.membership_applications where email = 'schlau@example.org';
   return next is(v_a.status::text, 'new', 'Der Status bleibt bei "neu"');
@@ -1610,7 +1594,7 @@ create or replace function tests.test_antrag_annehmen_erzeugt_mitglied()
 returns setof text language plpgsql as $f$
 declare admin record; v_a uuid; v_e record; v_m public.members;
 begin
-  perform public.submit_membership_application(
+  perform tests.antrag_stellen(
     jsonb_build_object('first_name','Anna','last_name','Aufnahme',
                        'email','anna.aufnahme@example.org','birthday','1988-04-11',
                            'gender','female','street','Teststr. 1','postcode','70372','city','Stuttgart','mobile','0170 1234567',
@@ -1644,7 +1628,7 @@ declare v_a public.membership_applications;
 begin
   perform tests.fixture_merkmal('t_antrag_foto', 'boolean', true);
 
-  perform public.submit_membership_application(
+  perform tests.antrag_stellen(
     tests.antrag_daten('ein.williger@example.org', 'Ein')
     || jsonb_build_object('attribute_choices', jsonb_build_object('t_antrag_foto', true),
                           'guardian_name', 'Mama Williger',
@@ -1695,7 +1679,7 @@ create or replace function tests.test_antrag_zweimal_annehmen_wird_abgewiesen()
 returns setof text language plpgsql as $f$
 declare admin record; v_a uuid;
 begin
-  perform public.submit_membership_application(tests.antrag_daten('einmal@example.org'));
+  perform tests.antrag_stellen(tests.antrag_daten('einmal@example.org'));
   select id into v_a from public.membership_applications where email = 'einmal@example.org';
 
   select * into admin from tests.fixture_user('admin') limit 1;
@@ -1714,8 +1698,8 @@ create or replace function tests.test_antrag_ablehnen_und_spam()
 returns setof text language plpgsql as $f$
 declare admin record; v_a uuid; v_b uuid;
 begin
-  perform public.submit_membership_application(tests.antrag_daten('absage@example.org'));
-  perform public.submit_membership_application(tests.antrag_daten('spam@example.org'));
+  perform tests.antrag_stellen(tests.antrag_daten('absage@example.org'));
+  perform tests.antrag_stellen(tests.antrag_daten('spam@example.org'));
   select id into v_a from public.membership_applications where email = 'absage@example.org';
   select id into v_b from public.membership_applications where email = 'spam@example.org';
 
@@ -1739,7 +1723,7 @@ create or replace function tests.test_antraege_nur_fuer_admins()
 returns setof text language plpgsql as $f$
 declare a record; v_a uuid; v_sichtbar integer;
 begin
-  perform public.submit_membership_application(tests.antrag_daten('geheim@example.org'));
+  perform tests.antrag_stellen(tests.antrag_daten('geheim@example.org'));
   select id into v_a from public.membership_applications where email = 'geheim@example.org';
 
   select * into a from tests.fixture_user() limit 1;

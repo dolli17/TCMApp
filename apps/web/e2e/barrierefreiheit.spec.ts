@@ -34,6 +34,10 @@ for (const schema of ["light", "dark"] as const) {
     test("Anmelden und Antrag", async ({ page }) => {
       await pruefe(page, "/login");
       await pruefe(page, "/antrag");
+      // Nach dem Absenden und der Link aus der Mail (ohne gültiges Token:
+      // die Seite „Link abgelaufen“).
+      await pruefe(page, "/antrag/danke");
+      await pruefe(page, "/antrag/bestaetigen?token=unbekannt");
     });
 
     test("Seiten des Mitglieds", async ({ page }) => {
