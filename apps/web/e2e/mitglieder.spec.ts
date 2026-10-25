@@ -1,7 +1,8 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { anmelden, MITGLIED_ID, NUTZER, testName } from "./hilfen";
-import { leerePostfach, mailLink, warteAufMails } from "./mailpit";
+import { sqlLokal } from "./lokale-db";
+import { antragsLink, leerePostfach, mailLink, mailsAn, warteAufMails } from "./mailpit";
 
 /**
  * Mitgliederverwaltung von der Liste bis zum Löschen.
@@ -32,6 +33,19 @@ async function pflichtfelderFuellen(bereich: Page | Locator, geburtstag = "1990-
   await bereich.getByLabel("Straße und Hausnummer").fill("Hauptstraße 1");
   await bereich.getByLabel("PLZ").fill("77815");
   await bereich.getByLabel("Ort", { exact: true }).fill("Muckensturm");
+}
+
+/**
+ * Den Antrag über den Link aus der Mail bestätigen (S22): Mail in Mailpit
+ * abwarten, Link öffnen, Knopf drücken. Erst danach sieht ihn die Verwaltung.
+ */
+async function antragBestaetigen(page: Page, email: string) {
+  const [mail] = await warteAufMails(email);
+  expect(mail!.betreff).toBe("Bitte bestätige deinen Mitgliedsantrag");
+  await page.goto(antragsLink(mail!));
+  await expect(page.getByRole("heading", { name: "Antrag bestätigen." })).toBeVisible();
+  await page.getByRole("button", { name: "Antrag bestätigen" }).click();
+  await expect(page.getByRole("heading", { name: "Bestätigt." })).toBeVisible({ timeout: 20_000 });
 }
 
 /** Öffnet das Fenster „Mitglied anlegen“ und füllt Vor- und Nachnamen. */
@@ -902,9 +916,10 @@ test.describe("Mitgliederverwaltung", () => {
     await expect(page.locator(".hinweis.fehler")).toContainText("abgelaufen", { timeout: 15_000 });
   });
 
-  test("Mitgliedsantrag: absenden, annehmen, Mitglied entsteht", async ({ page }) => {
+  test("Mitgliedsantrag: absenden, per Mail bestätigen, annehmen, Mitglied entsteht", async ({ page }) => {
     const nachname = testName("Antrag");
     const email = `${nachname.toLowerCase()}@example.org`;
+    await leerePostfach(email);
 
     // Ohne Anmeldung erreichbar – die Middleware darf nicht auf /login umleiten.
     await page.goto("/antrag");
@@ -920,22 +935,36 @@ test.describe("Mitgliederverwaltung", () => {
     // Auf die Überschrift warten statt auf die Adresse: Next wechselt die
     // Seite im Browser, ohne sie neu zu laden - waitForURL wartet dabei auf
     // ein load-Ereignis, das nie kommt.
-    await expect(page.getByRole("heading", { name: "Danke!" })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("heading", { name: "Fast geschafft." })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("Bitte bestätige deine E-Mail-Adresse.")).toBeVisible();
+    await expect(page.getByText(/Spam-Ordner/)).toBeVisible();
+    await warteAufMails(email);
 
     // Ein zweiter Antrag derselben Adresse läuft ins Leere – aber ohne dass
-    // die Seite das verrät.
+    // die Seite das verrät. Eine zweite Mail gibt es erst nach der Sperrfrist.
     await page.goto("/antrag");
     await page.getByLabel("Vorname").fill("Nochmal");
     await page.getByLabel("Nachname").fill(nachname);
     await page.getByLabel("E-Mail", { exact: true }).fill(email);
     await pflichtfelderFuellen(page, "1994-07-21");
     await page.getByRole("button", { name: "Antrag absenden" }).click();
-    await expect(page.getByRole("heading", { name: "Danke!" })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("heading", { name: "Fast geschafft." })).toBeVisible({ timeout: 20_000 });
+    expect(await mailsAn(email)).toHaveLength(1);
 
-    // Als Admin: der Antrag liegt vor, genau einmal
+    // Unbestätigt sieht die Verwaltung ihn nicht.
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/mitglieder/antraege");
     const zeilen = page.locator('.liste-gruppe[aria-label="Anträge"] li').filter({ hasText: nachname });
+    await expect(zeilen).toHaveCount(0);
+
+    // Link aus der Mail: bestätigen, dann liegt der Antrag vor, genau einmal.
+    // Ein zweiter Klick auf den Link bestätigt nichts mehr, er sagt nur, dass
+    // es schon geschehen ist.
+    await antragBestaetigen(page, email);
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Bestätigt." })).toBeVisible();
+
+    await page.goto("/admin/mitglieder/antraege");
     await expect(zeilen).toHaveCount(1);
 
     // Annehmen - eingeladen wird immer, eine Wahl gibt es nicht mehr
@@ -980,16 +1009,16 @@ test.describe("Mitgliederverwaltung", () => {
     // nicht. Der Login scheitert also, und die Annahme muss ganz ausbleiben.
     const email = `${nachname.toLowerCase()}@example.org.`;
 
-    await page.goto("/antrag");
-    await page.getByLabel("Vorname").fill("Ohne");
-    await page.getByLabel("Nachname").fill(nachname);
-    await page.getByLabel("E-Mail", { exact: true }).fill(email);
-    await pflichtfelderFuellen(page, "1991-03-03");
-    // Das Formular prüft die Adresse selbst (U70) und hielte den Punkt am
-    // Ende auf. Als Textfeld geht sie durch - geprüft wird hier der Server.
-    await page.getByLabel("E-Mail", { exact: true }).evaluate((f) => ((f as HTMLInputElement).type = "text"));
-    await page.getByRole("button", { name: "Antrag absenden" }).click();
-    await expect(page.getByRole("heading", { name: "Danke!" })).toBeVisible({ timeout: 20_000 });
+    // Über das Formular entsteht so ein Antrag nicht mehr: an die Adresse geht
+    // keine Bestätigungsmail (S22). Er wird deshalb direkt angelegt, wie ein
+    // Antrag aus der Zeit vor der Bestätigung.
+    sqlLokal(
+      `insert into public.membership_applications
+         (first_name, last_name, email, birthday, gender, mobile, street, postcode, city, confirmed_at)
+       values ('Ohne', '${nachname}', '${email}', '1991-03-03', 'diverse', '07223 12345',
+               'Hauptstraße 1', '77815', 'Muckensturm', now());`,
+      "Der Testantrag ließ sich nicht anlegen",
+    );
 
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/mitglieder/antraege");
@@ -1025,7 +1054,8 @@ test.describe("Mitgliederverwaltung", () => {
     await page.getByLabel("E-Mail", { exact: true }).fill(email);
     await pflichtfelderFuellen(page, "1990-01-01");
     await page.getByRole("button", { name: "Antrag absenden" }).click();
-    await expect(page.getByRole("heading", { name: "Danke!" })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("heading", { name: "Fast geschafft." })).toBeVisible({ timeout: 20_000 });
+    await antragBestaetigen(page, email);
 
     await anmelden(page, NUTZER.admin);
     await page.goto("/admin/mitglieder/antraege");

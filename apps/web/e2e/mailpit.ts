@@ -85,3 +85,15 @@ export function mailLink(mail: Mail, typ: "invite" | "recovery"): string {
   if (!link) throw new Error(`Kein ${typ}-Link in der Mail „${mail.betreff}“: ${links.join(", ") || "keiner"}`);
   return link;
 }
+
+/**
+ * Pfad und Suchteil des Bestätigungslinks aus der Antragsmail (S22). Ohne
+ * Host: die Edge Function baut ihn aus SITE_URL, der Test läuft gegen
+ * baseURL.
+ */
+export function antragsLink(mail: Mail): string {
+  const link = /href="([^"]*\/antrag\/bestaetigen\?token=[^"]*)"/.exec(mail.html)?.[1];
+  if (!link) throw new Error(`Kein Bestätigungslink in der Mail „${mail.betreff}“`);
+  const url = new URL(link.replace(/&amp;/g, "&"));
+  return `${url.pathname}${url.search}`;
+}

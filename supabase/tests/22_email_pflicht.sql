@@ -272,7 +272,7 @@ returns setof text language plpgsql as $f$
 declare a record; v_a uuid; v_e record; v_login uuid := tests.fixture_login('mit.login@example.org');
 begin
   select * into a from tests.fixture_user('admin') limit 1;
-  perform public.submit_membership_application(
+  perform tests.antrag_stellen(
     tests.antrag_daten('mit.login@example.org', 'MitLogin'));
   select id into v_a from public.membership_applications where email = 'mit.login@example.org';
 
@@ -297,7 +297,7 @@ begin
   -- Eine Einwilligung, die bei der Annahme uebertragen wuerde.
   perform tests.fixture_merkmal('t_offen_foto', 'boolean', true);
 
-  perform public.submit_membership_application(
+  perform tests.antrag_stellen(
     tests.antrag_daten('offen.bleiben@example.org', 'Offen')
       || jsonb_build_object('attribute_choices', jsonb_build_object('t_offen_foto', true)));
   select id into v_a from public.membership_applications where email = 'offen.bleiben@example.org';

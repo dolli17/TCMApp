@@ -61,7 +61,8 @@ export interface LoginErgebnis {
   hinweis?: string;
 }
 
-function funktionsAdresse(): string | null {
+/** Die Basisadresse der Edge Functions, auch für den Mitgliedsantrag. */
+export function funktionsAdresse(): string | null {
   const direkt = process.env.SUPABASE_FUNCTIONS_URL;
   if (direkt) return direkt.replace(/\/$/, "");
 

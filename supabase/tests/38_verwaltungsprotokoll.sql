@@ -341,8 +341,8 @@ declare adm record; v_antrag uuid; v_eintrag record;
 begin
   select * into adm from tests.fixture_user('admin', 'Admin') limit 1;
   insert into public.membership_applications
-    (first_name, last_name, email, birthday, message, ip_hash, user_agent)
-  values ('Anna', 'Antrag', 'anna.antrag@example.org', '1990-01-01', 'Hallo, ich spiele gern', 'x', 'y')
+    (first_name, last_name, email, birthday, message, ip_hash, user_agent, confirmed_at)
+  values ('Anna', 'Antrag', 'anna.antrag@example.org', '1990-01-01', 'Hallo, ich spiele gern', 'x', 'y', now())
   returning id into v_antrag;
   return next is(
     (select count(*)::integer from public.change_log where row_id = v_antrag), 0,

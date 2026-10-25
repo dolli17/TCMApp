@@ -57,25 +57,18 @@ end; $f$;
 create or replace function tests.test_welle4_antrag_herkunft_aus_dem_kopf()
 returns setof text language plpgsql as $f$
 declare v_hash text; v_erwartet text := private.hash_ip('203.0.113.50');
-        v_a jsonb := tests.antrag_daten('kopf@example.org');
-        v_b jsonb := tests.antrag_daten('ohnekopf@example.org');
 begin
-  perform set_config('request.headers',
-    '{"x-forwarded-for": "203.0.113.50, 10.0.0.1"}', true);
-  perform tests.act_as_anon();
-  -- Wer p_ip setzt, bestimmt seine Herkunft nicht mehr selbst.
-  perform public.submit_membership_application(v_a, '198.51.100.99');
-  perform set_config('role', 'postgres', true);
-
+  -- Seit S22 liest die Edge Function mitgliedsantrag den ersten Eintrag aus
+  -- x-forwarded-for und gibt ihn als p_ip weiter. Nur sie darf einreichen;
+  -- ein Kopf an der Datenbank zaehlt nicht mehr.
+  perform set_config('request.headers', '{"x-forwarded-for": "198.51.100.99"}', true);
+  perform public.begin_membership_application(tests.antrag_daten('kopf@example.org'), '203.0.113.50');
   select ip_hash into v_hash from public.membership_applications where email = 'kopf@example.org';
-  return next is(v_hash, v_erwartet, 'Die Herkunft ist der erste Eintrag aus x-forwarded-for');
+  return next is(v_hash, v_erwartet, 'Die Herkunft ist die, die die Function weitergibt');
 
-  perform set_config('request.headers', null, true);
-  perform tests.act_as_anon();
-  perform public.submit_membership_application(v_b, '198.51.100.99');
-  perform set_config('role', 'postgres', true);
+  perform public.begin_membership_application(tests.antrag_daten('ohnekopf@example.org'));
   select ip_hash into v_hash from public.membership_applications where email = 'ohnekopf@example.org';
-  return next is(v_hash, null, 'Ohne Kopf keine Herkunft, auch wenn p_ip gesetzt ist');
+  return next is(v_hash, null, 'Ohne Herkunft keine Herkunft, auch wenn ein Kopf gesetzt ist');
 end; $f$;
 
 -- ---------------------------------------------------------------------------

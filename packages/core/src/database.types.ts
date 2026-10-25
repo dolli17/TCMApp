@@ -1538,6 +1538,10 @@ export type Database = {
           attribute_choices: Json
           birthday: string
           city: string | null
+          confirmation_mails: number
+          confirmation_sent_at: string | null
+          confirmation_token_hash: string | null
+          confirmed_at: string | null
           country_code: string | null
           created_member_id: string | null
           decided_at: string | null
@@ -1571,6 +1575,10 @@ export type Database = {
           attribute_choices?: Json
           birthday: string
           city?: string | null
+          confirmation_mails?: number
+          confirmation_sent_at?: string | null
+          confirmation_token_hash?: string | null
+          confirmed_at?: string | null
           country_code?: string | null
           created_member_id?: string | null
           decided_at?: string | null
@@ -1604,6 +1612,10 @@ export type Database = {
           attribute_choices?: Json
           birthday?: string
           city?: string | null
+          confirmation_mails?: number
+          confirmation_sent_at?: string | null
+          confirmation_token_hash?: string | null
+          confirmed_at?: string | null
           country_code?: string | null
           created_member_id?: string | null
           decided_at?: string | null
@@ -2204,6 +2216,15 @@ export type Database = {
           open_charges: number
         }[]
       }
+      begin_membership_application: {
+        Args: { p_data: Json; p_ip?: string; p_user_agent?: string }
+        Returns: {
+          application_id: string
+          email: string
+          first_name: string
+          token: string
+        }[]
+      }
       billing_period_overview: {
         Args: { p_limit?: number }
         Returns: {
@@ -2307,6 +2328,10 @@ export type Database = {
         }[]
       }
       complete_onboarding: { Args: never; Returns: string }
+      confirm_membership_application: {
+        Args: { p_token: string }
+        Returns: string
+      }
       court_overview: {
         Args: never
         Returns: {
@@ -2976,6 +3001,10 @@ export type Database = {
           status: Database["public"]["Enums"]["member_status"]
         }[]
       }
+      membership_application_confirmation_state: {
+        Args: { p_token: string }
+        Returns: string
+      }
       mod97: { Args: { p_digits: string }; Returns: number }
       move_booking: {
         Args: {
@@ -3192,6 +3221,10 @@ export type Database = {
       }
       register_push_token: {
         Args: { p_device_name?: string; p_platform: string; p_token: string }
+        Returns: undefined
+      }
+      release_membership_application_mail: {
+        Args: { p_application_id: string }
         Returns: undefined
       }
       release_notification_mails: { Args: { p_ids: string[] }; Returns: number }

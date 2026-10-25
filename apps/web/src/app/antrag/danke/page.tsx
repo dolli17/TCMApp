@@ -2,28 +2,30 @@ import Link from "next/link";
 import { AnmeldeBuehne } from "@/components/AnmeldeBuehne";
 
 export const metadata = {
-  title: "Antrag eingegangen – TC Muckensturm",
+  title: "E-Mail bestätigen – TC Muckensturm",
 };
 
+/**
+ * Nach dem Absenden. Der Antrag ist noch unbestätigt (S22): erst der Link aus
+ * der Mail schickt ihn an den Vorstand. Die Seite sagt das für jeden gleich,
+ * auch wenn gar keine Mail rausging (Adresse schon bestätigt, Sperrfrist).
+ */
 export default function DankeSeite() {
   return (
-    <AnmeldeBuehne titel="Danke!" unterzeile="Dein Antrag ist beim Vorstand angekommen." breit>
+    <AnmeldeBuehne titel="Fast geschafft." unterzeile="Bitte bestätige deine E-Mail-Adresse." breit>
         <div className="hinweis erfolg" role="status">
-          Wir melden uns in den nächsten Tagen bei dir – meist per E-Mail.
+          Wir haben dir eine E-Mail mit einem Link geschickt. Erst wenn du ihn öffnest und
+          bestätigst, geht dein Antrag an den Vorstand.
         </div>
 
         <p className="beschreibung">
-          Sobald der Vorstand deinen Antrag angenommen hat, bekommst du eine Einladung zur
-          Vereins-App. Damit buchst du Plätze, siehst deine Getränke und pflegst deine Daten selbst.
+          Keine Mail da? Schau auch im Spam-Ordner nach. Der Link gilt 24 Stunden – danach
+          löschen wir deine Angaben, und du stellst den Antrag einfach neu.
         </p>
 
         <p className="beschreibung">
-          Fragen bis dahin? Sprich uns einfach auf der Anlage an.
+          Vertippt bei der Adresse? <Link href="/antrag">Antrag noch einmal stellen</Link>
         </p>
-
-        <Link className="knopf block leise" href="/login">
-          Zur Anmeldung
-        </Link>
     </AnmeldeBuehne>
   );
 }
