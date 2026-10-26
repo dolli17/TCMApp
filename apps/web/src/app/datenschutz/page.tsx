@@ -133,7 +133,8 @@ export default async function DatenschutzSeite() {
         Austritt werden sie anonymisiert, sobald keine offenen Forderungen mehr bestehen.
         Buchhaltungsrelevante Daten (Beiträge, Lastschriften) bewahren wir nach den
         gesetzlichen Fristen bis zu zehn Jahre auf. Abgelehnte Mitgliedsanträge werden nach
-        [[Frist]] gelöscht.
+        [[Frist]] gelöscht. Benachrichtigungen in der App werden nach drei Monaten
+        automatisch gelöscht.
       </p>
 
       <h2>7. Deine Rechte</h2>
