@@ -9,6 +9,7 @@ import {
   groupNotifications,
   notificationSymbol, notificationZiel,
   relativeTimeLabel,
+  startseitenNeuigkeiten,
   sumOpenDrinks,
   timelinePosition,
   timelineSegments,
@@ -94,6 +95,32 @@ describe("relativeTimeLabel", () => {
     expect(relativeTimeLabel(um("2026-09-27", "20:00").toISOString(), JETZT)).toBe("gestern");
     expect(relativeTimeLabel(um("2026-09-26", "10:00").toISOString(), JETZT)).toBe("Sa");
     expect(relativeTimeLabel(um("2026-09-10", "10:00").toISOString(), JETZT)).toBe("10.09.");
+  });
+});
+
+describe("startseitenNeuigkeiten", () => {
+  const vorTagen = (tage: number) => new Date(JETZT.getTime() - tage * 86_400_000).toISOString();
+  const n = (id: string, alterTage: number, gelesen: boolean) => ({
+    id, created_at: vorTagen(alterTage), read_at: gelesen ? JETZT.toISOString() : null,
+  });
+
+  it("zeigt Gelesenes nur aus den letzten sieben Tagen", () => {
+    const liste = [n("frisch", 1, true), n("grenze", 7, true), n("alt", 7.01, true)];
+    expect(startseitenNeuigkeiten(liste, JETZT).map((x) => x.id)).toEqual(["frisch", "grenze"]);
+  });
+
+  it("laesst Ungelesenes stehen, egal wie alt", () => {
+    const liste = [n("uralt", 60, false), n("alt", 30, true)];
+    expect(startseitenNeuigkeiten(liste, JETZT).map((x) => x.id)).toEqual(["uralt"]);
+  });
+
+  it("hoechstens drei, Reihenfolge bleibt", () => {
+    const liste = [n("a", 20, false), n("b", 10, false), n("c", 0, true), n("d", 1, true)];
+    expect(startseitenNeuigkeiten(liste, JETZT).map((x) => x.id)).toEqual(["a", "b", "c"]);
+  });
+
+  it("leer, wenn alles gelesen und alt ist", () => {
+    expect(startseitenNeuigkeiten([n("alt", 8, true)], JETZT)).toEqual([]);
   });
 });
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   bookingKicker, dayTag, eventDemnaechst, formatCents, freeCourtsNow, localMinutes, minutesOf, minutesToTime,
-  offenesSpielText, relativeTimeLabel, sumOpenDrinks, timeToMinutes, timelinePosition,
+  offenesSpielText, relativeTimeLabel, startseitenNeuigkeiten, sumOpenDrinks, timeToMinutes, timelinePosition,
   timelineSegments, upcomingBookings,
 } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
@@ -61,6 +61,8 @@ export default async function Start() {
       supabase.rpc("open_matches", {}),
       supabase.rpc("my_drink_purchases"),
       supabase.rpc("my_work_duty", {}),
+      // Ungelesen zuerst, dann die neuesten: drei reichen, denn hinter einer
+      // gelesenen, die zu alt ist, kommen nur noch aeltere.
       supabase.rpc("my_notifications", { p_limit: 3 }),
       supabase.rpc("events_fuer_mitglied"),
     ]);
@@ -96,7 +98,7 @@ export default async function Start() {
   const dienst = dienstRes.data?.[0] ?? null;
   const ist = Number(dienst?.completed_hours ?? 0);
   const soll = Number(dienst?.required_hours ?? 0);
-  const neues = (neuesRes.data ?? []).slice(0, 3);
+  const neues = startseitenNeuigkeiten(neuesRes.data ?? [], jetzt);
   const demnaechst = eventDemnaechst((eventsRes.data ?? []).map(alsMitgliedEvent), jetzt);
 
   return (
