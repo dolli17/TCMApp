@@ -102,6 +102,26 @@ export function relativeTimeLabel(iso: string, now: Date = new Date()): string {
   return tagMonat.format(zeit);
 }
 
+/** So viele Tage bleibt eine gelesene Nachricht auf der Startseite stehen. */
+export const NEUIGKEITEN_TAGE = 7;
+
+/**
+ * Was die Startseite unter "Neuigkeiten" zeigt: Ungelesenes, egal wie alt,
+ * und Gelesenes der letzten sieben Tage, hoechstens `max` Stueck. Die
+ * Reihenfolge bleibt die der Liste (my_notifications: ungelesen zuerst, dann
+ * die neuesten). Glocke und Nachrichtenliste zeigen weiter alles.
+ */
+export function startseitenNeuigkeiten<T extends { read_at: string | null; created_at: string }>(
+  liste: readonly T[],
+  now: Date = new Date(),
+  max = 3,
+): T[] {
+  const grenze = now.getTime() - NEUIGKEITEN_TAGE * 86_400_000;
+  return liste
+    .filter((n) => n.read_at === null || new Date(n.created_at).getTime() >= grenze)
+    .slice(0, max);
+}
+
 /** Summe der Getraenke, die nicht zurueckgenommen wurden. */
 export function sumOpenDrinks(
   kaeufe: readonly { total_cents: number | null; voided_at: string | null }[],

@@ -21,7 +21,7 @@ import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-na
 import { router, type Href } from "expo-router";
 import Svg, { Circle, Path } from "react-native-svg";
 import {
-  berlinDay, bookingKicker, dayTag, eventDemnaechst, formatCents, notificationZiel, localMinutes, relativeTimeLabel, sumOpenDrinks,
+  berlinDay, bookingKicker, dayTag, eventDemnaechst, formatCents, notificationZiel, localMinutes, relativeTimeLabel, startseitenNeuigkeiten, sumOpenDrinks,
   timelinePosition, timelineSegments, upcomingBookings,
 } from "@tcm/core";
 import { abstand, radius, schrift } from "@tcm/ui";
@@ -57,6 +57,7 @@ async function ladeHome() {
     await Promise.allSettled([
       ladeMeinenNamen(), ladeMeineBuchungen(), ladePlaetze(), ladeTagesplan(heute),
       ladeBuchungseinstellungen(), ladeBuchungsarten(), ladeOffeneSpiele(),
+      // Drei Benachrichtigungen reichen: ungelesen zuerst, dann die neuesten.
       ladeEigeneGetraenke(), ladeArbeitsdienst(), ladeBenachrichtigungen(3), ladeVeranstaltungen(),
     ]);
 
@@ -577,11 +578,13 @@ type Neues = Awaited<ReturnType<typeof ladeBenachrichtigungen>>;
 
 function Neuigkeiten({ neues, erneut }: { neues: Abschnitt<Neues>; erneut: Erneut }) {
   const { stil, farben } = useTheme();
-  const liste = (neues.wert ?? []).slice(0, 3);
+  // Ungelesenes und die letzte Woche; "Alle" fuehrt auch dann zur ganzen
+  // Liste, wenn nur noch Aelteres da ist.
+  const liste = startseitenNeuigkeiten(neues.wert ?? []);
 
   return (
     <>
-      <Kopfzeile titel="Neuigkeiten" link={liste.length > 0 ? { text: "Alle", ziel: "/nachrichten", label: "Alle Neuigkeiten" } : undefined} />
+      <Kopfzeile titel="Neuigkeiten" link={(neues.wert ?? []).length > 0 ? { text: "Alle", ziel: "/nachrichten", label: "Alle Neuigkeiten" } : undefined} />
       {neues.fehler && <Fehlerzeile text={neues.fehler} {...erneut} />}
       {neues.wert && liste.length === 0 && <Leerzustand text="Keine Neuigkeiten." />}
       {liste.length > 0 && (
