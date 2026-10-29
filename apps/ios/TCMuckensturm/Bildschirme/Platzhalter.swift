@@ -21,13 +21,22 @@ struct HauptTabs: View {
             Platzhalter(titel: "Verein")
                 .tabItem { Label("Verein", systemImage: "person.3") }
                 .tag(HauptTab.verein)
-            Platzhalter(titel: "Konto", abmelden: true)
+            KontoBildschirm()
                 .tabItem { Label("Konto", systemImage: "person.crop.circle") }
                 .tag(HauptTab.konto)
         }
         .tint(Farbe.blue)
         // Home fuehrt auf Bildschirme, die es nativ noch nicht gibt: bis dahin der passende Tab.
         .environment(\.zuTab) { tab = $0 }
+        #if DEBUG
+        // Fuer Bildschirmfotos per simctl (README): `-TCMTab konto` oeffnet den Tab.
+        .task {
+            let argumente = ProcessInfo.processInfo.arguments
+            if let i = argumente.firstIndex(of: "-TCMTab"), i + 1 < argumente.count {
+                tab = ["plaetze": .plaetze, "verein": .verein, "konto": .konto][argumente[i + 1]] ?? tab
+            }
+        }
+        #endif
     }
 }
 

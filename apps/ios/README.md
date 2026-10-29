@@ -62,7 +62,7 @@ den Ablauf beim Öffnen eines Links, die Token-Farben hell/dunkel und das Laden 
 Dazu der Swift-Kern gegen **jeden Fall** der Golden Files
 in `packages/core/golden/` (`KernGoldenTests`, Ordner als Testressource eingebunden), weitere
 Kern-Fälle aus den Vitest-Tests (`KernTests`), das Decoding der Home-Modelle mit Beispiel-JSON
-(`StartdatenTests`) und die View-Logik von Home, Glocke und Neuigkeiten (`HomeLogikTests`).
+(`StartdatenTests`), die View-Logik von Home, Glocke und Neuigkeiten (`HomeLogikTests`) und das Konto (`KontoTests`).
 
 ### Screenshots gegen den lokalen Stack
 
@@ -144,6 +144,39 @@ xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMPasswortVergessen
 xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMLink "tcmlokal://passwort-setzen?token_hash=<hash>&type=recovery"
 ```
 
+## Konto
+
+| Konto, hell | Konto, dunkel | Einstellungen, hell | Einstellungen, dunkel |
+|---|---|---|---|
+| ![Konto hell](docs/konto-hell.png) | ![Konto dunkel](docs/konto-dunkel.png) | ![Einstellungen hell](docs/konto-einstellungen-hell.png) | ![Einstellungen dunkel](docs/konto-einstellungen-dunkel.png) |
+| ![Meine Daten hell](docs/konto-daten-hell.png) | ![Meine Daten dunkel](docs/konto-daten-dunkel.png) | ![Kündigung dunkel](docs/konto-kuendigen-dunkel.png) | |
+
+Wie `apps/mobile/app/(tabs)/konto.tsx` mit seinen Blättern, Texte wortgleich (`Bildschirme/Konto/`).
+Gelesen und geschrieben wird nur über RPCs (`Daten/Kontodaten.swift`): `mein_profil`, `my_charges`,
+`my_drink_purchases`, `my_work_duty`, `mein_mandat`, `ich` + `member_attributes`, `save_my_profile`
+(nur geänderte Felder, `""` leert), `save_my_notfallkontakt`, `set_member_attribute`,
+`remove_member_attribute`, `konto_loeschung_beantragen`.
+
+- **Profilkopf, Abrechnung, Arbeitsdienst:** jede Quelle lädt für sich, Fehler mit „Erneut versuchen“,
+  Pull-to-refresh, stilles Nachladen beim Zurückkehren auf den Tab.
+- **Meine Daten, Notfallkontakt:** vor dem Senden geprüft wie `memberProfileSchema` (`Kern/Profil.swift`,
+  Fälle aus `schemas.test.ts` in `KontoTests`); der Fehler steht am Feld. Abweichung: Für zu lange Eingaben
+  zeigt zod einen englischen Text, nativ steht „Höchstens N Zeichen.“
+- **Einwilligungen** (`member_attributes`, nur selbst pflegbare), **Bankverbindung & Mandat** (nur lesen,
+  IBAN nur mit den letzten vier Stellen), **Mitgliedschaft kündigen beantragen** (`Kern/Kontoloeschung.swift`).
+- **Passwort ändern:** neu gegenüber der Expo-App, mit denselben Regeln wie „Passwort festlegen“
+  (`PasswortRegeln`, `Sitzung.passwortSpeichern`).
+- **Erscheinungsbild** System/Hell/Dunkel in `UserDefaults` (`erscheinungsbild`), gesetzt in `StartAnsicht`.
+- **Abmelden** mit Rückfrage über `Sitzung.abmelden()`.
+- `CHARGE_KIND_LABEL` und `merkmalBeschreibung` sind gegen die Golden Files geprüft (`KontoTests`).
+
+Bildschirmfotos ohne Klicks (nur Debug): `-TCMTab konto` öffnet den Tab, `-TCMKontoBlatt daten|notfall|einwilligungen|bank|passwort|loeschen`
+ein Blatt, `-TCMKontoRollen einstellungen` rollt zu den Einstellungen.
+
+```bash
+xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMTab konto -TCMKontoBlatt daten
+```
+
 ## Aufbau
 
 ```
@@ -153,9 +186,9 @@ TCMuckensturm/
   Daten/          Supabase-Client, Schlüsselbund-Speicher, Anmeldefehler, Zugang (mein_zugang)
   Kern/           Rechenlogik aus @tcm/core als reine Funktionen (Zeit in Europe/Berlin, Startseite,
                   freie Plätze, Geld, translateDbError, Veranstaltungen) – geprüft gegen die Golden Files
-  Daten/          (siehe oben) und Startdaten: RPCs und Modelle für Home, Glocke, Neuigkeiten
+  Daten/          (siehe oben), Startdaten (Home, Glocke, Neuigkeiten) und Kontodaten (Konto-Tab)
   Theme/          Farben und Schrift für SwiftUI auf Basis der erzeugten Tokens
-  Bildschirme/    Anmeldung (mit Passwort vergessen/setzen), Kein Zugang, Home, Nachrichten (Glocke, Neuigkeiten), Bausteine, Platzhalter
+  Bildschirme/    Anmeldung (mit Passwort vergessen/setzen), Kein Zugang, Home, Konto, Nachrichten (Glocke, Neuigkeiten), Bausteine, Platzhalter
   Ressourcen/     Assets (App-Icon, Logo, Markenblau), Schriften (Barlow, OFL)
 TCMuckensturmTests/
 ```
@@ -167,7 +200,7 @@ TCMuckensturmTests/
   das Teilen in Stücke entfällt.
 - **Start-Logik** wie `apps/mobile/app/index.tsx`: ohne Sitzung → Anmelden; mit Sitzung →
   `mein_zugang()`: kein Zugang → „Kein Zugang mehr“ (meldet ab), Onboarding offen → Platzhalter,
-  sonst Tabs Home / Plätze / Verein / Konto (Platzhalter).
+  sonst Tabs Home / Plätze / Verein (Platzhalter) / Konto.
 - **Abmelden** nur in `Sitzung.abmelden()`.
 - **Tokens:** `packages/ui/generated/Tokens.swift` (erzeugt aus `packages/ui/src/tokens.ts` mit
   `pnpm --filter @tcm/ui build:native`) ist in `project.yml` als Quelle eingebunden, nicht kopiert.
@@ -186,11 +219,10 @@ TCMuckensturmTests/
 ## Was noch fehlt
 
 - Prod-Werte (`Konfiguration/Prod.xcconfig`) und ein App-Store-Eintrag für die native App
-- Onboarding, Tabs Plätze/Verein/Konto, Verwaltung
+- Onboarding, Tabs Plätze/Verein, Verwaltung
 - Schwebende Tab-Leiste und kompakte Kopfzeile wie in der Expo-App (heute die System-TabView)
-- „Passwort ändern“ im Konto-Tab (der Ablauf `.eigenesKonto` steht schon, es fehlt der Einstieg)
 - Fragment-Zweig der Passwort-Links entfernen, sobald die Cloud-Vorlagen token_hash schicken (S20, gemeinsam mit Expo-App und Web)
-- Push (inkl. Push-Token-Abmeldung in `Sitzung.abmelden()`), Widgets
+- Push (APNs-Registrierung, Schalter „Mitteilungen aufs Handy“ im Konto, Push-Token-Abmeldung in `Sitzung.abmelden()`), Widgets
 - Übernahme der Sitzung aus der Expo-App (expo-secure-store), damit Mitglieder nach dem Umstieg angemeldet bleiben
 - App Groups und Associated Domains im Apple Developer Portal für `.dev`/`.lokal` registrieren (für Geräte-Builds)
 - `Package.resolved` ist nicht eingecheckt (liegt im erzeugten `.xcodeproj`): die transitiven Pakete von supabase-swift werden beim ersten Bauen aufgelöst
