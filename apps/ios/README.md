@@ -99,8 +99,8 @@ nicht (braucht einen macOS-Runner).
   Hand geht es mit `Konfiguration/Lokal.geheim.xcconfig.example`.
 - Schemes: `TCMuckensturm` (Run/Test mit Lokal, Archive mit Dev), `TCMuckensturm Dev` (Run/Archive mit Dev).
 - Team `93Z2KKGMV7`, automatisches Signieren.
-- Entitlements (`TCMuckensturm/TCMuckensturm.entitlements`): App Group `group.<Bundle-ID>`
-  (für Prod also `group.de.tcmuckensturm.app`), zugleich Access Group des Schlüsselbunds;
+- Entitlements (`TCMuckensturm/TCMuckensturm.entitlements`): App Group `group.<Bundle-ID der App>`
+  (für Prod also `group.de.tcmuckensturm.app`, auch in der Widget-Erweiterung), zugleich Access Group des Schlüsselbunds;
   Associated Domains `applinks:app.tennisclub-muckensturm.de` und `applinks:dev.tennisclub-muckensturm.de`.
 
 ## Passwort vergessen und setzen
@@ -342,6 +342,55 @@ Baut die Konfiguration Prod (Bundle `de.tcmuckensturm.app`, dieselbe App wie die
 - **Hochladen:** mit dem API-Schlüssel von App Store Connect, über die Umgebung, nicht im Repo.
 - **Lizenz:** Hat Apple die Program License Agreement erneuert, scheitert das Signieren mit „PLA Update available“, bis der Account Holder zugestimmt hat.
 
+## Widgets
+
+| Hell | Dunkel |
+|---|---|
+| ![Widgets hell](docs/widgets-hell.png) | ![Widgets dunkel](docs/widgets-dunkel.png) |
+
+Erweiterung `TCMWidgets` (WidgetKit), Bundle-ID `<App>.widgets` je Konfiguration
+(`de.tcmuckensturm.app.widgets`, `.dev.widgets`, `.lokal.widgets`), dieselbe App Group wie die App.
+
+- **Meine nächsten Spiele** (klein, mittel, Sperrbildschirm rechteckig und über der Uhr): die nächsten
+  eigenen Buchungen aus `my_bookings` mit Kicker wie auf Home (`bookingKicker`, „Heute · in 4 Stunden“),
+  Uhrzeit, Platz, Art und Mitspielern (`HomeLogik.mitText`).
+- **Plätze jetzt** (mittel, groß): je Platz der Stand jetzt („frei bis 15:00“, „belegt bis 17:30“,
+  „frei ab 20:00“) aus `freeCourtsNow`, dazu eine Zeitleiste mit Belegung und den freien Lücken
+  (`Platzplan.freeGaps`) grün; groß zusätzlich die Lücken als Text. Mittel zeigt die freien Plätze zuerst.
+- **Nächste Veranstaltung** (klein, mittel): aus `events_fuer_mitglied` (`eventDemnaechst`), mit Datumskachel
+  und eigener Marke („Angemeldet“, „Warteliste“, „Anmelden“).
+- **Daten:** Home legt nach jedem Laden einen Schnappschuss (JSON, `WidgetSchnappschuss`) im Container der
+  App Group ab und ruft `WidgetCenter.reloadAllTimelines()` – nur, wenn sich etwas geändert hat. Das Widget
+  liest ihn und lädt im Zeitplan selbst nach (`WidgetLaden`, dieselben RPCs wie Home) mit der Sitzung aus
+  dem geteilten Schlüsselbund, ohne Realtime. Was dabei nicht lädt, bleibt aus dem alten Schnappschuss stehen.
+  Darin stehen nur eigene Termine mit den Namen der Mitspieler, die Belegung ohne Namen (nur die Art) und die
+  nächsten Veranstaltungen – keine Bankdaten, keine Nachrichten. Abmelden löscht den Schnappschuss.
+- **Zeitplan** (`WidgetZeitplan`, reine Funktionen): neu laden eine Minute nach dem Ende des nächsten eigenen
+  Spiels, um Mitternacht in Berlin, spätestens nach 30 Minuten (Plätze) bzw. 60 Minuten (Spiele, Veranstaltung).
+  Dazwischen ein Eintrag je Viertelstunde und zu Beginn und Ende der Spiele, damit Kicker und freie Plätze
+  ohne Netz weiterrücken. Ohne Daten erneut nach 15 Minuten.
+- **Ohne Sitzung:** „In der App anmelden“. Vor dem ersten Entsperren ist der Schlüsselbund nicht lesbar; das
+  Widget zeigt deshalb einen vorhandenen Schnappschuss noch bis zu 12 Stunden weiter.
+- **Tippen** öffnet die App über das eigene Schema (`tcm://plaetze`, `tcm://verein/veranstaltung/<id>`,
+  `WidgetLink`); die App führt dorthin wie bei einer Push-Nachricht (`PushZiel.ausPfad`, `PushNavigation`).
+  Zum Testen ohne Klicks: `xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMLink tcmlokal://plaetze`.
+- **Geteilter Code:** `TCMWidgets/Gemeinsam/` gehört zu App und Erweiterung; die Erweiterung bekommt dazu
+  `Kern/`, `Startdaten`, `Schluesselbund`, `SupabaseVerbindung`, `Umgebung`, `Theme`, `HomeLogik`, die Tokens
+  und die Schriften – in `project.yml` mehrfach zugeordnet, nicht kopiert.
+- **Hell, dunkel, getönt:** Farben aus den Tokens folgen dem System; im getönten Modus färbt das System ein,
+  hervorgehoben ist, was `widgetAccentable` trägt (Uhrzeit, Datumskachel, freie Lücken).
+- **Tests:** `WidgetTests` (Kodierung, Zusammenführen, Ablage, Zeitplan inkl. Zeitumstellung, Aufbereitung,
+  Links, keine Namen Fremder im Schnappschuss), `WidgetBilderTests` (die Bilder oben per `ImageRenderer`,
+  Home-Screen-Widgets lassen sich ohne Klicks nicht platzieren). `testLadenGegenDenLokalenStack` lädt wie das
+  Widget, nur mit `TEST_RUNNER_TCM_LOKAL_STACK=1` nach `LokalAnmeldenUITests`, sonst übersprungen:
+
+```bash
+TEST_RUNNER_TCM_SCREENSHOTS=$PWD/docs TEST_RUNNER_TCM_LOKAL_STACK=1 \
+  xcodebuild test -project TCMuckensturm.xcodeproj -scheme TCMuckensturm \
+  -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath build/DerivedData \
+  -only-testing:TCMuckensturmTests/WidgetTests -only-testing:TCMuckensturmTests/WidgetBilderTests
+```
+
 ## Aufbau
 
 ```
@@ -357,6 +406,9 @@ TCMuckensturm/
   Theme/          Farben und Schrift für SwiftUI auf Basis der erzeugten Tokens
   Bildschirme/    Anmeldung (mit Passwort vergessen/setzen), Kein Zugang, Home, Konto, Nachrichten (Glocke, Neuigkeiten), Onboarding, Plätze, Verein, Bausteine; die Tabs in Platzhalter.swift
   Ressourcen/     Assets (App-Icon, Logo, Markenblau), Schriften (Barlow, OFL)
+TCMWidgets/
+  Gemeinsam/      Schnappschuss, Zeitplan und Aufbereitung, Laden, Ansichten (in App und Erweiterung)
+  Erweiterung/    Widget-Bundle, Zeitplan-Anbieter, Info.plist, Entitlements
 TCMuckensturmTests/
 ```
 
@@ -392,7 +444,10 @@ TCMuckensturmTests/
   Buchungsblatt (`?buchen=jetzt`, `?buchung=…`), mitlaufender Tabellenkopf in Freie Zeiten
 - Schwebende Tab-Leiste und kompakte Kopfzeile wie in der Expo-App (heute die System-TabView)
 - Fragment-Zweig der Passwort-Links entfernen, sobald die Cloud-Vorlagen token_hash schicken (S20, gemeinsam mit Expo-App und Web)
-- Widgets
+- Widgets: auf einem echten Gerät ungetestet (braucht die Registrierung unten); interaktive Widgets
+  (App Intents) und Live Activities für laufende Spiele
+- Widgets: Bundle-IDs der Erweiterung (`de.tcmuckensturm.app.widgets`, `.dev.widgets`, `.lokal.widgets`) im
+  Apple Developer Portal registrieren und der jeweiligen App Group zuordnen
 - Push auf einem echten Gerät: braucht die Fähigkeit Push Notifications für die App-IDs (`.lokal`, `.dev`) im
   Apple Developer Portal und den APNs-Schlüssel als Edge-Secret (`docs/native-apps.md`, Push). Getestet ist
   bisher nur im Simulator (Marke, `register_push_token`, `simctl push`, Ziele)

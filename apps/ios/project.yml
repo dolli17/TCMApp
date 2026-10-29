@@ -47,9 +47,12 @@ targets:
       # Erzeugt aus packages/ui/src/tokens.ts (pnpm --filter @tcm/ui build:native) - eingebunden, nicht kopiert
       - path: ../../packages/ui/generated/Tokens.swift
         group: TCMuckensturm/Theme
+      # Schnappschuss, Zeitplan und Ansichten der Widgets - gehoeren auch zur Erweiterung
+      - path: TCMWidgets/Gemeinsam
     dependencies:
       - package: Supabase
         product: Supabase
+      - target: TCMWidgets
     settings:
       base:
         INFOPLIST_FILE: TCMuckensturm/Info.plist
@@ -61,6 +64,36 @@ targets:
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+
+  # Widgets (WidgetKit). Gleiche Konfigurationen wie die App, Bundle-ID <app>.widgets,
+  # dieselbe App Group. Geteilter Code ist hier mehrfach zugeordnet, nicht kopiert.
+  TCMWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: TCMWidgets
+      - path: TCMuckensturm/Kern
+      - path: TCMuckensturm/Daten/Startdaten.swift
+      - path: TCMuckensturm/Daten/Schluesselbund.swift
+      - path: TCMuckensturm/Daten/SupabaseVerbindung.swift
+      - path: TCMuckensturm/App/Umgebung.swift
+      - path: TCMuckensturm/Theme/Theme.swift
+      - path: TCMuckensturm/Bildschirme/Home/HomeLogik.swift
+      - path: ../../packages/ui/generated/Tokens.swift
+      - path: TCMuckensturm/Ressourcen/Schriften
+        buildPhase: resources
+    dependencies:
+      - package: Supabase
+        product: Supabase
+    settings:
+      base:
+        INFOPLIST_FILE: TCMWidgets/Erweiterung/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: TCMWidgets/Erweiterung/TCMWidgets.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)$(APP_BUNDLE_SUFFIX).widgets
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SKIP_INSTALL: YES
 
   TCMuckensturmTests:
     type: bundle.unit-test

@@ -63,7 +63,10 @@ struct HomeBildschirm: View {
 
     private func laden(_ art: Art) async {
         if art == .nachladen { aktualisiert = true }
-        inhalt = await Self.lade(Startdaten(client: sitzung.client))
+        let neu = await Self.lade(Startdaten(client: sitzung.client))
+        inhalt = neu
+        // Die Widgets zeigen dasselbe (TCMWidgets/Gemeinsam).
+        WidgetBruecke.ablegen(neu, umgebung: sitzung.umgebung)
         laedt = false
         aktualisiert = false
     }

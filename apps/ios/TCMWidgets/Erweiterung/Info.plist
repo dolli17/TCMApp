@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>de</string>
+	<key>CFBundleDisplayName</key>
+	<string>$(TCM_ANZEIGENAME)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.widgetkit-extension</string>
+	</dict>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Nur fuer die Konfiguration Lokal (http://127.0.0.1:54321), wie in der App. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<!-- Dieselben Schriften wie die App (TCMuckensturm/Ressourcen/Schriften, in project.yml eingebunden). -->
+	<key>UIAppFonts</key>
+	<array>
+		<string>Barlow_400Regular.ttf</string>
+		<string>Barlow_500Medium.ttf</string>
+		<string>Barlow_600SemiBold.ttf</string>
+		<string>Barlow_700Bold.ttf</string>
+		<string>Barlow_800ExtraBold.ttf</string>
+		<string>BarlowSemiCondensed_600SemiBold.ttf</string>
+		<string>BarlowSemiCondensed_700Bold.ttf</string>
+		<string>BarlowSemiCondensed_800ExtraBold.ttf</string>
+	</array>
+	<!-- Dieselben Werte wie in der App (Umgebung.swift), gesetzt in Konfiguration/*.xcconfig. -->
+	<key>TCMSupabaseURL</key>
+	<string>$(SUPABASE_URL)</string>
+	<key>TCMSupabaseKey</key>
+	<string>$(SUPABASE_KEY)</string>
+	<key>TCMSiteURL</key>
+	<string>$(SITE_URL)</string>
+	<key>TCMAppGroup</key>
+	<string>$(APP_GROUP)</string>
+	<key>TCMURLSchema</key>
+	<string>$(APP_URL_SCHEME)</string>
+</dict>
+</plist>

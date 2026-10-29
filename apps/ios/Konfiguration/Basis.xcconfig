@@ -9,9 +9,11 @@ APP_BUNDLE_SUFFIX =
 PRODUCT_BUNDLE_IDENTIFIER = $(APP_BUNDLE_ID)$(APP_BUNDLE_SUFFIX)
 TCM_ANZEIGENAME = TC Muckensturm
 
-// App Group, zugleich Access Group des Schluesselbunds - fuer spaetere Widgets.
-// Je Bundle-ID eine eigene Gruppe, damit Dev und Prod sich nichts teilen.
-APP_GROUP = group.$(PRODUCT_BUNDLE_IDENTIFIER)
+// App Group, zugleich Access Group des Schluesselbunds - geteilt mit den Widgets.
+// Je Konfiguration eine eigene Gruppe, damit Dev und Prod sich nichts teilen.
+// Aus der Bundle-ID der App, nicht PRODUCT_BUNDLE_IDENTIFIER: die Erweiterung
+// heisst <app>.widgets und muss dieselbe Gruppe haben.
+APP_GROUP = group.$(APP_BUNDLE_ID)$(APP_BUNDLE_SUFFIX)
 
 // Web-Adresse fuer Antrag, Impressum usw. Leer: die Verweise bleiben weg.
 // Auch Ziel des Links aus "Passwort vergessen" (<SITE_URL>/passwort-setzen,
