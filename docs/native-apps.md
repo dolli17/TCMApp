@@ -45,7 +45,7 @@ Damit beide Apps gegen einen schmalen, stabilen Vertrag bauen, nicht gegen Tabel
 - **Rechenlogik:** Was die App selbst rechnet, kommt entweder auf den Server (als Feld in einer RPC, etwa die Knöpfe einer Buchung) oder wird portiert und mit den **Golden Files** geprüft. Faustregel: Portieren, was offline oder im Widget gebraucht wird (Zeit, Raster, freie Plätze jetzt, Texte), auf den Server, was ohnehin eine Abfrage braucht. Ändert sich eine Golden-Datei im Diff, ziehen Swift und Kotlin nach.
 - **Push direkt über APNs und FCM** statt über den Expo-Push-Dienst:
   - Spalte `provider` in `push_tokens` (`expo`, `apns`, `fcm`, Standard `expo`), `register_push_token` bekommt `p_provider` mit Standard `expo`. Die Expo-App funktioniert also unverändert weiter. *Erledigt mit N6*, dazu liefert `claim_notification_pushes` je Empfänger `geraete` mit Marke und Anbieter. `tokens` enthält bis zum Umbau der Function nur Expo-Marken.
-  - Die Edge Function `notification-pushes` verschickt je nach `provider`: Expo-Tokens weiter über `exp.host`, APNs per HTTP/2 mit JWT aus dem `.p8`-Schlüssel, FCM über die HTTP-v1-API mit Dienstkonto. Ungültige Tokens werden wie heute über `disabled_at` abgeschaltet.
+  - Die Edge Function `notification-pushes` verschickt je nach `provider`: Expo-Tokens weiter über `exp.host`, APNs per HTTP/2 mit JWT aus dem `.p8`-Schlüssel, FCM über die HTTP-v1-API mit Dienstkonto. Ungültige Tokens werden wie heute über `disabled_at` abgeschaltet. *Erledigt mit N7*, Einzelheiten unter [Push](#push).
   - **Übergang:** Solange Expo-Tokens aktiv sind, bleibt der Expo-Zweig. Nach dem Umstieg laufen sie aus (deinstalliert oder überschrieben). Den Zweig entfernen, wenn 30 Tage lang kein Expo-Token mehr `last_seen_at` erneuert hat.
 - **Universal Links und App Links statt `tcm://`:** Passwort- und Einladungslinks (`/passwort-setzen?token_hash=…`) und Push-Ziele öffnen die App über `https://app.tennisclub-muckensturm.de/…` (Dev: `dev.…`). Dazu kommen `apple-app-site-association` und `assetlinks.json` (Spur N3) und neue Redirect-URLs in Supabase Auth (`goLive.md`, Schritt 1 und 2). `tcm://` bleibt für die Expo-App erlaubt, bis sie entfernt ist.
 
@@ -91,6 +91,31 @@ Maßstab ist die Expo-App: gleiche Texte, gleiche Regeln, gleiche Fehlermeldunge
 - **Umstieg:** Erst wenn beide Apps alle Screens aus C können und die Tester sie auf Dev abgenommen haben. Dann den ersten nativen Build unter `de.tcmuckensturm.app` an TestFlight bzw. den Play-Track geben.
 - **Aufräumen danach:** `apps/mobile` entfernen, den Expo-Zweig in `notification-pushes` und die Spalte `provider = 'expo'` auslaufen lassen, `tcm://` aus den Redirect-URLs streichen, die direkten Tabellen-Grants der Phase A zurücknehmen. Jedes davon ist ein eigener PR, die Migrationen wieder abwärtskompatibel.
 
+## Push
+`supabase/functions/notification-pushes` teilt die Empfänger nach `geraete` (aus `claim_notification_pushes`) auf. Fehlt `geraete`, gehen die `tokens` wie bisher an Expo.
+
+| Anbieter | Weg | Gerät stilllegen bei |
+|---|---|---|
+| `expo` | `exp.host`, Stapel zu 100, unverändert | `DeviceNotRegistered` |
+| `apns` | `api.push.apple.com` (bzw. `api.sandbox.…`), HTTP/2, `apns-push-type: alert`, `apns-topic` = Bundle-ID. ES256-JWT aus dem `.p8`-Schlüssel, 50 Minuten zwischengespeichert. | 410, 400 `BadDeviceToken` |
+| `fcm` | `fcm.googleapis.com/v1/projects/<id>/messages:send`. OAuth2-Zugriffstoken aus dem Dienstkonto (RS256-JWT gegen `oauth2.googleapis.com/token`), bis 5 Minuten vor Ablauf zwischengespeichert. | 404, `UNREGISTERED`, `INVALID_ARGUMENT` am Feld `message.token` |
+
+- **Inhalt:** Titel und Text aus `pushvorlage.ts` wie bei Expo, Badge = Zahl der Posten. Bei APNs und FCM kommen als Daten `ziel` (Pfad wie in der Expo-App), `kind` (wenn alle Posten dieselbe Art haben) und `event_id` (wenn es um genau eine Veranstaltung geht) mit. Bei APNs stehen sie neben `aps` auf oberster Ebene, bei FCM in `data`.
+- **Fehler:** APNs und FCM gehen je Gerät, bis zu 20 gleichzeitig. Netzfehler, 5xx, 429 und abgelehnte Anmeldung (APNs 403, FCM 401) gelten als vorübergehend. Dann gibt die Function die Benachrichtigung wieder frei, aber nur, wenn sie auf keinem anderen Gerät des Mitglieds angekommen ist, und antwortet mit 502. Andere 4xx (etwa `DeviceTokenNotForTopic`, das auch bei falscher Bundle-ID kommt) werden geloggt, ohne Stilllegen und ohne Freigabe.
+- **Konfiguration** (Edge-Secrets, `supabase secrets set`, Namen auch in `.env.example`). Fehlt etwas, werden die Geräte dieses Anbieters übersprungen und nur gezählt geloggt (ohne Marken), Expo läuft weiter. `PUSH_AKTIV=true` gilt für alle drei Wege.
+
+| Variable | Inhalt |
+|---|---|
+| `APNS_KEY_ID` | Key-ID des APNs-Schlüssels (10 Zeichen) |
+| `APNS_TEAM_ID` | `93Z2KKGMV7` |
+| `APNS_PRIVATE_KEY` | Inhalt der `.p8`-Datei (Zeilenumbrüche echt oder als `\n`) |
+| `APNS_BUNDLE_ID` | `de.tcmuckensturm.app` |
+| `APNS_UMGEBUNG` | `production` (Standard) oder `sandbox`. Marken aus Xcode-Debug-Builds gelten nur in der Sandbox; eine Marke aus der falschen Umgebung beantwortet Apple mit `BadDeviceToken`, und sie wird stillgelegt. Dev mit TestFlight-Builds: `production`. |
+| `FCM_SERVICE_ACCOUNT` | JSON-Datei des Firebase-Dienstkontos (braucht `project_id`, `client_email`, `private_key`) |
+
+- **Was der Verein noch besorgen muss:** im Apple-Developer-Konto unter *Certificates, Identifiers & Profiles → Keys* einen Schlüssel mit „Apple Push Notifications service (APNs)“ anlegen, die `.p8`-Datei laden (geht nur einmal) und die Key-ID notieren; die App-ID `de.tcmuckensturm.app` braucht die Fähigkeit Push Notifications. Für Android ein Firebase-Projekt mit der Android-App `de.tcmuckensturm.app` anlegen, die Cloud Messaging API (V1) ist dort an, und unter *Projekteinstellungen → Dienstkonten* einen privaten Schlüssel als JSON erzeugen. Beides gehört in den Passwortmanager und als Secret in Dev und Prod.
+- **HTTP/2:** APNs spricht nur HTTP/2. Das `fetch` von Deno handelt es per ALPN aus; am 29.10.2026 mit Deno 2.9.6 gegen beide APNs-Rechner geprüft (Antwort 403 `MissingProviderToken` mit `apns-id`). Die Edge Runtime nutzt dasselbe `fetch` von Deno. Gegen die Edge Runtime selbst ist es erst mit echtem Schlüssel auf Dev nachzuweisen.
+
 ## Offene Voraussetzungen
 Alles hier entscheidest du selbst. Ohne diese Punkte bleiben die betroffenen Teile liegen.
 
@@ -98,8 +123,8 @@ Alles hier entscheidest du selbst. Ohne diese Punkte bleiben die betroffenen Tei
 |---|---|---|
 | **Android-SDK lokal** (Android Studio oder Command-line Tools, Emulator-Image API 34+) | Phase B Android, Tests | fehlt auf diesem Rechner |
 | **Plattenplatz** | Xcode-Simulatoren, Android-SDK und Emulator, Gradle-Cache brauchen zusammen leicht 30–50 GB | knapp (am 29.10.2026 rund 32 GB frei) |
-| **Google Play Console** (einmalig 25 $) und **Firebase-Projekt** (FCM) | Android-Release, Push auf Android | nicht angelegt |
-| **Eigener APNs-Schlüssel (.p8)** im Apple-Developer-Konto des Vereins, mit Key-ID und Team-ID als Edge-Secret | Push direkt über APNs (Phase A). Heute verwaltet EAS den Push-Schlüssel. | offen |
+| **Google Play Console** (einmalig 25 $) und **Firebase-Projekt** (FCM) mit Dienstkonto-Schlüssel | Android-Release, Push auf Android (`FCM_SERVICE_ACCOUNT`, siehe [Push](#push)) | nicht angelegt |
+| **Eigener APNs-Schlüssel (.p8)** im Apple-Developer-Konto des Vereins, mit Key-ID und Team-ID als Edge-Secret | Push direkt über APNs (Phase A). Heute verwaltet EAS den Push-Schlüssel. Die Function ist bereit (N7), es fehlen nur die Secrets, siehe [Push](#push). | offen |
 | **macOS-Runner in CI** (GitHub Actions) | iOS-Build und -Tests in der CI. Für das öffentliche Repo sind die Standard-Runner frei, größere macOS-Runner kosten extra, und die Jobs laufen lange. Alternative: nur lokal testen und per Fastlane hochladen. | offen, Kosten und Laufzeit abwägen |
 
 ## Kritische Dateien

@@ -142,7 +142,7 @@ Vor dem Absenden prüft die Verwaltung die Eingaben selbst. Uhrzeit: „Uhrzeit 
 
 Die nativen Apps registrieren APNs- bzw. FCM-Tokens mit dem optionalen Parameter `p_provider` (`expo`, `apns`, `fcm`, Standard `expo`). Die Expo-App schickt ihn nicht und bleibt bei `expo`. Ein anderer Wert: „Unbekannter Push-Anbieter "…".“ Die Regel S26 bleibt: Eine Marke, die noch für ein anderes Mitglied mit Zugang aktiv ist, zieht nicht um.
 
-Der Versand (`claim_notification_pushes`, nur Edge Function `notification-pushes`) liefert je Empfänger zusätzlich `geraete` = `[{token, provider}]`, neueste zuerst. `tokens` enthält bis zum Umbau der Function nur noch Expo-Marken, denn sie schickt alles an `exp.host`. Eine APNs- oder FCM-Marke würde dort abgelehnt und stillgelegt. Bis die Function APNs und FCM selbst verschickt, gehen Nachrichten an native Geräte also nicht hinaus, sind aber wie bisher abgehakt.
+Der Versand (`claim_notification_pushes`, nur Edge Function `notification-pushes`) liefert je Empfänger zusätzlich `geraete` = `[{token, provider}]`, neueste zuerst. `tokens` enthält nur Expo-Marken. Die Function verschickt nach `provider`: Expo über `exp.host`, APNs und FCM direkt (N7, siehe `docs/native-apps.md`, Abschnitt Push). Für die native App kommen als Daten `ziel`, `kind` und `event_id` mit (die letzten beiden nur, wenn eindeutig); bei APNs neben `aps`, bei FCM in `data`.
 
 ## Neu für die nativen Apps
 

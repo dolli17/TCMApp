@@ -21,6 +21,8 @@ export const NUTZER = "Bearer nutzer-token";
 /** Eine mitgeschriebene Anfrage, schon ausgelesen. */
 export interface Aufruf {
   methode: string;
+  /** Der Rechner, etwa api.push.apple.com. */
+  host: string;
   pfad: string;
   suche: URLSearchParams;
   /** Wer gefragt hat: der apikey-Kopf. */
@@ -72,6 +74,7 @@ export class Router {
     }
     const aufruf: Aufruf = {
       methode: req.method,
+      host: url.host,
       pfad: url.pathname,
       suche: url.searchParams,
       schluessel: req.headers.get("apikey"),
@@ -148,7 +151,20 @@ export async function ladeFunction(
     SITE_URL: "https://tcm.test",
     ...umgebung,
   };
-  for (const name of ["RESEND_API_KEY", "MAIL_FROM", "MAILPIT_URL"]) Deno.env.delete(name);
+  const vorher = [
+    "RESEND_API_KEY",
+    "MAIL_FROM",
+    "MAILPIT_URL",
+    "PUSH_AKTIV",
+    "EXPO_ACCESS_TOKEN",
+    "APNS_KEY_ID",
+    "APNS_TEAM_ID",
+    "APNS_PRIVATE_KEY",
+    "APNS_BUNDLE_ID",
+    "APNS_UMGEBUNG",
+    "FCM_SERVICE_ACCOUNT",
+  ];
+  for (const name of vorher) Deno.env.delete(name);
   for (const [k, v] of Object.entries(env)) Deno.env.set(k, v);
 
   globalThis.fetch = router.fetch;
