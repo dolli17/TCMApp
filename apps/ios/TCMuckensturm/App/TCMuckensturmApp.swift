@@ -57,6 +57,8 @@ struct TCMuckensturmApp: App {
 /// Zeigt den Bildschirm, den die Weiche gewaehlt hat.
 struct StartAnsicht: View {
     @Environment(Sitzung.self) private var sitzung
+    /// System, Hell oder Dunkel aus dem Konto (Erscheinungsbild)
+    @AppStorage(Erscheinungsbild.schluessel) private var erscheinungsbild: Erscheinungsbild = .system
 
     var body: some View {
         Group {
@@ -69,6 +71,7 @@ struct StartAnsicht: View {
         }
         .animation(.default, value: sitzung.ziel)
         .animation(.default, value: sitzung.passwort == nil)
+        .preferredColorScheme(erscheinungsbild.farbschema)
     }
 
     @ViewBuilder private var weiche: some View {
