@@ -11,6 +11,8 @@ import SwiftUI
 
 enum HauptTab: Hashable, Sendable {
     case home, plaetze, verein, konto
+    /// Nur mit Platzrechten sichtbar (Bildschirme/Verwaltung).
+    case verwaltung
 }
 
 private struct ZuTabSchluessel: EnvironmentKey {

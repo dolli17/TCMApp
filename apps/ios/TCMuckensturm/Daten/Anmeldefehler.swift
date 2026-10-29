@@ -77,16 +77,24 @@ enum Anmeldefehler {
         }
     }
 
-    /// Wie passwortFehlerText in @tcm/core: beim Speichern eines neuen Passworts, nie englischer Rohtext.
-    static func passwortFehlerText(_ fehler: AuthFehlerForm?) -> String {
+    /// Im Konto gibt es keinen Link, der ablaufen koennte - dort ist die Sitzung weg.
+    static let neuAnmelden = "Bitte melde dich neu an und versuch es dann noch einmal."
+
+    /**
+     * Wie passwortFehlerText in @tcm/core: beim Speichern eines neuen
+     * Passworts, nie englischer Rohtext. `imKonto`: aus dem Konto heraus
+     * statt aus dem Mail-Link, dann heisst eine fehlende Sitzung "neu anmelden".
+     */
+    static func passwortFehlerText(_ fehler: AuthFehlerForm?, imKonto: Bool = false) -> String {
         guard let fehler else { return "Das Passwort ließ sich nicht speichern." }
         if let text = stoerungText(fehler) { return text }
+        let ohneSitzung = imKonto ? neuAnmelden : "Der Link ist abgelaufen. Bitte fordere einen neuen an."
         switch fehler.code {
         case "same_password": return "Das neue Passwort muss sich vom bisherigen unterscheiden."
         case "weak_password": return "Das Passwort ist zu schwach. Bitte wähle ein längeres."
-        case "session_not_found", "session_expired": return "Der Link ist abgelaufen. Bitte fordere einen neuen an."
+        case "session_not_found", "session_expired": return ohneSitzung
         default:
-            if fehler.status == 401 { return "Der Link ist abgelaufen. Bitte fordere einen neuen an." }
+            if fehler.status == 401 { return ohneSitzung }
             return "Das Passwort ließ sich nicht speichern. Bitte versuche es erneut."
         }
     }

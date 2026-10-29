@@ -469,7 +469,7 @@ private struct PasswortAendern: View {
         guard fehler == nil else { return }
         laeuft = true
         Task {
-            let meldung = await sitzung.passwortSpeichern(passwort)
+            let meldung = await sitzung.passwortSpeichern(passwort, imKonto: true)
             laeuft = false
             if let meldung {
                 fehler = meldung
