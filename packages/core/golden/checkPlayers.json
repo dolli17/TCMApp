@@ -1,0 +1,227 @@
+[
+  {
+    "name": "Einzel ohne Mitspieler",
+    "input": {
+      "type": {
+        "code": "einzel",
+        "name": "Einzel",
+        "durationMinutes": 60,
+        "minPlayers": 2,
+        "maxPlayers": 2,
+        "requiresPartner": true
+      },
+      "memberCount": 0,
+      "guestCount": 0
+    },
+    "output": {
+      "ok": false,
+      "reason": "„Einzel“ braucht mindestens 2 Spieler – es fehlt noch ein Mitspieler."
+    }
+  },
+  {
+    "name": "Einzel mit einem Mitglied",
+    "input": {
+      "type": {
+        "code": "einzel",
+        "name": "Einzel",
+        "durationMinutes": 60,
+        "minPlayers": 2,
+        "maxPlayers": 2,
+        "requiresPartner": true
+      },
+      "memberCount": 1,
+      "guestCount": 0
+    },
+    "output": {
+      "ok": true
+    }
+  },
+  {
+    "name": "Einzel mit einem Gast",
+    "input": {
+      "type": {
+        "code": "einzel",
+        "name": "Einzel",
+        "durationMinutes": 60,
+        "minPlayers": 2,
+        "maxPlayers": 2,
+        "requiresPartner": true
+      },
+      "memberCount": 0,
+      "guestCount": 1
+    },
+    "output": {
+      "ok": true
+    }
+  },
+  {
+    "name": "Einzel mit zu vielen",
+    "input": {
+      "type": {
+        "code": "einzel",
+        "name": "Einzel",
+        "durationMinutes": 60,
+        "minPlayers": 2,
+        "maxPlayers": 2,
+        "requiresPartner": true
+      },
+      "memberCount": 2,
+      "guestCount": 0
+    },
+    "output": {
+      "ok": false,
+      "reason": "„Einzel“ erlaubt höchstens 2 Spieler."
+    }
+  },
+  {
+    "name": "Doppel mit vier",
+    "input": {
+      "type": {
+        "code": "doppel",
+        "name": "Doppel",
+        "durationMinutes": 90,
+        "minPlayers": 3,
+        "maxPlayers": 4,
+        "requiresPartner": true
+      },
+      "memberCount": 3,
+      "guestCount": 0
+    },
+    "output": {
+      "ok": true
+    }
+  },
+  {
+    "name": "Doppel mit fuenf",
+    "input": {
+      "type": {
+        "code": "doppel",
+        "name": "Doppel",
+        "durationMinutes": 90,
+        "minPlayers": 3,
+        "maxPlayers": 4,
+        "requiresPartner": true
+      },
+      "memberCount": 4,
+      "guestCount": 0
+    },
+    "output": {
+      "ok": false,
+      "reason": "„Doppel“ erlaubt höchstens 4 Spieler."
+    }
+  },
+  {
+    "name": "Doppel mit einem Mitspieler: es fehlt noch einer",
+    "input": {
+      "type": {
+        "code": "doppel",
+        "name": "Doppel",
+        "durationMinutes": 90,
+        "minPlayers": 3,
+        "maxPlayers": 4,
+        "requiresPartner": true
+      },
+      "memberCount": 1,
+      "guestCount": 0
+    },
+    "output": {
+      "ok": false,
+      "reason": "„Doppel“ braucht mindestens 3 Spieler – es fehlt noch ein Mitspieler."
+    }
+  },
+  {
+    "name": "Doppel mit Mitglied und Gast",
+    "input": {
+      "type": {
+        "code": "doppel",
+        "name": "Doppel",
+        "durationMinutes": 90,
+        "minPlayers": 3,
+        "maxPlayers": 4,
+        "requiresPartner": true
+      },
+      "memberCount": 1,
+      "guestCount": 1
+    },
+    "output": {
+      "ok": true
+    }
+  },
+  {
+    "name": "leeres Doppel: es fehlen zwei",
+    "input": {
+      "type": {
+        "code": "doppel",
+        "name": "Doppel",
+        "durationMinutes": 90,
+        "minPlayers": 3,
+        "maxPlayers": 4,
+        "requiresPartner": true
+      },
+      "memberCount": 0,
+      "guestCount": 0
+    },
+    "output": {
+      "ok": false,
+      "reason": "„Doppel“ braucht mindestens 3 Spieler – es fehlen noch 2 Mitspieler."
+    }
+  },
+  {
+    "name": "Mitspieler gesucht: Doppel unterbesetzt",
+    "input": {
+      "type": {
+        "code": "doppel",
+        "name": "Doppel",
+        "durationMinutes": 90,
+        "minPlayers": 3,
+        "maxPlayers": 4,
+        "requiresPartner": true
+      },
+      "memberCount": 1,
+      "guestCount": 0,
+      "partnerWanted": true
+    },
+    "output": {
+      "ok": true
+    }
+  },
+  {
+    "name": "Mitspieler gesucht: Einzel allein",
+    "input": {
+      "type": {
+        "code": "einzel",
+        "name": "Einzel",
+        "durationMinutes": 60,
+        "minPlayers": 2,
+        "maxPlayers": 2,
+        "requiresPartner": true
+      },
+      "memberCount": 0,
+      "guestCount": 0,
+      "partnerWanted": true
+    },
+    "output": {
+      "ok": true
+    }
+  },
+  {
+    "name": "Mitspieler gesucht: Obergrenze gilt",
+    "input": {
+      "type": {
+        "code": "einzel",
+        "name": "Einzel",
+        "durationMinutes": 60,
+        "minPlayers": 2,
+        "maxPlayers": 2,
+        "requiresPartner": true
+      },
+      "memberCount": 2,
+      "guestCount": 0,
+      "partnerWanted": true
+    },
+    "output": {
+      "ok": false,
+      "reason": "„Einzel“ erlaubt höchstens 2 Spieler."
+    }
+  }
+]

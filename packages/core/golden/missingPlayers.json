@@ -1,0 +1,114 @@
+[
+  {
+    "name": "leeres Doppel",
+    "input": {
+      "type": {
+        "code": "doppel",
+        "name": "Doppel",
+        "durationMinutes": 90,
+        "minPlayers": 3,
+        "maxPlayers": 4,
+        "requiresPartner": true
+      },
+      "memberCount": 0,
+      "guestCount": 0
+    },
+    "output": 2
+  },
+  {
+    "name": "Doppel mit einem",
+    "input": {
+      "type": {
+        "code": "doppel",
+        "name": "Doppel",
+        "durationMinutes": 90,
+        "minPlayers": 3,
+        "maxPlayers": 4,
+        "requiresPartner": true
+      },
+      "memberCount": 1,
+      "guestCount": 0
+    },
+    "output": 1
+  },
+  {
+    "name": "Doppel mit Mitglied und Gast",
+    "input": {
+      "type": {
+        "code": "doppel",
+        "name": "Doppel",
+        "durationMinutes": 90,
+        "minPlayers": 3,
+        "maxPlayers": 4,
+        "requiresPartner": true
+      },
+      "memberCount": 1,
+      "guestCount": 1
+    },
+    "output": 0
+  },
+  {
+    "name": "leeres Einzel",
+    "input": {
+      "type": {
+        "code": "einzel",
+        "name": "Einzel",
+        "durationMinutes": 60,
+        "minPlayers": 2,
+        "maxPlayers": 2,
+        "requiresPartner": true
+      },
+      "memberCount": 0,
+      "guestCount": 0
+    },
+    "output": 1
+  },
+  {
+    "name": "Einzel mit Gast",
+    "input": {
+      "type": {
+        "code": "einzel",
+        "name": "Einzel",
+        "durationMinutes": 60,
+        "minPlayers": 2,
+        "maxPlayers": 2,
+        "requiresPartner": true
+      },
+      "memberCount": 0,
+      "guestCount": 1
+    },
+    "output": 0
+  },
+  {
+    "name": "Partner noetig, auch wenn min_players 1 waere",
+    "input": {
+      "type": {
+        "code": "einzel",
+        "name": "Einzel",
+        "durationMinutes": 60,
+        "minPlayers": 1,
+        "maxPlayers": 2,
+        "requiresPartner": true
+      },
+      "memberCount": 0,
+      "guestCount": 0
+    },
+    "output": 1
+  },
+  {
+    "name": "ohne Partnerpflicht",
+    "input": {
+      "type": {
+        "code": "einzel",
+        "name": "Einzel",
+        "durationMinutes": 60,
+        "minPlayers": 1,
+        "maxPlayers": 2,
+        "requiresPartner": false
+      },
+      "memberCount": 0,
+      "guestCount": 0
+    },
+    "output": 0
+  }
+]

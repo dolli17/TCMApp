@@ -19,7 +19,7 @@ Eine Datei je Funktion, `<funktion>.json`, als Liste:
 ```
 
 - **`name`** ist innerhalb der Datei eindeutig. Er eignet sich als Testname auf allen Plattformen.
-- **`input`** enthält die Parameter mit ihren Namen aus der TypeScript-Signatur. Bei Funktionen mit einem Optionsobjekt (`canStartAt`, `freeCourtsNow`, `freeSlotsOfDay`, `courtStatusAt`, `bookingActions`) ist `input` dieses Objekt. Fehlt ein Feld, ist der Parameter nicht angegeben (`undefined`, in Swift `nil`, in Kotlin `null` bzw. der Standardwert).
+- **`input`** enthält die Parameter mit ihren Namen aus der TypeScript-Signatur. Bei Funktionen mit einem Optionsobjekt (`canStartAt`, `freeCourtsNow`, `freeSlotsOfDay`, `freeGaps`, `courtStatusAt`, `bookingActions`, `umsetzZiele`) ist `input` dieses Objekt. Fehlt ein Feld, ist der Parameter nicht angegeben (`undefined`, in Swift `nil`, in Kotlin `null` bzw. der Standardwert).
 - **`output`** ist das Ergebnis, wie `JSON.stringify` es schreibt. Felder, die fehlen, waren `undefined`.
 - **Zeitpunkte** (`now`, `starts_at`, Rückgaben vom Typ `Date`) stehen als ISO-8601 in UTC. Die Logik rechnet immer in **Europe/Berlin**, egal in welcher Zeitzone das Gerät steht. Die Fälle enthalten Sommer, Winter und beide Umstellungstage 2026 (29.03. und 25.10.).
 - **Geld** steht in ganzen Cent. `formatCents` liefert ein geschütztes Leerzeichen (U+00A0) vor dem Euro-Zeichen.
