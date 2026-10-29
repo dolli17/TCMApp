@@ -53,7 +53,7 @@ struct PasswortSetzenBildschirm: View {
                 GelberKnopf(text: "Neuen Link anfordern") { vergessenOffen = true }
                 LeiserVerweis(text: "Zurück zur Anmeldung", aktion: sitzung.passwortSchliessen)
             }
-            .padding(.top, Tokens.abstand.abschnitt)
+            .padding(.top, Tokens.Abstand.abschnitt)
         case let .bereit(konto):
             if let konto {
                 Text("Für das Konto \(Text(konto).font(Schrift.text(.fett, 15)))")
@@ -82,7 +82,7 @@ struct PasswortSetzenBildschirm: View {
             }
 
             GelberKnopf(text: laeuft ? "Wird gespeichert…" : "Speichern", gesperrt: laeuft, aktion: speichern)
-                .padding(.top, Tokens.abstand.abschnitt)
+                .padding(.top, Tokens.Abstand.abschnitt)
         }
     }
 

@@ -107,7 +107,7 @@ private struct KonfigurationFehlt: View {
                 .font(Schrift.text(.normal, 14))
                 .foregroundStyle(Farbe.ink2)
         }
-        .padding(Tokens.abstand.rand)
+        .padding(Tokens.Abstand.rand)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .foregroundStyle(Farbe.ink)
         .background(Farbe.bg)

@@ -21,10 +21,10 @@ struct AnmeldeSeite<Inhalt: View>: View {
         ScrollView {
             VStack(spacing: 0) {
                 Buehne(titel: titel, unterzeile: unterzeile)
-                VStack(spacing: Tokens.abstand.l) { inhalt }
+                VStack(spacing: Tokens.Abstand.l) { inhalt }
                     .frame(maxWidth: 420)
                     .padding(.horizontal, 24)
-                    .padding(.top, Tokens.abstand.s)
+                    .padding(.top, Tokens.Abstand.s)
                     .padding(.bottom, 36)
             }
         }
@@ -65,7 +65,7 @@ private struct Buehne: View {
                 .padding(.top, 60)
                 .padding(.leading, 24)
                 .accessibilityLabel("TC Muckensturm")
-            VStack(alignment: .leading, spacing: Tokens.abstand.s) {
+            VStack(alignment: .leading, spacing: Tokens.Abstand.s) {
                 Text(titel)
                     .font(Schrift.text(.extrafett, 36, relativeTo: .largeTitle))
                     .tracking(-0.7)
@@ -127,7 +127,7 @@ struct AnmeldeFeld: View {
     @State private var sichtbar = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Tokens.abstand.s) {
+        VStack(alignment: .leading, spacing: Tokens.Abstand.s) {
             Text(beschriftung)
                 .font(Schrift.text(.halbfett, 13, relativeTo: .footnote))
                 .foregroundStyle(Farbe.ink2)
@@ -158,9 +158,9 @@ struct AnmeldeFeld: View {
                         .padding(.trailing, 6)
                 }
             }
-            .background(Farbe.surf, in: RoundedRectangle(cornerRadius: Tokens.radius.feld))
+            .background(Farbe.surf, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
             .overlay(
-                RoundedRectangle(cornerRadius: Tokens.radius.feld)
+                RoundedRectangle(cornerRadius: Tokens.Radius.feld)
                     .strokeBorder(Farbe.rahmen, lineWidth: 1.5)
             )
         }
@@ -243,7 +243,7 @@ struct AnmeldeHinweis: View {
             .padding(12)
             .background(
                 (ok ? Farbe.green : Farbe.red).opacity(0.16),
-                in: RoundedRectangle(cornerRadius: Tokens.radius.feld)
+                in: RoundedRectangle(cornerRadius: Tokens.Radius.feld)
             )
     }
 }
