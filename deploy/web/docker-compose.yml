@@ -17,6 +17,10 @@ services:
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:?fehlt in .env}
     image: tcm-web:latest
     restart: unless-stopped
+    # Werte, die der Server erst zur Laufzeit liest (nicht eingebacken).
+    # Leer ist erlaubt: ohne Fingerabdruck liefert /.well-known/assetlinks.json 404.
+    environment:
+      ANDROID_APP_FINGERPRINTS: ${ANDROID_APP_FINGERPRINTS:-}
     networks:
       - traefik-public
     labels:

@@ -45,6 +45,9 @@ const OEFFENTLICH = [
   "/beitragsordnung",
   // Der Hinweis fuer Ausgeschiedene: sie sind dort schon abgemeldet.
   "/kein-zugang",
+  // Universal Links und App Links (app/.well-known): Apple und Google holen
+  // die Dateien ohne Anmeldung und folgen keiner Umleitung.
+  "/.well-known",
 ];
 
 /**
