@@ -1,0 +1,25 @@
+[
+  {
+    "name": "nur was nicht geklappt hat bleibt",
+    "input": {
+      "results": [
+        {
+          "id": "bier",
+          "name": "Bier",
+          "quantity": 2,
+          "ok": true
+        },
+        {
+          "id": "wasser",
+          "name": "Wasser",
+          "quantity": 3,
+          "ok": false,
+          "message": "Gesperrt."
+        }
+      ]
+    },
+    "output": {
+      "wasser": 3
+    }
+  }
+]

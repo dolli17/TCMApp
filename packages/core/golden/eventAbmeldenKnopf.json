@@ -1,0 +1,86 @@
+[
+  {
+    "name": "vor dem Schluss kostenlos",
+    "input": {
+      "e": {
+        "id": "fest",
+        "kind": "fest",
+        "title": "Saisonabschlussfest",
+        "description": null,
+        "location": "Clubhaus",
+        "status": "published",
+        "starts_at": "2026-11-06T18:00:00.000Z",
+        "ends_at": "2026-11-06T22:30:00.000Z",
+        "registration_enabled": true,
+        "registration_deadline": "2026-10-30T22:59:00.000Z",
+        "max_participants": 80,
+        "companions_allowed": true,
+        "fee_cents": 1800,
+        "work_hours": null,
+        "personen": 62,
+        "warteliste": 0,
+        "mein_status": "registered",
+        "meine_begleitpersonen": 1,
+        "meine_bemerkung": null
+      },
+      "now": "2026-10-20T10:00:00.000Z"
+    },
+    "output": "Abmelden (bis 30.10. kostenlos)"
+  },
+  {
+    "name": "nach dem Schluss bleibt die Gebuehr",
+    "input": {
+      "e": {
+        "id": "fest",
+        "kind": "fest",
+        "title": "Saisonabschlussfest",
+        "description": null,
+        "location": "Clubhaus",
+        "status": "published",
+        "starts_at": "2026-11-06T18:00:00.000Z",
+        "ends_at": "2026-11-06T22:30:00.000Z",
+        "registration_enabled": true,
+        "registration_deadline": "2026-10-30T22:59:00.000Z",
+        "max_participants": 80,
+        "companions_allowed": true,
+        "fee_cents": 1800,
+        "work_hours": null,
+        "personen": 62,
+        "warteliste": 0,
+        "mein_status": "registered",
+        "meine_begleitpersonen": 1,
+        "meine_bemerkung": null
+      },
+      "now": "2026-11-02T10:00:00.000Z"
+    },
+    "output": "Abmelden (Gebühr bleibt)"
+  },
+  {
+    "name": "von der Warteliste",
+    "input": {
+      "e": {
+        "id": "fest",
+        "kind": "fest",
+        "title": "Saisonabschlussfest",
+        "description": null,
+        "location": "Clubhaus",
+        "status": "published",
+        "starts_at": "2026-11-06T18:00:00.000Z",
+        "ends_at": "2026-11-06T22:30:00.000Z",
+        "registration_enabled": true,
+        "registration_deadline": "2026-10-30T22:59:00.000Z",
+        "max_participants": 80,
+        "companions_allowed": true,
+        "fee_cents": 1800,
+        "work_hours": null,
+        "personen": 62,
+        "warteliste": 0,
+        "mein_status": "waitlisted",
+        "meine_begleitpersonen": 1,
+        "meine_bemerkung": null
+      },
+      "now": "2026-11-02T10:00:00.000Z"
+    },
+    "output": "Abmelden"
+  }
+]

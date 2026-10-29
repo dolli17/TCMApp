@@ -1,0 +1,70 @@
+[
+  {
+    "name": "im Fenster",
+    "input": {
+      "purchase": {
+        "id": "k1",
+        "memberId": "m1",
+        "drinkItemId": "bier",
+        "quantity": 1,
+        "unitPriceCents": 250,
+        "createdAt": "2026-08-03T11:50:00.000Z",
+        "voidedAt": null
+      },
+      "windowMinutes": 15,
+      "now": "2026-08-03T12:00:00.000Z"
+    },
+    "output": true
+  },
+  {
+    "name": "nach Ablauf",
+    "input": {
+      "purchase": {
+        "id": "k1",
+        "memberId": "m1",
+        "drinkItemId": "bier",
+        "quantity": 1,
+        "unitPriceCents": 250,
+        "createdAt": "2026-08-03T11:40:00.000Z",
+        "voidedAt": null
+      },
+      "windowMinutes": 15,
+      "now": "2026-08-03T12:00:00.000Z"
+    },
+    "output": false
+  },
+  {
+    "name": "genau auf der Grenze",
+    "input": {
+      "purchase": {
+        "id": "k1",
+        "memberId": "m1",
+        "drinkItemId": "bier",
+        "quantity": 1,
+        "unitPriceCents": 250,
+        "createdAt": "2026-08-03T11:45:00.000Z",
+        "voidedAt": null
+      },
+      "windowMinutes": 15,
+      "now": "2026-08-03T12:00:00.000Z"
+    },
+    "output": true
+  },
+  {
+    "name": "schon storniert",
+    "input": {
+      "purchase": {
+        "id": "k1",
+        "memberId": "m1",
+        "drinkItemId": "bier",
+        "quantity": 1,
+        "unitPriceCents": 250,
+        "createdAt": "2026-08-03T11:59:00.000Z",
+        "voidedAt": "2026-08-03T11:59:30.000Z"
+      },
+      "windowMinutes": 15,
+      "now": "2026-08-03T12:00:00.000Z"
+    },
+    "output": false
+  }
+]

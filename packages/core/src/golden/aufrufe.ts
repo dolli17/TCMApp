@@ -19,7 +19,10 @@ import {
   otherPlayersLabel, timeToMinutes, umsetzZiele, type BookingTypeInfo,
 } from "../booking";
 import { courtStatusAt, type CourtSlot } from "../courtStatus";
-import { changeBasket, type DrinkBasket } from "../drinks";
+import {
+  basketAfterBatch, basketReminder, basketSummary, canVoidSelf, changeBasket, drinkBatchReport, type DrinkBasket,
+  type DrinkBatchResult, type DrinkPurchase,
+} from "../drinks";
 import { translateDbError, type PostgresLikeError } from "../errors";
 import { CHARGE_KIND_LABEL } from "../forderungen";
 import { freeGaps, freeSlotsOfDay, occupancyLabel, startInGap, type FreeGap } from "../freeSlots";
@@ -30,7 +33,11 @@ import { merkmalBeschreibung, type MerkmalSicht } from "../merkmaltexte";
 import { formatCents } from "../money";
 import { offenesSpielText } from "../offeneSpiele";
 import type { ChargeKind } from "../sepa/types";
-import { eventMonatsGruppen } from "../veranstaltungen-mitglieder";
+import { eventStatusMarke, eventZeitText } from "../veranstaltungen";
+import {
+  eventAbmeldbar, eventAbmeldenKnopf, eventAenderbar, eventAnmeldenKnopf, eventBelegungText, eventGebuehrHinweis,
+  eventLangeZeit, eventMonatsGruppen, eventNurWarteliste, eventPersonenText, eventWartelisteText, type MitgliedEvent,
+} from "../veranstaltungen-mitglieder";
 import { sichererWeiterPfad } from "../weiterleitung";
 import { zugangsGrund } from "../zugang";
 
@@ -99,6 +106,25 @@ export const aufrufe: Record<string, (input: Eingabe) => unknown> = {
   sichererWeiterPfad: (i) =>
     i.fallback === undefined ? sichererWeiterPfad(i.wert) : sichererWeiterPfad(i.wert, i.fallback as string),
   CHARGE_KIND_LABEL: (i) => CHARGE_KIND_LABEL[i.kind as ChargeKind],
+  eventLangeZeit: (i) => eventLangeZeit(i.startsAt as string, i.endsAt as string | null),
+  eventZeitText: (i) => eventZeitText(i.startsAt as string, i.endsAt as string | null),
+  eventStatusMarke: (i) => eventStatusMarke(i.e as MitgliedEvent, new Date(i.now as string)),
+  eventBelegungText: (i) => eventBelegungText(i.e as MitgliedEvent),
+  eventAenderbar: (i) => eventAenderbar(i.e as MitgliedEvent, new Date(i.now as string)),
+  eventAbmeldbar: (i) => eventAbmeldbar(i.e as MitgliedEvent, new Date(i.now as string)),
+  eventNurWarteliste: (i) => eventNurWarteliste(i.e as MitgliedEvent, i.begleitpersonen as number),
+  eventPersonenText: (i) => eventPersonenText(i.begleitpersonen as number),
+  eventAnmeldenKnopf: (i) => eventAnmeldenKnopf(i.e as MitgliedEvent, i.begleitpersonen as number),
+  eventAbmeldenKnopf: (i) => eventAbmeldenKnopf(i.e as MitgliedEvent, new Date(i.now as string)),
+  eventGebuehrHinweis: (i) => eventGebuehrHinweis(i.e as MitgliedEvent),
+  eventWartelisteText: (i) => eventWartelisteText(i.platz as number | null, i.laenge as number),
+  basketSummary: (i) =>
+    basketSummary(i.items as { id: string; price_cents: number | null }[], i.basket as DrinkBasket),
+  basketAfterBatch: (i) => basketAfterBatch(i.results as (DrinkBatchResult & { id: string })[]),
+  basketReminder: (i) => basketReminder(i.count as number, i.totalCents as number),
+  drinkBatchReport: (i) => drinkBatchReport(i.results as DrinkBatchResult[]),
+  canVoidSelf: (i) =>
+    canVoidSelf(i.purchase as DrinkPurchase, i.windowMinutes as number, new Date(i.now as string)),
 };
 
 /** Das Ergebnis so, wie es in der Datei steht: nach JSON-Regeln. */

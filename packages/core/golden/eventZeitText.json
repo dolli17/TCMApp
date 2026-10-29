@@ -1,0 +1,18 @@
+[
+  {
+    "name": "an einem Tag",
+    "input": {
+      "startsAt": "2026-11-06T18:00:00.000Z",
+      "endsAt": "2026-11-06T22:30:00.000Z"
+    },
+    "output": "Fr 06.11.2026 · 19–23:30 Uhr"
+  },
+  {
+    "name": "ohne Ende",
+    "input": {
+      "startsAt": "2026-11-06T18:00:00.000Z",
+      "endsAt": null
+    },
+    "output": "Fr 06.11.2026 · 19 Uhr"
+  }
+]

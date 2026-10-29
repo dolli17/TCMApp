@@ -6,7 +6,7 @@
  * was demnaechst im Verein ansteht, der laufende Monat und die letzten
  * Neuigkeiten. Nur Lesen - gebucht und eingetragen wird auf den
  * Bildschirmen, auf die die Knoepfe fuehren (bis es sie nativ gibt: der
- * passende Tab).
+ * passende Tab; Getraenke und Veranstaltungen ueber zuVerein).
  *
  * Alle Abschnitte laden parallel und jeder fuer sich: schlaegt einer fehl,
  * steht dort der Fehler, und der Rest bleibt gefuellt.
@@ -245,6 +245,7 @@ private struct TerminKarte: View {
 
 private struct Schnellaktionen: View {
     @Environment(\.zuTab) private var zuTab
+    @Environment(\.zuVerein) private var zuVerein
     @Environment(\.dynamicTypeSize) private var textgroesse
 
     private struct Kachel: Identifiable {
@@ -267,7 +268,7 @@ private struct Schnellaktionen: View {
         layout {
             ForEach(kacheln) { k in
                 let tinte = k.gelb ? Farbe.onGold : Farbe.ink
-                Button { zuTab(k.ziel) } label: {
+                Button { k.ziel == .verein ? zuVerein(.getraenke) : zuTab(k.ziel) } label: {
                     let symbol = Image(systemName: k.symbol)
                         .font(.system(size: 20, weight: k.gelb ? .semibold : .regular))
                         .foregroundStyle(tinte)
@@ -414,14 +415,14 @@ private struct OffeneSpiele: View {
 // MARK: - Demnaechst im Verein
 
 private struct DemnaechstImVerein: View {
-    @Environment(\.zuTab) private var zuTab
+    @Environment(\.zuVerein) private var zuVerein
     let events: Abschnitt<[MitgliedEvent]>
     let erneut: Erneut
 
     var body: some View {
         let jetzt = Date()
         let liste = Veranstaltungen.eventDemnaechst(events.wert ?? [], now: jetzt)
-        Kopfzeile(titel: "Demnächst im Verein", link: ("Alle", "Alle Veranstaltungen", { zuTab(.verein) }))
+        Kopfzeile(titel: "Demnächst im Verein", link: ("Alle", "Alle Veranstaltungen", { zuVerein(.veranstaltungen) }))
         if let f = events.fehler {
             Fehlerzeile(text: f, laeuft: erneut.laeuft, onErneut: erneut.aktion)
         }
@@ -429,7 +430,7 @@ private struct DemnaechstImVerein: View {
             Leerzustand(text: "Gerade ist nichts geplant.")
         }
         ForEach(liste) { e in
-            EventKarte(e: e, jetzt: jetzt, aufforderung: true) { zuTab(.verein) }
+            EventKarte(e: e, jetzt: jetzt, aufforderung: true) { zuVerein(.veranstaltung(e.id)) }
         }
     }
 }
@@ -506,6 +507,7 @@ struct MarkeKlein: View {
 
 private struct DeinStandKacheln: View {
     @Environment(\.zuTab) private var zuTab
+    @Environment(\.zuVerein) private var zuVerein
     let stand: DeinStand
 
     var body: some View {
@@ -542,7 +544,7 @@ private struct DeinStandKacheln: View {
     private func kachel<Inhalt: View>(
         titel: String, label: String, ziel: HauptTab, @ViewBuilder inhalt: () -> Inhalt
     ) -> some View {
-        Button { zuTab(ziel) } label: {
+        Button { ziel == .verein ? zuVerein(.getraenke) : zuTab(ziel) } label: {
             VStack(alignment: .leading, spacing: 4) {
                 Text(titel).font(Schrift.text(.halbfett, 13)).foregroundStyle(Farbe.muted)
                 inhalt()
@@ -560,7 +562,7 @@ private struct DeinStandKacheln: View {
 // MARK: - Neuigkeiten
 
 private struct Neuigkeiten: View {
-    @Environment(\.zuTab) private var zuTab
+    @Environment(\.zuVerein) private var zuVerein
     let neues: Abschnitt<[Benachrichtigung]>
     let erneut: Erneut
     let alle: () -> Void
@@ -584,8 +586,8 @@ private struct Neuigkeiten: View {
             VStack(spacing: 0) {
                 ForEach(Array(liste.enumerated()), id: \.element.id) { i, n in
                     if i > 0 { Rectangle().fill(Farbe.line).frame(height: 1) }
-                    NachrichtZeile(n: n, neu: n.readAt == nil, jetzt: jetzt, hervorheben: false, zeilen: 3) { _ in
-                        zuTab(.verein)
+                    NachrichtZeile(n: n, neu: n.readAt == nil, jetzt: jetzt, hervorheben: false, zeilen: 3) {
+                        zuVerein(.veranstaltung($0))
                     }
                 }
             }

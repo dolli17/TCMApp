@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HauptTabs: View {
     @State private var tab: HauptTab = .home
+    @State private var verein = VereinZustand()
 
     var body: some View {
         TabView(selection: $tab) {
@@ -18,7 +19,7 @@ struct HauptTabs: View {
             PlaetzeBildschirm()
                 .tabItem { Label("Plätze", systemImage: "sportscourt") }
                 .tag(HauptTab.plaetze)
-            Platzhalter(titel: "Verein")
+            VereinBildschirm()
                 .tabItem { Label("Verein", systemImage: "person.3") }
                 .tag(HauptTab.verein)
             KontoBildschirm()
@@ -28,6 +29,7 @@ struct HauptTabs: View {
         .tint(Farbe.blue)
         // Home fuehrt auf Bildschirme, die es nativ noch nicht gibt: bis dahin der passende Tab.
         .environment(\.zuTab) { tab = $0 }
+        .vereinTab(verein, tab: $tab)
         #if DEBUG
         // Fuer Bildschirmfotos per simctl (README): `-TCMTab konto` oeffnet den Tab.
         .task {

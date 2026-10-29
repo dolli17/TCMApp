@@ -1,0 +1,219 @@
+[
+  {
+    "name": "Anmeldung offen",
+    "input": {
+      "e": {
+        "id": "fest",
+        "kind": "fest",
+        "title": "Saisonabschlussfest",
+        "description": null,
+        "location": "Clubhaus",
+        "status": "published",
+        "starts_at": "2026-11-06T18:00:00.000Z",
+        "ends_at": "2026-11-06T22:30:00.000Z",
+        "registration_enabled": true,
+        "registration_deadline": "2026-10-30T22:59:00.000Z",
+        "max_participants": 80,
+        "companions_allowed": true,
+        "fee_cents": 1800,
+        "work_hours": null,
+        "personen": 62,
+        "warteliste": 0,
+        "mein_status": null,
+        "meine_begleitpersonen": null,
+        "meine_bemerkung": null
+      },
+      "now": "2026-10-20T10:00:00.000Z"
+    },
+    "output": {
+      "text": "Anmeldung offen",
+      "ton": "blau"
+    }
+  },
+  {
+    "name": "Anmeldung geschlossen",
+    "input": {
+      "e": {
+        "id": "fest",
+        "kind": "fest",
+        "title": "Saisonabschlussfest",
+        "description": null,
+        "location": "Clubhaus",
+        "status": "published",
+        "starts_at": "2026-11-06T18:00:00.000Z",
+        "ends_at": "2026-11-06T22:30:00.000Z",
+        "registration_enabled": true,
+        "registration_deadline": "2026-10-30T22:59:00.000Z",
+        "max_participants": 80,
+        "companions_allowed": true,
+        "fee_cents": 1800,
+        "work_hours": null,
+        "personen": 62,
+        "warteliste": 0,
+        "mein_status": null,
+        "meine_begleitpersonen": null,
+        "meine_bemerkung": null
+      },
+      "now": "2026-11-02T10:00:00.000Z"
+    },
+    "output": {
+      "text": "Anmeldung geschlossen",
+      "ton": "gelb"
+    }
+  },
+  {
+    "name": "Abgeschlossen",
+    "input": {
+      "e": {
+        "id": "fest",
+        "kind": "fest",
+        "title": "Saisonabschlussfest",
+        "description": null,
+        "location": "Clubhaus",
+        "status": "published",
+        "starts_at": "2026-11-06T18:00:00.000Z",
+        "ends_at": "2026-11-06T22:30:00.000Z",
+        "registration_enabled": true,
+        "registration_deadline": "2026-10-30T22:59:00.000Z",
+        "max_participants": 80,
+        "companions_allowed": true,
+        "fee_cents": 1800,
+        "work_hours": null,
+        "personen": 62,
+        "warteliste": 0,
+        "mein_status": null,
+        "meine_begleitpersonen": null,
+        "meine_bemerkung": null
+      },
+      "now": "2026-11-08T10:00:00.000Z"
+    },
+    "output": {
+      "text": "Abgeschlossen",
+      "ton": "gruen"
+    }
+  },
+  {
+    "name": "Abgesagt",
+    "input": {
+      "e": {
+        "id": "fest",
+        "kind": "fest",
+        "title": "Saisonabschlussfest",
+        "description": null,
+        "location": "Clubhaus",
+        "status": "cancelled",
+        "starts_at": "2026-11-06T18:00:00.000Z",
+        "ends_at": "2026-11-06T22:30:00.000Z",
+        "registration_enabled": true,
+        "registration_deadline": "2026-10-30T22:59:00.000Z",
+        "max_participants": 80,
+        "companions_allowed": true,
+        "fee_cents": 1800,
+        "work_hours": null,
+        "personen": 62,
+        "warteliste": 0,
+        "mein_status": null,
+        "meine_begleitpersonen": null,
+        "meine_bemerkung": null
+      },
+      "now": "2026-10-20T10:00:00.000Z"
+    },
+    "output": {
+      "text": "Abgesagt",
+      "ton": "rot"
+    }
+  },
+  {
+    "name": "Veroeffentlicht ohne Anmeldung",
+    "input": {
+      "e": {
+        "id": "fest",
+        "kind": "fest",
+        "title": "Saisonabschlussfest",
+        "description": null,
+        "location": "Clubhaus",
+        "status": "published",
+        "starts_at": "2026-11-06T18:00:00.000Z",
+        "ends_at": "2026-11-06T22:30:00.000Z",
+        "registration_enabled": false,
+        "registration_deadline": null,
+        "max_participants": 80,
+        "companions_allowed": true,
+        "fee_cents": 1800,
+        "work_hours": null,
+        "personen": 62,
+        "warteliste": 0,
+        "mein_status": null,
+        "meine_begleitpersonen": null,
+        "meine_bemerkung": null
+      },
+      "now": "2026-10-20T10:00:00.000Z"
+    },
+    "output": {
+      "text": "Veröffentlicht",
+      "ton": "grau"
+    }
+  },
+  {
+    "name": "ohne Anmeldeschluss zaehlt der Beginn",
+    "input": {
+      "e": {
+        "id": "fest",
+        "kind": "fest",
+        "title": "Saisonabschlussfest",
+        "description": null,
+        "location": "Clubhaus",
+        "status": "published",
+        "starts_at": "2026-11-06T18:00:00.000Z",
+        "ends_at": "2026-11-06T22:30:00.000Z",
+        "registration_enabled": true,
+        "registration_deadline": null,
+        "max_participants": 80,
+        "companions_allowed": true,
+        "fee_cents": 1800,
+        "work_hours": null,
+        "personen": 62,
+        "warteliste": 0,
+        "mein_status": null,
+        "meine_begleitpersonen": null,
+        "meine_bemerkung": null
+      },
+      "now": "2026-11-02T10:00:00.000Z"
+    },
+    "output": {
+      "text": "Anmeldung offen",
+      "ton": "blau"
+    }
+  },
+  {
+    "name": "Laeuft",
+    "input": {
+      "e": {
+        "id": "fest",
+        "kind": "fest",
+        "title": "Saisonabschlussfest",
+        "description": null,
+        "location": "Clubhaus",
+        "status": "published",
+        "starts_at": "2026-11-06T18:00:00.000Z",
+        "ends_at": "2026-11-06T22:30:00.000Z",
+        "registration_enabled": true,
+        "registration_deadline": null,
+        "max_participants": 80,
+        "companions_allowed": true,
+        "fee_cents": 1800,
+        "work_hours": null,
+        "personen": 62,
+        "warteliste": 0,
+        "mein_status": null,
+        "meine_begleitpersonen": null,
+        "meine_bemerkung": null
+      },
+      "now": "2026-11-06T18:30:00.000Z"
+    },
+    "output": {
+      "text": "Läuft",
+      "ton": "gelb"
+    }
+  }
+]

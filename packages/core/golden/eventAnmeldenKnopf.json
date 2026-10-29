@@ -1,0 +1,86 @@
+[
+  {
+    "name": "mit Betrag",
+    "input": {
+      "e": {
+        "id": "fest",
+        "kind": "fest",
+        "title": "Saisonabschlussfest",
+        "description": null,
+        "location": "Clubhaus",
+        "status": "published",
+        "starts_at": "2026-11-06T18:00:00.000Z",
+        "ends_at": "2026-11-06T22:30:00.000Z",
+        "registration_enabled": true,
+        "registration_deadline": "2026-10-30T22:59:00.000Z",
+        "max_participants": 80,
+        "companions_allowed": true,
+        "fee_cents": 1800,
+        "work_hours": null,
+        "personen": 62,
+        "warteliste": 0,
+        "mein_status": null,
+        "meine_begleitpersonen": null,
+        "meine_bemerkung": null
+      },
+      "begleitpersonen": 1
+    },
+    "output": "Verbindlich anmelden · 36,00 €"
+  },
+  {
+    "name": "ohne Gebuehr",
+    "input": {
+      "e": {
+        "id": "dienst",
+        "kind": "arbeitsdienst",
+        "title": "Frühjahrsputz",
+        "description": null,
+        "location": "Anlage",
+        "status": "published",
+        "starts_at": "2026-11-14T08:00:00.000Z",
+        "ends_at": "2026-11-14T12:00:00.000Z",
+        "registration_enabled": true,
+        "registration_deadline": "2026-10-30T22:59:00.000Z",
+        "max_participants": 25,
+        "companions_allowed": true,
+        "fee_cents": null,
+        "work_hours": 3,
+        "personen": 14,
+        "warteliste": 0,
+        "mein_status": null,
+        "meine_begleitpersonen": null,
+        "meine_bemerkung": null
+      },
+      "begleitpersonen": 0
+    },
+    "output": "Anmelden"
+  },
+  {
+    "name": "nur noch Warteliste",
+    "input": {
+      "e": {
+        "id": "fest",
+        "kind": "fest",
+        "title": "Saisonabschlussfest",
+        "description": null,
+        "location": "Clubhaus",
+        "status": "published",
+        "starts_at": "2026-11-06T18:00:00.000Z",
+        "ends_at": "2026-11-06T22:30:00.000Z",
+        "registration_enabled": true,
+        "registration_deadline": "2026-10-30T22:59:00.000Z",
+        "max_participants": 80,
+        "companions_allowed": true,
+        "fee_cents": 1800,
+        "work_hours": null,
+        "personen": 79,
+        "warteliste": 0,
+        "mein_status": null,
+        "meine_begleitpersonen": null,
+        "meine_bemerkung": null
+      },
+      "begleitpersonen": 1
+    },
+    "output": "Auf die Warteliste"
+  }
+]

@@ -1,0 +1,23 @@
+[
+  {
+    "name": "0 Begleitpersonen",
+    "input": {
+      "begleitpersonen": 0
+    },
+    "output": "Du allein"
+  },
+  {
+    "name": "1 Begleitpersonen",
+    "input": {
+      "begleitpersonen": 1
+    },
+    "output": "Du + 1 Begleitperson"
+  },
+  {
+    "name": "2 Begleitpersonen",
+    "input": {
+      "begleitpersonen": 2
+    },
+    "output": "Du + 2 Begleitpersonen"
+  }
+]

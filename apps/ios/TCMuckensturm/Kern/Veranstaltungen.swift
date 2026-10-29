@@ -1,10 +1,13 @@
 /**
- * Veranstaltungen fuer Mitglieder - soweit Home sie braucht
+ * Veranstaltungen fuer Mitglieder
  *
  * Portierung aus packages/core/src/veranstaltungen-mitglieder.ts und
- * veranstaltungen.ts: die naechsten zwei fuer "Demnächst im Verein" und die
- * Texte der Karte (Datumskachel, Zeit und Ort, fette Zeile, eigener Stand).
- * Ob eine Anmeldung klappt, entscheiden die RPCs.
+ * veranstaltungen.ts: die naechsten zwei fuer "Demnächst im Verein", die
+ * Liste nach Monat, die Texte der Karte (Datumskachel, Zeit und Ort, fette
+ * Zeile, eigener Stand) und das Detail (Eckdaten, Belegung, Knoepfe,
+ * Hinweise). Ob eine Anmeldung klappt, entscheiden die RPCs; hier steht nur,
+ * was die Oberflaeche anbietet und wie sie es sagt. Gepruefte Faelle:
+ * packages/core/golden/event*.json (KernGoldenTests).
  */
 
 import Foundation
@@ -30,6 +33,9 @@ struct MitgliedEvent: Decodable, Equatable, Identifiable, Sendable {
     let meinStatus: String?
     let meineBegleitpersonen: Int?
     let meineBemerkung: String?
+    /// Die eigene, nicht erlassene Forderung zur Anmeldung, sonst nil (seit Phase A in events_fuer_mitglied).
+    let meineForderungCents: Int?
+    let meineForderungStatus: String?
 
     enum CodingKeys: String, CodingKey {
         case id, kind, status, title, description, location, personen, warteliste
@@ -44,6 +50,8 @@ struct MitgliedEvent: Decodable, Equatable, Identifiable, Sendable {
         case meinStatus = "mein_status"
         case meineBegleitpersonen = "meine_begleitpersonen"
         case meineBemerkung = "meine_bemerkung"
+        case meineForderungCents = "meine_forderung_cents"
+        case meineForderungStatus = "meine_forderung_status"
     }
 
     init(from decoder: Decoder) throws {
@@ -68,6 +76,8 @@ struct MitgliedEvent: Decodable, Equatable, Identifiable, Sendable {
         meinStatus = try c.decodeIfPresent(String.self, forKey: .meinStatus)
         meineBegleitpersonen = try c.decodeIfPresent(Int.self, forKey: .meineBegleitpersonen)
         meineBemerkung = try c.decodeIfPresent(String.self, forKey: .meineBemerkung)
+        meineForderungCents = try c.decodeIfPresent(Int.self, forKey: .meineForderungCents)
+        meineForderungStatus = try c.decodeIfPresent(String.self, forKey: .meineForderungStatus)
     }
 }
 
@@ -109,9 +119,18 @@ enum Veranstaltungen {
     }
 
     /// Ab wann die Anmeldung feststeht: Anmeldeschluss, sonst Beginn.
+    static func eventSchluss(_ e: MitgliedEvent) -> String {
+        e.registrationDeadline ?? e.startsAt
+    }
+
     static func eventSchlussVorbei(_ e: MitgliedEvent, now: Date) -> Bool {
-        guard let schluss = Zeit.datum(e.registrationDeadline ?? e.startsAt) else { return false }
+        guard let schluss = Zeit.datum(eventSchluss(e)) else { return false }
         return schluss <= now
+    }
+
+    static func eventBegonnen(_ e: MitgliedEvent, now: Date) -> Bool {
+        guard let beginn = Zeit.datum(e.startsAt) else { return false }
+        return beginn <= now
     }
 
     static func eventIchDabei(_ e: MitgliedEvent) -> Bool {
@@ -221,5 +240,162 @@ enum Veranstaltungen {
         if e.meinStatus == "waitlisted" { return MeineMarke(text: "Warteliste", ton: .gelb) }
         if aufforderung && eventAnmeldbar(e, now: now) { return MeineMarke(text: "Anmelden", ton: .gelb) }
         return nil
+    }
+
+    // MARK: - Liste
+
+    struct Monat: Equatable, Sendable {
+        /// "2026-11"
+        let schluessel: String
+        /// "November 2026"
+        let titel: String
+        var events: [MitgliedEvent]
+    }
+
+    /**
+     * Kommende (bzw. mit vergangen: vergangene) Veranstaltungen nach Monat.
+     * Kommendes der Reihe nach, Vergangenes neueste zuerst. Gleiche Zeiten
+     * bleiben in der Reihenfolge der Liste (Array.sort in JavaScript ist stabil).
+     */
+    static func eventMonatsGruppen(_ liste: [MitgliedEvent], now: Date, vergangen: Bool = false) -> [Monat] {
+        let zeit = { (e: MitgliedEvent) in Zeit.datum(e.startsAt) ?? .distantFuture }
+        let auswahl = liste
+            .filter { $0.status != "draft" && eventVorbei($0, now: now) == vergangen }
+            .enumerated()
+            .sorted {
+                let a = zeit($0.element), b = zeit($1.element)
+                if a == b { return $0.offset < $1.offset }
+                return vergangen ? a > b : a < b
+            }
+            .map(\.element)
+        var gruppen: [Monat] = []
+        for e in auswahl {
+            guard let d = Zeit.datum(e.startsAt) else { continue }
+            let schluessel = String(Zeit.berlinDay(d).prefix(7))
+            if gruppen.last?.schluessel == schluessel {
+                gruppen[gruppen.count - 1].events.append(e)
+            } else {
+                gruppen.append(Monat(schluessel: schluessel, titel: "\(Zeit.monatLang(d)) \(Zeit.jahr(d))", events: [e]))
+            }
+        }
+        return gruppen
+    }
+
+    // MARK: - Detail
+
+    /// "06.11."
+    static func eventTagKurz(_ iso: String) -> String {
+        guard let d = Zeit.datum(iso) else { return "" }
+        return Zeit.tagMonat(d)
+    }
+
+    /// "Freitag, 6. November · 19–23:30 Uhr"
+    static func eventLangeZeit(startsAt: String, endsAt: String?) -> String {
+        guard let a = Zeit.datum(startsAt) else { return "" }
+        return "\(Zeit.heuteLang(a)) · \(uhrSpanne(startsAt: startsAt, endsAt: endsAt))"
+    }
+
+    /// "Fr 06.11.2026"
+    private static func tagMitJahr(_ d: Date) -> String {
+        let k = Zeit.berlin.dateComponents([.year, .month, .day], from: d)
+        return "\(Zeit.kurzerWochentag(d)) \(String(format: "%02d.%02d.%04d", k.day ?? 0, k.month ?? 0, k.year ?? 0))"
+    }
+
+    /// "Fr 06.11.2026 · 19–23:30 Uhr", mehrtaegig "Fr 06.11.2026, 19 Uhr – Sa 07.11.2026, 02 Uhr".
+    static func eventZeitText(startsAt: String, endsAt: String?) -> String {
+        guard let a = Zeit.datum(startsAt) else { return "" }
+        let tagA = tagMitJahr(a)
+        guard let endsAt, let b = Zeit.datum(endsAt) else { return "\(tagA) · \(uhr(a)) Uhr" }
+        if Zeit.berlinDay(a) == Zeit.berlinDay(b) { return "\(tagA) · \(uhr(a))–\(uhr(b)) Uhr" }
+        return "\(tagA), \(uhr(a)) Uhr – \(tagMitJahr(b)), \(uhr(b)) Uhr"
+    }
+
+    /// Die Statusmarke: "Anmeldung offen", "Abgeschlossen", "Abgesagt" ...
+    static func eventStatusMarke(_ e: MitgliedEvent, now: Date) -> MeineMarke {
+        if e.status == "draft" { return MeineMarke(text: "Entwurf", ton: .grau) }
+        if e.status == "cancelled" { return MeineMarke(text: "Abgesagt", ton: .rot) }
+        if eventVorbei(e, now: now) { return MeineMarke(text: "Abgeschlossen", ton: .gruen) }
+        if eventBegonnen(e, now: now) { return MeineMarke(text: "Läuft", ton: .gelb) }
+        if e.registrationEnabled != true { return MeineMarke(text: "Veröffentlicht", ton: .grau) }
+        return eventSchlussVorbei(e, now: now)
+            ? MeineMarke(text: "Anmeldung geschlossen", ton: .gelb)
+            : MeineMarke(text: "Anmeldung offen", ton: .blau)
+    }
+
+    /// Begleitpersonen und Bemerkung aendern geht bis zum Anmeldeschluss.
+    static func eventAenderbar(_ e: MitgliedEvent, now: Date) -> Bool {
+        e.status == "published" && eventIchDabei(e) && !eventSchlussVorbei(e, now: now)
+    }
+
+    /// Abmelden geht bis zum Beginn - nach dem Anmeldeschluss kostet es trotzdem.
+    static func eventAbmeldbar(_ e: MitgliedEvent, now: Date) -> Bool {
+        e.status == "published" && eventIchDabei(e) && !eventBegonnen(e, now: now)
+    }
+
+    /// Was eine Anmeldung kostet: Preis pro Person, Begleitpersonen eingerechnet.
+    static func eventGebuehrCents(_ feeCents: Int?, begleitpersonen: Int) -> Int {
+        (feeCents ?? 0) * (1 + Swift.max(0, begleitpersonen))
+    }
+
+    /// Wuerde diese Gruppe nur noch auf die Warteliste passen?
+    static func eventNurWarteliste(_ e: MitgliedEvent, begleitpersonen: Int) -> Bool {
+        guard let max = e.maxParticipants else { return false }
+        return (e.personen ?? 0) + 1 + Swift.max(0, begleitpersonen) > max
+    }
+
+    /// "62 angemeldet · noch 18 frei", ohne Grenze "62 angemeldet". Nur Zahlen, keine Namen.
+    static func eventBelegungText(_ e: MitgliedEvent) -> String {
+        var teile = ["\(e.personen ?? 0) angemeldet"]
+        if let frei = eventFrei(e) { teile.append(frei > 0 ? "noch \(frei) frei" : "ausgebucht") }
+        if let w = e.warteliste, w > 0 { teile.append("\(w) auf der Warteliste") }
+        return teile.joined(separator: " · ")
+    }
+
+    /// Fuellstand fuer den Balken (0...1), ohne Grenze nil.
+    static func eventBelegungAnteil(_ e: MitgliedEvent) -> Double? {
+        guard let max = e.maxParticipants, max != 0 else { return nil }
+        return Swift.min(1, Double(e.personen ?? 0) / Double(max))
+    }
+
+    /// "Du allein", "Du + 1 Begleitperson", "Du + 2 Begleitpersonen".
+    static func eventPersonenText(_ begleitpersonen: Int) -> String {
+        if begleitpersonen <= 0 { return "Du allein" }
+        return "Du + \(begleitpersonen) \(begleitpersonen == 1 ? "Begleitperson" : "Begleitpersonen")"
+    }
+
+    /// Beschriftung des Anmeldeknopfs: "Verbindlich anmelden · 36,00 €", "Auf die Warteliste".
+    static func eventAnmeldenKnopf(_ e: MitgliedEvent, begleitpersonen: Int) -> String {
+        if eventNurWarteliste(e, begleitpersonen: begleitpersonen) { return "Auf die Warteliste" }
+        guard let fee = e.feeCents, fee != 0 else { return "Anmelden" }
+        return "Verbindlich anmelden · \(Geld.formatCents(eventGebuehrCents(fee, begleitpersonen: begleitpersonen)))"
+    }
+
+    /// "Abmelden (bis 30.10. kostenlos)", nach dem Schluss "Abmelden (Gebühr bleibt)".
+    static func eventAbmeldenKnopf(_ e: MitgliedEvent, now: Date) -> String {
+        if (e.feeCents ?? 0) == 0 || e.meinStatus == "waitlisted" { return "Abmelden" }
+        return eventSchlussVorbei(e, now: now)
+            ? "Abmelden (Gebühr bleibt)"
+            : "Abmelden (bis \(eventTagKurz(eventSchluss(e))) kostenlos)"
+    }
+
+    /**
+     * Der Hinweis zur Gebuehr vor dem Anmelden. Die Forderung entsteht mit der
+     * Anmeldung, steht im Konto unter Offen; nach dem Schluss kostet Abmelden
+     * trotzdem.
+     */
+    static func eventGebuehrHinweis(_ e: MitgliedEvent) -> String? {
+        guard let fee = e.feeCents, fee != 0 else { return nil }
+        let begleit = e.companionsAllowed == true ? " – auch für jede Begleitperson" : ""
+        return "\(Geld.formatCents(fee)) pro Person\(begleit). Mit der Anmeldung entsteht die Forderung, "
+            + "sie steht in deinem Konto unter „Offen“ und wird per Lastschrift eingezogen. "
+            + "Bis zum Anmeldeschluss am \(eventTagKurz(eventSchluss(e))) kannst du dich kostenlos abmelden, "
+            + "danach kostet die Abmeldung trotzdem."
+    }
+
+    /// Der Stand auf der Warteliste: "Platz 2 von 3 auf der Warteliste. ..."
+    static func eventWartelisteText(platz: Int?, laenge: Int) -> String {
+        let wo = platz.map { "Platz \($0) von \(Swift.max($0, laenge))" } ?? "Du stehst"
+        return "\(wo) auf der Warteliste. Wird ein Platz frei, rückst du bis zum Anmeldeschluss automatisch nach – "
+            + "erst dann entsteht eine Forderung."
     }
 }

@@ -213,6 +213,47 @@ TEST_RUNNER_TCM_DARSTELLUNG=dunkel TEST_RUNNER_TCM_SCREENSHOTS=$PWD/docs \
   -only-testing:TCMuckensturmUITests/PlaetzeUITests
 ```
 
+## Verein
+
+| Getränke | Zuletzt | Veranstaltungen | Angemeldet | Anmelden |
+|---|---|---|---|---|
+| ![Getränke hell](docs/verein-getraenke-korb-hell.png) | ![Zuletzt hell](docs/verein-getraenke-zuletzt-hell.png) | ![Veranstaltungen hell](docs/verein-veranstaltungen-hell.png) | ![Angemeldet hell](docs/verein-veranstaltung-angemeldet-hell.png) | ![Anmelden hell](docs/verein-veranstaltung-anmelden-hell.png) |
+| ![Getränke dunkel](docs/verein-getraenke-korb-dunkel.png) | ![Zuletzt dunkel](docs/verein-getraenke-zuletzt-dunkel.png) | ![Veranstaltungen dunkel](docs/verein-veranstaltungen-dunkel.png) | ![Angemeldet dunkel](docs/verein-veranstaltung-angemeldet-dunkel.png) | ![Anmelden dunkel](docs/verein-veranstaltung-anmelden-dunkel.png) |
+
+Wie `apps/mobile/app/(tabs)/verein/`, Texte wortgleich (`Bildschirme/Verein/`). Zwei Reiter unter
+dem großen Kopf, gemerkt unter `tcm-verein-reiter` (beim ersten Mal Getränke). Nur RPCs
+(`Daten/Vereinsdaten.swift`).
+
+- **Getränke:** laufender Monat (`my_drink_purchases`), Karte als Kacheln (`drink_menu`) mit Zähler,
+  gesammelt im Korb und über die Leiste unten eingetragen – je Artikel ein `record_drink_purchase`,
+  nacheinander. Was scheitert, bleibt im Korb, die Meldung nennt es (`drinkBatchReport`).
+  „Zuletzt“ mit Zurücknehmen (`void_drink_purchase`) nur im Stornofenster
+  (`drink_void_window_minutes`, sonst 15); ein Takt alle 30 Sekunden blendet den Knopf rechtzeitig aus.
+- **Korb** (U17): liegt im `VereinZustand`, den `HauptTabs` hält – er übersteht Reiter- und
+  Tab-Wechsel und ist mit dem Abmelden weg. Wer die Getränke mit vollem Korb verlässt, bekommt
+  „Noch nicht eingetragen“ mit „Zu den Getränken“.
+- **Veranstaltungen:** nach Monat, Schalter für Vergangenes (`events_fuer_mitglied`).
+- **Detail:** Eckdaten, Belegung nur als Zahl, Beschreibung; anmelden mit Begleitpersonen und
+  Bemerkung (`event_anmelden`), ändern (`event_anmeldung_aendern`), abmelden mit Rückfrage
+  (`event_abmelden`), Warteliste mit eigenem Platz (`event_mein_wartelistenplatz`). Der Betrag kommt
+  aus `meine_forderung_cents`/`meine_forderung_status`, nicht aus `charges`.
+- **Sprünge:** `zuVerein` (`Bildschirme/Navigation.swift`) öffnet einen Reiter oder gleich eine
+  Veranstaltung – von Home („Getränk eintragen“, „Demnächst im Verein“, „Dein Stand“), aus den
+  Neuigkeiten und der Glocke („Zur Veranstaltung ›“).
+- **Logik:** `Kern/Veranstaltungen.swift` (Liste und Detail) und `Kern/Getraenke.swift` (Korb, Storno),
+  geprüft gegen die Golden Files `eventMonatsGruppen`, `event*`, `changeBasket`, `basket*`,
+  `drinkBatchReport`, `canVoidSelf` (`VereinGoldenTests`); Texte der Bildschirme in
+  `VereinLogik.swift` (`VereinLogikTests`).
+
+Bildschirmfotos ohne Klicks (nur Debug): `-TCMVerein getraenke|veranstaltungen|<event-id>` öffnet
+Reiter oder Detail, `-TCMVereinKorb` legt zwei Artikel in den Korb, `-TCMVereinRollen zuletzt` rollt
+dorthin. Die Bilder oben zeigen das Seed-Konto mit vier Veranstaltungen, Anmeldungen und Entnahmen,
+die nur im lokalen Stack angelegt wurden (SQL bzw. `event_anmelden`, `record_drink_purchase`).
+
+```bash
+xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMTab verein -TCMVerein getraenke -TCMVereinKorb
+```
+
 ## Aufbau
 
 ```
@@ -221,10 +262,10 @@ TCMuckensturm/
                   StartLogik, Passwortlink, PasswortAblauf (reine Funktionen)
   Daten/          Supabase-Client, Schlüsselbund-Speicher, Anmeldefehler, Zugang (mein_zugang)
   Kern/           Rechenlogik aus @tcm/core als reine Funktionen (Zeit in Europe/Berlin, Startseite,
-                  freie Plätze, Geld, translateDbError, Veranstaltungen) – geprüft gegen die Golden Files
-  Daten/          (siehe oben), Startdaten (Home, Glocke, Neuigkeiten) und Kontodaten (Konto-Tab)
+                  freie Plätze, Geld, translateDbError, Veranstaltungen, Getränke) – geprüft gegen die Golden Files
+  Daten/          (siehe oben), Startdaten (Home, Glocke, Neuigkeiten), Kontodaten (Konto-Tab), Platzdaten, Vereinsdaten
   Theme/          Farben und Schrift für SwiftUI auf Basis der erzeugten Tokens
-  Bildschirme/    Anmeldung (mit Passwort vergessen/setzen), Kein Zugang, Home, Konto, Nachrichten (Glocke, Neuigkeiten), Plätze, Bausteine, Platzhalter
+  Bildschirme/    Anmeldung (mit Passwort vergessen/setzen), Kein Zugang, Home, Konto, Nachrichten (Glocke, Neuigkeiten), Plätze, Verein, Bausteine, Platzhalter
   Ressourcen/     Assets (App-Icon, Logo, Markenblau), Schriften (Barlow, OFL)
 TCMuckensturmTests/
 ```
@@ -236,7 +277,7 @@ TCMuckensturmTests/
   das Teilen in Stücke entfällt.
 - **Start-Logik** wie `apps/mobile/app/index.tsx`: ohne Sitzung → Anmelden; mit Sitzung →
   `mein_zugang()`: kein Zugang → „Kein Zugang mehr“ (meldet ab), Onboarding offen → Platzhalter,
-  sonst Tabs Home / Plätze / Verein (Platzhalter) / Konto.
+  sonst Tabs Home / Plätze / Verein / Konto.
 - **Abmelden** nur in `Sitzung.abmelden()`.
 - **Tokens:** `packages/ui/generated/Tokens.swift` (erzeugt aus `packages/ui/src/tokens.ts` mit
   `pnpm --filter @tcm/ui build:native`) ist in `project.yml` als Quelle eingebunden, nicht kopiert.
@@ -247,15 +288,16 @@ TCMuckensturmTests/
   deutsche Namen im Code, unabhängig von der Gerätesprache.
 - **Home:** wie `apps/mobile/app/(tabs)/home.tsx`, jeder Abschnitt lädt für sich (Fehler mit
   „Erneut versuchen“), Pull-to-refresh, stilles Nachladen beim Zurückkehren. Was auf Bildschirme
-  zeigt, die es nativ noch nicht gibt (Buchen, Spiele, Getränke, Veranstaltungen, Konto), wechselt
-  vorerst auf den passenden Tab (`Bildschirme/Navigation.swift`, `zuTab`).
+  zeigt, die es nativ noch nicht gibt (Buchen, Spiele), wechselt vorerst auf den passenden Tab
+  (`Bildschirme/Navigation.swift`, `zuTab`); Getränke und Veranstaltungen öffnet `zuVerein` gezielt.
 - **Schrift:** Barlow und Barlow Semi Condensed als TTF aus `@expo-google-fonts` (Version 0.4.1),
   Lizenz SIL OFL 1.1 in `Ressourcen/Schriften/OFL.txt`.
 
 ## Was noch fehlt
 
 - Prod-Werte (`Konfiguration/Prod.xcconfig`) und ein App-Store-Eintrag für die native App
-- Onboarding, Tab Verein, Verwaltung
+- Onboarding, Verwaltung
+- Verein: kompakter Titel in der Leiste beim Scrollen im Detail (`useKompakterTitel`)
 - Plätze: Bereich „Meine & offene Spiele“ (`plaetze/spiele.tsx`), Sprünge aus Home direkt ins
   Buchungsblatt (`?buchen=jetzt`, `?buchung=…`), mitlaufender Tabellenkopf in Freie Zeiten
 - Schwebende Tab-Leiste und kompakte Kopfzeile wie in der Expo-App (heute die System-TabView)

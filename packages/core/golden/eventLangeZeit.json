@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Fest am Abend",
+    "input": {
+      "startsAt": "2026-11-06T18:00:00.000Z",
+      "endsAt": "2026-11-06T22:30:00.000Z"
+    },
+    "output": "Freitag, 6. November · 19–23:30 Uhr"
+  },
+  {
+    "name": "ohne Ende",
+    "input": {
+      "startsAt": "2026-11-06T18:00:00.000Z",
+      "endsAt": null
+    },
+    "output": "Freitag, 6. November · 19 Uhr"
+  },
+  {
+    "name": "Arbeitsdienst am Vormittag",
+    "input": {
+      "startsAt": "2026-11-14T08:00:00.000Z",
+      "endsAt": "2026-11-14T12:00:00.000Z"
+    },
+    "output": "Samstag, 14. November · 09–13 Uhr"
+  }
+]

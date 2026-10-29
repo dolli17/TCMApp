@@ -716,6 +716,213 @@ const sichererWeiterPfadFaelle: GoldenEingabe[] = [
   { name: "eigener Fallback", input: { wert: "//boese.example", fallback: "/home" } },
 ];
 
+// ---------------------------------------------------------------------------
+// Veranstaltungen im Detail (veranstaltungen-mitglieder.test.ts, veranstaltungen.test.ts)
+// ---------------------------------------------------------------------------
+
+/** Das Fest aus veranstaltungen-mitglieder.test.ts, vollstaendig */
+const festVoll = {
+  id: "fest",
+  kind: "fest",
+  title: "Saisonabschlussfest",
+  description: null,
+  location: "Clubhaus",
+  status: "published",
+  starts_at: "2026-11-06T18:00:00.000Z",
+  ends_at: "2026-11-06T22:30:00.000Z",
+  registration_enabled: true,
+  registration_deadline: "2026-10-30T22:59:00.000Z",
+  max_participants: 80,
+  companions_allowed: true,
+  fee_cents: 1800,
+  work_hours: null,
+  personen: 62,
+  warteliste: 0,
+  mein_status: null,
+  meine_begleitpersonen: null,
+  meine_bemerkung: null,
+};
+const dienstVoll = {
+  ...festVoll,
+  id: "dienst",
+  kind: "arbeitsdienst",
+  title: "Frühjahrsputz",
+  location: "Anlage",
+  starts_at: "2026-11-14T08:00:00.000Z",
+  ends_at: "2026-11-14T12:00:00.000Z",
+  max_participants: 25,
+  fee_cents: null,
+  work_hours: 3,
+  personen: 14,
+};
+const angemeldet = { ...festVoll, mein_status: "registered", meine_begleitpersonen: 1 };
+const VORHER = "2026-10-20T10:00:00.000Z";
+const NACH_SCHLUSS = "2026-11-02T10:00:00.000Z";
+const DANACH = "2026-11-08T10:00:00.000Z";
+
+const eventLangeZeitFaelle: GoldenEingabe[] = [
+  { name: "Fest am Abend", input: { startsAt: festVoll.starts_at, endsAt: festVoll.ends_at } },
+  { name: "ohne Ende", input: { startsAt: festVoll.starts_at, endsAt: null } },
+  { name: "Arbeitsdienst am Vormittag", input: { startsAt: dienstVoll.starts_at, endsAt: dienstVoll.ends_at } },
+];
+
+const eventZeitTextFaelle: GoldenEingabe[] = [
+  { name: "an einem Tag", input: { startsAt: festVoll.starts_at, endsAt: festVoll.ends_at } },
+  { name: "ohne Ende", input: { startsAt: festVoll.starts_at, endsAt: null } },
+];
+
+const eventStatusMarkeFaelle: GoldenEingabe[] = [
+  { name: "Anmeldung offen", input: { e: festVoll, now: VORHER } },
+  { name: "Anmeldung geschlossen", input: { e: festVoll, now: NACH_SCHLUSS } },
+  { name: "Abgeschlossen", input: { e: festVoll, now: DANACH } },
+  { name: "Abgesagt", input: { e: { ...festVoll, status: "cancelled" }, now: VORHER } },
+  {
+    name: "Veroeffentlicht ohne Anmeldung",
+    input: { e: { ...festVoll, registration_enabled: false, registration_deadline: null }, now: VORHER },
+  },
+  {
+    name: "ohne Anmeldeschluss zaehlt der Beginn",
+    input: { e: { ...festVoll, registration_deadline: null }, now: NACH_SCHLUSS },
+  },
+  { name: "Laeuft", input: { e: { ...festVoll, registration_deadline: null }, now: "2026-11-06T18:30:00.000Z" } },
+];
+
+const eventBelegungTextFaelle: GoldenEingabe[] = [
+  { name: "noch frei", input: { e: festVoll } },
+  { name: "ausgebucht mit Warteliste", input: { e: { ...festVoll, personen: 80, warteliste: 3 } } },
+  { name: "ohne Grenze", input: { e: { ...festVoll, max_participants: null } } },
+];
+
+const eventAenderbarFaelle: GoldenEingabe[] = [
+  { name: "vor dem Schluss", input: { e: angemeldet, now: VORHER } },
+  { name: "nach dem Schluss nicht", input: { e: angemeldet, now: NACH_SCHLUSS } },
+  { name: "nicht dabei", input: { e: festVoll, now: VORHER } },
+];
+
+const eventAbmeldbarFaelle: GoldenEingabe[] = [
+  { name: "nach dem Schluss noch", input: { e: angemeldet, now: NACH_SCHLUSS } },
+  { name: "nach dem Beginn nicht", input: { e: angemeldet, now: DANACH } },
+  { name: "abgesagt nicht", input: { e: { ...angemeldet, status: "cancelled" }, now: VORHER } },
+];
+
+const eventNurWartelisteFaelle: GoldenEingabe[] = [
+  { name: "mit Begleitung zu viele", input: { e: { ...festVoll, personen: 79 }, begleitpersonen: 1 } },
+  { name: "allein passt es", input: { e: { ...festVoll, personen: 79 }, begleitpersonen: 0 } },
+  { name: "ohne Grenze nie", input: { e: { ...festVoll, max_participants: null }, begleitpersonen: 5 } },
+];
+
+const eventPersonenTextFaelle: GoldenEingabe[] = [0, 1, 2].map((begleitpersonen) => ({
+  name: `${begleitpersonen} Begleitpersonen`,
+  input: { begleitpersonen },
+}));
+
+const eventAnmeldenKnopfFaelle: GoldenEingabe[] = [
+  { name: "mit Betrag", input: { e: festVoll, begleitpersonen: 1 } },
+  { name: "ohne Gebuehr", input: { e: dienstVoll, begleitpersonen: 0 } },
+  { name: "nur noch Warteliste", input: { e: { ...festVoll, personen: 79 }, begleitpersonen: 1 } },
+];
+
+const eventAbmeldenKnopfFaelle: GoldenEingabe[] = [
+  { name: "vor dem Schluss kostenlos", input: { e: angemeldet, now: VORHER } },
+  { name: "nach dem Schluss bleibt die Gebuehr", input: { e: angemeldet, now: NACH_SCHLUSS } },
+  { name: "von der Warteliste", input: { e: { ...angemeldet, mein_status: "waitlisted" }, now: NACH_SCHLUSS } },
+];
+
+const eventGebuehrHinweisFaelle: GoldenEingabe[] = [
+  { name: "mit Gebuehr und Begleitung", input: { e: festVoll } },
+  { name: "ohne Gebuehr", input: { e: dienstVoll } },
+];
+
+const eventWartelisteTextFaelle: GoldenEingabe[] = [
+  { name: "mit Platz", input: { platz: 2, laenge: 3 } },
+  { name: "ohne Platz", input: { platz: null, laenge: 0 } },
+];
+
+// ---------------------------------------------------------------------------
+// Getraenke-Korb und Storno (drinks.test.ts)
+// ---------------------------------------------------------------------------
+
+const KORB_KARTE = [
+  { id: "bier", price_cents: 250 },
+  { id: "wasser", price_cents: 150 },
+  { id: "ohnePreis", price_cents: null },
+];
+
+const basketSummaryFaelle: GoldenEingabe[] = [
+  {
+    name: "Reihenfolge der Karte, Verschwundenes zaehlt nicht",
+    input: { items: KORB_KARTE, basket: { wasser: 1, bier: 2, weg: 4, ohnePreis: 1 } },
+  },
+  { name: "leerer Korb", input: { items: KORB_KARTE, basket: {} } },
+];
+
+const basketAfterBatchFaelle: GoldenEingabe[] = [
+  {
+    name: "nur was nicht geklappt hat bleibt",
+    input: {
+      results: [
+        { id: "bier", name: "Bier", quantity: 2, ok: true },
+        { id: "wasser", name: "Wasser", quantity: 3, ok: false, message: "Gesperrt." },
+      ],
+    },
+  },
+];
+
+const basketReminderFaelle: GoldenEingabe[] = [
+  { name: "ein Getraenk", input: { count: 1, totalCents: 250 } },
+  { name: "mehrere", input: { count: 3, totalCents: 650 } },
+];
+
+const drinkBatchReportFaelle: GoldenEingabe[] = [
+  {
+    name: "alles geklappt",
+    input: {
+      results: [
+        { name: "Bier", quantity: 2, ok: true },
+        { name: "Wasser still", quantity: 1, ok: true },
+      ],
+    },
+  },
+  {
+    name: "einer schlug fehl",
+    input: {
+      results: [
+        { name: "Bier", quantity: 2, ok: true },
+        { name: "Cola", quantity: 1, ok: false, message: "Der Artikel ist nicht mehr auf der Karte." },
+      ],
+    },
+  },
+  { name: "nichts geklappt", input: { results: [{ name: "Cola", quantity: 3, ok: false }] } },
+];
+
+const STORNO_JETZT = "2026-08-03T12:00:00.000Z";
+const kaufVon = (createdAt: string, voidedAt: string | null = null) => ({
+  id: "k1",
+  memberId: "m1",
+  drinkItemId: "bier",
+  quantity: 1,
+  unitPriceCents: 250,
+  createdAt,
+  voidedAt,
+});
+
+const canVoidSelfFaelle: GoldenEingabe[] = [
+  { name: "im Fenster", input: { purchase: kaufVon("2026-08-03T11:50:00.000Z"), windowMinutes: 15, now: STORNO_JETZT } },
+  { name: "nach Ablauf", input: { purchase: kaufVon("2026-08-03T11:40:00.000Z"), windowMinutes: 15, now: STORNO_JETZT } },
+  {
+    name: "genau auf der Grenze",
+    input: { purchase: kaufVon("2026-08-03T11:45:00.000Z"), windowMinutes: 15, now: STORNO_JETZT },
+  },
+  {
+    name: "schon storniert",
+    input: {
+      purchase: kaufVon("2026-08-03T11:59:00.000Z", "2026-08-03T11:59:30.000Z"),
+      windowMinutes: 15,
+      now: STORNO_JETZT,
+    },
+  },
+];
+
 /** Alle Dateien: Name der Datei (ohne .json) -> Faelle */
 export const faelle: Record<string, GoldenEingabe[]> = {
   berlinTime: berlinTimeFaelle,
@@ -749,4 +956,21 @@ export const faelle: Record<string, GoldenEingabe[]> = {
   offenesSpielText: offenesSpielTextFaelle,
   merkmalBeschreibung: merkmalBeschreibungFaelle,
   sichererWeiterPfad: sichererWeiterPfadFaelle,
+  eventLangeZeit: eventLangeZeitFaelle,
+  eventZeitText: eventZeitTextFaelle,
+  eventStatusMarke: eventStatusMarkeFaelle,
+  eventBelegungText: eventBelegungTextFaelle,
+  eventAenderbar: eventAenderbarFaelle,
+  eventAbmeldbar: eventAbmeldbarFaelle,
+  eventNurWarteliste: eventNurWartelisteFaelle,
+  eventPersonenText: eventPersonenTextFaelle,
+  eventAnmeldenKnopf: eventAnmeldenKnopfFaelle,
+  eventAbmeldenKnopf: eventAbmeldenKnopfFaelle,
+  eventGebuehrHinweis: eventGebuehrHinweisFaelle,
+  eventWartelisteText: eventWartelisteTextFaelle,
+  basketSummary: basketSummaryFaelle,
+  basketAfterBatch: basketAfterBatchFaelle,
+  basketReminder: basketReminderFaelle,
+  drinkBatchReport: drinkBatchReportFaelle,
+  canVoidSelf: canVoidSelfFaelle,
 };

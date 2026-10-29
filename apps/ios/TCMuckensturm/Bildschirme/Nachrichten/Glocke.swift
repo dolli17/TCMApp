@@ -13,7 +13,7 @@ import SwiftUI
 
 struct Glocke: View {
     @Environment(Sitzung.self) private var sitzung
-    @Environment(\.zuTab) private var zuTab
+    @Environment(\.zuVerein) private var zuVerein
     @State private var ungelesen = 0
     @State private var offen = false
     @State private var liste: [Benachrichtigung]?
@@ -77,9 +77,9 @@ struct Glocke: View {
                 if let fehler {
                     Text(fehler).font(Schrift.text(.halbfett, 16)).foregroundStyle(Farbe.redInk)
                 } else if let liste {
-                    NachrichtenListe(liste: liste, alleGesehen: alleGesehen) { _ in
+                    NachrichtenListe(liste: liste, alleGesehen: alleGesehen) {
                         offen = false
-                        zuTab(.verein)
+                        zuVerein(.veranstaltung($0))
                     }
                 } else {
                     ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity)
