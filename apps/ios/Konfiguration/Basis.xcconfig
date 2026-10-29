@@ -21,3 +21,8 @@ SITE_URL =
 // Eigenes URL-Schema, Rueckfall fuer Links aus der E-Mail (tcm://passwort-setzen).
 // Je Konfiguration ein eigenes, damit Dev und Prod nebeneinander installiert sein koennen.
 APP_URL_SCHEME = tcm
+
+// APNs-Umgebung (Entitlement aps-environment). Marken aus development gelten nur
+// in der Sandbox von APNs (APNS_UMGEBUNG=sandbox an der Edge Function, docs/native-apps.md).
+// Beim Export fuer TestFlight/App Store setzt Xcode ohnehin production.
+APS_UMGEBUNG = production

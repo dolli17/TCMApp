@@ -10,6 +10,8 @@ import SwiftUI
 
 @main
 struct TCMuckensturmApp: App {
+    /// Marke von APNs und das Tippen auf Nachrichten (PushAnmeldung)
+    @UIApplicationDelegateAdaptor(PushAppDelegate.self) private var pushDelegate
     @State private var sitzung: Sitzung?
     private let konfigurationsFehler: Umgebung.Fehler?
 
@@ -44,6 +46,11 @@ struct TCMuckensturmApp: App {
                         if let i = argumente.firstIndex(of: "-TCMLink"), i + 1 < argumente.count,
                            let url = URL(string: argumente[i + 1]) {
                             sitzung.linkOeffnen(url)
+                        }
+                        // `-TCMPush /nachrichten` tut, als haette man eine Nachricht mit diesem Ziel angetippt
+                        // (das Tippen selbst geht im Simulator nur von Hand).
+                        if let i = argumente.firstIndex(of: "-TCMPush"), i + 1 < argumente.count {
+                            PushZentrale.shared.geoeffnet(["ziel": argumente[i + 1]])
                         }
                     }
                     #endif
@@ -89,7 +96,7 @@ struct StartAnsicht: View {
             case let .keinZugang(grund):
                 KeinZugangBildschirm(grund: grund)
             case .onboarding:
-                OnboardingPlatzhalter()
+                OnboardingBildschirm()
             case .tabs:
                 HauptTabs()
             }

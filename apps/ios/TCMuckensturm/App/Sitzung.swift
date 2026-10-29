@@ -104,7 +104,9 @@ final class Sitzung {
 
     /// Die eine Stelle zum Abmelden.
     func abmelden() async {
-        // TODO: Push-Token abmelden, sobald es Push gibt (wie in apps/mobile/src/lib/push.ts).
+        // Erst das Geraet abmelden, solange die Sitzung noch gilt - sonst bekommt es
+        // weiter die Nachrichten des Vorbesitzers (wie meldeGeraetAb in push.ts).
+        _ = await PushZentrale.shared.abmelden(Pushdaten(client: client))
         // signOut entfernt die Sitzung zuerst lokal und meldet dann den Server;
         // faellt der aus (kein Netz), ist man trotzdem abgemeldet.
         try? await client.auth.signOut()
@@ -221,6 +223,17 @@ final class Sitzung {
                 zeitUeberschritten: frist
             ))
         }
+    }
+
+    /**
+     * Das Onboarding ist fertig (oder gar nicht noetig, etwa beim Kiosk): in
+     * die Tabs. Ohne neue Frage an mein_zugang - widerspraechen sich die
+     * beiden RPCs, pendelte die Weiche sonst zwischen Onboarding und Tabs.
+     */
+    func onboardingVerlassen() {
+        guard ziel == .onboarding else { return }
+        runde += 1
+        ziel = .tabs
     }
 
     /// Von "Kein Zugang" zurueck zur Anmeldung.

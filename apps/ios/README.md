@@ -62,7 +62,8 @@ den Ablauf beim Öffnen eines Links, die Token-Farben hell/dunkel und das Laden 
 Dazu der Swift-Kern gegen **jeden Fall** der Golden Files
 in `packages/core/golden/` (`KernGoldenTests`, Ordner als Testressource eingebunden), weitere
 Kern-Fälle aus den Vitest-Tests (`KernTests`), das Decoding der Home-Modelle mit Beispiel-JSON
-(`StartdatenTests`), die View-Logik von Home, Glocke und Neuigkeiten (`HomeLogikTests`) und das Konto (`KontoTests`).
+(`StartdatenTests`), die View-Logik von Home, Glocke und Neuigkeiten (`HomeLogikTests`), das Konto (`KontoTests`),
+das Onboarding (`OnboardingTests`) und Push (`PushTests`).
 
 ### Screenshots gegen den lokalen Stack
 
@@ -254,18 +255,94 @@ die nur im lokalen Stack angelegt wurden (SQL bzw. `event_anmelden`, `record_dri
 xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMTab verein -TCMVerein getraenke -TCMVereinKorb
 ```
 
+## Onboarding
+
+| Deine Daten | Mandat | Freigeschaltet | App-Einstellungen |
+|---|---|---|---|
+| ![Deine Daten](docs/onboarding-stammdaten-hell.png) | ![Mandat](docs/onboarding-sepa-hell.png) | ![Freigeschaltet](docs/onboarding-freigeschaltet-hell.png) | ![App-Einstellungen](docs/onboarding-einstellungen-hell.png) |
+
+Wie `apps/mobile/app/onboarding.tsx`, Texte wortgleich (`Bildschirme/Onboarding/`). Die Weiche
+schickt hierher, wenn `mein_zugang()` `onboarding_offen` meldet.
+
+- **Schritte:** Reihenfolge, Titel und Pflicht aus `Kern/Onboarding.swift` (`onboardingSchritte`,
+  `naechsterPflichtschritt`, `mandatstext`, IBAN-Prüfung aus `iban.ts`), erledigt laut `my_onboarding()`.
+  Erziehungsberechtigte nur bei Minderjährigen, dort ist auch der Notfallkontakt Pflicht.
+- **RPCs** (`Daten/Onboardingdaten.swift`): `my_onboarding`, `onboarding_save_stammdaten`,
+  `onboarding_accept_documents`, `onboarding_save_guardian`, `onboarding_save_notfallkontakt`,
+  `create_my_sepa_mandate`, `save_my_tennis`, `complete_onboarding`; Einwilligungen und
+  `booking_mail` über `set_member_attribute`/`remove_member_attribute`, das Passwort über `update(user:)`.
+  Optionale Parameter fehlen statt `null`.
+- **Prüfungen vorher** wie `pruefeOnboardingStammdaten` & Co. in `daten.ts` (`OnboardingLogik`), der
+  Fehler steht am Feld. Das Geburtsdatum hat einen Datumswähler (1900 bis heute), der Wert bleibt `TT.MM.JJJJ`.
+- **Freischalten:** Wer das Mandat verlässt, ruft `complete_onboarding()`. Fehlt noch etwas, springt der
+  Assistent zum ersten Schritt aus dem DETAIL der Meldung. Danach sind Einwilligungen, Tennis und
+  App-Einstellungen freiwillig, zurück in die Pflicht geht es nicht mehr. Fertig (oder ohne Mitglied wie
+  beim Kiosk): `Sitzung.onboardingVerlassen()` wechselt in die Tabs, ohne `mein_zugang` noch einmal zu fragen.
+- Unten stehen Datenschutz, Impressum und Abmelden.
+
+`-TCMOnboardingSchritt sepa` springt in Debug-Builds zu einem Schritt. Den Rundgang oben macht
+`OnboardingUITests`. Er schließt ein Onboarding ab und läuft deshalb nur mit einem eigenen Konto, nie
+mit `neu@`/`kind@`. Ein frisches Konto legt man lokal an, indem man den Onboarding-Block aus
+`supabase/seed.sql` mit neuer E-Mail und neuen UUIDs gegen den lokalen Stack ausführt. Bleibt ein solches
+Konto offen (Test abgebrochen), schlägt `test_onboarding_bestand_ist_freigeschaltet` in `pnpm db:test` fehl:
+dann das Konto wieder löschen (`members` und `auth.users`, nur lokal).
+
+```bash
+TEST_RUNNER_TCM_ONBOARDING_EMAIL=n11@tcm.local TEST_RUNNER_TCM_SCREENSHOTS=$PWD/docs \
+  xcodebuild test -project TCMuckensturm.xcodeproj -scheme "TCMuckensturm Lokal anmelden" \
+  -destination 'id=<geraet>' -derivedDataPath build/DerivedData \
+  -only-testing:TCMuckensturmUITests/OnboardingUITests
+```
+
+## Push
+
+| Nachricht bei offener App | Getippt: Veranstaltung |
+|---|---|
+| ![Banner](docs/push-banner-hell.png) | ![Veranstaltung](docs/push-veranstaltung-hell.png) |
+
+Wie `apps/mobile/src/lib/push.ts`, aber direkt über APNs (`App/PushAnmeldung.swift`, `Daten/Pushdaten.swift`).
+
+- **Erlaubnis** fragt die App erst, wenn jemand „Mitteilungen aufs Handy“ einschaltet (Konto oder
+  Onboarding-Schritt App-Einstellungen, `App/PushSchalter.swift`), nie vor dem Login.
+- **Anmelden:** `registerForRemoteNotifications`, Marke als Hex (`Pushmarke.hex`), dann
+  `register_push_token(p_token, p_platform 'ios', p_device_name, p_provider 'apns')`. Die zuletzt
+  angemeldete Marke steht in `UserDefaults` (`tcm-push-marke`). Vergibt APNs später eine andere,
+  meldet `auffrischen` beim Öffnen der Tabs die neue an und die alte ab.
+- **Status** des Schalters über `push_token_aktiv`. Hat jemand Mitteilungen in den iOS-Einstellungen
+  abgeschaltet, steht er auf aus.
+- **Abmelden:** `Sitzung.abmelden()` ruft vorher `remove_push_token`, sonst bekäme das Gerät die
+  Nachrichten des Vorbesitzers.
+- **Tippen:** Der App-Delegate (`PushAppDelegate`) gibt `ziel`, `kind` und `event_id` an `PushZiel.aus`
+  (reine Funktion, nur eigene Pfade wie `sichererWeiterPfad`). `/nachrichten` öffnet die Neuigkeiten als
+  Blatt, `/verein/veranstaltung/<id>` das Detail im Verein, `/plaetze`, `/konto` usw. den Tab. Das Ziel
+  wartet, bis die Tabs stehen, also auch beim Kaltstart (`App/PushNavigation.swift`).
+- **Entitlement** `aps-environment` = `APS_UMGEBUNG`: `development` für Lokal und Dev, `production`
+  für Prod (`Konfiguration/*.xcconfig`). Marken aus `development` gelten nur mit `APNS_UMGEBUNG=sandbox`
+  an der Edge Function (`docs/native-apps.md`, Push).
+
+Im Simulator testen (Apple-Silicon-Macs bekommen dort eine echte Marke):
+
+```bash
+# Zustellung bei offener App (Banner)
+xcrun simctl push booted de.tcmuckensturm.app.lokal nachricht.json   # {"aps":{"alert":{…}},"ziel":"/nachrichten"}
+# Tippen nachstellen (Debug): wie eine angetippte Nachricht mit diesem Ziel
+xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMPush /verein/veranstaltung/<id>
+```
+
 ## Aufbau
 
 ```
 TCMuckensturm/
   App/            Einstieg, Umgebung, Sitzung (Weiche, An-/Abmelden, Passwort-Links),
-                  StartLogik, Passwortlink, PasswortAblauf (reine Funktionen)
+                  StartLogik, Passwortlink, PasswortAblauf (reine Funktionen),
+                  Push (Anmeldung, App-Delegate, Ziel, Navigation, Schalter)
   Daten/          Supabase-Client, Schlüsselbund-Speicher, Anmeldefehler, Zugang (mein_zugang)
   Kern/           Rechenlogik aus @tcm/core als reine Funktionen (Zeit in Europe/Berlin, Startseite,
-                  freie Plätze, Geld, translateDbError, Veranstaltungen, Getränke) – geprüft gegen die Golden Files
-  Daten/          (siehe oben), Startdaten (Home, Glocke, Neuigkeiten), Kontodaten (Konto-Tab), Platzdaten, Vereinsdaten
+                  freie Plätze, Geld, translateDbError, Veranstaltungen, Getränke, Onboarding) – geprüft gegen die Golden Files
+  Daten/          (siehe oben), Startdaten (Home, Glocke, Neuigkeiten), Kontodaten (Konto-Tab), Platzdaten, Vereinsdaten,
+                  Onboardingdaten, Pushdaten
   Theme/          Farben und Schrift für SwiftUI auf Basis der erzeugten Tokens
-  Bildschirme/    Anmeldung (mit Passwort vergessen/setzen), Kein Zugang, Home, Konto, Nachrichten (Glocke, Neuigkeiten), Plätze, Verein, Bausteine, Platzhalter
+  Bildschirme/    Anmeldung (mit Passwort vergessen/setzen), Kein Zugang, Home, Konto, Nachrichten (Glocke, Neuigkeiten), Onboarding, Plätze, Verein, Bausteine; die Tabs in Platzhalter.swift
   Ressourcen/     Assets (App-Icon, Logo, Markenblau), Schriften (Barlow, OFL)
 TCMuckensturmTests/
 ```
@@ -276,7 +353,7 @@ TCMuckensturmTests/
   wie `apps/mobile/src/lib/supabase.ts`. Anders als expo-secure-store gibt es keine 2-KB-Grenze,
   das Teilen in Stücke entfällt.
 - **Start-Logik** wie `apps/mobile/app/index.tsx`: ohne Sitzung → Anmelden; mit Sitzung →
-  `mein_zugang()`: kein Zugang → „Kein Zugang mehr“ (meldet ab), Onboarding offen → Platzhalter,
+  `mein_zugang()`: kein Zugang → „Kein Zugang mehr“ (meldet ab), Onboarding offen → Onboarding,
   sonst Tabs Home / Plätze / Verein / Konto.
 - **Abmelden** nur in `Sitzung.abmelden()`.
 - **Tokens:** `packages/ui/generated/Tokens.swift` (erzeugt aus `packages/ui/src/tokens.ts` mit
@@ -296,13 +373,17 @@ TCMuckensturmTests/
 ## Was noch fehlt
 
 - Prod-Werte (`Konfiguration/Prod.xcconfig`) und ein App-Store-Eintrag für die native App
-- Onboarding, Verwaltung
+- Verwaltung
 - Verein: kompakter Titel in der Leiste beim Scrollen im Detail (`useKompakterTitel`)
 - Plätze: Bereich „Meine & offene Spiele“ (`plaetze/spiele.tsx`), Sprünge aus Home direkt ins
   Buchungsblatt (`?buchen=jetzt`, `?buchung=…`), mitlaufender Tabellenkopf in Freie Zeiten
 - Schwebende Tab-Leiste und kompakte Kopfzeile wie in der Expo-App (heute die System-TabView)
 - Fragment-Zweig der Passwort-Links entfernen, sobald die Cloud-Vorlagen token_hash schicken (S20, gemeinsam mit Expo-App und Web)
-- Push (APNs-Registrierung, Schalter „Mitteilungen aufs Handy“ im Konto, Push-Token-Abmeldung in `Sitzung.abmelden()`), Widgets
+- Widgets
+- Push auf einem echten Gerät: braucht die Fähigkeit Push Notifications für die App-IDs (`.lokal`, `.dev`) im
+  Apple Developer Portal und den APNs-Schlüssel als Edge-Secret (`docs/native-apps.md`, Push). Getestet ist
+  bisher nur im Simulator (Marke, `register_push_token`, `simctl push`, Ziele)
+- Onboarding: Bildschirmfotos dunkel
 - Übernahme der Sitzung aus der Expo-App (expo-secure-store), damit Mitglieder nach dem Umstieg angemeldet bleiben
 - App Groups und Associated Domains im Apple Developer Portal für `.dev`/`.lokal` registrieren (für Geräte-Builds)
 - `Package.resolved` ist nicht eingecheckt (liegt im erzeugten `.xcodeproj`): die transitiven Pakete von supabase-swift werden beim ersten Bauen aufgelöst
