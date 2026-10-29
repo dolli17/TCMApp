@@ -25,6 +25,15 @@ struct TCMuckensturmApp: App {
         }
     }
 
+    /// Passwort-Links zuerst; sonst fuehrt ein Tippen auf ein Widget wie eine Push-Nachricht dorthin (PushNavigation).
+    @MainActor private static func oeffnen(_ url: URL, sitzung: Sitzung) {
+        if sitzung.linkOeffnen(url) { return }
+        guard let pfad = WidgetLink.pfad(aus: url, schema: sitzung.umgebung.urlSchema),
+              let ziel = PushZiel.ausPfad(pfad)
+        else { return }
+        PushZentrale.shared.offenesZiel = ziel
+    }
+
     private static let unterTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 
     var body: some Scene {
@@ -36,8 +45,8 @@ struct TCMuckensturmApp: App {
                 StartAnsicht()
                     .environment(sitzung)
                     .task { sitzung.starten() }
-                    // Universal Links und das eigene Schema (Passwortlink)
-                    .onOpenURL { sitzung.linkOeffnen($0) }
+                    // Universal Links und das eigene Schema (Passwortlink), sonst ein Widget (WidgetLink)
+                    .onOpenURL { Self.oeffnen($0, sitzung: sitzung) }
                     #if DEBUG
                     // Fuer Bildschirmfotos per simctl (README): `-TCMLink <url>` oeffnet den Link
                     // wie onOpenURL - ohne die Systemfrage "In … oeffnen?" beim eigenen Schema.
@@ -45,7 +54,7 @@ struct TCMuckensturmApp: App {
                         let argumente = ProcessInfo.processInfo.arguments
                         if let i = argumente.firstIndex(of: "-TCMLink"), i + 1 < argumente.count,
                            let url = URL(string: argumente[i + 1]) {
-                            sitzung.linkOeffnen(url)
+                            Self.oeffnen(url, sitzung: sitzung)
                         }
                         // `-TCMPush /nachrichten` tut, als haette man eine Nachricht mit diesem Ziel angetippt
                         // (das Tippen selbst geht im Simulator nur von Hand).

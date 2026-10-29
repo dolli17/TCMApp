@@ -9,7 +9,8 @@ import Foundation
 import Supabase
 
 enum SupabaseVerbindung {
-    static func client(fuer umgebung: Umgebung) -> SupabaseClient {
+    /// - Parameter autoRefreshToken: im Widget aus - die Erweiterung lebt nur Sekunden (WidgetLaden).
+    static func client(fuer umgebung: Umgebung, autoRefreshToken: Bool = true) -> SupabaseClient {
         SupabaseClient(
             supabaseURL: umgebung.supabaseURL,
             supabaseKey: umgebung.supabaseKey,
@@ -21,7 +22,7 @@ enum SupabaseVerbindung {
                     // Schluessel auf diesem Geraet - wer die Mail am Rechner oeffnet,
                     // kaeme nicht weiter. Der token_hash aus den Vorlagen braucht keinen.
                     flowType: .implicit,
-                    autoRefreshToken: true,
+                    autoRefreshToken: autoRefreshToken,
                     // Die gespeicherte Sitzung sofort melden, auch wenn sie
                     // abgelaufen ist - die Weiche erneuert sie selbst (Sitzung.ladeZugang).
                     emitLocalSessionAsInitialSession: true

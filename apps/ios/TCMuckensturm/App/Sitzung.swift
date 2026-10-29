@@ -49,6 +49,8 @@ final class Sitzung {
                 case .initialSession, .signedIn:
                     await self.entscheiden(angemeldet: sitzung != nil)
                 case .signedOut:
+                    // Keine Termine mehr auf dem Home-Bildschirm des Geraets.
+                    WidgetBruecke.vergessen(umgebung: self.umgebung)
                     self.runde += 1
                     self.ziel = StartLogik.nachAbmelden(aktuell: self.ziel)
                 default:
