@@ -1,0 +1,11 @@
+// Dev: das Dev-Projekt (Branch main). Werte aus apps/mobile/eas.json
+// (build.base.env) - oeffentlicher Publishable Key, darf ins Repo.
+
+#include "Basis.xcconfig"
+
+APP_BUNDLE_SUFFIX = .dev
+TCM_ANZEIGENAME = TCM Dev
+
+SUPABASE_URL = https:/$()/xvjqqjiweogtfpfgeoqz.supabase.co
+SUPABASE_KEY = sb_publishable_Vrd1oT_d9KTwr9jfiT64Eg_LDW6IX1V
+SITE_URL = https:/$()/app.tennisclub-muckensturm.de

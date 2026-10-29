@@ -1,0 +1,12 @@
+// Lokal: gegen den lokalen Supabase-Stack (`pnpm db:start`), nur im Simulator.
+//
+// SUPABASE_URL und SUPABASE_KEY stehen in Lokal.geheim.xcconfig (gitignored).
+// Anlegen mit scripts/lokal-konfigurieren.sh oder von Hand aus
+// Lokal.geheim.xcconfig.example. Fehlt die Datei, zeigt die App beim Start
+// einen Hinweis statt abzustuerzen.
+
+#include "Basis.xcconfig"
+#include? "Lokal.geheim.xcconfig"
+
+APP_BUNDLE_SUFFIX = .lokal
+TCM_ANZEIGENAME = TCM Lokal

@@ -1,0 +1,17 @@
+// Gemeinsame Werte aller Konfigurationen.
+//
+// Achtung: "//" leitet in xcconfig einen Kommentar ein. Adressen deshalb als
+// https:/$()/beispiel.de schreiben - $() ist leer und trennt die beiden Striche.
+
+APP_BUNDLE_ID = de.tcmuckensturm.app
+// Wird je Konfiguration gesetzt: leer (Prod), .dev, .lokal
+APP_BUNDLE_SUFFIX =
+PRODUCT_BUNDLE_IDENTIFIER = $(APP_BUNDLE_ID)$(APP_BUNDLE_SUFFIX)
+TCM_ANZEIGENAME = TC Muckensturm
+
+// App Group, zugleich Access Group des Schluesselbunds - fuer spaetere Widgets.
+// Je Bundle-ID eine eigene Gruppe, damit Dev und Prod sich nichts teilen.
+APP_GROUP = group.$(PRODUCT_BUNDLE_IDENTIFIER)
+
+// Web-Adresse fuer Antrag, Impressum usw. Leer: die Verweise bleiben weg.
+SITE_URL =

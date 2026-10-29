@@ -39,6 +39,8 @@ next-env.d.ts
 *.jks
 android/
 ios/
+# Die native iOS-App ist kein Expo-Prebuild, sondern Quelle (eigene .gitignore darin).
+!apps/ios/
 
 # ---------------------------------------------------------------------------
 # Supabase CLI

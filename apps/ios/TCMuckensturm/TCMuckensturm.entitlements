@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Universal Links. Die Behandlung der Links kommt spaeter; die
+	     apple-app-site-association liegt im Web (.well-known). -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:app.tennisclub-muckensturm.de</string>
+		<string>applinks:dev.tennisclub-muckensturm.de</string>
+	</array>
+	<!-- App Group fuer spaetere Widgets; zugleich Access Group des Schluesselbunds. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>$(APP_GROUP)</string>
+	</array>
+</dict>
+</plist>

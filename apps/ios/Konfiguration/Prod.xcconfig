@@ -1,0 +1,11 @@
+// Prod: das Prod-Projekt (Branch production).
+//
+// TODO: Werte eintragen, sobald es das Prod-Projekt fuer die native App gibt
+// (URL, Publishable Key, SITE_URL). Bis dahin zeigt ein Prod-Build beim Start
+// den Konfigurationshinweis.
+
+#include "Basis.xcconfig"
+
+SUPABASE_URL =
+SUPABASE_KEY =
+SITE_URL = https:/$()/app.tennisclub-muckensturm.de
