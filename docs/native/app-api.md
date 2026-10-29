@@ -2,14 +2,14 @@
 
 Stand: 29.10.2026 · Quelle: Expo-App in `apps/mobile` (Datenschicht `src/lib/daten.ts`, `src/lib/push.ts`, `src/lib/verwaltung/*.ts`)
 
-Hier steht, was die App mit Supabase spricht: 51 RPCs, 9 direkte Tabellenzugriffe, ein Realtime-Kanal und die Auth-Aufrufe. Die nativen Apps (iOS, Android) müssen genau das abdecken, nicht mehr und nicht weniger. Fahrplan: [`native-apps.md`](../native-apps.md).
+Hier steht, was die App mit Supabase spricht: 51 RPCs, 9 direkte Tabellenzugriffe, ein Realtime-Kanal und die Auth-Aufrufe. Die nativen Apps (iOS, Android) müssen genau das abdecken, nicht mehr und nicht weniger. Statt der Tabellenzugriffe nehmen sie die RPCs aus [„Neu für die nativen Apps“](#neu-für-die-nativen-apps). Fahrplan: [`native-apps.md`](../native-apps.md).
 
 **Maschinenlesbar:** [`app-api.json`](app-api.json). Sie enthält Parameter und Rückgaben jeder RPC, die Spalten der Tabellen und die Werte der Enums. Erzeugt wird sie aus `packages/core/src/database.types.ts` mit `pnpm --filter @tcm/core build:app-api`. Der Test `packages/core/src/app-api.test.ts` prüft, dass sie aktuell ist und dass die Liste zu `apps/mobile` passt. Ruft die Expo-App eine neue RPC auf, schlägt er fehl.
 
 ## Grundsätze
 
 - **Alles läuft als angemeldetes Mitglied** (Publishable Key plus Sitzungs-JWT). Was jemand darf, entscheiden RLS und die RPCs, nie die App. Die App blendet nur aus, was die Datenbank ohnehin ablehnen würde (`bookingActions`, `canStartAt`, siehe `packages/core/golden/`).
-- **Schreiben nur über RPCs.** Einzige Ausnahme sind die zwei `update` auf `members` (siehe unten). Sie sollen ebenfalls RPCs werden.
+- **Schreiben nur über RPCs.** Einzige Ausnahme in der Expo-App sind die zwei `update` auf `members` (siehe unten). Die nativen Apps nehmen dafür `save_my_profile` und `save_my_notfallkontakt`.
 - **Zeitpunkte** gehen als ISO-8601 mit Zone hinaus (`toISOString()`, also UTC). Ein Zeitstempel ohne Zone würde Postgres in der Zeitzone der Verbindung (UTC) lesen, und die Buchung landete zwei Stunden daneben. Tage (`p_date`, `p_valid_from`) gehen als `JJJJ-MM-TT`, Uhrzeiten (`p_start_time`) als `HH:MM`. Wandeln Tag und Minute in einen Zeitpunkt immer in Europe/Berlin (`berlinTime`), nie in der Zeitzone des Geräts.
 - **Rückgaben:** `setof`/`returns table` kommt als Liste. Bei Funktionen, die genau eine Zeile liefern (`my_booking_quota`, `booking_settings`, `mein_zugang`, `my_work_duty`), nimmt die App die erste Zeile. `void` liefert nichts.
 - **Nullbarkeit:** Die generierten Typen sagen bei Rückgabespalten von RPCs nichts Verlässliches über `null`, `day_schedule.series_id` etwa ist meist `null`. Die nativen Modelle machen deshalb jede Rückgabespalte optional, die nicht offensichtlich Pflicht ist (Kennungen, Zeitpunkte).
@@ -39,7 +39,7 @@ Was die App darüber hinaus auswertet, steht bei der jeweiligen RPC in der Spalt
 | `setSession({ access_token, refresh_token })` | `app/passwort-setzen.tsx` | Altes Linkformat mit Tokens im Fragment. Entfällt mit S20 (`docs/goLive.md`, Schritt 1). Die nativen Apps brauchen es nicht mehr, wenn bis dahin beide Projekte umgestellt sind. |
 | `updateUser({ password })` | Passwort setzen, Onboarding-Schritt „Passwort“ | Fehler über `translateDbError`. Erfolg: „Passwort gespeichert.“ |
 | `getSession()`, `onAuthStateChange` | `app/index.tsx` (Weiche) | Ohne Sitzung zur Anmeldung, mit Sitzung `mein_zugang` fragen. |
-| `getUser()` | `ladeIchSelbst`, `ladeVeranstaltung` | `auth.uid` für `members.auth_user_id`. Entfällt mit der RPC `ich()` (siehe Tabellen). |
+| `getUser()` | `ladeIchSelbst`, `ladeVeranstaltung` | `auth.uid` für `members.auth_user_id`. Nativ nicht nötig: `ich()` liefert die `member_id`, `events_fuer_mitglied` die eigene Forderung. |
 
 Die Sitzung liegt in der Expo-App im SecureStore. Nativ kommt sie in die Keychain (mit App Group, damit Widgets lesen können) bzw. in den Android Keystore.
 
@@ -105,7 +105,7 @@ Vor dem Absenden prüft die Verwaltung die Eingaben selbst. Uhrzeit: „Uhrzeit 
 | `my_drink_purchases` | – | `{id, item_name, quantity, unit_price_cents, total_cents, created_at, voided_at, source}` | `ladeEigeneGetraenke`: Home, Konto, Getränke | wirft |
 | `record_drink_purchase` | `p_item_id`, `p_quantity` (1 bis 50, `MAX_DRINK_QUANTITY`) | `uuid` | `bucheGetraenk`: Getränke (je Artikel im Korb) | Meldung je Artikel; was scheitert, bleibt im Korb |
 | `void_drink_purchase` | `p_purchase_id`, `p_reason` = „Fehlbuchung“ | – | `storniereGetraenk`: Getränke | Meldung (etwa: Stornofenster vorbei). Erfolg: „Zurückgenommen.“ |
-| `events_fuer_mitglied` | – | veröffentlichte und abgesagte Veranstaltungen mit eigenem Stand: `id, kind, title, description, location, status, starts_at, ends_at, registration_enabled, registration_deadline, max_participants, companions_allowed, fee_cents, work_hours, personen, warteliste, mein_status, meine_begleitpersonen, meine_bemerkung` | `ladeVeranstaltungen`: Veranstaltungen, Home; `ladeVeranstaltung`: Detail mit `.eq("id", …)` auf dem Ergebnis | wirft; Detail ohne Treffer ist `null` |
+| `events_fuer_mitglied` | – | veröffentlichte und abgesagte Veranstaltungen mit eigenem Stand: `id, kind, title, description, location, status, starts_at, ends_at, registration_enabled, registration_deadline, max_participants, companions_allowed, fee_cents, work_hours, personen, warteliste, mein_status, meine_begleitpersonen, meine_bemerkung`, seit Phase A auch `meine_forderung_cents, meine_forderung_status` (die eigene, nicht erlassene Forderung, sonst `null`; die Expo-App liest sie noch aus `charges`) | `ladeVeranstaltungen`: Veranstaltungen, Home; `ladeVeranstaltung`: Detail mit `.eq("id", …)` auf dem Ergebnis | wirft; Detail ohne Treffer ist `null` |
 | `event_mein_wartelistenplatz` | `p_event_id` | Zahl oder `null` | `ladeVeranstaltung`: Detail | Fehler wird nicht ausgewertet, es gibt dann keinen Platz |
 | `event_anmelden` | `p_event_id`, `p_companions`, `p_note` | `registered` oder `waitlisted` | `meldeZuVeranstaltungAn`: Detail | Meldung. Erfolg: „Du bist angemeldet.“ bzw. „Ausgebucht – du stehst auf der Warteliste.“ |
 | `event_anmeldung_aendern` | `p_event_id`, `p_companions`, `p_note` | wie oben | `aendereVeranstaltungsAnmeldung`: Detail | Erfolg: „Deine Anmeldung ist geändert.“ bzw. „Geändert – du stehst weiter auf der Warteliste.“ |
@@ -137,28 +137,50 @@ Vor dem Absenden prüft die Verwaltung die Eingaben selbst. Uhrzeit: „Uhrzeit 
 
 | RPC | Parameter | Rückgabe | Wo | Fehler |
 |---|---|---|---|---|
-| `register_push_token` | `p_token` (heute Expo-Token), `p_platform` (`ios`, `android`), `p_device_name` | – | `push.ts registriereGeraet`: Konto, Onboarding | Meldung. Erfolg: „Benachrichtigungen sind eingeschaltet.“ |
+| `register_push_token` | `p_token` (heute Expo-Token), `p_platform` (`ios`, `android`), `p_device_name`; nativ zusätzlich `p_provider` (`apns`, `fcm`, Standard `expo`) | – | `push.ts registriereGeraet`: Konto, Onboarding | Meldung. Erfolg: „Benachrichtigungen sind eingeschaltet.“ |
 | `remove_push_token` | `p_token` | – | `push.ts meldeGeraetAb`: Konto, Onboarding, vor dem Abmelden | Meldung |
 
-Phase A ändert hier den Vertrag: Die nativen Apps registrieren APNs- bzw. FCM-Tokens mit einem zusätzlichen Parameter `p_provider` (`expo`, `apns`, `fcm`). Siehe `native-apps.md`.
+Die nativen Apps registrieren APNs- bzw. FCM-Tokens mit dem optionalen Parameter `p_provider` (`expo`, `apns`, `fcm`, Standard `expo`). Die Expo-App schickt ihn nicht und bleibt bei `expo`. Ein anderer Wert: „Unbekannter Push-Anbieter "…".“ Die Regel S26 bleibt: Eine Marke, die noch für ein anderes Mitglied mit Zugang aktiv ist, zieht nicht um.
+
+Der Versand (`claim_notification_pushes`, nur Edge Function `notification-pushes`) liefert je Empfänger zusätzlich `geraete` = `[{token, provider}]`, neueste zuerst. `tokens` enthält bis zum Umbau der Function nur noch Expo-Marken, denn sie schickt alles an `exp.host`. Eine APNs- oder FCM-Marke würde dort abgelehnt und stillgelegt. Bis die Function APNs und FCM selbst verschickt, gehen Nachrichten an native Geräte also nicht hinaus, sind aber wie bisher abgehakt.
+
+## Neu für die nativen Apps
+
+Diese RPCs ersetzen die direkten Tabellenzugriffe (Migration `20261029113529_app_rpcs.sql`, Tests in `supabase/tests/42_app_rpcs.sql`). Die Expo-App ruft sie nicht auf. Deshalb stehen sie in `app-api.json` unter `nativ` und nicht unter `rpcs`. In `app-api.ts` heißt die Liste `NATIVE_RPCS`.
+
+Für alle gilt: nur angemeldet (`anon` hat kein `execute`), und jede liefert nur Eigenes, auch einem Admin. Ohne Zugang (`private.hat_zugang`) geben die lesenden nichts zurück (keine Zeile, `false` bzw. `null`), die schreibenden lehnen mit „Nur Mitglieder haben ein Konto.“ (`42501`) ab. Wo die Tabellen-Policies schon das Richtige zeigen, laufen sie als Aufrufer (`security invoker`). Nur `ich` läuft als `security definer`, wie `mein_zugang`.
+
+| RPC | Parameter | Rückgabe | Ersetzt | Fehler, Hinweise |
+|---|---|---|---|---|
+| `ich` | – | eine Zeile `{member_id, first_name, last_name, roles[], admin, platz_rechte, kiosk, zugang, grund, onboarding_offen}` | `members` (`id` über `auth_user_id`), `member_roles`, `getUser()` | `admin` = Vorstand oder App Admin (`hatVolleRechte`), `platz_rechte` = dazu Platzwart (`hatPlatzRechte`), beide aus `private.is_admin`/`private.darf_plaetze`. `zugang`, `grund`, `onboarding_offen` wie `mein_zugang`. Ohne Zugang oder ohne Mitglied (Kiosk) sind `member_id` und Name `null`, `roles` ist leer und alle Rechte sind `false`. |
+| `mein_profil` | – | eine Zeile `{first_name, last_name, title, phone, mobile, street, postcode, city, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, membership_number, member_since, team_name, is_team_captain}` | `members` (Name, Stammdaten, Notfallkontakt, Mannschaft), `memberships` | Mitgliedschaft = neueste aktive, sonst `null`. `team_name` ist bei den meisten `null`. Ohne Zugang keine Zeile. |
+| `save_my_profile` | `p_first_name`, `p_last_name`, `p_title`, `p_phone`, `p_mobile`, `p_street`, `p_postcode`, `p_city`, alle optional | – | `update members` (`speichereStammdaten`) | Nur geänderte Felder schicken. Fehlt ein Parameter oder ist er `null`, bleibt das Feld unverändert. Ein leerer Text leert es, Vor- und Nachname dürfen nicht leer sein („Vor- und Nachname sind Pflicht.“). Läuft als Aufrufer, also über Policy `members_update_own`, Spalten-Grant und Trigger `guard_member_self_update`. Andere Spalten nimmt die Funktion gar nicht erst an. Die Prüfung der Formate (PLZ, Telefon) macht wie heute die App vorher mit `memberProfileSchema`. Erfolg: „Gespeichert.“ |
+| `save_my_notfallkontakt` | `p_name`, `p_phone`, `p_relation` | – | `update members` (`speichereNotfallkontakt`) | Ersetzt alle drei Felder, leere Texte werden `null`. Nummer ohne Namen: „Zur Notfallnummer gehört auch ein Name.“ Erfolg: „Notfallkontakt gespeichert.“ |
+| `mein_mandat` | – | höchstens eine Zeile `{reference, signed_on, status, holder, bank_name, iban_last4}` | `sepa_mandates` mit `bank_accounts` | Neuestes aktives Mandat. Von der IBAN gibt es nur die letzten vier Stellen. |
+| `courts_aktiv` | – | `{id, name, short_name, position}` nach `position` | `courts` | Wie die Policy nur für Mitglieder mit abgeschlossenem Onboarding (`is_member`). |
+| `booking_types_aktiv` | `p_applies_to` (`booking` oder `blocking`) | `{code, name, duration_minutes, requires_partner, min_players, max_players, sort_order}` nach `sort_order` | `booking_types` (`ladeBuchungsarten`, `ladeBlockungsarten`) | Nur aktive Arten. Die Platzverwaltung mit den inaktiven Arten bleibt ein Tabellenzugriff, bis sie nativ gebaut wird. |
+| `drink_void_window_minutes` | – | Zahl (Minuten) | `settings` (`drinks.void_window_minutes`) | Eine eigene RPC statt einer Spalte in `drink_menu` (dort stünde dieselbe Zahl in jeder Zeile) oder in `booking_settings` (gehört zum Platz). Fehlt die Einstellung: 15. Ohne Zugang `null`. |
+| `push_token_aktiv` | `p_token` | `boolean` | `push_tokens` (`istAngemeldet`) | `true` nur für die eigene, nicht stillgelegte Marke. |
+
+Außerdem geändert, ohne Bruch für Expo und Web: `events_fuer_mitglied` hat zwei Spalten mehr (`meine_forderung_cents`, `meine_forderung_status`), `register_push_token` hat `p_provider` (siehe [Push](#push)).
 
 ## Direkte Tabellenzugriffe – sollen RPC oder View werden
 
-Neun Tabellen liest die App direkt über PostgREST, `members` schreibt sie auch direkt. Das bindet die App an Spaltennamen und RLS-Details und kostet beim Start mehrere Runden. Für die nativen Apps sollen alle neun hinter RPCs oder Views verschwinden (Phase A). Die Migrationen dazu stehen noch aus. Hier stehen nur die Vorschläge.
+Neun Tabellen liest die App direkt über PostgREST, `members` schreibt sie auch direkt. Das bindet die App an Spaltennamen und RLS-Details und kostet beim Start mehrere Runden. Für die nativen Apps sind alle neun durch RPCs ersetzt (Phase A, Spalte „Ersatz“, siehe [oben](#neu-für-die-nativen-apps)). Die Expo-App liest bis zum Umstieg weiter direkt, deshalb bleiben Tabellen-Policies und -Grants bis zum Aufräumen danach.
 
-| Tabelle | Zugriff heute (Wo, Spalten, Filter) | Vorschlag |
-|---|---|---|
-| `courts` | `ladePlaetze`: `id, name, short_name` · `active = true` · nach `position` | **soll RPC/View werden:** `courts_aktiv()` oder View `courts_app`, nur aktive Plätze |
-| `booking_types` | `ladeBuchungsarten`: `code, name, duration_minutes, requires_partner, min_players, max_players` · `active`, `applies_to = booking` · `ladeBlockungsarten`: `code, name` · `applies_to = blocking` · Verwaltung: `code, name, applies_to, active` · alle nach `sort_order` | **soll RPC/View werden:** `booking_types_aktiv(p_applies_to)`, oder gleich in `booking_settings` mitliefern |
-| `members` | `ladeIchSelbst`/`ladeVeranstaltung`: `id` über `auth_user_id` · `ladeMeinenNamen`: `first_name, last_name` · `ladeMeineStammdaten`: 8 Stammdatenfelder + 3 Notfallkontakt · `ladeMeineMannschaft`: `is_team_captain, teams(name)` · **update** `speichereStammdaten` (nur geänderte Felder) und `speichereNotfallkontakt` | **soll RPC werden:** `mein_profil()` (alles Lesende in einem Zug), `save_my_profile(…)` und `save_my_notfallkontakt(…)`. Heute regeln Policy `members_update_own`, Spalten-Grant und Trigger `guard_member_self_update` das Schreiben. Der Trigger lehnt ab, sobald eine fremde Spalte im Patch steht. |
-| `member_roles` | `ladeIchSelbst`: `role` · `member_id = ich` | **soll RPC werden:** `ich()` mit `member_id`, Name, Rollen und abgeleiteten Rechten (`admin`, `platz_rechte` wie `hatVolleRechte`/`hatPlatzRechte`). Ersetzt beim Start drei Abfragen. |
-| `memberships` | `ladeMeineMitgliedschaft`: `number, started_on` · `status = active` · neueste | **soll RPC werden:** in `mein_profil()` |
-| `sepa_mandates` | `ladeMeinMandat`: `reference, signed_on, status, bank_accounts(holder, bank_name, iban_last4)` · `status = active` · neuestes | **soll RPC werden:** `mein_mandat()` |
-| `charges` | `ladeVeranstaltung`: `amount_cents, status` · `event_id`, `member_id = ich`, `status ≠ waived` (bewusst nur die eigene, ein Admin sähe sonst alle) | **soll RPC/View werden:** als `meine_forderung_cents`/`meine_forderung_status` in `events_fuer_mitglied` |
-| `settings` | `ladeStornoFenster`: `drinks.void_window_minutes` (bei Fehler 15) · Verwaltung `ladeEinstellungen`: alle, gefiltert auf `booking.` | **soll RPC werden:** Stornofenster in `drink_menu` oder `booking_settings`; Öffnung und Schluss liefert `booking_settings` schon |
-| `push_tokens` | `istAngemeldet`: `id` · `token = <token>`, `disabled_at is null` | **soll RPC werden:** `push_token_aktiv(p_token) → boolean`, im selben Zug wie `provider` |
+| Tabelle | Zugriff heute (Wo, Spalten, Filter) | Vorschlag | Ersatz |
+|---|---|---|---|
+| `courts` | `ladePlaetze`: `id, name, short_name` · `active = true` · nach `position` | **soll RPC/View werden:** `courts_aktiv()` oder View `courts_app`, nur aktive Plätze | `courts_aktiv()` |
+| `booking_types` | `ladeBuchungsarten`: `code, name, duration_minutes, requires_partner, min_players, max_players` · `active`, `applies_to = booking` · `ladeBlockungsarten`: `code, name` · `applies_to = blocking` · Verwaltung: `code, name, applies_to, active` · alle nach `sort_order` | **soll RPC/View werden:** `booking_types_aktiv(p_applies_to)`, oder gleich in `booking_settings` mitliefern | `booking_types_aktiv(p_applies_to)`; die Verwaltung (auch inaktive) bleibt vorerst |
+| `members` | `ladeIchSelbst`/`ladeVeranstaltung`: `id` über `auth_user_id` · `ladeMeinenNamen`: `first_name, last_name` · `ladeMeineStammdaten`: 8 Stammdatenfelder + 3 Notfallkontakt · `ladeMeineMannschaft`: `is_team_captain, teams(name)` · **update** `speichereStammdaten` (nur geänderte Felder) und `speichereNotfallkontakt` | **soll RPC werden:** `mein_profil()` (alles Lesende in einem Zug), `save_my_profile(…)` und `save_my_notfallkontakt(…)`. Heute regeln Policy `members_update_own`, Spalten-Grant und Trigger `guard_member_self_update` das Schreiben. Der Trigger lehnt ab, sobald eine fremde Spalte im Patch steht. | `ich()`, `mein_profil()`, `save_my_profile(…)`, `save_my_notfallkontakt(…)` |
+| `member_roles` | `ladeIchSelbst`: `role` · `member_id = ich` | **soll RPC werden:** `ich()` mit `member_id`, Name, Rollen und abgeleiteten Rechten (`admin`, `platz_rechte` wie `hatVolleRechte`/`hatPlatzRechte`). Ersetzt beim Start drei Abfragen. | `ich()` |
+| `memberships` | `ladeMeineMitgliedschaft`: `number, started_on` · `status = active` · neueste | **soll RPC werden:** in `mein_profil()` | `mein_profil()` |
+| `sepa_mandates` | `ladeMeinMandat`: `reference, signed_on, status, bank_accounts(holder, bank_name, iban_last4)` · `status = active` · neuestes | **soll RPC werden:** `mein_mandat()` | `mein_mandat()` |
+| `charges` | `ladeVeranstaltung`: `amount_cents, status` · `event_id`, `member_id = ich`, `status ≠ waived` (bewusst nur die eigene, ein Admin sähe sonst alle) | **soll RPC/View werden:** als `meine_forderung_cents`/`meine_forderung_status` in `events_fuer_mitglied` | `events_fuer_mitglied` (`meine_forderung_cents`, `meine_forderung_status`) |
+| `settings` | `ladeStornoFenster`: `drinks.void_window_minutes` (bei Fehler 15) · Verwaltung `ladeEinstellungen`: alle, gefiltert auf `booking.` | **soll RPC werden:** Stornofenster in `drink_menu` oder `booking_settings`; Öffnung und Schluss liefert `booking_settings` schon | `drink_void_window_minutes()`; Öffnung und Schluss aus `booking_settings`, die Verwaltung bleibt vorerst |
+| `push_tokens` | `istAngemeldet`: `id` · `token = <token>`, `disabled_at is null` | **soll RPC werden:** `push_token_aktiv(p_token) → boolean`, im selben Zug wie `provider` | `push_token_aktiv(p_token)`; `provider` beim Anmelden über `register_push_token` |
 
-Über Fremdschlüssel liest die App außerdem `teams` (bei `members`) und `bank_accounts` (bei `sepa_mandates`) mit. Beide verschwinden mit den Vorschlägen oben.
+Über Fremdschlüssel liest die App außerdem `teams` (bei `members`) und `bank_accounts` (bei `sepa_mandates`) mit. Beides liefern jetzt `mein_profil()` und `mein_mandat()`.
 
 ## Realtime
 

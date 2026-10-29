@@ -2,7 +2,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { appApiJson, REALTIME, RPCS, TABELLEN } from "../scripts/app-api";
+import { appApiJson, NATIVE_RPCS, REALTIME, RPCS, TABELLEN } from "../scripts/app-api";
 
 /**
  * Der API-Vertrag (docs/native/app-api.json) ist die Liste, an der die
@@ -36,6 +36,17 @@ describe("docs/native/app-api.json", () => {
 
   it("es sind neun Tabellen, die RPC oder View werden sollen", () => {
     expect(Object.keys(TABELLEN)).toHaveLength(9);
+  });
+
+  it("jede Tabelle hat einen Ersatz, und den gibt es als RPC", () => {
+    for (const [name, t] of Object.entries(TABELLEN)) {
+      expect(t.ersatz.length, name).toBeGreaterThan(0);
+      for (const r of t.ersatz) expect(r in NATIVE_RPCS || r in RPCS, `${name}: ${r}`).toBe(true);
+    }
+  });
+
+  it("die RPCs fuer die nativen Apps stehen nicht in der Expo-Liste", () => {
+    expect(Object.keys(NATIVE_RPCS).filter((r) => r in RPCS)).toEqual([]);
   });
 });
 

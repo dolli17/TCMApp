@@ -31,8 +31,9 @@ Die Arbeit läuft in parallelen Branches mit getrennten Bereichen:
 | N1 Grundlagen | `chore/native-grundlagen` | dieser Fahrplan, API-Vertrag, Golden Files, Token-Generator. Kein App-Code. |
 | N2 iOS-Gerüst | `feature/ios-geruest` | `apps/ios`: Projekt, Fundament (Phase B iOS) |
 | N3 Universal Links | `feature/universal-links` | `apps/web` `.well-known` (`apple-app-site-association`, `assetlinks.json`), Teil von Phase A |
+| N6 Backend-RPCs | `feature/app-rpcs` | `supabase/migrations`, Tests und API-Vertrag: Ersatz der Tabellenzugriffe, Push-Anbieter (Phase A). Einzige Spur mit Migrationen. |
 
-Weitere Spuren (Backend-RPCs, Android-Gerüst, Screens) folgen nach den Phasen unten. Migrationen gibt es dabei immer nur in **einer** Spur gleichzeitig (siehe `CONTRIBUTING.md`, „Parallel arbeiten“).
+Weitere Spuren (Android-Gerüst, Screens) folgen nach den Phasen unten. Migrationen gibt es dabei immer nur in **einer** Spur gleichzeitig (siehe `CONTRIBUTING.md`, „Parallel arbeiten“).
 
 ## Phasen
 
@@ -40,10 +41,10 @@ Weitere Spuren (Backend-RPCs, Android-Gerüst, Screens) folgen nach den Phasen u
 Damit beide Apps gegen einen schmalen, stabilen Vertrag bauen, nicht gegen Tabellen.
 
 - **API-Vertrag festhalten:** `docs/native/app-api.md` und `app-api.json`. *Erledigt mit N1.* Der Test in `packages/core` schlägt an, sobald die Expo-App eine neue RPC aufruft oder das Schema sich ändert und die JSON nicht neu erzeugt ist.
-- **Tabellenzugriffe durch RPCs/Views ersetzen:** Die 9 direkten Zugriffe (`courts`, `booking_types`, `members` mit zwei `update`, `member_roles`, `memberships`, `sepa_mandates`, `charges`, `settings`, `push_tokens`) bekommen RPCs bzw. Views. Die Vorschläge stehen in `app-api.md`, darunter `ich()`, `mein_profil()`, `save_my_profile(…)` und `mein_mandat()`. Alles als neue Migrationen, **abwärtskompatibel**: Die Expo-App liest bis zum Umstieg weiter direkt, die Tabellen-Grants bleiben bis zum Aufräumen danach.
+- **Tabellenzugriffe durch RPCs/Views ersetzen:** Die 9 direkten Zugriffe (`courts`, `booking_types`, `members` mit zwei `update`, `member_roles`, `memberships`, `sepa_mandates`, `charges`, `settings`, `push_tokens`) bekommen RPCs bzw. Views. *Erledigt mit N6* (Branch `feature/app-rpcs`): `ich()`, `mein_profil()`, `save_my_profile(…)`, `save_my_notfallkontakt(…)`, `mein_mandat()`, `courts_aktiv()`, `booking_types_aktiv(…)`, `drink_void_window_minutes()`, `push_token_aktiv(…)` und die eigene Forderung in `events_fuer_mitglied`, beschrieben in `app-api.md` unter „Neu für die nativen Apps“. Alles **abwärtskompatibel**: Die Expo-App liest bis zum Umstieg weiter direkt, die Tabellen-Grants bleiben bis zum Aufräumen danach.
 - **Rechenlogik:** Was die App selbst rechnet, kommt entweder auf den Server (als Feld in einer RPC, etwa die Knöpfe einer Buchung) oder wird portiert und mit den **Golden Files** geprüft. Faustregel: Portieren, was offline oder im Widget gebraucht wird (Zeit, Raster, freie Plätze jetzt, Texte), auf den Server, was ohnehin eine Abfrage braucht. Ändert sich eine Golden-Datei im Diff, ziehen Swift und Kotlin nach.
 - **Push direkt über APNs und FCM** statt über den Expo-Push-Dienst:
-  - Spalte `provider` in `push_tokens` (`expo`, `apns`, `fcm`, Standard `expo`), `register_push_token` bekommt `p_provider` mit Standard `expo`. Die Expo-App funktioniert also unverändert weiter.
+  - Spalte `provider` in `push_tokens` (`expo`, `apns`, `fcm`, Standard `expo`), `register_push_token` bekommt `p_provider` mit Standard `expo`. Die Expo-App funktioniert also unverändert weiter. *Erledigt mit N6*, dazu liefert `claim_notification_pushes` je Empfänger `geraete` mit Marke und Anbieter. `tokens` enthält bis zum Umbau der Function nur Expo-Marken.
   - Die Edge Function `notification-pushes` verschickt je nach `provider`: Expo-Tokens weiter über `exp.host`, APNs per HTTP/2 mit JWT aus dem `.p8`-Schlüssel, FCM über die HTTP-v1-API mit Dienstkonto. Ungültige Tokens werden wie heute über `disabled_at` abgeschaltet.
   - **Übergang:** Solange Expo-Tokens aktiv sind, bleibt der Expo-Zweig. Nach dem Umstieg laufen sie aus (deinstalliert oder überschrieben). Den Zweig entfernen, wenn 30 Tage lang kein Expo-Token mehr `last_seen_at` erneuert hat.
 - **Universal Links und App Links statt `tcm://`:** Passwort- und Einladungslinks (`/passwort-setzen?token_hash=…`) und Push-Ziele öffnen die App über `https://app.tennisclub-muckensturm.de/…` (Dev: `dev.…`). Dazu kommen `apple-app-site-association` und `assetlinks.json` (Spur N3) und neue Redirect-URLs in Supabase Auth (`goLive.md`, Schritt 1 und 2). `tcm://` bleibt für die Expo-App erlaubt, bis sie entfernt ist.
