@@ -74,6 +74,28 @@ export const RPCS: Record<string, string[]> = {
   void_drink_purchase: ["daten.ts storniereGetraenk"],
 };
 
+/**
+ * RPCs, die nur die nativen Apps brauchen: der Ersatz fuer die direkten
+ * Tabellenzugriffe (TABELLEN, ersatz). Die Expo-App ruft sie nicht auf, sie
+ * stehen deshalb nicht in RPCS. Je RPC ein Satz, wofuer sie da ist.
+ */
+export const NATIVE_RPCS: Record<string, string> = {
+  booking_types_aktiv: "Aktive Buchungsarten (p_applies_to = booking) bzw. Sperrarten (blocking), nach sort_order.",
+  courts_aktiv: "Aktive Plaetze mit id, name, short_name, position, nach position.",
+  drink_void_window_minutes: "Stornofenster der Getraenke in Minuten (15, wenn die Einstellung fehlt); ohne Zugang null.",
+  ich:
+    "Eine Zeile: member_id, Name, Rollen, admin (Vorstand, App Admin), platz_rechte (dazu Platzwart), " +
+    "kiosk und zugang/grund/onboarding_offen wie mein_zugang. Ohne Zugang Id, Name und Rechte leer.",
+  mein_mandat: "Das neueste aktive eigene SEPA-Mandat mit Kontoinhaber, Bank und den letzten vier Stellen der IBAN.",
+  mein_profil:
+    "Stammdaten, Notfallkontakt, Mitgliedsnummer und Mitglied seit, Mannschaft und Mannschaftsfuehrer in einer Zeile.",
+  push_token_aktiv: "Ist diese Marke fuer mich angemeldet und nicht stillgelegt?",
+  save_my_notfallkontakt: "Notfallkontakt als Ganzes ersetzen; leere Texte werden null.",
+  save_my_profile:
+    "Die acht Stammdatenfelder speichern: null heisst unveraendert, ein leerer Text leert. " +
+    "Laeuft ueber Policy members_update_own, Spalten-Grant und guard_member_self_update.",
+};
+
 export interface Tabellenzugriff {
   /** Datei unter apps/mobile/src/lib und Funktion */
   wo: string;
@@ -91,6 +113,8 @@ export interface Tabelle {
   zugriffe: Tabellenzugriff[];
   /** Alle direkten Tabellenzugriffe sollen RPC oder View werden - hier der Vorschlag. */
   vorschlag: string;
+  /** Die RPCs, die den Zugriff fuer die nativen Apps ersetzen (aus NATIVE_RPCS oder RPCS). */
+  ersatz: string[];
 }
 
 export const TABELLEN: Record<string, Tabelle> = {
@@ -121,6 +145,7 @@ export const TABELLEN: Record<string, Tabelle> = {
     vorschlag:
       "RPC booking_types_aktiv(p_applies_to) mit code, name, Dauer und Spielerzahlen; " +
       "oder in booking_settings mitliefern, die der Plan ohnehin laedt.",
+    ersatz: ["booking_types_aktiv"],
   },
   charges: {
     zugriffe: [
@@ -135,6 +160,7 @@ export const TABELLEN: Record<string, Tabelle> = {
     vorschlag:
       "Als Spalten meine_forderung_cents und meine_forderung_status in events_fuer_mitglied; " +
       "dann entfaellt auch die Abfrage der eigenen Mitglieds-Id davor.",
+    ersatz: ["events_fuer_mitglied"],
   },
   courts: {
     zugriffe: [
@@ -147,6 +173,7 @@ export const TABELLEN: Record<string, Tabelle> = {
       },
     ],
     vorschlag: "RPC courts_aktiv() oder View courts_app (id, name, short_name, position), nur aktive Plaetze.",
+    ersatz: ["courts_aktiv"],
   },
   member_roles: {
     zugriffe: [
@@ -160,6 +187,7 @@ export const TABELLEN: Record<string, Tabelle> = {
     vorschlag:
       "RPC ich() mit member_id, Name, Rollen und den abgeleiteten Rechten (admin, platz_rechte) - " +
       "ersetzt zusammen mit members drei Abfragen beim Start.",
+    ersatz: ["ich"],
   },
   members: {
     zugriffe: [
@@ -218,6 +246,7 @@ export const TABELLEN: Record<string, Tabelle> = {
       "Lesen: RPC mein_profil() mit Stammdaten, Notfallkontakt und Mannschaft in einem Zug. " +
       "Schreiben: RPC save_my_profile(...) und save_my_notfallkontakt(...), die nur geaenderte Felder " +
       "uebernehmen - heute erledigen das Policy, Spalten-Grant und Trigger guard_member_self_update.",
+    ersatz: ["ich", "mein_profil", "save_my_profile", "save_my_notfallkontakt"],
   },
   memberships: {
     zugriffe: [
@@ -232,6 +261,7 @@ export const TABELLEN: Record<string, Tabelle> = {
       },
     ],
     vorschlag: "In mein_profil() mitliefern (Mitgliedsnummer, Mitglied seit).",
+    ersatz: ["mein_profil"],
   },
   push_tokens: {
     zugriffe: [
@@ -246,6 +276,7 @@ export const TABELLEN: Record<string, Tabelle> = {
     vorschlag:
       "RPC push_token_aktiv(p_token) -> boolean; gehoert ohnehin zum Umbau auf APNs/FCM " +
       "(Spalte provider, siehe native-apps.md, Phase A).",
+    ersatz: ["push_token_aktiv"],
   },
   sepa_mandates: {
     zugriffe: [
@@ -260,6 +291,7 @@ export const TABELLEN: Record<string, Tabelle> = {
       },
     ],
     vorschlag: "RPC mein_mandat() mit Referenz, Datum, Kontoinhaber, Bank und den letzten vier Stellen der IBAN.",
+    ersatz: ["mein_mandat"],
   },
   settings: {
     zugriffe: [
@@ -281,6 +313,7 @@ export const TABELLEN: Record<string, Tabelle> = {
     vorschlag:
       "Das Stornofenster in drink_menu oder booking_settings mitliefern; Oeffnung und Schluss " +
       "kommen schon aus booking_settings. Die Verwaltung braucht dann keine eigene Abfrage mehr.",
+    ersatz: ["drink_void_window_minutes", "booking_settings"],
   },
 };
 
@@ -450,17 +483,24 @@ export function appApi(databaseTypes: string): unknown {
   const schema = leseSchema(databaseTypes);
   const enums = new Set<string>();
 
+  const rpc = (name: string) => {
+    const knoten = schema.funktionen.get(name);
+    if (!knoten) throw new Error(`RPC ${name} fehlt in database.types.ts`);
+    const sig = signatur(knoten, name);
+    sig.forEach((s) => (enumsIn(s.args, enums), enumsIn(s.returns, enums)));
+    return sig.length === 1 ? { ...sig[0] } : { varianten: sig };
+  };
+
   const rpcs = Object.fromEntries(
     Object.entries(RPCS)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([name, wo]) => {
-        const knoten = schema.funktionen.get(name);
-        if (!knoten) throw new Error(`RPC ${name} fehlt in database.types.ts`);
-        const sig = signatur(knoten, name);
-        sig.forEach((s) => (enumsIn(s.args, enums), enumsIn(s.returns, enums)));
-        const eintrag = sig.length === 1 ? { ...sig[0] } : { varianten: sig };
-        return [name, { ...eintrag, genutztIn: wo }];
-      }),
+      .map(([name, wo]) => [name, { ...rpc(name), genutztIn: wo }]),
+  );
+
+  const nativ = Object.fromEntries(
+    Object.entries(NATIVE_RPCS)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, zweck]) => [name, { ...rpc(name), zweck }]),
   );
 
   const zeile = (name: string) => {
@@ -476,7 +516,10 @@ export function appApi(databaseTypes: string): unknown {
   const tabellen = Object.fromEntries(
     Object.entries(TABELLEN)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([name, t]) => [name, { sollRpcOderViewWerden: true, vorschlag: t.vorschlag, zugriffe: t.zugriffe, row: zeile(name) }]),
+      .map(([name, t]) => [
+        name,
+        { sollRpcOderViewWerden: true, vorschlag: t.vorschlag, ersatz: t.ersatz, zugriffe: t.zugriffe, row: zeile(name) },
+      ]),
   );
   const eingebettet = Object.fromEntries(EINGEBETTET.map((name) => [name, { row: zeile(name) }]));
 
@@ -498,8 +541,11 @@ export function appApi(databaseTypes: string): unknown {
     typen:
       "Einfache Typen als Text (string, number, boolean, Json, null, undefined, enum:<name>, auch mit ' | '), " +
       "sonst {liste}, {objekt} oder {oder}. Ein '?' am Feldnamen heisst optional. " +
-      "Rueckgabe {liste: {objekt}} ist eine Tabelle (setof), undefined heisst void.",
+      "Rueckgabe {liste: {objekt}} ist eine Tabelle (setof), undefined heisst void. " +
+      "rpcs ruft die Expo-App auf, nativ sind die RPCs nur fuer die nativen Apps (Ersatz der Tabellenzugriffe, " +
+      "siehe tabellen.*.ersatz).",
     rpcs,
+    nativ,
     tabellen,
     eingebettet,
     realtime: REALTIME,

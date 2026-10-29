@@ -1,6 +1,6 @@
 {
   "$kommentar": "ERZEUGT von packages/core/scripts/app-api.ts aus packages/core/src/database.types.ts - NICHT VON HAND AENDERN. Neu erzeugen mit: pnpm --filter @tcm/core build:app-api. Lesefassung mit Fehlertexten: docs/native/app-api.md",
-  "typen": "Einfache Typen als Text (string, number, boolean, Json, null, undefined, enum:<name>, auch mit ' | '), sonst {liste}, {objekt} oder {oder}. Ein '?' am Feldnamen heisst optional. Rueckgabe {liste: {objekt}} ist eine Tabelle (setof), undefined heisst void.",
+  "typen": "Einfache Typen als Text (string, number, boolean, Json, null, undefined, enum:<name>, auch mit ' | '), sonst {liste}, {objekt} oder {oder}. Ein '?' am Feldnamen heisst optional. Rueckgabe {liste: {objekt}} ist eine Tabelle (setof), undefined heisst void. rpcs ruft die Expo-App auf, nativ sind die RPCs nur fuer die nativen Apps (Ersatz der Tabellenzugriffe, siehe tabellen.*.ersatz).",
   "rpcs": {
     "booking_settings": {
       "args": {
@@ -303,6 +303,8 @@
             "mein_status": "enum:event_registration_status",
             "meine_begleitpersonen": "number",
             "meine_bemerkung": "string",
+            "meine_forderung_cents": "number",
+            "meine_forderung_status": "enum:charge_status",
             "personen": "number",
             "registration_deadline": "string",
             "registration_enabled": "boolean",
@@ -730,6 +732,7 @@
         "objekt": {
           "p_device_name?": "string",
           "p_platform": "string",
+          "p_provider?": "string",
           "p_token": "string"
         }
       },
@@ -905,10 +908,164 @@
       ]
     }
   },
+  "nativ": {
+    "booking_types_aktiv": {
+      "args": {
+        "objekt": {
+          "p_applies_to": "enum:booking_kind"
+        }
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "code": "string",
+            "duration_minutes": "number",
+            "max_players": "number",
+            "min_players": "number",
+            "name": "string",
+            "requires_partner": "boolean",
+            "sort_order": "number"
+          }
+        }
+      },
+      "zweck": "Aktive Buchungsarten (p_applies_to = booking) bzw. Sperrarten (blocking), nach sort_order."
+    },
+    "courts_aktiv": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "id": "string",
+            "name": "string",
+            "position": "number",
+            "short_name": "string"
+          }
+        }
+      },
+      "zweck": "Aktive Plaetze mit id, name, short_name, position, nach position."
+    },
+    "drink_void_window_minutes": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": "number",
+      "zweck": "Stornofenster der Getraenke in Minuten (15, wenn die Einstellung fehlt); ohne Zugang null."
+    },
+    "ich": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "admin": "boolean",
+            "first_name": "string",
+            "grund": "string",
+            "kiosk": "boolean",
+            "last_name": "string",
+            "member_id": "string",
+            "onboarding_offen": "boolean",
+            "platz_rechte": "boolean",
+            "roles": {
+              "liste": "enum:app_role"
+            },
+            "zugang": "boolean"
+          }
+        }
+      },
+      "zweck": "Eine Zeile: member_id, Name, Rollen, admin (Vorstand, App Admin), platz_rechte (dazu Platzwart), kiosk und zugang/grund/onboarding_offen wie mein_zugang. Ohne Zugang Id, Name und Rechte leer."
+    },
+    "mein_mandat": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "bank_name": "string",
+            "holder": "string",
+            "iban_last4": "string",
+            "reference": "string",
+            "signed_on": "string",
+            "status": "enum:mandate_status"
+          }
+        }
+      },
+      "zweck": "Das neueste aktive eigene SEPA-Mandat mit Kontoinhaber, Bank und den letzten vier Stellen der IBAN."
+    },
+    "mein_profil": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "city": "string",
+            "emergency_contact_name": "string",
+            "emergency_contact_phone": "string",
+            "emergency_contact_relation": "string",
+            "first_name": "string",
+            "is_team_captain": "boolean",
+            "last_name": "string",
+            "member_since": "string",
+            "membership_number": "string",
+            "mobile": "string",
+            "phone": "string",
+            "postcode": "string",
+            "street": "string",
+            "team_name": "string",
+            "title": "string"
+          }
+        }
+      },
+      "zweck": "Stammdaten, Notfallkontakt, Mitgliedsnummer und Mitglied seit, Mannschaft und Mannschaftsfuehrer in einer Zeile."
+    },
+    "push_token_aktiv": {
+      "args": {
+        "objekt": {
+          "p_token": "string"
+        }
+      },
+      "returns": "boolean",
+      "zweck": "Ist diese Marke fuer mich angemeldet und nicht stillgelegt?"
+    },
+    "save_my_notfallkontakt": {
+      "args": {
+        "objekt": {
+          "p_name": "string",
+          "p_phone": "string",
+          "p_relation?": "string"
+        }
+      },
+      "returns": "undefined",
+      "zweck": "Notfallkontakt als Ganzes ersetzen; leere Texte werden null."
+    },
+    "save_my_profile": {
+      "args": {
+        "objekt": {
+          "p_city?": "string",
+          "p_first_name?": "string",
+          "p_last_name?": "string",
+          "p_mobile?": "string",
+          "p_phone?": "string",
+          "p_postcode?": "string",
+          "p_street?": "string",
+          "p_title?": "string"
+        }
+      },
+      "returns": "undefined",
+      "zweck": "Die acht Stammdatenfelder speichern: null heisst unveraendert, ein leerer Text leert. Laeuft ueber Policy members_update_own, Spalten-Grant und guard_member_self_update."
+    }
+  },
   "tabellen": {
     "booking_types": {
       "sollRpcOderViewWerden": true,
       "vorschlag": "RPC booking_types_aktiv(p_applies_to) mit code, name, Dauer und Spielerzahlen; oder in booking_settings mitliefern, die der Plan ohnehin laedt.",
+      "ersatz": [
+        "booking_types_aktiv"
+      ],
       "zugriffe": [
         {
           "wo": "daten.ts ladeBuchungsarten",
@@ -982,6 +1139,9 @@
     "charges": {
       "sollRpcOderViewWerden": true,
       "vorschlag": "Als Spalten meine_forderung_cents und meine_forderung_status in events_fuer_mitglied; dann entfaellt auch die Abfrage der eigenen Mitglieds-Id davor.",
+      "ersatz": [
+        "events_fuer_mitglied"
+      ],
       "zugriffe": [
         {
           "wo": "daten.ts ladeVeranstaltung",
@@ -1020,6 +1180,9 @@
     "courts": {
       "sollRpcOderViewWerden": true,
       "vorschlag": "RPC courts_aktiv() oder View courts_app (id, name, short_name, position), nur aktive Plaetze.",
+      "ersatz": [
+        "courts_aktiv"
+      ],
       "zugriffe": [
         {
           "wo": "daten.ts ladePlaetze",
@@ -1053,6 +1216,9 @@
     "member_roles": {
       "sollRpcOderViewWerden": true,
       "vorschlag": "RPC ich() mit member_id, Name, Rollen und den abgeleiteten Rechten (admin, platz_rechte) - ersetzt zusammen mit members drei Abfragen beim Start.",
+      "ersatz": [
+        "ich"
+      ],
       "zugriffe": [
         {
           "wo": "daten.ts ladeIchSelbst",
@@ -1077,6 +1243,12 @@
     "members": {
       "sollRpcOderViewWerden": true,
       "vorschlag": "Lesen: RPC mein_profil() mit Stammdaten, Notfallkontakt und Mannschaft in einem Zug. Schreiben: RPC save_my_profile(...) und save_my_notfallkontakt(...), die nur geaenderte Felder uebernehmen - heute erledigen das Policy, Spalten-Grant und Trigger guard_member_self_update.",
+      "ersatz": [
+        "ich",
+        "mein_profil",
+        "save_my_profile",
+        "save_my_notfallkontakt"
+      ],
       "zugriffe": [
         {
           "wo": "daten.ts ladeIchSelbst",
@@ -1226,6 +1398,9 @@
     "memberships": {
       "sollRpcOderViewWerden": true,
       "vorschlag": "In mein_profil() mitliefern (Mitgliedsnummer, Mitglied seit).",
+      "ersatz": [
+        "mein_profil"
+      ],
       "zugriffe": [
         {
           "wo": "daten.ts ladeMeineMitgliedschaft",
@@ -1267,6 +1442,9 @@
     "push_tokens": {
       "sollRpcOderViewWerden": true,
       "vorschlag": "RPC push_token_aktiv(p_token) -> boolean; gehoert ohnehin zum Umbau auf APNs/FCM (Spalte provider, siehe native-apps.md, Phase A).",
+      "ersatz": [
+        "push_token_aktiv"
+      ],
       "zugriffe": [
         {
           "wo": "push.ts istAngemeldet",
@@ -1290,6 +1468,7 @@
           "last_seen_at": "string",
           "member_id": "string",
           "platform": "string",
+          "provider": "string",
           "token": "string"
         }
       }
@@ -1297,6 +1476,9 @@
     "sepa_mandates": {
       "sollRpcOderViewWerden": true,
       "vorschlag": "RPC mein_mandat() mit Referenz, Datum, Kontoinhaber, Bank und den letzten vier Stellen der IBAN.",
+      "ersatz": [
+        "mein_mandat"
+      ],
       "zugriffe": [
         {
           "wo": "daten.ts ladeMeinMandat",
@@ -1341,6 +1523,10 @@
     "settings": {
       "sollRpcOderViewWerden": true,
       "vorschlag": "Das Stornofenster in drink_menu oder booking_settings mitliefern; Oeffnung und Schluss kommen schon aus booking_settings. Die Verwaltung braucht dann keine eigene Abfrage mehr.",
+      "ersatz": [
+        "drink_void_window_minutes",
+        "booking_settings"
+      ],
       "zugriffe": [
         {
           "wo": "daten.ts ladeStornoFenster",

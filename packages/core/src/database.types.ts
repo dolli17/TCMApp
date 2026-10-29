@@ -1797,6 +1797,7 @@ export type Database = {
           last_seen_at: string
           member_id: string
           platform: string
+          provider: string
           token: string
         }
         Insert: {
@@ -1807,6 +1808,7 @@ export type Database = {
           last_seen_at?: string
           member_id: string
           platform: string
+          provider?: string
           token: string
         }
         Update: {
@@ -1817,6 +1819,7 @@ export type Database = {
           last_seen_at?: string
           member_id?: string
           platform?: string
+          provider?: string
           token?: string
         }
         Relationships: [
@@ -2254,6 +2257,18 @@ export type Database = {
           slot_minutes: number
         }[]
       }
+      booking_types_aktiv: {
+        Args: { p_applies_to: Database["public"]["Enums"]["booking_kind"] }
+        Returns: {
+          code: string
+          duration_minutes: number
+          max_players: number
+          min_players: number
+          name: string
+          requires_partner: boolean
+          sort_order: number
+        }[]
+      }
       cancel_booking: {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: undefined
@@ -2305,6 +2320,7 @@ export type Database = {
       claim_notification_pushes: {
         Args: { p_limit?: number }
         Returns: {
+          geraete: Json
           items: Json
           member_id: string
           notification_ids: string[]
@@ -2342,6 +2358,15 @@ export type Database = {
           short_name: string
           sort_position: number
           subline: string
+        }[]
+      }
+      courts_aktiv: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+          position: number
+          short_name: string
         }[]
       }
       create_blocking: {
@@ -2601,6 +2626,7 @@ export type Database = {
           valid_from: string
         }[]
       }
+      drink_void_window_minutes: { Args: never; Returns: number }
       einzug_gruppen: {
         Args: never
         Returns: {
@@ -2807,6 +2833,8 @@ export type Database = {
           mein_status: Database["public"]["Enums"]["event_registration_status"]
           meine_begleitpersonen: number
           meine_bemerkung: string
+          meine_forderung_cents: number
+          meine_forderung_status: Database["public"]["Enums"]["charge_status"]
           personen: number
           registration_deadline: string
           registration_enabled: boolean
@@ -2860,6 +2888,21 @@ export type Database = {
       }
       iban_is_valid: { Args: { p_iban: string }; Returns: boolean }
       iban_to_numeric: { Args: { p_text: string }; Returns: string }
+      ich: {
+        Args: never
+        Returns: {
+          admin: boolean
+          first_name: string
+          grund: string
+          kiosk: boolean
+          last_name: string
+          member_id: string
+          onboarding_offen: boolean
+          platz_rechte: boolean
+          roles: Database["public"]["Enums"]["app_role"][]
+          zugang: boolean
+        }[]
+      }
       ist_testadresse: { Args: { p_email: string }; Returns: boolean }
       join_booking: { Args: { p_booking_id: string }; Returns: undefined }
       konto_loeschung_beantragen: {
@@ -2889,6 +2932,37 @@ export type Database = {
         Returns: undefined
       }
       mark_notifications_read: { Args: { p_ids?: string[] }; Returns: number }
+      mein_mandat: {
+        Args: never
+        Returns: {
+          bank_name: string
+          holder: string
+          iban_last4: string
+          reference: string
+          signed_on: string
+          status: Database["public"]["Enums"]["mandate_status"]
+        }[]
+      }
+      mein_profil: {
+        Args: never
+        Returns: {
+          city: string
+          emergency_contact_name: string
+          emergency_contact_phone: string
+          emergency_contact_relation: string
+          first_name: string
+          is_team_captain: boolean
+          last_name: string
+          member_since: string
+          membership_number: string
+          mobile: string
+          phone: string
+          postcode: string
+          street: string
+          team_name: string
+          title: string
+        }[]
+      }
       mein_zugang: {
         Args: never
         Returns: {
@@ -3188,6 +3262,7 @@ export type Database = {
         Args: { p_ereignis: string; p_member_id: string }
         Returns: undefined
       }
+      push_token_aktiv: { Args: { p_token: string }; Returns: boolean }
       reactivate_member: { Args: { p_member_id: string }; Returns: undefined }
       reactivate_membership: {
         Args: {
@@ -3228,7 +3303,12 @@ export type Database = {
         Returns: string
       }
       register_push_token: {
-        Args: { p_device_name?: string; p_platform: string; p_token: string }
+        Args: {
+          p_device_name?: string
+          p_platform: string
+          p_provider?: string
+          p_token: string
+        }
         Returns: undefined
       }
       release_membership_application_mail: {
@@ -3269,6 +3349,23 @@ export type Database = {
       reorder_drink_items: { Args: { p_ids: string[] }; Returns: number }
       revoke_sepa_mandate: {
         Args: { p_mandate_id: string; p_revoked_on?: string }
+        Returns: undefined
+      }
+      save_my_notfallkontakt: {
+        Args: { p_name: string; p_phone: string; p_relation?: string }
+        Returns: undefined
+      }
+      save_my_profile: {
+        Args: {
+          p_city?: string
+          p_first_name?: string
+          p_last_name?: string
+          p_mobile?: string
+          p_phone?: string
+          p_postcode?: string
+          p_street?: string
+          p_title?: string
+        }
         Returns: undefined
       }
       save_my_tennis: {
