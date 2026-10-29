@@ -1,0 +1,12 @@
+# Erzeugt von XcodeGen aus project.yml
+*.xcodeproj/
+*.xcworkspace/
+
+# Lokale Werte (siehe Konfiguration/Lokal.geheim.xcconfig.example)
+Konfiguration/Lokal.geheim.xcconfig
+
+# Xcode
+DerivedData/
+build/
+xcuserdata/
+*.xcresult

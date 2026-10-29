@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>de</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>de</string>
+	</array>
+	<key>CFBundleDisplayName</key>
+	<string>$(TCM_ANZEIGENAME)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Nur fuer die Konfiguration Lokal (http://127.0.0.1:54321) noetig; erlaubt kein http ins Internet. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Barlow_400Regular.ttf</string>
+		<string>Barlow_500Medium.ttf</string>
+		<string>Barlow_600SemiBold.ttf</string>
+		<string>Barlow_700Bold.ttf</string>
+		<string>Barlow_800ExtraBold.ttf</string>
+		<string>BarlowSemiCondensed_600SemiBold.ttf</string>
+		<string>BarlowSemiCondensed_700Bold.ttf</string>
+		<string>BarlowSemiCondensed_800ExtraBold.ttf</string>
+	</array>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
+	<key>UILaunchScreen</key>
+	<dict>
+		<!-- Derselbe Grund wie der Splash der Expo-App (app.json) -->
+		<key>UIColorName</key>
+		<string>Markenblau</string>
+	</dict>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UIUserInterfaceStyle</key>
+	<string>Automatic</string>
+	<!-- Eigene Werte, gelesen von Umgebung.swift. Gesetzt in Konfiguration/*.xcconfig. -->
+	<key>TCMSupabaseURL</key>
+	<string>$(SUPABASE_URL)</string>
+	<key>TCMSupabaseKey</key>
+	<string>$(SUPABASE_KEY)</string>
+	<key>TCMSiteURL</key>
+	<string>$(SITE_URL)</string>
+	<key>TCMAppGroup</key>
+	<string>$(APP_GROUP)</string>
+</dict>
+</plist>

@@ -1,0 +1,104 @@
+# Quelle des Xcode-Projekts. Das .xcodeproj wird daraus erzeugt
+# (`xcodegen generate`) und nicht eingecheckt - siehe README.md.
+name: TCMuckensturm
+
+options:
+  bundleIdPrefix: de.tcmuckensturm
+  deploymentTarget:
+    iOS: "17.0"
+  developmentLanguage: de
+  defaultConfig: Lokal
+  createIntermediateGroups: true
+  generateEmptyDirectories: false
+
+configs:
+  Lokal: debug
+  Dev: release
+  Prod: release
+
+configFiles:
+  Lokal: Konfiguration/Lokal.xcconfig
+  Dev: Konfiguration/Dev.xcconfig
+  Prod: Konfiguration/Prod.xcconfig
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    DEVELOPMENT_TEAM: 93Z2KKGMV7
+    CODE_SIGN_STYLE: Automatic
+    TARGETED_DEVICE_FAMILY: "1"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    # Exakt gepinnt. Neue Version erst, wenn sie mindestens zwei Wochen alt ist.
+    exactVersion: 2.55.4
+
+targets:
+  TCMuckensturm:
+    type: application
+    platform: iOS
+    sources:
+      - path: TCMuckensturm
+    dependencies:
+      - package: Supabase
+        product: Supabase
+    settings:
+      base:
+        INFOPLIST_FILE: TCMuckensturm/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: TCMuckensturm/TCMuckensturm.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+
+  TCMuckensturmTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: TCMuckensturmTests
+    dependencies:
+      - target: TCMuckensturm
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: de.tcmuckensturm.app.tests
+
+schemes:
+  TCMuckensturm:
+    build:
+      targets:
+        TCMuckensturm: all
+        TCMuckensturmTests: [test]
+    run:
+      config: Lokal
+    test:
+      config: Lokal
+      gatherCoverageData: false
+      targets:
+        - TCMuckensturmTests
+    profile:
+      config: Dev
+    analyze:
+      config: Lokal
+    archive:
+      config: Dev
+  TCMuckensturm Dev:
+    build:
+      targets:
+        TCMuckensturm: all
+    run:
+      config: Dev
+    profile:
+      config: Dev
+    analyze:
+      config: Dev
+    archive:
+      config: Dev
