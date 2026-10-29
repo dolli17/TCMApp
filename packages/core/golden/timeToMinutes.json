@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Schluss",
+    "input": {
+      "value": "21:00"
+    },
+    "output": 1260
+  },
+  {
+    "name": "Oeffnung",
+    "input": {
+      "value": "08:00"
+    },
+    "output": 480
+  },
+  {
+    "name": "halbe Stunde",
+    "input": {
+      "value": "14:30"
+    },
+    "output": 870
+  },
+  {
+    "name": "vor der Oeffnung",
+    "input": {
+      "value": "06:00"
+    },
+    "output": 360
+  }
+]

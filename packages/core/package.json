@@ -10,6 +10,7 @@
     "./types": "./src/database.types.ts"
   },
   "scripts": {
+    "build:golden": "tsx scripts/build-golden.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
@@ -19,6 +20,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }

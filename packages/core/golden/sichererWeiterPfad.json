@@ -1,0 +1,169 @@
+[
+  {
+    "name": "eigene Seite: /",
+    "input": {
+      "wert": "/"
+    },
+    "output": "/"
+  },
+  {
+    "name": "eigene Seite: /plan",
+    "input": {
+      "wert": "/plan"
+    },
+    "output": "/plan"
+  },
+  {
+    "name": "eigene Seite: /plan?tag=2026-10-20#oben",
+    "input": {
+      "wert": "/plan?tag=2026-10-20#oben"
+    },
+    "output": "/plan?tag=2026-10-20#oben"
+  },
+  {
+    "name": "eigene Seite: /admin/mitglieder/abc",
+    "input": {
+      "wert": "/admin/mitglieder/abc"
+    },
+    "output": "/admin/mitglieder/abc"
+  },
+  {
+    "name": "null",
+    "input": {
+      "wert": null
+    },
+    "output": "/"
+  },
+  {
+    "name": "fehlt",
+    "input": {},
+    "output": "/"
+  },
+  {
+    "name": "leer",
+    "input": {
+      "wert": ""
+    },
+    "output": "/"
+  },
+  {
+    "name": "Zahl",
+    "input": {
+      "wert": 42
+    },
+    "output": "/"
+  },
+  {
+    "name": "abgewiesen: \"https://boese.example\"",
+    "input": {
+      "wert": "https://boese.example"
+    },
+    "output": "/"
+  },
+  {
+    "name": "abgewiesen: \"http://boese.example/plan\"",
+    "input": {
+      "wert": "http://boese.example/plan"
+    },
+    "output": "/"
+  },
+  {
+    "name": "abgewiesen: \"javascript:alert(1)\"",
+    "input": {
+      "wert": "javascript:alert(1)"
+    },
+    "output": "/"
+  },
+  {
+    "name": "abgewiesen: \"data:text/html,<script>alert(1)</script>\"",
+    "input": {
+      "wert": "data:text/html,<script>alert(1)</script>"
+    },
+    "output": "/"
+  },
+  {
+    "name": "abgewiesen: \"boese.example\"",
+    "input": {
+      "wert": "boese.example"
+    },
+    "output": "/"
+  },
+  {
+    "name": "abgewiesen: \"plan\"",
+    "input": {
+      "wert": "plan"
+    },
+    "output": "/"
+  },
+  {
+    "name": "abgewiesen: \"//boese.example\"",
+    "input": {
+      "wert": "//boese.example"
+    },
+    "output": "/"
+  },
+  {
+    "name": "abgewiesen: \"///boese.example\"",
+    "input": {
+      "wert": "///boese.example"
+    },
+    "output": "/"
+  },
+  {
+    "name": "abgewiesen: \"/\\\\boese.example\"",
+    "input": {
+      "wert": "/\\boese.example"
+    },
+    "output": "/"
+  },
+  {
+    "name": "abgewiesen: \"/\\\\/boese.example\"",
+    "input": {
+      "wert": "/\\/boese.example"
+    },
+    "output": "/"
+  },
+  {
+    "name": "abgewiesen: \"/plan\\\\..\\\\x\"",
+    "input": {
+      "wert": "/plan\\..\\x"
+    },
+    "output": "/"
+  },
+  {
+    "name": "abgewiesen: \"/\\t/boese.example\"",
+    "input": {
+      "wert": "/\t/boese.example"
+    },
+    "output": "/"
+  },
+  {
+    "name": "abgewiesen: \"/\\n/boese.example\"",
+    "input": {
+      "wert": "/\n/boese.example"
+    },
+    "output": "/"
+  },
+  {
+    "name": "abgewiesen: \"/\\r/boese.example\"",
+    "input": {
+      "wert": "/\r/boese.example"
+    },
+    "output": "/"
+  },
+  {
+    "name": "abgewiesen: \"/plan\\u0000\"",
+    "input": {
+      "wert": "/plan\u0000"
+    },
+    "output": "/"
+  },
+  {
+    "name": "eigener Fallback",
+    "input": {
+      "wert": "//boese.example",
+      "fallback": "/home"
+    },
+    "output": "/home"
+  }
+]

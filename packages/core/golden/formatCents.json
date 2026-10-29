@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Beitrag",
+    "input": {
+      "cents": 1900
+    },
+    "output": "19,00 €"
+  },
+  {
+    "name": "null",
+    "input": {
+      "cents": 0
+    },
+    "output": "0,00 €"
+  },
+  {
+    "name": "Cent",
+    "input": {
+      "cents": 5
+    },
+    "output": "0,05 €"
+  }
+]

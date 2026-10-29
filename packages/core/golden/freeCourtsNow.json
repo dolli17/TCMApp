@@ -1,0 +1,218 @@
+[
+  {
+    "name": "beginnt bei der naechsten Startzeit im Raster",
+    "input": {
+      "day": "2026-06-15",
+      "courtIds": [
+        "p1"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [],
+      "now": "2026-06-15T13:10:00.000Z"
+    },
+    "output": [
+      {
+        "courtId": "p1",
+        "fromMinute": 930,
+        "untilMinute": 1260
+      }
+    ]
+  },
+  {
+    "name": "Sekunden nach einer Startzeit: die naechste",
+    "input": {
+      "day": "2026-06-15",
+      "courtIds": [
+        "p1"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [],
+      "now": "2026-06-15T13:30:20.000Z"
+    },
+    "output": [
+      {
+        "courtId": "p1",
+        "fromMinute": 960,
+        "untilMinute": 1260
+      }
+    ]
+  },
+  {
+    "name": "genau zur Startzeit",
+    "input": {
+      "day": "2026-06-15",
+      "courtIds": [
+        "p1"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [],
+      "now": "2026-06-15T13:30:00.000Z"
+    },
+    "output": [
+      {
+        "courtId": "p1",
+        "fromMinute": 930,
+        "untilMinute": 1260
+      }
+    ]
+  },
+  {
+    "name": "vor der Oeffnung die Oeffnung",
+    "input": {
+      "day": "2026-06-15",
+      "courtIds": [
+        "p1"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [],
+      "now": "2026-06-15T04:15:00.000Z"
+    },
+    "output": [
+      {
+        "courtId": "p1",
+        "fromMinute": 480,
+        "untilMinute": 1260
+      }
+    ]
+  },
+  {
+    "name": "frei bis zur naechsten Belegung",
+    "input": {
+      "day": "2026-06-15",
+      "courtIds": [
+        "p1"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-06-15T07:00:00.000Z",
+          "ends_at": "2026-06-15T08:00:00.000Z"
+        },
+        {
+          "court_id": "p1",
+          "starts_at": "2026-06-15T15:00:00.000Z",
+          "ends_at": "2026-06-15T16:00:00.000Z"
+        }
+      ],
+      "now": "2026-06-15T13:10:00.000Z"
+    },
+    "output": [
+      {
+        "courtId": "p1",
+        "fromMinute": 930,
+        "untilMinute": 1020
+      }
+    ]
+  },
+  {
+    "name": "laesst Plaetze weg, auf denen jetzt nichts beginnen kann",
+    "input": {
+      "day": "2026-06-15",
+      "courtIds": [
+        "p1",
+        "p2"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-06-15T13:00:00.000Z",
+          "ends_at": "2026-06-15T14:00:00.000Z"
+        },
+        {
+          "court_id": "p2",
+          "starts_at": "2026-06-15T14:00:00.000Z",
+          "ends_at": "2026-06-15T15:00:00.000Z"
+        }
+      ],
+      "now": "2026-06-15T13:10:00.000Z"
+    },
+    "output": []
+  },
+  {
+    "name": "keine volle Stunde bis Schluss",
+    "input": {
+      "day": "2026-06-15",
+      "courtIds": [
+        "p1"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [],
+      "now": "2026-06-15T18:10:00.000Z"
+    },
+    "output": []
+  },
+  {
+    "name": "sortiert nach der laengsten freien Zeit, sonst nach Platzreihenfolge",
+    "input": {
+      "day": "2026-06-15",
+      "courtIds": [
+        "p1",
+        "p2",
+        "p3",
+        "p4"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-06-15T15:00:00.000Z",
+          "ends_at": "2026-06-15T16:00:00.000Z"
+        },
+        {
+          "court_id": "p3",
+          "starts_at": "2026-06-15T17:00:00.000Z",
+          "ends_at": "2026-06-15T18:00:00.000Z"
+        }
+      ],
+      "now": "2026-06-15T13:10:00.000Z"
+    },
+    "output": [
+      {
+        "courtId": "p2",
+        "fromMinute": 930,
+        "untilMinute": 1260
+      },
+      {
+        "courtId": "p4",
+        "fromMinute": 930,
+        "untilMinute": 1260
+      },
+      {
+        "courtId": "p3",
+        "fromMinute": 930,
+        "untilMinute": 1140
+      },
+      {
+        "courtId": "p1",
+        "fromMinute": 930,
+        "untilMinute": 1020
+      }
+    ]
+  }
+]

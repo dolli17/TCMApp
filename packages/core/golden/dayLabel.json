@@ -1,0 +1,50 @@
+[
+  {
+    "name": "heute",
+    "input": {
+      "startsAt": "2026-09-28T15:00:00.000Z",
+      "now": "2026-09-28T12:00:00.000Z"
+    },
+    "output": "Heute"
+  },
+  {
+    "name": "morgen",
+    "input": {
+      "startsAt": "2026-09-29T15:00:00.000Z",
+      "now": "2026-09-28T12:00:00.000Z"
+    },
+    "output": "Morgen"
+  },
+  {
+    "name": "danach Wochentag und Datum",
+    "input": {
+      "startsAt": "2026-10-01T17:00:00.000Z",
+      "now": "2026-09-28T12:00:00.000Z"
+    },
+    "output": "Donnerstag, 01.10."
+  },
+  {
+    "name": "Zeitumstellung: Samstag spaet, Termin Sonntag frueh",
+    "input": {
+      "startsAt": "2026-10-25T08:00:00.000Z",
+      "now": "2026-10-24T21:30:00.000Z"
+    },
+    "output": "Morgen"
+  },
+  {
+    "name": "Zeitumstellung: Samstag, Termin Montag",
+    "input": {
+      "startsAt": "2026-10-26T08:00:00.000Z",
+      "now": "2026-10-24T21:30:00.000Z"
+    },
+    "output": "Montag, 26.10."
+  },
+  {
+    "name": "Zeitumstellung: kurz nach Mitternacht Berlin, in UTC noch der Vortag",
+    "input": {
+      "startsAt": "2026-03-29T08:00:00.000Z",
+      "now": "2026-03-28T23:30:00.000Z"
+    },
+    "output": "Heute"
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Sommer: 18:30 Berlin ist 16:30 UTC",
+    "input": {
+      "day": "2026-07-15",
+      "minutes": 1110
+    },
+    "output": "2026-07-15T16:30:00.000Z"
+  },
+  {
+    "name": "Winter: 18:30 Berlin ist 17:30 UTC",
+    "input": {
+      "day": "2026-01-15",
+      "minutes": 1110
+    },
+    "output": "2026-01-15T17:30:00.000Z"
+  },
+  {
+    "name": "Tag der Umstellung auf Sommerzeit, 10:00",
+    "input": {
+      "day": "2026-03-29",
+      "minutes": 600
+    },
+    "output": "2026-03-29T08:00:00.000Z"
+  },
+  {
+    "name": "Tag der Umstellung auf Winterzeit, 10:00",
+    "input": {
+      "day": "2026-10-25",
+      "minutes": 600
+    },
+    "output": "2026-10-25T09:00:00.000Z"
+  },
+  {
+    "name": "Mitternacht im Sommer ist in UTC noch der Vortag",
+    "input": {
+      "day": "2026-09-28",
+      "minutes": 30
+    },
+    "output": "2026-09-27T22:30:00.000Z"
+  }
+]

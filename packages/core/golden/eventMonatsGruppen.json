@@ -1,0 +1,119 @@
+[
+  {
+    "name": "Kommendes der Reihe nach",
+    "input": {
+      "liste": [
+        {
+          "id": "dez",
+          "status": "published",
+          "starts_at": "2026-12-11T18:00:00.000Z",
+          "ends_at": null
+        },
+        {
+          "id": "dienst",
+          "status": "published",
+          "starts_at": "2026-11-14T08:00:00.000Z",
+          "ends_at": "2026-11-14T12:00:00.000Z"
+        },
+        {
+          "id": "fest",
+          "status": "published",
+          "starts_at": "2026-11-06T18:00:00.000Z",
+          "ends_at": "2026-11-06T22:30:00.000Z"
+        },
+        {
+          "id": "okt",
+          "status": "published",
+          "starts_at": "2026-10-10T16:00:00.000Z",
+          "ends_at": null
+        }
+      ],
+      "now": "2026-10-20T10:00:00.000Z"
+    },
+    "output": [
+      {
+        "schluessel": "2026-11",
+        "titel": "November 2026",
+        "events": [
+          {
+            "id": "fest",
+            "status": "published",
+            "starts_at": "2026-11-06T18:00:00.000Z",
+            "ends_at": "2026-11-06T22:30:00.000Z"
+          },
+          {
+            "id": "dienst",
+            "status": "published",
+            "starts_at": "2026-11-14T08:00:00.000Z",
+            "ends_at": "2026-11-14T12:00:00.000Z"
+          }
+        ]
+      },
+      {
+        "schluessel": "2026-12",
+        "titel": "Dezember 2026",
+        "events": [
+          {
+            "id": "dez",
+            "status": "published",
+            "starts_at": "2026-12-11T18:00:00.000Z",
+            "ends_at": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Vergangenes neueste zuerst",
+    "input": {
+      "liste": [
+        {
+          "id": "okt",
+          "status": "published",
+          "starts_at": "2026-10-10T16:00:00.000Z",
+          "ends_at": null
+        },
+        {
+          "id": "fest",
+          "status": "published",
+          "starts_at": "2026-11-06T18:00:00.000Z",
+          "ends_at": "2026-11-06T22:30:00.000Z"
+        },
+        {
+          "id": "dienst",
+          "status": "published",
+          "starts_at": "2026-11-14T08:00:00.000Z",
+          "ends_at": "2026-11-14T12:00:00.000Z"
+        }
+      ],
+      "now": "2026-11-08T10:00:00.000Z",
+      "vergangen": true
+    },
+    "output": [
+      {
+        "schluessel": "2026-11",
+        "titel": "November 2026",
+        "events": [
+          {
+            "id": "fest",
+            "status": "published",
+            "starts_at": "2026-11-06T18:00:00.000Z",
+            "ends_at": "2026-11-06T22:30:00.000Z"
+          }
+        ]
+      },
+      {
+        "schluessel": "2026-10",
+        "titel": "Oktober 2026",
+        "events": [
+          {
+            "id": "okt",
+            "status": "published",
+            "starts_at": "2026-10-10T16:00:00.000Z",
+            "ends_at": null
+          }
+        ]
+      }
+    ]
+  }
+]
