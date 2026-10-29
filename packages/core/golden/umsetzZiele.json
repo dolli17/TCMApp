@@ -1,0 +1,727 @@
+[
+  {
+    "name": "freie Plaetze und Zeiten, ohne die eigene Lage",
+    "input": {
+      "booking": {
+        "booking_id": "meine",
+        "court_id": "p1",
+        "starts_at": "2026-06-15T12:00:00.000Z",
+        "ends_at": "2026-06-15T13:00:00.000Z"
+      },
+      "day": "2026-06-15",
+      "courtIds": [
+        "p1",
+        "p2"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "occupied": [
+        {
+          "booking_id": "meine",
+          "court_id": "p1",
+          "starts_at": "2026-06-15T12:00:00.000Z",
+          "ends_at": "2026-06-15T13:00:00.000Z"
+        }
+      ],
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": [
+      {
+        "courtId": "p1",
+        "minute": 600
+      },
+      {
+        "courtId": "p1",
+        "minute": 630
+      },
+      {
+        "courtId": "p1",
+        "minute": 660
+      },
+      {
+        "courtId": "p1",
+        "minute": 690
+      },
+      {
+        "courtId": "p1",
+        "minute": 720
+      },
+      {
+        "courtId": "p1",
+        "minute": 750
+      },
+      {
+        "courtId": "p1",
+        "minute": 780
+      },
+      {
+        "courtId": "p1",
+        "minute": 810
+      },
+      {
+        "courtId": "p1",
+        "minute": 870
+      },
+      {
+        "courtId": "p1",
+        "minute": 900
+      },
+      {
+        "courtId": "p1",
+        "minute": 930
+      },
+      {
+        "courtId": "p1",
+        "minute": 960
+      },
+      {
+        "courtId": "p1",
+        "minute": 990
+      },
+      {
+        "courtId": "p1",
+        "minute": 1020
+      },
+      {
+        "courtId": "p1",
+        "minute": 1050
+      },
+      {
+        "courtId": "p1",
+        "minute": 1080
+      },
+      {
+        "courtId": "p1",
+        "minute": 1110
+      },
+      {
+        "courtId": "p1",
+        "minute": 1140
+      },
+      {
+        "courtId": "p1",
+        "minute": 1170
+      },
+      {
+        "courtId": "p1",
+        "minute": 1200
+      },
+      {
+        "courtId": "p2",
+        "minute": 600
+      },
+      {
+        "courtId": "p2",
+        "minute": 630
+      },
+      {
+        "courtId": "p2",
+        "minute": 660
+      },
+      {
+        "courtId": "p2",
+        "minute": 690
+      },
+      {
+        "courtId": "p2",
+        "minute": 720
+      },
+      {
+        "courtId": "p2",
+        "minute": 750
+      },
+      {
+        "courtId": "p2",
+        "minute": 780
+      },
+      {
+        "courtId": "p2",
+        "minute": 810
+      },
+      {
+        "courtId": "p2",
+        "minute": 840
+      },
+      {
+        "courtId": "p2",
+        "minute": 870
+      },
+      {
+        "courtId": "p2",
+        "minute": 900
+      },
+      {
+        "courtId": "p2",
+        "minute": 930
+      },
+      {
+        "courtId": "p2",
+        "minute": 960
+      },
+      {
+        "courtId": "p2",
+        "minute": 990
+      },
+      {
+        "courtId": "p2",
+        "minute": 1020
+      },
+      {
+        "courtId": "p2",
+        "minute": 1050
+      },
+      {
+        "courtId": "p2",
+        "minute": 1080
+      },
+      {
+        "courtId": "p2",
+        "minute": 1110
+      },
+      {
+        "courtId": "p2",
+        "minute": 1140
+      },
+      {
+        "courtId": "p2",
+        "minute": 1170
+      },
+      {
+        "courtId": "p2",
+        "minute": 1200
+      }
+    ]
+  },
+  {
+    "name": "belegte Zeiten ueber die volle Dauer ausgelassen",
+    "input": {
+      "booking": {
+        "booking_id": "meine",
+        "court_id": "p1",
+        "starts_at": "2026-06-15T12:00:00.000Z",
+        "ends_at": "2026-06-15T13:00:00.000Z"
+      },
+      "day": "2026-06-15",
+      "courtIds": [
+        "p1",
+        "p2"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "occupied": [
+        {
+          "booking_id": "meine",
+          "court_id": "p1",
+          "starts_at": "2026-06-15T12:00:00.000Z",
+          "ends_at": "2026-06-15T13:00:00.000Z"
+        },
+        {
+          "booking_id": "fremd",
+          "court_id": "p2",
+          "starts_at": "2026-06-15T14:30:00.000Z",
+          "ends_at": "2026-06-15T15:30:00.000Z"
+        }
+      ],
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": [
+      {
+        "courtId": "p1",
+        "minute": 600
+      },
+      {
+        "courtId": "p1",
+        "minute": 630
+      },
+      {
+        "courtId": "p1",
+        "minute": 660
+      },
+      {
+        "courtId": "p1",
+        "minute": 690
+      },
+      {
+        "courtId": "p1",
+        "minute": 720
+      },
+      {
+        "courtId": "p1",
+        "minute": 750
+      },
+      {
+        "courtId": "p1",
+        "minute": 780
+      },
+      {
+        "courtId": "p1",
+        "minute": 810
+      },
+      {
+        "courtId": "p1",
+        "minute": 870
+      },
+      {
+        "courtId": "p1",
+        "minute": 900
+      },
+      {
+        "courtId": "p1",
+        "minute": 930
+      },
+      {
+        "courtId": "p1",
+        "minute": 960
+      },
+      {
+        "courtId": "p1",
+        "minute": 990
+      },
+      {
+        "courtId": "p1",
+        "minute": 1020
+      },
+      {
+        "courtId": "p1",
+        "minute": 1050
+      },
+      {
+        "courtId": "p1",
+        "minute": 1080
+      },
+      {
+        "courtId": "p1",
+        "minute": 1110
+      },
+      {
+        "courtId": "p1",
+        "minute": 1140
+      },
+      {
+        "courtId": "p1",
+        "minute": 1170
+      },
+      {
+        "courtId": "p1",
+        "minute": 1200
+      },
+      {
+        "courtId": "p2",
+        "minute": 600
+      },
+      {
+        "courtId": "p2",
+        "minute": 630
+      },
+      {
+        "courtId": "p2",
+        "minute": 660
+      },
+      {
+        "courtId": "p2",
+        "minute": 690
+      },
+      {
+        "courtId": "p2",
+        "minute": 720
+      },
+      {
+        "courtId": "p2",
+        "minute": 750
+      },
+      {
+        "courtId": "p2",
+        "minute": 780
+      },
+      {
+        "courtId": "p2",
+        "minute": 810
+      },
+      {
+        "courtId": "p2",
+        "minute": 840
+      },
+      {
+        "courtId": "p2",
+        "minute": 870
+      },
+      {
+        "courtId": "p2",
+        "minute": 900
+      },
+      {
+        "courtId": "p2",
+        "minute": 930
+      },
+      {
+        "courtId": "p2",
+        "minute": 1050
+      },
+      {
+        "courtId": "p2",
+        "minute": 1080
+      },
+      {
+        "courtId": "p2",
+        "minute": 1110
+      },
+      {
+        "courtId": "p2",
+        "minute": 1140
+      },
+      {
+        "courtId": "p2",
+        "minute": 1170
+      },
+      {
+        "courtId": "p2",
+        "minute": 1200
+      }
+    ]
+  },
+  {
+    "name": "anderer Tag ohne Buchungsvorlauf",
+    "input": {
+      "booking": {
+        "booking_id": "meine",
+        "court_id": "p1",
+        "starts_at": "2026-06-15T12:00:00.000Z",
+        "ends_at": "2026-06-15T13:00:00.000Z"
+      },
+      "day": "2026-07-20",
+      "courtIds": [
+        "p1",
+        "p2"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "occupied": [],
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": [
+      {
+        "courtId": "p1",
+        "minute": 480
+      },
+      {
+        "courtId": "p1",
+        "minute": 510
+      },
+      {
+        "courtId": "p1",
+        "minute": 540
+      },
+      {
+        "courtId": "p1",
+        "minute": 570
+      },
+      {
+        "courtId": "p1",
+        "minute": 600
+      },
+      {
+        "courtId": "p1",
+        "minute": 630
+      },
+      {
+        "courtId": "p1",
+        "minute": 660
+      },
+      {
+        "courtId": "p1",
+        "minute": 690
+      },
+      {
+        "courtId": "p1",
+        "minute": 720
+      },
+      {
+        "courtId": "p1",
+        "minute": 750
+      },
+      {
+        "courtId": "p1",
+        "minute": 780
+      },
+      {
+        "courtId": "p1",
+        "minute": 810
+      },
+      {
+        "courtId": "p1",
+        "minute": 840
+      },
+      {
+        "courtId": "p1",
+        "minute": 870
+      },
+      {
+        "courtId": "p1",
+        "minute": 900
+      },
+      {
+        "courtId": "p1",
+        "minute": 930
+      },
+      {
+        "courtId": "p1",
+        "minute": 960
+      },
+      {
+        "courtId": "p1",
+        "minute": 990
+      },
+      {
+        "courtId": "p1",
+        "minute": 1020
+      },
+      {
+        "courtId": "p1",
+        "minute": 1050
+      },
+      {
+        "courtId": "p1",
+        "minute": 1080
+      },
+      {
+        "courtId": "p1",
+        "minute": 1110
+      },
+      {
+        "courtId": "p1",
+        "minute": 1140
+      },
+      {
+        "courtId": "p1",
+        "minute": 1170
+      },
+      {
+        "courtId": "p1",
+        "minute": 1200
+      },
+      {
+        "courtId": "p2",
+        "minute": 480
+      },
+      {
+        "courtId": "p2",
+        "minute": 510
+      },
+      {
+        "courtId": "p2",
+        "minute": 540
+      },
+      {
+        "courtId": "p2",
+        "minute": 570
+      },
+      {
+        "courtId": "p2",
+        "minute": 600
+      },
+      {
+        "courtId": "p2",
+        "minute": 630
+      },
+      {
+        "courtId": "p2",
+        "minute": 660
+      },
+      {
+        "courtId": "p2",
+        "minute": 690
+      },
+      {
+        "courtId": "p2",
+        "minute": 720
+      },
+      {
+        "courtId": "p2",
+        "minute": 750
+      },
+      {
+        "courtId": "p2",
+        "minute": 780
+      },
+      {
+        "courtId": "p2",
+        "minute": 810
+      },
+      {
+        "courtId": "p2",
+        "minute": 840
+      },
+      {
+        "courtId": "p2",
+        "minute": 870
+      },
+      {
+        "courtId": "p2",
+        "minute": 900
+      },
+      {
+        "courtId": "p2",
+        "minute": 930
+      },
+      {
+        "courtId": "p2",
+        "minute": 960
+      },
+      {
+        "courtId": "p2",
+        "minute": 990
+      },
+      {
+        "courtId": "p2",
+        "minute": 1020
+      },
+      {
+        "courtId": "p2",
+        "minute": 1050
+      },
+      {
+        "courtId": "p2",
+        "minute": 1080
+      },
+      {
+        "courtId": "p2",
+        "minute": 1110
+      },
+      {
+        "courtId": "p2",
+        "minute": 1140
+      },
+      {
+        "courtId": "p2",
+        "minute": 1170
+      },
+      {
+        "courtId": "p2",
+        "minute": 1200
+      }
+    ]
+  },
+  {
+    "name": "laufende Buchung nur auf andere Plaetze zur selben Zeit",
+    "input": {
+      "booking": {
+        "booking_id": "meine",
+        "court_id": "p1",
+        "starts_at": "2026-06-15T12:00:00.000Z",
+        "ends_at": "2026-06-15T13:00:00.000Z"
+      },
+      "day": "2026-06-15",
+      "courtIds": [
+        "p1",
+        "p2"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "occupied": [
+        {
+          "booking_id": "meine",
+          "court_id": "p1",
+          "starts_at": "2026-06-15T12:00:00.000Z",
+          "ends_at": "2026-06-15T13:00:00.000Z"
+        }
+      ],
+      "now": "2026-06-15T12:20:00.000Z"
+    },
+    "output": [
+      {
+        "courtId": "p2",
+        "minute": 840
+      }
+    ]
+  },
+  {
+    "name": "laufende Buchung, anderer Platz belegt",
+    "input": {
+      "booking": {
+        "booking_id": "meine",
+        "court_id": "p1",
+        "starts_at": "2026-06-15T12:00:00.000Z",
+        "ends_at": "2026-06-15T13:00:00.000Z"
+      },
+      "day": "2026-06-15",
+      "courtIds": [
+        "p1",
+        "p2"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "occupied": [
+        {
+          "booking_id": "meine",
+          "court_id": "p1",
+          "starts_at": "2026-06-15T12:00:00.000Z",
+          "ends_at": "2026-06-15T13:00:00.000Z"
+        },
+        {
+          "booking_id": "fremd",
+          "court_id": "p2",
+          "starts_at": "2026-06-15T12:30:00.000Z",
+          "ends_at": "2026-06-15T13:30:00.000Z"
+        }
+      ],
+      "now": "2026-06-15T12:20:00.000Z"
+    },
+    "output": []
+  },
+  {
+    "name": "laufende Buchung nicht an einem anderen Tag",
+    "input": {
+      "booking": {
+        "booking_id": "meine",
+        "court_id": "p1",
+        "starts_at": "2026-06-15T12:00:00.000Z",
+        "ends_at": "2026-06-15T13:00:00.000Z"
+      },
+      "day": "2026-06-16",
+      "courtIds": [
+        "p1",
+        "p2"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "occupied": [],
+      "now": "2026-06-15T12:20:00.000Z"
+    },
+    "output": []
+  },
+  {
+    "name": "vergangene Buchung hat keine Ziele",
+    "input": {
+      "booking": {
+        "booking_id": "meine",
+        "court_id": "p1",
+        "starts_at": "2026-06-15T12:00:00.000Z",
+        "ends_at": "2026-06-15T13:00:00.000Z"
+      },
+      "day": "2026-06-15",
+      "courtIds": [
+        "p1",
+        "p2"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "occupied": [
+        {
+          "booking_id": "meine",
+          "court_id": "p1",
+          "starts_at": "2026-06-15T12:00:00.000Z",
+          "ends_at": "2026-06-15T13:00:00.000Z"
+        }
+      ],
+      "now": "2026-06-15T13:00:00.000Z"
+    },
+    "output": []
+  }
+]

@@ -177,6 +177,42 @@ ein Blatt, `-TCMKontoRollen einstellungen` rollt zu den Einstellungen.
 xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMTab konto -TCMKontoBlatt daten
 ```
 
+## Plätze
+
+| Freie Zeiten | Raster | Buchen | Eigene Buchung |
+|---|---|---|---|
+| ![Freie Zeiten hell](docs/plaetze-freie-zeiten-offen-hell.png) | ![Raster hell](docs/plaetze-raster-hell.png) | ![Buchen hell](docs/plaetze-buchen-hell.png) | ![Eigene Buchung hell](docs/plaetze-eigene-buchung-hell.png) |
+| ![Freie Zeiten dunkel](docs/plaetze-freie-zeiten-offen-dunkel.png) | ![Raster dunkel](docs/plaetze-raster-dunkel.png) | ![Buchen dunkel](docs/plaetze-buchen-dunkel.png) | ![Eigene Buchung dunkel](docs/plaetze-eigene-buchung-dunkel.png) |
+
+Wie `apps/mobile/app/(tabs)/plaetze/`, Texte wortgleich (`Bildschirme/Plaetze/`).
+
+- **Belegungsplan:** Tag wählen bis `lead_days`, zwei Ansichten (Raster Plätze × Zeit, Freie Zeiten
+  als Tabelle; gemerkt unter `tcm-plaetze-ansicht`), Pull-to-refresh, stilles Neuladen beim
+  Zurückkehren in den Vordergrund. Realtime über den Kanal `plan-<datum>`, höchstens einmal pro
+  Sekunde neu geladen.
+- **Buchen** (`Buchungsblatt.swift`): Art, Mitspieler aus `member_directory`, Gäste, „Mitspieler
+  gesucht“, Kontingent (`my_booking_quota`), Fehler über `translateDbError`.
+- **Eigene Buchung:** Mitspieler ändern, stornieren mit Grund (zweistufig), Serientermin absagen,
+  Mitspielersuche umschalten; offene Spiele anderer: mitspielen.
+- **Sperren und Umsetzen** (mit Platzrechten): zweistufig, wenn Buchungen im Weg liegen
+  (`create_blocking`/`update_blocking`, `move_booking`).
+- **Logik:** neue Kernfunktionen in `Kern/Platzplan.swift` (aus `@tcm/core`, gegen die Golden Files
+  `freeGaps`, `startInGap`, `occupancyLabel`, `blockingLabel`, `checkPlayers`, `missingPlayers`,
+  `otherPlayersLabel`, `umsetzZiele` geprüft: `PlatzplanGoldenTests`), Ansichtslogik als reine
+  Funktionen in `PlaetzeLogik.swift` (`PlaetzeLogikTests`). RPCs in `Daten/Platzdaten.swift`.
+
+Die Bilder macht der UI-Test `PlaetzeUITests` (bucht nichts). Er erwartet im lokalen Stack für den
+Folgetag ein offenes Doppel auf Platz 3 um 17:00 und eine eigene Buchung des Seed-Kontos um 18:00
+auf Platz 1 (beides per `create_booking`, nur lokal):
+
+```bash
+xcrun simctl ui <geraet> appearance dark    # oder light
+TEST_RUNNER_TCM_DARSTELLUNG=dunkel TEST_RUNNER_TCM_SCREENSHOTS=$PWD/docs \
+  xcodebuild test -project TCMuckensturm.xcodeproj -scheme "TCMuckensturm Lokal anmelden" \
+  -destination 'id=<geraet>' -derivedDataPath build/DerivedData \
+  -only-testing:TCMuckensturmUITests/PlaetzeUITests
+```
+
 ## Aufbau
 
 ```
@@ -188,7 +224,7 @@ TCMuckensturm/
                   freie Plätze, Geld, translateDbError, Veranstaltungen) – geprüft gegen die Golden Files
   Daten/          (siehe oben), Startdaten (Home, Glocke, Neuigkeiten) und Kontodaten (Konto-Tab)
   Theme/          Farben und Schrift für SwiftUI auf Basis der erzeugten Tokens
-  Bildschirme/    Anmeldung (mit Passwort vergessen/setzen), Kein Zugang, Home, Konto, Nachrichten (Glocke, Neuigkeiten), Bausteine, Platzhalter
+  Bildschirme/    Anmeldung (mit Passwort vergessen/setzen), Kein Zugang, Home, Konto, Nachrichten (Glocke, Neuigkeiten), Plätze, Bausteine, Platzhalter
   Ressourcen/     Assets (App-Icon, Logo, Markenblau), Schriften (Barlow, OFL)
 TCMuckensturmTests/
 ```
@@ -219,7 +255,9 @@ TCMuckensturmTests/
 ## Was noch fehlt
 
 - Prod-Werte (`Konfiguration/Prod.xcconfig`) und ein App-Store-Eintrag für die native App
-- Onboarding, Tabs Plätze/Verein, Verwaltung
+- Onboarding, Tab Verein, Verwaltung
+- Plätze: Bereich „Meine & offene Spiele“ (`plaetze/spiele.tsx`), Sprünge aus Home direkt ins
+  Buchungsblatt (`?buchen=jetzt`, `?buchung=…`), mitlaufender Tabellenkopf in Freie Zeiten
 - Schwebende Tab-Leiste und kompakte Kopfzeile wie in der Expo-App (heute die System-TabView)
 - Fragment-Zweig der Passwort-Links entfernen, sobald die Cloud-Vorlagen token_hash schicken (S20, gemeinsam mit Expo-App und Web)
 - Push (APNs-Registrierung, Schalter „Mitteilungen aufs Handy“ im Konto, Push-Token-Abmeldung in `Sitzung.abmelden()`), Widgets

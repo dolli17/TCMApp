@@ -1,0 +1,41 @@
+[
+  {
+    "name": "Kategorie und Grund, getrimmt",
+    "input": {
+      "b": {
+        "type_name": "Platzpflege",
+        "title": " Regen "
+      }
+    },
+    "output": {
+      "kategorie": "Platzpflege",
+      "grund": "Regen"
+    }
+  },
+  {
+    "name": "leerer Grund faellt weg",
+    "input": {
+      "b": {
+        "type_name": "Verbandsspiel",
+        "title": "  "
+      }
+    },
+    "output": {
+      "kategorie": "Verbandsspiel",
+      "grund": null
+    }
+  },
+  {
+    "name": "ohne Kategorie",
+    "input": {
+      "b": {
+        "type_name": null,
+        "title": null
+      }
+    },
+    "output": {
+      "kategorie": "Gesperrt",
+      "grund": null
+    }
+  }
+]

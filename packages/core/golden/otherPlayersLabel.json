@@ -1,0 +1,72 @@
+[
+  {
+    "name": "Einzel",
+    "input": {
+      "type": {
+        "code": "einzel",
+        "name": "Einzel",
+        "durationMinutes": 60,
+        "minPlayers": 2,
+        "maxPlayers": 2,
+        "requiresPartner": true
+      }
+    },
+    "output": "1 weitere Person"
+  },
+  {
+    "name": "Doppel",
+    "input": {
+      "type": {
+        "code": "doppel",
+        "name": "Doppel",
+        "durationMinutes": 90,
+        "minPlayers": 3,
+        "maxPlayers": 4,
+        "requiresPartner": true
+      }
+    },
+    "output": "2–3 weitere Personen"
+  },
+  {
+    "name": "Doppel mit vier Pflicht",
+    "input": {
+      "type": {
+        "code": "doppel",
+        "name": "Doppel",
+        "durationMinutes": 90,
+        "minPlayers": 4,
+        "maxPlayers": 4,
+        "requiresPartner": true
+      }
+    },
+    "output": "3 weitere Personen"
+  },
+  {
+    "name": "ohne Untergrenze",
+    "input": {
+      "type": {
+        "code": "doppel",
+        "name": "Doppel",
+        "durationMinutes": 90,
+        "minPlayers": 1,
+        "maxPlayers": 4,
+        "requiresPartner": false
+      }
+    },
+    "output": "bis zu 3 weitere Personen"
+  },
+  {
+    "name": "niemand kann mitspielen",
+    "input": {
+      "type": {
+        "code": "einzel",
+        "name": "Einzel",
+        "durationMinutes": 60,
+        "minPlayers": 1,
+        "maxPlayers": 1,
+        "requiresPartner": false
+      }
+    },
+    "output": ""
+  }
+]

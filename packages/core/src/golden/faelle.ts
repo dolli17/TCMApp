@@ -373,6 +373,149 @@ const bookingActionsFaelle: GoldenEingabe[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Belegungsplan und Buchungsblatt (freeSlots.test.ts, booking.test.ts, home.test.ts)
+// ---------------------------------------------------------------------------
+
+const luecken = (name: string, occupied: unknown[], now: string, mehr = {}): GoldenEingabe => ({
+  name,
+  input: {
+    day: RASTER_TAG,
+    courtId: "p1",
+    openingMinutes: 480,
+    closingMinutes: 1260,
+    slotMinutes: 30,
+    durationMinutes: 60,
+    occupied,
+    now,
+    ...mehr,
+  },
+});
+
+const freeGapsFaelle: GoldenEingabe[] = [
+  luecken(
+    "zwischen den Belegungen, heute ab der naechsten Startzeit",
+    [slot("p1", "16:00", "17:00"), slot("p1", "19:00", "20:00")],
+    um(RASTER_TAG, "14:10"),
+  ),
+  luecken(
+    "eine Luecke kuerzer als die Dauer faellt weg, andere Plaetze zaehlen nicht",
+    [slot("p1", "08:00", "16:00"), slot("p1", "16:30", "21:00"), slot("p2", "18:00", "19:00")],
+    um(RASTER_TAG, "06:00"),
+  ),
+  luecken("am letzten Vorlauftag endet die Luecke an der Grenze", [], um("2026-09-21", "14:10"), { leadDays: 7 }),
+  luecken("ein vergangener Tag hat keine Luecken", [], um("2026-09-29", "08:00")),
+];
+
+const LUECKE = { courtId: "p1", from: 900, until: 1050 };
+const startInGapFaelle: GoldenEingabe[] = [
+  { name: "rundet aufs Raster ab", input: { gap: LUECKE, minute: 950, slotMinutes: 30, durationMinutes: 60 } },
+  { name: "laesst die volle Stunde Platz", input: { gap: LUECKE, minute: 1040, slotMinutes: 30, durationMinutes: 60 } },
+  { name: "vor der Luecke ihr Beginn", input: { gap: LUECKE, minute: 840, slotMinutes: 30, durationMinutes: 60 } },
+];
+
+const beschriftung = (name: string, mehr: Record<string, unknown>): GoldenEingabe => ({
+  name,
+  input: { b: slot("p1", "17:00", "19:00", mehr) },
+});
+
+const occupancyLabelFaelle: GoldenEingabe[] = [
+  beschriftung("eigene Buchung", { is_own: true, type_name: "Einzel" }),
+  beschriftung("fremde Buchung mit Namen", { owner_name: "Eva Muster" }),
+  beschriftung("sucht Mitspieler", { partner_wanted: true, frei: 2 }),
+  beschriftung("Training einer Serie", { kind: "blocking", series_id: "s", title: "Training" }),
+  beschriftung("Sperrung mit Grund", { kind: "blocking", type_name: "Platzpflege", title: "Regen" }),
+  beschriftung("Sperrung ohne Grund", { kind: "blocking", type_name: "Verbandsspiel", title: null }),
+];
+
+const blockingLabelFaelle: GoldenEingabe[] = [
+  { name: "Kategorie und Grund, getrimmt", input: { b: { type_name: "Platzpflege", title: " Regen " } } },
+  { name: "leerer Grund faellt weg", input: { b: { type_name: "Verbandsspiel", title: "  " } } },
+  { name: "ohne Kategorie", input: { b: { type_name: null, title: null } } },
+];
+
+// booking.test.ts: EINZEL und DOPPEL
+const EINZEL = { code: "einzel", name: "Einzel", durationMinutes: 60, minPlayers: 2, maxPlayers: 2, requiresPartner: true };
+const DOPPEL = { code: "doppel", name: "Doppel", durationMinutes: 90, minPlayers: 3, maxPlayers: 4, requiresPartner: true };
+
+const besetzung = (
+  name: string, type: Record<string, unknown>, memberCount: number, guestCount: number, partnerWanted?: boolean,
+): GoldenEingabe => ({
+  name,
+  input: partnerWanted === undefined
+    ? { type, memberCount, guestCount }
+    : { type, memberCount, guestCount, partnerWanted },
+});
+
+const checkPlayersFaelle: GoldenEingabe[] = [
+  besetzung("Einzel ohne Mitspieler", EINZEL, 0, 0),
+  besetzung("Einzel mit einem Mitglied", EINZEL, 1, 0),
+  besetzung("Einzel mit einem Gast", EINZEL, 0, 1),
+  besetzung("Einzel mit zu vielen", EINZEL, 2, 0),
+  besetzung("Doppel mit vier", DOPPEL, 3, 0),
+  besetzung("Doppel mit fuenf", DOPPEL, 4, 0),
+  besetzung("Doppel mit einem Mitspieler: es fehlt noch einer", DOPPEL, 1, 0),
+  besetzung("Doppel mit Mitglied und Gast", DOPPEL, 1, 1),
+  besetzung("leeres Doppel: es fehlen zwei", DOPPEL, 0, 0),
+  besetzung("Mitspieler gesucht: Doppel unterbesetzt", DOPPEL, 1, 0, true),
+  besetzung("Mitspieler gesucht: Einzel allein", EINZEL, 0, 0, true),
+  besetzung("Mitspieler gesucht: Obergrenze gilt", EINZEL, 2, 0, true),
+];
+
+const missingPlayersFaelle: GoldenEingabe[] = [
+  besetzung("leeres Doppel", DOPPEL, 0, 0),
+  besetzung("Doppel mit einem", DOPPEL, 1, 0),
+  besetzung("Doppel mit Mitglied und Gast", DOPPEL, 1, 1),
+  besetzung("leeres Einzel", EINZEL, 0, 0),
+  besetzung("Einzel mit Gast", EINZEL, 0, 1),
+  besetzung("Partner noetig, auch wenn min_players 1 waere", { ...EINZEL, minPlayers: 1 }, 0, 0),
+  besetzung("ohne Partnerpflicht", { ...EINZEL, minPlayers: 1, requiresPartner: false }, 0, 0),
+];
+
+const otherPlayersLabelFaelle: GoldenEingabe[] = [
+  { name: "Einzel", input: { type: EINZEL } },
+  { name: "Doppel", input: { type: DOPPEL } },
+  { name: "Doppel mit vier Pflicht", input: { type: { ...DOPPEL, minPlayers: 4 } } },
+  { name: "ohne Untergrenze", input: { type: { ...DOPPEL, minPlayers: 1, requiresPartner: false } } },
+  { name: "niemand kann mitspielen", input: { type: { ...EINZEL, minPlayers: 1, maxPlayers: 1, requiresPartner: false } } },
+];
+
+// booking.test.ts, umsetzZiele: Platz 1, 14 bis 15 Uhr am 15.06.2026
+const umsetzSlot = (court: string, von: string, bis: string, id = "fremd") => ({
+  booking_id: id,
+  ...belegt(PLATZ_TAG, court, von, bis),
+});
+const UMSETZ_BUCHUNG = umsetzSlot("p1", "14:00", "15:00", "meine");
+const umsetzen = (
+  name: string, opts: { occupied?: unknown[]; jetzt?: string; day?: string } = {},
+): GoldenEingabe => ({
+  name,
+  input: {
+    booking: UMSETZ_BUCHUNG,
+    day: opts.day ?? PLATZ_TAG,
+    courtIds: ["p1", "p2"],
+    openingMinutes: 480,
+    closingMinutes: 1260,
+    slotMinutes: 30,
+    occupied: opts.occupied ?? [UMSETZ_BUCHUNG],
+    now: um(PLATZ_TAG, opts.jetzt ?? "10:00"),
+  },
+});
+
+const umsetzZieleFaelle: GoldenEingabe[] = [
+  umsetzen("freie Plaetze und Zeiten, ohne die eigene Lage"),
+  umsetzen("belegte Zeiten ueber die volle Dauer ausgelassen", {
+    occupied: [UMSETZ_BUCHUNG, umsetzSlot("p2", "16:30", "17:30")],
+  }),
+  umsetzen("anderer Tag ohne Buchungsvorlauf", { day: "2026-07-20", occupied: [] }),
+  umsetzen("laufende Buchung nur auf andere Plaetze zur selben Zeit", { jetzt: "14:20" }),
+  umsetzen("laufende Buchung, anderer Platz belegt", {
+    jetzt: "14:20", occupied: [UMSETZ_BUCHUNG, umsetzSlot("p2", "14:30", "15:30")],
+  }),
+  umsetzen("laufende Buchung nicht an einem anderen Tag", { jetzt: "14:20", day: "2026-06-16", occupied: [] }),
+  umsetzen("vergangene Buchung hat keine Ziele", { jetzt: "15:00" }),
+];
+
+// ---------------------------------------------------------------------------
 // Getraenke und Geld (drinks.test.ts, home.test.ts, money.test.ts)
 // ---------------------------------------------------------------------------
 
@@ -588,6 +731,14 @@ export const faelle: Record<string, GoldenEingabe[]> = {
   courtStatusAt: courtStatusAtFaelle,
   occupancyKind: occupancyKindFaelle,
   bookingActions: bookingActionsFaelle,
+  freeGaps: freeGapsFaelle,
+  startInGap: startInGapFaelle,
+  occupancyLabel: occupancyLabelFaelle,
+  blockingLabel: blockingLabelFaelle,
+  checkPlayers: checkPlayersFaelle,
+  missingPlayers: missingPlayersFaelle,
+  otherPlayersLabel: otherPlayersLabelFaelle,
+  umsetzZiele: umsetzZieleFaelle,
   changeBasket: changeBasketFaelle,
   sumOpenDrinks: sumOpenDrinksFaelle,
   formatCents: formatCentsFaelle,

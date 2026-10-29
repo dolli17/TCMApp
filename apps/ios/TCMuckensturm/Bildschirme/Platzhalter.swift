@@ -15,7 +15,7 @@ struct HauptTabs: View {
             HomeBildschirm()
                 .tabItem { Label("Home", systemImage: "house") }
                 .tag(HauptTab.home)
-            Platzhalter(titel: "Plätze")
+            PlaetzeBildschirm()
                 .tabItem { Label("Plätze", systemImage: "sportscourt") }
                 .tag(HauptTab.plaetze)
             Platzhalter(titel: "Verein")

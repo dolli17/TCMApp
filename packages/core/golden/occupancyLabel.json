@@ -1,0 +1,118 @@
+[
+  {
+    "name": "eigene Buchung",
+    "input": {
+      "b": {
+        "court_id": "p1",
+        "starts_at": "2026-09-28T15:00:00.000Z",
+        "ends_at": "2026-09-28T17:00:00.000Z",
+        "kind": "booking",
+        "type_name": "Einzel",
+        "is_own": true
+      }
+    },
+    "output": {
+      "art": "eigen",
+      "title": "Du",
+      "detail": "Einzel",
+      "spoken": "17:00 bis 19:00 Uhr, deine Buchung, Einzel"
+    }
+  },
+  {
+    "name": "fremde Buchung mit Namen",
+    "input": {
+      "b": {
+        "court_id": "p1",
+        "starts_at": "2026-09-28T15:00:00.000Z",
+        "ends_at": "2026-09-28T17:00:00.000Z",
+        "kind": "booking",
+        "type_name": "Doppel",
+        "owner_name": "Eva Muster"
+      }
+    },
+    "output": {
+      "art": "belegt",
+      "title": "Eva Muster",
+      "detail": "Doppel",
+      "spoken": "17:00 bis 19:00 Uhr, belegt von Eva Muster, Doppel"
+    }
+  },
+  {
+    "name": "sucht Mitspieler",
+    "input": {
+      "b": {
+        "court_id": "p1",
+        "starts_at": "2026-09-28T15:00:00.000Z",
+        "ends_at": "2026-09-28T17:00:00.000Z",
+        "kind": "booking",
+        "type_name": "Doppel",
+        "partner_wanted": true,
+        "frei": 2
+      }
+    },
+    "output": {
+      "art": "sucht",
+      "title": "sucht 2",
+      "detail": "Doppel",
+      "spoken": "17:00 bis 19:00 Uhr, Doppel sucht noch 2 Mitspieler"
+    }
+  },
+  {
+    "name": "Training einer Serie",
+    "input": {
+      "b": {
+        "court_id": "p1",
+        "starts_at": "2026-09-28T15:00:00.000Z",
+        "ends_at": "2026-09-28T17:00:00.000Z",
+        "kind": "blocking",
+        "type_name": "Doppel",
+        "series_id": "s",
+        "title": "Training"
+      }
+    },
+    "output": {
+      "art": "serie",
+      "title": "Training",
+      "detail": "bis 19:00",
+      "spoken": "17:00 bis 19:00 Uhr, Training"
+    }
+  },
+  {
+    "name": "Sperrung mit Grund",
+    "input": {
+      "b": {
+        "court_id": "p1",
+        "starts_at": "2026-09-28T15:00:00.000Z",
+        "ends_at": "2026-09-28T17:00:00.000Z",
+        "kind": "blocking",
+        "type_name": "Platzpflege",
+        "title": "Regen"
+      }
+    },
+    "output": {
+      "art": "gesperrt",
+      "title": "Platzpflege",
+      "detail": "Regen",
+      "spoken": "17:00 bis 19:00 Uhr, gesperrt, Platzpflege, Regen"
+    }
+  },
+  {
+    "name": "Sperrung ohne Grund",
+    "input": {
+      "b": {
+        "court_id": "p1",
+        "starts_at": "2026-09-28T15:00:00.000Z",
+        "ends_at": "2026-09-28T17:00:00.000Z",
+        "kind": "blocking",
+        "type_name": "Verbandsspiel",
+        "title": null
+      }
+    },
+    "output": {
+      "art": "gesperrt",
+      "title": "Verbandsspiel",
+      "detail": "",
+      "spoken": "17:00 bis 19:00 Uhr, gesperrt, Verbandsspiel"
+    }
+  }
+]

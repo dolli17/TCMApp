@@ -1,0 +1,44 @@
+[
+  {
+    "name": "rundet aufs Raster ab",
+    "input": {
+      "gap": {
+        "courtId": "p1",
+        "from": 900,
+        "until": 1050
+      },
+      "minute": 950,
+      "slotMinutes": 30,
+      "durationMinutes": 60
+    },
+    "output": 930
+  },
+  {
+    "name": "laesst die volle Stunde Platz",
+    "input": {
+      "gap": {
+        "courtId": "p1",
+        "from": 900,
+        "until": 1050
+      },
+      "minute": 1040,
+      "slotMinutes": 30,
+      "durationMinutes": 60
+    },
+    "output": 990
+  },
+  {
+    "name": "vor der Luecke ihr Beginn",
+    "input": {
+      "gap": {
+        "courtId": "p1",
+        "from": 900,
+        "until": 1050
+      },
+      "minute": 840,
+      "slotMinutes": 30,
+      "durationMinutes": 60
+    },
+    "output": 900
+  }
+]

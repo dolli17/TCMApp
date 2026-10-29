@@ -15,14 +15,17 @@
  */
 
 import {
-  berlinTime, bookingActions, canStartAt, freeCourtsNow, minutesOf, minutesToTime, timeToMinutes,
+  berlinTime, bookingActions, canStartAt, checkPlayers, freeCourtsNow, minutesOf, minutesToTime, missingPlayers,
+  otherPlayersLabel, timeToMinutes, umsetzZiele, type BookingTypeInfo,
 } from "../booking";
 import { courtStatusAt, type CourtSlot } from "../courtStatus";
 import { changeBasket, type DrinkBasket } from "../drinks";
 import { translateDbError, type PostgresLikeError } from "../errors";
 import { CHARGE_KIND_LABEL } from "../forderungen";
-import { freeSlotsOfDay } from "../freeSlots";
-import { dayLabel, dayTag, occupancyKind, sumOpenDrinks, upcomingBookings, type OccupancyFlags } from "../home";
+import { freeGaps, freeSlotsOfDay, occupancyLabel, startInGap, type FreeGap } from "../freeSlots";
+import {
+  blockingLabel, dayLabel, dayTag, occupancyKind, sumOpenDrinks, upcomingBookings, type OccupancyFlags,
+} from "../home";
 import { merkmalBeschreibung, type MerkmalSicht } from "../merkmaltexte";
 import { formatCents } from "../money";
 import { offenesSpielText } from "../offeneSpiele";
@@ -66,6 +69,18 @@ export const aufrufe: Record<string, (input: Eingabe) => unknown> = {
     courtStatusAt({ ...(i as Parameters<typeof courtStatusAt<CourtSlot>>[0]), ...jetzt(i) }),
   occupancyKind: (i) => occupancyKind(i.b as OccupancyFlags),
   bookingActions: (i) => bookingActions({ ...(i as Parameters<typeof bookingActions>[0]), ...jetzt(i) }),
+  freeGaps: (i) => freeGaps({ ...(i as Parameters<typeof freeGaps>[0]), ...jetzt(i) }),
+  startInGap: (i) =>
+    startInGap(i.gap as FreeGap, i.minute as number, i.slotMinutes as number, i.durationMinutes as number),
+  occupancyLabel: (i) => occupancyLabel(i.b as Parameters<typeof occupancyLabel>[0]),
+  blockingLabel: (i) => blockingLabel(i.b as Parameters<typeof blockingLabel>[0]),
+  checkPlayers: (i) =>
+    checkPlayers(
+      i.type as BookingTypeInfo, i.memberCount as number, i.guestCount as number, i.partnerWanted as boolean | undefined,
+    ),
+  missingPlayers: (i) => missingPlayers(i.type as BookingTypeInfo, i.memberCount as number, i.guestCount as number),
+  otherPlayersLabel: (i) => otherPlayersLabel(i.type as BookingTypeInfo),
+  umsetzZiele: (i) => umsetzZiele({ ...(i as Parameters<typeof umsetzZiele>[0]), ...jetzt(i) }),
   changeBasket: (i) => changeBasket(i.basket as DrinkBasket, i.itemId as string, i.delta as number),
   sumOpenDrinks: (i) => sumOpenDrinks(i.kaeufe as Parameters<typeof sumOpenDrinks>[0]),
   formatCents: (i) => formatCents(i.cents as number),
