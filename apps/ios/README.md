@@ -329,6 +329,19 @@ xcrun simctl push booted de.tcmuckensturm.app.lokal nachricht.json   # {"aps":{"
 xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMPush /verein/veranstaltung/<id>
 ```
 
+## TestFlight
+
+```sh
+ASC_KEY_PATH=~/Documents/Apple/AuthKey_<id>.p8 ASC_KEY_ID=<id> ASC_ISSUER_ID=<issuer> \
+  scripts/testflight.sh <buildnummer> [version]
+```
+
+Baut die Konfiguration Prod (Bundle `de.tcmuckensturm.app`, dieselbe App wie die Expo-Builds bis 16) gegen das Dev-Projekt, wie die Expo-Builds auch (`Konfiguration/TestFlight.xcconfig`), und lädt sie zu App Store Connect hoch. Die Buildnummer muss höher sein als jede bisherige.
+
+- **Signieren:** Ein Apple-Konto des Teams muss in Xcode unter Settings → Accounts angemeldet sein. Xcode legt dann Zertifikat und Profile an und meldet App Group, Associated Domains und Push an. Der API-Schlüssel allein reicht dafür nicht (App Groups gibt es in der API nicht, das automatische Signieren lehnt ihn ab).
+- **Hochladen:** mit dem API-Schlüssel von App Store Connect, über die Umgebung, nicht im Repo.
+- **Lizenz:** Hat Apple die Program License Agreement erneuert, scheitert das Signieren mit „PLA Update available“, bis der Account Holder zugestimmt hat.
+
 ## Aufbau
 
 ```

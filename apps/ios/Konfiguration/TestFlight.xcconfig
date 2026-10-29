@@ -1,0 +1,10 @@
+// Nur fuer scripts/testflight.sh (xcodebuild -xcconfig): ein Prod-Build
+// (Bundle de.tcmuckensturm.app) gegen das Dev-Projekt, wie die Expo-Builds
+// fuer TestFlight. Die Werte stehen auch in Dev.xcconfig.
+//
+// Hier nur Backend-Werte: -xcconfig gilt fuer alle Targets, Bundle-IDs und
+// Namen duerfen deshalb nicht hier stehen.
+
+SUPABASE_URL = https:/$()/xvjqqjiweogtfpfgeoqz.supabase.co
+SUPABASE_KEY = sb_publishable_Vrd1oT_d9KTwr9jfiT64Eg_LDW6IX1V
+SITE_URL = https:/$()/dev.tennisclub-muckensturm.de
