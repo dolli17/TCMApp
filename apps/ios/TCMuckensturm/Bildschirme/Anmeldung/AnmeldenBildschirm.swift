@@ -51,8 +51,16 @@ struct AnmeldenBildschirm: View {
                 .padding(.top, Tokens.abstand.abschnitt)
             }
             .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(isPresented: $vergessenOffen) { PasswortVergessenPlatzhalter() }
+            .navigationDestination(isPresented: $vergessenOffen) {
+                PasswortVergessenBildschirm { vergessenOffen = false }
+            }
         }
+        #if DEBUG
+        // Fuer Bildschirmfotos per simctl (README): `xcrun simctl launch … -TCMPasswortVergessen`
+        .onAppear {
+            if ProcessInfo.processInfo.arguments.contains("-TCMPasswortVergessen") { vergessenOffen = true }
+        }
+        #endif
     }
 
     private func absenden() {
@@ -63,18 +71,6 @@ struct AnmeldenBildschirm: View {
             let meldung = await sitzung.anmelden(email: email, passwort: passwort)
             laeuft = false
             fehler = meldung
-        }
-    }
-}
-
-/// Ziel von "Passwort vergessen?" - der Ablauf (Link anfordern, Universal Link) folgt.
-struct PasswortVergessenPlatzhalter: View {
-    var body: some View {
-        AnmeldeSeite(
-            titel: "Passwort vergessen",
-            unterzeile: "Kommt in der nativen App bald. Bis dahin geht es über die Website."
-        ) {
-            EmptyView()
         }
     }
 }

@@ -14,4 +14,10 @@ TCM_ANZEIGENAME = TC Muckensturm
 APP_GROUP = group.$(PRODUCT_BUNDLE_IDENTIFIER)
 
 // Web-Adresse fuer Antrag, Impressum usw. Leer: die Verweise bleiben weg.
+// Auch Ziel des Links aus "Passwort vergessen" (<SITE_URL>/passwort-setzen,
+// Universal Link); ohne SITE_URL nimmt die App ihr eigenes URL-Schema.
 SITE_URL =
+
+// Eigenes URL-Schema, Rueckfall fuer Links aus der E-Mail (tcm://passwort-setzen).
+// Je Konfiguration ein eigenes, damit Dev und Prod nebeneinander installiert sein koennen.
+APP_URL_SCHEME = tcm

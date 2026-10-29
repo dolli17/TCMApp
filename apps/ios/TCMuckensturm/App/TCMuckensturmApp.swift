@@ -34,6 +34,19 @@ struct TCMuckensturmApp: App {
                 StartAnsicht()
                     .environment(sitzung)
                     .task { sitzung.starten() }
+                    // Universal Links und das eigene Schema (Passwortlink)
+                    .onOpenURL { sitzung.linkOeffnen($0) }
+                    #if DEBUG
+                    // Fuer Bildschirmfotos per simctl (README): `-TCMLink <url>` oeffnet den Link
+                    // wie onOpenURL - ohne die Systemfrage "In … oeffnen?" beim eigenen Schema.
+                    .task {
+                        let argumente = ProcessInfo.processInfo.arguments
+                        if let i = argumente.firstIndex(of: "-TCMLink"), i + 1 < argumente.count,
+                           let url = URL(string: argumente[i + 1]) {
+                            sitzung.linkOeffnen(url)
+                        }
+                    }
+                    #endif
             } else {
                 KonfigurationFehlt(fehler: konfigurationsFehler)
             }
@@ -46,6 +59,19 @@ struct StartAnsicht: View {
     @Environment(Sitzung.self) private var sitzung
 
     var body: some View {
+        Group {
+            if let passwort = sitzung.passwort {
+                // Der Link aus der E-Mail geht vor, bis das Passwort steht.
+                PasswortSetzenBildschirm(zustand: passwort)
+            } else {
+                weiche
+            }
+        }
+        .animation(.default, value: sitzung.ziel)
+        .animation(.default, value: sitzung.passwort == nil)
+    }
+
+    @ViewBuilder private var weiche: some View {
         Group {
             switch sitzung.ziel {
             case .laden:
@@ -65,7 +91,6 @@ struct StartAnsicht: View {
                 HauptTabs()
             }
         }
-        .animation(.default, value: sitzung.ziel)
     }
 }
 

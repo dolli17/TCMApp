@@ -16,6 +16,8 @@ export default tseslint.config(
       // minifizierten Code und sind bereits in .gitignore.
       "supabase/.temp/**",
       "supabase/.branches/**",
+      // Build-Ausgabe der iOS-App (mit den Paket-Checkouts von supabase-swift), gitignored.
+      "apps/ios/build/**",
     ],
   },
   js.configs.recommended,

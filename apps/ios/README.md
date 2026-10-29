@@ -47,25 +47,26 @@ xcrun simctl launch booted de.tcmuckensturm.app.dev
 xcrun simctl io booted screenshot docs/anmelden.png
 ```
 
-Die Tests laufen in der App als Host. Sie decken ab: `Umgebung` (Info.plist-Werte), den
+Die Tests laufen in der App als Host. Sie decken ab: `Umgebung` (Info.plist-Werte, Rückleitung), den
 Schlüsselbund-Speicher gegen den echten Simulator-Schlüsselbund (eigener Test-Dienst, auch mit
 App Group), die Zuordnung der Anmeldefehler (dieselben Fälle wie
-`packages/core/src/anmeldefehler.test.ts`), die Start-Logik als reine Funktion sowie das Lesen der
-Token-Farben und das Laden der Schriften.
+`packages/core/src/anmeldefehler.test.ts`), die Start-Logik als reine Funktion, die Auswertung der
+Passwort-Links (dieselben Fälle wie `apps/mobile/src/lib/passwortlink.test.ts`), Passwortregeln und
+den Ablauf beim Öffnen eines Links sowie das Lesen der Token-Farben und das Laden der Schriften.
 
 `pnpm verify` im Repo-Wurzelverzeichnis berührt `apps/ios` nicht. Eine CI für iOS gibt es noch
 nicht (braucht einen macOS-Runner).
 
 ## Konfigurationen
 
-| Konfiguration | Supabase | Bundle-ID | Name auf dem Home-Bildschirm |
-|---|---|---|---|
-| `Lokal` | lokaler Stack (`127.0.0.1:54321`), Werte aus `Konfiguration/Lokal.geheim.xcconfig` (gitignored) | `de.tcmuckensturm.app.lokal` | TCM Lokal |
-| `Dev` | Dev-Projekt, Werte aus `apps/mobile/eas.json` (öffentlicher Publishable Key) | `de.tcmuckensturm.app.dev` | TCM Dev |
-| `Prod` | **TODO** – Werte fehlen noch, der Build zeigt den Hinweis „Konfiguration fehlt“ | `de.tcmuckensturm.app` | TC Muckensturm |
+| Konfiguration | Supabase | Bundle-ID | Name auf dem Home-Bildschirm | URL-Schema | SITE_URL |
+|---|---|---|---|---|---|
+| `Lokal` | lokaler Stack (`127.0.0.1:54321`), Werte aus `Konfiguration/Lokal.geheim.xcconfig` (gitignored) | `de.tcmuckensturm.app.lokal` | TCM Lokal | `tcmlokal` | – |
+| `Dev` | Dev-Projekt, Werte aus `apps/mobile/eas.json` (öffentlicher Publishable Key) | `de.tcmuckensturm.app.dev` | TCM Dev | `tcmdev` | `https://dev.tennisclub-muckensturm.de` |
+| `Prod` | **TODO** – Werte fehlen noch, der Build zeigt den Hinweis „Konfiguration fehlt“ | `de.tcmuckensturm.app` | TC Muckensturm | `tcm` | `https://app.tennisclub-muckensturm.de` |
 
 - Werte stehen in `Konfiguration/*.xcconfig` und kommen über die `Info.plist` (`TCMSupabaseURL`,
-  `TCMSupabaseKey`, `TCMSiteURL`, `TCMAppGroup`) in die App (`App/Umgebung.swift`).
+  `TCMSupabaseKey`, `TCMSiteURL`, `TCMAppGroup`, `TCMURLSchema`) in die App (`App/Umgebung.swift`).
 - In xcconfig beginnt mit `//` ein Kommentar. Adressen deshalb als `https:/$()/beispiel.de`.
 - `scripts/lokal-konfigurieren.sh` liest `apps/mobile/.env` und nimmt die Werte nur, wenn die
   Adresse lokal ist; sonst `apps/web/.env.local`. „Lokal“ läuft so nie gegen Dev oder Prod. Von
@@ -76,14 +77,57 @@ nicht (braucht einen macOS-Runner).
   (für Prod also `group.de.tcmuckensturm.app`), zugleich Access Group des Schlüsselbunds;
   Associated Domains `applinks:app.tennisclub-muckensturm.de` und `applinks:dev.tennisclub-muckensturm.de`.
 
+## Passwort vergessen und setzen
+
+| Passwort vergessen | Passwort festlegen | Anderes Konto angemeldet |
+|---|---|---|
+| ![Passwort vergessen](docs/passwort-vergessen.png) | ![Passwort festlegen](docs/passwort-setzen.png) | ![Rückfrage](docs/passwort-rueckfrage.png) |
+
+Wie `apps/mobile/app/passwort-vergessen.tsx` und `passwort-setzen.tsx`, Texte wortgleich.
+
+- **Anfordern** (`Bildschirme/Anmeldung/PasswortVergessenBildschirm.swift`): `resetPasswordForEmail`
+  mit `redirectTo` = `<SITE_URL>/passwort-setzen` (Universal Link), ohne SITE_URL (Lokal)
+  `<URL-Schema>://passwort-setzen`. Die Erfolgsmeldung ist immer dieselbe, egal ob es die Adresse
+  gibt. Nur Störungen (kein Netz, Server) werden gemeldet, „zu viele Versuche“ nicht – das meldet
+  Auth nur für Adressen, die es gibt. Das Ziel muss in der **Redirect-Allowlist** des
+  Supabase-Projekts stehen (lokal: `supabase/config.toml`, Cloud: Dashboard).
+- **Link** (`App/Passwortlink.swift`, reine Funktion): angenommen werden
+  `https://app.tennisclub-muckensturm.de/passwort-setzen…`, `https://dev.…/passwort-setzen…` und als
+  Rückfall `tcm://`, `tcmdev://`, `tcmlokal://passwort-setzen`. Ausgewertet wie `passwortlink.ts`:
+  `?token_hash=…&type=invite|recovery`, übergangsweise die Sitzung im Fragment (S20), Fehler im Link.
+  Universal Links brauchen die `apple-app-site-association` im Web (Spur N3).
+- **Einlösen und setzen** (`App/Sitzung.swift`, `App/PasswortAblauf.swift`,
+  `Bildschirme/Anmeldung/PasswortSetzenBildschirm.swift`): `verifyOTP(tokenHash:type:)` bzw.
+  `setSession` mit 15 s Frist, dann neues Passwort (mindestens acht Zeichen, zweimal gleich),
+  `update(user:)`, danach in die Weiche. Solange ein Link offen ist, liegt „Passwort festlegen“
+  über der Weiche.
+- **Anderes Konto angemeldet** (Security-Audit, Login-CSRF): Die App meldet nicht still ab, sondern
+  fragt „Du bist als … angemeldet. Mit diesem Link meldest du dich ab und setzt das Passwort für ein
+  anderes Konto. Fortfahren?“. Abbrechen verwirft den Link, Fortfahren meldet über
+  `Sitzung.abmelden()` ab. Ein `token_hash` verrät das Konto nicht, deshalb fragt die App bei jeder
+  bestehenden Anmeldung; ein Fragment-Link fürs eigene Konto geht ohne Rückfrage durch.
+- Der Client nutzt `flowType: .implicit` wie supabase-js in der Expo-App. Mit PKCE (Vorgabe von
+  supabase-swift) hinge der Link an einem Schlüssel auf dem anfordernden Gerät.
+
+Bildschirmfotos ohne Klicks (nur Debug, also `Lokal`): `-TCMPasswortVergessen` öffnet „Passwort
+vergessen“, `-TCMLink <url>` öffnet einen Link wie `onOpenURL`. `xcrun simctl openurl` geht auch,
+iOS fragt beim eigenen Schema aber erst „In ‚TCM Lokal‘ öffnen?“.
+
+```bash
+xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMPasswortVergessen
+# token_hash aus Mailpit (http://127.0.0.1:54324) nach "Passwort vergessen"
+xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMLink "tcmlokal://passwort-setzen?token_hash=<hash>&type=recovery"
+```
+
 ## Aufbau
 
 ```
 TCMuckensturm/
-  App/            Einstieg, Umgebung, Sitzung (Weiche, An-/Abmelden), StartLogik (reine Funktion)
+  App/            Einstieg, Umgebung, Sitzung (Weiche, An-/Abmelden, Passwort-Links),
+                  StartLogik, Passwortlink, PasswortAblauf (reine Funktionen)
   Daten/          Supabase-Client, Schlüsselbund-Speicher, Anmeldefehler, Zugang (mein_zugang)
   Theme/          Tokens (vorläufig, siehe unten), Farben und Schrift für SwiftUI
-  Bildschirme/    Anmeldung, Kein Zugang, Platzhalter (Onboarding, Tabs)
+  Bildschirme/    Anmeldung (mit Passwort vergessen/setzen), Kein Zugang, Platzhalter (Onboarding, Tabs)
   Ressourcen/     Assets (App-Icon, Logo, Markenblau), Schriften (Barlow, OFL)
 TCMuckensturmTests/
 ```
@@ -106,7 +150,9 @@ TCMuckensturmTests/
 ## Was noch fehlt
 
 - Prod-Werte (`Konfiguration/Prod.xcconfig`) und ein App-Store-Eintrag für die native App
-- Passwort vergessen/setzen, Universal Links (Behandlung), Onboarding, alle Tabs, Verwaltung
+- Onboarding, alle Tabs, Verwaltung
+- „Passwort ändern“ im Konto-Tab (der Ablauf `.eigenesKonto` steht schon, es fehlt der Einstieg)
+- Fragment-Zweig der Passwort-Links entfernen, sobald die Cloud-Vorlagen token_hash schicken (S20, gemeinsam mit Expo-App und Web)
 - Push (inkl. Push-Token-Abmeldung in `Sitzung.abmelden()`), Widgets
 - Übernahme der Sitzung aus der Expo-App (expo-secure-store), damit Mitglieder nach dem Umstieg angemeldet bleiben
 - App Groups und Associated Domains im Apple Developer Portal für `.dev`/`.lokal` registrieren (für Geräte-Builds)

@@ -76,6 +76,20 @@ enum Anmeldefehler {
         default: return anmeldedatenFalsch
         }
     }
+
+    /// Wie passwortFehlerText in @tcm/core: beim Speichern eines neuen Passworts, nie englischer Rohtext.
+    static func passwortFehlerText(_ fehler: AuthFehlerForm?) -> String {
+        guard let fehler else { return "Das Passwort ließ sich nicht speichern." }
+        if let text = stoerungText(fehler) { return text }
+        switch fehler.code {
+        case "same_password": return "Das neue Passwort muss sich vom bisherigen unterscheiden."
+        case "weak_password": return "Das Passwort ist zu schwach. Bitte wähle ein längeres."
+        case "session_not_found", "session_expired": return "Der Link ist abgelaufen. Bitte fordere einen neuen an."
+        default:
+            if fehler.status == 401 { return "Der Link ist abgelaufen. Bitte fordere einen neuen an." }
+            return "Das Passwort ließ sich nicht speichern. Bitte versuche es erneut."
+        }
+    }
 }
 
 extension AuthFehlerForm {
