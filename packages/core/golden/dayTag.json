@@ -1,0 +1,42 @@
+[
+  {
+    "name": "heute",
+    "input": {
+      "startsAt": "2026-09-28T15:00:00.000Z",
+      "now": "2026-09-28T12:00:00.000Z"
+    },
+    "output": "HEUTE"
+  },
+  {
+    "name": "morgen",
+    "input": {
+      "startsAt": "2026-09-29T15:00:00.000Z",
+      "now": "2026-09-28T12:00:00.000Z"
+    },
+    "output": "MORGEN"
+  },
+  {
+    "name": "danach der Wochentag",
+    "input": {
+      "startsAt": "2026-09-30T15:00:00.000Z",
+      "now": "2026-09-28T12:00:00.000Z"
+    },
+    "output": "MI"
+  },
+  {
+    "name": "Zeitumstellung: Samstag spaet, Termin Sonntag frueh",
+    "input": {
+      "startsAt": "2026-10-25T08:00:00.000Z",
+      "now": "2026-10-24T21:30:00.000Z"
+    },
+    "output": "MORGEN"
+  },
+  {
+    "name": "Zeitumstellung: Samstag, Termin Montag",
+    "input": {
+      "startsAt": "2026-10-26T08:00:00.000Z",
+      "now": "2026-10-24T21:30:00.000Z"
+    },
+    "output": "MO"
+  }
+]

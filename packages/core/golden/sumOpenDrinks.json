@@ -1,0 +1,22 @@
+[
+  {
+    "name": "zaehlt Zurueckgenommenes nicht mit",
+    "input": {
+      "kaeufe": [
+        {
+          "total_cents": 250,
+          "voided_at": null
+        },
+        {
+          "total_cents": 180,
+          "voided_at": "2026-09-01T10:00:00Z"
+        },
+        {
+          "total_cents": 120,
+          "voided_at": null
+        }
+      ]
+    },
+    "output": 370
+  }
+]

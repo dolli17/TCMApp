@@ -1,0 +1,388 @@
+[
+  {
+    "name": "frei bis zur naechsten Belegung",
+    "input": {
+      "day": "2026-09-28",
+      "courtId": "p1",
+      "minute": 1020,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-09-28T16:00:00.000Z",
+          "ends_at": "2026-09-28T17:00:00.000Z",
+          "kind": "booking",
+          "type_name": "Einzel"
+        }
+      ],
+      "now": "2026-09-28T12:10:00.000Z"
+    },
+    "output": {
+      "art": "frei",
+      "text": "frei 17:00 – 18:00"
+    }
+  },
+  {
+    "name": "frei bis zum Schluss",
+    "input": {
+      "day": "2026-09-28",
+      "courtId": "p1",
+      "minute": 1020,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-09-28T07:00:00.000Z",
+          "ends_at": "2026-09-28T08:00:00.000Z",
+          "kind": "booking",
+          "type_name": "Einzel"
+        }
+      ],
+      "now": "2026-09-28T12:10:00.000Z"
+    },
+    "output": {
+      "art": "frei",
+      "text": "frei bis 21:00"
+    }
+  },
+  {
+    "name": "belegt bis zum Ende der Buchung",
+    "input": {
+      "day": "2026-09-28",
+      "courtId": "p1",
+      "minute": 1050,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-09-28T15:00:00.000Z",
+          "ends_at": "2026-09-28T17:00:00.000Z",
+          "kind": "booking",
+          "type_name": "Einzel"
+        }
+      ],
+      "now": "2026-09-28T12:10:00.000Z"
+    },
+    "output": {
+      "art": "belegt",
+      "text": "belegt bis 19:00",
+      "belegung": {
+        "court_id": "p1",
+        "starts_at": "2026-09-28T15:00:00.000Z",
+        "ends_at": "2026-09-28T17:00:00.000Z",
+        "kind": "booking",
+        "type_name": "Einzel"
+      }
+    }
+  },
+  {
+    "name": "die eigene Buchung",
+    "input": {
+      "day": "2026-09-28",
+      "courtId": "p1",
+      "minute": 1020,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-09-28T15:00:00.000Z",
+          "ends_at": "2026-09-28T16:00:00.000Z",
+          "kind": "booking",
+          "type_name": "Einzel",
+          "is_own": true
+        }
+      ],
+      "now": "2026-09-28T12:10:00.000Z"
+    },
+    "output": {
+      "art": "eigen",
+      "text": "Deine Buchung · 17:00",
+      "belegung": {
+        "court_id": "p1",
+        "starts_at": "2026-09-28T15:00:00.000Z",
+        "ends_at": "2026-09-28T16:00:00.000Z",
+        "kind": "booking",
+        "type_name": "Einzel",
+        "is_own": true
+      }
+    }
+  },
+  {
+    "name": "ein Spiel, das Mitspieler sucht",
+    "input": {
+      "day": "2026-09-28",
+      "courtId": "p1",
+      "minute": 1050,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-09-28T15:00:00.000Z",
+          "ends_at": "2026-09-28T16:00:00.000Z",
+          "kind": "booking",
+          "type_name": "Doppel",
+          "partner_wanted": true,
+          "frei": 1
+        }
+      ],
+      "now": "2026-09-28T12:10:00.000Z"
+    },
+    "output": {
+      "art": "sucht",
+      "text": "Doppel sucht 1 · 17:00",
+      "belegung": {
+        "court_id": "p1",
+        "starts_at": "2026-09-28T15:00:00.000Z",
+        "ends_at": "2026-09-28T16:00:00.000Z",
+        "kind": "booking",
+        "type_name": "Doppel",
+        "partner_wanted": true,
+        "frei": 1
+      }
+    }
+  },
+  {
+    "name": "gesperrt mit Kategorie und Grund",
+    "input": {
+      "day": "2026-09-28",
+      "courtId": "p1",
+      "minute": 1020,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-09-28T06:00:00.000Z",
+          "ends_at": "2026-09-28T19:00:00.000Z",
+          "kind": "blocking",
+          "type_name": "Platzpflege",
+          "title": "Regen"
+        }
+      ],
+      "now": "2026-09-28T12:10:00.000Z"
+    },
+    "output": {
+      "art": "gesperrt",
+      "text": "gesperrt · Platzpflege, Regen",
+      "belegung": {
+        "court_id": "p1",
+        "starts_at": "2026-09-28T06:00:00.000Z",
+        "ends_at": "2026-09-28T19:00:00.000Z",
+        "kind": "blocking",
+        "type_name": "Platzpflege",
+        "title": "Regen"
+      }
+    }
+  },
+  {
+    "name": "gesperrt ohne Grund",
+    "input": {
+      "day": "2026-09-28",
+      "courtId": "p1",
+      "minute": 1020,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-09-28T06:00:00.000Z",
+          "ends_at": "2026-09-28T19:00:00.000Z",
+          "kind": "blocking",
+          "type_name": "Verbandsspiel",
+          "title": " "
+        }
+      ],
+      "now": "2026-09-28T12:10:00.000Z"
+    },
+    "output": {
+      "art": "gesperrt",
+      "text": "gesperrt · Verbandsspiel",
+      "belegung": {
+        "court_id": "p1",
+        "starts_at": "2026-09-28T06:00:00.000Z",
+        "ends_at": "2026-09-28T19:00:00.000Z",
+        "kind": "blocking",
+        "type_name": "Verbandsspiel",
+        "title": " "
+      }
+    }
+  },
+  {
+    "name": "Training einer Serie",
+    "input": {
+      "day": "2026-09-28",
+      "courtId": "p1",
+      "minute": 1020,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-09-28T14:00:00.000Z",
+          "ends_at": "2026-09-28T17:00:00.000Z",
+          "kind": "blocking",
+          "type_name": "Einzel",
+          "series_id": "s1",
+          "title": "Training"
+        }
+      ],
+      "now": "2026-09-28T12:10:00.000Z"
+    },
+    "output": {
+      "art": "serie",
+      "text": "Training bis 19:00",
+      "belegung": {
+        "court_id": "p1",
+        "starts_at": "2026-09-28T14:00:00.000Z",
+        "ends_at": "2026-09-28T17:00:00.000Z",
+        "kind": "blocking",
+        "type_name": "Einzel",
+        "series_id": "s1",
+        "title": "Training"
+      }
+    }
+  },
+  {
+    "name": "knapp: frei zur Minute, aber die Stunde passt nicht",
+    "input": {
+      "day": "2026-09-28",
+      "courtId": "p1",
+      "minute": 1020,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-09-28T15:30:00.000Z",
+          "ends_at": "2026-09-28T16:30:00.000Z",
+          "kind": "booking",
+          "type_name": "Einzel"
+        }
+      ],
+      "now": "2026-09-28T12:10:00.000Z"
+    },
+    "output": {
+      "art": "knapp",
+      "text": "belegt ab 17:30",
+      "belegung": {
+        "court_id": "p1",
+        "starts_at": "2026-09-28T15:30:00.000Z",
+        "ends_at": "2026-09-28T16:30:00.000Z",
+        "kind": "booking",
+        "type_name": "Einzel"
+      }
+    }
+  },
+  {
+    "name": "vorbei",
+    "input": {
+      "day": "2026-09-28",
+      "courtId": "p1",
+      "minute": 780,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "now": "2026-09-28T12:10:00.000Z"
+    },
+    "output": {
+      "art": "vorbei",
+      "text": "vorbei"
+    }
+  },
+  {
+    "name": "Schluss",
+    "input": {
+      "day": "2026-09-28",
+      "courtId": "p1",
+      "minute": 1230,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "now": "2026-09-28T12:10:00.000Z"
+    },
+    "output": {
+      "art": "schluss",
+      "text": "Schluss um 21:00"
+    }
+  },
+  {
+    "name": "sieht nur den eigenen Platz",
+    "input": {
+      "day": "2026-09-28",
+      "courtId": "p1",
+      "minute": 1020,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [
+        {
+          "court_id": "p2",
+          "starts_at": "2026-09-28T15:00:00.000Z",
+          "ends_at": "2026-09-28T16:00:00.000Z",
+          "kind": "booking",
+          "type_name": "Einzel"
+        }
+      ],
+      "now": "2026-09-28T12:10:00.000Z"
+    },
+    "output": {
+      "art": "frei",
+      "text": "frei bis 21:00"
+    }
+  },
+  {
+    "name": "Vorlauf: noch frei",
+    "input": {
+      "day": "2026-09-28",
+      "courtId": "p1",
+      "minute": 840,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "now": "2026-09-21T12:10:00.000Z",
+      "leadDays": 7
+    },
+    "output": {
+      "art": "frei",
+      "text": "frei bis 21:00"
+    }
+  },
+  {
+    "name": "Vorlauf: buchbar ab 14:30",
+    "input": {
+      "day": "2026-09-28",
+      "courtId": "p1",
+      "minute": 870,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "now": "2026-09-21T12:10:00.000Z",
+      "leadDays": 7
+    },
+    "output": {
+      "art": "vorlauf",
+      "text": "buchbar ab 14:30"
+    }
+  },
+  {
+    "name": "Vorlauf: buchbar ab 17:00",
+    "input": {
+      "day": "2026-09-28",
+      "courtId": "p1",
+      "minute": 1020,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "now": "2026-09-21T12:10:00.000Z",
+      "leadDays": 7
+    },
+    "output": {
+      "art": "vorlauf",
+      "text": "buchbar ab 17:00"
+    }
+  }
+]

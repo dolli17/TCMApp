@@ -1,0 +1,136 @@
+[
+  {
+    "name": "sucht einen",
+    "input": {
+      "spiel": {
+        "owner_name": "Robin Heinzler",
+        "players": [],
+        "frei": 1
+      }
+    },
+    "output": {
+      "kopf": "Robin Heinzler sucht einen Mitspieler",
+      "dabei": null
+    }
+  },
+  {
+    "name": "sucht drei",
+    "input": {
+      "spiel": {
+        "owner_name": "Robin Heinzler",
+        "players": [],
+        "frei": 3
+      }
+    },
+    "output": {
+      "kopf": "Robin Heinzler sucht 3 Mitspieler",
+      "dabei": null
+    }
+  },
+  {
+    "name": "eigene Buchung, einer",
+    "input": {
+      "spiel": {
+        "owner_name": "Robin Heinzler",
+        "players": [],
+        "frei": 1
+      },
+      "eigenes": true
+    },
+    "output": {
+      "kopf": "Du suchst einen Mitspieler",
+      "dabei": null
+    }
+  },
+  {
+    "name": "eigene Buchung, zwei",
+    "input": {
+      "spiel": {
+        "owner_name": "Robin Heinzler",
+        "players": [],
+        "frei": 2
+      },
+      "eigenes": true
+    },
+    "output": {
+      "kopf": "Du suchst 2 Mitspieler",
+      "dabei": null
+    }
+  },
+  {
+    "name": "noch niemand dabei",
+    "input": {
+      "spiel": {
+        "owner_name": "Robin Heinzler",
+        "players": [],
+        "frei": 2
+      }
+    },
+    "output": {
+      "kopf": "Robin Heinzler sucht 2 Mitspieler",
+      "dabei": null
+    }
+  },
+  {
+    "name": "eine Person dabei",
+    "input": {
+      "spiel": {
+        "owner_name": "Robin Heinzler",
+        "players": [
+          "Anna Schmidt"
+        ],
+        "frei": 1
+      }
+    },
+    "output": {
+      "kopf": "Robin Heinzler sucht einen Mitspieler",
+      "dabei": "Schon dabei: Anna Schmidt"
+    }
+  },
+  {
+    "name": "leere Namen fallen weg",
+    "input": {
+      "spiel": {
+        "owner_name": "Robin Heinzler",
+        "players": [
+          "Anna Schmidt",
+          "",
+          "Max Gast"
+        ],
+        "frei": 1
+      }
+    },
+    "output": {
+      "kopf": "Robin Heinzler sucht einen Mitspieler",
+      "dabei": "Schon dabei: Anna Schmidt und Max Gast"
+    }
+  },
+  {
+    "name": "ohne Namen des Buchers",
+    "input": {
+      "spiel": {
+        "owner_name": null,
+        "players": [],
+        "frei": 1
+      }
+    },
+    "output": {
+      "kopf": "Jemand sucht einen Mitspieler",
+      "dabei": null
+    }
+  },
+  {
+    "name": "Name des Buchers nur Leerzeichen",
+    "input": {
+      "spiel": {
+        "owner_name": "  ",
+        "players": [],
+        "frei": 1
+      }
+    },
+    "output": {
+      "kopf": "Jemand sucht einen Mitspieler",
+      "dabei": null
+    }
+  }
+]

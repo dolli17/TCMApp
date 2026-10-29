@@ -1,0 +1,100 @@
+[
+  {
+    "name": "Sommerzeit: 16:30 UTC ist 18:30 Berlin",
+    "input": {
+      "iso": "2026-07-15T16:30:00Z"
+    },
+    "output": 1110
+  },
+  {
+    "name": "Winterzeit: 17:30 UTC ist 18:30 Berlin",
+    "input": {
+      "iso": "2026-01-15T17:30:00Z"
+    },
+    "output": 1110
+  },
+  {
+    "name": "Umkehrung von berlinTime: 2026-01-15 08:00",
+    "input": {
+      "iso": "2026-01-15T07:00:00.000Z"
+    },
+    "output": 480
+  },
+  {
+    "name": "Umkehrung von berlinTime: 2026-01-15 12:30",
+    "input": {
+      "iso": "2026-01-15T11:30:00.000Z"
+    },
+    "output": 750
+  },
+  {
+    "name": "Umkehrung von berlinTime: 2026-01-15 20:00",
+    "input": {
+      "iso": "2026-01-15T19:00:00.000Z"
+    },
+    "output": 1200
+  },
+  {
+    "name": "Umkehrung von berlinTime: 2026-07-15 08:00",
+    "input": {
+      "iso": "2026-07-15T06:00:00.000Z"
+    },
+    "output": 480
+  },
+  {
+    "name": "Umkehrung von berlinTime: 2026-07-15 12:30",
+    "input": {
+      "iso": "2026-07-15T10:30:00.000Z"
+    },
+    "output": 750
+  },
+  {
+    "name": "Umkehrung von berlinTime: 2026-07-15 20:00",
+    "input": {
+      "iso": "2026-07-15T18:00:00.000Z"
+    },
+    "output": 1200
+  },
+  {
+    "name": "Umkehrung von berlinTime: 2026-03-29 08:00",
+    "input": {
+      "iso": "2026-03-29T06:00:00.000Z"
+    },
+    "output": 480
+  },
+  {
+    "name": "Umkehrung von berlinTime: 2026-03-29 12:30",
+    "input": {
+      "iso": "2026-03-29T10:30:00.000Z"
+    },
+    "output": 750
+  },
+  {
+    "name": "Umkehrung von berlinTime: 2026-03-29 20:00",
+    "input": {
+      "iso": "2026-03-29T18:00:00.000Z"
+    },
+    "output": 1200
+  },
+  {
+    "name": "Umkehrung von berlinTime: 2026-10-25 08:00",
+    "input": {
+      "iso": "2026-10-25T07:00:00.000Z"
+    },
+    "output": 480
+  },
+  {
+    "name": "Umkehrung von berlinTime: 2026-10-25 12:30",
+    "input": {
+      "iso": "2026-10-25T11:30:00.000Z"
+    },
+    "output": 750
+  },
+  {
+    "name": "Umkehrung von berlinTime: 2026-10-25 20:00",
+    "input": {
+      "iso": "2026-10-25T19:00:00.000Z"
+    },
+    "output": 1200
+  }
+]

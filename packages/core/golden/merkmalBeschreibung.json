@@ -1,0 +1,65 @@
+[
+  {
+    "name": "duzt das Mitglied im Konto",
+    "input": {
+      "code": "foto",
+      "beschreibung": "Darf die Person auf Fotos der Website, in Aushängen und in der Presse erscheinen? Bei Minderjährigen erteilen die Erziehungsberechtigten die Einwilligung.",
+      "sicht": "mitglied"
+    },
+    "output": "Dürfen wir dich auf Fotos der Website, in Aushängen und in der Presse zeigen? Bei Minderjährigen willigen die Erziehungsberechtigten ein."
+  },
+  {
+    "name": "neutraler Text in der Verwaltung",
+    "input": {
+      "code": "foto",
+      "beschreibung": "Darf die Person auf Fotos der Website, in Aushängen und in der Presse erscheinen? Bei Minderjährigen erteilen die Erziehungsberechtigten die Einwilligung.",
+      "sicht": "verwaltung"
+    },
+    "output": "Darf die Person auf Fotos der Website, in Aushängen und in der Presse erscheinen? Bei Minderjährigen erteilen die Erziehungsberechtigten die Einwilligung."
+  },
+  {
+    "name": "Verwaltung spricht nicht von deinen Buchungen",
+    "input": {
+      "code": "booking_mail",
+      "beschreibung": "Ob Änderungen an deinen Platzbuchungen zusätzlich per E-Mail kommen. In der App siehst du sie in jedem Fall.",
+      "sicht": "verwaltung"
+    },
+    "output": "Ob Änderungen an den Platzbuchungen des Mitglieds zusätzlich per E-Mail kommen. In der App sieht es sie in jedem Fall."
+  },
+  {
+    "name": "Mitglied behaelt den Buchungsmail-Text",
+    "input": {
+      "code": "booking_mail",
+      "beschreibung": "Ob Änderungen an deinen Platzbuchungen zusätzlich per E-Mail kommen. In der App siehst du sie in jedem Fall.",
+      "sicht": "mitglied"
+    },
+    "output": "Ob Änderungen an deinen Platzbuchungen zusätzlich per E-Mail kommen. In der App siehst du sie in jedem Fall."
+  },
+  {
+    "name": "alter Text ohne Umlaute",
+    "input": {
+      "code": "booking_mail",
+      "beschreibung": "Ob Aenderungen an deinen Platzbuchungen zusaetzlich per E-Mail kommen. In der App siehst du sie in jedem Fall.",
+      "sicht": "verwaltung"
+    },
+    "output": "Ob Änderungen an den Platzbuchungen des Mitglieds zusätzlich per E-Mail kommen. In der App sieht es sie in jedem Fall."
+  },
+  {
+    "name": "vom Vorstand geaendert",
+    "input": {
+      "code": "foto",
+      "beschreibung": "Eigener Text.",
+      "sicht": "mitglied"
+    },
+    "output": "Eigener Text."
+  },
+  {
+    "name": "unbekanntes Merkmal",
+    "input": {
+      "code": "ehrung",
+      "beschreibung": "Vom Verein verliehen.",
+      "sicht": "mitglied"
+    },
+    "output": "Vom Verein verliehen."
+  }
+]

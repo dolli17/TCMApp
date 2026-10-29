@@ -1,0 +1,23 @@
+[
+  {
+    "name": "halbe Stunde",
+    "input": {
+      "minutes": 510
+    },
+    "output": "08:30"
+  },
+  {
+    "name": "Mitternacht",
+    "input": {
+      "minutes": 0
+    },
+    "output": "00:00"
+  },
+  {
+    "name": "Schluss",
+    "input": {
+      "minutes": 1260
+    },
+    "output": "21:00"
+  }
+]

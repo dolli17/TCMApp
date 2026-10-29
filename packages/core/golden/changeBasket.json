@@ -1,0 +1,86 @@
+[
+  {
+    "name": "erster Artikel",
+    "input": {
+      "basket": {},
+      "itemId": "bier",
+      "delta": 1
+    },
+    "output": {
+      "bier": 1
+    }
+  },
+  {
+    "name": "einer mehr",
+    "input": {
+      "basket": {
+        "bier": 1
+      },
+      "itemId": "bier",
+      "delta": 1
+    },
+    "output": {
+      "bier": 2
+    }
+  },
+  {
+    "name": "einer weniger",
+    "input": {
+      "basket": {
+        "bier": 2
+      },
+      "itemId": "bier",
+      "delta": -1
+    },
+    "output": {
+      "bier": 1
+    }
+  },
+  {
+    "name": "bei 0 faellt der Artikel heraus",
+    "input": {
+      "basket": {
+        "bier": 1
+      },
+      "itemId": "bier",
+      "delta": -1
+    },
+    "output": {}
+  },
+  {
+    "name": "nicht unter 0",
+    "input": {
+      "basket": {},
+      "itemId": "bier",
+      "delta": -1
+    },
+    "output": {}
+  },
+  {
+    "name": "begrenzt auf die Hoechstmenge",
+    "input": {
+      "basket": {
+        "bier": 50
+      },
+      "itemId": "bier",
+      "delta": 1
+    },
+    "output": {
+      "bier": 50
+    }
+  },
+  {
+    "name": "anderer Artikel kommt dazu",
+    "input": {
+      "basket": {
+        "bier": 50
+      },
+      "itemId": "wasser",
+      "delta": 1
+    },
+    "output": {
+      "bier": 50,
+      "wasser": 1
+    }
+  }
+]

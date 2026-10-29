@@ -1,0 +1,205 @@
+[
+  {
+    "name": "Constraint am Namen in der Meldung",
+    "input": {
+      "error": {
+        "message": "duplicate key value violates unique constraint \"members_email_key\"",
+        "code": "23505"
+      }
+    },
+    "output": "Diese E-Mail-Adresse wird bereits verwendet."
+  },
+  {
+    "name": "Constraint nur in details",
+    "input": {
+      "error": {
+        "message": "irgendwas",
+        "details": "Key (member_id)=(…) conflicts with memberships_one_open_per_member"
+      }
+    },
+    "output": "Dieses Mitglied hat bereits eine laufende Mitgliedschaft."
+  },
+  {
+    "name": "nuLiga-Id",
+    "input": {
+      "error": {
+        "message": "members_nuliga_id_key"
+      }
+    },
+    "output": "Diese nuLiga-Id ist bereits einem anderen Mitglied zugeordnet."
+  },
+  {
+    "name": "Notfallkontakt",
+    "input": {
+      "error": {
+        "message": "members_emergency_contact_paarweise"
+      }
+    },
+    "output": "Zur Notfallnummer gehört auch ein Name."
+  },
+  {
+    "name": "RPC-Meldung mit Punkt wird durchgereicht",
+    "input": {
+      "error": {
+        "message": "Der letzte Administrator kann die Rolle nicht abgeben.",
+        "code": "23514"
+      }
+    },
+    "output": "Der letzte Administrator kann die Rolle nicht abgeben."
+  },
+  {
+    "name": "Doppelbelegung einer Person wird durchgereicht",
+    "input": {
+      "error": {
+        "message": "Robin Heinzler spielt zu dieser Zeit schon auf Platz 2.",
+        "code": "23514"
+      }
+    },
+    "output": "Robin Heinzler spielt zu dieser Zeit schon auf Platz 2."
+  },
+  {
+    "name": "Meldung ohne Satzzeichen nicht",
+    "input": {
+      "error": {
+        "message": "something went wrong",
+        "code": "23514"
+      }
+    },
+    "output": "Die Eingabe verletzt eine Regel."
+  },
+  {
+    "name": "Meldung mit violates nicht",
+    "input": {
+      "error": {
+        "message": "new row violates row-level security policy for table \"members\".",
+        "code": "42501"
+      }
+    },
+    "output": "Dafür fehlt dir die Berechtigung."
+  },
+  {
+    "name": "Fehlercode 42501",
+    "input": {
+      "error": {
+        "code": "42501"
+      }
+    },
+    "output": "Dafür fehlt dir die Berechtigung."
+  },
+  {
+    "name": "Fehlercode 23P01",
+    "input": {
+      "error": {
+        "code": "23P01"
+      }
+    },
+    "output": "Dieser Platz ist zu der Zeit bereits belegt."
+  },
+  {
+    "name": "Fehlercode P0002",
+    "input": {
+      "error": {
+        "code": "P0002"
+      }
+    },
+    "output": "Der gesuchte Datensatz wurde nicht gefunden."
+  },
+  {
+    "name": "technischer Text mit unbekanntem Code",
+    "input": {
+      "error": {
+        "message": "Cannot coerce the result to a single JSON object",
+        "code": "PGRST116"
+      }
+    },
+    "output": "Das hat nicht geklappt. Bitte versuche es erneut."
+  },
+  {
+    "name": "technischer Text ohne Code",
+    "input": {
+      "error": {
+        "message": "permission denied for table members"
+      }
+    },
+    "output": "Das hat nicht geklappt. Bitte versuche es erneut."
+  },
+  {
+    "name": "keine Verbindung: TypeError: fetch failed",
+    "input": {
+      "error": {
+        "message": "TypeError: fetch failed",
+        "details": "",
+        "code": ""
+      }
+    },
+    "output": "Keine Verbindung zum Server. Bitte prüfe die Internetverbindung und versuche es erneut."
+  },
+  {
+    "name": "keine Verbindung: TypeError: Failed to fetch",
+    "input": {
+      "error": {
+        "message": "TypeError: Failed to fetch",
+        "details": "",
+        "code": ""
+      }
+    },
+    "output": "Keine Verbindung zum Server. Bitte prüfe die Internetverbindung und versuche es erneut."
+  },
+  {
+    "name": "keine Verbindung: NetworkError when attempting to fetch resource.",
+    "input": {
+      "error": {
+        "message": "NetworkError when attempting to fetch resource.",
+        "details": "",
+        "code": ""
+      }
+    },
+    "output": "Keine Verbindung zum Server. Bitte prüfe die Internetverbindung und versuche es erneut."
+  },
+  {
+    "name": "keine Verbindung: Load failed",
+    "input": {
+      "error": {
+        "message": "Load failed",
+        "details": "",
+        "code": ""
+      }
+    },
+    "output": "Keine Verbindung zum Server. Bitte prüfe die Internetverbindung und versuche es erneut."
+  },
+  {
+    "name": "keine Verbindung: Network request failed",
+    "input": {
+      "error": {
+        "message": "Network request failed",
+        "details": "",
+        "code": ""
+      }
+    },
+    "output": "Keine Verbindung zum Server. Bitte prüfe die Internetverbindung und versuche es erneut."
+  },
+  {
+    "name": "keine Verbindung in details",
+    "input": {
+      "error": {
+        "message": "x",
+        "details": "Error: connect ECONNREFUSED 127.0.0.1:54321"
+      }
+    },
+    "output": "Keine Verbindung zum Server. Bitte prüfe die Internetverbindung und versuche es erneut."
+  },
+  {
+    "name": "leerer Fehler",
+    "input": {
+      "error": {}
+    },
+    "output": "Unbekannter Fehler."
+  },
+  {
+    "name": "kein Fehler",
+    "input": {
+      "error": null
+    },
+    "output": "Unbekannter Fehler."
+  }
+]

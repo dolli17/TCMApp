@@ -1,0 +1,270 @@
+[
+  {
+    "name": "freier Platz in der Zukunft",
+    "input": {
+      "day": "2026-06-15",
+      "courtId": "p1",
+      "minute": 900,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": true
+  },
+  {
+    "name": "Vergangenes",
+    "input": {
+      "day": "2026-06-15",
+      "courtId": "p1",
+      "minute": 570,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": false
+  },
+  {
+    "name": "endet nach Schluss",
+    "input": {
+      "day": "2026-06-15",
+      "courtId": "p1",
+      "minute": 1230,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": false
+  },
+  {
+    "name": "letzte Stunde vor Schluss",
+    "input": {
+      "day": "2026-06-15",
+      "courtId": "p1",
+      "minute": 1200,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": true
+  },
+  {
+    "name": "volle Dauer zaehlt: 18:30 belegt, 18:00 geht nicht",
+    "input": {
+      "day": "2026-06-15",
+      "courtId": "p1",
+      "minute": 1080,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-06-15T16:30:00.000Z",
+          "ends_at": "2026-06-15T17:30:00.000Z"
+        }
+      ],
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": false
+  },
+  {
+    "name": "direkt davor geht",
+    "input": {
+      "day": "2026-06-15",
+      "courtId": "p1",
+      "minute": 1050,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-06-15T16:30:00.000Z",
+          "ends_at": "2026-06-15T17:30:00.000Z"
+        }
+      ],
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": true
+  },
+  {
+    "name": "direkt danach geht",
+    "input": {
+      "day": "2026-06-15",
+      "courtId": "p1",
+      "minute": 1170,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-06-15T16:30:00.000Z",
+          "ends_at": "2026-06-15T17:30:00.000Z"
+        }
+      ],
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": true
+  },
+  {
+    "name": "nur Belegungen desselben Platzes",
+    "input": {
+      "day": "2026-06-15",
+      "courtId": "p1",
+      "minute": 1080,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [
+        {
+          "court_id": "p2",
+          "starts_at": "2026-06-15T16:00:00.000Z",
+          "ends_at": "2026-06-15T17:00:00.000Z"
+        }
+      ],
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": true
+  },
+  {
+    "name": "letzter Vorlauftag vor der Uhrzeit von jetzt",
+    "input": {
+      "day": "2026-06-22",
+      "courtId": "p1",
+      "minute": 570,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "leadDays": 7,
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": true
+  },
+  {
+    "name": "letzter Vorlauftag genau an der Grenze",
+    "input": {
+      "day": "2026-06-22",
+      "courtId": "p1",
+      "minute": 600,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "leadDays": 7,
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": true
+  },
+  {
+    "name": "letzter Vorlauftag nach der Grenze",
+    "input": {
+      "day": "2026-06-22",
+      "courtId": "p1",
+      "minute": 630,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "leadDays": 7,
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": false
+  },
+  {
+    "name": "letzter Vorlauftag am Nachmittag",
+    "input": {
+      "day": "2026-06-22",
+      "courtId": "p1",
+      "minute": 900,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "leadDays": 7,
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": false
+  },
+  {
+    "name": "Tag davor ganz frei",
+    "input": {
+      "day": "2026-06-21",
+      "courtId": "p1",
+      "minute": 1200,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "leadDays": 7,
+      "now": "2026-06-15T08:00:00.000Z"
+    },
+    "output": true
+  },
+  {
+    "name": "Zeitumstellung: Grenze rutscht auf 09:00",
+    "input": {
+      "day": "2026-10-25",
+      "courtId": "p1",
+      "minute": 540,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "leadDays": 7,
+      "now": "2026-10-18T08:00:00.000Z"
+    },
+    "output": true
+  },
+  {
+    "name": "Zeitumstellung: 09:30 schon zu weit",
+    "input": {
+      "day": "2026-10-25",
+      "courtId": "p1",
+      "minute": 570,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "leadDays": 7,
+      "now": "2026-10-18T08:00:00.000Z"
+    },
+    "output": false
+  },
+  {
+    "name": "Zeitumstellung: 10:00 schon zu weit",
+    "input": {
+      "day": "2026-10-25",
+      "courtId": "p1",
+      "minute": 600,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "leadDays": 7,
+      "now": "2026-10-18T08:00:00.000Z"
+    },
+    "output": false
+  },
+  {
+    "name": "Winterzeit: Grenze genau 10:00",
+    "input": {
+      "day": "2026-11-01",
+      "courtId": "p1",
+      "minute": 600,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "leadDays": 7,
+      "now": "2026-10-25T09:00:00.000Z"
+    },
+    "output": true
+  },
+  {
+    "name": "Winterzeit: 10:30 zu weit",
+    "input": {
+      "day": "2026-11-01",
+      "courtId": "p1",
+      "minute": 630,
+      "durationMinutes": 60,
+      "closingMinutes": 1260,
+      "occupied": [],
+      "leadDays": 7,
+      "now": "2026-10-25T09:00:00.000Z"
+    },
+    "output": false
+  }
+]

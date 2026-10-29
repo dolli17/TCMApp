@@ -1,0 +1,277 @@
+[
+  {
+    "name": "Bucher vor Spielbeginn",
+    "input": {
+      "own": true,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T10:00:00Z"
+    },
+    "output": {
+      "cancel": true,
+      "editPlayers": true,
+      "leave": false,
+      "join": false
+    }
+  },
+  {
+    "name": "Bucher nach Spielbeginn",
+    "input": {
+      "own": true,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T08:30:00Z"
+    },
+    "output": {
+      "cancel": false,
+      "editPlayers": false,
+      "leave": false,
+      "join": false
+    }
+  },
+  {
+    "name": "Bucher genau zu Spielbeginn",
+    "input": {
+      "own": true,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T09:00:00.000Z"
+    },
+    "output": {
+      "cancel": false,
+      "editPlayers": false,
+      "leave": false,
+      "join": false
+    }
+  },
+  {
+    "name": "Mitspieler genau zu Spielbeginn",
+    "input": {
+      "own": false,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T09:00:00.000Z",
+      "joined": true
+    },
+    "output": {
+      "cancel": false,
+      "editPlayers": false,
+      "leave": false,
+      "join": false
+    }
+  },
+  {
+    "name": "mitspielen genau zu Spielbeginn",
+    "input": {
+      "own": false,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T09:00:00.000Z",
+      "partnerWanted": true,
+      "free": 1
+    },
+    "output": {
+      "cancel": false,
+      "editPlayers": false,
+      "leave": false,
+      "join": false
+    }
+  },
+  {
+    "name": "Platzrechte waehrend der Spielzeit",
+    "input": {
+      "own": false,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T08:30:00Z",
+      "managesCourts": true
+    },
+    "output": {
+      "cancel": true,
+      "editPlayers": true,
+      "leave": false,
+      "join": false
+    }
+  },
+  {
+    "name": "Bucher mit Platzrechten waehrend der Spielzeit",
+    "input": {
+      "own": true,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T08:30:00Z",
+      "managesCourts": true
+    },
+    "output": {
+      "cancel": true,
+      "editPlayers": true,
+      "leave": false,
+      "join": false
+    }
+  },
+  {
+    "name": "fremde Buchung ohne Platzrechte",
+    "input": {
+      "own": false,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T10:00:00Z"
+    },
+    "output": {
+      "cancel": false,
+      "editPlayers": false,
+      "leave": false,
+      "join": false
+    }
+  },
+  {
+    "name": "Mitspieler vor Spielbeginn",
+    "input": {
+      "own": false,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T10:00:00Z",
+      "joined": true
+    },
+    "output": {
+      "cancel": false,
+      "editPlayers": false,
+      "leave": true,
+      "join": false
+    }
+  },
+  {
+    "name": "Mitspieler nach Spielbeginn",
+    "input": {
+      "own": false,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T08:30:00Z",
+      "joined": true
+    },
+    "output": {
+      "cancel": false,
+      "editPlayers": false,
+      "leave": false,
+      "join": false
+    }
+  },
+  {
+    "name": "Mitspieler mit Platzrechten nach Spielbeginn",
+    "input": {
+      "own": false,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T08:30:00Z",
+      "joined": true,
+      "managesCourts": true
+    },
+    "output": {
+      "cancel": true,
+      "editPlayers": true,
+      "leave": false,
+      "join": false
+    }
+  },
+  {
+    "name": "Bucher, der auch eingetragen ist",
+    "input": {
+      "own": true,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T10:00:00Z",
+      "joined": true
+    },
+    "output": {
+      "cancel": true,
+      "editPlayers": true,
+      "leave": false,
+      "join": false
+    }
+  },
+  {
+    "name": "mitspielen: gesucht, frei, nicht begonnen",
+    "input": {
+      "own": false,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T10:00:00Z",
+      "partnerWanted": true,
+      "free": 1
+    },
+    "output": {
+      "cancel": false,
+      "editPlayers": false,
+      "leave": false,
+      "join": true
+    }
+  },
+  {
+    "name": "mitspielen: schon begonnen",
+    "input": {
+      "own": false,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T08:30:00Z",
+      "partnerWanted": true,
+      "free": 1
+    },
+    "output": {
+      "cancel": false,
+      "editPlayers": false,
+      "leave": false,
+      "join": false
+    }
+  },
+  {
+    "name": "mitspielen: nicht gesucht",
+    "input": {
+      "own": false,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T10:00:00Z",
+      "partnerWanted": false,
+      "free": 1
+    },
+    "output": {
+      "cancel": false,
+      "editPlayers": false,
+      "leave": false,
+      "join": false
+    }
+  },
+  {
+    "name": "mitspielen: kein Platz frei",
+    "input": {
+      "own": false,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T10:00:00Z",
+      "partnerWanted": true,
+      "free": 0
+    },
+    "output": {
+      "cancel": false,
+      "editPlayers": false,
+      "leave": false,
+      "join": false
+    }
+  },
+  {
+    "name": "mitspielen: eigene Buchung",
+    "input": {
+      "own": true,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T10:00:00Z",
+      "partnerWanted": true,
+      "free": 1
+    },
+    "output": {
+      "cancel": true,
+      "editPlayers": true,
+      "leave": false,
+      "join": false
+    }
+  },
+  {
+    "name": "mitspielen: schon eingetragen",
+    "input": {
+      "own": false,
+      "now": "2026-10-25T09:00:00.000Z",
+      "startsAt": "2026-10-25T10:00:00Z",
+      "partnerWanted": true,
+      "free": 1,
+      "joined": true
+    },
+    "output": {
+      "cancel": false,
+      "editPlayers": false,
+      "leave": true,
+      "join": false
+    }
+  }
+]

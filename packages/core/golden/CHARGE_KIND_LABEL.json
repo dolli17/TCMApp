@@ -1,0 +1,51 @@
+[
+  {
+    "name": "fee",
+    "input": {
+      "kind": "fee"
+    },
+    "output": "Beitrag"
+  },
+  {
+    "name": "drinks",
+    "input": {
+      "kind": "drinks"
+    },
+    "output": "Getränke"
+  },
+  {
+    "name": "work_duty",
+    "input": {
+      "kind": "work_duty"
+    },
+    "output": "Arbeitsdienst"
+  },
+  {
+    "name": "event",
+    "input": {
+      "kind": "event"
+    },
+    "output": "Veranstaltung"
+  },
+  {
+    "name": "guest",
+    "input": {
+      "kind": "guest"
+    },
+    "output": "Gastgebühr"
+  },
+  {
+    "name": "deposit",
+    "input": {
+      "kind": "deposit"
+    },
+    "output": "Pfand"
+  },
+  {
+    "name": "misc",
+    "input": {
+      "kind": "misc"
+    },
+    "output": "Sonstiges"
+  }
+]

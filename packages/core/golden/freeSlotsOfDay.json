@@ -1,0 +1,1709 @@
+[
+  {
+    "name": "heute: naechste Halbstunde, danach volle Stunden",
+    "input": {
+      "day": "2026-09-28",
+      "courtIds": [
+        "p1",
+        "p2",
+        "p3"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [],
+      "now": "2026-09-28T12:10:00.000Z"
+    },
+    "output": [
+      {
+        "minute": 870,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 900,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 960,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1020,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1080,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1140,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1200,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      }
+    ]
+  },
+  {
+    "name": "heute zur vollen Stunde keine Zeit doppelt",
+    "input": {
+      "day": "2026-09-28",
+      "courtIds": [
+        "p1",
+        "p2",
+        "p3"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [],
+      "now": "2026-09-28T14:00:00.000Z"
+    },
+    "output": [
+      {
+        "minute": 960,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1020,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1080,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1140,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1200,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      }
+    ]
+  },
+  {
+    "name": "am letzten Vorlauftag ist nach der Grenze nichts frei",
+    "input": {
+      "day": "2026-09-28",
+      "courtIds": [
+        "p1"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [],
+      "leadDays": 7,
+      "now": "2026-09-21T12:10:00.000Z"
+    },
+    "output": [
+      {
+        "minute": 480,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 1
+      },
+      {
+        "minute": 540,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 1
+      },
+      {
+        "minute": 600,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 1
+      },
+      {
+        "minute": 660,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 1
+      },
+      {
+        "minute": 720,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 1
+      },
+      {
+        "minute": 780,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 1
+      },
+      {
+        "minute": 840,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 1
+      },
+      {
+        "minute": 900,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "vorlauf",
+              "text": "buchbar ab 15:00"
+            }
+          }
+        ],
+        "free": 0
+      },
+      {
+        "minute": 960,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "vorlauf",
+              "text": "buchbar ab 16:00"
+            }
+          }
+        ],
+        "free": 0
+      },
+      {
+        "minute": 1020,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "vorlauf",
+              "text": "buchbar ab 17:00"
+            }
+          }
+        ],
+        "free": 0
+      },
+      {
+        "minute": 1080,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "vorlauf",
+              "text": "buchbar ab 18:00"
+            }
+          }
+        ],
+        "free": 0
+      },
+      {
+        "minute": 1140,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "vorlauf",
+              "text": "buchbar ab 19:00"
+            }
+          }
+        ],
+        "free": 0
+      },
+      {
+        "minute": 1200,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "vorlauf",
+              "text": "buchbar ab 20:00"
+            }
+          }
+        ],
+        "free": 0
+      }
+    ]
+  },
+  {
+    "name": "vor der Oeffnung ab der Oeffnung",
+    "input": {
+      "day": "2026-09-28",
+      "courtIds": [
+        "p1",
+        "p2",
+        "p3"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [],
+      "now": "2026-09-28T04:00:00.000Z"
+    },
+    "output": [
+      {
+        "minute": 480,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 540,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 600,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 660,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 720,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 780,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 840,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 900,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 960,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1020,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1080,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1140,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1200,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      }
+    ]
+  },
+  {
+    "name": "kommender Tag ab der Oeffnung",
+    "input": {
+      "day": "2026-09-29",
+      "courtIds": [
+        "p1",
+        "p2",
+        "p3"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [],
+      "now": "2026-09-28T12:10:00.000Z"
+    },
+    "output": [
+      {
+        "minute": 480,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 540,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 600,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 660,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 720,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 780,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 840,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 900,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 960,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1020,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1080,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1140,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1200,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      }
+    ]
+  },
+  {
+    "name": "vergangener Tag",
+    "input": {
+      "day": "2026-09-27",
+      "courtIds": [
+        "p1",
+        "p2",
+        "p3"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [],
+      "now": "2026-09-28T12:10:00.000Z"
+    },
+    "output": []
+  },
+  {
+    "name": "Abend nach der letzten Startzeit",
+    "input": {
+      "day": "2026-09-28",
+      "courtIds": [
+        "p1",
+        "p2",
+        "p3"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [],
+      "now": "2026-09-28T18:10:00.000Z"
+    },
+    "output": []
+  },
+  {
+    "name": "Status je Platz: eigen, sucht, frei",
+    "input": {
+      "day": "2026-09-28",
+      "courtIds": [
+        "p1",
+        "p2",
+        "p3"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-09-28T15:00:00.000Z",
+          "ends_at": "2026-09-28T16:00:00.000Z",
+          "kind": "booking",
+          "type_name": "Doppel",
+          "is_own": true
+        },
+        {
+          "court_id": "p2",
+          "starts_at": "2026-09-28T15:00:00.000Z",
+          "ends_at": "2026-09-28T16:00:00.000Z",
+          "kind": "booking",
+          "type_name": "Doppel",
+          "partner_wanted": true,
+          "frei": 1
+        }
+      ],
+      "now": "2026-09-28T14:10:00.000Z"
+    },
+    "output": [
+      {
+        "minute": 990,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "knapp",
+              "text": "belegt ab 17:00",
+              "belegung": {
+                "court_id": "p1",
+                "starts_at": "2026-09-28T15:00:00.000Z",
+                "ends_at": "2026-09-28T16:00:00.000Z",
+                "kind": "booking",
+                "type_name": "Doppel",
+                "is_own": true
+              }
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "knapp",
+              "text": "belegt ab 17:00",
+              "belegung": {
+                "court_id": "p2",
+                "starts_at": "2026-09-28T15:00:00.000Z",
+                "ends_at": "2026-09-28T16:00:00.000Z",
+                "kind": "booking",
+                "type_name": "Doppel",
+                "partner_wanted": true,
+                "frei": 1
+              }
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 1
+      },
+      {
+        "minute": 1020,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "eigen",
+              "text": "Deine Buchung · 17:00",
+              "belegung": {
+                "court_id": "p1",
+                "starts_at": "2026-09-28T15:00:00.000Z",
+                "ends_at": "2026-09-28T16:00:00.000Z",
+                "kind": "booking",
+                "type_name": "Doppel",
+                "is_own": true
+              }
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "sucht",
+              "text": "Doppel sucht 1 · 17:00",
+              "belegung": {
+                "court_id": "p2",
+                "starts_at": "2026-09-28T15:00:00.000Z",
+                "ends_at": "2026-09-28T16:00:00.000Z",
+                "kind": "booking",
+                "type_name": "Doppel",
+                "partner_wanted": true,
+                "frei": 1
+              }
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 1
+      },
+      {
+        "minute": 1080,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1140,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1200,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      }
+    ]
+  },
+  {
+    "name": "knapp: eine volle Stunde passt nicht",
+    "input": {
+      "day": "2026-09-28",
+      "courtIds": [
+        "p1",
+        "p2",
+        "p3"
+      ],
+      "openingMinutes": 480,
+      "closingMinutes": 1260,
+      "slotMinutes": 30,
+      "durationMinutes": 60,
+      "occupied": [
+        {
+          "court_id": "p1",
+          "starts_at": "2026-09-28T15:30:00.000Z",
+          "ends_at": "2026-09-28T16:30:00.000Z",
+          "kind": "booking",
+          "type_name": "Doppel"
+        }
+      ],
+      "now": "2026-09-28T14:10:00.000Z"
+    },
+    "output": [
+      {
+        "minute": 990,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei 16:30 – 17:30"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1020,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "knapp",
+              "text": "belegt ab 17:30",
+              "belegung": {
+                "court_id": "p1",
+                "starts_at": "2026-09-28T15:30:00.000Z",
+                "ends_at": "2026-09-28T16:30:00.000Z",
+                "kind": "booking",
+                "type_name": "Doppel"
+              }
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 2
+      },
+      {
+        "minute": 1080,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "belegt",
+              "text": "belegt bis 18:30",
+              "belegung": {
+                "court_id": "p1",
+                "starts_at": "2026-09-28T15:30:00.000Z",
+                "ends_at": "2026-09-28T16:30:00.000Z",
+                "kind": "booking",
+                "type_name": "Doppel"
+              }
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 2
+      },
+      {
+        "minute": 1140,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      },
+      {
+        "minute": 1200,
+        "courts": [
+          {
+            "courtId": "p1",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p2",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          },
+          {
+            "courtId": "p3",
+            "status": {
+              "art": "frei",
+              "text": "frei bis 21:00"
+            }
+          }
+        ],
+        "free": 3
+      }
+    ]
+  }
+]

@@ -1,0 +1,73 @@
+[
+  {
+    "name": "Buchung",
+    "input": {
+      "b": {
+        "kind": "booking"
+      }
+    },
+    "output": "belegt"
+  },
+  {
+    "name": "eigene Buchung",
+    "input": {
+      "b": {
+        "kind": "booking",
+        "is_own": true
+      }
+    },
+    "output": "eigen"
+  },
+  {
+    "name": "sucht Mitspieler mit freiem Platz",
+    "input": {
+      "b": {
+        "kind": "booking",
+        "partner_wanted": true,
+        "frei": 1
+      }
+    },
+    "output": "sucht"
+  },
+  {
+    "name": "sucht, aber kein Platz frei",
+    "input": {
+      "b": {
+        "kind": "booking",
+        "partner_wanted": true,
+        "frei": 0
+      }
+    },
+    "output": "belegt"
+  },
+  {
+    "name": "Sperrung",
+    "input": {
+      "b": {
+        "kind": "blocking"
+      }
+    },
+    "output": "gesperrt"
+  },
+  {
+    "name": "Serie: blocking mit series_id",
+    "input": {
+      "b": {
+        "kind": "blocking",
+        "series_id": "s1"
+      }
+    },
+    "output": "serie"
+  },
+  {
+    "name": "Serie bleibt Serie, auch wenn sie dem Mitglied gehoert",
+    "input": {
+      "b": {
+        "kind": "booking",
+        "series_id": "s1",
+        "is_own": true
+      }
+    },
+    "output": "serie"
+  }
+]

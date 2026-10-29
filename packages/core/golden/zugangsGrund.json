@@ -1,0 +1,63 @@
+[
+  {
+    "name": "übernimmt archiviert",
+    "input": {
+      "wert": "archiviert"
+    },
+    "output": "archiviert"
+  },
+  {
+    "name": "übernimmt gesperrt",
+    "input": {
+      "wert": "gesperrt"
+    },
+    "output": "gesperrt"
+  },
+  {
+    "name": "übernimmt ausgetreten",
+    "input": {
+      "wert": "ausgetreten"
+    },
+    "output": "ausgetreten"
+  },
+  {
+    "name": "übernimmt unbekannt",
+    "input": {
+      "wert": "unbekannt"
+    },
+    "output": "unbekannt"
+  },
+  {
+    "name": "null",
+    "input": {
+      "wert": null
+    },
+    "output": "unbekannt"
+  },
+  {
+    "name": "fehlt",
+    "input": {},
+    "output": "unbekannt"
+  },
+  {
+    "name": "leer",
+    "input": {
+      "wert": ""
+    },
+    "output": "unbekannt"
+  },
+  {
+    "name": "fremder Wert",
+    "input": {
+      "wert": "admin"
+    },
+    "output": "unbekannt"
+  },
+  {
+    "name": "Markup",
+    "input": {
+      "wert": "<script>"
+    },
+    "output": "unbekannt"
+  }
+]

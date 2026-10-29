@@ -13,6 +13,7 @@
   },
   "scripts": {
     "build:css": "tsx scripts/build-css.ts",
+    "build:native": "tsx scripts/build-native.ts",
     "test": "pnpm build:css && vitest run",
     "typecheck": "tsc --noEmit"
   },
