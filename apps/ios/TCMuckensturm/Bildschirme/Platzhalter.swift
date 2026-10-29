@@ -1,25 +1,33 @@
 /**
  * Platzhalter fuer alles, was nach der Anmeldung kommt
  *
- * Onboarding und die vier Tabs (Home, Plaetze, Verein, Konto) bauen die
- * naechsten Schritte. Die Verwaltung kommt spaeter dazu.
+ * Onboarding und die Tabs Plaetze, Verein, Konto bauen die naechsten
+ * Schritte (Home steht in Bildschirme/Home). Die Verwaltung kommt spaeter dazu.
  */
 
 import SwiftUI
 
 struct HauptTabs: View {
+    @State private var tab: HauptTab = .home
+
     var body: some View {
-        TabView {
-            Platzhalter(titel: "Home")
+        TabView(selection: $tab) {
+            HomeBildschirm()
                 .tabItem { Label("Home", systemImage: "house") }
+                .tag(HauptTab.home)
             Platzhalter(titel: "Plätze")
                 .tabItem { Label("Plätze", systemImage: "sportscourt") }
+                .tag(HauptTab.plaetze)
             Platzhalter(titel: "Verein")
                 .tabItem { Label("Verein", systemImage: "person.3") }
+                .tag(HauptTab.verein)
             Platzhalter(titel: "Konto", abmelden: true)
                 .tabItem { Label("Konto", systemImage: "person.crop.circle") }
+                .tag(HauptTab.konto)
         }
         .tint(Farbe.blue)
+        // Home fuehrt auf Bildschirme, die es nativ noch nicht gibt: bis dahin der passende Tab.
+        .environment(\.zuTab) { tab = $0 }
     }
 }
 
@@ -35,14 +43,14 @@ private struct Platzhalter: View {
     var abmelden = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Tokens.abstand.m) {
+        VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
             Text(titel)
-                .font(Schrift.text(.extrafett, Tokens.schrift.groesse.seitentitel, relativeTo: .largeTitle))
-                .tracking(Tokens.schrift.laufweiteTitel)
+                .font(Schrift.text(.extrafett, Tokens.Schrift.seitentitel, relativeTo: .largeTitle))
+                .tracking(Tokens.Schrift.laufweiteTitel)
                 .foregroundStyle(Farbe.ink)
                 .accessibilityAddTraits(.isHeader)
             Text("Dieser Bereich kommt in einem der nächsten Schritte.")
-                .font(Schrift.text(.normal, Tokens.schrift.groesse.normal))
+                .font(Schrift.text(.normal, Tokens.Schrift.normal))
                 .foregroundStyle(Farbe.ink2)
             Spacer()
             if abmelden {
@@ -52,7 +60,7 @@ private struct Platzhalter: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
         }
-        .padding(Tokens.abstand.rand)
+        .padding(Tokens.Abstand.rand)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Farbe.bg)
     }

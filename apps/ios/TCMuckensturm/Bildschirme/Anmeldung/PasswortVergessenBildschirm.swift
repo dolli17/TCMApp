@@ -41,7 +41,7 @@ struct PasswortVergessenBildschirm: View {
                 GelberKnopf(text: laeuft ? "Wird gesendet…" : "Link anfordern", gesperrt: laeuft, aktion: absenden)
                 LeiserVerweis(text: "Zurück zur Anmeldung", aktion: zurueck)
             }
-            .padding(.top, Tokens.abstand.abschnitt)
+            .padding(.top, Tokens.Abstand.abschnitt)
         }
         .toolbar(.hidden, for: .navigationBar)
     }

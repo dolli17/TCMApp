@@ -3,7 +3,13 @@
 Grundgerüst der nativen App (Swift 6, SwiftUI, iOS 17+, nur iPhone, Hochformat, Deutsch).
 Die Expo-App in `apps/mobile` bleibt unverändert, bis diese App fertig ist. Web und Supabase bleiben.
 
-![Anmeldung](docs/anmelden.png)
+| Anmeldung | Home, hell | Home, dunkel |
+|---|---|---|
+| ![Anmeldung](docs/anmelden.png) | ![Home hell](docs/home-leer-hell.png) | ![Home dunkel](docs/home-leer-dunkel.png) |
+| | ![Home mit Buchungen hell](docs/home-buchungen-hell.png) | ![Home mit Buchungen dunkel](docs/home-buchungen-dunkel.png) |
+
+Home zeigt das Seed-Konto `mitglied@tcm.local`, oben ohne eigene Buchungen (Leerzustand „Noch nichts
+geplant“), unten mit zwei Testbuchungen, die nur im lokalen Stack per `create_booking` angelegt wurden.
 
 ## Voraussetzungen
 
@@ -52,7 +58,26 @@ Schlüsselbund-Speicher gegen den echten Simulator-Schlüsselbund (eigener Test-
 App Group), die Zuordnung der Anmeldefehler (dieselben Fälle wie
 `packages/core/src/anmeldefehler.test.ts`), die Start-Logik als reine Funktion, die Auswertung der
 Passwort-Links (dieselben Fälle wie `apps/mobile/src/lib/passwortlink.test.ts`), Passwortregeln und
-den Ablauf beim Öffnen eines Links sowie das Lesen der Token-Farben und das Laden der Schriften.
+den Ablauf beim Öffnen eines Links, die Token-Farben hell/dunkel und das Laden der Schriften.
+Dazu der Swift-Kern gegen **jeden Fall** der Golden Files
+in `packages/core/golden/` (`KernGoldenTests`, Ordner als Testressource eingebunden), weitere
+Kern-Fälle aus den Vitest-Tests (`KernTests`), das Decoding der Home-Modelle mit Beispiel-JSON
+(`StartdatenTests`) und die View-Logik von Home, Glocke und Neuigkeiten (`HomeLogikTests`).
+
+### Screenshots gegen den lokalen Stack
+
+Ohne den Simulator von Hand zu bedienen: Das Scheme `TCMuckensturm Lokal anmelden` (UI-Test
+`LokalAnmeldenUITests`) meldet die Konfiguration Lokal mit dem Seed-Konto an
+(`mitglied@tcm.local`, Passwort aus `supabase/seed.sql`; andere Werte über `TCM_EMAIL` /
+`TCM_PASSWORT`). Die Sitzung bleibt im Schlüsselbund, danach geht der Rest mit `simctl`:
+
+```bash
+xcodebuild test -project TCMuckensturm.xcodeproj -scheme "TCMuckensturm Lokal anmelden" \
+  -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath build/DerivedData
+xcrun simctl ui booted appearance dark       # oder light
+xcrun simctl launch booted de.tcmuckensturm.app.lokal
+xcrun simctl io booted screenshot docs/home-leer-dunkel.png
+```
 
 `pnpm verify` im Repo-Wurzelverzeichnis berührt `apps/ios` nicht. Eine CI für iOS gibt es noch
 nicht (braucht einen macOS-Runner).
@@ -126,8 +151,11 @@ TCMuckensturm/
   App/            Einstieg, Umgebung, Sitzung (Weiche, An-/Abmelden, Passwort-Links),
                   StartLogik, Passwortlink, PasswortAblauf (reine Funktionen)
   Daten/          Supabase-Client, Schlüsselbund-Speicher, Anmeldefehler, Zugang (mein_zugang)
-  Theme/          Tokens (vorläufig, siehe unten), Farben und Schrift für SwiftUI
-  Bildschirme/    Anmeldung (mit Passwort vergessen/setzen), Kein Zugang, Platzhalter (Onboarding, Tabs)
+  Kern/           Rechenlogik aus @tcm/core als reine Funktionen (Zeit in Europe/Berlin, Startseite,
+                  freie Plätze, Geld, translateDbError, Veranstaltungen) – geprüft gegen die Golden Files
+  Daten/          (siehe oben) und Startdaten: RPCs und Modelle für Home, Glocke, Neuigkeiten
+  Theme/          Farben und Schrift für SwiftUI auf Basis der erzeugten Tokens
+  Bildschirme/    Anmeldung (mit Passwort vergessen/setzen), Kein Zugang, Home, Nachrichten (Glocke, Neuigkeiten), Bausteine, Platzhalter
   Ressourcen/     Assets (App-Icon, Logo, Markenblau), Schriften (Barlow, OFL)
 TCMuckensturmTests/
 ```
@@ -141,16 +169,25 @@ TCMuckensturmTests/
   `mein_zugang()`: kein Zugang → „Kein Zugang mehr“ (meldet ab), Onboarding offen → Platzhalter,
   sonst Tabs Home / Plätze / Verein / Konto (Platzhalter).
 - **Abmelden** nur in `Sitzung.abmelden()`.
-- **Tokens:** `Theme/Tokens.swift` ist eine Abschrift von `packages/ui/src/tokens.ts` mit denselben
-  Namen (`Tokens.farben.hell.blue`, `Tokens.abstand.rand`, `Tokens.radius.feld`). Sobald
-  `packages/ui/generated/Tokens.swift` erzeugt wird (Spur N1), ersetzt die erzeugte Datei diese.
+- **Tokens:** `packages/ui/generated/Tokens.swift` (erzeugt aus `packages/ui/src/tokens.ts` mit
+  `pnpm --filter @tcm/ui build:native`) ist in `project.yml` als Quelle eingebunden, nicht kopiert.
+  `Farbe.ink` liest `Tokens.farben` (hell/dunkel nach Erscheinungsbild), Maße als
+  `Tokens.Abstand.rand`, `Tokens.Radius.feld`, `Tokens.Schrift.seitentitel`.
+- **Kern:** Zeitpunkte bleiben in den Modellen Text wie in der Expo-App; `Zeit.datum(_:)` liest
+  PostgREST (`+00:00`, Mikrosekunden) wie JavaScript (`Z`). Wochentage und Monate stehen als feste
+  deutsche Namen im Code, unabhängig von der Gerätesprache.
+- **Home:** wie `apps/mobile/app/(tabs)/home.tsx`, jeder Abschnitt lädt für sich (Fehler mit
+  „Erneut versuchen“), Pull-to-refresh, stilles Nachladen beim Zurückkehren. Was auf Bildschirme
+  zeigt, die es nativ noch nicht gibt (Buchen, Spiele, Getränke, Veranstaltungen, Konto), wechselt
+  vorerst auf den passenden Tab (`Bildschirme/Navigation.swift`, `zuTab`).
 - **Schrift:** Barlow und Barlow Semi Condensed als TTF aus `@expo-google-fonts` (Version 0.4.1),
   Lizenz SIL OFL 1.1 in `Ressourcen/Schriften/OFL.txt`.
 
 ## Was noch fehlt
 
 - Prod-Werte (`Konfiguration/Prod.xcconfig`) und ein App-Store-Eintrag für die native App
-- Onboarding, alle Tabs, Verwaltung
+- Onboarding, Tabs Plätze/Verein/Konto, Verwaltung
+- Schwebende Tab-Leiste und kompakte Kopfzeile wie in der Expo-App (heute die System-TabView)
 - „Passwort ändern“ im Konto-Tab (der Ablauf `.eigenesKonto` steht schon, es fehlt der Einstieg)
 - Fragment-Zweig der Passwort-Links entfernen, sobald die Cloud-Vorlagen token_hash schicken (S20, gemeinsam mit Expo-App und Web)
 - Push (inkl. Push-Token-Abmeldung in `Sitzung.abmelden()`), Widgets

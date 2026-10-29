@@ -44,6 +44,9 @@ targets:
     platform: iOS
     sources:
       - path: TCMuckensturm
+      # Erzeugt aus packages/ui/src/tokens.ts (pnpm --filter @tcm/ui build:native) - eingebunden, nicht kopiert
+      - path: ../../packages/ui/generated/Tokens.swift
+        group: TCMuckensturm/Theme
     dependencies:
       - package: Supabase
         product: Supabase
@@ -64,12 +67,30 @@ targets:
     platform: iOS
     sources:
       - path: TCMuckensturmTests
+      # Golden Files der Rechenlogik aus @tcm/core (packages/core/golden/README.md)
+      - path: ../../packages/core/golden
+        type: folder
+        buildPhase: resources
     dependencies:
       - target: TCMuckensturm
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: de.tcmuckensturm.app.tests
+
+  # Oberflaechentest zum Anmelden gegen den lokalen Stack (fuer Screenshots), eigenes Scheme
+  TCMuckensturmUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: TCMuckensturmUITests
+    dependencies:
+      - target: TCMuckensturm
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: de.tcmuckensturm.app.uitests
+        TEST_TARGET_NAME: TCMuckensturm
 
 schemes:
   TCMuckensturm:
@@ -102,3 +123,13 @@ schemes:
       config: Dev
     archive:
       config: Dev
+  TCMuckensturm Lokal anmelden:
+    build:
+      targets:
+        TCMuckensturm: all
+        TCMuckensturmUITests: [test]
+    test:
+      config: Lokal
+      gatherCoverageData: false
+      targets:
+        - TCMuckensturmUITests

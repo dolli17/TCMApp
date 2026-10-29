@@ -19,7 +19,7 @@ struct KeinZugangBildschirm: View {
                 .foregroundStyle(Farbe.ink2)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            VStack(spacing: Tokens.abstand.l) {
+            VStack(spacing: Tokens.Abstand.l) {
                 // Der Kontakt steht im Impressum; ohne Adresse (lokal) fuehrt der Knopf zur Anmeldung.
                 if let kontakt = sitzung.umgebung.webLink("/impressum#kontakt") {
                     Link(destination: kontakt) {
@@ -34,7 +34,7 @@ struct KeinZugangBildschirm: View {
                     GelberKnopf(text: "Zur Anmeldung") { sitzung.zurAnmeldung() }
                 }
             }
-            .padding(.top, Tokens.abstand.abschnitt)
+            .padding(.top, Tokens.Abstand.abschnitt)
         }
     }
 }
