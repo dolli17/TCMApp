@@ -1,0 +1,18 @@
+[
+  {
+    "name": "ein Getraenk",
+    "input": {
+      "count": 1,
+      "totalCents": 250
+    },
+    "output": "1 Getränk (2,50 €) ist noch nicht eingetragen."
+  },
+  {
+    "name": "mehrere",
+    "input": {
+      "count": 3,
+      "totalCents": 650
+    },
+    "output": "3 Getränke (6,50 €) sind noch nicht eingetragen."
+  }
+]

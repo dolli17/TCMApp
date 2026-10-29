@@ -1,0 +1,83 @@
+[
+  {
+    "name": "noch frei",
+    "input": {
+      "e": {
+        "id": "fest",
+        "kind": "fest",
+        "title": "Saisonabschlussfest",
+        "description": null,
+        "location": "Clubhaus",
+        "status": "published",
+        "starts_at": "2026-11-06T18:00:00.000Z",
+        "ends_at": "2026-11-06T22:30:00.000Z",
+        "registration_enabled": true,
+        "registration_deadline": "2026-10-30T22:59:00.000Z",
+        "max_participants": 80,
+        "companions_allowed": true,
+        "fee_cents": 1800,
+        "work_hours": null,
+        "personen": 62,
+        "warteliste": 0,
+        "mein_status": null,
+        "meine_begleitpersonen": null,
+        "meine_bemerkung": null
+      }
+    },
+    "output": "62 angemeldet · noch 18 frei"
+  },
+  {
+    "name": "ausgebucht mit Warteliste",
+    "input": {
+      "e": {
+        "id": "fest",
+        "kind": "fest",
+        "title": "Saisonabschlussfest",
+        "description": null,
+        "location": "Clubhaus",
+        "status": "published",
+        "starts_at": "2026-11-06T18:00:00.000Z",
+        "ends_at": "2026-11-06T22:30:00.000Z",
+        "registration_enabled": true,
+        "registration_deadline": "2026-10-30T22:59:00.000Z",
+        "max_participants": 80,
+        "companions_allowed": true,
+        "fee_cents": 1800,
+        "work_hours": null,
+        "personen": 80,
+        "warteliste": 3,
+        "mein_status": null,
+        "meine_begleitpersonen": null,
+        "meine_bemerkung": null
+      }
+    },
+    "output": "80 angemeldet · ausgebucht · 3 auf der Warteliste"
+  },
+  {
+    "name": "ohne Grenze",
+    "input": {
+      "e": {
+        "id": "fest",
+        "kind": "fest",
+        "title": "Saisonabschlussfest",
+        "description": null,
+        "location": "Clubhaus",
+        "status": "published",
+        "starts_at": "2026-11-06T18:00:00.000Z",
+        "ends_at": "2026-11-06T22:30:00.000Z",
+        "registration_enabled": true,
+        "registration_deadline": "2026-10-30T22:59:00.000Z",
+        "max_participants": null,
+        "companions_allowed": true,
+        "fee_cents": 1800,
+        "work_hours": null,
+        "personen": 62,
+        "warteliste": 0,
+        "mein_status": null,
+        "meine_begleitpersonen": null,
+        "meine_bemerkung": null
+      }
+    },
+    "output": "62 angemeldet"
+  }
+]

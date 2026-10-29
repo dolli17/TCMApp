@@ -12,7 +12,7 @@ import SwiftUI
 
 struct NachrichtenBildschirm: View {
     @Environment(Sitzung.self) private var sitzung
-    @Environment(\.zuTab) private var zuTab
+    @Environment(\.zuVerein) private var zuVerein
     @State private var nachrichten: [Benachrichtigung]?
     @State private var fehler: String?
     @State private var laedt = true
@@ -44,7 +44,7 @@ struct NachrichtenBildschirm: View {
                         .padding(.bottom, -8)
                     }
                     if let nachrichten {
-                        NachrichtenListe(liste: nachrichten, alleGesehen: alleGesehen) { _ in zuTab(.verein) }
+                        NachrichtenListe(liste: nachrichten, alleGesehen: alleGesehen) { zuVerein(.veranstaltung($0)) }
                     }
                 }
             }

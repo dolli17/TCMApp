@@ -1,0 +1,70 @@
+[
+  {
+    "name": "Reihenfolge der Karte, Verschwundenes zaehlt nicht",
+    "input": {
+      "items": [
+        {
+          "id": "bier",
+          "price_cents": 250
+        },
+        {
+          "id": "wasser",
+          "price_cents": 150
+        },
+        {
+          "id": "ohnePreis",
+          "price_cents": null
+        }
+      ],
+      "basket": {
+        "wasser": 1,
+        "bier": 2,
+        "weg": 4,
+        "ohnePreis": 1
+      }
+    },
+    "output": {
+      "lines": [
+        {
+          "id": "bier",
+          "price_cents": 250
+        },
+        {
+          "id": "wasser",
+          "price_cents": 150
+        },
+        {
+          "id": "ohnePreis",
+          "price_cents": null
+        }
+      ],
+      "count": 4,
+      "totalCents": 650
+    }
+  },
+  {
+    "name": "leerer Korb",
+    "input": {
+      "items": [
+        {
+          "id": "bier",
+          "price_cents": 250
+        },
+        {
+          "id": "wasser",
+          "price_cents": 150
+        },
+        {
+          "id": "ohnePreis",
+          "price_cents": null
+        }
+      ],
+      "basket": {}
+    },
+    "output": {
+      "lines": [],
+      "count": 0,
+      "totalCents": 0
+    }
+  }
+]

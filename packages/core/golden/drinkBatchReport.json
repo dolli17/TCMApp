@@ -1,0 +1,61 @@
+[
+  {
+    "name": "alles geklappt",
+    "input": {
+      "results": [
+        {
+          "name": "Bier",
+          "quantity": 2,
+          "ok": true
+        },
+        {
+          "name": "Wasser still",
+          "quantity": 1,
+          "ok": true
+        }
+      ]
+    },
+    "output": {
+      "ok": true,
+      "text": "Eingetragen: 2× Bier, 1× Wasser still."
+    }
+  },
+  {
+    "name": "einer schlug fehl",
+    "input": {
+      "results": [
+        {
+          "name": "Bier",
+          "quantity": 2,
+          "ok": true
+        },
+        {
+          "name": "Cola",
+          "quantity": 1,
+          "ok": false,
+          "message": "Der Artikel ist nicht mehr auf der Karte."
+        }
+      ]
+    },
+    "output": {
+      "ok": false,
+      "text": "Nicht eingetragen: 1× Cola (Der Artikel ist nicht mehr auf der Karte). Eingetragen: 2× Bier."
+    }
+  },
+  {
+    "name": "nichts geklappt",
+    "input": {
+      "results": [
+        {
+          "name": "Cola",
+          "quantity": 3,
+          "ok": false
+        }
+      ]
+    },
+    "output": {
+      "ok": false,
+      "text": "Nicht eingetragen: 3× Cola."
+    }
+  }
+]
