@@ -163,12 +163,13 @@ final class Sitzung {
     }
 
     /// Speichert das neue Passwort. Gibt bei Erfolg nil zurueck, sonst den Text fuer die Anzeige.
-    func passwortSpeichern(_ neu: String) async -> String? {
+    /// `imKonto`: aus dem Konto statt aus einem Mail-Link (andere Meldung ohne Sitzung).
+    func passwortSpeichern(_ neu: String, imKonto: Bool = false) async -> String? {
         do {
             _ = try await client.auth.update(user: UserAttributes(password: neu))
             return nil
         } catch {
-            return Anmeldefehler.passwortFehlerText(AuthFehlerForm.aus(error))
+            return Anmeldefehler.passwortFehlerText(AuthFehlerForm.aus(error), imKonto: imKonto)
         }
     }
 

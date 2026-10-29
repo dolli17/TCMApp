@@ -2,7 +2,8 @@
  * Die Tabs nach der Anmeldung: Home, Plaetze, Verein, Konto
  *
  * Frueher standen hier die Platzhalter; die Bildschirme stehen jetzt in
- * Bildschirme/. Die Verwaltung kommt spaeter dazu.
+ * Bildschirme/. Der fuenfte Tab, die Verwaltung, erscheint nur mit
+ * Platzrechten (VerwaltungZugang).
  */
 
 import SwiftUI
@@ -10,6 +11,8 @@ import SwiftUI
 struct HauptTabs: View {
     @State private var tab: HauptTab = .home
     @State private var verein = VereinZustand()
+    @State private var verwaltung = VerwaltungZugang()
+    @Environment(Sitzung.self) private var sitzung
 
     var body: some View {
         TabView(selection: $tab) {
@@ -25,7 +28,14 @@ struct HauptTabs: View {
             KontoBildschirm()
                 .tabItem { Label("Konto", systemImage: "person.crop.circle") }
                 .tag(HauptTab.konto)
+            if verwaltung.sichtbar {
+                VerwaltungBildschirm()
+                    .tabItem { Label("Verwaltung", systemImage: "wrench.and.screwdriver") }
+                    .tag(HauptTab.verwaltung)
+            }
         }
+        .environment(verwaltung)
+        .task { await verwaltung.pruefen(sitzung.client) }
         .tint(Farbe.blue)
         // Home fuehrt auf Bildschirme, die es nativ noch nicht gibt: bis dahin der passende Tab.
         .environment(\.zuTab) { tab = $0 }
@@ -38,7 +48,10 @@ struct HauptTabs: View {
         .task {
             let argumente = ProcessInfo.processInfo.arguments
             if let i = argumente.firstIndex(of: "-TCMTab"), i + 1 < argumente.count {
-                tab = ["plaetze": .plaetze, "verein": .verein, "konto": .konto][argumente[i + 1]] ?? tab
+                let ziel: [String: HauptTab] = ["plaetze": .plaetze, "verein": .verein, "konto": .konto, "verwaltung": .verwaltung]
+                // Die Verwaltung erst, wenn ich() die Rechte bestaetigt hat.
+                if ziel[argumente[i + 1]] == .verwaltung { await verwaltung.pruefen(sitzung.client) }
+                tab = ziel[argumente[i + 1]] ?? tab
             }
         }
         #endif

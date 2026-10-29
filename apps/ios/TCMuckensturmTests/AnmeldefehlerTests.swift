@@ -103,6 +103,14 @@ final class AnmeldefehlerTests: XCTestCase {
         )
         XCTAssertTrue(Anmeldefehler.passwortFehlerText(AuthFehlerForm(status: 401)).contains("abgelaufen"))
         XCTAssertTrue(Anmeldefehler.passwortFehlerText(.aus(AuthError.sessionMissing)).contains("abgelaufen"))
+        // Im Konto gibt es keinen Link: dort heisst es neu anmelden.
+        XCTAssertEqual(Anmeldefehler.passwortFehlerText(AuthFehlerForm(status: 401), imKonto: true), Anmeldefehler.neuAnmelden)
+        XCTAssertEqual(
+            Anmeldefehler.passwortFehlerText(AuthFehlerForm(code: "session_not_found", status: 403), imKonto: true),
+            Anmeldefehler.neuAnmelden
+        )
+        XCTAssertEqual(Anmeldefehler.passwortFehlerText(.aus(AuthError.sessionMissing), imKonto: true), Anmeldefehler.neuAnmelden)
+        XCTAssertTrue(Anmeldefehler.passwortFehlerText(AuthFehlerForm(code: "weak_password", status: 422), imKonto: true).contains("zu schwach"))
     }
 
     func testPasswortFehlerOhneEnglischenRohtext() {

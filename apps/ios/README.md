@@ -166,7 +166,9 @@ Gelesen und geschrieben wird nur über RPCs (`Daten/Kontodaten.swift`): `mein_pr
 - **Einwilligungen** (`member_attributes`, nur selbst pflegbare), **Bankverbindung & Mandat** (nur lesen,
   IBAN nur mit den letzten vier Stellen), **Mitgliedschaft kündigen beantragen** (`Kern/Kontoloeschung.swift`).
 - **Passwort ändern:** neu gegenüber der Expo-App, mit denselben Regeln wie „Passwort festlegen“
-  (`PasswortRegeln`, `Sitzung.passwortSpeichern`).
+  (`PasswortRegeln`, `Sitzung.passwortSpeichern(_:imKonto:)`). Ist die Sitzung weg (401,
+  `session_not_found`), steht hier „Bitte melde dich neu an und versuch es dann noch einmal.“ statt
+  des Satzes vom abgelaufenen Mail-Link.
 - **Erscheinungsbild** System/Hell/Dunkel in `UserDefaults` (`erscheinungsbild`), gesetzt in `StartAnsicht`.
 - **Abmelden** mit Rückfrage über `Sitzung.abmelden()`.
 - `CHARGE_KIND_LABEL` und `merkmalBeschreibung` sind gegen die Golden Files geprüft (`KontoTests`).
@@ -234,7 +236,9 @@ dem großen Kopf, gemerkt unter `tcm-verein-reiter` (beim ersten Mal Getränke).
   Tab-Wechsel und ist mit dem Abmelden weg. Wer die Getränke mit vollem Korb verlässt, bekommt
   „Noch nicht eingetragen“ mit „Zu den Getränken“.
 - **Veranstaltungen:** nach Monat, Schalter für Vergangenes (`events_fuer_mitglied`).
-- **Detail:** Eckdaten, Belegung nur als Zahl, Beschreibung; anmelden mit Begleitpersonen und
+- **Detail:** Ist der große Titel hinausgescrollt, steht er klein und weiß in der blauen Leiste
+  (`useKompakterTitel`). Der Zurück-Knopf ist hell dunkelblau (`blueInk`) auf dem hellblauen Glas,
+  dunkel weiß auf blauem Glas, beides über 4:1. Eckdaten, Belegung nur als Zahl, Beschreibung; anmelden mit Begleitpersonen und
   Bemerkung (`event_anmelden`), ändern (`event_anmeldung_aendern`), abmelden mit Rückfrage
   (`event_abmelden`), Warteliste mit eigenem Platz (`event_mein_wartelistenplatz`). Der Betrag kommt
   aus `meine_forderung_cents`/`meine_forderung_status`, nicht aus `charges`.
@@ -253,6 +257,55 @@ die nur im lokalen Stack angelegt wurden (SQL bzw. `event_anmelden`, `record_dri
 
 ```bash
 xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMTab verein -TCMVerein getraenke -TCMVereinKorb
+```
+
+| Detail oben | Detail gescrollt, hell | Detail gescrollt, dunkel |
+|---|---|---|
+| ![Detail hell](docs/verein-veranstaltung-anmelden-hell.png) | ![Gescrollt hell](docs/verein-veranstaltung-gescrollt-hell.png) | ![Gescrollt dunkel](docs/verein-veranstaltung-gescrollt-dunkel.png) |
+
+Die beiden gescrollten Bilder macht der UI-Test `VerwaltungUITests` (wischt nur, ändert nichts):
+
+```bash
+TEST_RUNNER_TCM_DARSTELLUNG=hell TEST_RUNNER_TCM_SCREENSHOTS=$PWD/docs \
+  xcodebuild test -project TCMuckensturm.xcodeproj -scheme "TCMuckensturm Lokal anmelden" \
+  -destination 'id=<geraet>' -derivedDataPath build/DerivedData \
+  -only-testing:TCMuckensturmUITests/VerwaltungUITests
+```
+
+## Verwaltung
+
+| Plätze | Serien | Plätze sperren | Serie anlegen |
+|---|---|---|---|
+| ![Plätze hell](docs/verwaltung-plaetze-hell.png) | ![Serien hell](docs/verwaltung-serien-hell.png) | ![Sperren hell](docs/verwaltung-sperren-hell.png) | ![Serie anlegen hell](docs/verwaltung-serie-anlegen-hell.png) |
+| ![Plätze dunkel](docs/verwaltung-plaetze-dunkel.png) | ![Serien dunkel](docs/verwaltung-serien-dunkel.png) | ![Sperren dunkel](docs/verwaltung-sperren-dunkel.png) | ![Serie anlegen dunkel](docs/verwaltung-serie-anlegen-dunkel.png) |
+
+Wie `apps/mobile/app/(tabs)/verwaltung/`, Texte wortgleich (`Bildschirme/Verwaltung/`). Der fünfte
+Tab erscheint nur mit Platzrechten (`ich().platz_rechte` bzw. `admin`, `VerwaltungZugang` in
+`HauptTabs`); das ist wie im Web nur die Oberfläche, die RPCs prüfen selbst.
+
+- **Plätze:** alle aus `court_overview` mit dem Stand von jetzt aus `day_schedule` (frei, „gesperrt
+  bis …“, „Serie bis …“, stillgelegt). Fällt nur der Tagesplan aus, fehlt bloß der Stand. Eine
+  Sperrung führt per Tippen in den Tab Plätze, wo sie bearbeitet und aufgehoben wird.
+- **Plätze sperren:** mehrere Plätze, Tag (`TT.MM.JJJJ`), Von/Bis (`HH:MM`, Vorgabe Öffnung und Schluss
+  aus `booking_settings`), Kategorie (`booking_types_aktiv('blocking')`), Grund. Zweistufig über
+  `create_blocking`: erst zählen, dann „n Buchungen verdrängen“.
+- **Serien:** Liste aus `series_overview`; anlegen mit Vorschau (`preview_series`, dann `create_series`),
+  ändern (Uhrzeit, Titel, Enddatum, zweistufig über `update_series`) und beenden mit Rückfrage
+  (`end_series`).
+- **Web:** Admins führt die Karte unten auf `SITE_URL/admin`, den Platzwart auf `/admin/plaetze`
+  (`openURL`). Ohne Webadresse (lokal) steht nur der Satz da.
+- **Logik:** reine Funktionen in `VerwaltungLogik.swift` (`normZeit`, `deutschZuIso`, `zustandJetzt`,
+  `pruefeSerie` wie `seriesSchema`, Meldungen) mit den Fällen aus `plaetze.test.ts` (`VerwaltungTests`).
+  RPCs in `Verwaltungsdaten.swift`, nur aus `docs/native/app-api.md`.
+
+Bildschirmfotos ohne Klicks (nur Debug): `-TCMTab verwaltung` öffnet den Tab (sobald `ich()` die
+Rechte bestätigt), `-TCMVerwaltung serien|sperren|serie-anlegen` ein Segment oder Blatt. Die Bilder
+zeigen `admin@tcm.local` (Anmeldung mit `TEST_RUNNER_TCM_EMAIL=admin@tcm.local` über
+`LokalAnmeldenUITests`) mit einer Sperrung auf Platz 2, die nur im lokalen Stack per
+`create_blocking` angelegt wurde.
+
+```bash
+xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMTab verwaltung -TCMVerwaltung sperren
 ```
 
 ## Onboarding
@@ -355,7 +408,7 @@ TCMuckensturm/
   Daten/          (siehe oben), Startdaten (Home, Glocke, Neuigkeiten), Kontodaten (Konto-Tab), Platzdaten, Vereinsdaten,
                   Onboardingdaten, Pushdaten
   Theme/          Farben und Schrift für SwiftUI auf Basis der erzeugten Tokens
-  Bildschirme/    Anmeldung (mit Passwort vergessen/setzen), Kein Zugang, Home, Konto, Nachrichten (Glocke, Neuigkeiten), Onboarding, Plätze, Verein, Bausteine; die Tabs in Platzhalter.swift
+  Bildschirme/    Anmeldung (mit Passwort vergessen/setzen), Kein Zugang, Home, Konto, Nachrichten (Glocke, Neuigkeiten), Onboarding, Plätze, Verein, Verwaltung, Bausteine; die Tabs in Platzhalter.swift
   Ressourcen/     Assets (App-Icon, Logo, Markenblau), Schriften (Barlow, OFL)
 TCMuckensturmTests/
 ```
@@ -367,7 +420,7 @@ TCMuckensturmTests/
   das Teilen in Stücke entfällt.
 - **Start-Logik** wie `apps/mobile/app/index.tsx`: ohne Sitzung → Anmelden; mit Sitzung →
   `mein_zugang()`: kein Zugang → „Kein Zugang mehr“ (meldet ab), Onboarding offen → Onboarding,
-  sonst Tabs Home / Plätze / Verein / Konto.
+  sonst Tabs Home / Plätze / Verein / Konto, mit Platzrechten dazu Verwaltung.
 - **Abmelden** nur in `Sitzung.abmelden()`.
 - **Tokens:** `packages/ui/generated/Tokens.swift` (erzeugt aus `packages/ui/src/tokens.ts` mit
   `pnpm --filter @tcm/ui build:native`) ist in `project.yml` als Quelle eingebunden, nicht kopiert.
@@ -386,8 +439,6 @@ TCMuckensturmTests/
 ## Was noch fehlt
 
 - Prod-Werte (`Konfiguration/Prod.xcconfig`) und ein App-Store-Eintrag für die native App
-- Verwaltung
-- Verein: kompakter Titel in der Leiste beim Scrollen im Detail (`useKompakterTitel`)
 - Plätze: Bereich „Meine & offene Spiele“ (`plaetze/spiele.tsx`), Sprünge aus Home direkt ins
   Buchungsblatt (`?buchen=jetzt`, `?buchung=…`), mitlaufender Tabellenkopf in Freie Zeiten
 - Schwebende Tab-Leiste und kompakte Kopfzeile wie in der Expo-App (heute die System-TabView)

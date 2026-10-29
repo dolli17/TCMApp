@@ -8,12 +8,18 @@
  * Ob es klappt, entscheiden die RPCs; die Knoepfe zeigen nur, was gerade
  * geht. Der Betrag kommt aus der eigenen Forderung (meine_forderung_* in
  * events_fuer_mitglied) - so steht hier dasselbe wie im Konto.
+ *
+ * Ist der grosse Titel im Kopf hinausgescrollt, steht er klein in der
+ * Navigationsleiste (useKompakterTitel in der Expo-App). Der Zurueck-Knopf
+ * ist hell blueInk auf hellblauem Glas, dunkel weiss auf blauem Glas -
+ * beides ueber 4:1, mehr als die 3:1 fuer Bedienelemente (WCAG AA).
  */
 
 import SwiftUI
 
 struct VeranstaltungBildschirm: View {
     @Environment(Sitzung.self) private var sitzung
+    @Environment(\.colorScheme) private var schema
     let id: String
     @State private var detail: VeranstaltungDetail?
     @State private var fehler: String?
@@ -21,12 +27,14 @@ struct VeranstaltungBildschirm: View {
     @State private var aktualisiert = false
     /// Hier statt in der Anmeldung: die baut sich nach einer Aenderung neu auf, die Meldung bleibt.
     @State private var meldung: Ergebnis?
+    /// Der grosse Titel ist hinausgescrollt: dann steht er klein in der Leiste.
+    @State private var kompakt = false
 
     var body: some View {
         let jetzt = Date()
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Kopf(titel: detail?.event.title)
+                Kopf(titel: detail?.event.title, kompakt: $kompakt)
                 VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
                     if let fehler {
                         Fehlerzeile(text: fehler, laeuft: aktualisiert) { Task { await laden(nachladen: true) } }
@@ -42,14 +50,32 @@ struct VeranstaltungBildschirm: View {
                 .padding(.horizontal, Tokens.Abstand.rand)
                 .padding(.top, Tokens.Abstand.rand)
                 .padding(.bottom, Tokens.Abstand.abschnitt * 2)
+                // Der Inhalt behaelt das Blau; der Tint darunter gilt dem Zurueck-Knopf.
+                .tint(Farbe.blue)
             }
         }
         .background(Farbe.bg)
         .refreshable { await laden(nachladen: true) }
         .navigationBarTitleDisplayMode(.inline)
+        // Dunkel ist die Leiste ohnehin dunkel; hell wuerde .dark den Zurueck-Knopf weiss auf helles Glas legen.
+        .toolbarColorScheme(schema == .dark ? .dark : nil, for: .navigationBar)
+        .toolbar {
+            // Klein in der Leiste erst, wenn der grosse Titel hinausgescrollt ist - weiss auf brand (5,9:1).
+            ToolbarItem(placement: .principal) {
+                Text(detail?.event.title ?? "")
+                    .font(Schrift.display(.fett, 18))
+                    .foregroundStyle(Farbe.onBrand)
+                    .lineLimit(1)
+                    .opacity(kompakt ? 1 : 0)
+                    .accessibilityHidden(!kompakt)
+                    // Die Leiste misst den Titel nur beim Anlegen; ohne neue id bliebe er leer (Laden) bzw. versteckt.
+                    .id("\(detail?.event.title ?? "")-\(kompakt)")
+            }
+        }
+        // Hell liegt der Zurueck-Knopf auf hellblauem Glas: dunkelblau. Dunkel ist das Glas blau: weiss.
+        .tint(schema == .dark ? Farbe.onBrand : Farbe.blueInk)
         .toolbarBackground(Farbe.brand, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .task { await laden(nachladen: false) }
     }
 
@@ -97,6 +123,9 @@ struct VeranstaltungBildschirm: View {
 /// Der blaue Kopf unter der Navigationsleiste, die ebenfalls blau ist.
 private struct Kopf: View {
     let titel: String?
+    @Binding var kompakt: Bool
+    /// Wo der Titel ohne Scrollen steht - Bezug fuer `kompakt`.
+    @State private var basis: CGFloat?
 
     var body: some View {
         Text(titel ?? " ")
@@ -116,6 +145,12 @@ private struct Kopf: View {
                 .padding(.top, -400)
             }
             .accessibilityAddTraits(.isHeader)
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .scrollView) } action: { rahmen in
+                let start = basis ?? rahmen.minY
+                if basis == nil { basis = start }
+                // Kompakt, sobald der Kopf zu zwei Dritteln unter der Leiste liegt.
+                kompakt = start - rahmen.minY > rahmen.height * 2 / 3
+            }
     }
 }
 
