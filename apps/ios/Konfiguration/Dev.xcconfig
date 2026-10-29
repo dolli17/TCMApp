@@ -5,7 +5,9 @@
 
 APP_BUNDLE_SUFFIX = .dev
 TCM_ANZEIGENAME = TCM Dev
+APP_URL_SCHEME = tcmdev
 
 SUPABASE_URL = https:/$()/xvjqqjiweogtfpfgeoqz.supabase.co
 SUPABASE_KEY = sb_publishable_Vrd1oT_d9KTwr9jfiT64Eg_LDW6IX1V
-SITE_URL = https:/$()/app.tennisclub-muckensturm.de
+// Das Dev-Web (docs/goLive.md); dort steht auch die Redirect-Allowlist des Dev-Projekts.
+SITE_URL = https:/$()/dev.tennisclub-muckensturm.de

@@ -7,6 +7,7 @@ final class UmgebungTests: XCTestCase {
         "TCMSupabaseKey": "sb_publishable_test",
         "TCMSiteURL": "https://app.beispiel.de/",
         "TCMAppGroup": "group.de.tcmuckensturm.app",
+        "TCMURLSchema": "tcm",
     ]
 
     func testLiestAlleWerte() throws {
@@ -15,6 +16,7 @@ final class UmgebungTests: XCTestCase {
         XCTAssertEqual(u.supabaseKey, "sb_publishable_test")
         XCTAssertEqual(u.siteURL?.absoluteString, "https://app.beispiel.de")
         XCTAssertEqual(u.appGroup, "group.de.tcmuckensturm.app")
+        XCTAssertEqual(u.urlSchema, "tcm")
     }
 
     func testFehlendeURLWirft() {
@@ -57,10 +59,26 @@ final class UmgebungTests: XCTestCase {
         XCTAssertEqual(u.webLink("impressum#kontakt")?.absoluteString, "https://app.beispiel.de/impressum#kontakt")
     }
 
+    func testPasswortRueckleitungUeberDasWeb() throws {
+        let u = try Umgebung(info: vollstaendig)
+        XCTAssertEqual(u.passwortRueckleitung?.absoluteString, "https://app.beispiel.de/passwort-setzen")
+    }
+
+    /// Lokal gibt es kein Web: dann das eigene Schema.
+    func testPasswortRueckleitungOhneWeb() throws {
+        var info = vollstaendig
+        info["TCMSiteURL"] = ""
+        info["TCMURLSchema"] = "tcmlokal"
+        XCTAssertEqual(try Umgebung(info: info).passwortRueckleitung?.absoluteString, "tcmlokal://passwort-setzen")
+        info["TCMURLSchema"] = ""
+        XCTAssertNil(try Umgebung(info: info).passwortRueckleitung)
+    }
+
     /// Die xcconfig-Werte (http:/$()/…) kommen in der gebauten App als echte Adresse an.
     func testAppBundleHatEineGueltigeUmgebung() throws {
         let u = try Umgebung.ausBundle(Bundle(for: Sitzung.self))
         XCTAssertTrue(["http", "https"].contains(u.supabaseURL.scheme ?? ""))
         XCTAssertNotNil(u.appGroup)
+        XCTAssertNotNil(u.urlSchema)
     }
 }

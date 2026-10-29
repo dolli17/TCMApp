@@ -17,6 +17,8 @@ struct Umgebung: Equatable, Sendable {
     let siteURL: URL?
     /// App Group und Access Group des Schluesselbunds; nil, wenn keine gesetzt ist.
     let appGroup: String?
+    /// Eigenes URL-Schema (tcm, tcmdev, tcmlokal); nil, wenn keins gesetzt ist.
+    let urlSchema: String?
 
     enum Fehler: Error, Equatable {
         case fehlt(String)
@@ -27,6 +29,7 @@ struct Umgebung: Equatable, Sendable {
     static let schluesselKey = "TCMSupabaseKey"
     static let schluesselSite = "TCMSiteURL"
     static let schluesselAppGroup = "TCMAppGroup"
+    static let schluesselURLSchema = "TCMURLSchema"
 
     /// Liest die Werte aus der Info.plist. Wirft, statt abzustuerzen: die App
     /// zeigt dann einen verstaendlichen Hinweis.
@@ -44,6 +47,8 @@ struct Umgebung: Equatable, Sendable {
         self.siteURL = Self.basis(Self.text(info[Self.schluesselSite])).flatMap(URL.init(string:))
         let gruppe = Self.text(info[Self.schluesselAppGroup])
         self.appGroup = gruppe.isEmpty ? nil : gruppe
+        let eigenesSchema = Self.text(info[Self.schluesselURLSchema])
+        self.urlSchema = eigenesSchema.isEmpty ? nil : eigenesSchema
     }
 
     static func ausBundle(_ bundle: Bundle = .main) throws -> Umgebung {
@@ -55,6 +60,17 @@ struct Umgebung: Equatable, Sendable {
         guard let siteURL else { return nil }
         let teil = pfad.hasPrefix("/") ? pfad : "/\(pfad)"
         return URL(string: siteURL.absoluteString + teil)
+    }
+
+    /**
+     * Wohin der Link aus "Passwort vergessen" fuehrt: <SITE_URL>/passwort-setzen
+     * als Universal Link (oeffnet die App, sonst das Web). Ohne Webadresse
+     * (lokal) das eigene Schema. Das Ziel muss in der Redirect-Allowlist des
+     * Supabase-Projekts stehen, sonst schickt Auth auf die Site-URL.
+     */
+    var passwortRueckleitung: URL? {
+        if let link = webLink("/passwort-setzen") { return link }
+        return urlSchema.flatMap { URL(string: "\($0)://passwort-setzen") }
     }
 
     private static func text(_ wert: Any?) -> String {

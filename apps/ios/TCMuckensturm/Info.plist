@@ -24,6 +24,18 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- Rueckfall fuer Links aus der E-Mail (tcm://passwort-setzen); vorrangig sind Universal Links. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(APP_URL_SCHEME)</string>
+			</array>
+		</dict>
+	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
@@ -75,5 +87,7 @@
 	<string>$(SITE_URL)</string>
 	<key>TCMAppGroup</key>
 	<string>$(APP_GROUP)</string>
+	<key>TCMURLSchema</key>
+	<string>$(APP_URL_SCHEME)</string>
 </dict>
 </plist>

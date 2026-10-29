@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Universal Links. Die Behandlung der Links kommt spaeter; die
+	<!-- Universal Links (App/Passwortlink.swift). Die
 	     apple-app-site-association liegt im Web (.well-known). -->
 	<key>com.apple.developer.associated-domains</key>
 	<array>

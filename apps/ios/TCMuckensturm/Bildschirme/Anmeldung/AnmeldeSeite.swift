@@ -115,6 +115,8 @@ private struct Platz: Shape {
 /// Mit `passwort` verdeckt es die Eingabe und traegt rechts den Schalter "Anzeigen".
 struct AnmeldeFeld: View {
     let beschriftung: String
+    /// Fuer VoiceOver, wenn die Beschriftung allein nicht reicht ("Noch einmal").
+    var bedienName: String?
     @Binding var text: String
     var passwort = false
     var inhaltsTyp: UITextContentType?
@@ -146,7 +148,7 @@ struct AnmeldeFeld: View {
                 .onSubmit(beimAbsenden)
                 .font(Schrift.text(.normal, 16))
                 .foregroundStyle(Farbe.ink)
-                .accessibilityLabel(beschriftung)
+                .accessibilityLabel(bedienName ?? beschriftung)
                 .padding(.leading, 16)
                 .padding(.trailing, passwort ? 0 : 16)
                 .frame(minHeight: 54)

@@ -176,6 +176,8 @@ additional_redirect_urls = [
   # Cloud zusaetzlich im Dashboard unter "Redirect URLs" stehen.
   "tcm://passwort-setzen",
   "exp://127.0.0.1:8081/--/passwort-setzen",
+  # Die native iOS-App in der Konfiguration "Lokal" (apps/ios, eigenes Schema).
+  "tcmlokal://passwort-setzen",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600

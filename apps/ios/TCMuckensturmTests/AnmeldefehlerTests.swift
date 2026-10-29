@@ -90,4 +90,25 @@ final class AnmeldefehlerTests: XCTestCase {
         struct Irgendwas: Error {}
         XCTAssertEqual(text(.aus(Irgendwas())), Anmeldefehler.anmeldedatenFalsch)
     }
+
+    // MARK: - passwortFehlerText (wie packages/core/src/anmeldefehler.test.ts)
+
+    func testPasswortFehlerBekannteFaelle() {
+        XCTAssertTrue(Anmeldefehler.passwortFehlerText(AuthFehlerForm(code: "same_password", status: 422)).contains("unterscheiden"))
+        XCTAssertTrue(Anmeldefehler.passwortFehlerText(AuthFehlerForm(code: "weak_password", status: 422)).contains("zu schwach"))
+        XCTAssertEqual(Anmeldefehler.passwortFehlerText(AuthFehlerForm(status: 429)), Anmeldefehler.zuVieleVersuche)
+        XCTAssertEqual(
+            Anmeldefehler.passwortFehlerText(AuthFehlerForm(status: 0, ohneAntwort: true)),
+            Anmeldefehler.verbindung
+        )
+        XCTAssertTrue(Anmeldefehler.passwortFehlerText(AuthFehlerForm(status: 401)).contains("abgelaufen"))
+        XCTAssertTrue(Anmeldefehler.passwortFehlerText(.aus(AuthError.sessionMissing)).contains("abgelaufen"))
+    }
+
+    func testPasswortFehlerOhneEnglischenRohtext() {
+        let text = Anmeldefehler.passwortFehlerText(
+            AuthFehlerForm(code: "unexpected_failure", status: 400, nachricht: "Something broke")
+        )
+        XCTAssertFalse(text.contains("Something"))
+    }
 }

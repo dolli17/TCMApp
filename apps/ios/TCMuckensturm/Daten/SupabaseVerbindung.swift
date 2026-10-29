@@ -16,6 +16,11 @@ enum SupabaseVerbindung {
             options: SupabaseClientOptions(
                 auth: .init(
                     storage: Schluesselbund(accessGroup: umgebung.appGroup),
+                    // Wie supabase-js in der Expo-App. Mit PKCE (Vorgabe von
+                    // supabase-swift) haengt "Passwort vergessen" den Link an einen
+                    // Schluessel auf diesem Geraet - wer die Mail am Rechner oeffnet,
+                    // kaeme nicht weiter. Der token_hash aus den Vorlagen braucht keinen.
+                    flowType: .implicit,
                     autoRefreshToken: true,
                     // Die gespeicherte Sitzung sofort melden, auch wenn sie
                     // abgelaufen ist - die Weiche erneuert sie selbst (Sitzung.ladeZugang).
