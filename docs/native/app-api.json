@@ -1,0 +1,1582 @@
+{
+  "$kommentar": "ERZEUGT von packages/core/scripts/app-api.ts aus packages/core/src/database.types.ts - NICHT VON HAND AENDERN. Neu erzeugen mit: pnpm --filter @tcm/core build:app-api. Lesefassung mit Fehlertexten: docs/native/app-api.md",
+  "typen": "Einfache Typen als Text (string, number, boolean, Json, null, undefined, enum:<name>, auch mit ' | '), sonst {liste}, {objekt} oder {oder}. Ein '?' am Feldnamen heisst optional. Rueckgabe {liste: {objekt}} ist eine Tabelle (setof), undefined heisst void.",
+  "rpcs": {
+    "booking_settings": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "closing_time": "string",
+            "display_minutes": "number",
+            "guest_fee_cents": "number",
+            "lead_days": "number",
+            "max_open_bookings": "number",
+            "opening_time": "string",
+            "slot_minutes": "number"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts ladeBuchungseinstellungen"
+      ]
+    },
+    "cancel_booking": {
+      "args": {
+        "objekt": {
+          "p_booking_id": "string",
+          "p_reason?": "string"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts storniereBuchung",
+        "daten.ts hebeSperreAuf"
+      ]
+    },
+    "cancel_series_occurrence": {
+      "args": {
+        "objekt": {
+          "p_booking_id": "string",
+          "p_reason?": "string"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts sageSerienterminAb"
+      ]
+    },
+    "complete_onboarding": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": "string",
+      "genutztIn": [
+        "daten.ts schliesseOnboardingAb"
+      ]
+    },
+    "court_overview": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "active": "boolean",
+            "id": "string",
+            "name": "string",
+            "offene_buchungen": "number",
+            "short_name": "string",
+            "sort_position": "number",
+            "subline": "string"
+          }
+        }
+      },
+      "genutztIn": [
+        "verwaltung/plaetze.ts ladePlaetze"
+      ]
+    },
+    "create_blocking": {
+      "args": {
+        "objekt": {
+          "p_bis": "string",
+          "p_court_ids": {
+            "liste": "string"
+          },
+          "p_force?": "boolean",
+          "p_title": "string",
+          "p_type_code": "string",
+          "p_von": "string"
+        }
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "created_count": "number",
+            "displaced_count": "number"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts sperreStunde",
+        "verwaltung/plaetze.ts sperre"
+      ]
+    },
+    "create_booking": {
+      "args": {
+        "objekt": {
+          "p_booking_type_code": "string",
+          "p_court_id": "string",
+          "p_guest_names?": {
+            "liste": "string"
+          },
+          "p_partner_wanted?": "boolean",
+          "p_player_member_ids?": {
+            "liste": "string"
+          },
+          "p_starts_at": "string"
+        }
+      },
+      "returns": "string",
+      "genutztIn": [
+        "daten.ts bucheplatz"
+      ]
+    },
+    "create_my_sepa_mandate": {
+      "args": {
+        "objekt": {
+          "p_accept?": "boolean",
+          "p_holder?": "string",
+          "p_iban": "string"
+        }
+      },
+      "returns": "string",
+      "genutztIn": [
+        "daten.ts erteileMandat"
+      ]
+    },
+    "create_series": {
+      "args": {
+        "objekt": {
+          "p_booking_type_code": "string",
+          "p_court_id": "string",
+          "p_displace?": "boolean",
+          "p_end_time": "string",
+          "p_start_time": "string",
+          "p_title": "string",
+          "p_valid_from": "string",
+          "p_valid_to": "string",
+          "p_weekday": "number"
+        }
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "created_count": "number",
+            "displaced_count": "number",
+            "series_id": "string"
+          }
+        }
+      },
+      "genutztIn": [
+        "verwaltung/plaetze.ts legeSerieAn"
+      ]
+    },
+    "day_schedule": {
+      "args": {
+        "objekt": {
+          "p_date": "string"
+        }
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "bin_dabei": "boolean",
+            "booking_id": "string",
+            "court_id": "string",
+            "ends_at": "string",
+            "frei": "number",
+            "guest_names": {
+              "liste": "string"
+            },
+            "is_own": "boolean",
+            "kind": "enum:booking_kind",
+            "owner_member_id": "string",
+            "owner_name": "string",
+            "partner_wanted": "boolean",
+            "player_member_ids": {
+              "liste": "string"
+            },
+            "players": {
+              "liste": "string"
+            },
+            "series_id": "string",
+            "starts_at": "string",
+            "title": "string",
+            "type_code": "string",
+            "type_name": "string"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts ladeTagesplan",
+        "verwaltung/plaetze.ts ladePlaetze"
+      ]
+    },
+    "drink_menu": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "category": "enum:drink_category",
+            "description": "string",
+            "id": "string",
+            "name": "string",
+            "price_cents": "number",
+            "sort_order": "number"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts ladeGetraenkekarte"
+      ]
+    },
+    "end_series": {
+      "args": {
+        "objekt": {
+          "p_ab?": "string",
+          "p_series_id": "string"
+        }
+      },
+      "returns": "number",
+      "genutztIn": [
+        "verwaltung/plaetze.ts beendeSerie"
+      ]
+    },
+    "event_abmelden": {
+      "args": {
+        "objekt": {
+          "p_event_id": "string"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts meldeVonVeranstaltungAb"
+      ]
+    },
+    "event_anmelden": {
+      "args": {
+        "objekt": {
+          "p_companions?": "number",
+          "p_event_id": "string",
+          "p_note?": "string"
+        }
+      },
+      "returns": "enum:event_registration_status",
+      "genutztIn": [
+        "daten.ts meldeZuVeranstaltungAn"
+      ]
+    },
+    "event_anmeldung_aendern": {
+      "args": {
+        "objekt": {
+          "p_companions": "number",
+          "p_event_id": "string",
+          "p_note?": "string"
+        }
+      },
+      "returns": "enum:event_registration_status",
+      "genutztIn": [
+        "daten.ts aendereVeranstaltungsAnmeldung"
+      ]
+    },
+    "event_mein_wartelistenplatz": {
+      "args": {
+        "objekt": {
+          "p_event_id": "string"
+        }
+      },
+      "returns": "number",
+      "genutztIn": [
+        "daten.ts ladeVeranstaltung"
+      ]
+    },
+    "events_fuer_mitglied": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "companions_allowed": "boolean",
+            "description": "string",
+            "ends_at": "string",
+            "fee_cents": "number",
+            "id": "string",
+            "kind": "enum:event_kind",
+            "location": "string",
+            "max_participants": "number",
+            "mein_status": "enum:event_registration_status",
+            "meine_begleitpersonen": "number",
+            "meine_bemerkung": "string",
+            "personen": "number",
+            "registration_deadline": "string",
+            "registration_enabled": "boolean",
+            "starts_at": "string",
+            "status": "enum:event_status",
+            "title": "string",
+            "warteliste": "number",
+            "work_hours": "number"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts ladeVeranstaltungen",
+        "daten.ts ladeVeranstaltung"
+      ]
+    },
+    "join_booking": {
+      "args": {
+        "objekt": {
+          "p_booking_id": "string"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts spieleMit"
+      ]
+    },
+    "konto_loeschung_beantragen": {
+      "args": {
+        "objekt": {
+          "p_nachricht?": "string"
+        }
+      },
+      "returns": "boolean",
+      "genutztIn": [
+        "daten.ts beantrageKontoloeschung"
+      ]
+    },
+    "leave_booking": {
+      "args": {
+        "objekt": {
+          "p_booking_id": "string"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts verlasseBuchung"
+      ]
+    },
+    "mark_notifications_read": {
+      "args": {
+        "objekt": {
+          "p_ids?": {
+            "liste": "string"
+          }
+        }
+      },
+      "returns": "number",
+      "genutztIn": [
+        "daten.ts markiereBenachrichtigungenGelesen"
+      ]
+    },
+    "mein_zugang": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "grund": "string",
+            "onboarding_offen": "boolean",
+            "zugang": "boolean"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts ladeZugang"
+      ]
+    },
+    "member_attributes": {
+      "args": {
+        "objekt": {
+          "p_member_id": "string"
+        }
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "code": "string",
+            "darf_ich": "boolean",
+            "description": "string",
+            "multiple": "boolean",
+            "name": "string",
+            "option_label": "string",
+            "option_value": "string",
+            "optionen": "Json",
+            "self_editable": "boolean",
+            "set_at": "string",
+            "text_value": "string",
+            "value_kind": "enum:attribute_kind"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts ladeMeineMerkmale"
+      ]
+    },
+    "member_directory": {
+      "args": {
+        "objekt": {
+          "p_query?": "string"
+        }
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "first_name": "string",
+            "id": "string",
+            "last_name": "string"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts ladeVerzeichnis"
+      ]
+    },
+    "move_booking": {
+      "args": {
+        "objekt": {
+          "p_booking_id": "string",
+          "p_court_id": "string",
+          "p_reason?": "string",
+          "p_starts_at": "string"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts setzeUm"
+      ]
+    },
+    "my_booking_quota": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "allowed": "number",
+            "used": "number"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts ladeKontingent"
+      ]
+    },
+    "my_bookings": {
+      "args": {
+        "objekt": {
+          "p_ab?": "string"
+        }
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "bin_bucher": "boolean",
+            "booking_id": "string",
+            "court_name": "string",
+            "ends_at": "string",
+            "kind": "enum:booking_kind",
+            "owner_name": "string",
+            "players": {
+              "liste": "string"
+            },
+            "starts_at": "string",
+            "title": "string",
+            "type_code": "string",
+            "type_name": "string"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts ladeMeineBuchungen"
+      ]
+    },
+    "my_charges": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "amount_cents": "number",
+            "description": "string",
+            "due_date": "string",
+            "id": "string",
+            "is_for_other": "boolean",
+            "kind": "enum:charge_kind",
+            "member_name": "string",
+            "period_label": "string",
+            "status": "enum:charge_status"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts ladeMeineForderungen"
+      ]
+    },
+    "my_drink_purchases": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "created_at": "string",
+            "id": "string",
+            "item_name": "string",
+            "quantity": "number",
+            "source": "enum:purchase_source",
+            "total_cents": "number",
+            "unit_price_cents": "number",
+            "voided_at": "string"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts ladeEigeneGetraenke"
+      ]
+    },
+    "my_notifications": {
+      "args": {
+        "objekt": {
+          "p_limit?": "number"
+        }
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "body": "string",
+            "created_at": "string",
+            "event_id": "string",
+            "id": "string",
+            "kind": "string",
+            "read_at": "string",
+            "title": "string"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts ladeBenachrichtigungen"
+      ]
+    },
+    "my_onboarding": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": "Json",
+      "genutztIn": [
+        "daten.ts ladeOnboarding"
+      ]
+    },
+    "my_unread_notification_count": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": "number",
+      "genutztIn": [
+        "daten.ts zaehleUngelesen"
+      ]
+    },
+    "my_work_duty": {
+      "args": {
+        "objekt": {
+          "p_year?": "number"
+        }
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "completed_hours": "number",
+            "missing_hours": "number",
+            "required_hours": "number",
+            "year": "number"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts ladeArbeitsdienst"
+      ]
+    },
+    "onboarding_accept_documents": {
+      "args": {
+        "objekt": {
+          "p_codes": {
+            "liste": "string"
+          }
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts akzeptiereDokumente"
+      ]
+    },
+    "onboarding_save_guardian": {
+      "args": {
+        "objekt": {
+          "p_consent?": "boolean",
+          "p_email?": "string",
+          "p_name": "string",
+          "p_phone?": "string"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts speichereErziehungsberechtigte"
+      ]
+    },
+    "onboarding_save_notfallkontakt": {
+      "args": {
+        "objekt": {
+          "p_name": "string",
+          "p_phone": "string",
+          "p_relation?": "string"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts speichereOnboardingNotfallkontakt"
+      ]
+    },
+    "onboarding_save_stammdaten": {
+      "args": {
+        "objekt": {
+          "p_birthday": "string",
+          "p_city": "string",
+          "p_country_code?": "string",
+          "p_first_name": "string",
+          "p_gender": "enum:gender",
+          "p_last_name": "string",
+          "p_mobile?": "string",
+          "p_nationality_code?": "string",
+          "p_phone?": "string",
+          "p_postcode": "string",
+          "p_salutation?": "enum:salutation",
+          "p_street": "string",
+          "p_title?": "string"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts speichereOnboardingStammdaten"
+      ]
+    },
+    "open_matches": {
+      "args": {
+        "objekt": {
+          "p_bis?": "string",
+          "p_von?": "string"
+        }
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "bin_dabei": "boolean",
+            "booking_id": "string",
+            "court_name": "string",
+            "ends_at": "string",
+            "frei": "number",
+            "owner_member_id": "string",
+            "owner_name": "string",
+            "players": {
+              "liste": "string"
+            },
+            "starts_at": "string",
+            "type_code": "string",
+            "type_name": "string"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts ladeOffeneSpiele"
+      ]
+    },
+    "preview_series": {
+      "args": {
+        "objekt": {
+          "p_court_id": "string",
+          "p_end_time": "string",
+          "p_start_time": "string",
+          "p_valid_from": "string",
+          "p_valid_to": "string",
+          "p_weekday": "number"
+        }
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "conflict_booking_id": "string",
+            "conflict_kind": "enum:booking_kind",
+            "conflict_member_name": "string",
+            "ends_at": "string",
+            "starts_at": "string"
+          }
+        }
+      },
+      "genutztIn": [
+        "verwaltung/plaetze.ts vorschauSerie"
+      ]
+    },
+    "record_drink_purchase": {
+      "args": {
+        "objekt": {
+          "p_item_id": "string",
+          "p_quantity?": "number"
+        }
+      },
+      "returns": "string",
+      "genutztIn": [
+        "daten.ts bucheGetraenk"
+      ]
+    },
+    "register_push_token": {
+      "args": {
+        "objekt": {
+          "p_device_name?": "string",
+          "p_platform": "string",
+          "p_token": "string"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "push.ts registriereGeraet"
+      ]
+    },
+    "remove_member_attribute": {
+      "args": {
+        "objekt": {
+          "p_member_id": "string",
+          "p_option_value?": "string",
+          "p_type_code": "string"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts entferneMerkmal"
+      ]
+    },
+    "remove_push_token": {
+      "args": {
+        "objekt": {
+          "p_token": "string"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "push.ts meldeGeraetAb"
+      ]
+    },
+    "save_my_tennis": {
+      "args": {
+        "objekt": {
+          "p_mannschaft_interesse?": "boolean",
+          "p_nuliga_id?": "string",
+          "p_tennis_lk?": "string"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts speichereTennis"
+      ]
+    },
+    "series_overview": {
+      "args": {
+        "objekt": {}
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "court_name": "string",
+            "end_time": "string",
+            "id": "string",
+            "kuenftige": "number",
+            "start_time": "string",
+            "title": "string",
+            "type_name": "string",
+            "valid_from": "string",
+            "valid_to": "string",
+            "weekday": "number"
+          }
+        }
+      },
+      "genutztIn": [
+        "verwaltung/plaetze.ts ladePlaetze"
+      ]
+    },
+    "set_member_attribute": {
+      "args": {
+        "objekt": {
+          "p_member_id": "string",
+          "p_option_value?": "string",
+          "p_text_value?": "string",
+          "p_type_code": "string"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts setzeMerkmal"
+      ]
+    },
+    "set_partner_wanted": {
+      "args": {
+        "objekt": {
+          "p_booking_id": "string",
+          "p_wanted": "boolean"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts sucheMitspieler"
+      ]
+    },
+    "update_blocking": {
+      "args": {
+        "objekt": {
+          "p_bis": "string",
+          "p_booking_id": "string",
+          "p_court_ids": {
+            "liste": "string"
+          },
+          "p_force?": "boolean",
+          "p_title": "string",
+          "p_type_code": "string",
+          "p_von": "string"
+        }
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "created_count": "number",
+            "displaced_count": "number"
+          }
+        }
+      },
+      "genutztIn": [
+        "daten.ts aendereSperre"
+      ]
+    },
+    "update_booking_players": {
+      "args": {
+        "objekt": {
+          "p_booking_id": "string",
+          "p_guest_names?": {
+            "liste": "string"
+          },
+          "p_member_ids?": {
+            "liste": "string"
+          }
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts aendereMitspieler"
+      ]
+    },
+    "update_series": {
+      "args": {
+        "objekt": {
+          "p_displace?": "boolean",
+          "p_end_time": "string",
+          "p_series_id": "string",
+          "p_start_time": "string",
+          "p_title": "string",
+          "p_valid_to?": "string"
+        }
+      },
+      "returns": {
+        "liste": {
+          "objekt": {
+            "cancelled_count": "number",
+            "created_count": "number",
+            "displaced_count": "number"
+          }
+        }
+      },
+      "genutztIn": [
+        "verwaltung/plaetze.ts aendereSerie"
+      ]
+    },
+    "void_drink_purchase": {
+      "args": {
+        "objekt": {
+          "p_purchase_id": "string",
+          "p_reason?": "string"
+        }
+      },
+      "returns": "undefined",
+      "genutztIn": [
+        "daten.ts storniereGetraenk"
+      ]
+    }
+  },
+  "tabellen": {
+    "booking_types": {
+      "sollRpcOderViewWerden": true,
+      "vorschlag": "RPC booking_types_aktiv(p_applies_to) mit code, name, Dauer und Spielerzahlen; oder in booking_settings mitliefern, die der Plan ohnehin laedt.",
+      "zugriffe": [
+        {
+          "wo": "daten.ts ladeBuchungsarten",
+          "art": "select",
+          "spalten": [
+            "code",
+            "name",
+            "duration_minutes",
+            "requires_partner",
+            "min_players",
+            "max_players"
+          ],
+          "filter": [
+            "active=eq.true",
+            "applies_to=eq.booking"
+          ],
+          "sortierung": "sort_order"
+        },
+        {
+          "wo": "daten.ts ladeBlockungsarten",
+          "art": "select",
+          "spalten": [
+            "code",
+            "name"
+          ],
+          "filter": [
+            "active=eq.true",
+            "applies_to=eq.blocking"
+          ],
+          "sortierung": "sort_order"
+        },
+        {
+          "wo": "verwaltung/plaetze.ts ladePlaetze",
+          "art": "select",
+          "spalten": [
+            "code",
+            "name",
+            "applies_to",
+            "active"
+          ],
+          "filter": [],
+          "sortierung": "sort_order"
+        }
+      ],
+      "row": {
+        "objekt": {
+          "active": "boolean",
+          "allowed_roles": {
+            "oder": [
+              {
+                "liste": "enum:app_role"
+              },
+              "null"
+            ]
+          },
+          "applies_to": "enum:booking_kind",
+          "code": "string",
+          "counts_towards_quota": "boolean",
+          "created_at": "string",
+          "duration_minutes": "number",
+          "id": "string",
+          "max_players": "number",
+          "min_players": "number",
+          "name": "string",
+          "requires_partner": "boolean",
+          "sort_order": "number",
+          "updated_at": "string"
+        }
+      }
+    },
+    "charges": {
+      "sollRpcOderViewWerden": true,
+      "vorschlag": "Als Spalten meine_forderung_cents und meine_forderung_status in events_fuer_mitglied; dann entfaellt auch die Abfrage der eigenen Mitglieds-Id davor.",
+      "zugriffe": [
+        {
+          "wo": "daten.ts ladeVeranstaltung",
+          "art": "select",
+          "spalten": [
+            "amount_cents",
+            "status"
+          ],
+          "filter": [
+            "event_id=eq.<event>",
+            "member_id=eq.<ich>",
+            "status=neq.waived"
+          ],
+          "einzeln": true
+        }
+      ],
+      "row": {
+        "objekt": {
+          "amount_cents": "number",
+          "booking_id": "string | null",
+          "created_at": "string",
+          "description": "string",
+          "due_date": "string | null",
+          "event_id": "string | null",
+          "id": "string",
+          "kind": "enum:charge_kind",
+          "member_id": "string",
+          "notified_at": "string | null",
+          "payer_id": "string",
+          "period_label": "string | null",
+          "status": "enum:charge_status",
+          "updated_at": "string"
+        }
+      }
+    },
+    "courts": {
+      "sollRpcOderViewWerden": true,
+      "vorschlag": "RPC courts_aktiv() oder View courts_app (id, name, short_name, position), nur aktive Plaetze.",
+      "zugriffe": [
+        {
+          "wo": "daten.ts ladePlaetze",
+          "art": "select",
+          "spalten": [
+            "id",
+            "name",
+            "short_name"
+          ],
+          "filter": [
+            "active=eq.true"
+          ],
+          "sortierung": "position"
+        }
+      ],
+      "row": {
+        "objekt": {
+          "active": "boolean",
+          "created_at": "string",
+          "ebusy_id": "number | null",
+          "id": "string",
+          "name": "string",
+          "position": "number",
+          "short_name": "string",
+          "source": "enum:record_source",
+          "subline": "string | null",
+          "updated_at": "string"
+        }
+      }
+    },
+    "member_roles": {
+      "sollRpcOderViewWerden": true,
+      "vorschlag": "RPC ich() mit member_id, Name, Rollen und den abgeleiteten Rechten (admin, platz_rechte) - ersetzt zusammen mit members drei Abfragen beim Start.",
+      "zugriffe": [
+        {
+          "wo": "daten.ts ladeIchSelbst",
+          "art": "select",
+          "spalten": [
+            "role"
+          ],
+          "filter": [
+            "member_id=eq.<ich>"
+          ]
+        }
+      ],
+      "row": {
+        "objekt": {
+          "granted_at": "string",
+          "granted_by": "string | null",
+          "member_id": "string",
+          "role": "enum:app_role"
+        }
+      }
+    },
+    "members": {
+      "sollRpcOderViewWerden": true,
+      "vorschlag": "Lesen: RPC mein_profil() mit Stammdaten, Notfallkontakt und Mannschaft in einem Zug. Schreiben: RPC save_my_profile(...) und save_my_notfallkontakt(...), die nur geaenderte Felder uebernehmen - heute erledigen das Policy, Spalten-Grant und Trigger guard_member_self_update.",
+      "zugriffe": [
+        {
+          "wo": "daten.ts ladeIchSelbst",
+          "art": "select",
+          "spalten": [
+            "id"
+          ],
+          "filter": [
+            "auth_user_id=eq.<auth.uid>"
+          ],
+          "einzeln": true
+        },
+        {
+          "wo": "daten.ts ladeVeranstaltung",
+          "art": "select",
+          "spalten": [
+            "id"
+          ],
+          "filter": [
+            "auth_user_id=eq.<auth.uid>"
+          ],
+          "einzeln": true
+        },
+        {
+          "wo": "daten.ts ladeMeinenNamen",
+          "art": "select",
+          "spalten": [
+            "first_name",
+            "last_name"
+          ],
+          "filter": [
+            "id=eq.<ich>"
+          ],
+          "einzeln": true
+        },
+        {
+          "wo": "daten.ts ladeMeineStammdaten",
+          "art": "select",
+          "spalten": [
+            "first_name",
+            "last_name",
+            "title",
+            "phone",
+            "mobile",
+            "street",
+            "postcode",
+            "city",
+            "emergency_contact_name",
+            "emergency_contact_phone",
+            "emergency_contact_relation"
+          ],
+          "filter": [
+            "id=eq.<ich>"
+          ],
+          "einzeln": true
+        },
+        {
+          "wo": "daten.ts ladeMeineMannschaft",
+          "art": "select",
+          "spalten": [
+            "is_team_captain",
+            "teams(name)"
+          ],
+          "filter": [
+            "id=eq.<ich>"
+          ],
+          "einzeln": true
+        },
+        {
+          "wo": "daten.ts speichereStammdaten",
+          "art": "update",
+          "spalten": [
+            "first_name",
+            "last_name",
+            "title",
+            "phone",
+            "mobile",
+            "street",
+            "postcode",
+            "city"
+          ],
+          "filter": [
+            "id=eq.<ich>"
+          ]
+        },
+        {
+          "wo": "daten.ts speichereNotfallkontakt",
+          "art": "update",
+          "spalten": [
+            "emergency_contact_name",
+            "emergency_contact_phone",
+            "emergency_contact_relation"
+          ],
+          "filter": [
+            "id=eq.<ich>"
+          ]
+        }
+      ],
+      "row": {
+        "objekt": {
+          "auth_user_id": "string | null",
+          "birthday": "string | null",
+          "city": "string | null",
+          "country_code": "string | null",
+          "created_at": "string",
+          "ebusy_person_id": "number | null",
+          "email": "string | null",
+          "emergency_contact_name": "string | null",
+          "emergency_contact_phone": "string | null",
+          "emergency_contact_relation": "string | null",
+          "first_name": "string",
+          "gender": "enum:gender | null",
+          "guardian_consent_at": "string | null",
+          "guardian_email": "string | null",
+          "guardian_name": "string | null",
+          "guardian_phone": "string | null",
+          "id": "string",
+          "import_notes": "string | null",
+          "imported_at": "string | null",
+          "invited_at": "string | null",
+          "is_team_captain": "boolean",
+          "is_trainer": "boolean",
+          "last_name": "string",
+          "legacy_data": "Json | null",
+          "login_disabled_at": "string | null",
+          "mobile": "string | null",
+          "nationality_code": "string | null",
+          "notes": "string | null",
+          "nuliga_id": "string | null",
+          "onboarding_completed_at": "string | null",
+          "onboarding_stammdaten_at": "string | null",
+          "phone": "string | null",
+          "playing_right": "enum:playing_right",
+          "playing_right_since": "string | null",
+          "postcode": "string | null",
+          "salutation": "enum:salutation | null",
+          "source": "enum:record_source",
+          "status": "enum:member_status",
+          "street": "string | null",
+          "team_id": "string | null",
+          "tennis_lk": "string | null",
+          "title": "string | null",
+          "updated_at": "string"
+        }
+      }
+    },
+    "memberships": {
+      "sollRpcOderViewWerden": true,
+      "vorschlag": "In mein_profil() mitliefern (Mitgliedsnummer, Mitglied seit).",
+      "zugriffe": [
+        {
+          "wo": "daten.ts ladeMeineMitgliedschaft",
+          "art": "select",
+          "spalten": [
+            "number",
+            "started_on"
+          ],
+          "filter": [
+            "member_id=eq.<ich>",
+            "status=eq.active"
+          ],
+          "sortierung": "started_on.desc",
+          "limit": 1,
+          "einzeln": true
+        }
+      ],
+      "row": {
+        "objekt": {
+          "cancellation_date": "string | null",
+          "cancellation_reason": "string | null",
+          "created_at": "string",
+          "ebusy_id": "number | null",
+          "ended_on": "string | null",
+          "id": "string",
+          "import_notes": "string | null",
+          "imported_at": "string | null",
+          "legacy_data": "Json | null",
+          "member_id": "string",
+          "notes": "string | null",
+          "number": "string",
+          "source": "enum:record_source",
+          "started_on": "string",
+          "status": "enum:membership_status",
+          "updated_at": "string"
+        }
+      }
+    },
+    "push_tokens": {
+      "sollRpcOderViewWerden": true,
+      "vorschlag": "RPC push_token_aktiv(p_token) -> boolean; gehoert ohnehin zum Umbau auf APNs/FCM (Spalte provider, siehe native-apps.md, Phase A).",
+      "zugriffe": [
+        {
+          "wo": "push.ts istAngemeldet",
+          "art": "select",
+          "spalten": [
+            "id"
+          ],
+          "filter": [
+            "token=eq.<token>",
+            "disabled_at=is.null"
+          ],
+          "einzeln": true
+        }
+      ],
+      "row": {
+        "objekt": {
+          "created_at": "string",
+          "device_name": "string | null",
+          "disabled_at": "string | null",
+          "id": "string",
+          "last_seen_at": "string",
+          "member_id": "string",
+          "platform": "string",
+          "token": "string"
+        }
+      }
+    },
+    "sepa_mandates": {
+      "sollRpcOderViewWerden": true,
+      "vorschlag": "RPC mein_mandat() mit Referenz, Datum, Kontoinhaber, Bank und den letzten vier Stellen der IBAN.",
+      "zugriffe": [
+        {
+          "wo": "daten.ts ladeMeinMandat",
+          "art": "select",
+          "spalten": [
+            "reference",
+            "signed_on",
+            "status",
+            "bank_accounts(holder, bank_name, iban_last4)"
+          ],
+          "filter": [
+            "member_id=eq.<ich>",
+            "status=eq.active"
+          ],
+          "sortierung": "signed_on.desc",
+          "limit": 1,
+          "einzeln": true
+        }
+      ],
+      "row": {
+        "objekt": {
+          "accepted_holder": "string | null",
+          "bank_account_id": "string",
+          "created_at": "string",
+          "ebusy_id": "number | null",
+          "granted_online_at": "string | null",
+          "id": "string",
+          "last_used_on": "string | null",
+          "mandate_text": "string | null",
+          "member_id": "string",
+          "reference": "string",
+          "reference_conflict": "boolean",
+          "revoked_on": "string | null",
+          "sequence_type": "enum:mandate_sequence",
+          "signed_on": "string",
+          "source": "enum:record_source",
+          "status": "enum:mandate_status",
+          "updated_at": "string"
+        }
+      }
+    },
+    "settings": {
+      "sollRpcOderViewWerden": true,
+      "vorschlag": "Das Stornofenster in drink_menu oder booking_settings mitliefern; Oeffnung und Schluss kommen schon aus booking_settings. Die Verwaltung braucht dann keine eigene Abfrage mehr.",
+      "zugriffe": [
+        {
+          "wo": "daten.ts ladeStornoFenster",
+          "art": "select",
+          "spalten": [
+            "key",
+            "value"
+          ],
+          "filter": [
+            "key=eq.drinks.void_window_minutes"
+          ],
+          "einzeln": true
+        },
+        {
+          "wo": "verwaltung/gemeinsam.ts ladeEinstellungen",
+          "art": "select",
+          "spalten": [
+            "key",
+            "value",
+            "value_type",
+            "label",
+            "description",
+            "updated_at"
+          ],
+          "filter": [],
+          "sortierung": "key"
+        }
+      ],
+      "row": {
+        "objekt": {
+          "description": "string | null",
+          "key": "string",
+          "label": "string",
+          "updated_at": "string",
+          "updated_by": "string | null",
+          "value": "Json",
+          "value_type": "string"
+        }
+      }
+    }
+  },
+  "eingebettet": {
+    "teams": {
+      "row": {
+        "objekt": {
+          "active": "boolean",
+          "created_at": "string",
+          "id": "string",
+          "name": "string",
+          "sort_order": "number",
+          "updated_at": "string"
+        }
+      }
+    },
+    "bank_accounts": {
+      "row": {
+        "objekt": {
+          "active": "boolean",
+          "bank_name": "string | null",
+          "created_at": "string",
+          "ebusy_id": "number | null",
+          "holder": "string",
+          "iban_encrypted": "string",
+          "iban_fingerprint": "string | null",
+          "iban_last4": "string",
+          "id": "string",
+          "member_id": "string",
+          "source": "enum:record_source",
+          "updated_at": "string"
+        }
+      }
+    }
+  },
+  "realtime": [
+    {
+      "wo": "app/(tabs)/plaetze/index.tsx",
+      "kanal": "plan-<datum>",
+      "art": "postgres_changes",
+      "event": "*",
+      "schema": "public",
+      "tabelle": "bookings",
+      "zweck": "Belegungsplan neu laden, hoechstens einmal pro Sekunde; beim Zurueckkehren in die App wird ohnehin neu geladen, weil der Kanal im Schlaf nichts sieht."
+    }
+  ],
+  "auth": [
+    {
+      "aufruf": "signInWithPassword",
+      "wo": "daten.ts anmelden",
+      "zweck": "Anmelden mit E-Mail und Passwort"
+    },
+    {
+      "aufruf": "signOut",
+      "wo": "daten.ts abmelden",
+      "zweck": "Abmelden"
+    },
+    {
+      "aufruf": "signOut({ scope: 'local' })",
+      "wo": "app/passwort-setzen.tsx",
+      "zweck": "Alte Sitzung verwerfen, bevor ein Passwort-Link eingeloest wird"
+    },
+    {
+      "aufruf": "resetPasswordForEmail",
+      "wo": "daten.ts passwortLinkAnfordern",
+      "zweck": "Passwort-Link anfordern"
+    },
+    {
+      "aufruf": "updateUser({ password })",
+      "wo": "daten.ts passwortSetzen",
+      "zweck": "Neues Passwort setzen"
+    },
+    {
+      "aufruf": "verifyOtp({ token_hash, type })",
+      "wo": "app/passwort-setzen.tsx",
+      "zweck": "Link aus der Mail (Einladung, Wiederherstellung) mit token_hash einloesen"
+    },
+    {
+      "aufruf": "setSession({ access_token, refresh_token })",
+      "wo": "app/passwort-setzen.tsx",
+      "zweck": "Link im alten Format mit Tokens im Fragment einloesen"
+    },
+    {
+      "aufruf": "getSession",
+      "wo": "app/index.tsx, app/passwort-setzen.tsx",
+      "zweck": "Gibt es eine Sitzung?"
+    },
+    {
+      "aufruf": "onAuthStateChange",
+      "wo": "app/index.tsx",
+      "zweck": "Weiche bei An- und Abmelden"
+    },
+    {
+      "aufruf": "getUser",
+      "wo": "daten.ts ladeIchSelbst, ladeVeranstaltung",
+      "zweck": "auth.uid fuer members.auth_user_id"
+    }
+  ],
+  "enums": {
+    "app_role": [
+      "member",
+      "admin",
+      "board",
+      "groundskeeper"
+    ],
+    "attribute_kind": [
+      "list",
+      "text",
+      "date",
+      "boolean",
+      "number"
+    ],
+    "booking_kind": [
+      "booking",
+      "blocking"
+    ],
+    "charge_kind": [
+      "fee",
+      "drinks",
+      "deposit",
+      "work_duty",
+      "misc",
+      "guest",
+      "event"
+    ],
+    "charge_status": [
+      "open",
+      "notified",
+      "submitted",
+      "settled",
+      "returned",
+      "waived"
+    ],
+    "drink_category": [
+      "drink",
+      "food",
+      "other"
+    ],
+    "event_kind": [
+      "arbeitsdienst",
+      "fest",
+      "termin"
+    ],
+    "event_registration_status": [
+      "registered",
+      "waitlisted",
+      "cancelled"
+    ],
+    "event_status": [
+      "draft",
+      "published",
+      "cancelled"
+    ],
+    "gender": [
+      "female",
+      "male",
+      "diverse"
+    ],
+    "mandate_sequence": [
+      "FRST",
+      "RCUR",
+      "OOFF",
+      "FNAL"
+    ],
+    "mandate_status": [
+      "active",
+      "revoked",
+      "expired"
+    ],
+    "member_status": [
+      "active",
+      "inactive",
+      "archived"
+    ],
+    "membership_status": [
+      "active",
+      "requested",
+      "declined",
+      "ended"
+    ],
+    "playing_right": [
+      "none",
+      "own_club",
+      "second_club"
+    ],
+    "purchase_source": [
+      "app",
+      "kiosk",
+      "bar_duty"
+    ],
+    "record_source": [
+      "app",
+      "ebusy_import"
+    ],
+    "salutation": [
+      "female",
+      "male",
+      "none"
+    ]
+  }
+}
