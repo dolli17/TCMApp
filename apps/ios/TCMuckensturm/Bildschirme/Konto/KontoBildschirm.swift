@@ -10,8 +10,7 @@
  * Jede Quelle laedt fuer sich: schlaegt eine fehl (etwa das Mandat), zeigt
  * nur ihr Abschnitt den Fehler, und der Rest der Seite bleibt gefuellt.
  *
- * "Mitteilungen aufs Handy" fehlt noch: ohne APNs-Registrierung gaebe es
- * keine Marke, die der Schalter an- oder abmelden koennte.
+ * "Mitteilungen aufs Handy" meldet die APNs-Marke an und ab (App/PushSchalter.swift).
  */
 
 import SwiftUI
@@ -107,6 +106,7 @@ struct KontoBildschirm: View {
         // Ein Fehltipp am Ende der Liste meldete sofort ab (U28).
         .alert("Wirklich abmelden?", isPresented: $abmeldenFragen) {
             Button("Abbrechen", role: .cancel) {}
+            // Sitzung.abmelden meldet vorher das Geraet fuer Push ab.
             Button("Abmelden", role: .destructive) { Task { await sitzung.abmelden() } }
         }
     }
@@ -126,6 +126,8 @@ struct KontoBildschirm: View {
                 }
                 KontoLinie()
                 KontoEintrag(titel: "Bankverbindung & Mandat", symbol: "building.columns") { blatt = .bank }
+                KontoLinie()
+                PushSchalter(symbol: "bell")
                 KontoLinie()
                 KontoEintrag(titel: "Passwort ändern", symbol: "lock") { blatt = .passwort }
                 KontoLinie()
