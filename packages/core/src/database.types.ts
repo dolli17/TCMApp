@@ -1737,41 +1737,57 @@ export type Database = {
       notifications: {
         Row: {
           body: string
+          booking_id: string | null
           created_at: string
           event_id: string | null
           id: string
           kind: string
+          mail_discarded_at: string | null
           mailed_at: string | null
           member_id: string
+          push_discarded_at: string | null
           pushed_at: string | null
           read_at: string | null
           title: string
         }
         Insert: {
           body: string
+          booking_id?: string | null
           created_at?: string
           event_id?: string | null
           id?: string
           kind: string
+          mail_discarded_at?: string | null
           mailed_at?: string | null
           member_id: string
+          push_discarded_at?: string | null
           pushed_at?: string | null
           read_at?: string | null
           title: string
         }
         Update: {
           body?: string
+          booking_id?: string | null
           created_at?: string
           event_id?: string | null
           id?: string
           kind?: string
+          mail_discarded_at?: string | null
           mailed_at?: string | null
           member_id?: string
+          push_discarded_at?: string | null
           pushed_at?: string | null
           read_at?: string | null
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notifications_event_id_fkey"
             columns: ["event_id"]

@@ -450,13 +450,16 @@ end; $f$;
 create or replace function tests.test_mitgliedschaft_beenden_und_wieder_aufnehmen()
 returns setof text language plpgsql as $f$
 declare a record; v_neu uuid; v_nummer text; v_offen integer;
+        -- Berliner Datum wie create_member, nicht current_date (UTC): kurz
+        -- nach Mitternacht laege der Austritt sonst vor dem Eintritt.
+        v_heute date := private.heute();
 begin
   select * into a from tests.fixture_user('admin') limit 1;
   perform tests.fixture_login('rita.rueckkehr.4@example.org', 'f963df7d-cfed-5987-a3af-bbd96fd3694b');
   perform tests.act_as(a.auth_id);
 
   v_neu := public.create_member('Rita', 'Rueckkehr', 'rita.rueckkehr.4@example.org', p_birthday => '1980-01-01', p_gender => 'female', p_street => 'Teststr. 1', p_postcode => '70372', p_city => 'Stuttgart', p_mobile => '0170 1234567', p_auth_user_id => 'f963df7d-cfed-5987-a3af-bbd96fd3694b');
-  perform public.end_membership(v_neu, current_date, current_date, 'Umzug');
+  perform public.end_membership(v_neu, v_heute, v_heute, 'Umzug');
 
   perform set_config('role', 'postgres', true);
   select count(*)::integer into v_offen from public.memberships
