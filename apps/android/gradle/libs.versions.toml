@@ -1,34 +1,27 @@
 # Alle Abhaengigkeiten der Android-App, exakt gepinnt.
 #
 # Regeln (apps/android/README.md):
-# - Neue Versionen erst, wenn sie mindestens zwei Wochen alt sind.
-# - compileSdk ist 35 (nur dieses SDK ist installiert). AndroidX-Bibliotheken
-#   tragen in ihrer AAR ein minCompileSdk; hoeher als 35 bricht der Build ab
-#   (checkAarMetadata). Deshalb stehen einige AndroidX-Versionen bewusst eine
-#   Stufe unter der neuesten - steigt compileSdk, koennen sie mit.
+# - Neue Versionen erst, wenn sie mindestens zwei Wochen alt sind
+#   (Stand 30.10.2026: veroeffentlicht bis 16.10.2026).
+# - compileSdk 37, targetSdk 36 (Google Play). AndroidX-Bibliotheken tragen in
+#   ihrer AAR ein minCompileSdk; checkAarMetadata bricht ab, wenn es hoeher ist.
 
 [versions]
-# AGP 9 verlangt Build-Tools 36 und laedt sie selbst nach - hier ist nur 35.0.0 installiert.
-agp = "8.13.2"
+# AGP 9 bringt Kotlin selbst mit (kein Plugin org.jetbrains.kotlin.android).
+# 9.5.0 ist juenger als zwei Wochen.
+agp = "9.4.1"
 kotlin = "2.4.21"
 
-# Compose 1.11.4 - die BOM danach (2026.08.00) verlangt compileSdk 37.
-compose-bom = "2026.06.01"
-# 1.11 verlangt compileSdk 36
-activity-compose = "1.10.1"
-# 1.17 verlangt compileSdk 36
-core-ktx = "1.16.0"
-# 2.11 verlangt compileSdk 37
-lifecycle = "2.10.0"
-# 2.10 verlangt compileSdk 37
-navigation-compose = "2.9.8"
+compose-bom = "2026.09.00"
+activity-compose = "1.13.0"
+core-ktx = "1.19.1"
+lifecycle = "2.11.0"
+navigation-compose = "2.10.2"
+# 1.3.0 ist juenger als zwei Wochen.
 datastore = "1.2.1"
-# Nur fuer supabase-kt (Custom Tabs beim OAuth, das die App nicht nutzt).
-# supabase-kt zieht 1.10.0, das compileSdk 36 verlangt; 1.8.0 hat dieselbe API.
-androidx-browser = "1.8.0"
 
 supabase = "3.8.0"
-# Wie supabase-kt 3.8.0 selbst
+# Wie supabase-kt 3.8.0 selbst (zieht auch androidx.browser 1.10.0)
 ktor = "3.5.1"
 kotlinx-serialization = "1.11.0"
 kotlinx-coroutines = "1.11.0"
@@ -36,6 +29,7 @@ kotlinx-coroutines = "1.11.0"
 junit4 = "4.13.2"
 junit-jupiter = "6.1.1"
 robolectric = "4.17"
+# 1.77.0 ist juenger als zwei Wochen.
 roborazzi = "1.76.0"
 androidx-test-core = "1.7.0"
 androidx-test-ext-junit = "1.3.0"
@@ -48,7 +42,6 @@ androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-ru
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
-androidx-browser = { module = "androidx.browser:browser", version.ref = "androidx-browser" }
 
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 compose-ui = { module = "androidx.compose.ui:ui" }
@@ -87,7 +80,6 @@ turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }

@@ -1,9 +1,9 @@
+import com.android.build.api.variant.HostTestBuilder
 import java.util.Properties
 
 // Die Compose-App. Varianten, Werte und Signieren: apps/android/README.md.
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.roborazzi)
@@ -40,14 +40,15 @@ val releaseKeystore = wert("tcm.keystore", "TCM_KEYSTORE")
 
 android {
     namespace = "de.tcmuckensturm.app"
-    compileSdk = 35
-    // Die installierten Build-Tools (README: keine weiteren SDK-Pakete)
-    buildToolsVersion = "35.0.0"
+    compileSdk = 37
+    // Installiert (README); android.builder.sdkDownload=false laedt nichts nach.
+    buildToolsVersion = "37.0.0"
 
     defaultConfig {
         applicationId = "de.tcmuckensturm.app"
         minSdk = 26
-        targetSdk = 35
+        // Google Play verlangt fuer neue Apps und Updates mindestens 36.
+        targetSdk = 36
         versionCode = providers.gradleProperty("tcm.versionCode").orNull?.toInt() ?: 1
         versionName = "0.1.0"
     }
@@ -120,7 +121,7 @@ android {
     sourceSets {
         getByName("main") {
             // Erzeugt aus packages/ui/src/tokens.ts (pnpm --filter @tcm/ui build:native) - eingebunden, nicht kopiert
-            kotlin.srcDir("../../../packages/ui/generated")
+            kotlin.directories.add("../../../packages/ui/generated")
         }
     }
 
@@ -137,7 +138,7 @@ android {
 
     lint {
         abortOnError = true
-        // Gibt es nur als Warnung, weil compileSdk 35 bewusst ist (README): neuere Bibliotheken brauchen 36+.
+        // Versionen pinnt libs.versions.toml bewusst (mindestens zwei Wochen alt), nicht Lint.
         disable += setOf("GradleDependency", "AndroidGradlePluginVersion", "NewerVersionAvailable")
     }
 }
@@ -149,8 +150,7 @@ androidComponents {
         if (lokal && variante.buildType == "release") variante.enable = false
         // Die JVM-Tests (JUnit, Robolectric, Roborazzi) laufen einmal, mit lokalDebug -
         // sie haengen an keiner Umgebung, und die Screenshots entstehen so nur einmal.
-        @Suppress("DEPRECATION")
-        variante.enableUnitTest = lokal && variante.buildType == "debug"
+        variante.hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = lokal && variante.buildType == "debug"
     }
 }
 
@@ -189,10 +189,6 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
-    // supabase-kt zieht eine neuere Version, die compileSdk 36 verlangt (libs.versions.toml).
-    implementation(libs.androidx.browser) {
-        version { strictly(libs.versions.androidx.browser.get()) }
-    }
 
     testImplementation(libs.junit4)
     testImplementation(libs.robolectric)

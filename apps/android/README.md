@@ -15,16 +15,20 @@ unverändert, bis diese App fertig ist. Web und Supabase bleiben.
 Die Bilder bis auf das letzte entstehen ohne Gerät (Robolectric + Roborazzi, `BildschirmfotoTest`).
 Die Anmeldeseiten sind wie in iOS und Expo immer dunkel; „hell“ zeigt, dass ein helles System daran
 nichts ändert. Das letzte Bild ist der Rauchtest im Emulator: Variante `lokal`, angemeldet als
-`mitglied@tcm.local` gegen den lokalen Stack (vorher: `docs/rauchtest-anmelden.png`). Die
-hellen Symbole in dessen Statusleiste sind ein Fehler, der danach behoben wurde (`Systemleisten` in
-`theme/Theme.kt`); das Bild ist noch nicht neu aufgenommen.
+`mitglied@tcm.local` gegen den lokalen Stack (vorher: `docs/rauchtest-anmelden.png`). Gebaut mit
+targetSdk 36, gelaufen auf dem API-35-Emulator.
 
 ## Voraussetzungen
 
-- **JDK 21** (z. B. `brew install openjdk@21`). Gradle lädt sich selbst über den Wrapper (9.5.1).
+Gebaut mit AGP 9.4.1 (Kotlin ist darin eingebaut, kein Plugin `org.jetbrains.kotlin.android`),
+Kotlin 2.4.21, `compileSdk` 37, `targetSdk` 36 (Mindestwert von Google Play), `minSdk` 26.
+Versionen stehen gepinnt in `gradle/libs.versions.toml` und sind mindestens zwei Wochen alt.
+
+- **JDK 21** (z. B. `brew install openjdk@21`). Gradle lädt sich selbst über den Wrapper (9.8.1).
 - **Android SDK** mit genau diesen Paketen (`sdkmanager`):
-  `platform-tools`, `platforms;android-35`, `build-tools;35.0.0`, für den Emulator zusätzlich
-  `emulator` und `system-images;android-35;google_apis;arm64-v8a` (AVD z. B. `tcm-pixel`).
+  `platform-tools`, `platforms;android-37.0`, `build-tools;37.0.0` (`build-tools;36.0.0` ist die
+  Vorgabe von AGP 9.4, die App setzt 37.0.0), für den Emulator zusätzlich `emulator` und
+  `system-images;android-35;google_apis;arm64-v8a` (AVD z. B. `tcm-pixel`).
   `gradle.properties` setzt `android.builder.sdkDownload=false`: Fehlt etwas, bricht der Build ab,
   statt still weitere Pakete zu laden.
 - Für die Variante `lokal`: der lokale Supabase-Stack (`pnpm db:start` im Repo).
@@ -161,5 +165,5 @@ Für parallele Spuren gilt:
 - Prod-Werte (Supabase-URL und -Key), Release-Keystore, Fingerprints in `assetlinks.json`.
 - R8/Minify ist für Release noch aus (Regeln für supabase-kt/Ktor/Serialization fehlen).
 - CI für Android.
-- `compileSdk`/`targetSdk` 35: einige AndroidX-Bibliotheken sind deshalb nicht auf dem neuesten Stand
-  (deren neueste Versionen verlangen `compileSdk` 36), `androidx.browser` ist auf 1.8.0 festgehalten.
+- Emulator-Image für API 36/37: Der Rauchtest läuft auf API 35, das Verhalten unter targetSdk 36
+  auf einem Android-16-Gerät ist noch nicht geprüft.

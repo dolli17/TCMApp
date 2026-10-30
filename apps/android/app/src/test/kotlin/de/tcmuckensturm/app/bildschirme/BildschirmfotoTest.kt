@@ -2,7 +2,7 @@ package de.tcmuckensturm.app.bildschirme
 
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -42,7 +42,7 @@ class BildschirmfotoTest {
     }
 
     @Composable
-    private fun anmelden() = AnmeldenInhalt(
+    private fun Anmelden() = AnmeldenInhalt(
         email = TextFieldState("mitglied@tcm.local"),
         passwort = TextFieldState("geheim123"),
         fehler = null,
@@ -53,10 +53,10 @@ class BildschirmfotoTest {
     )
 
     @Test
-    fun anmeldenHell() = foto("anmelden-hell", dunkel = false) { anmelden() }
+    fun anmeldenHell() = foto("anmelden-hell", dunkel = false) { Anmelden() }
 
     @Test
-    fun anmeldenDunkel() = foto("anmelden-dunkel", dunkel = true) { anmelden() }
+    fun anmeldenDunkel() = foto("anmelden-dunkel", dunkel = true) { Anmelden() }
 
     @Test
     fun anmeldenMitFehler() = foto("anmelden-fehler", dunkel = true) {
