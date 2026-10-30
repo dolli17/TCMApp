@@ -14,8 +14,10 @@
 
 package de.tcmuckensturm.app.start
 
+import de.tcmuckensturm.app.daten.Pushdaten
 import de.tcmuckensturm.app.daten.Zugangsdaten
 import de.tcmuckensturm.app.daten.authFehlerForm
+import de.tcmuckensturm.app.push.PushZentrale
 import de.tcmuckensturm.kern.Anmeldefehler
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.OtpType
@@ -52,6 +54,8 @@ class Sitzung(
     val umgebung: Umgebung,
     val client: SupabaseClient,
     private val scope: CoroutineScope,
+    /** Meldet beim Abmelden das Geraet fuer Push ab; null in Tests. */
+    private val push: PushZentrale? = null,
 ) {
     private val _ziel = MutableStateFlow<StartZiel>(StartZiel.Laden)
     val ziel: StateFlow<StartZiel> = _ziel.asStateFlow()
@@ -129,8 +133,9 @@ class Sitzung(
 
     /** Die eine Stelle zum Abmelden. */
     suspend fun abmelden() {
-        // TODO (Push-Spur): vorher das Geraet abmelden (remove_push_token), solange die
-        // Sitzung noch gilt - sonst bekommt es weiter die Nachrichten des Vorbesitzers.
+        // Vorher das Geraet abmelden (remove_push_token), solange die Sitzung noch gilt -
+        // sonst bekommt es weiter die Nachrichten des Vorbesitzers (wie meldeGeraetAb in push.ts).
+        push?.abmelden(Pushdaten(client))
         try {
             // Wie supabase-js und supabase-swift: alle Sitzungen des Kontos beenden.
             client.auth.signOut(SignOutScope.GLOBAL)

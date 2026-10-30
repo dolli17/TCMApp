@@ -69,6 +69,15 @@ Weitere Bilder (je hell und dunkel, mit Ladefehler, beim Laden) unter `docs/kont
 Beispieldaten aus `VerwaltungAttrappe` (`VerwaltungBildschirmfotoTest`), ohne Netz; weitere unter
 `docs/verwaltung-*.png`.
 
+### Onboarding und Push (Spur A6)
+
+| Deine Daten | Rechtliches | Erziehungsberechtigte | SEPA, dunkel | Freigeschaltet | App-Einstellungen | Push-Schalter |
+|---|---|---|---|---|---|---|
+| ![Stammdaten](docs/onboarding-stammdaten-hell.png) | ![Rechtliches](docs/onboarding-rechtliches-hell.png) | ![Erziehungsberechtigte](docs/onboarding-erziehungsberechtigte-hell.png) | ![SEPA](docs/onboarding-sepa-dunkel.png) | ![Einwilligungen](docs/onboarding-einwilligungen-hell.png) | ![Einstellungen](docs/onboarding-einstellungen-dunkel.png) | ![Push](docs/push-schalter-hell.png) |
+
+Weitere Schritte (Passwort, Notfallkontakt, Tennis, Mandat ohne Gläubigerdaten, Ladefehler) unter
+`docs/onboarding-*.png`, aus `OnboardingBildfotoTest` mit Beispieldaten ohne Netz.
+
 ## Voraussetzungen
 
 Gebaut mit AGP 9.4.1 (Kotlin ist darin eingebaut, kein Plugin `org.jetbrains.kotlin.android`),
@@ -141,6 +150,50 @@ ist nur in der Variante `lokal` und nur für `10.0.2.2`, `127.0.0.1` und `localh
   unter `/.well-known/assetlinks.json` die Fingerprints liefert (`ANDROID_APP_FINGERPRINTS`, Spur
   N3); bis dahin öffnet der Link das Web, und die App kommt über das eigene Schema an den Link.
 
+## Push (FCM)
+
+Die App meldet ihre FCM-Marke über `register_push_token(p_token, p_platform 'android',
+p_device_name, p_provider 'fcm')` an; versandt wird von der Edge Function `notification-pushes`
+(`supabase/functions/notification-pushes/fcm.ts`, HTTP v1 mit `notification` und `data`). Es gibt
+**kein `google-services.json` und kein Gradle-Plugin google-services**: `TcmApp` richtet FirebaseApp
+von Hand aus vier BuildConfig-Werten ein (`push/PushFirebase.kt`). Fehlt einer, bleibt Push aus, der
+Schalter im Konto sagt „In dieser Version der App sind Mitteilungen noch nicht eingerichtet.“, und der
+Rest der App läuft normal.
+
+**Im Firebase-Projekt anzulegen** (Firebase-Konsole, ein Projekt für alle Varianten):
+
+1. Projekt anlegen (Google Analytics nicht nötig) und Cloud Messaging (HTTP v1) aktiv lassen.
+2. Je Variante eine Android-App mit dem Paketnamen: `de.tcmuckensturm.app.lokal`,
+   `de.tcmuckensturm.app.dev`, `de.tcmuckensturm.app`. SHA-Fingerabdrücke braucht FCM nicht.
+3. Aus „Projekteinstellungen → Allgemein“ (bzw. der `google-services.json`, die man dort laden kann,
+   aber nicht einchecken muss) die Werte ablesen: Projekt-ID (`project_id`), Absender-ID / Projektnummer
+   (`project_number`), Web-API-Schlüssel (`api_key.current_key`) und je App die App-ID
+   (`mobilesdk_app_id`, Form `1:<nummer>:android:<hex>`). Diese Werte sind nicht geheim; sie stecken in
+   jeder ausgelieferten App.
+4. Für den Versand: „Projekteinstellungen → Dienstkonten → Neuen privaten Schlüssel generieren“ und das
+   JSON als Secret `FCM_SERVICE_ACCOUNT` der Edge Function setzen (Supabase, nicht im Repo).
+
+**Properties** (Gradle-Property `-P…`/`~/.gradle/gradle.properties`, Umgebung oder für `lokal` auch
+`lokal.properties`):
+
+| BuildConfig | Gradle-Property | Umgebung | lokal.properties |
+|---|---|---|---|
+| `FIREBASE_PROJECT_ID` | `tcm.firebase.projectId` | `FIREBASE_PROJECT_ID` | `firebase.projectId` |
+| `FIREBASE_SENDER_ID` | `tcm.firebase.senderId` | `FIREBASE_SENDER_ID` | `firebase.senderId` |
+| `FIREBASE_API_KEY` | `tcm.firebase.apiKey` | `FIREBASE_API_KEY` | `firebase.apiKey` |
+| `FIREBASE_APP_ID` (je Variante) | `tcm.firebase.appId.lokal` / `.dev` / `.prod` | `FIREBASE_APP_ID_LOKAL` / `_DEV` / `_PROD` | `firebase.appId.lokal` |
+
+Verhalten wie in iOS (`App/Push*.swift`): Gefragt wird erst, wenn jemand den Schalter „Mitteilungen
+aufs Handy“ umlegt (Konto oder Onboarding-Schritt „App-Einstellungen“); ab Android 13 kommt dann der
+Systemdialog `POST_NOTIFICATIONS`. Vorher erzeugt Firebase keine Marke (`firebase_messaging_auto_init_enabled`
+aus). Den Status zeigt `push_token_aktiv` für die zuletzt angemeldete Marke (in den Einstellungen der
+App gespeichert). Eine neue Marke (`onNewToken`, beim Start der Tabs `auffrischen`) wird angemeldet und
+die alte abgemeldet. `Sitzung.abmelden()` meldet vorher `remove_push_token` und verwirft die Marke bei
+FCM. Der Kanal heißt „Mitteilungen“ (`mitteilungen`, im Manifest als Standard für FCM). Ist die App im
+Hintergrund, zeigt das System die Nachricht; ist sie vorne, zeigt `PushDienst` sie selbst. Ein Tippen
+öffnet `HauptActivity` mit `ziel`/`kind`/`event_id` aus `data`; `push/PushZiel.kt` macht daraus einen
+Tab oder „Neuigkeiten“ (Logik wie `PushZiel.swift`), `PushNavigation.kt` öffnet es, sobald die Tabs stehen.
+
 ## Aufbau
 
 ```
@@ -152,6 +205,7 @@ apps/android
 │       ├── daten/        Supabase-Client, Sitzungsspeicher, Verschluesselung, Fehlerform, Zugangsdaten
 │       ├── theme/        TcmTheme aus packages/ui/generated/Tokens.kt, Schriften, Erscheinungsbild
 │       ├── navigation/   HauptTab (die Tabs), HauptTabs (ein NavHost)
+│       ├── push/         PushZentrale, Firebase/FCM, PushSchalter, PushZiel, PushNavigation
 │       └── bildschirme/  anmeldung, keinzugang, onboarding, home, plaetze, verein, konto, verwaltung
 └── docs/          Bildschirmfotos
 ```
@@ -176,7 +230,7 @@ Für parallele Spuren gilt:
 
 - **Start-Logik** (`start/StartLogik.kt`, wie `StartLogik.swift`): ohne Sitzung „Anmelden“, sonst
   `mein_zugang`: kein Zugang (`zugangsGrund`) → „Kein Zugang“ (meldet ab), Onboarding offen →
-  Platzhalter, sonst Tabs Home, Plätze, Verein, Konto und „Verwaltung“ bei Platzrechten
+  Onboarding, sonst Tabs Home, Plätze, Verein, Konto und „Verwaltung“ bei Platzrechten
   (`ich().roles`). Die Weiche (`start/Sitzung.kt`) folgt `sessionStatus` von supabase-kt.
 - **Sitzung** (`daten/Sitzungsspeicher.kt`): als JSON, AES-256-GCM-verschlüsselt mit einem Schlüssel
   im Android Keystore (Alias `tcm-sitzung`), abgelegt in einem DataStore. Kein
@@ -227,8 +281,18 @@ Für parallele Spuren gilt:
   gespeichert. Abmelden mit Rückfrage über `Sitzung.abmelden()`. Gespeichert meldet eine Snackbar.
   Datenzugriff nur über RPCs (`daten/Kontodaten.kt`, Getränke und Arbeitsdienst aus
   `daten/Startdaten.kt`). Stunden stehen deutsch mit Komma (`kern/Zahlen.kt`: „6,5 / 10 h“). Der
-  Inhalt liegt im `KontoModell` (ViewModel) und lädt beim Zurückkehren in den Tab still nach. Der Push-Schalter ist eine gesperrte Platzhalterzeile (`TODO` für die
-  Push-Spur), oben rechts die Glocke aus `bildschirme/nachrichten`.
+  Inhalt liegt im `KontoModell` (ViewModel) und lädt beim Zurückkehren in den Tab still nach. Dazu der
+  Push-Schalter „Mitteilungen aufs Handy“ (`push/PushSchalter.kt`), oben rechts die Glocke aus
+  `bildschirme/nachrichten`.
+- **Onboarding** (`bildschirme/onboarding/`, wie `Bildschirme/Onboarding/` in iOS): alle Schritte
+  (Passwort, Deine Daten, Satzung und Datenschutz, Erziehungsberechtigte bei Minderjährigen,
+  Notfallkontakt, SEPA-Mandat, Einwilligungen, Tennis, App-Einstellungen), Reihenfolge und Pflicht aus
+  `kern/Onboarding.kt` (mit IBAN-Prüfung), Stand aus `my_onboarding()`, je Schritt die RPC aus
+  `daten/Onboardingdaten.kt`. Mit dem Mandat `complete_onboarding()`; fehlt etwas, springt der Assistent
+  zum ersten fehlenden Schritt. Danach sind die Schritte freiwillig, fertig geht es über
+  `Sitzung.onboardingVerlassen()` in die Tabs. Geburtsdatum per Material-Datumswähler (deutsch, 1900 bis
+  heute), Zurück-Geste einen Schritt zurück, unten Datenschutz, Impressum, Abmelden. Der Ablauf liegt im
+  `OnboardingModell` (ViewModel).
 - **Verwaltung** (`bildschirme/verwaltung/`, `daten/Verwaltungsdaten.kt`, wie
   `Bildschirme/Verwaltung/` in iOS): Tab nur mit Platzrechten oder Admin (`ich()`), Segmente
   „Plätze“ und „Serien“ (klebt beim Rollen). Plätze zum Lesen mit dem Zustand von jetzt (frei,
@@ -280,16 +344,18 @@ Für parallele Spuren gilt:
   `PlaetzeBildschirmfotoTest`, für den Verein `VereinLogikTest` (Texte, Decoding, Korb und Erinnerung)
   und `VereinBildschirmfotoTest`, für die Verwaltung `VerwaltungLogikTest` (Fälle aus
   `VerwaltungTests.swift`), `VerwaltungModellTest` (gegen `VerwaltungAttrappe`) und
-  `VerwaltungBildschirmfotoTest` (inkl. Sprung in den Tab Plätze und Web-Link je nach Rechten).
+  `VerwaltungBildschirmfotoTest` (inkl. Sprung in den Tab Plätze und Web-Link je nach Rechten); für Onboarding und Push `OnboardingLogikTest` und `OnboardingModellTest`
+  (Ablauf mit Ersatzdaten, Fälle aus `OnboardingTests.swift`), `PushZielTest` (Fälle aus `PushTests.swift`),
+  `PushZentraleTest` (An-/Abmelden, neue Marke, ohne Erlaubnis) und `OnboardingBildfotoTest`. In `:kern`
+  `OnboardingTest` (Fälle aus `onboarding.test.ts` und `iban.test.ts`; Golden Files gibt es dafür nicht).
 - Der Android Keystore fehlt in Robolectric. Die Tests des Sitzungsspeichers nehmen deshalb einen
   Software-Schlüssel; der echte Keystore läuft im Emulator-Rauchtest.
 
 ## Was fehlt
 
-- Screens: Onboarding, Widget (`:widgets`).
-- Konto: Push-Schalter „Mitteilungen aufs Handy“ (Push-Spur).
+- Screens: Widget (`:widgets`).
 - Home: „Demnächst im Verein“ (die Karte gibt es schon: `EventKarte(e, jetzt, aufforderung = true)`).
-- Push (FCM): Anmeldung des Tokens und Abmeldung beim Abmelden (`TODO` in `Sitzung.abmelden()`).
+- Push: das Firebase-Projekt selbst und seine Werte (siehe „Push (FCM)“); ohne sie ist Push aus.
 - Prod-Werte (Supabase-URL und -Key), Release-Keystore, Fingerprints in `assetlinks.json`.
 - R8/Minify ist für Release noch aus (Regeln für supabase-kt/Ktor/Serialization fehlen).
 - CI für Android.
