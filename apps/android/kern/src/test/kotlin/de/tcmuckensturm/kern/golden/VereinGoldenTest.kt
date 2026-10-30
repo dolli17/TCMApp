@@ -1,7 +1,6 @@
 package de.tcmuckensturm.kern.golden
 
 import de.tcmuckensturm.kern.EintragErgebnis
-import de.tcmuckensturm.kern.Forderungen
 import de.tcmuckensturm.kern.Geld
 import de.tcmuckensturm.kern.Getraenke
 import de.tcmuckensturm.kern.Getraenkekauf
@@ -208,15 +207,10 @@ class VereinGoldenTest {
         JsonPrimitive(Startseite.sumOpenDrinks(kaeufe))
     }
 
-    // ---- Geld und Forderungsarten ---------------------------------------------
+    // ---- Geld (CHARGE_KIND_LABEL prueft KontoGoldenTest) ------------------------
 
     @TestFactory
     fun formatCents() = Golden.pruefen("formatCents") { input ->
         JsonPrimitive(Geld.formatCents(input.zahl("cents")))
-    }
-
-    @TestFactory
-    fun chargeKindLabel() = Golden.pruefen("CHARGE_KIND_LABEL") { input ->
-        text(Forderungen.chargeKindLabel(input.text("kind")!!))
     }
 }

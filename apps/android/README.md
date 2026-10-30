@@ -240,7 +240,7 @@ Für parallele Spuren gilt:
   `Veranstaltungen`) wechselt den Tab und öffnet das Ziel. `EventKarte` (mit `aufforderung`) ist für
   Home gedacht.
 - Laden und Schreiben: `daten/Vereinsdaten.kt` (eigene Getränke und Name über `Startdaten`), Kern:
-  `kern/Veranstaltungen.kt`, `Getraenke.kt`, `Merkmaltexte.kt` (`Forderungen.chargeKindLabel`).
+  `kern/Veranstaltungen.kt`, `Getraenke.kt`, Forderungsarten aus `Merkmaltexte.kt` (Konto).
   Kopf, Karte, Leerzustand und Fehlerzeile aus `bildschirme/Bausteine.kt`, die Glocke aus `nachrichten`.
 
 ## Tests
