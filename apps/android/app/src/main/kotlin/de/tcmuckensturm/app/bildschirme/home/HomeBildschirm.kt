@@ -77,6 +77,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import de.tcmuckensturm.app.bildschirme.verein.LocalZuVerein
+import de.tcmuckensturm.app.bildschirme.verein.VereinZiel
 import de.tcmuckensturm.app.bildschirme.Avatar
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
 import de.tcmuckensturm.app.bildschirme.GrosserKopf
@@ -196,6 +198,7 @@ fun HomeBildschirm(zuNachrichten: () -> Unit) {
     }
     val client = LocalSitzung.current.client
     val zuTab = LocalZuTab.current
+    val zuVerein = LocalZuVerein.current
     val modell = viewModel { HomeModell(Startdaten(client)) }
     val zustand by modell.zustand.collectAsStateWithLifecycle()
 
@@ -206,13 +209,12 @@ fun HomeBildschirm(zuNachrichten: () -> Unit) {
         zustand = zustand,
         ziele = HomeZiele(
             zuTab = zuTab,
-            // TODO (Verein-Spur): Getraenke und Veranstaltung direkt, sobald der Verein-Graph Ziele dafuer hat.
-            zuGetraenken = { zuTab(HauptTab.VEREIN) },
-            zuVeranstaltung = { zuTab(HauptTab.VEREIN) },
+            zuGetraenken = { zuVerein(VereinZiel.Getraenke) },
+            zuVeranstaltung = { zuVerein(VereinZiel.Veranstaltung(it)) },
             zuNachrichten = zuNachrichten,
         ),
         nachladen = { modell.laden(nachladen = true) },
-        glocke = { Glocke(zuVeranstaltung = { zuTab(HauptTab.VEREIN) }) },
+        glocke = { Glocke(zuVeranstaltung = { zuVerein(VereinZiel.Veranstaltung(it)) }) },
     )
 }
 

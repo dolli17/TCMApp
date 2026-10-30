@@ -33,6 +33,18 @@ Mit Beispieldaten (`HomeBildschirmfotoTest`, `Beispiele`), JETZT ist Montag, 28.
 Beispieldaten aus `PlatzAttrappe` (`PlaetzeBildschirmfotoTest`), ohne Netz. Das Buchungsblatt
 erscheint in den Bildern ohne das Fenster des `ModalBottomSheet`.
 
+### Verein
+
+Getränke mit Korb, Veranstaltungen, Detail mit Anmeldung, Warteliste, Arbeitsdienst (`VereinBildschirmfotoTest`, Beispieldaten, JETZT ist Dienstag, 20.10.2026, 12:00):
+
+| Getränke, hell | Getränke, dunkel | Zuletzt und Meldung | Erinnerung an den Korb |
+|---|---|---|---|
+| ![Getränke hell](docs/verein-getraenke-hell.png) | ![Getränke dunkel](docs/verein-getraenke-dunkel.png) | ![Zuletzt](docs/verein-getraenke-zuletzt.png) | ![Erinnerung](docs/verein-erinnerung.png) |
+
+| Veranstaltungen, hell | Veranstaltungen, dunkel | Angemeldet, hell | Angemeldet, dunkel | Anmelden | Warteliste | Arbeitsdienst |
+|---|---|---|---|---|---|---|
+| ![Liste hell](docs/verein-veranstaltungen-hell.png) | ![Liste dunkel](docs/verein-veranstaltungen-dunkel.png) | ![Detail hell](docs/verein-veranstaltung-hell.png) | ![Detail dunkel](docs/verein-veranstaltung-dunkel.png) | ![Anmelden](docs/verein-veranstaltung-anmelden.png) | ![Warteliste](docs/verein-veranstaltung-warteliste.png) | ![Arbeitsdienst](docs/verein-arbeitsdienst.png) |
+
 Die Bilder bis auf das letzte entstehen ohne Gerät (Robolectric + Roborazzi, `BildschirmfotoTest`).
 Die Anmeldeseiten sind wie in iOS und Expo immer dunkel; „hell“ zeigt, dass ein helles System daran
 nichts ändert. Das letzte Bild ist der Rauchtest im Emulator: Variante `lokal`, angemeldet als
@@ -178,8 +190,8 @@ Für parallele Spuren gilt:
   „Jetzt frei“ mit Zeitleiste, offene Spiele, „Dein Stand“ (Getränke, Arbeitsdienst), Neuigkeiten
   der letzten 7 Tage, Bildschirm „Neuigkeiten“, Herunterziehen zum Aktualisieren. Jeder Abschnitt
   lädt für sich (`Abschnitt`), Texte als reine Funktionen in `HomeLogik`. „Demnächst im Verein“
-  fehlt noch (braucht die Veranstaltungen aus der Verein-Spur); Getränke und Veranstaltungen führen
-  bis dahin auf den Tab Verein.
+  fehlt noch; Getränke, Veranstaltungen und Einträge der Glocke führen über `LocalZuVerein` direkt
+  zum Ziel im Tab Verein.
 - **Plätze** (`bildschirme/plaetze`, `daten/Platzdaten.kt`, wie iOS): Tagwahl über `lead_days`,
   Ansichten „Freie Zeiten“ und „Übersicht“ (Raster Plätze × Zeit, gemerkt), belegt/frei/eigene/
   Sperre, Pull-to-refresh, Realtime-Kanal `plan-<datum>` auf `bookings` (höchstens ein Nachladen je
@@ -209,11 +221,34 @@ Für parallele Spuren gilt:
   Inhalt liegt im `KontoModell` (ViewModel) und lädt beim Zurückkehren in den Tab still nach. Der Push-Schalter ist eine gesperrte Platzhalterzeile (`TODO` für die
   Push-Spur), oben rechts die Glocke aus `bildschirme/nachrichten`.
 
+### Tab Verein (`bildschirme/verein`, wie `Bildschirme/Verein` in iOS)
+
+- **Reiter** Getränke und Veranstaltungen unter dem Kopf mit Segmenten, gemerkt unter
+  `tcm-verein-reiter` (SharedPreferences), beim ersten Mal Getränke. Darüber eine Veranstaltung im
+  Detail (`VeranstaltungZiel`), Zurück-Pfeil und -Geste über den NavHost.
+- **Getränke:** laufender Monat (`sumOpenDrinks`), Karte als Kacheln mit Zähler, Korb erst mit
+  „Eintragen“ gebucht (je Artikel `record_drink_purchase`, nacheinander), Rückmeldung als Snackbar
+  (`drinkBatchReport`), Fehlgeschlagenes bleibt im Korb. „Zuletzt“ mit Zurücknehmen im Stornofenster
+  (`drink_void_window_minutes`, Takt alle 30 s).
+- **Korb** in `VereinZustand`, gehalten von `VereinTab` in `HauptTabs`: übersteht Reiter- und
+  Tab-Wechsel, ist mit dem Abmelden weg. Wer die Getränke mit vollem Korb verlässt, bekommt die
+  Rückfrage „Noch nicht eingetragen“ mit dem Weg zurück.
+- **Veranstaltungen** nach Monat, Vergangenes umschaltbar; **Detail** mit Eckdaten, Belegung als
+  Zahl, Anmelden mit Begleitpersonen und Bemerkung, Ändern, Abmelden mit Rückfrage, Warteliste mit
+  Platz, eigene Forderung aus `meine_forderung_*`.
+- **Sprung von außen:** `LocalZuVerein.current(VereinZiel.Veranstaltung(id))` (auch `Getraenke`,
+  `Veranstaltungen`) wechselt den Tab und öffnet das Ziel. `EventKarte` (mit `aufforderung`) ist für
+  Home gedacht.
+- Laden und Schreiben: `daten/Vereinsdaten.kt` (eigene Getränke und Name über `Startdaten`), Kern:
+  `kern/Veranstaltungen.kt`, `Getraenke.kt`, Forderungsarten aus `Merkmaltexte.kt` (Konto).
+  Kopf, Karte, Leerzustand und Fehlerzeile aus `bildschirme/Bausteine.kt`, die Glocke aus `nachrichten`.
+
 ## Tests
 
 - `:kern` (JUnit 5): ein generischer Lader für `packages/core/golden/*.json` (als Testressource
   eingebunden) prüft jede Datei auf Lesbarkeit und jeden Fall der portierten Funktionen
-  (`KernGoldenTest`, `StartseiteGoldenTest`, `KontoGoldenTest`), dazu `StartseiteTest`,
+  (`KernGoldenTest`, `StartseiteGoldenTest`, `KontoGoldenTest`, für den Verein `VereinGoldenTest`: alle `event*`,
+  `basket*`, `changeBasket`, `canVoidSelf`, `drinkBatchReport`, `formatCents`), dazu `StartseiteTest`,
   `AnmeldefehlerTest` mit den Fällen aus `anmeldefehler.test.ts`, `ProfilTest` (Fälle aus `schemas.test.ts` und
   `kontoloeschung.test.ts`) und `ZahlenTest`.
 - `:app` (JUnit 4, Robolectric, nur Variante `lokalDebug`): `StartLogikTest`, `PasswortlinkTest`
@@ -222,14 +257,16 @@ Für parallele Spuren gilt:
   (Schriften, Farbschema) `BildschirmfotoTest`, `HomeBildschirmfotoTest`, für das Konto
   `KontoLogikTest` (Fälle aus `KontoTests.swift`), `ErscheinungsbildSpeicherTest` und `KontoBildfotoTest`, für Plätze
   `PlaetzeLogikTest`, `PlaetzeModellTest` (gegen `PlatzAttrappe`, inkl. Drossel) und
-  `PlaetzeBildschirmfotoTest`.
+  `PlaetzeBildschirmfotoTest`, für den Verein `VereinLogikTest` (Texte, Decoding, Korb und Erinnerung)
+  und `VereinBildschirmfotoTest`.
 - Der Android Keystore fehlt in Robolectric. Die Tests des Sitzungsspeichers nehmen deshalb einen
   Software-Schlüssel; der echte Keystore läuft im Emulator-Rauchtest.
 
 ## Was fehlt
 
-- Screens: Onboarding, Verein, Verwaltung (Platzhalter), Widget (`:widgets`).
+- Screens: Onboarding, Verwaltung (Platzhalter), Widget (`:widgets`).
 - Konto: Push-Schalter „Mitteilungen aufs Handy“ (Push-Spur).
+- Home: „Demnächst im Verein“ (die Karte gibt es schon: `EventKarte(e, jetzt, aufforderung = true)`).
 - Push (FCM): Anmeldung des Tokens und Abmeldung beim Abmelden (`TODO` in `Sitzung.abmelden()`).
 - Prod-Werte (Supabase-URL und -Key), Release-Keystore, Fingerprints in `assetlinks.json`.
 - R8/Minify ist für Release noch aus (Regeln für supabase-kt/Ktor/Serialization fehlen).
