@@ -26,6 +26,15 @@ nichts ändert. Das letzte Bild ist der Rauchtest im Emulator: Variante `lokal`,
 `mitglied@tcm.local` gegen den lokalen Stack (vorher: `docs/rauchtest-anmelden.png`). Gebaut mit
 targetSdk 36, gelaufen auf dem API-35-Emulator.
 
+### Konto (Spur A4)
+
+| Konto, hell | Konto, dunkel | Ganze Seite | Meine Daten | Einwilligungen | Mandat | Passwort | Kündigung |
+|---|---|---|---|---|---|---|---|
+| ![Konto hell](docs/konto-hell.png) | ![Konto dunkel](docs/konto-dunkel.png) | ![Ganze Seite](docs/konto-ganz-hell.png) | ![Meine Daten](docs/konto-daten-dunkel.png) | ![Einwilligungen](docs/konto-einwilligungen-hell.png) | ![Mandat](docs/konto-bank-hell.png) | ![Passwort](docs/konto-passwort-hell.png) | ![Kündigung](docs/konto-kuendigung-hell.png) |
+
+Weitere Bilder (je hell und dunkel, mit Ladefehler, beim Laden) unter `docs/konto-*.png`, aus
+`KontoBildfotoTest` mit Beispieldaten ohne Netz.
+
 ## Voraussetzungen
 
 Gebaut mit AGP 9.4.1 (Kotlin ist darin eingebaut, kein Plugin `org.jetbrains.kotlin.android`),
@@ -161,23 +170,42 @@ Für parallele Spuren gilt:
 - **Kern** (`kern/`): Zeit (`berlinTime`, `dayTag`, `minutesOf`, `timeToMinutes`, `minutesToTime`,
   `dayLabel` …), Startseite (`upcomingBookings`, `bookingKicker`, `relativeTimeLabel`,
   `groupNotifications`, Zeitleiste …), Belegung (`canStartAt`, `freeCourtsNow`), `Geld.formatCents`,
-  `translateDbError`, Anmeldefehler, `zugangsGrund`, `sichererWeiterPfad`.
+  `translateDbError`, Anmeldefehler, `zugangsGrund`, `sichererWeiterPfad`, für das Konto
+  `memberProfileSchema` (`Profil.kt`), Kündigung (`Kontoloeschung.kt`), `CHARGE_KIND_LABEL` und
+  `merkmalBeschreibung` (`Merkmaltexte.kt`), `Zahlen.deutsch`.
+- **Konto** (`bildschirme/konto/`, wie `Bildschirme/Konto/` in iOS): Profilkopf, Abrechnung
+  (`my_charges` plus laufende Getränke, zurückgebuchte Lastschriften), Arbeitsdienst, Einstellungen
+  als Bottom Sheets: Meine Daten und Notfallkontakt (geprüft mit `kern/Profil.kt`, dann
+  `save_my_profile` nur mit geänderten Feldern bzw. `save_my_notfallkontakt`), Einwilligungen
+  (`member_attributes`, nur selbst pflegbare), Bankverbindung & Mandat (nur lesen, IBAN nur mit den
+  letzten vier Stellen), Passwort ändern (`Sitzung.passwortSpeichern(imKonto = true)`: ohne Sitzung
+  „neu anmelden“ statt „Link abgelaufen“), Mitgliedschaft kündigen beantragen
+  (`kern/Kontoloeschung.kt`). Erscheinungsbild System/Hell/Dunkel wirkt sofort und bleibt
+  gespeichert. Abmelden mit Rückfrage über `Sitzung.abmelden()`. Gespeichert meldet eine Snackbar.
+  Datenzugriff nur über RPCs (`daten/Kontodaten.kt`, Getränke und Arbeitsdienst aus
+  `daten/Startdaten.kt`). Stunden stehen deutsch mit Komma (`kern/Zahlen.kt`: „6,5 / 10 h“). Der
+  Inhalt liegt im `KontoModell` (ViewModel) und lädt beim Zurückkehren in den Tab still nach. Der Push-Schalter ist eine gesperrte Platzhalterzeile (`TODO` für die
+  Push-Spur), oben rechts die Glocke aus `bildschirme/nachrichten`.
 
 ## Tests
 
 - `:kern` (JUnit 5): ein generischer Lader für `packages/core/golden/*.json` (als Testressource
   eingebunden) prüft jede Datei auf Lesbarkeit und jeden Fall der portierten Funktionen
-  (`KernGoldenTest`, `StartseiteGoldenTest`), dazu `StartseiteTest` und `AnmeldefehlerTest` mit den Fällen aus `anmeldefehler.test.ts`.
+  (`KernGoldenTest`, `StartseiteGoldenTest`, `KontoGoldenTest`), dazu `StartseiteTest`,
+  `AnmeldefehlerTest` mit den Fällen aus `anmeldefehler.test.ts`, `ProfilTest` (Fälle aus `schemas.test.ts` und
+  `kontoloeschung.test.ts`) und `ZahlenTest`.
 - `:app` (JUnit 4, Robolectric, nur Variante `lokalDebug`): `StartLogikTest`, `PasswortlinkTest`
   (Fälle aus `apps/mobile/src/lib/passwortlink.test.ts`), `PasswortAblaufTest`, `UmgebungTest`,
   `SitzungsspeicherTest` (Verschlüsselung, Unlesbares, Löschen), `FehlerformTest`, `StartdatenTest`, `HomeLogikTest`, `ThemeTest`
-  (Schriften, Farbschema) `BildschirmfotoTest` und `HomeBildschirmfotoTest`.
+  (Schriften, Farbschema) `BildschirmfotoTest`, `HomeBildschirmfotoTest`, für das Konto
+  `KontoLogikTest` (Fälle aus `KontoTests.swift`), `ErscheinungsbildSpeicherTest` und `KontoBildfotoTest`.
 - Der Android Keystore fehlt in Robolectric. Die Tests des Sitzungsspeichers nehmen deshalb einen
   Software-Schlüssel; der echte Keystore läuft im Emulator-Rauchtest.
 
 ## Was fehlt
 
-- Screens: Onboarding, Plätze, Verein, Konto, Verwaltung (Platzhalter), Widget (`:widgets`).
+- Screens: Onboarding, Plätze, Verein, Verwaltung (Platzhalter), Widget (`:widgets`).
+- Konto: Push-Schalter „Mitteilungen aufs Handy“ (Push-Spur).
 - Push (FCM): Anmeldung des Tokens und Abmeldung beim Abmelden (`TODO` in `Sitzung.abmelden()`).
 - Prod-Werte (Supabase-URL und -Key), Release-Keystore, Fingerprints in `assetlinks.json`.
 - R8/Minify ist für Release noch aus (Regeln für supabase-kt/Ktor/Serialization fehlen).
