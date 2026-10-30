@@ -2,6 +2,8 @@ package de.tcmuckensturm.app.bildschirme
 
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -103,9 +105,15 @@ class BildschirmfotoTest {
         )
     }
 
-    @Test
-    fun tabsHell() = foto("tabs-hell", dunkel = false) { HauptTabsInhalt(verwaltungSichtbar = true) }
+    /** Ohne Sitzung: die Bildschirme der Tabs zeichnen im Vorschaumodus, ohne Netz. */
+    @Composable
+    private fun Tabs() = CompositionLocalProvider(LocalInspectionMode provides true) {
+        HauptTabsInhalt(verwaltungSichtbar = true)
+    }
 
     @Test
-    fun tabsDunkel() = foto("tabs-dunkel", dunkel = true) { HauptTabsInhalt(verwaltungSichtbar = true) }
+    fun tabsHell() = foto("tabs-hell", dunkel = false) { Tabs() }
+
+    @Test
+    fun tabsDunkel() = foto("tabs-dunkel", dunkel = true) { Tabs() }
 }

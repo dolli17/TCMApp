@@ -12,6 +12,14 @@ unverändert, bis diese App fertig ist. Web und Supabase bleiben.
 |---|---|---|---|
 | ![Anmeldefehler](docs/anmelden-fehler.png) | ![Passwort vergessen](docs/passwort-vergessen.png) | ![Passwort festlegen](docs/passwort-setzen.png) | ![Rauchtest](docs/rauchtest-angemeldet.png) |
 
+### Home, Glocke, Neuigkeiten
+
+| Home, hell | Home, dunkel | Leer | Fehler | Neuigkeiten | Glocke |
+|---|---|---|---|---|---|
+| ![Home hell](docs/home-hell.png) | ![Home dunkel](docs/home-dunkel.png) | ![Home leer](docs/home-leer.png) | ![Home Fehler](docs/home-fehler.png) | ![Neuigkeiten](docs/neuigkeiten-dunkel.png) | ![Glocke](docs/glocke-hell.png) |
+
+Mit Beispieldaten (`HomeBildschirmfotoTest`, `Beispiele`), JETZT ist Montag, 28.09.2026, 14:00.
+
 Die Bilder bis auf das letzte entstehen ohne Gerät (Robolectric + Roborazzi, `BildschirmfotoTest`).
 Die Anmeldeseiten sind wie in iOS und Expo immer dunkel; „hell“ zeigt, dass ein helles System daran
 nichts ändert. Das letzte Bild ist der Rauchtest im Emulator: Variante `lokal`, angemeldet als
@@ -143,24 +151,33 @@ Für parallele Spuren gilt:
   Quellverzeichnis eingebunden, nicht kopiert), Hell/Dunkel/System in einem DataStore
   (`erscheinungsbild`), Barlow und Barlow Semi Condensed unter `res/font` (Lizenz:
   `assets/lizenzen/OFL-Barlow.txt`).
+- **Home** (`bildschirme/home`, `bildschirme/nachrichten`, `daten/Startdaten.kt`) wie iOS: Kopf mit
+  Name, Glocke (Zähler, Blatt, gelesen markieren) und Avatar, „Als Nächstes“, Schnellaktionen,
+  „Jetzt frei“ mit Zeitleiste, offene Spiele, „Dein Stand“ (Getränke, Arbeitsdienst), Neuigkeiten
+  der letzten 7 Tage, Bildschirm „Neuigkeiten“, Herunterziehen zum Aktualisieren. Jeder Abschnitt
+  lädt für sich (`Abschnitt`), Texte als reine Funktionen in `HomeLogik`. „Demnächst im Verein“
+  fehlt noch (braucht die Veranstaltungen aus der Verein-Spur); Getränke und Veranstaltungen führen
+  bis dahin auf den Tab Verein.
 - **Kern** (`kern/`): Zeit (`berlinTime`, `dayTag`, `minutesOf`, `timeToMinutes`, `minutesToTime`,
-  `dayLabel` …), `translateDbError`, Anmeldefehler, `zugangsGrund`, `sichererWeiterPfad`.
+  `dayLabel` …), Startseite (`upcomingBookings`, `bookingKicker`, `relativeTimeLabel`,
+  `groupNotifications`, Zeitleiste …), Belegung (`canStartAt`, `freeCourtsNow`), `Geld.formatCents`,
+  `translateDbError`, Anmeldefehler, `zugangsGrund`, `sichererWeiterPfad`.
 
 ## Tests
 
 - `:kern` (JUnit 5): ein generischer Lader für `packages/core/golden/*.json` (als Testressource
   eingebunden) prüft jede Datei auf Lesbarkeit und jeden Fall der portierten Funktionen
-  (`KernGoldenTest`), dazu `AnmeldefehlerTest` mit den Fällen aus `anmeldefehler.test.ts`.
+  (`KernGoldenTest`, `StartseiteGoldenTest`), dazu `StartseiteTest` und `AnmeldefehlerTest` mit den Fällen aus `anmeldefehler.test.ts`.
 - `:app` (JUnit 4, Robolectric, nur Variante `lokalDebug`): `StartLogikTest`, `PasswortlinkTest`
   (Fälle aus `apps/mobile/src/lib/passwortlink.test.ts`), `PasswortAblaufTest`, `UmgebungTest`,
-  `SitzungsspeicherTest` (Verschlüsselung, Unlesbares, Löschen), `FehlerformTest`, `ThemeTest`
-  (Schriften, Farbschema) und `BildschirmfotoTest`.
+  `SitzungsspeicherTest` (Verschlüsselung, Unlesbares, Löschen), `FehlerformTest`, `StartdatenTest`, `HomeLogikTest`, `ThemeTest`
+  (Schriften, Farbschema) `BildschirmfotoTest` und `HomeBildschirmfotoTest`.
 - Der Android Keystore fehlt in Robolectric. Die Tests des Sitzungsspeichers nehmen deshalb einen
   Software-Schlüssel; der echte Keystore läuft im Emulator-Rauchtest.
 
 ## Was fehlt
 
-- Screens: Onboarding, Home, Plätze, Verein, Konto, Verwaltung (Platzhalter), Widget (`:widgets`).
+- Screens: Onboarding, Plätze, Verein, Konto, Verwaltung (Platzhalter), Widget (`:widgets`).
 - Push (FCM): Anmeldung des Tokens und Abmeldung beim Abmelden (`TODO` in `Sitzung.abmelden()`).
 - Prod-Werte (Supabase-URL und -Key), Release-Keystore, Fingerprints in `assetlinks.json`.
 - R8/Minify ist für Release noch aus (Regeln für supabase-kt/Ktor/Serialization fehlen).
