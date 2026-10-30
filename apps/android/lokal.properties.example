@@ -1,0 +1,7 @@
+# Kopie nach lokal.properties (gitignored). Werte fuer die Variante "lokal":
+# der lokale Supabase-Stack (pnpm db:start), Schluessel aus `supabase status`
+# bzw. apps/mobile/.env (EXPO_PUBLIC_SUPABASE_ANON_KEY).
+#
+# Der Emulator erreicht den Rechner unter 10.0.2.2, nicht unter 127.0.0.1.
+supabase.url=http://10.0.2.2:54321
+supabase.key=sb_publishable_...

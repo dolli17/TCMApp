@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- brand aus packages/ui/src/tokens.ts (wie Markenblau in der iOS-App) -->
+    <color name="markenblau">#1466A8</color>
+</resources>

@@ -18,6 +18,9 @@ export default tseslint.config(
       "supabase/.branches/**",
       // Build-Ausgabe der iOS-App (mit den Paket-Checkouts von supabase-swift), gitignored.
       "apps/ios/build/**",
+      // Build-Ausgabe der Android-App (Gradle-Testberichte mit JavaScript), gitignored.
+      "apps/android/**/build/**",
+      "apps/android/.gradle/**",
     ],
   },
   js.configs.recommended,

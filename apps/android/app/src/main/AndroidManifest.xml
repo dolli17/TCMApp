@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+        allowBackup aus: siehe res/xml/sicherung.xml. Netzwerk: nur https,
+        ausser in der Variante lokal (res/xml/netzwerk.xml).
+    -->
+    <application
+        android:name=".TcmApp"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/sicherung"
+        android:fullBackupContent="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/netzwerk"
+        android:supportsRtl="false"
+        android:theme="@style/Theme.TCM">
+
+        <activity
+            android:name=".HauptActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+                App Links: der Link aus der Einladungs- und Passwortmail
+                (APP_LINK_PFADE in packages/core/src/applinks.ts). Bestaetigt
+                wird die Domain ueber /.well-known/assetlinks.json im Web,
+                sobald dort die Fingerabdruecke stehen (ANDROID_APP_FINGERPRINTS).
+            -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="app.tennisclub-muckensturm.de" />
+                <data android:host="dev.tennisclub-muckensturm.de" />
+                <data android:path="/passwort-setzen" />
+                <data android:pathPrefix="/passwort-setzen/" />
+            </intent-filter>
+
+            <!-- Rueckfall ohne Webadresse (lokal) und fuer Widgets: das eigene Schema je Variante -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="${urlSchema}" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

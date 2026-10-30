@@ -31,6 +31,7 @@ Die Arbeit läuft in parallelen Branches mit getrennten Bereichen:
 | N1 Grundlagen | `chore/native-grundlagen` | dieser Fahrplan, API-Vertrag, Golden Files, Token-Generator. Kein App-Code. |
 | N2 iOS-Gerüst | `feature/ios-geruest` | `apps/ios`: Projekt, Fundament (Phase B iOS) |
 | N3 Universal Links | `feature/universal-links` | `apps/web` `.well-known` (`apple-app-site-association`, `assetlinks.json`), Teil von Phase A |
+| A1 Android-Gerüst | `feature/android-geruest` | `apps/android`: Gradle-Projekt (`:app`, `:kern`), Fundament (Phase B Android), Anmeldung und Kein Zugang, Tabs als Platzhalter. Einzelheiten in [`apps/android/README.md`](../apps/android/README.md). |
 | N6 Backend-RPCs | `feature/app-rpcs` | `supabase/migrations`, Tests und API-Vertrag: Ersatz der Tabellenzugriffe, Push-Anbieter (Phase A). Einzige Spur mit Migrationen. |
 
 Weitere Spuren (Android-Gerüst, Screens) folgen nach den Phasen unten. Migrationen gibt es dabei immer nur in **einer** Spur gleichzeitig (siehe `CONTRIBUTING.md`, „Parallel arbeiten“).
