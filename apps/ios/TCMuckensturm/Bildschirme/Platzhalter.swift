@@ -20,7 +20,7 @@ struct HauptTabs: View {
                 .tabItem { Label("Home", systemImage: "house") }
                 .tag(HauptTab.home)
             PlaetzeBildschirm()
-                .tabItem { Label("Plätze", systemImage: "sportscourt") }
+                .tabItem { Label("Plätze", systemImage: "tennis.racket") }
                 .tag(HauptTab.plaetze)
             VereinBildschirm()
                 .tabItem { Label("Verein", systemImage: "person.3") }
