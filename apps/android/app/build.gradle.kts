@@ -38,6 +38,15 @@ fun wert(property: String, umgebung: String): String? =
 
 val releaseKeystore = wert("tcm.keystore", "TCM_KEYSTORE")
 
+/**
+ * Firebase fuer Push (README, "Push"): Gradle-Property `tcm.firebase.<name>`,
+ * Umgebung `FIREBASE_<NAME>` oder `firebase.<name>` in lokal.properties.
+ * Leer heisst: kein Push, die App laeuft sonst normal. Die App-ID gilt je
+ * Paket, deshalb je Variante (`appId.lokal`, `appId.dev`, `appId.prod`).
+ */
+fun firebase(name: String, umgebung: String): String =
+    wert("tcm.firebase.$name", umgebung) ?: lokal.getProperty("firebase.$name") ?: ""
+
 android {
     namespace = "de.tcmuckensturm.app"
     compileSdk = 37
@@ -51,12 +60,17 @@ android {
         targetSdk = 36
         versionCode = providers.gradleProperty("tcm.versionCode").orNull?.toInt() ?: 1
         versionName = "0.1.0"
+
+        buildConfigField("String", "FIREBASE_PROJECT_ID", firebase("projectId", "FIREBASE_PROJECT_ID").alsBuildConfig())
+        buildConfigField("String", "FIREBASE_API_KEY", firebase("apiKey", "FIREBASE_API_KEY").alsBuildConfig())
+        buildConfigField("String", "FIREBASE_SENDER_ID", firebase("senderId", "FIREBASE_SENDER_ID").alsBuildConfig())
     }
 
     flavorDimensions += "umgebung"
     productFlavors {
         create("lokal") {
             dimension = "umgebung"
+            buildConfigField("String", "FIREBASE_APP_ID", firebase("appId.lokal", "FIREBASE_APP_ID_LOKAL").alsBuildConfig())
             applicationIdSuffix = ".lokal"
             resValue("string", "app_name", "TCM Lokal")
             buildConfigField("String", "SUPABASE_URL", lokal.getProperty("supabase.url", "").alsBuildConfig())
@@ -68,6 +82,7 @@ android {
         }
         create("dev") {
             dimension = "umgebung"
+            buildConfigField("String", "FIREBASE_APP_ID", firebase("appId.dev", "FIREBASE_APP_ID_DEV").alsBuildConfig())
             applicationIdSuffix = ".dev"
             resValue("string", "app_name", "TCM Dev")
             buildConfigField("String", "SUPABASE_URL", DevBackend.SUPABASE_URL.alsBuildConfig())
@@ -78,6 +93,7 @@ android {
         }
         create("prod") {
             dimension = "umgebung"
+            buildConfigField("String", "FIREBASE_APP_ID", firebase("appId.prod", "FIREBASE_APP_ID_PROD").alsBuildConfig())
             resValue("string", "app_name", "TC Muckensturm")
             // TODO: Werte des Prod-Projekts eintragen, sobald es die native App gibt (wie Prod.xcconfig).
             buildConfigField("String", "SUPABASE_URL", (if (prodGegenDev) DevBackend.SUPABASE_URL else "").alsBuildConfig())
@@ -110,6 +126,12 @@ android {
             isMinifyEnabled = false
             signingConfig = signingConfigs.findByName("release")
         }
+    }
+
+    bundle {
+        // Die App ist deutsch; der Datumswaehler stellt auf Deutsch um, auch auf einem englischen
+        // Telefon (OnboardingSchritte.kt). Dafuer muessen die deutschen Texte immer mitkommen.
+        language { enableSplit = false }
     }
 
     buildFeatures {
@@ -190,6 +212,9 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 
     testImplementation(libs.junit4)
     testImplementation(libs.robolectric)

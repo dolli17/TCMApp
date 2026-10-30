@@ -8,6 +8,8 @@
  *
  * Die Tab-Leiste haelt unten frei; oben (Statusleiste) sorgt jeder
  * Bildschirm selbst fuer Abstand, damit grosse Koepfe darunter zeichnen koennen.
+ *
+ * Angetippte Push-Nachrichten oeffnen hier ihr Ziel (push/PushNavigation.kt).
  */
 
 package de.tcmuckensturm.app.navigation
@@ -22,8 +24,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -31,6 +35,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import de.tcmuckensturm.app.TcmApp
 import de.tcmuckensturm.app.bildschirme.home.HomeGraph
 import de.tcmuckensturm.app.bildschirme.home.homeGraph
 import de.tcmuckensturm.app.bildschirme.konto.kontoGraph
@@ -40,6 +45,9 @@ import de.tcmuckensturm.app.bildschirme.verein.VereinTab
 import de.tcmuckensturm.app.bildschirme.verein.vereinGraph
 import de.tcmuckensturm.app.bildschirme.verwaltung.rememberVerwaltungSichtbar
 import de.tcmuckensturm.app.bildschirme.verwaltung.verwaltungGraph
+import de.tcmuckensturm.app.daten.Pushdaten
+import de.tcmuckensturm.app.push.PushZentrale
+import de.tcmuckensturm.app.push.PushZieleOeffnen
 import de.tcmuckensturm.app.start.LocalSitzung
 import de.tcmuckensturm.app.theme.TcmSchrift
 import de.tcmuckensturm.app.theme.TcmTheme
@@ -48,12 +56,19 @@ import de.tcmuckensturm.app.ui.tokens.Schrift
 @Composable
 fun HauptTabs() {
     val sitzung = LocalSitzung.current
-    HauptTabsInhalt(verwaltungSichtbar = rememberVerwaltungSichtbar(sitzung.client))
+    val push = TcmApp.aus(LocalContext.current).push
+    // Hat FCM inzwischen eine andere Marke vergeben, wird die neue angemeldet.
+    LaunchedEffect(sitzung) { push.auffrischen(Pushdaten(sitzung.client)) }
+    HauptTabsInhalt(verwaltungSichtbar = rememberVerwaltungSichtbar(sitzung.client), push = push)
 }
 
-/** Ohne Sitzung, damit die Screenshot-Tests die Leiste zeichnen koennen. */
+/** Ohne Sitzung, damit die Screenshot-Tests die Leiste zeichnen koennen; dort ohne Push. */
 @Composable
-fun HauptTabsInhalt(verwaltungSichtbar: Boolean, nav: NavHostController = rememberNavController()) {
+fun HauptTabsInhalt(
+    verwaltungSichtbar: Boolean,
+    nav: NavHostController = rememberNavController(),
+    push: PushZentrale? = null,
+) {
     val tabs = HauptTab.entries.filter { it != HauptTab.VERWALTUNG || verwaltungSichtbar }
     val eintrag by nav.currentBackStackEntryAsState()
     val ziel = eintrag?.destination
@@ -106,6 +121,8 @@ fun HauptTabsInhalt(verwaltungSichtbar: Boolean, nav: NavHostController = rememb
                     kontoGraph(nav)
                     verwaltungGraph(nav)
                 }
+                // Innerhalb von VereinTab: eine Veranstaltung oeffnet ueber LocalZuVerein ihr Detail.
+                if (push != null) PushZieleOeffnen(push, nav, zuTab)
             }
         }
     }

@@ -27,6 +27,8 @@ supabase = "3.8.0"
 ktor = "3.5.1"
 kotlinx-serialization = "1.11.0"
 kotlinx-coroutines = "1.11.0"
+# Push (FCM). 35.0.2 vom 15.10.2026; 35.1.0 ist juenger als zwei Wochen.
+firebase-bom = "35.0.2"
 
 junit4 = "4.13.2"
 junit-jupiter = "6.1.1"
@@ -63,6 +65,9 @@ supabase-postgrest = { module = "io.github.jan-tennert.supabase:postgrest-kt" }
 supabase-realtime = { module = "io.github.jan-tennert.supabase:realtime-kt" }
 supabase-functions = { module = "io.github.jan-tennert.supabase:functions-kt" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }

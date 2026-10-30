@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Ab Android 13; gefragt wird erst beim Schalter "Mitteilungen aufs Handy" (push/PushSchalter.kt) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!--
         allowBackup aus: siehe res/xml/sicherung.xml. Netzwerk: nur https,
@@ -17,6 +20,41 @@
         android:networkSecurityConfig="@xml/netzwerk"
         android:supportsRtl="false"
         android:theme="@style/Theme.TCM">
+
+        <!--
+            Push (push/PushFirebase.kt): FirebaseApp richtet TcmApp von Hand aus
+            BuildConfig ein, ohne google-services.json - deshalb kein
+            FirebaseInitProvider. Keine Marke vor dem Schalter (auto_init aus).
+            Zeigt das System eine Nachricht selbst (App im Hintergrund), nimmt
+            es Kanal, Symbol und Farbe von hier.
+        -->
+        <provider
+            android:name="com.google.firebase.provider.FirebaseInitProvider"
+            android:authorities="${applicationId}.firebaseinitprovider"
+            tools:node="remove" />
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="mitteilungen" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_mitteilung" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/markenblau" />
+
+        <service
+            android:name=".push.PushDienst"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
 
         <activity
             android:name=".HauptActivity"

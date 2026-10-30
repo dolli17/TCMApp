@@ -36,7 +36,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.AlertDialog
@@ -44,7 +43,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -78,6 +76,8 @@ import de.tcmuckensturm.app.bildschirme.leise
 import de.tcmuckensturm.app.bildschirme.nachrichten.Glocke
 import de.tcmuckensturm.app.navigation.HauptTab
 import de.tcmuckensturm.app.navigation.LocalZuTab
+import de.tcmuckensturm.app.push.PushSchalter
+import de.tcmuckensturm.app.push.PushSchalterAnsicht
 import de.tcmuckensturm.app.daten.Arbeitsdienst
 import de.tcmuckensturm.app.daten.EigenesGetraenk
 import de.tcmuckensturm.app.daten.Forderung
@@ -191,6 +191,7 @@ fun KontoBildschirm() {
                 link = { links.openUri(it) },
                 abmelden = { abmeldenFragen = true },
                 glocke = { Glocke(zuVeranstaltung = { zuTab(HauptTab.VEREIN) }) },
+                push = { PushSchalter(symbol = true) },
             )
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(Abstand.rand))
@@ -222,7 +223,7 @@ fun KontoBildschirm() {
             confirmButton = {
                 TextButton(onClick = {
                     abmeldenFragen = false
-                    // Sitzung.abmelden ist die eine Stelle (dort spaeter auch das Abmelden fuer Push).
+                    // Sitzung.abmelden ist die eine Stelle (dort auch das Abmelden fuer Push).
                     scope.launch { sitzung.abmelden() }
                 }) { Text("Abmelden", color = TcmTheme.farben.redInk) }
             },
@@ -244,6 +245,8 @@ fun KontoAnsicht(
     abmelden: () -> Unit,
     /** Rechts oben; im Betrieb die Glocke, in den Screenshot-Tests GlockeKnopf ohne Netz. */
     glocke: @Composable () -> Unit = {},
+    /** "Mitteilungen aufs Handy"; im Betrieb PushSchalter, in den Screenshot-Tests ohne Geraet. */
+    push: @Composable () -> Unit = { PushSchalterAnsicht(an = false, symbol = true) },
     jetzt: Instant = Instant.now(),
 ) {
     val f = TcmTheme.farben
@@ -269,7 +272,7 @@ fun KontoAnsicht(
         Profilkopf(d.profil, nochmal)
         Abrechnung(d.forderungen, d.getraenke, nochmal, jetzt)
         ArbeitsdienstKarte(d.dienst, nochmal)
-        Einstellungen(d, erscheinungsbild, oeffnen, erscheinungsbildWaehlen)
+        Einstellungen(d, erscheinungsbild, oeffnen, erscheinungsbildWaehlen, push)
         KontoGruppe(Modifier.padding(top = Abstand.s)) {
             // Datenschutz und Impressum liegen im Web; ohne Basisadresse (lokal) fehlen die Zeilen.
             if (datenschutz != null && impressum != null) {
@@ -464,6 +467,7 @@ private fun Einstellungen(
     erscheinungsbild: Erscheinungsbild,
     oeffnen: (KontoBlatt) -> Unit,
     erscheinungsbildWaehlen: (Erscheinungsbild) -> Unit,
+    push: @Composable () -> Unit,
 ) {
     KontoAbschnitt("Einstellungen")
     KontoGruppe {
@@ -477,7 +481,7 @@ private fun Einstellungen(
         KontoLinie()
         KontoEintrag("Bankverbindung & Mandat", BankSymbol) { oeffnen(KontoBlatt.BANK) }
         KontoLinie()
-        PushZeile()
+        push()
         KontoLinie()
         KontoEintrag("Passwort ändern", Icons.Outlined.Lock) { oeffnen(KontoBlatt.PASSWORT) }
         KontoLinie()
@@ -492,29 +496,5 @@ private fun Einstellungen(
                 wahl = erscheinungsbildWaehlen,
             )
         }
-    }
-}
-
-/**
- * "Mitteilungen aufs Handy" - noch ohne Funktion.
- *
- * TODO (Spur A6, Push): hier den Schalter einbauen wie App/PushSchalter.swift
- * der iOS-App (FCM-Token anmelden/abmelden, Erlaubnis POST_NOTIFICATIONS erst
- * beim Einschalten, Fehler als Satz darunter). Bis dahin steht die Zeile
- * gesperrt da, damit die Einstellungen schon ihre endgueltige Ordnung haben.
- */
-@Composable
-private fun PushZeile() {
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Symbolkachel(Icons.Outlined.Notifications)
-        Column(Modifier.weight(1f)) {
-            Text("Mitteilungen aufs Handy", style = TcmSchrift.text(Schrift.gewichtHalbfett, 15.5.sp), color = TcmTheme.farben.ink)
-            Leise("Kommt bald.")
-        }
-        Switch(checked = false, onCheckedChange = null, enabled = false)
     }
 }

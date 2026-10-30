@@ -14,6 +14,7 @@ import de.tcmuckensturm.app.daten.Forderung
 import de.tcmuckensturm.app.daten.MeinMandat
 import de.tcmuckensturm.app.daten.MeinProfil
 import de.tcmuckensturm.app.daten.MerkmalZeile
+import de.tcmuckensturm.app.push.PushSchalterAnsicht
 import de.tcmuckensturm.app.theme.Erscheinungsbild
 import de.tcmuckensturm.app.theme.TcmTheme
 import java.time.Instant
@@ -122,6 +123,7 @@ class KontoBildfotoTest {
             link = {},
             abmelden = {},
             glocke = { GlockeKnopf(2) {} },
+            push = { PushSchalterAnsicht(an = true, symbol = true) },
             jetzt = KontoBeispiel.jetzt,
         )
 
