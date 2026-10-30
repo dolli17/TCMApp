@@ -20,6 +20,19 @@ unverändert, bis diese App fertig ist. Web und Supabase bleiben.
 
 Mit Beispieldaten (`HomeBildschirmfotoTest`, `Beispiele`), JETZT ist Montag, 28.09.2026, 14:00.
 
+### Plätze
+
+| Freie Zeiten | Freie Zeiten, dunkel | Übersicht | Übersicht, dunkel | Buchen |
+|---|---|---|---|---|
+| ![Freie Zeiten hell](docs/plaetze-freie-zeiten-hell.png) | ![Freie Zeiten dunkel](docs/plaetze-freie-zeiten-dunkel.png) | ![Raster hell](docs/plaetze-raster-hell.png) | ![Raster dunkel](docs/plaetze-raster-dunkel.png) | ![Buchen hell](docs/plaetze-buchen-hell.png) |
+
+| Buchen, dunkel | Eigene Buchung | Eigene Buchung, dunkel | Mitspielen | Sperrung |
+|---|---|---|---|---|
+| ![Buchen dunkel](docs/plaetze-buchen-dunkel.png) | ![Eigene Buchung hell](docs/plaetze-eigene-buchung-hell.png) | ![Eigene Buchung dunkel](docs/plaetze-eigene-buchung-dunkel.png) | ![Mitspielen](docs/plaetze-mitspielen.png) | ![Sperrung](docs/plaetze-sperrung.png) |
+
+Beispieldaten aus `PlatzAttrappe` (`PlaetzeBildschirmfotoTest`), ohne Netz. Das Buchungsblatt
+erscheint in den Bildern ohne das Fenster des `ModalBottomSheet`.
+
 Die Bilder bis auf das letzte entstehen ohne Gerät (Robolectric + Roborazzi, `BildschirmfotoTest`).
 Die Anmeldeseiten sind wie in iOS und Expo immer dunkel; „hell“ zeigt, dass ein helles System daran
 nichts ändert. Das letzte Bild ist der Rauchtest im Emulator: Variante `lokal`, angemeldet als
@@ -167,9 +180,18 @@ Für parallele Spuren gilt:
   lädt für sich (`Abschnitt`), Texte als reine Funktionen in `HomeLogik`. „Demnächst im Verein“
   fehlt noch (braucht die Veranstaltungen aus der Verein-Spur); Getränke und Veranstaltungen führen
   bis dahin auf den Tab Verein.
+- **Plätze** (`bildschirme/plaetze`, `daten/Platzdaten.kt`, wie iOS): Tagwahl über `lead_days`,
+  Ansichten „Freie Zeiten“ und „Übersicht“ (Raster Plätze × Zeit, gemerkt), belegt/frei/eigene/
+  Sperre, Pull-to-refresh, Realtime-Kanal `plan-<datum>` auf `bookings` (höchstens ein Nachladen je
+  Sekunde) und Nachladen beim Zurückkommen in den Vordergrund. Buchungsblatt mit Art, Mitspielern
+  (Mitgliedersuche), Gästen, „Mitspieler gesucht“ und Kontingent; eigene Buchung (Mitspieler ändern,
+  stornieren mit Grund, Mitspielersuche, Serientermin absagen), Mitspielen; mit Platzrechten Sperren
+  und Umsetzen mit Rückfrage vor dem Verdrängen. Reine Ansichtslogik in `PlaetzeLogik.kt`.
 - **Kern** (`kern/`): Zeit (`berlinTime`, `dayTag`, `minutesOf`, `timeToMinutes`, `minutesToTime`,
   `dayLabel` …), Startseite (`upcomingBookings`, `bookingKicker`, `relativeTimeLabel`,
-  `groupNotifications`, Zeitleiste …), Belegung (`canStartAt`, `freeCourtsNow`), `Geld.formatCents`,
+  `groupNotifications`, `occupancyKind`, Zeitleiste …), Belegung (`canStartAt`, `freeCourtsNow`),
+  Platzplan (`freeSlotsOfDay`, `freeGaps`, `bookingActions`, `checkPlayers`, `umsetzZiele` …),
+  offene Spiele, `Geld.formatCents`,
   `translateDbError`, Anmeldefehler, `zugangsGrund`, `sichererWeiterPfad`, für das Konto
   `memberProfileSchema` (`Profil.kt`), Kündigung (`Kontoloeschung.kt`), `CHARGE_KIND_LABEL` und
   `merkmalBeschreibung` (`Merkmaltexte.kt`), `Zahlen.deutsch`.
@@ -198,13 +220,15 @@ Für parallele Spuren gilt:
   (Fälle aus `apps/mobile/src/lib/passwortlink.test.ts`), `PasswortAblaufTest`, `UmgebungTest`,
   `SitzungsspeicherTest` (Verschlüsselung, Unlesbares, Löschen), `FehlerformTest`, `StartdatenTest`, `HomeLogikTest`, `ThemeTest`
   (Schriften, Farbschema) `BildschirmfotoTest`, `HomeBildschirmfotoTest`, für das Konto
-  `KontoLogikTest` (Fälle aus `KontoTests.swift`), `ErscheinungsbildSpeicherTest` und `KontoBildfotoTest`.
+  `KontoLogikTest` (Fälle aus `KontoTests.swift`), `ErscheinungsbildSpeicherTest` und `KontoBildfotoTest`, für Plätze
+  `PlaetzeLogikTest`, `PlaetzeModellTest` (gegen `PlatzAttrappe`, inkl. Drossel) und
+  `PlaetzeBildschirmfotoTest`.
 - Der Android Keystore fehlt in Robolectric. Die Tests des Sitzungsspeichers nehmen deshalb einen
   Software-Schlüssel; der echte Keystore läuft im Emulator-Rauchtest.
 
 ## Was fehlt
 
-- Screens: Onboarding, Plätze, Verein, Verwaltung (Platzhalter), Widget (`:widgets`).
+- Screens: Onboarding, Verein, Verwaltung (Platzhalter), Widget (`:widgets`).
 - Konto: Push-Schalter „Mitteilungen aufs Handy“ (Push-Spur).
 - Push (FCM): Anmeldung des Tokens und Abmeldung beim Abmelden (`TODO` in `Sitzung.abmelden()`).
 - Prod-Werte (Supabase-URL und -Key), Release-Keystore, Fingerprints in `assetlinks.json`.
