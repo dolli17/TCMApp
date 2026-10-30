@@ -192,7 +192,7 @@ final class KontoTests: XCTestCase {
         XCTAssertEqual(KontoLogik.dienstText(fertig), "Erledigt – danke für deinen Einsatz.")
         XCTAssertEqual(KontoLogik.dienstAnteil(fertig), 1)
         let ohne = Arbeitsdienst(year: 2026, requiredHours: 0, completedHours: 2.5, missingHours: 0)
-        XCTAssertEqual(KontoLogik.dienstWert(ohne), "2.5 h")
+        XCTAssertEqual(KontoLogik.dienstWert(ohne), "2,5 h")
         XCTAssertEqual(KontoLogik.dienstText(ohne), "Für dieses Jahr ist kein Arbeitsdienst vorgesehen.")
     }
 
