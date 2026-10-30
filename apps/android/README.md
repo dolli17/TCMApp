@@ -192,7 +192,7 @@ die alte abgemeldet. `Sitzung.abmelden()` meldet vorher `remove_push_token` und 
 FCM. Der Kanal heißt „Mitteilungen“ (`mitteilungen`, im Manifest als Standard für FCM). Ist die App im
 Hintergrund, zeigt das System die Nachricht; ist sie vorne, zeigt `PushDienst` sie selbst. Ein Tippen
 öffnet `HauptActivity` mit `ziel`/`kind`/`event_id` aus `data`; `push/PushZiel.kt` macht daraus einen
-Tab oder „Neuigkeiten“ (Logik wie `PushZiel.swift`), `PushNavigation.kt` öffnet es, sobald die Tabs stehen.
+Tab, „Neuigkeiten“ oder das Detail einer Veranstaltung (Logik wie `PushZiel.swift`), `PushNavigation.kt` öffnet es, sobald die Tabs stehen.
 
 ## Aufbau
 

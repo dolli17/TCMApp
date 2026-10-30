@@ -121,8 +121,9 @@ fun HauptTabsInhalt(
                     kontoGraph(nav)
                     verwaltungGraph(nav)
                 }
+                // Innerhalb von VereinTab: eine Veranstaltung oeffnet ueber LocalZuVerein ihr Detail.
+                if (push != null) PushZieleOeffnen(push, nav, zuTab)
             }
-            if (push != null) PushZieleOeffnen(push, nav, zuTab)
         }
     }
 }

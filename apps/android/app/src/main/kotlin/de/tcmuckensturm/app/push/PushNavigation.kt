@@ -8,6 +8,7 @@
  *
  * Neuigkeiten oeffnen im Tab Home den Bildschirm "Neuigkeiten" (statt eines
  * Blatts wie in iOS - so fuehrt die Zurueck-Geste dorthin zurueck, wo man war).
+ * Eine Veranstaltung oeffnet im Tab Verein ihr Detail (LocalZuVerein).
  */
 
 package de.tcmuckensturm.app.push
@@ -18,11 +19,14 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import de.tcmuckensturm.app.bildschirme.home.Nachrichten
+import de.tcmuckensturm.app.bildschirme.verein.LocalZuVerein
+import de.tcmuckensturm.app.bildschirme.verein.VereinZiel
 import de.tcmuckensturm.app.navigation.HauptTab
 
-/** In HauptTabs, nach dem NavHost. */
+/** In HauptTabs, nach dem NavHost und unter VereinTab. */
 @Composable
 fun PushZieleOeffnen(zentrale: PushZentrale, nav: NavHostController, zuTab: (HauptTab) -> Unit) {
+    val zuVerein = LocalZuVerein.current
     val ziel by zentrale.offenesZiel.collectAsStateWithLifecycle()
     LaunchedEffect(ziel) {
         val z = ziel ?: return@LaunchedEffect
@@ -32,8 +36,7 @@ fun PushZieleOeffnen(zentrale: PushZentrale, nav: NavHostController, zuTab: (Hau
                 zuTab(HauptTab.HOME)
                 nav.navigate(Nachrichten) { launchSingleTop = true }
             }
-            // TODO (Verein-Spur): direkt das Detail der Veranstaltung, sobald der Verein-Graph ein Ziel dafuer hat.
-            is PushZiel.Veranstaltung -> zuTab(HauptTab.VEREIN)
+            is PushZiel.Veranstaltung -> zuVerein(VereinZiel.Veranstaltung(z.id))
             is PushZiel.Tab -> zuTab(z.tab)
         }
     }
