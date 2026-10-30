@@ -11,10 +11,10 @@
 
 package de.tcmuckensturm.app.daten
 
-import de.tcmuckensturm.kern.BelegterSlot
-import de.tcmuckensturm.kern.Belegungsmerkmale
 import de.tcmuckensturm.kern.Benachrichtigungsdaten
+import de.tcmuckensturm.kern.BuchungsSlot
 import de.tcmuckensturm.kern.Getraenkekauf
+import de.tcmuckensturm.kern.PlanSlot
 import de.tcmuckensturm.kern.Zeitraum
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
@@ -69,20 +69,20 @@ data class OffenesSpiel(
     @SerialName("bin_dabei") val binDabei: Boolean? = null,
 ) : Zeitraum
 
-/** Eine Belegung aus day_schedule. */
+/** Eine Belegung aus day_schedule (Home und Plaetze). */
 @Serializable
 data class TagesBelegung(
-    @SerialName("booking_id") val bookingId: String,
+    @SerialName("booking_id") override val bookingId: String,
     @SerialName("court_id") override val courtId: String,
     @SerialName("starts_at") override val startsAt: String,
     @SerialName("ends_at") override val endsAt: String,
     override val kind: String? = null,
     @SerialName("series_id") override val seriesId: String? = null,
     @SerialName("type_code") val typeCode: String? = null,
-    @SerialName("type_name") val typeName: String? = null,
-    val title: String? = null,
+    @SerialName("type_name") override val typeName: String? = null,
+    override val title: String? = null,
     @SerialName("owner_member_id") val ownerMemberId: String? = null,
-    @SerialName("owner_name") val ownerName: String? = null,
+    @SerialName("owner_name") override val ownerName: String? = null,
     @SerialName("is_own") override val isOwn: Boolean? = null,
     @SerialName("bin_dabei") val binDabei: Boolean? = null,
     @SerialName("partner_wanted") override val partnerWanted: Boolean? = null,
@@ -90,7 +90,7 @@ data class TagesBelegung(
     val players: List<String?>? = null,
     @SerialName("player_member_ids") val playerMemberIds: List<String?>? = null,
     @SerialName("guest_names") val guestNames: List<String?>? = null,
-) : BelegterSlot, Belegungsmerkmale
+) : PlanSlot, BuchungsSlot
 
 /** Die eine Zeile aus booking_settings. */
 @Serializable
