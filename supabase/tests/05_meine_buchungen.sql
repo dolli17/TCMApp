@@ -84,14 +84,9 @@ begin
                                array[b.member_id, c.member_id]) into v_id;
   perform set_config('role', 'postgres', true);
 
-  perform tests.act_as(c.auth_id);
-  return next throws_ok(
-    format('select public.leave_booking(%L)', v_id),
-    '23514', 'Ohne dich wären es zu wenige Spieler. Bitte sag dem Bucher Bescheid.',
-    'Wer die Untergrenze reissen wuerde, kommt nicht raus');
-  perform set_config('role', 'postgres', true);
-
-  -- Ein vierter Spieler macht den Weg frei.
+  -- Unter der Untergrenze kommt man seit dem Security-Audit (3.2) trotzdem
+  -- raus; das prueft 43_security_audit.sql. Hier der gewoehnliche Fall: ein
+  -- vierter Spieler, dann reicht es auch ohne den, der geht.
   perform tests.act_as(a.auth_id);
   perform public.update_booking_players(v_id, array[b.member_id, c.member_id], array['Gast']);
   perform set_config('role', 'postgres', true);
@@ -179,6 +174,12 @@ begin
   select * into c from tests.fixture_user() limit 1;
   perform tests.act_as(a.auth_id);
   select public.create_booking(v_court, s1, 'einzel', array[b.member_id]) into v_id;
+  perform set_config('role', 'postgres', true);
+  -- Die Eintragung ist schon beim Geraet angekommen. Sonst hoebe der Tausch
+  -- sie still auf (Security-Audit 3.1, siehe 43_security_audit.sql).
+  update public.notifications set pushed_at = now()
+   where member_id = b.member_id and kind = 'booking_added';
+  perform tests.act_as(a.auth_id);
   perform public.update_booking_players(v_id, array[c.member_id]);
   perform set_config('role', 'postgres', true);
 

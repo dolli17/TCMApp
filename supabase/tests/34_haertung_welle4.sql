@@ -90,7 +90,7 @@ begin
   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'private' and has_function_privilege('authenticated', p.oid, 'execute');
   return next is(v_auth,
-    'can_view_member, current_member_id, darf_plaetze, has_full_rights, has_role, is_admin, is_kiosk, is_member',
+    'buchung_sichtbar, can_view_member, current_member_id, darf_plaetze, has_full_rights, has_role, is_admin, is_kiosk, is_member',
     'authenticated fuehrt nur aus, was Policies und Rechtepruefung brauchen');
 
   select string_agg(p.proname, ', ' order by p.proname) into v_anon
