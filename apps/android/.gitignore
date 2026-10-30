@@ -1,0 +1,15 @@
+# Gradle und Android Studio
+.gradle/
+.kotlin/
+build/
+.idea/
+*.iml
+local.properties
+captures/
+
+# Lokale Werte (siehe lokal.properties.example)
+lokal.properties
+
+# Signierschluessel nie einchecken (Release-Signing: README.md)
+*.keystore
+*.jks

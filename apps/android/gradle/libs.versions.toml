@@ -1,0 +1,93 @@
+# Alle Abhaengigkeiten der Android-App, exakt gepinnt.
+#
+# Regeln (apps/android/README.md):
+# - Neue Versionen erst, wenn sie mindestens zwei Wochen alt sind.
+# - compileSdk ist 35 (nur dieses SDK ist installiert). AndroidX-Bibliotheken
+#   tragen in ihrer AAR ein minCompileSdk; hoeher als 35 bricht der Build ab
+#   (checkAarMetadata). Deshalb stehen einige AndroidX-Versionen bewusst eine
+#   Stufe unter der neuesten - steigt compileSdk, koennen sie mit.
+
+[versions]
+# AGP 9 verlangt Build-Tools 36 und laedt sie selbst nach - hier ist nur 35.0.0 installiert.
+agp = "8.13.2"
+kotlin = "2.4.21"
+
+# Compose 1.11.4 - die BOM danach (2026.08.00) verlangt compileSdk 37.
+compose-bom = "2026.06.01"
+# 1.11 verlangt compileSdk 36
+activity-compose = "1.10.1"
+# 1.17 verlangt compileSdk 36
+core-ktx = "1.16.0"
+# 2.11 verlangt compileSdk 37
+lifecycle = "2.10.0"
+# 2.10 verlangt compileSdk 37
+navigation-compose = "2.9.8"
+datastore = "1.2.1"
+# Nur fuer supabase-kt (Custom Tabs beim OAuth, das die App nicht nutzt).
+# supabase-kt zieht 1.10.0, das compileSdk 36 verlangt; 1.8.0 hat dieselbe API.
+androidx-browser = "1.8.0"
+
+supabase = "3.8.0"
+# Wie supabase-kt 3.8.0 selbst
+ktor = "3.5.1"
+kotlinx-serialization = "1.11.0"
+kotlinx-coroutines = "1.11.0"
+
+junit4 = "4.13.2"
+junit-jupiter = "6.1.1"
+robolectric = "4.17"
+roborazzi = "1.76.0"
+androidx-test-core = "1.7.0"
+androidx-test-ext-junit = "1.3.0"
+turbine = "1.2.1"
+
+[libraries]
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "core-ktx" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+androidx-browser = { module = "androidx.browser:browser", version.ref = "androidx-browser" }
+
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
+compose-ui = { module = "androidx.compose.ui:ui" }
+compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+compose-material3 = { module = "androidx.compose.material3:material3" }
+# Nur der Grundsatz der Symbole (Home, Person, ...); "extended" ist zu gross.
+compose-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
+
+supabase-bom = { module = "io.github.jan-tennert.supabase:bom", version.ref = "supabase" }
+supabase-auth = { module = "io.github.jan-tennert.supabase:auth-kt" }
+supabase-postgrest = { module = "io.github.jan-tennert.supabase:postgrest-kt" }
+supabase-realtime = { module = "io.github.jan-tennert.supabase:realtime-kt" }
+supabase-functions = { module = "io.github.jan-tennert.supabase:functions-kt" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+
+junit4 = { module = "junit:junit", version.ref = "junit4" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-jupiter" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
+roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
+roborazzi-junit-rule = { module = "io.github.takahirom.roborazzi:roborazzi-junit-rule", version.ref = "roborazzi" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-ext-junit" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
