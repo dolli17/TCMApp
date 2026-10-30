@@ -70,20 +70,22 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import de.tcmuckensturm.app.bildschirme.Avatar
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
 import de.tcmuckensturm.app.bildschirme.GrosserKopf
+import de.tcmuckensturm.app.bildschirme.Hauptknopf
+import de.tcmuckensturm.app.bildschirme.Hinweis
+import de.tcmuckensturm.app.bildschirme.ImVordergrund
 import de.tcmuckensturm.app.bildschirme.karte
 import de.tcmuckensturm.app.bildschirme.konto.KontoGruppe
-import de.tcmuckensturm.app.bildschirme.konto.KontoHinweis
 import de.tcmuckensturm.app.bildschirme.konto.KontoLinie
 import de.tcmuckensturm.app.bildschirme.konto.KontoSegmente
 import de.tcmuckensturm.app.bildschirme.nachrichten.Glocke
-import de.tcmuckensturm.app.bildschirme.plaetze.Hauptknopf
 import de.tcmuckensturm.app.bildschirme.plaetze.PlaetzeLogik
 import de.tcmuckensturm.app.bildschirme.verein.LocalZuVerein
 import de.tcmuckensturm.app.bildschirme.verein.VereinZiel
 import de.tcmuckensturm.app.daten.Serie
 import de.tcmuckensturm.app.daten.VerwalteterPlatz
-import de.tcmuckensturm.app.daten.Verwaltungsdaten
 import de.tcmuckensturm.app.daten.VerwaltungsStand
+import de.tcmuckensturm.app.daten.Verwaltungsdaten
+import de.tcmuckensturm.app.daten.name
 import de.tcmuckensturm.app.navigation.HauptTab
 import de.tcmuckensturm.app.navigation.LocalZuTab
 import de.tcmuckensturm.app.start.LocalSitzung
@@ -109,7 +111,7 @@ fun VerwaltungBildschirm() {
         m = m,
         webLink = { sitzung.umgebung.webLink(it) },
         oeffnen = { oeffneImBrowser(context, it, farbe, dunkel) },
-        glocke = { Glocke(zuVeranstaltung = { zuVerein(VereinZiel.Veranstaltung(it)) }) },
+        glocke = { Glocke() },
     )
 
     m.blatt?.let { VerwaltungBlattFenster(m, it) }
@@ -138,13 +140,7 @@ fun VerwaltungInhalt(
             ) {
                 item(key = "kopf") {
                     Rand {
-                        GrosserKopf("Verwaltung") {
-                            glocke()
-                            val ich = m.ich
-                            if (ich?.memberId != null) {
-                                Avatar(PlaetzeLogik.initialen(ich.firstName, ich.lastName)) { zuTab(HauptTab.KONTO) }
-                            }
-                        }
+                        GrosserKopf("Verwaltung", name = m.ich?.name, glocke = glocke)
                     }
                 }
                 m.fehler?.let { text ->
@@ -163,7 +159,7 @@ fun VerwaltungInhalt(
                             KontoSegmente(
                                 optionen = VerwaltungAnsicht.entries.map { it to it.label },
                                 gewaehlt = m.ansicht,
-                                modifier = Modifier.semantics { contentDescription = "Plätze und Serien" },
+                                beschriftung = "Plätze und Serien",
                                 wahl = m::waehle,
                             )
                         }
@@ -197,7 +193,7 @@ private fun Inhalt(
         Hauptknopf(if (serien) "+ Serie anlegen" else "+ Plätze sperren") {
             m.blatt = if (serien) VerwaltungBlatt.SerieAnlegen else VerwaltungBlatt.Sperren
         }
-        m.meldung?.let { KontoHinweis(it.meldung, ok = it.ok) }
+        m.meldung?.let { Hinweis(it.meldung, ok = it.ok) }
         if (serien) {
             VerwaltungGruppenkopf("Laufend", neben = "${s.serien.size} Serien")
             SerienListe(s.serien) { m.blatt = VerwaltungBlatt.SerieAendern(it) }
@@ -438,26 +434,5 @@ fun oeffneImBrowser(context: Context, url: String, leiste: Color, dunkel: Boolea
         } catch (_: ActivityNotFoundException) {
             // Kein Browser auf dem Geraet: dann bleibt es beim Satz auf der Karte.
         }
-    }
-}
-
-/** Nach dem Zurueckkehren aus dem Hintergrund (ON_STOP, dann ON_START) - auch aus dem Custom Tab. */
-@Composable
-private fun ImVordergrund(aktion: () -> Unit) {
-    val besitzer = LocalLifecycleOwner.current
-    DisposableEffect(besitzer) {
-        var warWeg = false
-        val beobachter = LifecycleEventObserver { _, ereignis ->
-            when (ereignis) {
-                Lifecycle.Event.ON_STOP -> warWeg = true
-                Lifecycle.Event.ON_START -> if (warWeg) {
-                    warWeg = false
-                    aktion()
-                }
-                else -> Unit
-            }
-        }
-        besitzer.lifecycle.addObserver(beobachter)
-        onDispose { besitzer.lifecycle.removeObserver(beobachter) }
     }
 }

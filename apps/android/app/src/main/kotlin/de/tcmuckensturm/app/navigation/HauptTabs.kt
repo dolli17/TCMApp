@@ -14,8 +14,16 @@
 
 package de.tcmuckensturm.app.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -110,16 +118,27 @@ fun HauptTabsInhalt(
             // Korb und Reiter des Vereins ueberleben Tab-Wechsel; die Erinnerung an den Korb kommt von hier.
             val vereinOffen = ziel?.hierarchy?.any { it.hasRoute(VereinGraph::class) } == true
             VereinTab(nav, vereinOffen, zuTab) {
-                NavHost(
-                    navController = nav,
-                    startDestination = HomeGraph,
-                    modifier = Modifier.padding(bottom = innen.calculateBottomPadding()),
-                ) {
-                    homeGraph(nav)
-                    plaetzeGraph(nav)
-                    vereinGraph(nav)
-                    kontoGraph(nav)
-                    verwaltungGraph(nav)
+                Box(Modifier.fillMaxSize()) {
+                    NavHost(
+                        navController = nav,
+                        startDestination = HomeGraph,
+                        // consumeWindowInsets: Was die Tab-Leiste schon freihaelt, zieht imePadding() darunter ab.
+                        modifier = Modifier.padding(bottom = innen.calculateBottomPadding()).consumeWindowInsets(innen),
+                    ) {
+                        homeGraph(nav)
+                        plaetzeGraph(nav)
+                        vereinGraph(nav)
+                        kontoGraph(nav)
+                        verwaltungGraph(nav)
+                    }
+                    // Edge-to-Edge: Was unter die Statusleiste scrollt, verschwindet hinter dem
+                    // Seitenhintergrund, statt mit Uhrzeit und Symbolen zu kollidieren.
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth()
+                            .windowInsetsTopHeight(WindowInsets.statusBars)
+                            .background(f.bg),
+                    )
                 }
                 // Innerhalb von VereinTab: eine Veranstaltung oeffnet ueber LocalZuVerein ihr Detail.
                 if (push != null) PushZieleOeffnen(push, nav, zuTab)

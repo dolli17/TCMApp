@@ -14,17 +14,8 @@
 package de.tcmuckensturm.kern
 
 import java.time.Instant
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonDecoder
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.doubleOrNull
 
 /** Eine Zeile aus events_fuer_mitglied. Optional ist, was nicht offensichtlich Pflicht ist (app-api.md). */
 @Serializable
@@ -54,19 +45,6 @@ data class MitgliedEvent(
     @SerialName("meine_forderung_cents") val meineForderungCents: Int? = null,
     @SerialName("meine_forderung_status") val meineForderungStatus: String? = null,
 )
-
-/** Eine Zahl, die als JSON-Zahl oder als Text kommt (Postgres numeric). */
-object ZahlOderText : KSerializer<Double> {
-    override val descriptor = PrimitiveSerialDescriptor("de.tcmuckensturm.kern.ZahlOderText", PrimitiveKind.DOUBLE)
-
-    override fun deserialize(decoder: Decoder): Double {
-        val json = decoder as? JsonDecoder ?: return decoder.decodeDouble()
-        val wert = json.decodeJsonElement() as? JsonPrimitive
-        return wert?.doubleOrNull ?: wert?.content?.toDoubleOrNull() ?: throw SerializationException("Keine Zahl")
-    }
-
-    override fun serialize(encoder: Encoder, value: Double) = encoder.encodeDouble(value)
-}
 
 enum class EventTon { GELB, GRUEN, BLAU, GRAU, ROT;
 
@@ -128,8 +106,8 @@ object Veranstaltungen {
     /** "19:00" -> "19", "23:30" bleibt (Intl mit zweistelliger Stunde, also "09"). */
     fun uhr(d: Instant): String {
         val z = d.atZone(Zeit.berlinZone)
-        val h = "%02d".format(z.hour)
-        return if (z.minute == 0) h else "$h:${"%02d".format(z.minute)}"
+        val h = "%02d".formatiert(z.hour)
+        return if (z.minute == 0) h else "$h:${"%02d".formatiert(z.minute)}"
     }
 
     fun uhrSpanne(startsAt: String, endsAt: String?): String {
@@ -151,7 +129,7 @@ object Veranstaltungen {
     fun eventDatumKachel(startsAt: String): DatumKachel {
         val d = Zeit.datum(startsAt) ?: return DatumKachel("", "")
         val z = d.atZone(Zeit.berlinZone)
-        return DatumKachel("%02d".format(z.dayOfMonth), Zeit.monateKurz[z.monthValue - 1])
+        return DatumKachel("%02d".formatiert(z.dayOfMonth), Zeit.monateKurz[z.monthValue - 1])
     }
 
     /** Stunden deutsch: 3 -> "3", 2.5 -> "2,5". */
@@ -252,7 +230,7 @@ object Veranstaltungen {
     /** "Fr 06.11.2026" */
     private fun tagMitJahr(d: Instant): String {
         val z = d.atZone(Zeit.berlinZone)
-        return "${Zeit.kurzerWochentag(d)} ${"%02d.%02d.%04d".format(z.dayOfMonth, z.monthValue, z.year)}"
+        return "${Zeit.kurzerWochentag(d)} ${"%02d.%02d.%04d".formatiert(z.dayOfMonth, z.monthValue, z.year)}"
     }
 
     /** "Fr 06.11.2026 · 19–23:30 Uhr", mehrtaegig "Fr 06.11.2026, 19 Uhr – Sa 07.11.2026, 02 Uhr". */

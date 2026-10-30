@@ -20,11 +20,11 @@
 package de.tcmuckensturm.app.bildschirme.verein
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -52,8 +52,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -74,11 +74,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import de.tcmuckensturm.app.bildschirme.karte
-import de.tcmuckensturm.app.bildschirme.Kopfzeile
-import de.tcmuckensturm.app.bildschirme.Leerzustand
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
 import de.tcmuckensturm.app.bildschirme.Kicker
+import de.tcmuckensturm.app.bildschirme.Kopfzeile
+import de.tcmuckensturm.app.bildschirme.Leerzustand
+import de.tcmuckensturm.app.bildschirme.Leise
+import de.tcmuckensturm.app.bildschirme.grosseSchrift
+import de.tcmuckensturm.app.bildschirme.karte
 import de.tcmuckensturm.app.daten.EigenesGetraenk
 import de.tcmuckensturm.app.daten.Getraenk
 import de.tcmuckensturm.app.daten.Meldung
@@ -399,7 +401,7 @@ private fun Monatskarte(buchungen: List<EigenesGetraenk>, jetzt: Instant) {
 @Composable
 private fun Karte(karte: List<Getraenk>, korb: Getraenkekorb, laeuft: Boolean, aendern: (String, Int) -> Unit) {
     // Bei grosser Schrift eine Kachel je Zeile.
-    val spalten = if (LocalDensity.current.fontScale >= 1.5f) 1 else 2
+    val spalten = if (grosseSchrift(1.5f)) 1 else 2
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         for (zeile in karte.chunked(spalten)) {
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {

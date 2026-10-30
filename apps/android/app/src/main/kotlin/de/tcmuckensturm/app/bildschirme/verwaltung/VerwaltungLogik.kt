@@ -21,6 +21,7 @@ import de.tcmuckensturm.app.daten.TagesBelegung
 import de.tcmuckensturm.kern.Startseite
 import de.tcmuckensturm.kern.TimelineKind
 import de.tcmuckensturm.kern.Zeit
+import de.tcmuckensturm.kern.formatiert
 import java.time.DateTimeException
 import java.time.Instant
 import java.time.LocalDate
@@ -88,7 +89,7 @@ object VerwaltungLogik {
         val h = teile[0].toInt()
         val min = teile[1].toInt()
         if (h > 24 || min > 59 || (h == 24 && min > 0)) return null
-        return "%02d:%s".format(h, teile[1])
+        return "%02d:%s".formatiert(h, teile[1])
     }
 
     private val isoMuster = Regex("""^\d{4}-\d{2}-\d{2}$""")

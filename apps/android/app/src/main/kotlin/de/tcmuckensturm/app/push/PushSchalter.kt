@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import de.tcmuckensturm.app.TcmApp
-import de.tcmuckensturm.app.bildschirme.konto.Leise
+import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.bildschirme.konto.Symbolkachel
 import de.tcmuckensturm.app.daten.Pushdaten
 import de.tcmuckensturm.app.start.LocalSitzung

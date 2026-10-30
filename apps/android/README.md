@@ -20,6 +20,15 @@ unverändert, bis diese App fertig ist. Web und Supabase bleiben.
 
 Mit Beispieldaten (`HomeBildschirmfotoTest`, `Beispiele`), JETZT ist Montag, 28.09.2026, 14:00.
 
+### Schrift 200 % und Gerät
+
+| Home 200 % | Plätze 200 % | Verein 200 % | Konto 200 % | Gerät: Home | Gerät: Plätze | Gerät: Verein | Gerät: Konto |
+|---|---|---|---|---|---|---|---|
+| ![Home 200 %](docs/home-schrift-200.png) | ![Plätze 200 %](docs/plaetze-schrift-200.png) | ![Verein 200 %](docs/verein-schrift-200.png) | ![Konto 200 %](docs/konto-schrift-200.png) | ![Gerät Home](docs/geraet-home.png) | ![Gerät Plätze](docs/geraet-plaetze.png) | ![Gerät Verein](docs/geraet-verein.png) | ![Gerät Konto](docs/geraet-konto.png) |
+
+Die ersten vier aus Robolectric mit `fontScale = 2f`, die `geraet-*.png` aus dem Emulator
+(`tcm-pixel`, Variante `lokal`, `mitglied@tcm.local` gegen den lokalen Stack).
+
 ### Plätze
 
 | Freie Zeiten | Freie Zeiten, dunkel | Übersicht | Übersicht, dunkel | Buchen |
@@ -131,7 +140,7 @@ adb wait-for-device
 ./gradlew :app:installLokalDebug
 adb shell am start -n de.tcmuckensturm.app.lokal/de.tcmuckensturm.app.HauptActivity
 # E-Mail und Passwort per `adb shell input tap/text` eintragen (Seed: mitglied@tcm.local, Passwort aus supabase/seed.sql)
-adb exec-out screencap -p > docs/rauchtest-angemeldet.png
+adb exec-out screencap -p > docs/rauchtest-angemeldet.png   # je Tab: docs/geraet-<tab>.png
 adb emu kill
 ```
 
@@ -263,10 +272,10 @@ Für parallele Spuren gilt:
   `assets/lizenzen/OFL-Barlow.txt`).
 - **Home** (`bildschirme/home`, `bildschirme/nachrichten`, `daten/Startdaten.kt`) wie iOS: Kopf mit
   Name, Glocke (Zähler, Blatt, gelesen markieren) und Avatar, „Als Nächstes“, Schnellaktionen,
-  „Jetzt frei“ mit Zeitleiste, offene Spiele, „Dein Stand“ (Getränke, Arbeitsdienst), Neuigkeiten
+  „Jetzt frei“ mit Zeitleiste, offene Spiele, „Dein Stand“ (Getränke, Arbeitsdienst), „Demnächst im
+  Verein“ (`events_fuer_mitglied`, „Alle“ springt zu den Veranstaltungen), Neuigkeiten
   der letzten 7 Tage, Bildschirm „Neuigkeiten“, Herunterziehen zum Aktualisieren. Jeder Abschnitt
-  lädt für sich (`Abschnitt`), Texte als reine Funktionen in `HomeLogik`. „Demnächst im Verein“
-  fehlt noch; Getränke, Veranstaltungen und Einträge der Glocke führen über `LocalZuVerein` direkt
+  lädt für sich (`Abschnitt`), Texte als reine Funktionen in `HomeLogik`. Getränke, Veranstaltungen und Einträge der Glocke führen über `LocalZuVerein` direkt
   zum Ziel im Tab Verein.
 - **Plätze** (`bildschirme/plaetze`, `daten/Platzdaten.kt`, wie iOS): Tagwahl über `lead_days`,
   Ansichten „Freie Zeiten“ und „Übersicht“ (Raster Plätze × Zeit, gemerkt), belegt/frei/eigene/
@@ -317,6 +326,20 @@ Für parallele Spuren gilt:
   `SITE_URL/admin`, Platzwart `SITE_URL/admin/plaetze`) als Custom Tab (`androidx.browser`),
   ohne Webadresse (lokal) nur der Satz. Uhrzeit und Datum werden getippt (HH:MM, TT.MM.JJJJ) wie
   in iOS und Expo; reine Logik in `VerwaltungLogik.kt`.
+- **Gemeinsame Bausteine** (`bildschirme/Bausteine.kt`): `GrosserKopf` (Titel, Glocke, Avatar
+  auf allen Tabs gleich), `Hauptknopf` (groß oder `kompakt`, `rot`, gesperrt neutral mit Grund),
+  `LeiserKnopf`, `Leise`, `Hinweis`, `Erneut`, `ImVordergrund`, `randlos`. Für große Schrift:
+  `grosseSchrift()`, `NebeneinanderOderUntereinander`, `GedeckelteSchrift` (Datumskacheln,
+  Segmente, Zähler) und `mitTrennung()` (deutsche Silbentrennung). Initialen in
+  `daten/Startdaten.kt` (`Initialen`), lenientes `ZahlOderText` und `formatiert()` (Ziffern immer
+  deutsch, unabhängig von der Gerätesprache) in `kern/Zahlen.kt`.
+- **Release:** R8 mit Ressourcen-Schrumpfen, Regeln für die `@Serializable`-Klassen
+  und die fehlenden JVM-Klassen von Ktor (slf4j, `java.lang.management`) in `app/proguard-rules.pro`.
+  `assembleProdRelease -Ptcm.prodBackend=dev` ergibt unsigniert rund 5,0 MB. Launcher-Icon
+  adaptiv (`mipmap-anydpi/ic_launcher.xml`: Hintergrund Markenblau, Vordergrund und monochrom als
+  Vektor aus `apps/mobile/assets/adaptive-icon.svg`); PNGs entfallen, da `minSdk` 26.
+- **Ränder:** Edge-to-Edge mit deckender Fläche unter der Statusleiste (`HauptTabs`), Tastatur über
+  `imePadding()` (die Tab-Leiste wird über `consumeWindowInsets` abgezogen).
 
 ### Tab Verein (`bildschirme/verein`, wie `Bildschirme/Verein` in iOS)
 
@@ -388,10 +411,8 @@ Für parallele Spuren gilt:
 
 - Widgets: Generated Previews (Android 15, `providePreview`) und ein Rauchtest auf dem Gerät
   (Hinlegen, Tippen, Laden im Hintergrund) stehen aus.
-- Home: „Demnächst im Verein“ (die Karte gibt es schon: `EventKarte(e, jetzt, aufforderung = true)`).
 - Push: das Firebase-Projekt selbst und seine Werte (siehe „Push (FCM)“); ohne sie ist Push aus.
 - Prod-Werte (Supabase-URL und -Key), Release-Keystore, Fingerprints in `assetlinks.json`.
-- R8/Minify ist für Release noch aus (Regeln für supabase-kt/Ktor/Serialization fehlen).
 - CI für Android.
 - Emulator-Image für API 36/37: Der Rauchtest läuft auf API 35, das Verhalten unter targetSdk 36
   auf einem Android-16-Gerät ist noch nicht geprüft.

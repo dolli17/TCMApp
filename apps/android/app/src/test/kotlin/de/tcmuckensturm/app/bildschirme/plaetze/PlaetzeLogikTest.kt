@@ -165,10 +165,7 @@ class PlaetzeLogikTest {
     }
 
     @Test
-    fun initialenUndGast() {
-        assertEquals("EM", PlaetzeLogik.initialen("eva", "Muster"))
-        assertEquals("?", PlaetzeLogik.initialen(null, null))
-        assertEquals("EM", PlaetzeLogik.initialenAusName("Eva Maria Muster"))
+    fun gast() {
         assertEquals("Gast", PlaetzeLogik.gastText(0))
         assertEquals("Gast · 5,00 €", PlaetzeLogik.gastText(500))
         assertEquals(

@@ -125,13 +125,6 @@ class HomeLogikTest {
     }
 
     @Test
-    fun initialen() {
-        assertEquals("MM", HomeLogik.initialen(MeinName("max", "muster")))
-        assertEquals("", HomeLogik.initialen(null))
-        assertEquals("E", HomeLogik.initialen(MeinName("Erika", "")))
-    }
-
-    @Test
     fun offeneSpiele() {
         val o = Beispiele.offen
         assertEquals("Doppel · sucht 2", HomeLogik.offenesSpielTitel(o[0]))

@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -52,9 +54,12 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -90,14 +95,6 @@ fun rememberJetzt(m: PlaetzeModell): Instant {
         }
     }
     return jetzt
-}
-
-/** Laeuft bis an den Bildschirmrand, obwohl der Inhalt um `rand` eingerueckt ist (Tagwahl). */
-fun Modifier.randlos(rand: Dp): Modifier = layout { messbar, grenzen ->
-    val extra = rand.roundToPx() * 2
-    val breite = grenzen.maxWidth + extra
-    val platziert = messbar.measure(grenzen.copy(minWidth = breite, maxWidth = breite))
-    layout(grenzen.maxWidth, platziert.height) { platziert.place(-extra / 2, 0) }
 }
 
 // ---- Belegungsfarben ------------------------------------------------------------------
@@ -178,7 +175,7 @@ fun Legende(eintraege: List<Pair<String, Modifier>>, breite: Dp, hoehe: Dp) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = "" },
+        modifier = Modifier.clearAndSetSemantics {},
     ) {
         for ((name, kaestchen) in eintraege) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -191,12 +188,6 @@ fun Legende(eintraege: List<Pair<String, Modifier>>, breite: Dp, hoehe: Dp) {
 
 // ---- Texte ------------------------------------------------------------------------------
 
-/** Leiser Hinweistext (.leise() in iOS). */
-@Composable
-fun Leise(text: String, modifier: Modifier = Modifier) {
-    Text(text, style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.klein), color = TcmTheme.farben.muted, modifier = modifier)
-}
-
 @Composable
 fun Feldname(text: String, zusatz: String? = null) {
     val f = TcmTheme.farben
@@ -208,7 +199,7 @@ fun Feldname(text: String, zusatz: String? = null) {
             }
         },
         style = TcmSchrift.text(Schrift.gewichtHalbfett, 13.sp),
-        modifier = Modifier.padding(bottom = 8.dp),
+        modifier = Modifier.padding(bottom = 8.dp).semantics { heading() },
     )
 }
 
@@ -251,40 +242,6 @@ fun Besetzungshinweis(text: String) {
 }
 
 // ---- Knoepfe ----------------------------------------------------------------------------
-
-/**
- * Gesperrt ist neutral statt blassgold (U26). Mit `beiGesperrt` nimmt der
- * gesperrte Knopf das Tippen noch an und fuehrt zum naechsten Schritt.
- */
-@Composable
-fun Hauptknopf(
-    text: String,
-    gesperrt: Boolean = false,
-    grund: String? = null,
-    beiGesperrt: (() -> Unit)? = null,
-    aktion: () -> Unit,
-) {
-    val f = TcmTheme.farben
-    val tippbar = !gesperrt || beiGesperrt != null
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 58.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(if (gesperrt) f.surf3 else f.gold)
-            .clickable(enabled = tippbar, role = Role.Button) { if (gesperrt) beiGesperrt?.invoke() else aktion() }
-            .semantics { if (gesperrt && grund != null) contentDescription = "$text. $grund" }
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text,
-            style = TcmSchrift.text(Schrift.gewichtExtrafett, 17.sp),
-            color = if (gesperrt) f.muted else f.onGold,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
 
 @Composable
 fun Nebenknopf(
@@ -418,7 +375,15 @@ fun <T> Segmente(beschriftung: String, optionen: List<Segment<T>>, wert: T, wahl
 /** Chips zum Antippen, einzeln oder mehrfach (Kategorie, Plaetze, Beginn). */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun Chipwahl(optionen: List<Pair<String, String>>, gewaehlt: (String) -> Boolean, wahl: (String) -> Unit) {
+fun Chipwahl(
+    optionen: List<Pair<String, String>>,
+    gewaehlt: (String) -> Boolean,
+    /** Der Feldname davor, damit TalkBack "Plätze P1" statt nur "P1" liest. */
+    beschriftung: String? = null,
+    /** Einfachwahl (Kategorie, Art) liest TalkBack als Optionsfeld, Mehrfachwahl als Kästchen. */
+    mehrfach: Boolean = false,
+    wahl: (String) -> Unit,
+) {
     val f = TcmTheme.farben
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         for ((wert, label) in optionen) {
@@ -429,8 +394,8 @@ fun Chipwahl(optionen: List<Pair<String, String>>, gewaehlt: (String) -> Boolean
                     .widthIn(min = 48.dp)
                     .clip(CircleShape)
                     .background(if (aktiv) f.gold else f.surf2)
-                    .clickable(role = Role.Checkbox) { wahl(wert) }
-                    .semantics { selected = aktiv }
+                    .selectable(selected = aktiv, role = if (mehrfach) Role.Checkbox else Role.RadioButton) { wahl(wert) }
+                    .semantics { if (beschriftung != null) contentDescription = "$beschriftung $label" }
                     .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.Center,
             ) {
@@ -453,7 +418,7 @@ fun GesuchtKarte(an: Boolean, deaktiviert: Boolean = false, wechsel: (Boolean) -
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
             .background(f.surf2)
-            .clickable(enabled = !deaktiviert, role = Role.Switch) { wechsel(!an) }
+            .toggleable(value = an, enabled = !deaktiviert, role = Role.Switch, onValueChange = wechsel)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -481,7 +446,7 @@ fun GesuchtKarte(an: Boolean, deaktiviert: Boolean = false, wechsel: (Boolean) -
     }
 }
 
-/** Ein Mitspieler als Chip: Initialen im Kreis, Name, optional ein X zum Entfernen. */
+/** Ein Mitspieler als Chip: Initialen im Kreis (ohne Buchstaben "?"), Name, optional ein X zum Entfernen. */
 @Composable
 fun Chip(
     kuerzel: String,
@@ -516,7 +481,7 @@ fun Chip(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                kuerzel,
+                kuerzel.ifEmpty { "?" },
                 style = TcmSchrift.text(Schrift.gewichtFett, Schrift.kicker),
                 color = when {
                     gelb -> f.onGold

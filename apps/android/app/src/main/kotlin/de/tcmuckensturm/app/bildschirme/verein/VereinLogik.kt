@@ -19,6 +19,7 @@ import de.tcmuckensturm.kern.MeineMarke
 import de.tcmuckensturm.kern.MitgliedEvent
 import de.tcmuckensturm.kern.Veranstaltungen
 import de.tcmuckensturm.kern.Zeit
+import de.tcmuckensturm.kern.formatiert
 import java.time.Instant
 
 enum class VereinReiter(val wert: String, val label: String) {
@@ -45,7 +46,7 @@ object VereinLogik {
         val d = iso?.let(Zeit::datum) ?: return ""
         val z = d.atZone(Zeit.berlinZone)
         return "${Zeit.kurzerWochentag(d)}., " +
-            "%02d.%02d., %02d:%02d".format(z.dayOfMonth, z.monthValue, z.hour, z.minute)
+            "%02d.%02d., %02d:%02d".formatiert(z.dayOfMonth, z.monthValue, z.hour, z.minute)
     }
 
     /** Die Unterzeile in "Zuletzt": "Do., 29.10., 18:05 · App · zurückgenommen" */

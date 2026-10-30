@@ -66,6 +66,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.heading
@@ -227,7 +228,13 @@ fun AnmeldeFeld(
     )
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Abstand.s)) {
-        Text(beschriftung, style = TcmSchrift.text(Schrift.gewichtHalbfett, 13.sp), color = f.ink2)
+        // Das Feld traegt die Beschriftung selbst; TalkBack soll sie nicht zweimal lesen.
+        Text(
+            beschriftung,
+            style = TcmSchrift.text(Schrift.gewichtHalbfett, 13.sp),
+            color = f.ink2,
+            modifier = Modifier.clearAndSetSemantics {},
+        )
         Row(
             Modifier
                 .fillMaxWidth()
@@ -282,25 +289,6 @@ private fun PasswortSchalter(sichtbar: Boolean, umschalten: () -> Unit, modifier
             style = TcmSchrift.text(Schrift.gewichtFett, 14.sp),
             color = TcmTheme.farben.ink2,
         )
-    }
-}
-
-/** Der gelbe Hauptknopf, 58 hoch. */
-@Composable
-fun GelberKnopf(text: String, modifier: Modifier = Modifier, gesperrt: Boolean = false, aktion: () -> Unit) {
-    val f = TcmTheme.farben
-    val druck = remember { MutableInteractionSource() }
-    val gedrueckt by druck.collectIsPressedAsState()
-    Box(
-        modifier
-            .fillMaxWidth()
-            .heightIn(min = 58.dp)
-            .alpha(if (gesperrt) 0.6f else if (gedrueckt) 0.85f else 1f)
-            .background(f.gold, RoundedCornerShape(18.dp))
-            .clickable(interactionSource = druck, indication = null, enabled = !gesperrt, role = Role.Button, onClick = aktion),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text, style = TcmSchrift.text(Schrift.gewichtExtrafett, 17.sp), color = f.onGold)
     }
 }
 

@@ -91,9 +91,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import de.tcmuckensturm.app.bildschirme.Avatar
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
 import de.tcmuckensturm.app.bildschirme.GrosserKopf
+import de.tcmuckensturm.app.bildschirme.ImVordergrund
+import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.bildschirme.nachrichten.Glocke
+import de.tcmuckensturm.app.bildschirme.randlos
 import de.tcmuckensturm.app.daten.AktiverPlatz
 import de.tcmuckensturm.app.daten.Platzdaten
+import de.tcmuckensturm.app.daten.name
 import de.tcmuckensturm.app.navigation.HauptTab
 import de.tcmuckensturm.app.navigation.LocalZuTab
 import de.tcmuckensturm.app.start.LocalSitzung
@@ -118,8 +122,7 @@ fun PlaetzeBildschirm() {
             ansichtMerken = { a -> einstellungen.edit { putString(ANSICHT_SCHLUESSEL, a.wert) } },
         )
     }
-    val zuTab = LocalZuTab.current
-    PlaetzeInhalt(m, glocke = { Glocke(zuVeranstaltung = { zuTab(HauptTab.VEREIN) }) })
+    PlaetzeInhalt(m, glocke = { Glocke() })
 }
 
 /** Eine Snackbar mit Haken oder Warnung. */
@@ -215,38 +218,12 @@ fun PlaetzeInhalt(m: PlaetzeModell, glocke: @Composable () -> Unit = {}) {
     m.fenster?.let { Buchungsblatt(m, it) }
 }
 
-/** Nach dem Zurueckkehren aus dem Hintergrund (ON_STOP, dann ON_START). */
-@Composable
-private fun ImVordergrund(aktion: () -> Unit) {
-    val besitzer = LocalLifecycleOwner.current
-    DisposableEffect(besitzer) {
-        var warWeg = false
-        val beobachter = LifecycleEventObserver { _, ereignis ->
-            when (ereignis) {
-                Lifecycle.Event.ON_STOP -> warWeg = true
-                Lifecycle.Event.ON_START -> if (warWeg) {
-                    warWeg = false
-                    aktion()
-                }
-                else -> Unit
-            }
-        }
-        besitzer.lifecycle.addObserver(beobachter)
-        onDispose { besitzer.lifecycle.removeObserver(beobachter) }
-    }
-}
-
 // ---- Kopf und Datumszeile ---------------------------------------------------------------
 
 /** Grosser Titel wie auf iOS, rechts Glocke und Initialen - die fuehren ins Konto. */
 @Composable
 private fun Kopf(m: PlaetzeModell, glocke: @Composable () -> Unit) {
-    val zuTab = LocalZuTab.current
-    GrosserKopf("Plätze") {
-        glocke()
-        val ich = m.ich
-        if (ich?.memberId != null) Avatar(PlaetzeLogik.initialen(ich.firstName, ich.lastName)) { zuTab(HauptTab.KONTO) }
-    }
+    GrosserKopf("Plätze", name = m.ich?.name, glocke = glocke)
 }
 
 @Composable
@@ -357,7 +334,7 @@ private fun Tagwahl(m: PlaetzeModell) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         contentPadding = PaddingValues(horizontal = Abstand.rand),
-        modifier = Modifier.randlos(Abstand.rand),
+        modifier = Modifier.randlos(),
     ) {
         items(m.tage) { t ->
             TagKachel(t, heute = m.heute, aktiv = t == m.datum) {

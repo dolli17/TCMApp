@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -49,13 +50,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -73,8 +74,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import de.tcmuckensturm.app.bildschirme.karte
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
+import de.tcmuckensturm.app.bildschirme.Hauptknopf
+import de.tcmuckensturm.app.bildschirme.Hinweis
+import de.tcmuckensturm.app.bildschirme.Leise
+import de.tcmuckensturm.app.bildschirme.LeiserKnopf
+import de.tcmuckensturm.app.bildschirme.grosseSchrift
+import de.tcmuckensturm.app.bildschirme.karte
 import de.tcmuckensturm.app.daten.Meldung
 import de.tcmuckensturm.app.daten.VeranstaltungDetail
 import de.tcmuckensturm.app.daten.Vereinsdaten
@@ -215,7 +221,8 @@ fun VeranstaltungSeite(stand: VeranstaltungStand, jetzt: Instant, aktionen: Vera
             )
         }
         PullToRefreshBox(isRefreshing = stand.aktualisiert, onRefresh = aktionen.nachladen, modifier = Modifier.weight(1f)) {
-            Column(Modifier.fillMaxSize().verticalScroll(scroll)) {
+            // imePadding: das Feld "Bemerkung" rollt ueber die Tastatur.
+            Column(Modifier.fillMaxSize().imePadding().verticalScroll(scroll)) {
                 Kopf(titel, Modifier.onSizeChanged { kopfHoehe = it.height })
                 Column(
                     Modifier
@@ -338,7 +345,7 @@ private fun Eckdaten(e: MitgliedEvent) {
 private fun Eckdatum(label: String, wert: String, klein: String? = null, zusatz: @Composable () -> Unit = {}) {
     val f = TcmTheme.farben
     // Bei grosser Schrift steht das Label ueber dem Wert.
-    val gross = LocalDensity.current.fontScale >= 1.5f
+    val gross = grosseSchrift(1.5f)
     val werte: @Composable () -> Unit = {
         Text(wert, style = TcmSchrift.text(Schrift.gewichtFett, Schrift.normal), color = f.ink)
         klein?.let {
@@ -491,7 +498,7 @@ private fun DabeiKarte(
                     style = TcmSchrift.text(Schrift.gewichtHalbfett, Schrift.normal),
                     color = f.ink,
                 )
-                Hauptknopf("Ja, abmelden", rot = true, gesperrt = laeuft, aktion = abmelden)
+                Hauptknopf("Ja, abmelden", rot = true, kompakt = true, gesperrt = laeuft, aktion = abmelden)
                 LeiserKnopf("Nein") { fragen(false) }
             } else {
                 if (Veranstaltungen.eventAenderbar(e, jetzt)) LeiserKnopf("Anmeldung ändern", aktion = aendern)
@@ -569,6 +576,7 @@ private fun Formular(
             } else {
                 Veranstaltungen.eventAnmeldenKnopf(e, begleitung)
             },
+            kompakt = true,
             gesperrt = laeuft,
             aktion = absenden,
         )

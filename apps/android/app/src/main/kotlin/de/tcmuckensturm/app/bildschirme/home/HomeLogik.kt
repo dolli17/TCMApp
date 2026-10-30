@@ -20,6 +20,7 @@ import de.tcmuckensturm.app.daten.OffenesSpiel
 import de.tcmuckensturm.app.daten.TagesBelegung
 import de.tcmuckensturm.kern.Belegung
 import de.tcmuckensturm.kern.Geld
+import de.tcmuckensturm.kern.MitgliedEvent
 import de.tcmuckensturm.kern.Startseite
 import de.tcmuckensturm.kern.TimelineSegment
 import de.tcmuckensturm.kern.Zahlen
@@ -72,6 +73,7 @@ data class HomeInhalt(
     val getraenke: Abschnitt<List<EigenesGetraenk>>,
     val dienst: Abschnitt<Arbeitsdienst?>,
     val neues: Abschnitt<List<Benachrichtigung>>,
+    val events: Abschnitt<List<MitgliedEvent>>,
 )
 
 data class FreiKarte(
@@ -205,8 +207,4 @@ object HomeLogik {
         !alleGesehen && liste.orEmpty().any { it.readAt == null }
 
     /** Initialen fuer den Avatar: "MM" */
-    fun initialen(name: MeinName?): String {
-        if (name == null) return ""
-        return (name.vorname.take(1) + name.nachname.take(1)).uppercase()
-    }
 }

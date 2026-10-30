@@ -50,8 +50,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.tcmuckensturm.app.bildschirme.Kicker
 import de.tcmuckensturm.app.bildschirme.Leerzustand
+import de.tcmuckensturm.app.bildschirme.grosseSchrift
 import de.tcmuckensturm.app.bildschirme.home.HomeLogik
 import de.tcmuckensturm.app.bildschirme.karte
+import de.tcmuckensturm.app.bildschirme.mitTrennung
 import de.tcmuckensturm.app.daten.Benachrichtigung
 import de.tcmuckensturm.app.theme.TcmSchrift
 import de.tcmuckensturm.app.theme.TcmTheme
@@ -180,20 +182,32 @@ fun NachrichtZeile(
             )
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val titel = @Composable { breite: Modifier ->
                 Text(
                     n.title ?: "",
-                    style = TcmSchrift.text(Schrift.gewichtFett, 15.sp),
+                    style = TcmSchrift.text(Schrift.gewichtFett, 15.sp).mitTrennung(),
                     color = f.ink,
                     maxLines = if (zeilen != null) 2 else Int.MAX_VALUE,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
+                    modifier = breite,
                 )
+            }
+            val zeit = @Composable {
                 Text(
                     Startseite.relativeTimeLabel(n.createdAt, jetzt),
                     style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.klein),
                     color = f.muted,
                 )
+            }
+            // Bei grosser Schrift steht die Zeit unter dem Titel, sonst bricht er mitten im Wort.
+            if (grosseSchrift()) {
+                titel(Modifier)
+                zeit()
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    titel(Modifier.weight(1f))
+                    zeit()
+                }
             }
             Text(
                 n.body ?: "",

@@ -79,6 +79,11 @@ class VereinBildschirmfotoTest {
         oeffne = {},
     )
 
+    /** Schrift 200 %: Kopf, Segmente und Karten ohne abgeschnittene Texte. */
+    @Test
+    @Config(qualifiers = "w412dp-h1800dp-xxhdpi", fontScale = 2f)
+    fun veranstaltungenSchrift200() = foto("verein-schrift-200", dunkel = false) { Liste() }
+
     @Test
     fun veranstaltungenHell() = foto("verein-veranstaltungen-hell", dunkel = false) { Liste() }
 

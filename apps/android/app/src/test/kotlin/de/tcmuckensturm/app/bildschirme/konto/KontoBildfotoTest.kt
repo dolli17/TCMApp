@@ -137,6 +137,11 @@ class KontoBildfotoTest {
     @Test
     fun kontoDunkel() = foto("konto-dunkel", dunkel = true) { Seite(erscheinungsbild = Erscheinungsbild.DUNKEL) }
 
+    /** Schrift 200 %: Profilkopf, Abrechnung und Einstellungen ohne abgeschnittene Texte. */
+    @Test
+    @Config(qualifiers = "w412dp-h3600dp-xxhdpi", fontScale = 2f)
+    fun kontoSchrift200() = foto("konto-schrift-200", dunkel = false) { Seite() }
+
     @Test
     @Config(qualifiers = "w412dp-h2200dp-xxhdpi")
     fun kontoGanzHell() = foto("konto-ganz-hell", dunkel = false) { Seite() }

@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.sp
 import de.tcmuckensturm.app.bildschirme.anmeldung.AnmeldeSeite
-import de.tcmuckensturm.app.bildschirme.anmeldung.GelberKnopf
+import de.tcmuckensturm.app.bildschirme.Hauptknopf
 import de.tcmuckensturm.app.bildschirme.anmeldung.LeiserVerweis
 import de.tcmuckensturm.app.start.LocalSitzung
 import de.tcmuckensturm.app.theme.TcmSchrift
@@ -51,10 +51,10 @@ fun KeinZugangInhalt(grund: ZugangsGrund, kontakt: String?, zurAnmeldung: () -> 
         )
         Column(Modifier.padding(top = Abstand.abschnitt), verticalArrangement = Arrangement.spacedBy(Abstand.l)) {
             if (kontakt != null) {
-                GelberKnopf("Vorstand kontaktieren") { links.openUri(kontakt) }
+                Hauptknopf("Vorstand kontaktieren") { links.openUri(kontakt) }
                 LeiserVerweis("Mit einem anderen Konto anmelden", aktion = zurAnmeldung)
             } else {
-                GelberKnopf("Zur Anmeldung", aktion = zurAnmeldung)
+                Hauptknopf("Zur Anmeldung", aktion = zurAnmeldung)
             }
         }
     }

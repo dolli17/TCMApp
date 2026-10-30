@@ -69,22 +69,25 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import de.tcmuckensturm.app.bildschirme.Erneut
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
+import de.tcmuckensturm.app.bildschirme.Hinweis
+import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.bildschirme.home.Abschnitt
 import de.tcmuckensturm.app.bildschirme.karte
 import de.tcmuckensturm.app.bildschirme.leise
 import de.tcmuckensturm.app.bildschirme.nachrichten.Glocke
+import de.tcmuckensturm.app.daten.Arbeitsdienst
+import de.tcmuckensturm.app.daten.EigenesGetraenk
+import de.tcmuckensturm.app.daten.Forderung
+import de.tcmuckensturm.app.daten.Initialen
+import de.tcmuckensturm.app.daten.Kontodaten
+import de.tcmuckensturm.app.daten.MeinProfil
+import de.tcmuckensturm.app.daten.Startdaten
 import de.tcmuckensturm.app.navigation.HauptTab
 import de.tcmuckensturm.app.navigation.LocalZuTab
 import de.tcmuckensturm.app.push.PushSchalter
 import de.tcmuckensturm.app.push.PushSchalterAnsicht
-import de.tcmuckensturm.app.daten.Arbeitsdienst
-import de.tcmuckensturm.app.daten.EigenesGetraenk
-import de.tcmuckensturm.app.daten.Forderung
-import de.tcmuckensturm.app.daten.Kontodaten
-import de.tcmuckensturm.app.daten.MeinProfil
-import de.tcmuckensturm.app.daten.Startdaten
-import io.github.jan.supabase.auth.auth
 import de.tcmuckensturm.app.start.LocalSitzung
 import de.tcmuckensturm.app.theme.Erscheinungsbild
 import de.tcmuckensturm.app.theme.ErscheinungsbildSpeicher
@@ -95,6 +98,7 @@ import de.tcmuckensturm.app.ui.tokens.Schrift
 import de.tcmuckensturm.kern.Geld
 import de.tcmuckensturm.kern.Kontoloeschung
 import de.tcmuckensturm.kern.Startseite
+import io.github.jan.supabase.auth.auth
 import java.time.Instant
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -190,7 +194,7 @@ fun KontoBildschirm() {
                 erscheinungsbildWaehlen = { neu -> scope.launch { speicher.setzen(neu) } },
                 link = { links.openUri(it) },
                 abmelden = { abmeldenFragen = true },
-                glocke = { Glocke(zuVeranstaltung = { zuTab(HauptTab.VEREIN) }) },
+                glocke = { Glocke() },
                 push = { PushSchalter(symbol = true) },
             )
         }
@@ -304,7 +308,7 @@ private fun Profilkopf(profil: Abschnitt<MeinProfil?>, erneut: Erneut) {
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                KontoLogik.initialen(vorname, nachname),
+                Initialen.von(vorname, nachname),
                 style = TcmSchrift.text(Schrift.gewichtExtrafett, 30.sp),
                 color = f.onBrand,
             )
@@ -357,7 +361,7 @@ private fun Abrechnung(
 
     KontoAbschnitt("Abrechnung")
     if (fehler != null) Fehlerzeile(fehler, erneut.laeuft, erneut.aktion)
-    KontoLogik.zurueckText(zurueck)?.let { KontoHinweis(it) }
+    KontoLogik.zurueckText(zurueck)?.let { Hinweis(it) }
     // Nach einem Ladefehler waere "Nichts offen" falsch beruhigend.
     if (fehler != null && offen.isEmpty() && laufend == 0) return
     KontoGruppe {
@@ -493,6 +497,7 @@ private fun Einstellungen(
             KontoSegmente(
                 optionen = Erscheinungsbild.entries.map { it to it.titel },
                 gewaehlt = erscheinungsbild,
+                beschriftung = "Erscheinungsbild",
                 wahl = erscheinungsbildWaehlen,
             )
         }

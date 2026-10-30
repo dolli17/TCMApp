@@ -14,6 +14,7 @@ package de.tcmuckensturm.app.bildschirme.nachrichten
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,13 +49,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.tcmuckensturm.app.bildschirme.GedeckelteSchrift
 import de.tcmuckensturm.app.bildschirme.Kapsel
 import de.tcmuckensturm.app.bildschirme.home.HomeLogik
-import de.tcmuckensturm.app.bildschirme.tippbar
+import de.tcmuckensturm.app.bildschirme.verein.LocalZuVerein
+import de.tcmuckensturm.app.bildschirme.verein.VereinZiel
 import de.tcmuckensturm.app.daten.Benachrichtigung
 import de.tcmuckensturm.app.daten.Meldung
 import de.tcmuckensturm.app.daten.Startdaten
@@ -75,7 +83,10 @@ data class GlockenBlatt(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Glocke(zuVeranstaltung: (String) -> Unit) {
+fun Glocke() {
+    // Auf jedem Tab gleich: eine Nachricht zu einer Veranstaltung oeffnet deren Detail im Verein.
+    val zuVerein = LocalZuVerein.current
+    val zuVeranstaltung: (String) -> Unit = { zuVerein(VereinZiel.Veranstaltung(it)) }
     val daten = Startdaten(LocalSitzung.current.client)
     val scope = rememberCoroutineScope()
     var ungelesen by remember { mutableIntStateOf(0) }
@@ -148,7 +159,12 @@ fun GlockeKnopf(ungelesen: Int, aktion: () -> Unit) {
     Box(
         Modifier
             .size(44.dp)
-            .tippbar(HomeLogik.glockenLabel(ungelesen), aktion = aktion),
+            // Runder Druck- und Fokuszustand, ohne die überstehende Zahl abzuschneiden.
+            .clickable(interactionSource = null, indication = ripple(bounded = false, radius = 22.dp), role = Role.Button, onClick = aktion)
+            .clearAndSetSemantics {
+                contentDescription = HomeLogik.glockenLabel(ungelesen)
+                role = Role.Button
+            },
     ) {
         Box(
             Modifier
@@ -171,11 +187,13 @@ fun GlockeKnopf(ungelesen: Int, aktion: () -> Unit) {
                     .padding(horizontal = 4.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    HomeLogik.glockenZahl(ungelesen),
-                    style = TcmSchrift.text(Schrift.gewichtFett, 11.sp),
-                    color = f.onBrand,
-                )
+                GedeckelteSchrift {
+                    Text(
+                        HomeLogik.glockenZahl(ungelesen),
+                        style = TcmSchrift.text(Schrift.gewichtFett, 11.sp),
+                        color = f.onBrand,
+                    )
+                }
             }
         }
     }

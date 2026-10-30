@@ -122,8 +122,10 @@ android {
     buildTypes {
         // debug signiert mit dem Debug-Keystore des Rechners (~/.android/debug.keystore).
         release {
-            // TODO: R8 einschalten, sobald die Regeln fuer kotlinx.serialization/Ktor geprueft sind.
-            isMinifyEnabled = false
+            // R8: verkleinert Code und Ressourcen; Regeln in proguard-rules.pro.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.findByName("release")
         }
     }
@@ -162,6 +164,8 @@ android {
         abortOnError = true
         // Versionen pinnt libs.versions.toml bewusst (mindestens zwei Wochen alt), nicht Lint.
         disable += setOf("GradleDependency", "AndroidGradlePluginVersion", "NewerVersionAvailable")
+        // targetSdk 36 ist der Mindestwert von Google Play; 37 erst nach einem Test auf Android 17.
+        disable += "OldTargetApi"
     }
 }
 

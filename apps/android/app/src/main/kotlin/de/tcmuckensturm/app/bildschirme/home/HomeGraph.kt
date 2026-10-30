@@ -13,8 +13,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import de.tcmuckensturm.app.bildschirme.nachrichten.NachrichtenBildschirm
-import de.tcmuckensturm.app.navigation.HauptTab
-import de.tcmuckensturm.app.navigation.LocalZuTab
+import de.tcmuckensturm.app.bildschirme.verein.LocalZuVerein
+import de.tcmuckensturm.app.bildschirme.verein.VereinZiel
 import kotlinx.serialization.Serializable
 
 /** Der Graph des Tabs (HauptTab.graph). */
@@ -35,11 +35,10 @@ fun NavGraphBuilder.homeGraph(nav: NavHostController) {
             HomeBildschirm(zuNachrichten = { nav.navigate(Nachrichten) { launchSingleTop = true } })
         }
         composable<Nachrichten> {
-            val zuTab = LocalZuTab.current
+            val zuVerein = LocalZuVerein.current
             NachrichtenBildschirm(
                 zurueck = { nav.popBackStack() },
-                // TODO (Verein-Spur): direkt zur Veranstaltung, sobald der Verein-Graph ein Ziel dafuer hat.
-                zuVeranstaltung = { zuTab(HauptTab.VEREIN) },
+                zuVeranstaltung = { zuVerein(VereinZiel.Veranstaltung(it)) },
             )
         }
     }

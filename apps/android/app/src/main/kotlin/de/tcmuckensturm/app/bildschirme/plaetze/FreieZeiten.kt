@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.tcmuckensturm.app.bildschirme.Handlung
 import de.tcmuckensturm.app.bildschirme.Leerzustand
+import de.tcmuckensturm.app.bildschirme.grosseSchrift
 import de.tcmuckensturm.app.daten.TagesBelegung
 import de.tcmuckensturm.app.theme.TcmSchrift
 import de.tcmuckensturm.app.theme.TcmTheme
@@ -75,7 +76,7 @@ import de.tcmuckensturm.kern.Zeit
 private const val GROSSE_SCHRIFT = 1.8f
 
 @Composable
-private fun grosseSchrift(): Boolean = LocalDensity.current.fontScale >= GROSSE_SCHRIFT
+private fun sehrGrosseSchrift(): Boolean = grosseSchrift(GROSSE_SCHRIFT)
 
 @Composable
 fun FreieZeiten(m: PlaetzeModell) {
@@ -106,7 +107,7 @@ fun FreieZeiten(m: PlaetzeModell) {
 @Composable
 private fun Tabelle(m: PlaetzeModell, zeilen: List<FreeSlotRow<TagesBelegung>>, offen: Int?, wechsel: (Int?) -> Unit) {
     val f = TcmTheme.farben
-    val gross = grosseSchrift()
+    val gross = sehrGrosseSchrift()
     val form = RoundedCornerShape(Radius.karte)
     Column(
         Modifier
@@ -351,7 +352,7 @@ private fun Kaestchen(art: CourtStatusKind) {
 /** Die Legende als eine Zeile unter der Karte; ohne Kaestchen (grosse Schrift) entfaellt sie. */
 @Composable
 fun FreieZeitenLegende() {
-    if (grosseSchrift()) return
+    if (sehrGrosseSchrift()) return
     val f = TcmTheme.farben
     val form = RoundedCornerShape(3.dp)
     Legende(

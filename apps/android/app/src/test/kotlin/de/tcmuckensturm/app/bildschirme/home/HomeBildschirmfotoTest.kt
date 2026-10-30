@@ -53,11 +53,11 @@ class HomeBildschirmfotoTest {
     )
 
     @Test
-    @Config(qualifiers = "w412dp-h1480dp-xxhdpi")
+    @Config(qualifiers = "w412dp-h1800dp-xxhdpi")
     fun homeHell() = foto("home-hell", dunkel = false) { Home(Beispiele.voll) }
 
     @Test
-    @Config(qualifiers = "w412dp-h1480dp-xxhdpi")
+    @Config(qualifiers = "w412dp-h1800dp-xxhdpi")
     fun homeDunkel() = foto("home-dunkel", dunkel = true) { Home(Beispiele.voll) }
 
     @Test
@@ -67,6 +67,11 @@ class HomeBildschirmfotoTest {
     @Test
     @Config(qualifiers = "w412dp-h1300dp-xxhdpi")
     fun homeFehler() = foto("home-fehler", dunkel = true) { Home(Beispiele.fehler, ungelesen = 12) }
+
+    /** Schrift 200 %: nichts abgeschnitten, Schnellaktionen untereinander (U5). */
+    @Test
+    @Config(qualifiers = "w412dp-h3600dp-xxhdpi", fontScale = 2f)
+    fun homeSchrift200() = foto("home-schrift-200", dunkel = false) { Home(Beispiele.voll) }
 
     @Test
     @Config(qualifiers = "w412dp-h915dp-xxhdpi")

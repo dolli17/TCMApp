@@ -56,12 +56,18 @@
             </intent-filter>
         </service>
 
+        <!--
+            Nur Telefon, Hochformat (wie iOS). Ab Android 16 ignoriert das System
+            die Festlegung auf grossen Bildschirmen; die Bildschirme rollen dann
+            einfach breiter. Bewusst so, daher ohne Lint-Warnung.
+        -->
         <activity
             android:name=".HauptActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

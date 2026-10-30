@@ -114,8 +114,7 @@ class Vereinsdaten(val client: SupabaseClient) {
 
     // ---- Veranstaltungen ----
 
-    suspend fun veranstaltungen(): List<MitgliedEvent> =
-        uebersetzt { client.postgrest.rpc("events_fuer_mitglied").decodeList<MitgliedEvent>() }
+    suspend fun veranstaltungen(): List<MitgliedEvent> = Startdaten(client).veranstaltungen()
 
     /** Ohne Treffer null. Der Platz auf der Warteliste ist Beiwerk: schlaegt er fehl, gibt es keinen. */
     suspend fun veranstaltung(id: String): VeranstaltungDetail? = coroutineScope {

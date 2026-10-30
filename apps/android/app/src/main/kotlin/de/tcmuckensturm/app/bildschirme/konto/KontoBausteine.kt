@@ -28,12 +28,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Close
@@ -53,6 +53,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.error
@@ -64,6 +65,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.tcmuckensturm.app.bildschirme.Hinweis
 import de.tcmuckensturm.app.bildschirme.karte
 import de.tcmuckensturm.app.bildschirme.leise
 import de.tcmuckensturm.app.theme.TcmSchrift
@@ -73,15 +75,6 @@ import de.tcmuckensturm.app.ui.tokens.Radius
 import de.tcmuckensturm.app.ui.tokens.Schrift
 
 // ---- Schrift ---------------------------------------------------------------
-
-/** Leiser Text (stil.leise aus bildschirme/Bausteine.kt in muted). */
-@Composable
-fun Leise(text: String, modifier: Modifier = Modifier) {
-    Text(text, style = leise, color = TcmTheme.farben.muted, modifier = modifier)
-}
-
-/** Was ein Abschnitt braucht, um nach einem Fehler neu zu laden. */
-data class Erneut(val laeuft: Boolean, val aktion: () -> Unit)
 
 // ---- Gruppen und Zeilen -----------------------------------------------------
 
@@ -217,25 +210,6 @@ fun Betrag(text: String, groesse: Float = 19f) {
     )
 }
 
-/** Hinweis im Formular (stil.hinweisFehler / stil.hinweisErfolg); TalkBack liest ihn vor. */
-@Composable
-fun KontoHinweis(text: String, ok: Boolean = false) {
-    val f = TcmTheme.farben
-    Text(
-        text,
-        style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal),
-        color = if (ok) f.greenInk else f.redInk,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                (if (ok) f.green else f.red).copy(alpha = if (TcmTheme.dunkel) 0.16f else 0.12f),
-                RoundedCornerShape(Radius.feld),
-            )
-            .padding(12.dp)
-            .semantics { liveRegion = LiveRegionMode.Polite },
-    )
-}
-
 // ---- Formular ---------------------------------------------------------------
 
 /**
@@ -259,10 +233,12 @@ fun KontoFeld(
     val f = TcmTheme.farben
     val form = RoundedCornerShape(Radius.feld)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        // Das Feld traegt die Beschriftung selbst; TalkBack soll sie nicht zweimal lesen.
         Text(
             label,
             style = TcmSchrift.text(Schrift.gewichtHalbfett, Schrift.klein),
             color = if (fehler != null) f.red else f.ink2,
+            modifier = Modifier.clearAndSetSemantics {},
         )
         BasicTextField(
             value = wert,
@@ -285,7 +261,7 @@ fun KontoFeld(
                     if (fehler != null) error(fehler)
                 },
         )
-        if (fehler != null) KontoHinweis(fehler)
+        if (fehler != null) Hinweis(fehler)
     }
 }
 
@@ -298,6 +274,8 @@ fun <W> KontoSegmente(
     optionen: List<Pair<W, String>>,
     gewaehlt: W?,
     modifier: Modifier = Modifier,
+    /** Wofuer die Wahl ist ("Erscheinungsbild", "Geschlecht"); TalkBack nennt es zur Gruppe. */
+    beschriftung: String? = null,
     untereinander: Boolean = false,
     gesperrt: Boolean = false,
     wahl: (W) -> Unit,
@@ -336,6 +314,7 @@ fun <W> KontoSegmente(
         .alpha(if (gesperrt) 0.6f else 1f)
         .background(f.surf2, RoundedCornerShape(Radius.knopf))
         .padding(4.dp)
+        .semantics { if (beschriftung != null) contentDescription = beschriftung }
         .selectableGroup()
     if (untereinander) {
         Column(rahmen, verticalArrangement = Arrangement.spacedBy(4.dp)) { knoepfe(Modifier.fillMaxWidth()) }
@@ -370,28 +349,6 @@ fun BlattKopf(titel: String, zu: () -> Unit) {
         ) {
             Icon(Icons.Outlined.Close, contentDescription = null, tint = f.ink, modifier = Modifier.size(20.dp))
         }
-    }
-}
-
-/** Leiser Knopf mit Rand (stil.knopfLeise); rot fuer die Kuendigung. */
-@Composable
-fun LeiserKnopf(text: String, rot: Boolean = false, gesperrt: Boolean = false, aktion: () -> Unit) {
-    val f = TcmTheme.farben
-    val form = RoundedCornerShape(Radius.knopf)
-    val druck = remember { MutableInteractionSource() }
-    val gedrueckt by druck.collectIsPressedAsState()
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 52.dp)
-            .alpha(if (gesperrt) 0.5f else 1f)
-            .background(if (gedrueckt) f.ink.copy(alpha = 0.04f) else Color.Transparent, form)
-            .border(1.5.dp, if (rot) f.red.copy(alpha = 0.5f) else f.line2, form)
-            .clip(form)
-            .clickable(interactionSource = druck, indication = null, enabled = !gesperrt, role = Role.Button, onClick = aktion),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text, style = TcmSchrift.text(Schrift.gewichtFett, 16.sp), color = if (rot) f.redInk else f.ink)
     }
 }
 
