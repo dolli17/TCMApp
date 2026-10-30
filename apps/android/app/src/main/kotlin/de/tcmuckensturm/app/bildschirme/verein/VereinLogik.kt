@@ -12,7 +12,6 @@ package de.tcmuckensturm.app.bildschirme.verein
 
 import de.tcmuckensturm.app.daten.EigenesGetraenk
 import de.tcmuckensturm.app.daten.Getraenk
-import de.tcmuckensturm.app.daten.Ich
 import de.tcmuckensturm.kern.EventTon
 import de.tcmuckensturm.kern.Geld
 import de.tcmuckensturm.kern.Getraenke
@@ -34,14 +33,6 @@ enum class VereinReiter(val wert: String, val label: String) {
 }
 
 object VereinLogik {
-    // ---- Kopf ----
-
-    /** Die Initialen fuer den Avatar ("LD"), ohne Namen leer. */
-    fun initialen(ich: Ich?): String {
-        if (ich == null) return ""
-        return ((ich.firstName ?: "").take(1) + (ich.lastName ?: "").take(1)).uppercase()
-    }
-
     // ---- Getraenke ----
 
     private val quelle = mapOf("kiosk" to "Theke", "bar_duty" to "Thekendienst", "app" to "App")

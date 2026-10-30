@@ -15,7 +15,6 @@
 
 package de.tcmuckensturm.app.daten
 
-import de.tcmuckensturm.kern.Getraenkekauf
 import de.tcmuckensturm.kern.Korbartikel
 import de.tcmuckensturm.kern.MitgliedEvent
 import io.github.jan.supabase.SupabaseClient
@@ -40,19 +39,6 @@ data class Getraenk(
     @SerialName("price_cents") override val priceCents: Int? = null,
     @SerialName("sort_order") val sortOrder: Int? = null,
 ) : Korbartikel
-
-/** Eine Zeile aus my_drink_purchases (Home, Konto, Getraenke). */
-@Serializable
-data class EigenesGetraenk(
-    val id: String,
-    @SerialName("item_name") val itemName: String? = null,
-    val quantity: Int? = null,
-    @SerialName("unit_price_cents") val unitPriceCents: Int? = null,
-    @SerialName("total_cents") override val totalCents: Int? = null,
-    @SerialName("created_at") val createdAt: String? = null,
-    @SerialName("voided_at") override val voidedAt: String? = null,
-    val source: String? = null,
-) : Getraenkekauf
 
 /** Eine Veranstaltung im Detail mit dem eigenen Platz auf der Warteliste. */
 data class VeranstaltungDetail(
@@ -88,8 +74,8 @@ class Vereinsdaten(val client: SupabaseClient) {
     suspend fun getraenkekarte(): List<Getraenk> =
         uebersetzt { client.postgrest.rpc("drink_menu").decodeList<Getraenk>() }
 
-    suspend fun eigeneGetraenke(): List<EigenesGetraenk> =
-        uebersetzt { client.postgrest.rpc("my_drink_purchases").decodeList<EigenesGetraenk>() }
+    /** my_drink_purchases, wie auf Home (Startdaten). */
+    suspend fun eigeneGetraenke(): List<EigenesGetraenk> = Startdaten(client).eigeneGetraenke()
 
     /** Minuten; ohne Einstellung oder bei einem Fehler 15 wie ladeStornoFenster. */
     suspend fun stornoFenster(): Int {
@@ -176,8 +162,8 @@ class Vereinsdaten(val client: SupabaseClient) {
         "Du bist abgemeldet."
     }
 
-    /** Fuer den Avatar im Kopf (ich()). */
-    suspend fun ich(): Ich? = Zugangsdaten(client).ich()
+    /** Fuer den Avatar im Kopf, wie auf Home (Startdaten). */
+    suspend fun meinName(): MeinName? = Startdaten(client).meinName()
 
     companion object {
         /** Wie lange man eine Entnahme selbst zuruecknehmen darf, wenn nichts eingestellt ist. */

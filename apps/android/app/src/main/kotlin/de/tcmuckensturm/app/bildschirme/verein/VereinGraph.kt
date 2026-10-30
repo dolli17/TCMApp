@@ -19,6 +19,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.toRoute
+import de.tcmuckensturm.app.bildschirme.nachrichten.Glocke
 import kotlinx.serialization.Serializable
 
 /** Der Graph des Tabs (HauptTab.graph). */
@@ -47,8 +48,11 @@ fun NavGraphBuilder.vereinGraph(nav: NavHostController) {
 @Composable
 fun VereinBildschirm(oeffne: (String) -> Unit) {
     val zustand = LocalVereinZustand.current
+    val zuVerein = LocalZuVerein.current
     val kopf: @Composable () -> Unit = {
-        VereinKopf(zustand.reiter, VereinLogik.initialen(zustand.ich), zustand::wechsle)
+        VereinKopf(zustand.reiter, zustand.name, zustand::wechsle) {
+            Glocke(zuVeranstaltung = { zuVerein(VereinZiel.Veranstaltung(it)) })
+        }
     }
     when (zustand.reiter) {
         VereinReiter.GETRAENKE -> GetraenkeAnsicht(kopf)

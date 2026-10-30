@@ -14,10 +14,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -43,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -55,9 +51,13 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.tcmuckensturm.app.bildschirme.Avatar
+import de.tcmuckensturm.app.bildschirme.GrosserKopf
+import de.tcmuckensturm.app.bildschirme.home.HomeLogik
+import de.tcmuckensturm.app.bildschirme.leise
+import de.tcmuckensturm.app.daten.MeinName
 import de.tcmuckensturm.app.navigation.HauptTab
 import de.tcmuckensturm.app.navigation.LocalZuTab
 import de.tcmuckensturm.app.theme.TcmSchrift
@@ -70,34 +70,17 @@ import de.tcmuckensturm.kern.EventTon
 // ---- Kopf --------------------------------------------------------------------
 
 /**
- * Grosser Titel "Verein" mit Avatar (fuehrt ins Konto), darunter die
- * Segmente fuer den Reiter. Die Glocke bringt der gemeinsame Kopf der
- * Home-Spur mit (GrosserKopf in iOS).
+ * Der grosse Kopf "Verein" (GrosserKopf aus Bausteine.kt) mit Glocke und
+ * Avatar, darunter die Segmente fuer den Reiter. `glocke` ist in der App die
+ * Glocke aus `nachrichten`, in den Bildschirmfotos nur ihr Knopf.
  */
 @Composable
-fun VereinKopf(reiter: VereinReiter, initialen: String, wechsle: (VereinReiter) -> Unit) {
+fun VereinKopf(reiter: VereinReiter, name: MeinName?, wechsle: (VereinReiter) -> Unit, glocke: @Composable () -> Unit) {
     val f = TcmTheme.farben
     val zuTab = LocalZuTab.current
-    Row(
-        Modifier.fillMaxWidth().padding(top = 16.dp, bottom = Abstand.m),
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        Text(
-            "Verein",
-            style = TcmSchrift.text(Schrift.gewichtExtrafett, Schrift.seitentitel, Schrift.laufweiteTitel),
-            color = f.ink,
-            modifier = Modifier.weight(1f).semantics { heading() },
-        )
-        Surface(
-            onClick = { zuTab(HauptTab.KONTO) },
-            shape = CircleShape,
-            color = f.brand,
-            modifier = Modifier.size(44.dp).semantics { contentDescription = "Konto" },
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(initialen, style = TcmSchrift.text(Schrift.gewichtFett, 15.sp), color = f.onBrand)
-            }
-        }
+    GrosserKopf(titel = "Verein") {
+        glocke()
+        Avatar(HomeLogik.initialen(name)) { zuTab(HauptTab.KONTO) }
     }
     SingleChoiceSegmentedButtonRow(
         Modifier.fillMaxWidth().padding(bottom = Abstand.xs).semantics { contentDescription = "Bereich" },
@@ -123,30 +106,15 @@ fun VereinKopf(reiter: VereinReiter, initialen: String, wechsle: (VereinReiter) 
     }
 }
 
-// ---- Karte, Texte ------------------------------------------------------------
+// ---- Texte ------------------------------------------------------------
 
-/** Die Karte (stil.karte): surf mit Linie und leichtem Schatten. */
-fun Modifier.karte(radius: Dp = Radius.karte, innen: Dp = 12.dp, farbe: Color, linie: Color): Modifier {
-    val form = RoundedCornerShape(radius)
-    return this
-        .shadow(1.dp, form, clip = false)
-        .clip(form)
-        .background(farbe)
-        .border(1.dp, linie, form)
-        .padding(innen)
-}
-
-@Composable
-fun Modifier.karte(radius: Dp = Radius.karte, innen: Dp = 12.dp): Modifier =
-    karte(radius, innen, TcmTheme.farben.surf, TcmTheme.farben.line)
-
-/** stil.leise */
+/** stil.leise als Text (Stil `leise` aus Bausteine.kt). */
 @Composable
 fun Leise(text: String, modifier: Modifier = Modifier) {
-    Text(text, style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.klein), color = TcmTheme.farben.muted, modifier = modifier)
+    Text(text, style = leise.copy(lineHeight = 18.sp), color = TcmTheme.farben.muted, modifier = modifier)
 }
 
-/** Abschnittstitel (KontoAbschnitt in iOS). */
+/** Titel in einer Karte ("Anmelden", "Du bist angemeldet"); Abschnitte der Seite nehmen Kopfzeile. */
 @Composable
 fun Abschnitt(titel: String, modifier: Modifier = Modifier) {
     Text(
@@ -155,40 +123,6 @@ fun Abschnitt(titel: String, modifier: Modifier = Modifier) {
         color = TcmTheme.farben.ink,
         modifier = modifier.semantics { heading() },
     )
-}
-
-/** Ein Leerzustand in einer Karte (Leerzustand.tsx). */
-@Composable
-fun Leerzustand(text: String) {
-    Box(Modifier.fillMaxWidth().karte(innen = 16.dp)) { Leise(text) }
-}
-
-/** Ein Ladefehler mit dem Weg zurueck (Fehlerzeile.tsx, U3). */
-@Composable
-fun Fehlerzeile(text: String, laeuft: Boolean, erneut: () -> Unit) {
-    val f = TcmTheme.farben
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(Radius.feld))
-            .background(f.red.copy(alpha = if (TcmTheme.dunkel) 0.16f else 0.12f))
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Text(text, style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal), color = f.redInk)
-        OutlinedButton(
-            onClick = erneut,
-            enabled = !laeuft,
-            border = BorderStroke(1.5.dp, f.red.copy(alpha = 0.4f)),
-            modifier = Modifier.heightIn(min = 44.dp),
-        ) {
-            Text(
-                if (laeuft) "Wird geladen…" else "Erneut versuchen",
-                style = TcmSchrift.text(Schrift.gewichtFett, 15.sp),
-                color = f.redInk,
-            )
-        }
-    }
 }
 
 /** Eine Meldung im Inhalt (KontoHinweis): gruen fuer Erfolg, rot fuer einen Fehler. */

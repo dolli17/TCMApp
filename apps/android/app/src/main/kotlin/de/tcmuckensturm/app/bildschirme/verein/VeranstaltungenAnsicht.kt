@@ -34,8 +34,8 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -50,6 +50,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import de.tcmuckensturm.app.bildschirme.karte
+import de.tcmuckensturm.app.bildschirme.Kopfzeile
+import de.tcmuckensturm.app.bildschirme.Leerzustand
+import de.tcmuckensturm.app.bildschirme.Fehlerzeile
 import de.tcmuckensturm.app.daten.Meldung
 import de.tcmuckensturm.app.daten.Vereinsdaten
 import de.tcmuckensturm.app.start.LocalSitzung
@@ -83,7 +87,7 @@ class VeranstaltungenModell(private val daten: Vereinsdaten, private val zustand
     fun laden(art: Ladeart) {
         viewModelScope.launch {
             if (art == Ladeart.NACHLADEN) stand = stand.copy(aktualisiert = true)
-            launch { ladeIch(daten, zustand) }
+            launch { ladeName(daten, zustand) }
             stand = try {
                 stand.copy(events = daten.veranstaltungen(), fehler = null)
             } catch (e: CancellationException) {
@@ -97,9 +101,9 @@ class VeranstaltungenModell(private val daten: Vereinsdaten, private val zustand
 }
 
 /** Der Name fuer den Avatar; schlaegt es fehl, bleibt der alte. */
-internal suspend fun ladeIch(daten: Vereinsdaten, zustand: VereinZustand) {
+internal suspend fun ladeName(daten: Vereinsdaten, zustand: VereinZustand) {
     try {
-        daten.ich()?.let { zustand.ich = it }
+        daten.meinName()?.let { zustand.name = it }
     } catch (e: CancellationException) {
         throw e
     } catch (_: Exception) {
@@ -161,7 +165,7 @@ fun VeranstaltungenSeite(
                     CircularProgressIndicator(color = f.muted)
                 }
             } else if (stand.events != null) {
-                if (vergangen) Abschnitt("Vergangene Veranstaltungen")
+                if (vergangen) Kopfzeile("Vergangene Veranstaltungen")
                 if (gruppen.isEmpty()) {
                     Leerzustand(if (vergangen) "Noch keine vergangenen Veranstaltungen." else "Gerade ist nichts geplant.")
                 }
@@ -201,7 +205,7 @@ fun EventKarte(e: MitgliedEvent, jetzt: Instant, aufforderung: Boolean = false, 
         color = Color.Transparent,
         modifier = Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = beschreibung },
     ) {
-        Row(Modifier.fillMaxWidth().karte(innen = 14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(Modifier.fillMaxWidth().karte(padding = 14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             Column(
                 Modifier
                     .size(width = 52.dp, height = 56.dp)

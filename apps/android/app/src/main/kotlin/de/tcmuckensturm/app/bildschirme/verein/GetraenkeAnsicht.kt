@@ -52,8 +52,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -74,6 +74,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import de.tcmuckensturm.app.bildschirme.karte
+import de.tcmuckensturm.app.bildschirme.Kopfzeile
+import de.tcmuckensturm.app.bildschirme.Leerzustand
+import de.tcmuckensturm.app.bildschirme.Fehlerzeile
+import de.tcmuckensturm.app.bildschirme.Kicker
 import de.tcmuckensturm.app.daten.EigenesGetraenk
 import de.tcmuckensturm.app.daten.Getraenk
 import de.tcmuckensturm.app.daten.Meldung
@@ -153,7 +158,7 @@ class GetraenkeModell(private val daten: Vereinsdaten, private val zustand: Vere
                 val karte = async { daten.getraenkekarte() }
                 val buchungen = async { daten.eigeneGetraenke() }
                 val fenster = async { daten.stornoFenster() }
-                launch { ladeIch(daten, zustand) }
+                launch { ladeName(daten, zustand) }
                 GetraenkeInhalt(karte.await(), buchungen.await(), fenster.await())
             }
             zustand.karte = neu.karte
@@ -321,14 +326,14 @@ fun GetraenkeSeite(
                 } else if (inhalt != null) {
                     Monatskarte(inhalt.buchungen, jetzt)
 
-                    Abschnitt("Was nimmst du?", Modifier.padding(top = Abstand.abschnitt - Abstand.m))
-                    Leise("Mit + sammelst du. Gebucht ist erst, was du unten einträgst.", Modifier.padding(top = 0.dp))
+                    Kopfzeile("Was nimmst du?")
+                    Leise("Mit + sammelst du. Gebucht ist erst, was du unten einträgst.")
                     Karte(inhalt.karte, korb, stand.laeuft) { id, um ->
                         if (um > 0) haptik.performHapticFeedback(HapticFeedbackType.SegmentTick)
                         aktionen.aendern(id, um)
                     }
 
-                    Abschnitt("Zuletzt", Modifier.padding(top = Abstand.abschnitt - Abstand.m))
+                    Kopfzeile("Zuletzt")
                     Leise(VereinLogik.stornoHinweis(inhalt.stornoFenster))
                     if (inhalt.buchungen.isEmpty()) {
                         Leerzustand("Noch nichts entnommen.")
@@ -372,11 +377,7 @@ private fun Monatskarte(buchungen: List<EigenesGetraenk>, jetzt: Instant) {
     ) {
         Platzlinien(Modifier.matchParentSize())
         Column(Modifier.padding(20.dp)) {
-            Text(
-                VereinLogik.monatKicker(jetzt).uppercase(),
-                style = TcmSchrift.kicker,
-                color = f.onBrand.copy(alpha = 0.85f),
-            )
+            Kicker(VereinLogik.monatKicker(jetzt), farbe = f.onBrand.copy(alpha = 0.85f))
             Text(
                 summe,
                 style = TcmSchrift.display(Schrift.gewichtFett, 44.sp),
@@ -458,7 +459,7 @@ private fun Zuletzt(
     zuruecknehmen: (String) -> Unit,
 ) {
     val f = TcmTheme.farben
-    Column(Modifier.fillMaxWidth().karte(innen = 0.dp)) {
+    Column(Modifier.fillMaxWidth().karte(padding = 0.dp)) {
         buchungen.forEachIndexed { i, b ->
             if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(f.line))
             Entnahme(b, fenster, jetzt, laeuft, markiert?.trifft(b.id) == true, zuruecknehmen)

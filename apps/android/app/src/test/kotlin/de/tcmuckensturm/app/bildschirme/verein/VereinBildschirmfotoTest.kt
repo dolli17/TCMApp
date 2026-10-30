@@ -5,7 +5,9 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import de.tcmuckensturm.app.bildschirme.nachrichten.GlockeKnopf
 import de.tcmuckensturm.app.daten.EigenesGetraenk
+import de.tcmuckensturm.app.daten.MeinName
 import de.tcmuckensturm.app.daten.Getraenk
 import de.tcmuckensturm.app.daten.VeranstaltungDetail
 import de.tcmuckensturm.app.daten.Vereinsdaten
@@ -47,7 +49,7 @@ class VereinBildschirmfotoTest {
         ),
         korb = korb,
         jetzt = Beispiele.jetzt,
-        kopf = { VereinKopf(VereinReiter.GETRAENKE, "LD") {} },
+        kopf = { VereinKopf(VereinReiter.GETRAENKE, Beispiele.name, {}) { GlockeKnopf(2) {} } },
         aktionen = GetraenkeAktionen(),
     )
 
@@ -71,7 +73,7 @@ class VereinBildschirmfotoTest {
         stand = VeranstaltungenStand(events = Beispiele.events, laedt = false),
         jetzt = Beispiele.jetzt,
         vergangen = false,
-        kopf = { VereinKopf(VereinReiter.VERANSTALTUNGEN, "LD") {} },
+        kopf = { VereinKopf(VereinReiter.VERANSTALTUNGEN, Beispiele.name, {}) { GlockeKnopf(2) {} } },
         nachladen = {},
         umschalten = {},
         oeffne = {},
@@ -134,6 +136,8 @@ class VereinBildschirmfotoTest {
 /** Beispieldaten wie im Seed (supabase/seed.sql), Stand 20.10.2026. */
 private object Beispiele {
     val jetzt: Instant = Zeit.datum("2026-10-20T10:00:00Z")!!
+
+    val name = MeinName("Lucas", "Dollmann")
 
     val karte = listOf(
         Getraenk("bier", "Bier", "bier", "0,5 l", 250, 1),

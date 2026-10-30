@@ -49,13 +49,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -73,6 +73,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import de.tcmuckensturm.app.bildschirme.karte
+import de.tcmuckensturm.app.bildschirme.Fehlerzeile
 import de.tcmuckensturm.app.daten.Meldung
 import de.tcmuckensturm.app.daten.VeranstaltungDetail
 import de.tcmuckensturm.app.daten.Vereinsdaten
@@ -277,7 +279,7 @@ private fun ColumnScope.Inhalt(d: VeranstaltungDetail, jetzt: Instant, stand: Ve
             beschreibung,
             style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal).copy(lineHeight = 23.sp),
             color = f.ink,
-            modifier = Modifier.fillMaxWidth().karte(innen = 16.dp),
+            modifier = Modifier.fillMaxWidth().karte(padding = 16.dp),
         )
     }
 
@@ -292,7 +294,7 @@ private fun ColumnScope.Inhalt(d: VeranstaltungDetail, jetzt: Instant, stand: Ve
 @Composable
 private fun Eckdaten(e: MitgliedEvent) {
     val f = TcmTheme.farben
-    Column(Modifier.fillMaxWidth().karte(innen = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(Modifier.fillMaxWidth().karte(padding = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Eckdatum("Wann", Veranstaltungen.eventZeitText(e.startsAt, e.endsAt))
         val ort = e.location
         if (!ort.isNullOrEmpty()) Eckdatum("Ort", ort)
@@ -406,7 +408,7 @@ private fun AnmeldungKarte(d: VeranstaltungDetail, jetzt: Instant, stand: Verans
             abmelden = { aktionen.meldeAb { frage = false } },
         )
         Veranstaltungen.eventAnmeldbar(e, jetzt) -> Column(
-            Modifier.fillMaxWidth().karte(innen = 16.dp),
+            Modifier.fillMaxWidth().karte(padding = 16.dp),
             verticalArrangement = Arrangement.spacedBy(Abstand.m),
         ) {
             Abschnitt("Anmelden")
@@ -421,7 +423,7 @@ private fun AnmeldungKarte(d: VeranstaltungDetail, jetzt: Instant, stand: Verans
                 )
             }
         }
-        else -> Column(Modifier.fillMaxWidth().karte(innen = 16.dp), verticalArrangement = Arrangement.spacedBy(Abstand.m)) {
+        else -> Column(Modifier.fillMaxWidth().karte(padding = 16.dp), verticalArrangement = Arrangement.spacedBy(Abstand.m)) {
             hinweis()
             Leise(VereinLogik.nichtsZuTun(e, jetzt))
         }

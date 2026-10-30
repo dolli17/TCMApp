@@ -2,7 +2,6 @@ package de.tcmuckensturm.app.bildschirme.verein
 
 import de.tcmuckensturm.app.daten.EigenesGetraenk
 import de.tcmuckensturm.app.daten.Getraenk
-import de.tcmuckensturm.app.daten.Ich
 import de.tcmuckensturm.kern.Getraenke
 import de.tcmuckensturm.kern.MitgliedEvent
 import de.tcmuckensturm.kern.Veranstaltungen
@@ -140,13 +139,6 @@ class VereinLogikTest {
         assertFalse(Hervorhebung.Neu(setOf("a")).trifft("a"))
         assertTrue(Hervorhebung.Eine("a").trifft("a"))
         assertFalse(Hervorhebung.Eine("a").trifft("b"))
-    }
-
-    @Test
-    fun initialen() {
-        assertEquals("", VereinLogik.initialen(null))
-        assertEquals("LD", VereinLogik.initialen(Ich(firstName = "lucas", lastName = "Dollmann")))
-        assertEquals("M", VereinLogik.initialen(Ich(firstName = "Mia")))
     }
 
     // ---- Veranstaltung im Detail ----

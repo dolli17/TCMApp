@@ -23,14 +23,14 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
 import androidx.navigation.NavHostController
 import de.tcmuckensturm.app.daten.Getraenk
-import de.tcmuckensturm.app.daten.Ich
+import de.tcmuckensturm.app.daten.MeinName
 import de.tcmuckensturm.app.navigation.HauptTab
 import de.tcmuckensturm.app.theme.TcmSchrift
 import de.tcmuckensturm.app.theme.TcmTheme
@@ -67,7 +67,7 @@ class VereinZustand(private val speicher: Reiterspeicher) {
     var erinnerung: String? by mutableStateOf(null)
 
     /** Fuer den Avatar im Kopf; laedt der Reiter, der gerade offen ist. */
-    var ich: Ich? by mutableStateOf(null)
+    var name: MeinName? by mutableStateOf(null)
 
     val korbSumme: Pair<Int, Int>
         get() = Getraenke.basketSummary(karte, korb).let { it.count to it.totalCents }
