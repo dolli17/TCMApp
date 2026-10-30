@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Namen und Beschreibungen der Widgets in der Auswahl des Launchers (wie TCMWidgets.swift) -->
+<resources>
+    <string name="widget_spiele_name">Meine nächsten Spiele</string>
+    <string name="widget_spiele_beschreibung">Deine nächsten Buchungen mit Platz, Uhrzeit und Mitspielern.</string>
+    <string name="widget_plaetze_name">Plätze jetzt</string>
+    <string name="widget_plaetze_beschreibung">Welche Plätze heute frei sind und bis wann.</string>
+    <string name="widget_veranstaltung_name">Nächste Veranstaltung</string>
+    <string name="widget_veranstaltung_beschreibung">Was demnächst im Verein ansteht und ob du dabei bist.</string>
+</resources>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Farben der Widget-Vorschau (layout/vorschau_*.xml) aus packages/ui/src/tokens.ts,
+    hell; dunkel in values-night. Die Widgets selbst nehmen die Tokens direkt (WidgetFarbe).
+-->
+<resources>
+    <color name="widget_brand">#1466A8</color>
+    <color name="widget_on_brand">#FFFFFF</color>
+    <color name="widget_on_brand_leise">#D9FFFFFF</color>
+    <color name="widget_gold">#FFD21F</color>
+    <color name="widget_on_gold">#0A1624</color>
+    <color name="widget_surf">#FFFFFF</color>
+    <color name="widget_surf2">#EEF2F6</color>
+    <color name="widget_ink">#0A1624</color>
+    <color name="widget_ink2">#44566B</color>
+    <color name="widget_muted">#596A7D</color>
+    <color name="widget_green_ink">#126C48</color>
+    <color name="widget_frei">#8C1E9E6A</color>
+    <color name="widget_belegt">#1A6FB0</color>
+</resources>

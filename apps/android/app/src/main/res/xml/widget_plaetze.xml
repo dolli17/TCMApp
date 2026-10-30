@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Widget "Plätze jetzt" (widgets/TcmWidgets.kt). Kein updatePeriodMillis:
+    geladen wird im Zeitplan der WidgetArbeit. Vorschau ab Android 12 als
+    Layout (previewLayout), davor als Bild (previewImage).
+-->
+<!-- targetCell* und previewLayout gelten ab Android 12; davor zaehlen minWidth/minHeight und previewImage. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:description="@string/widget_plaetze_beschreibung"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:minWidth="220dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="220dp"
+    android:minResizeHeight="110dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:previewLayout="@layout/vorschau_plaetze"
+    android:previewImage="@drawable/vorschau_plaetze"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen"
+    tools:ignore="UnusedAttribute" />

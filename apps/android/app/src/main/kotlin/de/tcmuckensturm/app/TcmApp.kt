@@ -22,12 +22,13 @@ import de.tcmuckensturm.app.push.PushZentrale
 import de.tcmuckensturm.app.start.Sitzung
 import de.tcmuckensturm.app.start.Umgebung
 import de.tcmuckensturm.app.theme.einstellungen
+import de.tcmuckensturm.app.widgets.WidgetBruecke
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
 class TcmApp : Application() {
-    /** So lange wie der Prozess; fuer Sitzung und spaeter Push und Widget. */
+    /** So lange wie der Prozess; fuer Sitzung und spaeter Push. Die Widgets nehmen `sitzung.client` mit. */
     val appScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     val konfiguration: Result<Umgebung> by lazy { runCatching { Umgebung.ausBuildConfig() } }
@@ -58,6 +59,7 @@ class TcmApp : Application() {
                 client = SupabaseVerbindung.client(umgebung, Sitzungsspeicher.fuer(this)),
                 scope = appScope,
                 push = push,
+                nachAbmelden = { WidgetBruecke.vergessen(this) },
             )
         }
     }

@@ -9,7 +9,7 @@
  * Die Tab-Leiste haelt unten frei; oben (Statusleiste) sorgt jeder
  * Bildschirm selbst fuer Abstand, damit grosse Koepfe darunter zeichnen koennen.
  *
- * Angetippte Push-Nachrichten oeffnen hier ihr Ziel (push/PushNavigation.kt).
+ * Angetippte Push-Nachrichten und Widgets oeffnen hier ihr Ziel (push/PushNavigation.kt).
  */
 
 package de.tcmuckensturm.app.navigation
