@@ -19,6 +19,8 @@ lifecycle = "2.11.0"
 navigation-compose = "2.10.2"
 # 1.3.0 ist juenger als zwei Wochen.
 datastore = "1.2.1"
+# Custom Tabs fuer die Web-Verwaltung; dieselbe Version, die supabase-kt 3.8.0 ohnehin mitbringt.
+browser = "1.10.0"
 
 supabase = "3.8.0"
 # Wie supabase-kt 3.8.0 selbst (zieht auch androidx.browser 1.10.0)
@@ -42,6 +44,7 @@ androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-ru
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
 
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 compose-ui = { module = "androidx.compose.ui:ui" }

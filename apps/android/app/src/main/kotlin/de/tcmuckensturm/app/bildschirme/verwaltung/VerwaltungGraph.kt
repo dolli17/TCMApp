@@ -3,9 +3,8 @@
  *
  * Den Tab gibt es nur mit Platzrechten (`ich().platz_rechte` bzw. `admin`),
  * wie VerwaltungZugang in der iOS-App. Das ist wie im Web nur die
- * Oberflaeche - die RPCs pruefen selbst. Platzhalter aus dem Geruest (A1);
- * die Verwaltungs-Spur baut hier die Bildschirme
- * (Vorlage: apps/ios/TCMuckensturm/Bildschirme/Verwaltung/).
+ * Oberflaeche - die RPCs pruefen selbst. Ein Ziel: VerwaltungBildschirm;
+ * Sperren und Serien sind Bottom Sheets darueber, keine eigenen Ziele.
  */
 
 package de.tcmuckensturm.app.bildschirme.verwaltung
@@ -20,8 +19,6 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
-import de.tcmuckensturm.app.bildschirme.Platzhalter
-import de.tcmuckensturm.app.daten.Ich
 import de.tcmuckensturm.app.daten.Zugangsdaten
 import io.github.jan.supabase.SupabaseClient
 import kotlin.coroutines.cancellation.CancellationException
@@ -39,16 +36,6 @@ fun NavGraphBuilder.verwaltungGraph(@Suppress("UNUSED_PARAMETER") nav: NavHostCo
     navigation<VerwaltungGraph>(startDestination = VerwaltungStart) {
         composable<VerwaltungStart> { VerwaltungBildschirm() }
     }
-}
-
-@Composable
-fun VerwaltungBildschirm() {
-    Platzhalter(titel = "Verwaltung", text = "Hier kommen Plätze sperren und Serien.")
-}
-
-object VerwaltungLogik {
-    /** Platzwart oder Admin. Ohne Antwort (Fehler) bleibt der Tab weg. */
-    fun sichtbar(ich: Ich?): Boolean = ich?.platzRechte == true || ich?.admin == true
 }
 
 /** Fragt beim Oeffnen der Tabs einmal ich(); ein Fehler zaehlt als "keine Rechte". */

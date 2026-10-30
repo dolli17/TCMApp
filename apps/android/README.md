@@ -60,6 +60,15 @@ targetSdk 36, gelaufen auf dem API-35-Emulator.
 Weitere Bilder (je hell und dunkel, mit Ladefehler, beim Laden) unter `docs/konto-*.png`, aus
 `KontoBildfotoTest` mit Beispieldaten ohne Netz.
 
+### Verwaltung (Spur A7)
+
+| Plätze | Plätze, dunkel | Serien | Serien, dunkel | Sperren | Serie anlegen | Serie ändern | Schrift 200 % |
+|---|---|---|---|---|---|---|---|
+| ![Plätze hell](docs/verwaltung-plaetze-hell.png) | ![Plätze dunkel](docs/verwaltung-plaetze-dunkel.png) | ![Serien hell](docs/verwaltung-serien-hell.png) | ![Serien dunkel](docs/verwaltung-serien-dunkel.png) | ![Sperren](docs/verwaltung-sperren-dunkel.png) | ![Serie anlegen](docs/verwaltung-serie-anlegen-hell.png) | ![Serie ändern](docs/verwaltung-serie-hell.png) | ![Schrift 200 %](docs/verwaltung-plaetze-schrift-200.png) |
+
+Beispieldaten aus `VerwaltungAttrappe` (`VerwaltungBildschirmfotoTest`), ohne Netz; weitere unter
+`docs/verwaltung-*.png`.
+
 ## Voraussetzungen
 
 Gebaut mit AGP 9.4.1 (Kotlin ist darin eingebaut, kein Plugin `org.jetbrains.kotlin.android`),
@@ -220,6 +229,17 @@ Für parallele Spuren gilt:
   `daten/Startdaten.kt`). Stunden stehen deutsch mit Komma (`kern/Zahlen.kt`: „6,5 / 10 h“). Der
   Inhalt liegt im `KontoModell` (ViewModel) und lädt beim Zurückkehren in den Tab still nach. Der Push-Schalter ist eine gesperrte Platzhalterzeile (`TODO` für die
   Push-Spur), oben rechts die Glocke aus `bildschirme/nachrichten`.
+- **Verwaltung** (`bildschirme/verwaltung/`, `daten/Verwaltungsdaten.kt`, wie
+  `Bildschirme/Verwaltung/` in iOS): Tab nur mit Platzrechten oder Admin (`ich()`), Segmente
+  „Plätze“ und „Serien“ (klebt beim Rollen). Plätze zum Lesen mit dem Zustand von jetzt (frei,
+  gesperrt bis …, Serie bis …, stillgelegt; aus `court_overview` und `day_schedule`); eine
+  Sperrung führt in den Tab Plätze. Blätter: Plätze sperren (`create_blocking`, zweistufig mit
+  Rückfrage vor dem Verdrängen), Serie anlegen (`preview_series` als Vorschau, dann
+  `create_series`), Serie ändern (`update_series`, zweistufig) oder beenden (`end_series`, mit
+  Rückfrage). Die Meldung steht danach unter dem gelben Knopf. Unten der Weg ins Web (Admins
+  `SITE_URL/admin`, Platzwart `SITE_URL/admin/plaetze`) als Custom Tab (`androidx.browser`),
+  ohne Webadresse (lokal) nur der Satz. Uhrzeit und Datum werden getippt (HH:MM, TT.MM.JJJJ) wie
+  in iOS und Expo; reine Logik in `VerwaltungLogik.kt`.
 
 ### Tab Verein (`bildschirme/verein`, wie `Bildschirme/Verein` in iOS)
 
@@ -258,13 +278,15 @@ Für parallele Spuren gilt:
   `KontoLogikTest` (Fälle aus `KontoTests.swift`), `ErscheinungsbildSpeicherTest` und `KontoBildfotoTest`, für Plätze
   `PlaetzeLogikTest`, `PlaetzeModellTest` (gegen `PlatzAttrappe`, inkl. Drossel) und
   `PlaetzeBildschirmfotoTest`, für den Verein `VereinLogikTest` (Texte, Decoding, Korb und Erinnerung)
-  und `VereinBildschirmfotoTest`.
+  und `VereinBildschirmfotoTest`, für die Verwaltung `VerwaltungLogikTest` (Fälle aus
+  `VerwaltungTests.swift`), `VerwaltungModellTest` (gegen `VerwaltungAttrappe`) und
+  `VerwaltungBildschirmfotoTest` (inkl. Sprung in den Tab Plätze und Web-Link je nach Rechten).
 - Der Android Keystore fehlt in Robolectric. Die Tests des Sitzungsspeichers nehmen deshalb einen
   Software-Schlüssel; der echte Keystore läuft im Emulator-Rauchtest.
 
 ## Was fehlt
 
-- Screens: Onboarding, Verwaltung (Platzhalter), Widget (`:widgets`).
+- Screens: Onboarding, Widget (`:widgets`).
 - Konto: Push-Schalter „Mitteilungen aufs Handy“ (Push-Spur).
 - Home: „Demnächst im Verein“ (die Karte gibt es schon: `EventKarte(e, jetzt, aufforderung = true)`).
 - Push (FCM): Anmeldung des Tokens und Abmeldung beim Abmelden (`TODO` in `Sitzung.abmelden()`).
