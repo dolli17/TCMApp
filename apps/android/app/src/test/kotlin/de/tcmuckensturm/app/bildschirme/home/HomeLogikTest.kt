@@ -86,9 +86,9 @@ class HomeLogikTest {
         assertEquals("4,50 €", stand.getraenkeWert)
         assertEquals("Getränke im September: 4,50 €, läuft noch. Zu den Getränken", stand.getraenkeLabel)
         assertEquals("Arbeitsdienst 2026", stand.dienstTitel)
-        assertEquals("2.5 / 10 h", stand.dienstWert)
+        assertEquals("2,5 / 10 h", stand.dienstWert)
         assertEquals(0.25, stand.dienstAnteil, 0.0)
-        assertEquals("Arbeitsdienst 2026: 2.5 von 10 Stunden. Zum Konto", stand.dienstLabel)
+        assertEquals("Arbeitsdienst 2026: 2,5 von 10 Stunden. Zum Konto", stand.dienstLabel)
 
         val ohne = HomeLogik.deinStand(Abschnitt.Fehler("Kaputt."), Abschnitt.Wert(null), jetzt)
         assertNull(ohne.getraenkeWert)
@@ -125,12 +125,10 @@ class HomeLogikTest {
     }
 
     @Test
-    fun initialenUndJsZahl() {
+    fun initialen() {
         assertEquals("MM", HomeLogik.initialen(MeinName("max", "muster")))
         assertEquals("", HomeLogik.initialen(null))
         assertEquals("E", HomeLogik.initialen(MeinName("Erika", "")))
-        assertEquals("3", HomeLogik.jsZahl(3.0))
-        assertEquals("2.5", HomeLogik.jsZahl(2.5))
     }
 
     @Test
