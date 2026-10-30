@@ -25,6 +25,7 @@ import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import de.tcmuckensturm.app.bildschirme.Hauptknopf
 import de.tcmuckensturm.app.start.LocalSitzung
 import de.tcmuckensturm.app.start.PasswortTexte
 import de.tcmuckensturm.app.ui.tokens.Abstand
@@ -84,7 +85,7 @@ fun PasswortVergessenInhalt(
         if (fehler != null) AnmeldeHinweis(fehler)
 
         Column(Modifier.padding(top = Abstand.abschnitt), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            GelberKnopf(if (laeuft) "Wird gesendet…" else "Link anfordern", gesperrt = laeuft, aktion = absenden)
+            Hauptknopf(if (laeuft) "Wird gesendet…" else "Link anfordern", gesperrt = laeuft, aktion = absenden)
             LeiserVerweis("Zurück zur Anmeldung", aktion = zurueck)
         }
     }

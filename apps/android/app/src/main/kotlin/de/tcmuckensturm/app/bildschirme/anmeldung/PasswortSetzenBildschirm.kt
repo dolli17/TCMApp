@@ -40,6 +40,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.tcmuckensturm.app.bildschirme.Hauptknopf
 import de.tcmuckensturm.app.start.LocalSitzung
 import de.tcmuckensturm.app.start.PasswortRegeln
 import de.tcmuckensturm.app.start.PasswortTexte
@@ -115,7 +116,7 @@ fun PasswortSetzenInhalt(
             is PasswortZustand.Fehler -> {
                 AnmeldeHinweis(zustand.text)
                 Column(Modifier.padding(top = Abstand.abschnitt), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    GelberKnopf("Neuen Link anfordern", aktion = neuerLink)
+                    Hauptknopf("Neuen Link anfordern", aktion = neuerLink)
                     LeiserVerweis("Zurück zur Anmeldung", aktion = schliessen)
                 }
             }
@@ -147,7 +148,7 @@ fun PasswortSetzenInhalt(
                     beimAbsenden = speichern,
                 )
                 if (fehler != null) AnmeldeHinweis(fehler)
-                GelberKnopf(
+                Hauptknopf(
                     if (laeuft) "Wird gespeichert…" else "Speichern",
                     modifier = Modifier.padding(top = Abstand.abschnitt),
                     gesperrt = laeuft,

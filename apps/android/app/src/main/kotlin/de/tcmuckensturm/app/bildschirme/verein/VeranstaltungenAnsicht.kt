@@ -17,6 +17,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,12 +36,12 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -51,10 +53,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import de.tcmuckensturm.app.bildschirme.karte
+import de.tcmuckensturm.app.bildschirme.Fehlerzeile
+import de.tcmuckensturm.app.bildschirme.GedeckelteSchrift
 import de.tcmuckensturm.app.bildschirme.Kopfzeile
 import de.tcmuckensturm.app.bildschirme.Leerzustand
-import de.tcmuckensturm.app.bildschirme.Fehlerzeile
+import de.tcmuckensturm.app.bildschirme.karte
+import de.tcmuckensturm.app.bildschirme.mitTrennung
 import de.tcmuckensturm.app.daten.Meldung
 import de.tcmuckensturm.app.daten.Vereinsdaten
 import de.tcmuckensturm.app.start.LocalSitzung
@@ -205,6 +209,7 @@ fun VeranstaltungenSeite(
 
 /** Eine Veranstaltung als Karte: Datumskachel, Marken, Titel, Zeit und Ort, die fette Zeile. */
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 fun EventKarte(e: MitgliedEvent, jetzt: Instant, aufforderung: Boolean = false, aktion: () -> Unit) {
     val f = TcmTheme.farben
     val k = Veranstaltungen.eventDatumKachel(e.startsAt)
@@ -227,15 +232,19 @@ fun EventKarte(e: MitgliedEvent, jetzt: Instant, aufforderung: Boolean = false, 
                 verticalArrangement = Arrangement.Center,
             ) {
                 val farbe = if (vorbei) f.ink2 else f.onBrand
-                Text(k.tag, style = TcmSchrift.display(Schrift.gewichtFett, 21.sp), color = farbe)
-                Text(k.monat.uppercase(), style = TcmSchrift.display(Schrift.gewichtFett, Schrift.kicker, 0.6.sp), color = farbe)
+                // Feste Kachel: Schrift gedeckelt wie in iOS (bis xLarge).
+                GedeckelteSchrift {
+                    Text(k.tag, style = TcmSchrift.display(Schrift.gewichtFett, 21.sp), color = farbe)
+                    Text(k.monat.uppercase(), style = TcmSchrift.display(Schrift.gewichtFett, Schrift.kicker, 0.6.sp), color = farbe)
+                }
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                // Umbrechend: bei grosser Schrift steht die zweite Marke darunter statt mitten im Wort zu brechen.
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     MarkeKlein(Veranstaltungen.kindLabel[art] ?: art, Veranstaltungen.kindTon[art] ?: EventTon.GRAU)
                     marke?.let { MarkeKlein(it.text, it.ton) }
                 }
-                Text(e.title ?: "", style = TcmSchrift.text(Schrift.gewichtFett, 17.sp), color = if (vorbei) f.ink2 else f.ink)
+                Text(e.title ?: "", style = TcmSchrift.text(Schrift.gewichtFett, 17.sp).mitTrennung(), color = if (vorbei) f.ink2 else f.ink)
                 Text(Veranstaltungen.eventKartenZeit(e), style = TcmSchrift.text(Schrift.gewichtNormal, 13.5.sp), color = f.muted)
                 Text(Veranstaltungen.eventKartenZeile(e, jetzt), style = TcmSchrift.text(Schrift.gewichtFett, 13.5.sp), color = f.ink)
             }

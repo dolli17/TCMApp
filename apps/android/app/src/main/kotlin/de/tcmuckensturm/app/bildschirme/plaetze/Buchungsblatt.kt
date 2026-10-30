@@ -65,6 +65,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.tcmuckensturm.app.bildschirme.Hauptknopf
+import de.tcmuckensturm.app.bildschirme.Leise
+import de.tcmuckensturm.app.bildschirme.NebeneinanderOderUntereinander
+import de.tcmuckensturm.app.daten.Initialen
 import de.tcmuckensturm.app.daten.Meldung
 import de.tcmuckensturm.app.daten.Mitglied
 import de.tcmuckensturm.app.daten.TagesBelegung
@@ -176,6 +180,8 @@ private fun Mitspieler(
     gastgebuehrCents: Int,
     suchen: Boolean,
     gefragt: Boolean = false,
+    /** Zaehlt hoch, wenn der gesperrte Buchen-Knopf zur Suche schickt; holt den Fokus auch bei offenem Feld. */
+    fokusAnfrage: Int = 0,
     aendern: (mitglieder: List<String>, gaeste: List<String>) -> Unit,
     suchenWechsel: (Boolean) -> Unit,
 ) {
@@ -191,7 +197,7 @@ private fun Mitspieler(
             for (id in mitglieder) {
                 val mg = verzeichnis.firstOrNull { it.id == id } ?: continue
                 Chip(
-                    PlaetzeLogik.initialen(mg.firstName, mg.lastName), mg.name,
+                    Initialen.von(mg.firstName, mg.lastName), mg.name,
                     weg = { aendern(mitglieder - id, gaeste) }, wegLabel = "${mg.name} entfernen",
                 )
             }
@@ -229,7 +235,7 @@ private fun Mitspieler(
         if (suchen && !voll) {
             Column(Modifier.padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Eingabe("Namen tippen …", "Mitspieler suchen", suche, { suche = it }, Modifier.focusRequester(fokus))
-                LaunchedEffect(Unit) { runCatching { fokus.requestFocus() } }
+                LaunchedEffect(fokusAnfrage) { runCatching { fokus.requestFocus() } }
                 if (suche.isNotBlank()) {
                     val treffer = PlaetzeLogik.treffer(suche, verzeichnis, mitglieder)
                     if (treffer.isEmpty()) {
@@ -306,6 +312,7 @@ private fun ColumnScope.BuchenInhalt(m: PlaetzeModell, b: Fenster.Buchen, kicker
     var gaeste by remember { mutableStateOf(listOf<String>()) }
     var sucht by remember { mutableStateOf(false) }
     var suchen by remember { mutableStateOf(false) }
+    var fokusAnfrage by remember { mutableIntStateOf(0) }
 
     val gewaehlt = m.arten.firstOrNull { it.code == art }
     val info = gewaehlt?.info
@@ -349,7 +356,7 @@ private fun ColumnScope.BuchenInhalt(m: PlaetzeModell, b: Fenster.Buchen, kicker
 
     // Sich selbst mitzunehmen weist die Datenbank ab - der Bucher zaehlt ohnehin mit.
     Mitspieler(
-        kopf = Kopfchip(PlaetzeLogik.initialen(ich?.firstName, ich?.lastName), "Du", gelb = true),
+        kopf = Kopfchip(Initialen.von(ich?.firstName, ich?.lastName), "Du", gelb = true),
         verzeichnis = m.verzeichnis.filter { it.id != m.meineId },
         mitglieder = mitglieder,
         gaeste = gaeste,
@@ -358,6 +365,7 @@ private fun ColumnScope.BuchenInhalt(m: PlaetzeModell, b: Fenster.Buchen, kicker
         gastgebuehrCents = m.gastgebuehr,
         suchen = suchen,
         gefragt = fehlen > 0,
+        fokusAnfrage = fokusAnfrage,
         aendern = { neueMitglieder, neueGaeste ->
             mitglieder = neueMitglieder
             gaeste = neueGaeste
@@ -374,7 +382,14 @@ private fun ColumnScope.BuchenInhalt(m: PlaetzeModell, b: Fenster.Buchen, kicker
             if (m.laeuft) "Wird gebucht …" else "${b.platzName} buchen",
             gesperrt = m.laeuft || hinweis != null,
             grund = hinweis,
-            beiGesperrt = if (m.laeuft || maxWeitere == 0) null else ({ suchen = true }),
+            beiGesperrt = if (m.laeuft || maxWeitere == 0) {
+                null
+            } else {
+                {
+                    suchen = true
+                    fokusAnfrage++
+                }
+            },
         ) {
             m.buchen(b.courtId, b.tag, start, art, mitglieder, gaeste, sucht)
         }
@@ -409,7 +424,7 @@ private fun SperrBereich(m: PlaetzeModell, courtId: String, platzName: String, t
         } else {
             Column {
                 Feldname("Kategorie")
-                Chipwahl(m.blockungsarten.map { it.code to (it.name ?: it.code) }, { it == art }) {
+                Chipwahl(m.blockungsarten.map { it.code to (it.name ?: it.code) }, { it == art }, "Kategorie") {
                     art = it
                     kollisionen = null
                 }
@@ -465,7 +480,7 @@ private fun ColumnScope.VerwaltenInhalt(m: PlaetzeModell, b: TagesBelegung, tag:
     val maxWeitere = maxOf((art?.maxPlayers ?: 4) - 1, 0)
     val geaendert = mitglieder.sorted() != vorher.sorted() || gaeste.sorted() != vorherGaeste.sorted()
     val bucher = Kopfchip(
-        PlaetzeLogik.initialenAusName(b.ownerName),
+        Initialen.ausName(b.ownerName),
         if (b.isOwn == true) "Du" else (b.ownerName ?: "Bucher"),
         gelb = b.isOwn == true,
     )
@@ -509,7 +524,7 @@ private fun ColumnScope.VerwaltenInhalt(m: PlaetzeModell, b: TagesBelegung, tag:
             Feldname("Wer spielt mit?")
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Chip(bucher.kuerzel, bucher.name, gelb = bucher.gelb)
-                for (p in b.players.orEmpty().filterNotNull()) Chip(PlaetzeLogik.initialenAusName(p), p)
+                for (p in b.players.orEmpty().filterNotNull()) Chip(Initialen.ausName(p), p)
                 repeat(maxOf(b.frei ?: 0, 0)) { Chip("", "frei", leer = true) }
             }
         }
@@ -550,16 +565,17 @@ private fun ColumnScope.VerwaltenInhalt(m: PlaetzeModell, b: TagesBelegung, tag:
             }
             // Im zweiten Schritt steht "Abbrechen" daneben: zurueck, ohne das Blatt zu schliessen (U76).
             if (v.darfVerwalten) {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                // Bei grosser Schrift untereinander, sonst quetschen sich die Texte (ViewThatFits in iOS).
+                NebeneinanderOderUntereinander { breite ->
                     if (stornoOffen) {
-                        Nebenknopf("Abbrechen", Modifier.weight(1f), gesperrt = m.laeuft) {
+                        Nebenknopf("Abbrechen", breite, gesperrt = m.laeuft) {
                             stornoOffen = false
                             grund = ""
                         }
                     }
                     Nebenknopf(
                         v.stornoText(bestaetigen = stornoOffen),
-                        Modifier.weight(1f),
+                        breite,
                         gefahr = true,
                         gesperrt = m.laeuft || (stornoOffen && v.grundNoetig && grund.isBlank()),
                     ) {
@@ -624,7 +640,7 @@ private fun SperreBearbeiten(m: PlaetzeModell, sperre: TagesBelegung, tag: Strin
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Column {
             Feldname("Plätze")
-            Chipwahl(m.plaetze.map { it.id to (it.name ?: "") }, { it in plaetze }) { id ->
+            Chipwahl(m.plaetze.map { it.id to (it.name ?: "") }, { it in plaetze }, "Plätze", mehrfach = true) { id ->
                 plaetze = if (id in plaetze) plaetze - id else plaetze + id
                 kollisionen = null
             }
@@ -642,7 +658,7 @@ private fun SperreBearbeiten(m: PlaetzeModell, sperre: TagesBelegung, tag: Strin
         }
         Column {
             Feldname("Kategorie")
-            Chipwahl(arten, { it == art }) {
+            Chipwahl(arten, { it == art }, "Kategorie") {
                 art = it
                 kollisionen = null
             }

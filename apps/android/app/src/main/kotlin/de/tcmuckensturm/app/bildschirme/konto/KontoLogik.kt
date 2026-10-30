@@ -81,9 +81,6 @@ data class Statusmarke(val text: String, val ton: Ton) {
 object KontoLogik {
     // ---- Profilkopf -----------------------------------------------------------
 
-    fun initialen(vorname: String, nachname: String): String =
-        (vorname.take(1) + nachname.take(1)).uppercase()
-
     /** "Mitglied seit 2019", die Mannschaft und "Mannschaftsführer", soweit vorhanden. */
     fun marken(p: MeinProfil?): List<String> {
         if (p == null) return emptyList()

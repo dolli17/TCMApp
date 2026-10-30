@@ -17,19 +17,27 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
@@ -37,22 +45,37 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.text.style.Hyphens
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import de.tcmuckensturm.app.daten.Initialen
+import de.tcmuckensturm.app.daten.MeinName
+import de.tcmuckensturm.app.navigation.HauptTab
+import de.tcmuckensturm.app.navigation.LocalZuTab
 import de.tcmuckensturm.app.theme.TcmSchrift
 import de.tcmuckensturm.app.theme.TcmTheme
 import de.tcmuckensturm.app.ui.tokens.Abstand
@@ -84,6 +107,13 @@ fun Kicker(text: String, modifier: Modifier = Modifier, farbe: Color = TcmTheme.
     Text(text.uppercase(), style = TcmSchrift.kicker, color = farbe, modifier = modifier)
 }
 
+/**
+ * Deutsche Silbentrennung fuer lange Woerter in schmalen Karten
+ * ("Mitglieder-versammlung" statt "Mitgliederversammlu|ng"), auch wenn das
+ * Telefon auf Englisch steht - die App ist deutsch.
+ */
+fun TextStyle.mitTrennung(): TextStyle = copy(hyphens = Hyphens.Auto, localeList = LocaleList("de-DE"))
+
 /** stil.leise */
 val leise: TextStyle get() = TcmSchrift.text(Schrift.gewichtNormal, Schrift.klein)
 
@@ -106,10 +136,13 @@ fun Modifier.tippbar(beschreibung: String? = null, rolle: Role = Role.Button, ak
 
 /**
  * Der grosse Titel-Kopf (GrosserKopf.tsx): optional ein Kicker, Titel in
- * 34/800, rechts Glocke und Avatar. Der Titel darf zweizeilig werden (U52).
+ * 34/800, rechts Glocke und Avatar - auf jedem Tab gleich (Home, Plaetze,
+ * Verein, Verwaltung; Konto hat nur die Glocke, wie iOS). Der Titel darf
+ * zweizeilig werden (U52). `glocke` ist in der App `Glocke()` aus
+ * `nachrichten`, in den Bildschirmfotos nur ihr Knopf (ohne Netz).
  */
 @Composable
-fun GrosserKopf(titel: String, kicker: String? = null, rechts: @Composable () -> Unit = {}) {
+fun GrosserKopf(titel: String, kicker: String? = null, name: MeinName?, glocke: @Composable () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -130,24 +163,28 @@ fun GrosserKopf(titel: String, kicker: String? = null, rechts: @Composable () ->
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            rechts()
+            glocke()
+            Avatar(name)
         }
     }
 }
 
-/** Initialen auf brand; fuehrt ins Konto. */
+/** Initialen auf brand (ohne Namen leer, solange er laedt); fuehrt ins Konto. */
 @Composable
-fun Avatar(initialen: String, aktion: () -> Unit) {
+fun Avatar(name: MeinName?) {
     val f = TcmTheme.farben
+    val zuTab = LocalZuTab.current
     Box(
         Modifier
             .size(44.dp)
             .clip(CircleShape)
             .background(f.brand)
-            .tippbar("Konto", aktion = aktion),
+            .tippbar("Konto") { zuTab(HauptTab.KONTO) },
         contentAlignment = Alignment.Center,
     ) {
-        Text(initialen, style = TcmSchrift.text(Schrift.gewichtFett, 15.sp), color = f.onBrand)
+        GedeckelteSchrift {
+            Text(Initialen.von(name), style = TcmSchrift.text(Schrift.gewichtFett, 15.sp), color = f.onBrand)
+        }
     }
 }
 
@@ -173,14 +210,19 @@ fun Kopfzeile(titel: String, link: KopfLink? = null) {
                 .semantics { heading() },
         )
         if (link != null) {
-            TextButton(
-                onClick = link.aktion,
-                modifier = Modifier.semantics(mergeDescendants = true) {
-                    contentDescription = link.label ?: link.text
-                },
-            ) {
-                Text(link.text, style = TcmSchrift.text(Schrift.gewichtHalbfett, 14.sp), color = f.blueInk)
-            }
+            // Kein TextButton: dessen Mindestbreite zentriert kurze Links wie "Alle" und
+            // verschiebt so die rechte Kante gegenüber "Alle Plätze".
+            Text(
+                link.text,
+                style = TcmSchrift.text(Schrift.gewichtHalbfett, 14.sp),
+                color = f.blueInk,
+                modifier = Modifier
+                    .clip(Kapsel)
+                    .tippbar(link.label ?: link.text, aktion = link.aktion)
+                    .heightIn(min = 48.dp)
+                    .wrapContentHeight()
+                    .padding(horizontal = 12.dp),
+            )
         }
     }
 }
@@ -248,6 +290,182 @@ fun Fehlerzeile(text: String, laeuft: Boolean = false, erneut: (() -> Unit)? = n
             }
         }
     }
+}
+
+// ---- Texte und Meldungen --------------------------------------------------------
+
+/** Leiser Text (stil.leise in muted), etwa unter einem Titel oder als Fussnote im Blatt. */
+@Composable
+fun Leise(text: String, modifier: Modifier = Modifier, farbe: Color = TcmTheme.farben.muted) {
+    Text(text, style = leise.copy(lineHeight = 18.sp), color = farbe, modifier = modifier)
+}
+
+/** Eine Meldung im Inhalt (stil.hinweisFehler): rot fuer einen Fehler, gruen fuer Erfolg; TalkBack liest sie vor. */
+@Composable
+fun Hinweis(text: String, ok: Boolean = false) {
+    val f = TcmTheme.farben
+    Text(
+        text,
+        style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal),
+        color = if (ok) f.greenInk else f.redInk,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(Radius.feld))
+            .background((if (ok) f.green else f.red).copy(alpha = if (TcmTheme.dunkel) 0.16f else 0.12f))
+            .padding(12.dp)
+            .semantics { liveRegion = LiveRegionMode.Polite },
+    )
+}
+
+// ---- Knoepfe ----------------------------------------------------------------------
+
+/**
+ * Der gelbe Hauptknopf (stil.knopfGold), rot fuer Abmelden, Verdraengen und
+ * Absagen. Gross (58 dp, Radius 18) in Anmeldung, Formularen und Blaettern,
+ * `kompakt` (52 dp, Radius knopf) in Karten wie in iOS (Veranstaltung,
+ * Rueckfragen der Verwaltung).
+ *
+ * Gesperrt ist neutral statt blassgold (U26). Mit `beiGesperrt` nimmt der
+ * gesperrte Knopf das Tippen noch an und fuehrt zum naechsten Schritt; `grund`
+ * sagt TalkBack, warum er gesperrt ist.
+ */
+@Composable
+fun Hauptknopf(
+    text: String,
+    modifier: Modifier = Modifier,
+    rot: Boolean = false,
+    kompakt: Boolean = false,
+    gesperrt: Boolean = false,
+    grund: String? = null,
+    beiGesperrt: (() -> Unit)? = null,
+    aktion: () -> Unit,
+) {
+    val f = TcmTheme.farben
+    val form = RoundedCornerShape(if (kompakt) Radius.knopf else 18.dp)
+    val neutral = gesperrt && !rot
+    Box(
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = if (kompakt) 52.dp else 58.dp)
+            .alpha(if (gesperrt && rot) 0.6f else 1f)
+            .clip(form)
+            .background(if (neutral) f.surf3 else if (rot) f.red else f.gold)
+            .clickable(enabled = !gesperrt || beiGesperrt != null, role = Role.Button) {
+                if (gesperrt) beiGesperrt?.invoke() else aktion()
+            }
+            .semantics { if (gesperrt && grund != null) contentDescription = "$text. $grund" }
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            style = TcmSchrift.text(Schrift.gewichtExtrafett, if (kompakt) 16.sp else 17.sp),
+            color = if (neutral) f.muted else if (rot) f.onBrand else f.onGold,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** Umrandeter Knopf (LeiserKnopf in iOS), 52 dp; rot fuer Abmelden und Kuendigen. */
+@Composable
+fun LeiserKnopf(
+    text: String,
+    modifier: Modifier = Modifier,
+    rot: Boolean = false,
+    gesperrt: Boolean = false,
+    aktion: () -> Unit,
+) {
+    val f = TcmTheme.farben
+    val form = RoundedCornerShape(Radius.knopf)
+    Box(
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = 52.dp)
+            .alpha(if (gesperrt) 0.5f else 1f)
+            .clip(form)
+            .border(1.5.dp, if (rot) f.red.copy(alpha = 0.5f) else f.line2, form)
+            .clickable(enabled = !gesperrt, role = Role.Button, onClick = aktion)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            style = TcmSchrift.text(Schrift.gewichtFett, 16.sp),
+            color = if (rot) f.redInk else f.ink,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+// ---- Schriftgroesse -------------------------------------------------------------
+
+/** Ob die Systemschrift mindestens `ab` (130 %, 150 % ...) gross ist - dann stapeln Reihen um. */
+@Composable
+fun grosseSchrift(ab: Float = 1.3f): Boolean = LocalDensity.current.fontScale >= ab
+
+/**
+ * Zwei Dinge nebeneinander, gleich breit und gleich hoch; bei grosser Schrift
+ * (ab 130 %) untereinander - wie ViewThatFits in iOS (Storno-Knoepfe, Dein
+ * Stand). `inhalt` bekommt die Breite fuer jedes Teil.
+ */
+@Composable
+fun NebeneinanderOderUntereinander(abstand: Dp = 10.dp, inhalt: @Composable (Modifier) -> Unit) {
+    if (grosseSchrift()) {
+        Column(verticalArrangement = Arrangement.spacedBy(abstand)) { inhalt(Modifier.fillMaxWidth()) }
+    } else {
+        Row(Modifier.height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(abstand)) {
+            inhalt(Modifier.weight(1f).fillMaxHeight())
+        }
+    }
+}
+
+/**
+ * Deckelt die Schriftgroesse fuer Inhalte mit fester Flaeche (Datumskacheln,
+ * Initialen, Marken) - wie `dynamicTypeSize(...DynamicTypeSize.xLarge)` in iOS.
+ * Der Text daneben waechst weiter mit.
+ */
+@Composable
+fun GedeckelteSchrift(hoechstens: Float = 1.2f, inhalt: @Composable () -> Unit) {
+    val d = LocalDensity.current
+    CompositionLocalProvider(LocalDensity provides Density(d.density, minOf(d.fontScale, hoechstens)), content = inhalt)
+}
+
+// ---- Laden ------------------------------------------------------------------------
+
+/** Was ein Abschnitt braucht, um nach einem Fehler neu zu laden (Home, Konto). */
+data class Erneut(val laeuft: Boolean, val aktion: () -> Unit)
+
+/** Ruft `aktion`, wenn die App aus dem Hintergrund zurueckkommt (nicht beim ersten Start). */
+@Composable
+fun ImVordergrund(aktion: () -> Unit) {
+    val besitzer = LocalLifecycleOwner.current
+    val aktuell by rememberUpdatedState(aktion)
+    DisposableEffect(besitzer) {
+        var warWeg = false
+        val beobachter = LifecycleEventObserver { _, ereignis ->
+            when (ereignis) {
+                Lifecycle.Event.ON_STOP -> warWeg = true
+                Lifecycle.Event.ON_START -> if (warWeg) {
+                    warWeg = false
+                    aktuell()
+                }
+                else -> Unit
+            }
+        }
+        besitzer.lifecycle.addObserver(beobachter)
+        onDispose { besitzer.lifecycle.removeObserver(beobachter) }
+    }
+}
+
+/**
+ * Laeuft bis an den Bildschirmrand, obwohl die Spalte um `rand` eingerueckt
+ * ist (Wischreihen auf Home, Tagwahl) - wie padding(-rand) in SwiftUI.
+ */
+fun Modifier.randlos(rand: Dp = Abstand.rand): Modifier = layout { messbar, grenzen ->
+    val extra = rand.roundToPx() * 2
+    val breite = grenzen.maxWidth + extra
+    val platziert = messbar.measure(grenzen.copy(minWidth = breite, maxWidth = breite))
+    layout(grenzen.maxWidth, platziert.height) { platziert.place(-extra / 2, 0) }
 }
 
 // ---- Zeitleiste ---------------------------------------------------------------

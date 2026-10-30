@@ -35,8 +35,6 @@ class KontoLogikTest {
         assertEquals("", p[0].werte["title"])
         assertEquals("71711", p[0].werte["postcode"])
         assertEquals(listOf("Mitglied seit 2019", "Herren 40", "Mannschaftsführer"), KontoLogik.marken(p[0]))
-        assertEquals("MM", KontoLogik.initialen("max", "Muster"))
-        assertEquals("", KontoLogik.initialen("", ""))
 
         val ohne = lies<List<MeinProfil>>("""[{"first_name":"Eva","last_name":"E","team_name":null,"is_team_captain":false}]""")
         assertEquals(emptyList<String>(), KontoLogik.marken(ohne[0]))

@@ -3,10 +3,10 @@
  *
  * Wie HomeBildschirm.swift der iOS-App. Was heute zaehlt, auf einen Blick:
  * die eigenen naechsten Termine, drei Schnellaktionen, welche Plaetze gerade
- * frei sind, wer Mitspieler sucht, der laufende Monat und die letzten
- * Neuigkeiten. Nur Lesen - gebucht und eingetragen wird auf den
- * Bildschirmen, auf die die Knoepfe fuehren (bis es sie nativ gibt: der
- * passende Tab).
+ * frei sind, wer Mitspieler sucht, was demnaechst im Verein ansteht, der
+ * laufende Monat und die letzten Neuigkeiten. Nur Lesen - gebucht und
+ * eingetragen wird auf den Bildschirmen, auf die die Knoepfe fuehren
+ * (Plaetze, Konto; Getraenke und Veranstaltungen ueber LocalZuVerein).
  *
  * Alle Abschnitte laden parallel und jeder fuer sich: schlaegt einer fehl,
  * steht dort der Fehler, und der Rest bleibt gefuellt. Der Inhalt liegt in
@@ -65,10 +65,10 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -78,10 +78,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import de.tcmuckensturm.app.bildschirme.verein.LocalZuVerein
-import de.tcmuckensturm.app.bildschirme.verein.VereinZiel
-import de.tcmuckensturm.app.bildschirme.Avatar
+import de.tcmuckensturm.app.bildschirme.Erneut
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
+import de.tcmuckensturm.app.bildschirme.GedeckelteSchrift
 import de.tcmuckensturm.app.bildschirme.GrosserKopf
 import de.tcmuckensturm.app.bildschirme.Handlung
 import de.tcmuckensturm.app.bildschirme.Kapsel
@@ -90,13 +89,19 @@ import de.tcmuckensturm.app.bildschirme.KopfLink
 import de.tcmuckensturm.app.bildschirme.Kopfzeile
 import de.tcmuckensturm.app.bildschirme.Leerzustand
 import de.tcmuckensturm.app.bildschirme.MiniZeitleiste
+import de.tcmuckensturm.app.bildschirme.NebeneinanderOderUntereinander
+import de.tcmuckensturm.app.bildschirme.grosseSchrift
 import de.tcmuckensturm.app.bildschirme.karte
 import de.tcmuckensturm.app.bildschirme.leise
 import de.tcmuckensturm.app.bildschirme.nachrichten.Glocke
 import de.tcmuckensturm.app.bildschirme.nachrichten.GlockeKnopf
 import de.tcmuckensturm.app.bildschirme.nachrichten.NachrichtZeile
 import de.tcmuckensturm.app.bildschirme.nachrichten.Trennlinie
+import de.tcmuckensturm.app.bildschirme.randlos
 import de.tcmuckensturm.app.bildschirme.tippbar
+import de.tcmuckensturm.app.bildschirme.verein.EventKarte
+import de.tcmuckensturm.app.bildschirme.verein.LocalZuVerein
+import de.tcmuckensturm.app.bildschirme.verein.VereinZiel
 import de.tcmuckensturm.app.daten.Benachrichtigung
 import de.tcmuckensturm.app.daten.MeineBuchung
 import de.tcmuckensturm.app.daten.OffenesSpiel
@@ -110,7 +115,9 @@ import de.tcmuckensturm.app.ui.tokens.Abstand
 import de.tcmuckensturm.app.ui.tokens.Radius
 import de.tcmuckensturm.app.ui.tokens.Schrift
 import de.tcmuckensturm.app.widgets.WidgetBruecke
+import de.tcmuckensturm.kern.MitgliedEvent
 import de.tcmuckensturm.kern.Startseite
+import de.tcmuckensturm.kern.Veranstaltungen
 import de.tcmuckensturm.kern.Zeit
 import java.time.Instant
 import kotlinx.coroutines.async
@@ -164,6 +171,7 @@ class HomeModell(
             val dienst = async { Abschnitt.von { d.arbeitsdienst() } }
             // Drei Benachrichtigungen reichen: ungelesen zuerst, dann die neuesten.
             val neues = async { Abschnitt.von { d.benachrichtigungen(limit = 3) } }
+            val events = async { Abschnitt.von { d.veranstaltungen() } }
 
             val p = plaetze.await()
             val t = plan.await()
@@ -187,6 +195,7 @@ class HomeModell(
                 getraenke = getraenke.await(),
                 dienst = dienst.await(),
                 neues = neues.await(),
+                events = events.await(),
             )
         }
     }
@@ -219,9 +228,10 @@ fun HomeBildschirm(zuNachrichten: () -> Unit) {
             zuGetraenken = { zuVerein(VereinZiel.Getraenke) },
             zuVeranstaltung = { zuVerein(VereinZiel.Veranstaltung(it)) },
             zuNachrichten = zuNachrichten,
+            zuVeranstaltungen = { zuVerein(VereinZiel.Veranstaltungen) },
         ),
         nachladen = { modell.laden(nachladen = true) },
-        glocke = { Glocke(zuVeranstaltung = { zuVerein(VereinZiel.Veranstaltung(it)) }) },
+        glocke = { Glocke() },
     )
 }
 
@@ -231,6 +241,7 @@ data class HomeZiele(
     val zuGetraenken: () -> Unit,
     val zuVeranstaltung: (String) -> Unit,
     val zuNachrichten: () -> Unit,
+    val zuVeranstaltungen: () -> Unit = {},
 )
 
 /** Ohne Sitzung und Netz - fuer die Bildschirmfotos. */
@@ -261,10 +272,7 @@ fun HomeAnsicht(
                 .padding(bottom = Abstand.abschnitt * 2),
             verticalArrangement = Arrangement.spacedBy(Abstand.m),
         ) {
-            GrosserKopf(titel = HomeLogik.titel(d?.name?.vorname), kicker = HomeLogik.kicker(jetzt)) {
-                glocke()
-                Avatar(HomeLogik.initialen(d?.name)) { ziele.zuTab(HauptTab.KONTO) }
-            }
+            GrosserKopf(HomeLogik.titel(d?.name?.vorname), HomeLogik.kicker(jetzt), d?.name, glocke)
             when {
                 d == null && zustand.laedt -> Box(
                     Modifier
@@ -280,7 +288,7 @@ fun HomeAnsicht(
                     Schnellaktionen(ziele)
                     JetztFrei(d.frei, erneut, ziele, jetzt)
                     OffeneSpiele(d.offen, erneut, ziele, jetzt)
-                    // "Demnaechst im Verein" folgt mit den Veranstaltungen (Verein-Spur).
+                    DemnaechstImVerein(d.events, erneut, ziele, jetzt)
                     DeinStandKacheln(HomeLogik.deinStand(d.getraenke, d.dienst, jetzt), ziele)
                     Neuigkeiten(d.neues, erneut, ziele, jetzt)
                 }
@@ -289,9 +297,6 @@ fun HomeAnsicht(
         }
     }
 }
-
-/** Was ein Abschnitt braucht, um nach einem Fehler neu zu laden. */
-private data class Erneut(val laeuft: Boolean, val aktion: () -> Unit)
 
 /** Waagerecht wischbar, bis an den Bildschirmrand - der Inhalt hat 20 Rand. */
 @Composable
@@ -304,20 +309,12 @@ private fun <T> Wischreihe(
     LazyRow(
         Modifier
             .fillMaxWidth()
-            .layoutOhneRand(),
+            .randlos(),
         contentPadding = PaddingValues(horizontal = Abstand.rand, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(abstand.dp),
     ) {
         itemsIndexed(eintraege, key = { _, e -> schluessel(e) }) { i, e -> inhalt(i, e) }
     }
-}
-
-/** Zieht eine Reihe ueber den Seitenrand der Spalte hinaus (wie padding(-rand) in SwiftUI). */
-private fun Modifier.layoutOhneRand(): Modifier = layout { messbar, grenzen ->
-    val rand = Abstand.rand.roundToPx()
-    val breite = grenzen.maxWidth + 2 * rand
-    val platziert = messbar.measure(grenzen.copy(minWidth = breite, maxWidth = breite))
-    layout(grenzen.maxWidth, platziert.height) { platziert.place(-rand, 0) }
 }
 
 // ---- Als Naechstes ------------------------------------------------------------
@@ -348,7 +345,7 @@ private fun TerminKarte(t: MeineBuchung, erste: Boolean, jetzt: Instant, aktion:
     val f = TcmTheme.farben
     val tinte = if (erste) f.onBrand else f.ink
     val form = RoundedCornerShape(Radius.karteGross)
-    val bildschirm = LocalConfiguration.current.screenWidthDp.dp
+    val bildschirm = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() }
     val breite = minOf(318.dp, bildschirm - Abstand.rand * 2 - 32.dp)
     Box(
         Modifier
@@ -438,7 +435,7 @@ private fun Schnellaktionen(ziele: HomeZiele) {
         Kachel("Mitspielen", Icons.Outlined.AddCircle, { ziele.zuTab(HauptTab.PLAETZE) }),
     )
     // Bei grosser Schrift untereinander, Symbol neben dem Text (U5).
-    val gestapelt = LocalDensity.current.fontScale >= 1.3f
+    val gestapelt = grosseSchrift()
 
     @Composable
     fun KachelInhalt(k: Kachel, modifier: Modifier) {
@@ -570,13 +567,16 @@ private fun OffeneSpiele(offen: Abschnitt<List<OffenesSpiel>>, erneut: Erneut, z
                         style = Stroke(dicke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx()))),
                     )
                 }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        Startseite.dayTag(o.startsAt, jetzt),
-                        style = TcmSchrift.display(Schrift.gewichtFett, 12.sp, 0.8.sp),
-                        color = f.ink2,
-                    )
-                    Text(uhr, style = TcmSchrift.display(Schrift.gewichtFett, 19.sp), color = f.ink)
+                // Feste Kachel: Schrift gedeckelt wie in iOS (bis xLarge).
+                GedeckelteSchrift {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            Startseite.dayTag(o.startsAt, jetzt),
+                            style = TcmSchrift.display(Schrift.gewichtFett, 12.sp, 0.8.sp),
+                            color = f.ink2,
+                        )
+                        Text(uhr, style = TcmSchrift.display(Schrift.gewichtFett, 19.sp), color = f.ink)
+                    }
                 }
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -606,6 +606,19 @@ private fun OffeneSpiele(offen: Abschnitt<List<OffenesSpiel>>, erneut: Erneut, z
     }
 }
 
+// ---- Demnaechst im Verein ------------------------------------------------------
+
+@Composable
+private fun DemnaechstImVerein(events: Abschnitt<List<MitgliedEvent>>, erneut: Erneut, ziele: HomeZiele, jetzt: Instant) {
+    val liste = Veranstaltungen.eventDemnaechst(events.wert.orEmpty(), jetzt)
+    Kopfzeile("Demnächst im Verein", KopfLink("Alle", "Alle Veranstaltungen", ziele.zuVeranstaltungen))
+    events.fehler?.let { Fehlerzeile(it, erneut.laeuft, erneut.aktion) }
+    if (events.wert != null && liste.isEmpty()) {
+        Leerzustand("Gerade ist nichts geplant.")
+    }
+    for (e in liste) EventKarte(e, jetzt, aufforderung = true) { ziele.zuVeranstaltung(e.id) }
+}
+
 // ---- Dein Stand ---------------------------------------------------------------
 
 @Composable
@@ -613,11 +626,9 @@ private fun DeinStandKacheln(stand: DeinStand, ziele: HomeZiele) {
     val f = TcmTheme.farben
     val gross = TcmSchrift.display(Schrift.gewichtFett, 28.sp)
     Kopfzeile("Dein Stand")
-    Row(
-        Modifier.height(IntrinsicSize.Max),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        StandKachel(stand.getraenkeTitel, stand.getraenkeLabel, ziele.zuGetraenken, Modifier.weight(1f)) {
+    // Bei grosser Schrift untereinander, sonst bricht "Arbeitsdienst 2026" mitten im Wort.
+    NebeneinanderOderUntereinander { breite ->
+        StandKachel(stand.getraenkeTitel, stand.getraenkeLabel, ziele.zuGetraenken, breite) {
             val fehler = stand.getraenkeFehler
             if (fehler != null) {
                 Text(fehler, style = leise, color = f.redInk)
@@ -626,7 +637,7 @@ private fun DeinStandKacheln(stand: DeinStand, ziele: HomeZiele) {
                 Text("läuft noch", style = leise, color = f.muted)
             }
         }
-        StandKachel(stand.dienstTitel, stand.dienstLabel, { ziele.zuTab(HauptTab.KONTO) }, Modifier.weight(1f)) {
+        StandKachel(stand.dienstTitel, stand.dienstLabel, { ziele.zuTab(HauptTab.KONTO) }, breite) {
             val fehler = stand.dienstFehler
             val wert = stand.dienstWert
             when {
@@ -666,7 +677,6 @@ private fun StandKachel(
 ) {
     Column(
         modifier
-            .fillMaxHeight()
             .karte(radius = Radius.karte, padding = 0.dp)
             .tippbar(label, aktion = aktion)
             .padding(16.dp),

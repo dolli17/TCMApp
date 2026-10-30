@@ -95,7 +95,7 @@ object Zeit {
     }
 
     /** 510 -> "08:30" */
-    fun minutesToTime(minuten: Int): String = "%02d:%02d".format(minuten / 60, minuten % 60)
+    fun minutesToTime(minuten: Int): String = "%02d:%02d".formatiert(minuten / 60, minuten % 60)
 
     /** Uhrzeit in Minuten seit Mitternacht, gerechnet in Europe/Berlin. */
     fun localMinutes(zeitpunkt: Instant): Int {
@@ -143,7 +143,7 @@ object Zeit {
     /** "30.09." in Berlin */
     fun tagMonat(zeitpunkt: Instant): String {
         val z = zeitpunkt.atZone(berlinZone)
-        return "%02d.%02d.".format(z.dayOfMonth, z.monthValue)
+        return "%02d.%02d.".formatiert(z.dayOfMonth, z.monthValue)
     }
 
     /** "Donnerstag, 29. Oktober" - der Kicker ueber "Hallo" auf Home */

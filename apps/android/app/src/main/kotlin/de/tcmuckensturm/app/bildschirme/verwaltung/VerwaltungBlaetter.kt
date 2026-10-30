@@ -59,12 +59,12 @@ import androidx.compose.ui.unit.sp
 import de.tcmuckensturm.app.bildschirme.konto.BlattKopf
 import de.tcmuckensturm.app.bildschirme.konto.KontoFeld
 import de.tcmuckensturm.app.bildschirme.konto.KontoGruppe
-import de.tcmuckensturm.app.bildschirme.konto.KontoHinweis
+import de.tcmuckensturm.app.bildschirme.Hinweis
 import de.tcmuckensturm.app.bildschirme.konto.KontoVerweis
-import de.tcmuckensturm.app.bildschirme.konto.LeiserKnopf
+import de.tcmuckensturm.app.bildschirme.LeiserKnopf
 import de.tcmuckensturm.app.bildschirme.plaetze.Chipwahl
 import de.tcmuckensturm.app.bildschirme.plaetze.Feldname
-import de.tcmuckensturm.app.bildschirme.plaetze.Hauptknopf
+import de.tcmuckensturm.app.bildschirme.Hauptknopf
 import de.tcmuckensturm.app.bildschirme.plaetze.PlaetzeLogik
 import de.tcmuckensturm.app.daten.PlatzErgebnis
 import de.tcmuckensturm.app.daten.Serie
@@ -140,10 +140,16 @@ private fun ZeitFeld(label: String, wert: String, aendern: (String) -> Unit, mod
 
 /** Chips mit Beschriftung darueber (Chipwahl in Formular.tsx). */
 @Composable
-private fun Chips(label: String, optionen: List<Pair<String, String>>, gewaehlt: (String) -> Boolean, wahl: (String) -> Unit) {
+private fun Chips(
+    label: String,
+    optionen: List<Pair<String, String>>,
+    gewaehlt: (String) -> Boolean,
+    mehrfach: Boolean = false,
+    wahl: (String) -> Unit,
+) {
     Column {
         Feldname(label)
-        Chipwahl(optionen, gewaehlt, wahl)
+        Chipwahl(optionen, gewaehlt, beschriftung = label, mehrfach = mehrfach, wahl = wahl)
     }
 }
 
@@ -165,25 +171,6 @@ private fun Folgen(text: String, zeilen: List<String> = emptyList()) {
         for (z in zeilen) {
             Text(z, style = TcmSchrift.text(Schrift.gewichtNormal, 13.5.sp).copy(fontFeatureSettings = "tnum"), color = f.ink)
         }
-    }
-}
-
-/** Rot als Flaeche mit weisser Schrift: Verdraengen und Beenden. */
-@Composable
-private fun GefahrKnopf(text: String, modifier: Modifier = Modifier, gesperrt: Boolean = false, aktion: () -> Unit) {
-    val f = TcmTheme.farben
-    Box(
-        modifier
-            .fillMaxWidth()
-            .heightIn(min = 52.dp)
-            .alpha(if (gesperrt) 0.6f else 1f)
-            .clip(RoundedCornerShape(16.dp))
-            .background(f.red)
-            .clickable(enabled = !gesperrt, role = Role.Button, onClick = aktion)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text, style = TcmSchrift.text(Schrift.gewichtExtrafett, 16.sp), color = f.onBrand, textAlign = TextAlign.Center)
     }
 }
 
@@ -240,6 +227,7 @@ private fun SperrenBlatt(m: VerwaltungModell, stand: VerwaltungsStand, zu: () ->
             label = "Plätze",
             optionen = plaetze.map { it.id to VerwaltungLogik.platzChip(it.shortName) } + (ALLE to if (alleGewaehlt) "Keinen" else "Alle"),
             gewaehlt = { if (it == ALLE) alleGewaehlt else it in gewaehlt },
+            mehrfach = true,
         ) { id ->
             geaendert {
                 gewaehlt = when {
@@ -259,11 +247,11 @@ private fun SperrenBlatt(m: VerwaltungModell, stand: VerwaltungsStand, zu: () ->
         }
         KontoFeld("Grund (freiwillig)", grund, { grund = it })
 
-        fehler?.let { KontoHinweis(it) }
+        fehler?.let { Hinweis(it) }
         val k = kollisionen
         if (k != null) {
             Folgen(PlaetzeLogik.imWegText(k))
-            GefahrKnopf(PlaetzeLogik.verdraengenText(k), gesperrt = laeuft) { absenden(verdraengen = true) }
+            Hauptknopf(PlaetzeLogik.verdraengenText(k), rot = true, kompakt = true, gesperrt = laeuft) { absenden(verdraengen = true) }
             LeiserKnopf("Doch nicht") { kollisionen = null }
         } else {
             Hauptknopf(
@@ -352,7 +340,7 @@ private fun SerieAnlegenBlatt(m: VerwaltungModell, stand: VerwaltungsStand, zu: 
             ZeitFeld("Bis (TT.MM.JJJJ)", form.validTo, { setze(form.copy(validTo = it)) }, Modifier.weight(1f))
         }
 
-        fehler?.let { KontoHinweis(it) }
+        fehler?.let { Hinweis(it) }
         val v = vorschau
         if (v != null) {
             Folgen(
@@ -427,11 +415,11 @@ private fun SerieBlatt(m: VerwaltungModell, serie: Serie, zu: () -> Unit) {
         ZeitFeld("Läuft bis (TT.MM.JJJJ)", ende, { ende = it })
         KontoFeld("Titel", titel, { titel = it })
 
-        fehler?.let { KontoHinweis(it) }
+        fehler?.let { Hinweis(it) }
         val k = kollisionen
         if (k != null) {
             Folgen(PlaetzeLogik.imWegText(k))
-            GefahrKnopf(PlaetzeLogik.verdraengenText(k), gesperrt = laeuft) { speichern(verdraengen = true) }
+            Hauptknopf(PlaetzeLogik.verdraengenText(k), rot = true, kompakt = true, gesperrt = laeuft) { speichern(verdraengen = true) }
         } else {
             Hauptknopf(
                 if (laeuft) "Wird gespeichert…" else "Änderung speichern",
@@ -444,7 +432,7 @@ private fun SerieBlatt(m: VerwaltungModell, serie: Serie, zu: () -> Unit) {
         KontoGruppe(Modifier.padding(top = Abstand.s)) {
             if (beendenFrage) {
                 Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    GefahrKnopf("${serie.kuenftige ?: 0} Termine absagen", Modifier.weight(1f), gesperrt = laeuft) {
+                    Hauptknopf("${serie.kuenftige ?: 0} Termine absagen", Modifier.weight(1f), rot = true, kompakt = true, gesperrt = laeuft) {
                         ausfuehren({ m.quelle.beendeSerie(serie.id) }, mitKollisionen = false)
                     }
                     Box(Modifier.weight(1f)) { LeiserKnopf("Doch nicht") { beendenFrage = false } }

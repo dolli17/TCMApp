@@ -22,6 +22,7 @@ import de.tcmuckensturm.kern.Platzplan
 import de.tcmuckensturm.kern.Startseite
 import de.tcmuckensturm.kern.TimelineKind
 import de.tcmuckensturm.kern.Zeit
+import de.tcmuckensturm.kern.formatiert
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -51,7 +52,7 @@ object PlaetzeLogik {
     /** Wochentag des Kalendertags (0 = Sonntag), unabhaengig von der Zeitzone. */
     private fun wochentag(datum: String): Int = (tag(datum)?.dayOfWeek?.value ?: 0) % 7
 
-    private fun tagMonat(datum: String): String = tag(datum)?.let { "%02d.%02d.".format(it.dayOfMonth, it.monthValue) } ?: ""
+    private fun tagMonat(datum: String): String = tag(datum)?.let { "%02d.%02d.".formatiert(it.dayOfMonth, it.monthValue) } ?: ""
 
     /** Fuer die Tageszeile: "Heute, 13.10.", "Morgen, 14.10." oder "Do., 15.10." */
     fun tageszeile(datum: String, heute: String): String {
@@ -64,7 +65,7 @@ object PlaetzeLogik {
     /** Fuer TalkBack: "Donnerstag, 05. November" */
     fun lesbar(datum: String): String {
         val t = tag(datum) ?: return datum
-        return "${Zeit.wochentageLang[wochentag(datum)]}, ${"%02d".format(t.dayOfMonth)}. ${Zeit.monateLang[t.monthValue - 1]}"
+        return "${Zeit.wochentageLang[wochentag(datum)]}, ${"%02d".formatiert(t.dayOfMonth)}. ${Zeit.monateLang[t.monthValue - 1]}"
     }
 
     /** Kicker im Blatt: "Montag, 28.09." */
@@ -146,17 +147,6 @@ object PlaetzeLogik {
     }
 
     // ---- Buchungsblatt ----------------------------------------------------------
-
-    fun initialen(vor: String?, nach: String?): String {
-        val k = "${(vor ?: "").take(1)}${(nach ?: "").take(1)}".uppercase()
-        return k.ifEmpty { "?" }
-    }
-
-    /** Initialen aus einem ganzen Namen: erstes und letztes Wort. */
-    fun initialenAusName(name: String?): String {
-        val teile = (name ?: "").split(" ").filter { it.isNotEmpty() }
-        return initialen(teile.firstOrNull(), if (teile.size > 1) teile.last() else null)
-    }
 
     const val TREFFER_MAX = 6
 

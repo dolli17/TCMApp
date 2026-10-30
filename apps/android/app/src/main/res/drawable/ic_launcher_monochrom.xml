@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Monochrome Ebene (Android 13+, Themensymbole): dasselbe Motiv einfarbig. - aus apps/mobile/assets/adaptive-icon.svg
+    (Platz in Perspektive, Netz, gelber Ball), auf die sichere Mitte (66 %) verkleinert.
+    Das gestrichelte Netz steht als einzelne kurze Striche da (VectorDrawable kennt kein dasharray).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+    <group
+        android:scaleX="0.66"
+        android:scaleY="0.66"
+        android:translateX="174"
+        android:translateY="174">
+        <path
+            android:pathData="M150,1024 L372,380 H652 L874,1024"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:strokeWidth="26" />
+        <path
+            android:pathData="M318,536 H706 M232,786 H792 M512,536 V786"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:strokeWidth="22" />
+        <path
+            android:pathData="M60,380 H64 M94,380 H98 M128,380 H132 M162,380 H166 M196,380 H200 M230,380 H234 M264,380 H268 M298,380 H302 M332,380 H336 M366,380 H370 M400,380 H404 M434,380 H438 M468,380 H472 M502,380 H506 M536,380 H540 M570,380 H574 M604,380 H608 M638,380 H642 M672,380 H676 M706,380 H710 M740,380 H744 M774,380 H778 M808,380 H812 M842,380 H846 M876,380 H880 M910,380 H914 M944,380 H948"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeLineCap="round"
+            android:strokeWidth="18" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M604,270 a96,96 0 1,0 192,0 a96,96 0 1,0 -192,0" />
+    </group>
+</vector>

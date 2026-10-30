@@ -54,6 +54,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.tcmuckensturm.app.bildschirme.Avatar
+import de.tcmuckensturm.app.bildschirme.GedeckelteSchrift
 import de.tcmuckensturm.app.bildschirme.GrosserKopf
 import de.tcmuckensturm.app.bildschirme.home.HomeLogik
 import de.tcmuckensturm.app.bildschirme.leise
@@ -78,41 +79,35 @@ import de.tcmuckensturm.kern.EventTon
 fun VereinKopf(reiter: VereinReiter, name: MeinName?, wechsle: (VereinReiter) -> Unit, glocke: @Composable () -> Unit) {
     val f = TcmTheme.farben
     val zuTab = LocalZuTab.current
-    GrosserKopf(titel = "Verein") {
-        glocke()
-        Avatar(HomeLogik.initialen(name)) { zuTab(HauptTab.KONTO) }
-    }
-    SingleChoiceSegmentedButtonRow(
-        Modifier.fillMaxWidth().padding(bottom = Abstand.xs).semantics { contentDescription = "Bereich" },
-    ) {
-        VereinReiter.entries.forEachIndexed { i, r ->
-            SegmentedButton(
-                selected = r == reiter,
-                onClick = { wechsle(r) },
-                shape = SegmentedButtonDefaults.itemShape(i, VereinReiter.entries.size),
-                icon = {},
-                colors = SegmentedButtonDefaults.colors(
-                    activeContainerColor = f.segAktiv,
-                    activeContentColor = f.ink,
-                    activeBorderColor = f.segAktivRand,
-                    inactiveContainerColor = f.surf2,
-                    inactiveContentColor = f.ink2,
-                    inactiveBorderColor = f.line,
-                ),
-            ) {
-                Text(r.label, style = TcmSchrift.text(Schrift.gewichtHalbfett, 15.sp))
+    GrosserKopf("Verein", name = name, glocke = glocke)
+    // Segmente wachsen nur bis 120 % mit (wie der Picker in iOS), sonst bricht "Veranstaltungen" im Wort.
+    GedeckelteSchrift {
+        SingleChoiceSegmentedButtonRow(
+            Modifier.fillMaxWidth().padding(bottom = Abstand.xs).semantics { contentDescription = "Bereich" },
+        ) {
+            VereinReiter.entries.forEachIndexed { i, r ->
+                SegmentedButton(
+                    selected = r == reiter,
+                    onClick = { wechsle(r) },
+                    shape = SegmentedButtonDefaults.itemShape(i, VereinReiter.entries.size),
+                    icon = {},
+                    colors = SegmentedButtonDefaults.colors(
+                        activeContainerColor = f.segAktiv,
+                        activeContentColor = f.ink,
+                        activeBorderColor = f.segAktivRand,
+                        inactiveContainerColor = f.surf2,
+                        inactiveContentColor = f.ink2,
+                        inactiveBorderColor = f.line,
+                    ),
+                ) {
+                    Text(r.label, style = TcmSchrift.text(Schrift.gewichtHalbfett, 15.sp), maxLines = 1)
+                }
             }
         }
     }
 }
 
 // ---- Texte ------------------------------------------------------------
-
-/** stil.leise als Text (Stil `leise` aus Bausteine.kt). */
-@Composable
-fun Leise(text: String, modifier: Modifier = Modifier) {
-    Text(text, style = leise.copy(lineHeight = 18.sp), color = TcmTheme.farben.muted, modifier = modifier)
-}
 
 /** Titel in einer Karte ("Anmelden", "Du bist angemeldet"); Abschnitte der Seite nehmen Kopfzeile. */
 @Composable
@@ -122,23 +117,6 @@ fun Abschnitt(titel: String, modifier: Modifier = Modifier) {
         style = TcmSchrift.text(Schrift.gewichtFett, Schrift.titel, (-0.2).sp),
         color = TcmTheme.farben.ink,
         modifier = modifier.semantics { heading() },
-    )
-}
-
-/** Eine Meldung im Inhalt (KontoHinweis): gruen fuer Erfolg, rot fuer einen Fehler. */
-@Composable
-fun Hinweis(text: String, ok: Boolean) {
-    val f = TcmTheme.farben
-    Text(
-        text,
-        style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal),
-        color = if (ok) f.greenInk else f.redInk,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(Radius.feld))
-            .background((if (ok) f.green else f.red).copy(alpha = if (TcmTheme.dunkel) 0.16f else 0.12f))
-            .padding(12.dp)
-            .semantics { liveRegion = LiveRegionMode.Polite },
     )
 }
 
@@ -205,43 +183,6 @@ fun Zaehlerstand(wert: Int, label: String) {
         textAlign = TextAlign.Center,
         modifier = Modifier.widthIn(min = 28.dp).semantics { contentDescription = label },
     )
-}
-
-/** Gelber Hauptknopf (stil.knopfGold), rot fuer das Abmelden. */
-@Composable
-fun Hauptknopf(text: String, rot: Boolean = false, gesperrt: Boolean = false, aktion: () -> Unit) {
-    val f = TcmTheme.farben
-    Surface(
-        onClick = aktion,
-        enabled = !gesperrt,
-        shape = RoundedCornerShape(Radius.knopf),
-        color = if (rot) f.red else f.gold,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).alpha(if (gesperrt) 0.6f else 1f),
-    ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-            Text(
-                text,
-                style = TcmSchrift.text(Schrift.gewichtExtrafett, 16.sp),
-                color = if (rot) Color.White else f.onGold,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
-
-/** Umrandeter Knopf (LeiserKnopf), rot fuer das Abmelden. */
-@Composable
-fun LeiserKnopf(text: String, rot: Boolean = false, gesperrt: Boolean = false, aktion: () -> Unit) {
-    val f = TcmTheme.farben
-    OutlinedButton(
-        onClick = aktion,
-        enabled = !gesperrt,
-        shape = RoundedCornerShape(Radius.knopf),
-        border = BorderStroke(1.5.dp, if (rot) f.red.copy(alpha = 0.5f) else f.line2),
-        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-    ) {
-        Text(text, style = TcmSchrift.text(Schrift.gewichtFett, 16.sp), color = if (rot) f.redInk else f.ink, textAlign = TextAlign.Center)
-    }
 }
 
 /** Ein Textknopf in blueInk ("Vergangene Veranstaltungen"). */

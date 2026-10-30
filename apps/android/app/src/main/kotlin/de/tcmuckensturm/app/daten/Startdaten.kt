@@ -14,25 +14,19 @@ package de.tcmuckensturm.app.daten
 import de.tcmuckensturm.kern.Benachrichtigungsdaten
 import de.tcmuckensturm.kern.BuchungsSlot
 import de.tcmuckensturm.kern.Getraenkekauf
+import de.tcmuckensturm.kern.MitgliedEvent
 import de.tcmuckensturm.kern.PlanSlot
+import de.tcmuckensturm.kern.ZahlOderText
 import de.tcmuckensturm.kern.Zeitraum
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.PostgrestRequestBuilder
 import io.github.jan.supabase.postgrest.result.PostgrestResult
 import kotlin.coroutines.cancellation.CancellationException
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.put
 
 // ---- Modelle ------------------------------------------------------------------
@@ -150,20 +144,6 @@ data class EigenesGetraenk(
     val source: String? = null,
 ) : Getraenkekauf
 
-/** numeric aus Postgres: kommt als Zahl oder als Text ("2.5"). */
-object ZahlOderText : KSerializer<Double?> {
-    override val descriptor = PrimitiveSerialDescriptor("ZahlOderText", PrimitiveKind.DOUBLE)
-
-    override fun deserialize(decoder: Decoder): Double? {
-        val wert = (decoder as? JsonDecoder)?.decodeJsonElement() ?: return decoder.decodeDouble()
-        return (wert as? JsonPrimitive)?.let { it.doubleOrNull ?: it.content.toDoubleOrNull() }
-    }
-
-    override fun serialize(encoder: Encoder, value: Double?) {
-        if (value == null) encoder.encodeNull() else encoder.encodeDouble(value)
-    }
-}
-
 /** Die eine Zeile aus my_work_duty. Stunden sind numeric, also Zahl oder Text. */
 @Serializable
 data class Arbeitsdienst(
@@ -179,6 +159,24 @@ data class MeinName(val vorname: String, val nachname: String)
 /** Ohne Zugang oder ohne Mitglied (Kiosk) ist member_id null - dann kein Name. */
 val Ich.name: MeinName?
     get() = if (memberId == null) null else MeinName(firstName ?: "", lastName ?: "")
+
+/**
+ * Initialen fuer Avatar und Mitspieler-Chips, an einer Stelle fuer alle Tabs
+ * (HomeLogik/KontoLogik/PlaetzeLogik.initialen in iOS). Ohne Buchstaben leer;
+ * der Chip zeigt dann "?".
+ */
+object Initialen {
+    /** "max", "Muster" -> "MM" */
+    fun von(vor: String?, nach: String?): String = ((vor ?: "").take(1) + (nach ?: "").take(1)).uppercase()
+
+    fun von(name: MeinName?): String = von(name?.vorname, name?.nachname)
+
+    /** Aus einem ganzen Namen: erstes und letztes Wort ("Eva Maria Muster" -> "EM"). */
+    fun ausName(name: String?): String {
+        val teile = (name ?: "").split(" ").filter { it.isNotEmpty() }
+        return von(teile.firstOrNull(), if (teile.size > 1) teile.last() else null)
+    }
+}
 
 // ---- Laden --------------------------------------------------------------------
 
@@ -223,6 +221,9 @@ class Startdaten(private val client: SupabaseClient) {
     /** Ohne Zeile null. */
     suspend fun arbeitsdienst(): Arbeitsdienst? =
         uebersetzt { rpc("my_work_duty").decodeList<Arbeitsdienst>().firstOrNull() }
+
+    /** Fuer "Demnächst im Verein"; Liste und Detail stehen in Vereinsdaten. */
+    suspend fun veranstaltungen(): List<MitgliedEvent> = uebersetzt { rpc("events_fuer_mitglied").decodeList() }
 
     /** Ungelesen zuerst, dann die neuesten. */
     suspend fun benachrichtigungen(limit: Int = 30): List<Benachrichtigung> =

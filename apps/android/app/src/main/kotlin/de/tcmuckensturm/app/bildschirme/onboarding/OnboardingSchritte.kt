@@ -53,10 +53,10 @@ import de.tcmuckensturm.app.bildschirme.Kicker
 import de.tcmuckensturm.app.bildschirme.anmeldung.AnmeldeFeld
 import de.tcmuckensturm.app.bildschirme.konto.KontoFeld
 import de.tcmuckensturm.app.bildschirme.konto.KontoGruppe
-import de.tcmuckensturm.app.bildschirme.konto.KontoHinweis
+import de.tcmuckensturm.app.bildschirme.Hinweis
 import de.tcmuckensturm.app.bildschirme.konto.KontoLinie
 import de.tcmuckensturm.app.bildschirme.konto.KontoSegmente
-import de.tcmuckensturm.app.bildschirme.konto.Leise
+import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.daten.Ergebnis
 import de.tcmuckensturm.app.start.PasswortRegeln
 import de.tcmuckensturm.app.start.PasswortTexte
@@ -76,7 +76,7 @@ import java.util.Locale
 @Composable
 fun SchrittPasswort(k: OnboardingKontext) {
     if (k.zustand.status[OnboardingSchrittKey.PASSWORT.wert] == true) {
-        KontoHinweis("Dein Passwort ist gesetzt.", ok = true)
+        Hinweis("Dein Passwort ist gesetzt.", ok = true)
         OnboardingKnoepfe(k, speichern = k.weiter)
         return
     }
@@ -99,7 +99,7 @@ fun SchrittPasswort(k: OnboardingKontext) {
     }
 
     AnmeldeFeld(beschriftung = "Passwort", zustand = passwort, inhaltsTyp = ContentType.NewPassword, passwort = true)
-    fehler?.takeIf { it.feld == "passwort" }?.let { KontoHinweis(it.meldung) }
+    fehler?.takeIf { it.feld == "passwort" }?.let { Hinweis(it.meldung) }
     AnmeldeFeld(
         beschriftung = "Noch einmal",
         bedienName = "Passwort wiederholen",
@@ -108,7 +108,7 @@ fun SchrittPasswort(k: OnboardingKontext) {
         passwort = true,
         absenden = ImeAction.Done,
     )
-    fehler?.takeIf { it.feld == "wiederholung" }?.let { KontoHinweis(it.meldung) }
+    fehler?.takeIf { it.feld == "wiederholung" }?.let { Hinweis(it.meldung) }
     OnboardingKnoepfe(k, speichern = speichern)
 }
 
@@ -150,8 +150,8 @@ fun SchrittStammdaten(k: OnboardingKontext) {
     }
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Beschriftung("Geschlecht", fehler = fehler?.feld == "gender")
-        KontoSegmente(OnboardingLogik.geschlechter, werte["gender"]) { setzen("gender", it) }
-        fehlerText("gender")?.let { KontoHinweis(it) }
+        KontoSegmente(OnboardingLogik.geschlechter, werte["gender"], beschriftung = "Geschlecht") { setzen("gender", it) }
+        fehlerText("gender")?.let { Hinweis(it) }
     }
     Gruppe("Adresse") {
         Feld("street", "Straße", ContentType.AddressStreet, gross = KeyboardCapitalization.Words)
@@ -222,7 +222,7 @@ private fun Geburtstag(text: String, fehler: String?, setzen: (String) -> Unit) 
                 )
             }
         }
-        fehler?.let { KontoHinweis(it) }
+        fehler?.let { Hinweis(it) }
     }
     if (!offen) return
 
@@ -377,11 +377,11 @@ fun SchrittSepa(k: OnboardingKontext) {
     val m = k.zustand.mandat
     when {
         m.vorhanden -> {
-            KontoHinweis("Für dich liegt ein SEPA-Mandat vor (Mandatsreferenz ${m.referenz ?: "–"}). Ändern kann es der Vorstand.", ok = true)
+            Hinweis("Für dich liegt ein SEPA-Mandat vor (Mandatsreferenz ${m.referenz ?: "–"}). Ändern kann es der Vorstand.", ok = true)
             OnboardingKnoepfe(k, weiterText = "Konto freischalten", speichern = k.weiter)
         }
         !m.moeglich -> {
-            KontoHinweis(
+            Hinweis(
                 "Die Gläubigerdaten des Vereins fehlen noch, deshalb lässt sich das Mandat gerade nicht erteilen. Bitte wende dich an den Vorstand.",
             )
             OnboardingKnoepfe(k, gesperrt = true, speichern = k.weiter)
@@ -489,7 +489,7 @@ fun SchrittEinstellungen(k: OnboardingKontext) {
 
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Beschriftung("E-Mails zu deinen Buchungen")
-        KontoSegmente(OnboardingLogik.buchungsmails, mails) { mails = it }
+        KontoSegmente(OnboardingLogik.buchungsmails, mails, beschriftung = "E-Mails zu deinen Buchungen") { mails = it }
     }
     Leise("In der App siehst du Änderungen an deinen Buchungen in jedem Fall.")
     KontoGruppe { k.pushSchalter("Das Gerät fragt einmal nach deiner Erlaubnis.") }

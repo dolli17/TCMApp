@@ -9,6 +9,7 @@ import de.tcmuckensturm.app.daten.MeinName
 import de.tcmuckensturm.app.daten.MeineBuchung
 import de.tcmuckensturm.app.daten.OffenesSpiel
 import de.tcmuckensturm.app.daten.TagesBelegung
+import de.tcmuckensturm.kern.MitgliedEvent
 import de.tcmuckensturm.kern.Zeit
 
 /** Beispieldaten fuer Tests und Bildschirmfotos. JETZT ist Montag, 28.09.2026, 14:00 in Berlin. */
@@ -71,6 +72,19 @@ object Beispiele {
         ),
     )
 
+    val events = listOf(
+        MitgliedEvent(
+            "e1", kind = "fest", status = "published", title = "Saisonabschluss", location = "Clubhaus",
+            startsAt = "2026-10-03T16:00:00Z", endsAt = "2026-10-03T21:00:00Z", registrationEnabled = true,
+            registrationDeadline = "2026-10-01T20:00:00Z", maxParticipants = 60, personen = 23,
+        ),
+        MitgliedEvent(
+            "e2", kind = "arbeitsdienst", status = "published", title = "Plätze winterfest machen",
+            startsAt = "2026-10-10T07:00:00Z", endsAt = "2026-10-10T11:00:00Z", registrationEnabled = true,
+            maxParticipants = 12, personen = 5, workHours = 4.0, meinStatus = "registered",
+        ),
+    )
+
     val voll = HomeInhalt(
         name = MeinName("Max", "Muster"),
         termine = Abschnitt.Wert(termine),
@@ -79,6 +93,7 @@ object Beispiele {
         getraenke = Abschnitt.Wert(listOf(EigenesGetraenk("g1", totalCents = 1250))),
         dienst = Abschnitt.Wert(Arbeitsdienst(2026, 10.0, 4.0, 6.0)),
         neues = Abschnitt.Wert(nachrichten.take(3)),
+        events = Abschnitt.Wert(events),
     )
 
     val leer = HomeInhalt(
@@ -89,6 +104,7 @@ object Beispiele {
         getraenke = Abschnitt.Wert(emptyList()),
         dienst = Abschnitt.Wert(null),
         neues = Abschnitt.Wert(emptyList()),
+        events = Abschnitt.Wert(emptyList()),
     )
 
     val fehler = HomeInhalt(
@@ -99,5 +115,6 @@ object Beispiele {
         getraenke = Abschnitt.Fehler("Keine Verbindung zum Server."),
         dienst = Abschnitt.Wert(Arbeitsdienst(2026, 10.0, 10.0, 0.0)),
         neues = Abschnitt.Wert(emptyList()),
+        events = Abschnitt.Fehler("Keine Verbindung zum Server."),
     )
 }

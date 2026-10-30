@@ -69,10 +69,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
 import de.tcmuckensturm.app.bildschirme.Kapsel
 import de.tcmuckensturm.app.bildschirme.Kicker
-import de.tcmuckensturm.app.bildschirme.anmeldung.GelberKnopf
-import de.tcmuckensturm.app.bildschirme.konto.KontoHinweis
-import de.tcmuckensturm.app.bildschirme.konto.Leise
-import de.tcmuckensturm.app.bildschirme.konto.LeiserKnopf
+import de.tcmuckensturm.app.bildschirme.Hauptknopf
+import de.tcmuckensturm.app.bildschirme.Hinweis
+import de.tcmuckensturm.app.bildschirme.Leise
+import de.tcmuckensturm.app.bildschirme.LeiserKnopf
 import de.tcmuckensturm.app.daten.Abschluss
 import de.tcmuckensturm.app.daten.Ergebnis
 import de.tcmuckensturm.app.daten.Kontodaten
@@ -332,7 +332,7 @@ fun OnboardingAnsicht(
                     style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal).copy(lineHeight = 22.sp),
                     color = TcmTheme.farben.ink,
                 )
-                stand.hinweis?.let { KontoHinweis(it.meldung, ok = it.ok) }
+                stand.hinweis?.let { Hinweis(it.meldung, ok = it.ok) }
                 // Je Schritt ein frisches Formular.
                 key(aktuell) {
                     when (aktuell) {
@@ -457,8 +457,8 @@ fun OnboardingKnoepfe(
     }
 
     Column(Modifier.padding(top = Abstand.s), verticalArrangement = Arrangement.spacedBy(Abstand.s)) {
-        meldung?.let { KontoHinweis(it) }
-        GelberKnopf(if (laeuft) "Wird gespeichert…" else weiterText, gesperrt = laeuft || gesperrt) { los(speichern) }
+        meldung?.let { Hinweis(it) }
+        Hauptknopf(if (laeuft) "Wird gespeichert…" else weiterText, gesperrt = laeuft || gesperrt) { los(speichern) }
         val zurueck = k.zurueck
         val ueberspringen = k.ueberspringen
         if (zurueck != null || ueberspringen != null) {

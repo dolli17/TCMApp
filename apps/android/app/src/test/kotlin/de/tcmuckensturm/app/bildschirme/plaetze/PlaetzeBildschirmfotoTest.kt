@@ -96,6 +96,11 @@ class PlaetzeBildschirmfotoTest {
         it.auswahl = Auswahl("p2", 17 * 60 + 30, 21 * 60)
     }
 
+    /** Schrift 200 %: Kopf, Tagwahl und freie Zeiten ohne abgeschnittene Texte. */
+    @Test
+    @Config(qualifiers = "w412dp-h1600dp-xxhdpi", fontScale = 2f)
+    fun freieZeitenSchrift200() = freieZeiten("plaetze-schrift-200", dunkel = false)
+
     @Test
     fun rasterHell() = raster(false).let { m -> foto("plaetze-raster-hell", dunkel = false) { PlaetzeInhalt(m, glocke = { GlockeKnopf(2) {} }) } }
 

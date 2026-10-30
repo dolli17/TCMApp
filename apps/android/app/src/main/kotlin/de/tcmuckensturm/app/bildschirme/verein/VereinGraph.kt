@@ -51,7 +51,7 @@ fun VereinBildschirm(oeffne: (String) -> Unit) {
     val zuVerein = LocalZuVerein.current
     val kopf: @Composable () -> Unit = {
         VereinKopf(zustand.reiter, zustand.name, zustand::wechsle) {
-            Glocke(zuVeranstaltung = { zuVerein(VereinZiel.Veranstaltung(it)) })
+            Glocke()
         }
     }
     when (zustand.reiter) {

@@ -69,9 +69,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import de.tcmuckensturm.app.bildschirme.anmeldung.AnmeldeFeld
-import de.tcmuckensturm.app.bildschirme.anmeldung.GelberKnopf
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
+import de.tcmuckensturm.app.bildschirme.Hauptknopf
+import de.tcmuckensturm.app.bildschirme.Hinweis
+import de.tcmuckensturm.app.bildschirme.Leise
+import de.tcmuckensturm.app.bildschirme.LeiserKnopf
+import de.tcmuckensturm.app.bildschirme.anmeldung.AnmeldeFeld
 import de.tcmuckensturm.app.daten.Ergebnis
 import de.tcmuckensturm.app.daten.Kontodaten
 import de.tcmuckensturm.app.daten.MeinMandat
@@ -299,10 +302,10 @@ private fun ColumnScope.Stammdatenformular(
 
     Box(Modifier.padding(horizontal = Abstand.rand)) { BlattKopf(titel, zu) }
     Spacer(Modifier.size(Abstand.m))
-    MitKnopf(knopf = { GelberKnopf(if (laeuft) "Speichert…" else "Speichern", gesperrt = laeuft, aktion = absenden) }) {
+    MitKnopf(knopf = { Hauptknopf(if (laeuft) "Speichert…" else "Speichern", gesperrt = laeuft, aktion = absenden) }) {
         Leise(erklaerung)
         val m = meldung
-        if (m != null && fehlerFeld == null) KontoHinweis(m.meldung, m.ok)
+        if (m != null && fehlerFeld == null) Hinweis(m.meldung, m.ok)
         for (feld in felder) {
             KontoFeld(
                 label = feld.label,
@@ -349,7 +352,7 @@ private fun Einwilligungen(merkmale: List<Merkmal>, aktionen: KontoAktionen, gea
 
     Column(verticalArrangement = Arrangement.spacedBy(Abstand.s)) {
         Leise("Was du hier setzt, kannst du jederzeit wieder zurücknehmen.")
-        meldung?.let { KontoHinweis(it.meldung, it.ok) }
+        meldung?.let { Hinweis(it.meldung, it.ok) }
         for (m in merkmale) {
             Column(Modifier.padding(top = Abstand.m), verticalArrangement = Arrangement.spacedBy(Abstand.xs)) {
                 Text(m.name, style = TcmSchrift.text(Schrift.gewichtHalbfett, Schrift.normal), color = TcmTheme.farben.ink)
@@ -358,7 +361,7 @@ private fun Einwilligungen(merkmale: List<Merkmal>, aktionen: KontoAktionen, gea
                     when (m.darstellung) {
                         Merkmal.Darstellung.NUR_LESEN -> Leise(KontoLogik.nurLesenText(m))
                         Merkmal.Darstellung.JA_NEIN -> {
-                            KontoSegmente(listOf(true to "Ja", false to "Nein"), m.gesetzt, gesperrt = laeuft) { ja ->
+                            KontoSegmente(listOf(true to "Ja", false to "Nein"), m.gesetzt, beschriftung = m.name, gesperrt = laeuft) { ja ->
                                 if (ja != m.gesetzt) {
                                     ausfuehren {
                                         if (ja) aktionen.setzeMerkmal(m.code, option = "true") else aktionen.entferneMerkmal(m.code)
@@ -371,6 +374,7 @@ private fun Einwilligungen(merkmale: List<Merkmal>, aktionen: KontoAktionen, gea
                         Merkmal.Darstellung.EINZELWAHL -> KontoSegmente(
                             m.optionen.map { it.value to (it.label ?: it.value) },
                             m.werte.firstOrNull()?.option,
+                            beschriftung = m.name,
                             untereinander = true,
                             gesperrt = laeuft,
                         ) { wert ->
@@ -536,7 +540,7 @@ private fun ColumnScope.PasswortAendern(email: String?, aktionen: KontoAktionen,
 
     Box(Modifier.padding(horizontal = Abstand.rand)) { BlattKopf("Passwort ändern", zu) }
     Spacer(Modifier.size(Abstand.m))
-    MitKnopf(knopf = { GelberKnopf(if (laeuft) "Wird gespeichert…" else "Speichern", gesperrt = laeuft, aktion = speichern) }) {
+    MitKnopf(knopf = { Hauptknopf(if (laeuft) "Wird gespeichert…" else "Speichern", gesperrt = laeuft, aktion = speichern) }) {
         if (email != null) {
             Text(
                 buildAnnotatedString {
@@ -563,7 +567,7 @@ private fun ColumnScope.PasswortAendern(email: String?, aktionen: KontoAktionen,
             absenden = ImeAction.Go,
             beimAbsenden = speichern,
         )
-        fehler?.let { KontoHinweis(it) }
+        fehler?.let { Hinweis(it) }
     }
 }
 
@@ -600,7 +604,7 @@ private fun KuendigungFormular(aktionen: KontoAktionen) {
                 color = TcmTheme.farben.ink,
             )
         }
-        meldung?.let { KontoHinweis(it.meldung, it.ok) }
+        meldung?.let { Hinweis(it.meldung, it.ok) }
         if (meldung?.ok == true) return@Column
         KontoFeld(
             label = Kontoloeschung.NACHRICHT_LABEL,
