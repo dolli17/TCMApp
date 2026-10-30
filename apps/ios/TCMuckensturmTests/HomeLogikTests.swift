@@ -58,9 +58,9 @@ final class HomeLogikTests: XCTestCase {
         XCTAssertEqual(stand.getraenkeWert, "4,50\u{00A0}€")
         XCTAssertEqual(stand.getraenkeLabel, "Getränke im September: 4,50\u{00A0}€, läuft noch. Zu den Getränken")
         XCTAssertEqual(stand.dienstTitel, "Arbeitsdienst 2026")
-        XCTAssertEqual(stand.dienstWert, "2.5 / 10 h")
+        XCTAssertEqual(stand.dienstWert, "2,5 / 10 h")
         XCTAssertEqual(stand.dienstAnteil, 0.25)
-        XCTAssertEqual(stand.dienstLabel, "Arbeitsdienst 2026: 2.5 von 10 Stunden. Zum Konto")
+        XCTAssertEqual(stand.dienstLabel, "Arbeitsdienst 2026: 2,5 von 10 Stunden. Zum Konto")
 
         let ohne = HomeLogik.deinStand(getraenke: .fehler("Kaputt."), dienst: .wert(nil), jetzt: jetzt)
         XCTAssertNil(ohne.getraenkeWert)
@@ -92,6 +92,6 @@ final class HomeLogikTests: XCTestCase {
         XCTAssertEqual(HomeLogik.initialen(MeinName(vorname: "max", nachname: "muster")), "MM")
         XCTAssertEqual(HomeLogik.initialen(nil), "")
         XCTAssertEqual(HomeLogik.jsZahl(3), "3")
-        XCTAssertEqual(HomeLogik.jsZahl(2.5), "2.5")
+        XCTAssertEqual(HomeLogik.jsZahl(2.5), "2,5")
     }
 }

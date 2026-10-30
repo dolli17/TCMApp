@@ -146,9 +146,9 @@ enum HomeLogik {
         "\(o.courtName ?? "") · \(o.ownerName ?? "")"
     }
 
-    /// Zahl wie in einem JavaScript-Template: 3 -> "3", 2.5 -> "2.5".
+    /// Zahl wie in einem JavaScript-Template, aber mit deutschem Komma: 3 -> "3", 2.5 -> "2,5".
     static func jsZahl(_ d: Double) -> String {
-        d == d.rounded() && abs(d) < 1e15 ? String(Int(d)) : "\(d)"
+        d == d.rounded() && abs(d) < 1e15 ? String(Int(d)) : "\(d)".replacingOccurrences(of: ".", with: ",")
     }
 
     static func deinStand(
