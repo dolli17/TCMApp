@@ -56,6 +56,8 @@ class Sitzung(
     private val scope: CoroutineScope,
     /** Meldet beim Abmelden das Geraet fuer Push ab; null in Tests. */
     private val push: PushZentrale? = null,
+    /** Nach jedem Abmelden: die Widgets vergessen alles (WidgetBruecke.vergessen). */
+    private val nachAbmelden: suspend () -> Unit = {},
 ) {
     private val _ziel = MutableStateFlow<StartZiel>(StartZiel.Laden)
     val ziel: StateFlow<StartZiel> = _ziel.asStateFlow()
@@ -87,9 +89,9 @@ class Sitzung(
                     if (angemeldet) {
                         entscheiden()
                     } else {
-                        // TODO (Widget-Spur): Schnappschuss des Widgets loeschen, wie WidgetBruecke.vergessen.
                         runde += 1
                         _ziel.value = StartLogik.nachAbmelden(_ziel.value)
+                        nachAbmelden()
                     }
                 }
         }

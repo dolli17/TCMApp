@@ -20,5 +20,5 @@ rootProject.name = "TCMuckensturm"
 
 // :app      die Compose-App
 // :kern     Rechenlogik aus @tcm/core, reines Kotlin, gegen die Golden Files geprueft
-// :widgets  folgt mit der Widget-Spur (Glance)
+// Die Widgets (Glance) liegen in :app (widgets/), siehe README.
 include(":app", ":kern")

@@ -92,5 +92,43 @@
                 <data android:scheme="${urlSchema}" />
             </intent-filter>
         </activity>
+
+        <!--
+            Widgets (widgets/TcmWidgets.kt): Groessen, Vorschau und Beschreibung
+            in res/xml/widget_*.xml. Laden im Zeitplan per WorkManager (WidgetArbeit).
+        -->
+        <receiver
+            android:name=".widgets.SpieleWidgetEmpfaenger"
+            android:exported="true"
+            android:label="@string/widget_spiele_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_spiele" />
+        </receiver>
+        <receiver
+            android:name=".widgets.PlaetzeWidgetEmpfaenger"
+            android:exported="true"
+            android:label="@string/widget_plaetze_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_plaetze" />
+        </receiver>
+        <receiver
+            android:name=".widgets.VeranstaltungWidgetEmpfaenger"
+            android:exported="true"
+            android:label="@string/widget_veranstaltung_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_veranstaltung" />
+        </receiver>
     </application>
 </manifest>

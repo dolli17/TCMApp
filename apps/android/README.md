@@ -78,6 +78,17 @@ Beispieldaten aus `VerwaltungAttrappe` (`VerwaltungBildschirmfotoTest`), ohne Ne
 Weitere Schritte (Passwort, Notfallkontakt, Tennis, Mandat ohne Gläubigerdaten, Ladefehler) unter
 `docs/onboarding-*.png`, aus `OnboardingBildfotoTest` mit Beispieldaten ohne Netz.
 
+### Widgets
+
+| Hell | Dunkel |
+|---|---|
+| ![Widgets hell](docs/widgets-hell.png) | ![Widgets dunkel](docs/widgets-dunkel.png) |
+
+„Meine nächsten Spiele“ (klein, mittel), „Nächste Veranstaltung“ (klein, mittel), „Plätze jetzt“
+(mittel, groß), unten die Hinweise ohne Anmeldung und ohne Daten. Glance rechnet die Ansicht in
+RemoteViews um, Robolectric bläst sie auf (`WidgetBildschirmfotoTest`, Beispieldaten aus
+`WidgetBeispiel`, JETZT ist Montag, 28.09.2026, 14:00).
+
 ## Voraussetzungen
 
 Gebaut mit AGP 9.4.1 (Kotlin ist darin eingebaut, kein Plugin `org.jetbrains.kotlin.android`),
@@ -206,7 +217,8 @@ apps/android
 │       ├── theme/        TcmTheme aus packages/ui/generated/Tokens.kt, Schriften, Erscheinungsbild
 │       ├── navigation/   HauptTab (die Tabs), HauptTabs (ein NavHost)
 │       ├── push/         PushZentrale, Firebase/FCM, PushSchalter, PushZiel, PushNavigation
-│       └── bildschirme/  anmeldung, keinzugang, onboarding, home, plaetze, verein, konto, verwaltung
+│       ├── bildschirme/  anmeldung, keinzugang, onboarding, home, plaetze, verein, konto, verwaltung
+│       └── widgets/      die drei Glance-Widgets, Schnappschuss, WidgetArbeit (WorkManager)
 └── docs/          Bildschirmfotos
 ```
 
@@ -223,8 +235,9 @@ Für parallele Spuren gilt:
   Golden Files.
 - Sprung in einen anderen Tab: `LocalZuTab.current(HauptTab.VEREIN)`. Sitzung und Client:
   `LocalSitzung.current`.
-- Ein Modul `:widgets` (Glance) folgt in der Widget-Spur; es liest dieselbe Sitzung
-  (`Sitzungsspeicher.fuer(context)`).
+- Die Widgets liegen im Paket `widgets/` von `:app`, nicht in einem eigenen Modul: Sie laufen
+  im Prozess der App und brauchen deren Client, `Startdaten`/`Vereinsdaten`, `HomeLogik` und die
+  Tokens. Ein Modul `:widgets` hätte das alles erst in ein drittes Modul verschieben müssen.
 
 ## Was schon da ist
 
@@ -327,6 +340,23 @@ Für parallele Spuren gilt:
   `kern/Veranstaltungen.kt`, `Getraenke.kt`, Forderungsarten aus `Merkmaltexte.kt` (Konto).
   Kopf, Karte, Leerzustand und Fehlerzeile aus `bildschirme/Bausteine.kt`, die Glocke aus `nachrichten`.
 
+- **Widgets** (`widgets/`, wie `apps/ios/TCMWidgets`): „Meine nächsten Spiele“, „Plätze jetzt“
+  und „Nächste Veranstaltung“ mit Glance 1.2. Alle lesen einen Schnappschuss
+  (`WidgetSchnappschuss`, JSON unter `noBackupFilesDir`, nur eigene Termine mit Mitspielern,
+  Belegung ohne Namen, Veranstaltungen). Home und die Veranstaltungsliste legen ihn nach jedem
+  Laden ab (`WidgetBruecke`); dazu lädt die `WidgetArbeit` (WorkManager, eine Kette
+  `tcm-widgets`) selbst: alle 30 Minuten, zu Beginn und kurz nach Ende des nächsten eigenen
+  Spiels und um Mitternacht in Berlin (`WidgetZeitplan`), nur solange ein Widget liegt. Sie nimmt
+  den einen Supabase-Client der App (`TcmApp.sitzung`); das Token erneuert nur supabase-kt, es
+  gibt keinen zweiten Client, der mit demselben Refresh-Token um die Wette läuft. Ohne Sitzung
+  oder Zugang wird der Schnappschuss gelöscht und das Widget zeigt „In der App anmelden“; beim
+  Abmelden ebenso (`Sitzung(nachAbmelden)`). Ein Tippen öffnet die App über das eigene Schema
+  (`tcmlokal://plaetze`, `…://verein/veranstaltung/<id>`), `HauptActivity` gibt den Pfad an die
+  `PushZentrale`, `PushZiel.ausPfad` führt hin wie bei einer Push-Nachricht. Farben aus den Tokens (hell/dunkel nach System), Material
+  You bewusst nicht. Barlow geht in RemoteViews nicht; statt Barlow Semi Condensed steht
+  `sans-serif-condensed`. Vorschau in der Auswahl: ab Android 12 `layout/vorschau_*.xml`, davor
+  die Bilder `drawable-nodpi/vorschau_*.png` (aus dem Bildschirmfoto-Test).
+
 ## Tests
 
 - `:kern` (JUnit 5): ein generischer Lader für `packages/core/golden/*.json` (als Testressource
@@ -348,12 +378,16 @@ Für parallele Spuren gilt:
   (Ablauf mit Ersatzdaten, Fälle aus `OnboardingTests.swift`), `PushZielTest` (Fälle aus `PushTests.swift`),
   `PushZentraleTest` (An-/Abmelden, neue Marke, ohne Erlaubnis) und `OnboardingBildfotoTest`. In `:kern`
   `OnboardingTest` (Fälle aus `onboarding.test.ts` und `iban.test.ts`; Golden Files gibt es dafür nicht).
+- Widgets: `WidgetLogikTest` (Fälle aus `WidgetTests.swift`: Kodierung, Zeitplan, Plätze,
+  Links, dazu Zeitleiste und Ziele), `WidgetLadenTest` (Ablage, Laden und Lauf gegen eine
+  Attrappe) und `WidgetBildschirmfotoTest`.
 - Der Android Keystore fehlt in Robolectric. Die Tests des Sitzungsspeichers nehmen deshalb einen
   Software-Schlüssel; der echte Keystore läuft im Emulator-Rauchtest.
 
 ## Was fehlt
 
-- Screens: Widget (`:widgets`).
+- Widgets: Generated Previews (Android 15, `providePreview`) und ein Rauchtest auf dem Gerät
+  (Hinlegen, Tippen, Laden im Hintergrund) stehen aus.
 - Home: „Demnächst im Verein“ (die Karte gibt es schon: `EventKarte(e, jetzt, aufforderung = true)`).
 - Push: das Firebase-Projekt selbst und seine Werte (siehe „Push (FCM)“); ohne sie ist Push aus.
 - Prod-Werte (Supabase-URL und -Key), Release-Keystore, Fingerprints in `assetlinks.json`.

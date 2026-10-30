@@ -6,6 +6,8 @@
  * Kaltstart aus onCreate, sonst aus onNewIntent (launchMode singleTask).
  * Ebenso das Tippen auf eine Push-Nachricht: `data` steht in den Extras und
  * geht an die PushZentrale, bis die Tabs das Ziel oeffnen.
+ * Ein Link mit dem eigenen Schema, der kein Passwort-Link ist, kommt von einem
+ * Widget (WidgetLink) und geht als Pfad denselben Weg wie eine Push-Nachricht.
  */
 
 package de.tcmuckensturm.app
@@ -19,6 +21,7 @@ import de.tcmuckensturm.app.push.PushZiel
 import de.tcmuckensturm.app.start.KonfigurationFehlt
 import de.tcmuckensturm.app.start.StartAnsicht
 import de.tcmuckensturm.app.theme.TcmTheme
+import de.tcmuckensturm.app.widgets.WidgetLink
 
 class HauptActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,12 +58,15 @@ class HauptActivity : ComponentActivity() {
     }
 
     /**
-     * Passwort-Links zuerst. TODO (Widget-/Push-Spur): sonst fuehrt das eigene
-     * Schema (tcm://plaetze) wie eine Push-Nachricht dorthin (PushZiel.ausPfad in iOS).
+     * Passwort-Links zuerst, sonst fuehrt das eigene Schema (tcm://plaetze) dorthin,
+     * wo ein Widget hinwill - ueber PushZiel.ausPfad wie in iOS.
      */
     private fun linkOeffnen(intent: Intent?) {
         if (intent?.action != Intent.ACTION_VIEW) return
         val adresse = intent.dataString ?: return
-        TcmApp.aus(this).sitzung?.linkOeffnen(adresse)
+        val app = TcmApp.aus(this)
+        val sitzung = app.sitzung ?: return
+        if (sitzung.linkOeffnen(adresse)) return
+        WidgetLink.pfad(adresse, sitzung.umgebung.urlSchema)?.let { app.push.geoeffnet(mapOf("ziel" to it)) }
     }
 }

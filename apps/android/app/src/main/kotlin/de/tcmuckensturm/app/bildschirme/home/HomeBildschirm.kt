@@ -66,6 +66,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -108,6 +109,7 @@ import de.tcmuckensturm.app.theme.TcmTheme
 import de.tcmuckensturm.app.ui.tokens.Abstand
 import de.tcmuckensturm.app.ui.tokens.Radius
 import de.tcmuckensturm.app.ui.tokens.Schrift
+import de.tcmuckensturm.app.widgets.WidgetBruecke
 import de.tcmuckensturm.kern.Startseite
 import de.tcmuckensturm.kern.Zeit
 import java.time.Instant
@@ -126,7 +128,11 @@ data class HomeZustand(
     val aktualisiert: Boolean = false,
 )
 
-class HomeModell(private val daten: Startdaten) : ViewModel() {
+class HomeModell(
+    private val daten: Startdaten,
+    /** Fuer die Widgets (WidgetBruecke), wie WidgetBruecke.ablegen in iOS. */
+    private val ablegen: suspend (HomeInhalt) -> Unit = {},
+) : ViewModel() {
     private val _zustand = MutableStateFlow(HomeZustand())
     val zustand: StateFlow<HomeZustand> = _zustand.asStateFlow()
 
@@ -139,7 +145,7 @@ class HomeModell(private val daten: Startdaten) : ViewModel() {
         if (nachladen) _zustand.value = _zustand.value.copy(aktualisiert = true)
         viewModelScope.launch {
             val neu = lade(daten)
-            // TODO (Widget-Spur): Schnappschuss fuer das Widget ablegen, wie WidgetBruecke.ablegen.
+            launch { ablegen(neu) }
             _zustand.value = HomeZustand(inhalt = neu, laedt = false, aktualisiert = false)
         }
     }
@@ -199,7 +205,8 @@ fun HomeBildschirm(zuNachrichten: () -> Unit) {
     val client = LocalSitzung.current.client
     val zuTab = LocalZuTab.current
     val zuVerein = LocalZuVerein.current
-    val modell = viewModel { HomeModell(Startdaten(client)) }
+    val context = LocalContext.current.applicationContext
+    val modell = viewModel { HomeModell(Startdaten(client)) { WidgetBruecke.ablegen(context, it) } }
     val zustand by modell.zustand.collectAsStateWithLifecycle()
 
     // Zurueck auf Home (Tab oder Neuigkeiten): still nachladen, ohne Ladekreis.

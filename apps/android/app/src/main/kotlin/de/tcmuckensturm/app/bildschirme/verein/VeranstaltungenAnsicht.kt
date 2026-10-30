@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -62,6 +63,7 @@ import de.tcmuckensturm.app.theme.TcmTheme
 import de.tcmuckensturm.app.ui.tokens.Abstand
 import de.tcmuckensturm.app.ui.tokens.Radius
 import de.tcmuckensturm.app.ui.tokens.Schrift
+import de.tcmuckensturm.app.widgets.WidgetBruecke
 import de.tcmuckensturm.kern.EventTon
 import de.tcmuckensturm.kern.MitgliedEvent
 import de.tcmuckensturm.kern.Veranstaltungen
@@ -76,7 +78,12 @@ data class VeranstaltungenStand(
     val aktualisiert: Boolean = false,
 )
 
-class VeranstaltungenModell(private val daten: Vereinsdaten, private val zustand: VereinZustand) : ViewModel() {
+class VeranstaltungenModell(
+    private val daten: Vereinsdaten,
+    private val zustand: VereinZustand,
+    /** Fuer das Widget "Nächste Veranstaltung" (WidgetBruecke). */
+    private val ablegen: suspend (List<MitgliedEvent>) -> Unit = {},
+) : ViewModel() {
     var stand by mutableStateOf(VeranstaltungenStand())
         private set
 
@@ -89,7 +96,10 @@ class VeranstaltungenModell(private val daten: Vereinsdaten, private val zustand
             if (art == Ladeart.NACHLADEN) stand = stand.copy(aktualisiert = true)
             launch { ladeName(daten, zustand) }
             stand = try {
-                stand.copy(events = daten.veranstaltungen(), fehler = null)
+                daten.veranstaltungen().let { events ->
+                    launch { ablegen(events) }
+                    stand.copy(events = events, fehler = null)
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -114,7 +124,10 @@ internal suspend fun ladeName(daten: Vereinsdaten, zustand: VereinZustand) {
 fun VeranstaltungenAnsicht(kopf: @Composable () -> Unit, oeffne: (String) -> Unit) {
     val client = LocalSitzung.current.client
     val zustand = LocalVereinZustand.current
-    val modell = viewModel { VeranstaltungenModell(Vereinsdaten(client), zustand) }
+    val context = LocalContext.current.applicationContext
+    val modell = viewModel {
+        VeranstaltungenModell(Vereinsdaten(client), zustand) { WidgetBruecke.veranstaltungenAblegen(context, it) }
+    }
     // Zurueck aus dem Detail oder auf den Tab: still nachladen.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         if (modell.stand.events != null) modell.laden(Ladeart.STILL)
