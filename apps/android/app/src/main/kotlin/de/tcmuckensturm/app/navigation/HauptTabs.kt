@@ -35,6 +35,8 @@ import de.tcmuckensturm.app.bildschirme.home.HomeGraph
 import de.tcmuckensturm.app.bildschirme.home.homeGraph
 import de.tcmuckensturm.app.bildschirme.konto.kontoGraph
 import de.tcmuckensturm.app.bildschirme.plaetze.plaetzeGraph
+import de.tcmuckensturm.app.bildschirme.verein.VereinGraph
+import de.tcmuckensturm.app.bildschirme.verein.VereinTab
 import de.tcmuckensturm.app.bildschirme.verein.vereinGraph
 import de.tcmuckensturm.app.bildschirme.verwaltung.rememberVerwaltungSichtbar
 import de.tcmuckensturm.app.bildschirme.verwaltung.verwaltungGraph
@@ -90,16 +92,20 @@ fun HauptTabsInhalt(verwaltungSichtbar: Boolean, nav: NavHostController = rememb
         },
     ) { innen ->
         CompositionLocalProvider(LocalZuTab provides zuTab) {
-            NavHost(
-                navController = nav,
-                startDestination = HomeGraph,
-                modifier = Modifier.padding(bottom = innen.calculateBottomPadding()),
-            ) {
-                homeGraph(nav)
-                plaetzeGraph(nav)
-                vereinGraph(nav)
-                kontoGraph(nav)
-                verwaltungGraph(nav)
+            // Korb und Reiter des Vereins ueberleben Tab-Wechsel; die Erinnerung an den Korb kommt von hier.
+            val vereinOffen = ziel?.hierarchy?.any { it.hasRoute(VereinGraph::class) } == true
+            VereinTab(nav, vereinOffen, zuTab) {
+                NavHost(
+                    navController = nav,
+                    startDestination = HomeGraph,
+                    modifier = Modifier.padding(bottom = innen.calculateBottomPadding()),
+                ) {
+                    homeGraph(nav)
+                    plaetzeGraph(nav)
+                    vereinGraph(nav)
+                    kontoGraph(nav)
+                    verwaltungGraph(nav)
+                }
             }
         }
     }
