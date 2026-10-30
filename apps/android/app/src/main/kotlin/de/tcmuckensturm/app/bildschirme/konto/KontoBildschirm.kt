@@ -71,6 +71,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import de.tcmuckensturm.app.bildschirme.Fehlerzeile
+import de.tcmuckensturm.app.bildschirme.home.Abschnitt
+import de.tcmuckensturm.app.bildschirme.karte
+import de.tcmuckensturm.app.bildschirme.leise
+import de.tcmuckensturm.app.bildschirme.nachrichten.Glocke
+import de.tcmuckensturm.app.navigation.HauptTab
+import de.tcmuckensturm.app.navigation.LocalZuTab
 import de.tcmuckensturm.app.daten.Arbeitsdienst
 import de.tcmuckensturm.app.daten.EigenesGetraenk
 import de.tcmuckensturm.app.daten.Forderung
@@ -153,6 +160,7 @@ fun KontoBildschirm() {
     val sitzung = LocalSitzung.current
     val context = LocalContext.current
     val links = LocalUriHandler.current
+    val zuTab = LocalZuTab.current
     val scope = rememberCoroutineScope()
     val kontodaten = remember(sitzung) { Kontodaten(sitzung.client) }
     val modell = viewModel { KontoModell(kontodaten, Startdaten(sitzung.client)) }
@@ -182,6 +190,7 @@ fun KontoBildschirm() {
                 erscheinungsbildWaehlen = { neu -> scope.launch { speicher.setzen(neu) } },
                 link = { links.openUri(it) },
                 abmelden = { abmeldenFragen = true },
+                glocke = { Glocke(zuVeranstaltung = { zuTab(HauptTab.VEREIN) }) },
             )
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(Abstand.rand))
@@ -233,6 +242,8 @@ fun KontoAnsicht(
     erscheinungsbildWaehlen: (Erscheinungsbild) -> Unit,
     link: (String) -> Unit,
     abmelden: () -> Unit,
+    /** Rechts oben; im Betrieb die Glocke, in den Screenshot-Tests GlockeKnopf ohne Netz. */
+    glocke: @Composable () -> Unit = {},
     jetzt: Instant = Instant.now(),
 ) {
     val f = TcmTheme.farben
@@ -242,10 +253,11 @@ fun KontoAnsicht(
             .background(f.bg)
             .verticalScroll(rememberScrollState())
             .statusBarsPadding()
-            .padding(start = Abstand.rand, end = Abstand.rand, top = Abstand.abschnitt, bottom = Abstand.abschnitt * 2),
+            .padding(start = Abstand.rand, end = Abstand.rand, top = 12.dp, bottom = Abstand.abschnitt * 2),
         verticalArrangement = Arrangement.spacedBy(Abstand.m),
     ) {
-        // TODO (Home-Spur): die Glocke rechts oben (Glocke.swift), sobald es sie gibt.
+        // Kein grosser Titel: oben steht, wer man ist. Die Glocke bleibt rechts und rollt mit weg (U53).
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { glocke() }
         val d = zustand.inhalt
         if (d == null) {
             Box(Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
@@ -396,7 +408,7 @@ private fun AbrechnungsZeile(titel: String, beschreibung: String?, marke: Status
         Column(Modifier.weight(1f)) {
             Text(titel, style = TcmSchrift.text(Schrift.gewichtHalbfett, 15.5.sp), color = TcmTheme.farben.ink, maxLines = 1)
             if (!beschreibung.isNullOrEmpty()) {
-                Text(beschreibung, style = leiseSchrift(), maxLines = 2, modifier = Modifier.padding(top = 2.dp))
+                Text(beschreibung, style = leise.copy(color = TcmTheme.farben.muted), maxLines = 2, modifier = Modifier.padding(top = 2.dp))
             }
             StatusmarkeAnsicht(marke)
         }
@@ -412,7 +424,7 @@ private fun ArbeitsdienstKarte(dienst: Abschnitt<Arbeitsdienst?>, erneut: Erneut
     dienst.fehler?.let { Fehlerzeile("Arbeitsdienst: $it", erneut.laeuft, erneut.aktion) }
     val d = dienst.wert ?: return
     val soll = d.requiredHours ?: 0.0
-    Column(Modifier.fillMaxWidth().karte(innen = 16.dp)) {
+    Column(Modifier.fillMaxWidth().karte(padding = 16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 "Arbeitsdienst ${d.year ?: ""}",
@@ -438,7 +450,7 @@ private fun ArbeitsdienstKarte(dienst: Abschnitt<Arbeitsdienst?>, erneut: Erneut
         }
         Text(
             KontoLogik.dienstText(d),
-            style = leiseSchrift().copy(lineHeight = 19.sp),
+            style = leise.copy(color = TcmTheme.farben.muted).copy(lineHeight = 19.sp),
             modifier = Modifier.padding(top = 10.dp),
         )
     }

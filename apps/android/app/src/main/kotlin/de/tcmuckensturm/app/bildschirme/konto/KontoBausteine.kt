@@ -6,8 +6,7 @@
  * Statusmarke) und der Formularteile (stil.feld, stil.hinweisFehler,
  * Segmente, BlattKopf). Masse wie dort, Farben und Groessen aus den Tokens.
  *
- * Karte, leiser Text und Fehlerzeile stehen hier fuer das Konto allein;
- * legt eine andere Spur sie gemeinsam unter bildschirme/ ab, ziehen sie dorthin.
+ * Karte, leise Schrift und Fehlerzeile kommen aus bildschirme/Bausteine.kt.
  */
 
 package de.tcmuckensturm.app.bildschirme.konto
@@ -48,7 +47,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -64,71 +62,22 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.tcmuckensturm.app.bildschirme.karte
+import de.tcmuckensturm.app.bildschirme.leise
 import de.tcmuckensturm.app.theme.TcmSchrift
 import de.tcmuckensturm.app.theme.TcmTheme
 import de.tcmuckensturm.app.ui.tokens.Abstand
 import de.tcmuckensturm.app.ui.tokens.Radius
 import de.tcmuckensturm.app.ui.tokens.Schrift
 
-// ---- Karte, Schrift, Fehler -------------------------------------------------
+// ---- Schrift ---------------------------------------------------------------
 
-/** stil.listenkarte bzw. stil.karte: surf, Linie, kleiner Schatten (im Dunkeln keiner) */
-@Composable
-fun Modifier.karte(radius: Dp = Radius.karte, innen: Dp = 12.dp): Modifier {
-    val f = TcmTheme.farben
-    val schatten = TcmTheme.schatten.klein
-    val form = RoundedCornerShape(radius)
-    return this
-        .shadow(schatten.elevation, form, ambientColor = schatten.farbe, spotColor = schatten.farbe)
-        .background(f.surf, form)
-        .border(1.dp, f.line, form)
-        .clip(form)
-        .padding(innen)
-}
-
-/** stil.leise */
-@Composable
-fun leiseSchrift() = TcmSchrift.text(Schrift.gewichtNormal, Schrift.klein).copy(color = TcmTheme.farben.muted)
-
+/** Leiser Text (stil.leise aus bildschirme/Bausteine.kt in muted). */
 @Composable
 fun Leise(text: String, modifier: Modifier = Modifier) {
-    Text(text, style = leiseSchrift(), modifier = modifier)
-}
-
-/** Ein Ladefehler mit dem Weg zurueck (Fehlerzeile.tsx, U3) */
-@Composable
-fun Fehlerzeile(text: String, laeuft: Boolean = false, onErneut: (() -> Unit)? = null) {
-    val f = TcmTheme.farben
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(f.red.copy(alpha = if (TcmTheme.dunkel) 0.16f else 0.12f), RoundedCornerShape(Radius.feld))
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Text(text, style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal), color = f.redInk)
-        if (onErneut != null) {
-            Box(
-                Modifier
-                    .heightIn(min = 44.dp)
-                    .alpha(if (laeuft) 0.6f else 1f)
-                    .border(1.5.dp, f.red.copy(alpha = 0.4f), CircleShape)
-                    .clip(CircleShape)
-                    .clickable(enabled = !laeuft, role = Role.Button, onClick = onErneut)
-                    .padding(horizontal = 16.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    if (laeuft) "Wird geladen…" else "Erneut versuchen",
-                    style = TcmSchrift.text(Schrift.gewichtFett, 15.sp),
-                    color = f.redInk,
-                )
-            }
-        }
-    }
+    Text(text, style = leise, color = TcmTheme.farben.muted, modifier = modifier)
 }
 
 /** Was ein Abschnitt braucht, um nach einem Fehler neu zu laden. */
@@ -153,7 +102,7 @@ fun KontoAbschnitt(titel: String) {
 /** Eine Liste in einer Karte; die Zeilen trennt je eine KontoLinie. */
 @Composable
 fun KontoGruppe(modifier: Modifier = Modifier, inhalt: @Composable ColumnScope.() -> Unit) {
-    Column(modifier.fillMaxWidth().karte(innen = 0.dp), content = inhalt)
+    Column(modifier.fillMaxWidth().karte(padding = 0.dp), content = inhalt)
 }
 
 /** Die Trennlinie zwischen zwei Zeilen einer Gruppe. */

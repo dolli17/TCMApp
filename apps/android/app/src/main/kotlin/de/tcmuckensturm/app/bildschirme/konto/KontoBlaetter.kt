@@ -71,6 +71,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.tcmuckensturm.app.bildschirme.anmeldung.AnmeldeFeld
 import de.tcmuckensturm.app.bildschirme.anmeldung.GelberKnopf
+import de.tcmuckensturm.app.bildschirme.Fehlerzeile
 import de.tcmuckensturm.app.daten.Ergebnis
 import de.tcmuckensturm.app.daten.Kontodaten
 import de.tcmuckensturm.app.daten.MeinMandat
@@ -165,7 +166,7 @@ fun KontoBlattInhalt(
                 val p = inhalt?.profil?.wert
                 if (p == null) {
                     Rollend(art.titel(), zu) {
-                        Fehlerzeile(inhalt?.profil?.fehler ?: "Deine Daten konnten nicht geladen werden.", onErneut = erneut)
+                        Fehlerzeile(inhalt?.profil?.fehler ?: "Deine Daten konnten nicht geladen werden.", erneut = erneut)
                     }
                 } else if (art == KontoBlatt.DATEN) {
                     Stammdatenformular(
@@ -192,14 +193,14 @@ fun KontoBlattInhalt(
             KontoBlatt.EINWILLIGUNGEN -> Rollend(art.titel(), zu) {
                 val fehler = inhalt?.merkmale?.fehler
                 if (fehler != null) {
-                    Fehlerzeile(fehler, onErneut = erneut)
+                    Fehlerzeile(fehler, erneut = erneut)
                 } else {
                     Einwilligungen(KontoLogik.merkmale(inhalt?.merkmale?.wert.orEmpty()), aktionen, geaendert)
                 }
             }
             KontoBlatt.BANK -> Rollend(art.titel(), zu) {
                 val fehler = inhalt?.mandat?.fehler
-                if (fehler != null) Fehlerzeile(fehler, onErneut = erneut) else Bank(inhalt?.mandat?.wert)
+                if (fehler != null) Fehlerzeile(fehler, erneut = erneut) else Bank(inhalt?.mandat?.wert)
             }
             KontoBlatt.PASSWORT -> PasswortAendern(email, aktionen, zu, gespeichert)
             KontoBlatt.LOESCHEN -> Rollend(art.titel(), zu) { KuendigungFormular(aktionen) }

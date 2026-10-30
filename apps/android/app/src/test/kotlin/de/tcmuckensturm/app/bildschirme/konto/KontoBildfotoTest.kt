@@ -5,6 +5,8 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import de.tcmuckensturm.app.bildschirme.home.Abschnitt
+import de.tcmuckensturm.app.bildschirme.nachrichten.GlockeKnopf
 import de.tcmuckensturm.app.daten.Arbeitsdienst
 import de.tcmuckensturm.app.daten.EigenesGetraenk
 import de.tcmuckensturm.app.daten.Ergebnis
@@ -119,6 +121,7 @@ class KontoBildfotoTest {
             erscheinungsbildWaehlen = {},
             link = {},
             abmelden = {},
+            glocke = { GlockeKnopf(2) {} },
             jetzt = KontoBeispiel.jetzt,
         )
 

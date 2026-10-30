@@ -4,48 +4,24 @@
  * Wie Bildschirme/Konto/KontoLogik.swift der iOS-App: Texte und Auswahl wie
  * apps/mobile/app/(tabs)/konto.tsx und die Blaetter dort
  * (Stammdatenformular, MerkmaleKarte, KontoloeschungFormular), ohne
- * Compose - geprueft in KontoLogikTest.
+ * Compose - geprueft in KontoLogikTest. `Abschnitt` kommt aus Home (HomeLogik.kt).
  */
 
 package de.tcmuckensturm.app.bildschirme.konto
 
+import de.tcmuckensturm.app.bildschirme.home.Abschnitt
 import de.tcmuckensturm.app.daten.Arbeitsdienst
 import de.tcmuckensturm.app.daten.EigenesGetraenk
 import de.tcmuckensturm.app.daten.Forderung
 import de.tcmuckensturm.app.daten.MeinMandat
 import de.tcmuckensturm.app.daten.MeinProfil
-import de.tcmuckensturm.app.daten.Meldung
 import de.tcmuckensturm.app.daten.MerkmalZeile
 import de.tcmuckensturm.kern.Forderungen
 import de.tcmuckensturm.kern.Merkmaltexte
 import de.tcmuckensturm.kern.Zahlen
 import de.tcmuckensturm.kern.Zeit
 import java.time.Instant
-import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.min
-
-/**
- * Ergebnis eines Abschnitts, der fuer sich laedt: ein Wert oder ein Fehlertext.
- * Schlaegt einer fehl, steht dort der Fehler, und der Rest bleibt gefuellt.
- */
-sealed interface Abschnitt<out T> {
-    data class Wert<T>(val inhalt: T) : Abschnitt<T>
-
-    data class Fehler(val text: String) : Abschnitt<Nothing>
-
-    val wert: T? get() = (this as? Wert<T>)?.inhalt
-    val fehler: String? get() = (this as? Fehler)?.text
-
-    companion object {
-        suspend fun <T> von(laden: suspend () -> T): Abschnitt<T> = try {
-            Wert(laden())
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Fehler(Meldung.aus(e).text)
-        }
-    }
-}
 
 /** Alles, was der Konto-Tab laedt; jede Quelle fuer sich. */
 data class KontoInhalt(

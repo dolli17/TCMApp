@@ -22,11 +22,11 @@ import de.tcmuckensturm.kern.Belegung
 import de.tcmuckensturm.kern.Geld
 import de.tcmuckensturm.kern.Startseite
 import de.tcmuckensturm.kern.TimelineSegment
+import de.tcmuckensturm.kern.Zahlen
 import de.tcmuckensturm.kern.Zeit
 import de.tcmuckensturm.kern.Zeitraum
 import java.time.Instant
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.math.abs
 
 /**
  * Ergebnis eines Abschnitts, der fuer sich laedt: ein Wert oder ein Fehlertext.
@@ -150,10 +150,6 @@ object HomeLogik {
 
     fun offenesSpielZeile(o: OffenesSpiel): String = "${o.courtName ?: ""} · ${o.ownerName ?: ""}"
 
-    /** Zahl wie in einem JavaScript-Template: 3 -> "3", 2.5 -> "2.5". */
-    fun jsZahl(d: Double): String =
-        if (d == Math.rint(d) && abs(d) < 1e15) d.toLong().toString() else d.toString()
-
     fun deinStand(
         getraenke: Abschnitt<List<EigenesGetraenk>>,
         dienst: Abschnitt<Arbeitsdienst?>,
@@ -171,7 +167,7 @@ object HomeLogik {
         val dienstFehler = dienst.fehler
         val dienstLabel = when {
             dienstFehler != null -> "Arbeitsdienst: $dienstFehler"
-            soll > 0 -> "Arbeitsdienst $jahr: ${jsZahl(ist)} von ${jsZahl(soll)} Stunden. Zum Konto"
+            soll > 0 -> "Arbeitsdienst $jahr: ${Zahlen.deutsch(ist)} von ${Zahlen.deutsch(soll)} Stunden. Zum Konto"
             else -> "Arbeitsdienst $jahr: kein Soll. Zum Konto"
         }
 
@@ -182,7 +178,7 @@ object HomeLogik {
             getraenkeLabel = getraenke.fehler?.let { "Getränke: $it" }
                 ?: "Getränke im $monat: $summe, läuft noch. Zu den Getränken",
             dienstTitel = "Arbeitsdienst $jahr",
-            dienstWert = if (mitSoll) "${jsZahl(ist)} / ${jsZahl(soll)} h" else null,
+            dienstWert = if (mitSoll) "${Zahlen.deutsch(ist)} / ${Zahlen.deutsch(soll)} h" else null,
             dienstAnteil = if (soll > 0) minOf(1.0, ist / soll) else 0.0,
             dienstFehler = dienstFehler,
             dienstLabel = dienstLabel,
