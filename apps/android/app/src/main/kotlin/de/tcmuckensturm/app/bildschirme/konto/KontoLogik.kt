@@ -18,10 +18,10 @@ import de.tcmuckensturm.app.daten.Meldung
 import de.tcmuckensturm.app.daten.MerkmalZeile
 import de.tcmuckensturm.kern.Forderungen
 import de.tcmuckensturm.kern.Merkmaltexte
+import de.tcmuckensturm.kern.Zahlen
 import de.tcmuckensturm.kern.Zeit
 import java.time.Instant
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.math.abs
 import kotlin.math.min
 
 /**
@@ -163,15 +163,11 @@ object KontoLogik {
 
     // ---- Arbeitsdienst --------------------------------------------------------
 
-    /** Zahl wie in einem JavaScript-Template: 3 -> "3", 2.5 -> "2.5". */
-    fun jsZahl(d: Double): String =
-        if (d == Math.rint(d) && abs(d) < 1e15) d.toLong().toString() else d.toString()
-
-    /** "4 / 10 h", ohne Soll "4 h" */
+    /** "6,5 / 10 h", ohne Soll "6,5 h" (deutsch, nicht "6.5" wie Expo und iOS) */
     fun dienstWert(d: Arbeitsdienst): String {
         val ist = d.completedHours ?: 0.0
         val soll = d.requiredHours ?: 0.0
-        return if (soll > 0) "${jsZahl(ist)} / ${jsZahl(soll)} h" else "${jsZahl(ist)} h"
+        return if (soll > 0) "${Zahlen.deutsch(ist)} / ${Zahlen.deutsch(soll)} h" else "${Zahlen.deutsch(ist)} h"
     }
 
     fun dienstText(d: Arbeitsdienst): String {
@@ -189,7 +185,7 @@ object KontoLogik {
 
     /** Fuer TalkBack: "4 von 10 Stunden geleistet" */
     fun dienstBedienText(d: Arbeitsdienst): String =
-        "${jsZahl(d.completedHours ?: 0.0)} von ${jsZahl(d.requiredHours ?: 0.0)} Stunden geleistet"
+        "${Zahlen.deutsch(d.completedHours ?: 0.0)} von ${Zahlen.deutsch(d.requiredHours ?: 0.0)} Stunden geleistet"
 
     // ---- Mandat ---------------------------------------------------------------
 

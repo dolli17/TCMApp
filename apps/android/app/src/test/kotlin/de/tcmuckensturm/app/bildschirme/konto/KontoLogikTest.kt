@@ -89,7 +89,7 @@ class KontoLogikTest {
         assertEquals("Erledigt – danke für deinen Einsatz.", KontoLogik.dienstText(fertig))
         assertEquals(1.0, KontoLogik.dienstAnteil(fertig), 0.0)
         val ohne = Arbeitsdienst(year = 2026, requiredHours = 0.0, completedHours = 2.5, missingHours = 0.0)
-        assertEquals("2.5 h", KontoLogik.dienstWert(ohne))
+        assertEquals("2,5 h", KontoLogik.dienstWert(ohne))
         assertEquals("Für dieses Jahr ist kein Arbeitsdienst vorgesehen.", KontoLogik.dienstText(ohne))
         assertEquals(0.0, KontoLogik.dienstAnteil(ohne), 0.0)
     }
@@ -101,7 +101,8 @@ class KontoLogikTest {
             """[{"year":2026,"required_hours":"10.0","completed_hours":4.5,"missing_hours":null}]""",
         )[0]
         assertEquals(Arbeitsdienst(year = 2026, requiredHours = 10.0, completedHours = 4.5, missingHours = null), d)
-        assertEquals("4.5 / 10 h", KontoLogik.dienstWert(d))
+        assertEquals("4,5 / 10 h", KontoLogik.dienstWert(d))
+        assertEquals("4,5 von 10 Stunden geleistet", KontoLogik.dienstBedienText(d))
     }
 
     @Test
