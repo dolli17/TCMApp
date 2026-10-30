@@ -1,6 +1,9 @@
 # Native Apps: Umzug von Expo auf Swift und Kotlin
 
-Stand: 29.10.2026 · Status: **entschieden, Grundlagen in Arbeit**
+Stand: 30.10.2026 · Status: **iOS und Android funktional fertig, Test auf Dev läuft**
+
+- **iOS** (`apps/ios`): alle Screens aus C, Widgets, Push-Anmeldung. Build 0.3.0 (17) liegt in TestFlight (Prod-Bundle gegen das Dev-Backend), hochgeladen mit `apps/ios/scripts/testflight.sh`.
+- **Android** (`apps/android`): alle Screens aus C, Glance-Widgets, Push über FCM (ohne Firebase-Werte ausgeschaltet). compileSdk 37, targetSdk 36 (Pflicht bei Google Play), minSdk 26. Noch nicht veröffentlicht: Play Console und Release-Keystore fehlen.
 
 ## Kontext
 Die Mitglieder-App ist heute eine Expo-App (React Native) in `apps/mobile`. Sie läuft auf iOS über TestFlight, Android ist nie veröffentlicht worden. Web (`apps/web`) und Supabase bleiben, wie sie sind. Nur die App wird neu gebaut, und zwar nativ, eine je Plattform.
@@ -34,7 +37,7 @@ Die Arbeit läuft in parallelen Branches mit getrennten Bereichen:
 | A1 Android-Gerüst | `feature/android-geruest` | `apps/android`: Gradle-Projekt (`:app`, `:kern`), Fundament (Phase B Android), Anmeldung und Kein Zugang, Tabs als Platzhalter. Einzelheiten in [`apps/android/README.md`](../apps/android/README.md). |
 | N6 Backend-RPCs | `feature/app-rpcs` | `supabase/migrations`, Tests und API-Vertrag: Ersatz der Tabellenzugriffe, Push-Anbieter (Phase A). Einzige Spur mit Migrationen. |
 
-Weitere Spuren (Android-Gerüst, Screens) folgen nach den Phasen unten. Migrationen gibt es dabei immer nur in **einer** Spur gleichzeitig (siehe `CONTRIBUTING.md`, „Parallel arbeiten“).
+Danach je Tab eine Spur, iOS als N4–N13 (bis PR #108), Android als A2–A9 (PRs #111–#118: Home, Konto, Verein, Plätze, Onboarding und Push, Verwaltung, Widgets, Aufräumrunde). Migrationen gibt es dabei immer nur in **einer** Spur gleichzeitig (siehe `CONTRIBUTING.md`, „Parallel arbeiten“).
 
 ## Phasen
 
@@ -122,8 +125,8 @@ Alles hier entscheidest du selbst. Ohne diese Punkte bleiben die betroffenen Tei
 
 | Was | Wofür | Stand |
 |---|---|---|
-| **Android-SDK lokal** (Android Studio oder Command-line Tools, Emulator-Image API 34+) | Phase B Android, Tests | fehlt auf diesem Rechner |
-| **Plattenplatz** | Xcode-Simulatoren, Android-SDK und Emulator, Gradle-Cache brauchen zusammen leicht 30–50 GB | knapp (am 29.10.2026 rund 32 GB frei) |
+| **Android-SDK lokal** (Android Studio oder Command-line Tools, Emulator-Image API 34+) | Phase B Android, Tests | installiert am 30.10.2026: Command-line Tools, Plattformen 35 und 37, Build-Tools 35–37, Emulator mit Image API 35 (AVD `tcm-pixel`), JDK 21 |
+| **Plattenplatz** | Xcode-Simulatoren, Android-SDK und Emulator, Gradle-Cache brauchen zusammen leicht 30–50 GB | knapp (am 30.10.2026 rund 20–25 GB frei) |
 | **Google Play Console** (einmalig 25 $) und **Firebase-Projekt** (FCM) mit Dienstkonto-Schlüssel | Android-Release, Push auf Android (`FCM_SERVICE_ACCOUNT`, siehe [Push](#push)) | nicht angelegt |
 | **Eigener APNs-Schlüssel (.p8)** im Apple-Developer-Konto des Vereins, mit Key-ID und Team-ID als Edge-Secret | Push direkt über APNs (Phase A). Heute verwaltet EAS den Push-Schlüssel. Die Function ist bereit (N7), es fehlen nur die Secrets, siehe [Push](#push). | offen |
 | **macOS-Runner in CI** (GitHub Actions) | iOS-Build und -Tests in der CI. Für das öffentliche Repo sind die Standard-Runner frei, größere macOS-Runner kosten extra, und die Jobs laufen lange. Alternative: nur lokal testen und per Fastlane hochladen. | offen, Kosten und Laufzeit abwägen |
