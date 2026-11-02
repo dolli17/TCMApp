@@ -147,16 +147,27 @@ struct Platzdaten: Sendable {
         let p_player_member_ids: [String]
         let p_guest_names: [String]
         let p_partner_wanted: Bool
+        /// nil faellt weg (synthetisiertes encodeIfPresent): ohne Filter ruft die App
+        /// create_booking wie vor der LK-Migration auf.
+        let p_partner_lk_von: Double?
+        let p_partner_lk_bis: Double?
+        let p_partner_fuer: String?
     }
 
-    /// Beginn als Zeitpunkt aus berlinTime - nie in der Zeitzone des Geraets.
+    /**
+     * Beginn als Zeitpunkt aus berlinTime - nie in der Zeitzone des Geraets.
+     * Der Filter zaehlt nur, wenn Mitspieler gesucht werden.
+     */
     func bucheplatz(
-        courtId: String, beginn: Date, typ: String, mitspieler: [String], gaeste: [String], sucheMitspieler: Bool
+        courtId: String, beginn: Date, typ: String, mitspieler: [String], gaeste: [String], sucheMitspieler: Bool,
+        filter: Suchfilter = .offen
     ) async -> PlatzErgebnis {
-        await schreibe("Platz gebucht.") {
+        let f = sucheMitspieler ? filter : .offen
+        return await schreibe("Platz gebucht.") {
             try await client.rpc("create_booking", params: BuchenParameter(
                 p_court_id: courtId, p_starts_at: Zeit.iso(beginn), p_booking_type_code: typ,
-                p_player_member_ids: mitspieler, p_guest_names: gaeste, p_partner_wanted: sucheMitspieler
+                p_player_member_ids: mitspieler, p_guest_names: gaeste, p_partner_wanted: sucheMitspieler,
+                p_partner_lk_von: f.paramVon, p_partner_lk_bis: f.paramBis, p_partner_fuer: f.paramFuer
             )).execute()
         }
     }
@@ -223,11 +234,26 @@ struct Platzdaten: Sendable {
     private struct GesuchtParameter: Encodable {
         let p_booking_id: String
         let p_wanted: Bool
+        /// nil faellt weg; die Datenbank nimmt dann null, also keine Einschraenkung.
+        let p_lk_von: Double?
+        let p_lk_bis: Double?
+        let p_fuer: String?
     }
 
-    func sucheMitspieler(_ bookingId: String, gesucht: Bool) async -> PlatzErgebnis {
-        await schreibe(gesucht ? "Die Buchung steht jetzt bei den offenen Spielen." : "Die Buchung ist nicht mehr ausgeschrieben.") {
-            try await client.rpc("set_partner_wanted", params: GesuchtParameter(p_booking_id: bookingId, p_wanted: gesucht)).execute()
+    /**
+     * Ausschreiben, abschalten oder den Filter einer laufenden Suche aendern
+     * (set_partner_wanted setzt bei p_wanted=true immer alle drei Filterwerte).
+     */
+    func sucheMitspieler(
+        _ bookingId: String, gesucht: Bool, filter: Suchfilter = .offen, erfolg: String? = nil
+    ) async -> PlatzErgebnis {
+        let f = gesucht ? filter : .offen
+        let text = erfolg
+            ?? (gesucht ? "Die Buchung steht jetzt bei den offenen Spielen." : "Die Buchung ist nicht mehr ausgeschrieben.")
+        return await schreibe(text) {
+            try await client.rpc("set_partner_wanted", params: GesuchtParameter(
+                p_booking_id: bookingId, p_wanted: gesucht, p_lk_von: f.paramVon, p_lk_bis: f.paramBis, p_fuer: f.paramFuer
+            )).execute()
         }
     }
 

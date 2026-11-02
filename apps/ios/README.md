@@ -210,6 +210,20 @@ Wie `apps/mobile/app/(tabs)/plaetze/`, Texte wortgleich (`Bildschirme/Plaetze/`)
   offenen Spielen auf Home kommt, sieht die offenen Spiele oben (`PlaetzeZustand`, `zuPlaetze`). Logik in
   `SpieleLogik.swift` (`SpieleLogikTests`, Golden File `offenesSpielText`). Bildschirmfotos ohne Klicks:
   `-TCMTab plaetze -TCMPlaetze spiele|offen`.
+- **Mitspielersuche „Nur für …“** (`Kern/Suchfilter.swift`, `SuchfilterTests`): Unter „Mitspieler
+  gesucht“ lässt sich die Suche auf einen LK-Bereich (zwei Räder, 1,0–25,0 in 0,1-Schritten) und auf
+  Alle/Damen/Herren einschränken – beim Buchen (`create_booking`, `p_partner_lk_von/_bis/_fuer`) und an
+  der eigenen Buchung (`set_partner_wanted`, „Filter speichern“). Grenzen 1 und 25 gehen als `null`;
+  ohne Einschränkung schickt die App die neuen Parameter gar nicht. Den aktuellen Filter liefert
+  `day_schedule`, offene Spiele zeigen ihn als Zusatz („LK 10–16 · Herren“, auch auf Home). Durchgesetzt
+  wird er in der Datenbank (`open_matches`, `join_booking`). Bilder: UI-Test `SuchfilterUITests`, braucht
+  heute um 17:00 Platz 1 frei. `testBuchungsblattMitFilter` bucht nichts; `testBuchenMitFilter` bucht nur
+  mit `TEST_RUNNER_TCM_BUCHEN=1` wirklich, prüft den Filter bei den offenen Spielen und an der eigenen
+  Buchung (aus `day_schedule`) und storniert danach wieder.
+
+  | Nur für …, hell | dunkel | Offene Spiele, hell | dunkel |
+  |---|---|---|---|
+  | ![Suchfilter hell](docs/plaetze-suchfilter-hell.png) | ![Suchfilter dunkel](docs/plaetze-suchfilter-dunkel.png) | ![Spiele mit Filter hell](docs/plaetze-spiele-suchfilter-hell.png) | ![Spiele mit Filter dunkel](docs/plaetze-spiele-suchfilter-dunkel.png) |
 - **Sperren und Umsetzen** (mit Platzrechten): zweistufig, wenn Buchungen im Weg liegen
   (`create_blocking`/`update_blocking`, `move_booking`).
 - **Logik:** neue Kernfunktionen in `Kern/Platzplan.swift` (aus `@tcm/core`, gegen die Golden Files
@@ -340,6 +354,9 @@ schickt hierher, wenn `mein_zugang()` `onboarding_offen` meldet.
   Optionale Parameter fehlen statt `null`.
 - **Prüfungen vorher** wie `pruefeOnboardingStammdaten` & Co. in `daten.ts` (`OnboardingLogik`), der
   Fehler steht am Feld. Das Geburtsdatum hat einen Datumswähler (1900 bis heute), der Wert bleibt `TT.MM.JJJJ`.
+- **Tennis:** Feld „LK oder geschätzte LK“ mit Hinweis darunter. Erlaubt sind leer oder eine Zahl 1–25 mit
+  höchstens einer Nachkommastelle (Komma oder Punkt, optional „LK“ davor); gespeichert wird normalisiert,
+  etwa `LK14,5` (`LkEingabe` in `Kern/Suchfilter.swift`). Die LK bearbeitet man in der App sonst nirgends.
 - **Freischalten:** Wer das Mandat verlässt, ruft `complete_onboarding()`. Fehlt noch etwas, springt der
   Assistent zum ersten Schritt aus dem DETAIL der Meldung. Danach sind Einwilligungen, Tennis und
   App-Einstellungen freiwillig, zurück in die Pflicht geht es nicht mehr. Fertig (oder ohne Mitglied wie

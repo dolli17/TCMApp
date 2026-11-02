@@ -406,14 +406,20 @@ struct SchrittTennis: View {
     @State private var nuliga = ""
     @State private var interesse = false
     @State private var bereit = false
+    /// Erst nach dem ersten Speichern pruefen - nicht schon beim Tippen meckern.
+    @State private var geprueft = false
 
     var body: some View {
-        KontoFeld(label: "LK (etwa 18,4)", text: $lk, tastatur: .numbersAndPunctuation)
+        KontoFeld(
+            label: LkEingabe.beschriftung, text: $lk, fehler: geprueft ? LkEingabe.fehler(lk) : nil,
+            hinweis: LkEingabe.hinweis, tastatur: .numbersAndPunctuation, grossschreibung: .characters
+        )
         KontoFeld(label: "nuLiga-ID", text: $nuliga, grossschreibung: .never)
         KontoGruppe {
             OnboardingSchalter(label: "Interesse an einer Mannschaft", an: $interesse)
         }
         OnboardingAktionen(k: k) {
+            geprueft = true
             let r = await k.daten.speichereTennis(lk: lk, nuligaId: nuliga, mannschaftInteresse: interesse)
             return r.ok ? await k.weiter() : r
         }

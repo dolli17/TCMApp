@@ -275,10 +275,16 @@ final class PlaetzeModell {
     }
 
     /// Der Zeitpunkt wird in Europe/Berlin gebildet, nicht in der Zeitzone des Telefons.
-    func buchen(courtId: String, tag: String, start: Int, typ: String, mitglieder: [String], gaeste: [String], sucht: Bool) async {
+    func buchen(
+        courtId: String, tag: String, start: Int, typ: String, mitglieder: [String], gaeste: [String], sucht: Bool,
+        filter: Suchfilter = .offen
+    ) async {
         let beginn = Zeit.berlinTime(day: tag, minutes: start)
         let r = await mitLauf {
-            await daten.bucheplatz(courtId: courtId, beginn: beginn, typ: typ, mitspieler: mitglieder, gaeste: gaeste, sucheMitspieler: sucht)
+            await daten.bucheplatz(
+                courtId: courtId, beginn: beginn, typ: typ, mitspieler: mitglieder, gaeste: gaeste, sucheMitspieler: sucht,
+                filter: filter
+            )
         }
         await ergebnis(r, ziel: .stelle(courtId: courtId, beginn: beginn))
     }
@@ -299,8 +305,16 @@ final class PlaetzeModell {
         await ergebnis(await mitLauf { await daten.hebeSperreAuf(id) })
     }
 
-    func ausschreiben(_ id: String, gesucht: Bool) async {
-        await ergebnis(await mitLauf { await daten.sucheMitspieler(id, gesucht: gesucht) }, ziel: .buchung(id))
+    func ausschreiben(_ id: String, gesucht: Bool, filter: Suchfilter = .offen) async {
+        await ergebnis(await mitLauf { await daten.sucheMitspieler(id, gesucht: gesucht, filter: filter) }, ziel: .buchung(id))
+    }
+
+    /// Den Filter einer laufenden Suche aendern - dieselbe RPC, eigene Meldung.
+    func filterAendern(_ id: String, filter: Suchfilter) async {
+        await ergebnis(
+            await mitLauf { await daten.sucheMitspieler(id, gesucht: true, filter: filter, erfolg: PlaetzeLogik.filterGespeichert(filter)) },
+            ziel: .buchung(id)
+        )
     }
 
     func beitreten(_ id: String) async {

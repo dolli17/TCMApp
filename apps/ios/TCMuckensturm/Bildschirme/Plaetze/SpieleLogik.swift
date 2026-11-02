@@ -188,6 +188,11 @@ enum SpieleLogik {
         return "\(o.typeName ?? "") · \(dabei) von \(gesamt) dabei"
     }
 
+    /// Zusatz, wenn die Suche eingeschraenkt ist: "LK 10–16 · Herren", "bis LK 16", "Damen" - sonst nil.
+    static func filterZusatz(_ o: OffenesSpiel) -> String? {
+        o.suchfilter.kurztext
+    }
+
     /// Nicht fuer eigene, schon besetzte oder begonnene Spiele (join_booking).
     static func darfMitspielen(_ o: OffenesSpiel, eigene: Set<String>, jetzt: Date) -> Bool {
         Platzplan.bookingActions(

@@ -80,12 +80,20 @@ struct OffenesSpiel: Decodable, Equatable, Identifiable, Sendable, Zeitraum {
     let players: [String?]?
     let frei: Int?
     let binDabei: Bool?
+    /// Filter der Suche ("Nur für …"); fehlt bei Datenbanken vor der LK-Migration.
+    var lkVon: Double? = nil
+    var lkBis: Double? = nil
+    var fuer: String? = nil
 
     var id: String { bookingId }
 
+    var suchfilter: Suchfilter { Suchfilter(von: lkVon, bis: lkBis, fuer: fuer) }
+
     enum CodingKeys: String, CodingKey {
-        case players, frei
+        case players, frei, fuer
         case bookingId = "booking_id"
+        case lkVon = "lk_von"
+        case lkBis = "lk_bis"
         case startsAt = "starts_at"
         case endsAt = "ends_at"
         case courtName = "court_name"
@@ -117,9 +125,18 @@ struct TagesBelegung: Decodable, Equatable, Sendable, BelegterSlot, Belegungsmer
     let players: [String?]?
     let playerMemberIds: [String?]?
     let guestNames: [String?]?
+    /// Filter der Suche ("Nur für …"); fehlt bei Datenbanken vor der LK-Migration.
+    var partnerLkVon: Double? = nil
+    var partnerLkBis: Double? = nil
+    var partnerFuer: String? = nil
+
+    var suchfilter: Suchfilter { Suchfilter(von: partnerLkVon, bis: partnerLkBis, fuer: partnerFuer) }
 
     enum CodingKeys: String, CodingKey {
         case kind, title, frei, players
+        case partnerLkVon = "partner_lk_von"
+        case partnerLkBis = "partner_lk_bis"
+        case partnerFuer = "partner_fuer"
         case bookingId = "booking_id"
         case courtId = "court_id"
         case startsAt = "starts_at"

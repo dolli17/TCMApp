@@ -287,26 +287,124 @@ private struct Chipwahl: View {
     }
 }
 
-/// "Mitspieler gesucht" mit Erklaerung - ohne sie raet man, was das bewirkt.
+/**
+ * "Mitspieler gesucht" mit Erklaerung - ohne sie raet man, was das bewirkt.
+ * Ist die Suche an und `filter` gesetzt, steht darunter "Nur für …".
+ * `speichern` gibt es nur an einer bestehenden Buchung, wenn der Filter
+ * geaendert wurde.
+ */
 private struct GesuchtKarte: View {
     let an: Bool
     var deaktiviert = false
+    var filter: Binding<Suchfilter>?
+    var speichern: (() -> Void)?
     let wechsel: (Bool) -> Void
 
     var body: some View {
-        Toggle(isOn: Binding(get: { an }, set: wechsel)) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Mitspieler gesucht").font(Schrift.text(.fett, 16)).foregroundStyle(Farbe.ink)
-                Text("Dein Spiel erscheint unter „Offene Spiele“. Wer mag, trägt sich selbst ein.")
-                    .font(Schrift.text(.normal, 13))
-                    .foregroundStyle(Farbe.muted)
-                    .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 14) {
+            Toggle(isOn: Binding(get: { an }, set: wechsel)) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Mitspieler gesucht").font(Schrift.text(.fett, 16)).foregroundStyle(Farbe.ink)
+                    Text("Dein Spiel erscheint unter „Offene Spiele“. Wer mag, trägt sich selbst ein.")
+                        .font(Schrift.text(.normal, 13))
+                        .foregroundStyle(Farbe.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .tint(Farbe.greenInk)
+            if an, let filter {
+                Farbe.line.frame(height: 1)
+                NurFuer(filter: filter, speichern: speichern)
             }
         }
-        .tint(Farbe.greenInk)
         .disabled(deaktiviert)
         .padding(16)
         .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 18))
+    }
+}
+
+/**
+ * "Nur für …": LK-Bereich von/bis in 0,1-Schritten und Alle/Damen/Herren.
+ * Zugeklappt steht rechts, was gilt; ein eingeschraenkter Filter oeffnet
+ * sich von selbst, damit man ihn sieht.
+ */
+private struct NurFuer: View {
+    @Binding var filter: Suchfilter
+    var speichern: (() -> Void)?
+
+    @State private var offen: Bool
+
+    init(filter: Binding<Suchfilter>, speichern: (() -> Void)?) {
+        _filter = filter
+        self.speichern = speichern
+        _offen = State(initialValue: filter.wrappedValue.istEingeschraenkt)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Button { withAnimation(.snappy) { offen.toggle() } } label: {
+                HStack(spacing: 8) {
+                    Text("Nur für …").font(Schrift.text(.fett, 15)).foregroundStyle(Farbe.ink)
+                    Spacer(minLength: 8)
+                    Text(filter.zusammenfassung)
+                        .font(Schrift.text(.halbfett, 14))
+                        .foregroundStyle(filter.istEingeschraenkt ? Farbe.goldInk : Farbe.muted)
+                        .lineLimit(1)
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Farbe.ink2)
+                        .rotationEffect(.degrees(offen ? 180 : 0))
+                }
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Nur für, \(filter.vorleseText)")
+            .accessibilityHint(offen ? "Zuklappen" : "Suche auf LK oder Damen und Herren einschränken")
+
+            if offen {
+                Segmente(
+                    beschriftung: "Für wen",
+                    optionen: SucheFuer.allCases.map { ($0, $0.label, false) },
+                    wert: $filter.fuer
+                )
+                HStack(spacing: 10) {
+                    lkWahl("LK von", wert: filter.vonZehntel) { filter = filter.mitVon($0) }
+                    Text("–").font(Schrift.text(.fett, 17)).foregroundStyle(Farbe.ink2).accessibilityHidden(true)
+                    lkWahl("LK bis", wert: filter.bisZehntel) { filter = filter.mitBis($0) }
+                }
+                Text("1 ist die beste LK, 25 die schwächste. Wer keine LK eingetragen hat, sieht die Suche nur, wenn „bis“ auf 25 steht.")
+                    .font(Schrift.text(.normal, 13))
+                    .foregroundStyle(Farbe.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                if filter.istEingeschraenkt {
+                    Nebenknopf(text: "Für alle öffnen", klein: true) { filter = .offen }
+                }
+            }
+            if let speichern {
+                Hauptknopf(text: "Filter speichern", aktion: speichern)
+            }
+        }
+    }
+
+    private func lkWahl(_ name: String, wert: Int, setze: @escaping (Int) -> Void) -> some View {
+        VStack(spacing: 2) {
+            Text(name).font(Schrift.text(.halbfett, 13)).foregroundStyle(Farbe.ink2).accessibilityHidden(true)
+            Picker(name, selection: Binding(get: { wert }, set: setze)) {
+                ForEach(Suchfilter.stufen, id: \.self) { z in
+                    Text("\(z / 10),\(z % 10)")
+                        .font(Schrift.text(.halbfett, 17))
+                        .monospacedDigit()
+                        .tag(z)
+                }
+            }
+            .pickerStyle(.wheel)
+            .frame(height: 112)
+            .clipped()
+            .background(Farbe.bg, in: RoundedRectangle(cornerRadius: 14))
+            .accessibilityLabel(name)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -500,6 +598,7 @@ private struct BuchenInhalt: View {
     @State private var mitglieder: [String] = []
     @State private var gaeste: [String] = []
     @State private var sucht = false
+    @State private var filter = Suchfilter.offen
     @State private var suchen = false
 
     init(modell: PlaetzeModell, courtId: String, platzName: String, tag: String, stunde: Int, startzeiten: [Int], vorgabe: Int, kicker: String) {
@@ -568,7 +667,7 @@ private struct BuchenInhalt: View {
             gastgebuehrCents: m.gastgebuehr, suchen: $suchen
         )
 
-        if nochPlatz { GesuchtKarte(an: sucht) { sucht = $0 } }
+        if nochPlatz { GesuchtKarte(an: sucht, filter: $filter) { sucht = $0 } }
 
         VStack(spacing: 10) {
             FehlerText(text: m.fensterFehler)
@@ -580,7 +679,10 @@ private struct BuchenInhalt: View {
                 beiGesperrt: m.laeuft || maxWeitere == 0 ? nil : { suchen = true }
             ) {
                 Task {
-                    await m.buchen(courtId: courtId, tag: tag, start: start, typ: art, mitglieder: mitglieder, gaeste: gaeste, sucht: sucht)
+                    await m.buchen(
+                        courtId: courtId, tag: tag, start: start, typ: art, mitglieder: mitglieder, gaeste: gaeste,
+                        sucht: sucht, filter: filter
+                    )
                 }
             }
             Fussnote(text: "Stornieren geht bis Spielbeginn")
@@ -670,6 +772,8 @@ private struct VerwaltenInhalt: View {
     @State private var bearbeitenOffen = false
     @State private var grund = ""
     @State private var suchen = false
+    /// "Nur für …" der Suche, beim Oeffnen aus day_schedule
+    @State private var filter: Suchfilter
     /// Einmal beim Oeffnen: die Uhr soll nicht unter dem Finger Knoepfe wegnehmen.
     @State private var jetzt = Date()
 
@@ -680,6 +784,7 @@ private struct VerwaltenInhalt: View {
         self.kicker = kicker
         _mitglieder = State(initialValue: (b.playerMemberIds ?? []).compactMap { $0 })
         _gaeste = State(initialValue: (b.guestNames ?? []).compactMap { $0 })
+        _filter = State(initialValue: b.suchfilter)
     }
 
     var body: some View {
@@ -745,8 +850,13 @@ private struct VerwaltenInhalt: View {
         }
 
         if !v.nurStorno && v.darfVerwalten && ((b.frei ?? 0) > 0 || b.partnerWanted == true) {
-            GesuchtKarte(an: b.partnerWanted == true, deaktiviert: m.laeuft) { an in
-                Task { await m.ausschreiben(b.bookingId, gesucht: an) }
+            GesuchtKarte(
+                an: b.partnerWanted == true, deaktiviert: m.laeuft, filter: $filter,
+                speichern: b.partnerWanted == true && filter != b.suchfilter
+                    ? { Task { await m.filterAendern(b.bookingId, filter: filter) } }
+                    : nil
+            ) { an in
+                Task { await m.ausschreiben(b.bookingId, gesucht: an, filter: filter) }
             }
         }
 
