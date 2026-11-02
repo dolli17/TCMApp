@@ -149,16 +149,23 @@ declare mf record; mf2 record;
 begin
   select * into mf  from tests.mf_mannschaft('T Prüfung A') limit 1;
   select * into mf2 from tests.mf_mannschaft('T Prüfung B') limit 1;
-  perform set_config('role', 'postgres', true); perform set_config('request.jwt.claims', '{}', true);
-  perform tests.act_as(mf.auth_id);
+
+  -- Nur intern nutzbar: authenticated darf sie nicht aufrufen.
+  return next ok(not has_function_privilege('authenticated', 'private.ist_mannschaftsfuehrer(uuid)', 'execute'),
+    'ist_mannschaftsfuehrer ist nicht für authenticated freigegeben');
+
+  -- Wie aus einer RPC: Claims des Nutzers, Rolle des Eigentümers.
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', mf.auth_id::text, 'role', 'authenticated')::text, true);
   return next ok(private.ist_mannschaftsfuehrer(mf.team_id), 'MF der eigenen Mannschaft');
   return next ok(not private.ist_mannschaftsfuehrer(mf2.team_id), 'nicht der fremden');
-  perform set_config('role', 'postgres', true); perform set_config('request.jwt.claims', '{}', true);
+
+  perform set_config('request.jwt.claims', '{}', true);
   update public.members set login_disabled_at = now() where id = mf.member_id;
-  perform set_config('role', 'postgres', true); perform set_config('request.jwt.claims', '{}', true);
-  perform tests.act_as(mf.auth_id);
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', mf.auth_id::text, 'role', 'authenticated')::text, true);
   return next ok(not private.ist_mannschaftsfuehrer(mf.team_id), 'ohne Zugang nicht');
-  perform set_config('role', 'postgres', true); perform set_config('request.jwt.claims', '{}', true);
+  perform set_config('request.jwt.claims', '{}', true);
 end; $f$;
 
 create or replace function tests.test_mf_einladen_und_kandidaten()

@@ -77,9 +77,8 @@ comment on function private.ist_mannschaftsfuehrer(uuid) is
   'Ist der angemeldete Nutzer Mannschaftsführer dieser aktiven Mannschaft '
   'und hat Zugang? Gibt nur Auskunft über den Aufrufer selbst.';
 
-revoke execute on function private.ist_mannschaftsfuehrer(uuid) from public, anon;
--- Wird in der Policy von team_invitations gebraucht.
-grant  execute on function private.ist_mannschaftsfuehrer(uuid) to authenticated;
+-- Nur intern aus den SECURITY-DEFINER-RPCs gerufen, keine Freigabe nach außen.
+revoke execute on function private.ist_mannschaftsfuehrer(uuid) from public, anon, authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Einladungen
@@ -116,11 +115,23 @@ comment on table public.team_invitations is
 
 alter table public.team_invitations enable row level security;
 
+-- Die Policy läuft mit den Rechten des Aufrufers. ist_mannschaftsfuehrer ist
+-- für authenticated nicht freigegeben, deshalb steht dieselbe Regel hier als
+-- Abfrage: eigene members-Zeile (current_member_id prüft den Zugang) mit
+-- MF-Häkchen in dieser Mannschaft, und die Mannschaft ist aktiv.
 create policy team_invitations_select on public.team_invitations
   for select to authenticated
   using (
     member_id = (select private.current_member_id())
-    or private.ist_mannschaftsfuehrer(team_id)
+    or exists (
+      select 1
+        from public.members m
+        join public.teams t on t.id = m.team_id
+       where m.id = (select private.current_member_id())
+         and m.team_id = team_invitations.team_id
+         and m.is_team_captain
+         and t.active
+    )
     or (select private.is_admin())
   );
 
