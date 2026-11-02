@@ -5,7 +5,8 @@
  * Bis dahin landet ein Tippen auf dem passenden Tab - Plaetze oder Konto.
  * HauptTabs setzt `zuTab`. In den Verein geht es mit `zuVerein` gezielt:
  * auf einen Reiter oder gleich in eine Veranstaltung (Bildschirme/Verein);
- * in die Plaetze mit `zuPlaetze` auf Belegung oder Spiele.
+ * in die Plaetze mit `zuPlaetze` auf Belegung oder Spiele, mit
+ * `zuMannschaft` ins Konto auf die Mannschaft.
  */
 
 import SwiftUI
@@ -63,5 +64,23 @@ extension EnvironmentValues {
     var zuPlaetze: @MainActor @Sendable (PlaetzeZiel) -> Void {
         get { self[ZuPlaetzeSchluessel.self] }
         set { self[ZuPlaetzeSchluessel.self] = newValue }
+    }
+}
+
+/// Wohin im Tab Konto.
+enum KontoZiel: Hashable, Sendable {
+    /// Einladungen, Kader und die Funktionen des Mannschaftsfuehrers
+    case mannschaft
+}
+
+private struct ZuMannschaftSchluessel: EnvironmentKey {
+    static let defaultValue: @MainActor @Sendable () -> Void = {}
+}
+
+extension EnvironmentValues {
+    /// Wechselt in den Tab Konto und oeffnet die Mannschaft (siehe kontoTab).
+    var zuMannschaft: @MainActor @Sendable () -> Void {
+        get { self[ZuMannschaftSchluessel.self] }
+        set { self[ZuMannschaftSchluessel.self] = newValue }
     }
 }

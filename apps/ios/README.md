@@ -169,7 +169,10 @@ Gelesen und geschrieben wird nur über RPCs (`Daten/Kontodaten.swift`): `mein_pr
   Tennis-Teil von `my_onboarding`, gespeichert über `save_my_tennis` in `Daten/Onboardingdaten.swift`, immer
   mit allen drei Werten (`""` heißt null). Prüfung wie im Onboarding (`LkEingabe`, nuLiga-ID höchstens
   40 Zeichen) in `TennisLogik` (`TennisLogikTests`), gegen den lokalen Stack in `KontoTennisUITests`.
-  Mannschaft und Mannschaftsführer bleiben Marken im Profilkopf, die setzt der Vorstand.
+  Mannschaft und Mannschaftsführer bleiben Marken im Profilkopf, die setzt der Vorstand. Wer in einer
+  Mannschaft ist, sieht dazu den Schalter „Mannschaftsführer darf meine Telefonnummer sehen“; geändert
+  wird er beim Speichern über `set_team_phone_visible`.
+- **Mannschaft** (siehe unten): Eintrag nur mit Mannschaft oder offenen Einladungen.
 - **Einwilligungen** (`member_attributes`, nur selbst pflegbare), **Bankverbindung & Mandat** (nur lesen,
   IBAN nur mit den letzten vier Stellen), **Mitgliedschaft kündigen beantragen** (`Kern/Kontoloeschung.swift`).
 - **Passwort ändern:** neu gegenüber der Expo-App, mit denselben Regeln wie „Passwort festlegen“
@@ -186,6 +189,36 @@ ein Blatt, `-TCMKontoRollen einstellungen` rollt zu den Einstellungen.
 ```bash
 xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMTab konto -TCMKontoBlatt daten
 ```
+
+### Mannschaft
+
+| Mannschaftsführer, hell | Mannschaftsführer, dunkel | Spieler hinzufügen, hell | Spieler hinzufügen, dunkel |
+|---|---|---|---|
+| ![MF hell](docs/konto-mannschaft-mf-hell.png) | ![MF dunkel](docs/konto-mannschaft-mf-dunkel.png) | ![Suche hell](docs/konto-mannschaft-suche-hell.png) | ![Suche dunkel](docs/konto-mannschaft-suche-dunkel.png) |
+
+Vertrag „Mannschaftsführer lädt in seine Mannschaft ein“ (02.11.2026). Ob jemand etwas darf, entscheidet die
+Datenbank (`private.ist_mannschaftsfuehrer`); die App zeigt nur an, was gerade geht. Ein eigener Bildschirm
+im `NavigationStack` des Kontos (`Bildschirme/Konto/MannschaftBildschirm.swift`), kein Blatt: So führen Push
+und Neuigkeiten hin, ohne mit einem offenen Blatt (Glocke) zu kollidieren, und die Suche liegt als Blatt darüber.
+
+- **Daten** (`Daten/Mannschaftsdaten.swift`): `meine_mannschaft`, `meine_mannschaft_einladungen`,
+  `mannschaft_kandidaten`, `mannschaft_einladen`, `mannschaft_einladung_zurueckziehen`,
+  `mannschaft_einladung_beantworten`, `mannschaft_austragen` (selbst austreten mit der eigenen `member_id`
+  aus `ich`), `set_team_phone_visible`. Fehler kommen als deutscher Satz aus den RPCs.
+- **Einladungen an mich** stehen oben. „Annehmen“ klappt das Telefon-Häkchen (Standard aus) und den
+  Wechselhinweis auf; geht Annehmen nicht (`annehmen_moeglich = false`, etwa als MF einer anderen
+  Mannschaft), steht der Grund da und nur „Ablehnen“ bleibt. Der Satz kommt aus `hinweis`, sonst baut
+  `MannschaftLogik.hinweis` ihn aus `wechsel_von`.
+- **Kader** mit Name und LK. Der MF sieht die Nummer (antippbar, `tel:`) oder „Telefon nicht freigegeben“,
+  kann andere austragen (mit Rückfrage), Spieler hinzufügen (Suche mit 300 ms Pause nach dem Tippen,
+  Marken „Interesse“ und „spielt in …“, Eingeladene ausgegraut) und offene Einladungen zurückziehen.
+  Spieler treten mit Rückfrage aus; der MF kann das nicht.
+- **Push und Neuigkeiten:** `team_invited`, `team_invitation_answered`, `team_removed` und `team_left`
+  führen zur Mannschaft (`PushZiel.mannschaft`, auch über den Pfad `/konto/mannschaft`), in den Neuigkeiten
+  mit „Zur Mannschaft ›“. Weg dorthin: `zuMannschaft` aus `kontoTab` (Navigation.swift).
+- Geprüft in `MannschaftLogikTests` (Decoding, Texte, Sichtbarkeit, Push-Ziele) und gegen den lokalen
+  Stack in `KontoMannschaftUITests` (MF `mitglied@tcm.local`: einladen, ausgegraut, zurückziehen).
+  `-TCMKonto mannschaft` öffnet den Bildschirm (nur Debug).
 
 ## Plätze
 
@@ -405,7 +438,8 @@ Wie `apps/mobile/src/lib/push.ts`, aber direkt über APNs (`App/PushAnmeldung.sw
 - **Tippen:** Der App-Delegate (`PushAppDelegate`) gibt `ziel`, `kind` und `event_id` an `PushZiel.aus`
   (reine Funktion, nur eigene Pfade wie `sichererWeiterPfad`). `/nachrichten` öffnet die Neuigkeiten als
   Blatt, `/verein/veranstaltung/<id>` das Detail im Verein, `/plaetze` die Belegung, `/plaetze/spiele`,
-  `/plaetze/meine` und `/plaetze/offen` (auch `/plan/…` aus dem Web) die Spiele, `/konto` usw. den Tab. Das Ziel
+  `/plaetze/meine` und `/plaetze/offen` (auch `/plan/…` aus dem Web) die Spiele, `/konto/mannschaft` und
+  die Arten `team_*` die Mannschaft im Konto, `/konto` usw. den Tab. Das Ziel
   wartet, bis die Tabs stehen, also auch beim Kaltstart (`App/PushNavigation.swift`).
 - **Entitlement** `aps-environment` = `APS_UMGEBUNG`: `development` für Lokal und Dev, `production`
   für Prod (`Konfiguration/*.xcconfig`). Marken aus `development` gelten nur mit `APNS_UMGEBUNG=sandbox`

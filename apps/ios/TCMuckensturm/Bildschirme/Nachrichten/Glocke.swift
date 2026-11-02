@@ -14,6 +14,7 @@ import SwiftUI
 struct Glocke: View {
     @Environment(Sitzung.self) private var sitzung
     @Environment(\.zuVerein) private var zuVerein
+    @Environment(\.zuMannschaft) private var zuMannschaft
     @State private var ungelesen = 0
     @State private var offen = false
     @State private var liste: [Benachrichtigung]?
@@ -49,6 +50,11 @@ struct Glocke: View {
         .onAppear { Task { await zaehlen() } }
         .sheet(isPresented: $offen, onDismiss: { Task { await zaehlen() } }) {
             blatt
+                // Zur Mannschaft: erst das Blatt schliessen.
+                .environment(\.zuMannschaft) {
+                    offen = false
+                    zuMannschaft()
+                }
         }
     }
 

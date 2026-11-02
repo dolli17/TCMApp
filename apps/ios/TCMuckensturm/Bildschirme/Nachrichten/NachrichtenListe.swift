@@ -5,6 +5,9 @@
  * (notificationSymbol), relative Zeit, ungelesene auf goldSoft. Dieselbe
  * Liste steht im Blatt hinter der Glocke und auf dem Bildschirm Neuigkeiten.
  *
+ * Nennt eine Nachricht eine Veranstaltung, fuehrt ein Tippen dorthin;
+ * Mannschafts-Nachrichten (team_*) fuehren ueber zuMannschaft ins Konto.
+ *
  * Gelesen markiert wird beim Oeffnen. Die Hervorhebung bleibt aber stehen,
  * bis "Alle als gelesen" sie wegnimmt - sonst saehe niemand, was neu war.
  */
@@ -72,6 +75,7 @@ struct NachrichtenListe: View {
 
 /// Eine Nachricht: Symbol, Titel, Zeit, Text, ggf. "Zur Veranstaltung ›".
 struct NachrichtZeile: View {
+    @Environment(\.zuMannschaft) private var zuMannschaft
     let n: Benachrichtigung
     let neu: Bool
     let jetzt: Date
@@ -82,6 +86,8 @@ struct NachrichtZeile: View {
 
     var body: some View {
         let ziel = Startseite.notificationZiel(eventId: n.eventId)
+        // Einladungen, Antworten und Austritte fuehren zur Mannschaft im Konto.
+        let mannschaft = ziel == nil && MannschaftLogik.istMannschaftsNachricht(n.kind)
         let inhalt = HStack(alignment: .top, spacing: 12) {
             Image(systemName: symbolName(hervorheben ? Startseite.notificationSymbol(n.kind ?? "") : .glocke))
                 .font(.system(size: 17, weight: .medium))
@@ -109,8 +115,8 @@ struct NachrichtZeile: View {
                     .lineSpacing(2)
                     .lineLimit(zeilen)
                     .fixedSize(horizontal: false, vertical: true)
-                if ziel != nil {
-                    Text("Zur Veranstaltung ›")
+                if ziel != nil || mannschaft {
+                    Text(ziel != nil ? "Zur Veranstaltung ›" : "Zur Mannschaft ›")
                         .font(Schrift.text(.halbfett, 13.5))
                         .foregroundStyle(Farbe.blueInk)
                         .padding(.top, 2)
@@ -129,6 +135,11 @@ struct NachrichtZeile: View {
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(.isLink)
                 .accessibilityHint("Öffnet die Veranstaltung")
+        } else if mannschaft {
+            Button { zuMannschaft() } label: { inhalt }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(.isLink)
+                .accessibilityHint("Öffnet die Mannschaft")
         } else {
             inhalt
         }

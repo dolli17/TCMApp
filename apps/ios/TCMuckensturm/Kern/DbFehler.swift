@@ -40,6 +40,7 @@ enum DbFehler {
         ("teams_name_lower_key", "Eine Mannschaft mit diesem Namen gibt es schon."),
         ("members_one_captain_per_team", "Diese Mannschaft hat schon einen Mannschaftsführer."),
         ("members_captain_needs_team", "Mannschaftsführer geht nur mit Mannschaft."),
+        ("team_invitations_eine_offene", "Dieses Mitglied ist schon eingeladen."),
     ]
 
     static let codeTexte: [String: String] = [

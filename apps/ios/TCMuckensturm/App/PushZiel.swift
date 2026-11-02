@@ -20,6 +20,8 @@ enum PushZiel: Equatable, Sendable {
     case veranstaltung(id: String)
     /// Plaetze: /plaetze die Belegung, /plaetze/spiele, /meine, /offen die Spiele (auch /plan/… aus dem Web)
     case plaetze(PlaetzeZiel)
+    /// Die Mannschaft im Konto (/konto/mannschaft und die Arten team_*)
+    case mannschaft
     /// Ein anderer Pfad der App, der zu einem Tab gehoert
     case tab(HauptTab)
 
@@ -29,6 +31,8 @@ enum PushZiel: Equatable, Sendable {
      *   die App einfach.
      */
     static func aus(_ daten: [String: String]) -> PushZiel? {
+        // Mannschafts-Nachrichten fuehren zur Mannschaft, auch wenn der Pfad noch /nachrichten nennt.
+        if MannschaftLogik.istMannschaftsNachricht(daten["kind"]) { return .mannschaft }
         if let pfad = daten["ziel"], let ziel = ausPfad(pfad) { return ziel }
         if let id = daten["event_id"], istKennung(id) { return .veranstaltung(id: id) }
         guard let kind = daten["kind"], !kind.isEmpty else { return nil }
@@ -57,6 +61,7 @@ enum PushZiel: Equatable, Sendable {
             default: return .tab(.plaetze)
             }
         case "konto":
+            if teile.count > 1, teile[1] == "mannschaft" { return .mannschaft }
             return .tab(.konto)
         case "verein":
             if teile.count == 3, teile[1] == "veranstaltung", istKennung(teile[2]) {

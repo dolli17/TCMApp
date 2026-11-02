@@ -12,6 +12,7 @@ struct HauptTabs: View {
     @State private var tab: HauptTab = .home
     @State private var verein = VereinZustand()
     @State private var plaetze = PlaetzeZustand()
+    @State private var konto = KontoZustand()
     @State private var verwaltung = VerwaltungZugang()
     @Environment(Sitzung.self) private var sitzung
 
@@ -41,10 +42,11 @@ struct HauptTabs: View {
         // Home fuehrt auf Bildschirme, die es nativ noch nicht gibt: bis dahin der passende Tab.
         .environment(\.zuTab) { tab = $0 }
         // Getippte Push-Nachrichten oeffnen ihr Ziel (App/PushNavigation.swift). Innen, damit
-        // zuVerein aus vereinTab und zuPlaetze aus plaetzeTab schon gelten.
+        // zuVerein aus vereinTab, zuPlaetze aus plaetzeTab und zuMannschaft aus kontoTab schon gelten.
         .pushZiele($tab)
         .vereinTab(verein, tab: $tab)
         .plaetzeTab(plaetze, tab: $tab)
+        .kontoTab(konto, tab: $tab)
         #if DEBUG
         // Fuer Bildschirmfotos per simctl (README): `-TCMTab konto` oeffnet den Tab.
         .task {
@@ -58,6 +60,11 @@ struct HauptTabs: View {
             // `-TCMPlaetze spiele|offen` oeffnet die Spiele, mit `offen` die offenen Spiele oben.
             if let i = argumente.firstIndex(of: "-TCMPlaetze"), i + 1 < argumente.count {
                 plaetze.oeffne(argumente[i + 1] == "belegung" ? .belegung : .spiele(offeneZuerst: argumente[i + 1] == "offen"))
+            }
+            // `-TCMKonto mannschaft` oeffnet im Konto die Mannschaft.
+            if let i = argumente.firstIndex(of: "-TCMKonto"), i + 1 < argumente.count, argumente[i + 1] == "mannschaft" {
+                konto.oeffne(.mannschaft)
+                tab = .konto
             }
         }
         #endif
