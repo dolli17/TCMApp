@@ -3,7 +3,7 @@
  *
  * Oben wer man ist, darunter was offen ist und der Arbeitsdienst. Die
  * Einstellungen stehen als gruppierte Liste; Meine Daten, Notfallkontakt,
- * Einwilligungen, Mandat, Passwort und die Kuendigung oeffnen je ein
+ * Tennis (LK, nuLiga-ID, Mannschaftsinteresse), Einwilligungen, Mandat, Passwort und die Kuendigung oeffnen je ein
  * eigenes Blatt (KontoBlaetter.swift), statt als lange Formulare die Seite
  * zu fuellen.
  *
@@ -16,7 +16,7 @@
 import SwiftUI
 
 enum KontoBlatt: String, Identifiable {
-    case daten, notfall, einwilligungen, bank, passwort, loeschen
+    case daten, notfall, tennis, einwilligungen, bank, passwort, loeschen
     var id: String { rawValue }
 }
 
@@ -120,6 +120,12 @@ struct KontoBildschirm: View {
                 KontoEintrag(titel: "Meine Daten", symbol: "person") { blatt = .daten }
                 KontoLinie()
                 KontoEintrag(titel: "Notfallkontakt", symbol: "phone") { blatt = .notfall }
+                KontoLinie()
+                KontoEintrag(
+                    titel: TennisLogik.titel,
+                    symbol: "tennisball",
+                    unterzeile: d.tennis.fehler == nil ? TennisLogik.uebersicht(d.tennis.wert ?? nil) : nil
+                ) { blatt = .tennis }
                 if KontoLogik.zeigeEinwilligungen(d.merkmale.wert) {
                     KontoLinie()
                     KontoEintrag(titel: "Einwilligungen", symbol: "checkmark.square") { blatt = .einwilligungen }
@@ -183,25 +189,29 @@ struct KontoBildschirm: View {
     private func laden(_ art: Art) async {
         if art == .nachladen { aktualisiert = true }
         if art != .still { meldung = nil }
-        inhalt = await Self.lade(Kontodaten(client: sitzung.client), Startdaten(client: sitzung.client))
+        inhalt = await Self.lade(
+            Kontodaten(client: sitzung.client), Startdaten(client: sitzung.client), Onboardingdaten(client: sitzung.client)
+        )
         laedt = false
         aktualisiert = false
     }
 
-    nonisolated static func lade(_ k: Kontodaten, _ s: Startdaten) async -> KontoInhalt {
+    nonisolated static func lade(_ k: Kontodaten, _ s: Startdaten, _ o: Onboardingdaten) async -> KontoInhalt {
         async let profil = Abschnitt.von { try await k.profil() }
         async let forderungen = Abschnitt.von { try await k.forderungen() }
         async let getraenke = Abschnitt.von { try await s.eigeneGetraenke() }
         async let dienst = Abschnitt.von { try await s.arbeitsdienst() }
         async let mandat = Abschnitt.von { try await k.mandat() }
         async let merkmale = Abschnitt.von { try await k.merkmale() }
+        async let tennis = Abschnitt.von { try await o.laden()?.tennis }
         return await KontoInhalt(
             profil: profil,
             forderungen: forderungen,
             getraenke: getraenke,
             dienst: dienst,
             mandat: mandat,
-            merkmale: merkmale
+            merkmale: merkmale,
+            tennis: tennis
         )
     }
 }

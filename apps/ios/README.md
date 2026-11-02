@@ -151,6 +151,7 @@ xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMLink "tcmlokal://passw
 |---|---|---|---|
 | ![Konto hell](docs/konto-hell.png) | ![Konto dunkel](docs/konto-dunkel.png) | ![Einstellungen hell](docs/konto-einstellungen-hell.png) | ![Einstellungen dunkel](docs/konto-einstellungen-dunkel.png) |
 | ![Meine Daten hell](docs/konto-daten-hell.png) | ![Meine Daten dunkel](docs/konto-daten-dunkel.png) | ![Kündigung dunkel](docs/konto-kuendigen-dunkel.png) | |
+| ![Tennis hell](docs/konto-tennis-hell.png) | ![Tennis dunkel](docs/konto-tennis-dunkel.png) | ![Tennis gespeichert hell](docs/konto-tennis-uebersicht-hell.png) | ![Tennis gespeichert dunkel](docs/konto-tennis-uebersicht-dunkel.png) |
 
 Wie `apps/mobile/app/(tabs)/konto.tsx` mit seinen Blättern, Texte wortgleich (`Bildschirme/Konto/`).
 Gelesen und geschrieben wird nur über RPCs (`Daten/Kontodaten.swift`): `mein_profil`, `my_charges`,
@@ -163,6 +164,12 @@ Gelesen und geschrieben wird nur über RPCs (`Daten/Kontodaten.swift`): `mein_pr
 - **Meine Daten, Notfallkontakt:** vor dem Senden geprüft wie `memberProfileSchema` (`Kern/Profil.swift`,
   Fälle aus `schemas.test.ts` in `KontoTests`); der Fehler steht am Feld. Abweichung: Für zu lange Eingaben
   zeigt zod einen englischen Text, nativ steht „Höchstens N Zeichen.“
+- **Tennis:** LK, nuLiga-ID und Interesse an einer Mannschaft nach dem Onboarding. Die Zeile zeigt den Stand
+  („LK14,5 · nuLiga 12345678 · Interesse an Mannschaft“ oder „Noch keine Angaben“). Gelesen über den
+  Tennis-Teil von `my_onboarding`, gespeichert über `save_my_tennis` in `Daten/Onboardingdaten.swift`, immer
+  mit allen drei Werten (`""` heißt null). Prüfung wie im Onboarding (`LkEingabe`, nuLiga-ID höchstens
+  40 Zeichen) in `TennisLogik` (`TennisLogikTests`), gegen den lokalen Stack in `KontoTennisUITests`.
+  Mannschaft und Mannschaftsführer bleiben Marken im Profilkopf, die setzt der Vorstand.
 - **Einwilligungen** (`member_attributes`, nur selbst pflegbare), **Bankverbindung & Mandat** (nur lesen,
   IBAN nur mit den letzten vier Stellen), **Mitgliedschaft kündigen beantragen** (`Kern/Kontoloeschung.swift`).
 - **Passwort ändern:** neu gegenüber der Expo-App, mit denselben Regeln wie „Passwort festlegen“
@@ -173,7 +180,7 @@ Gelesen und geschrieben wird nur über RPCs (`Daten/Kontodaten.swift`): `mein_pr
 - **Abmelden** mit Rückfrage über `Sitzung.abmelden()`.
 - `CHARGE_KIND_LABEL` und `merkmalBeschreibung` sind gegen die Golden Files geprüft (`KontoTests`).
 
-Bildschirmfotos ohne Klicks (nur Debug): `-TCMTab konto` öffnet den Tab, `-TCMKontoBlatt daten|notfall|einwilligungen|bank|passwort|loeschen`
+Bildschirmfotos ohne Klicks (nur Debug): `-TCMTab konto` öffnet den Tab, `-TCMKontoBlatt daten|notfall|tennis|einwilligungen|bank|passwort|loeschen`
 ein Blatt, `-TCMKontoRollen einstellungen` rollt zu den Einstellungen.
 
 ```bash
@@ -349,14 +356,14 @@ schickt hierher, wenn `mein_zugang()` `onboarding_offen` meldet.
   Erziehungsberechtigte nur bei Minderjährigen, dort ist auch der Notfallkontakt Pflicht.
 - **RPCs** (`Daten/Onboardingdaten.swift`): `my_onboarding`, `onboarding_save_stammdaten`,
   `onboarding_accept_documents`, `onboarding_save_guardian`, `onboarding_save_notfallkontakt`,
-  `create_my_sepa_mandate`, `save_my_tennis`, `complete_onboarding`; Einwilligungen und
+  `create_my_sepa_mandate`, `save_my_tennis` (immer alle drei Werte), `complete_onboarding`; Einwilligungen und
   `booking_mail` über `set_member_attribute`/`remove_member_attribute`, das Passwort über `update(user:)`.
   Optionale Parameter fehlen statt `null`.
 - **Prüfungen vorher** wie `pruefeOnboardingStammdaten` & Co. in `daten.ts` (`OnboardingLogik`), der
   Fehler steht am Feld. Das Geburtsdatum hat einen Datumswähler (1900 bis heute), der Wert bleibt `TT.MM.JJJJ`.
 - **Tennis:** Feld „LK oder geschätzte LK“ mit Hinweis darunter. Erlaubt sind leer oder eine Zahl 1–25 mit
   höchstens einer Nachkommastelle (Komma oder Punkt, optional „LK“ davor); gespeichert wird normalisiert,
-  etwa `LK14,5` (`LkEingabe` in `Kern/Suchfilter.swift`). Die LK bearbeitet man in der App sonst nirgends.
+  etwa `LK14,5` (`LkEingabe` in `Kern/Suchfilter.swift`). Später pflegt man sie im Konto unter „Tennis“.
 - **Freischalten:** Wer das Mandat verlässt, ruft `complete_onboarding()`. Fehlt noch etwas, springt der
   Assistent zum ersten Schritt aus dem DETAIL der Meldung. Danach sind Einwilligungen, Tennis und
   App-Einstellungen freiwillig, zurück in die Pflicht geht es nicht mehr. Fertig (oder ohne Mitglied wie

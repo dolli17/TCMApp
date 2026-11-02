@@ -16,6 +16,8 @@ struct KontoInhalt: Sendable {
     let dienst: Abschnitt<Arbeitsdienst?>
     let mandat: Abschnitt<MeinMandat?>
     let merkmale: Abschnitt<[MerkmalZeile]>
+    /// Der Tennis-Teil von my_onboarding(); nil ohne Mitglied.
+    let tennis: Abschnitt<OnboardingZustand.Tennis?>
 }
 
 /// Ein Merkmal mit allen seinen Werten (buendeln in MerkmaleKarte.tsx).

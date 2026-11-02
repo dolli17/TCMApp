@@ -1,7 +1,8 @@
 /**
  * Die Blaetter des Kontos
  *
- * Meine Daten und Notfallkontakt (Stammdatenformular.tsx), Einwilligungen
+ * Meine Daten und Notfallkontakt (Stammdatenformular.tsx), Tennis (wie der
+ * Onboarding-Schritt, TennisLogik), Einwilligungen
  * (MerkmaleKarte.tsx), Bankverbindung & Mandat (MandatAnsicht), Passwort
  * aendern und die Kuendigung (KontoloeschungFormular.tsx). Inhaltlich wie
  * in der Expo-App; "Passwort ändern" ist neu und nimmt dieselben Regeln wie
@@ -27,6 +28,7 @@ struct KontoBlattInhalt: View {
         Group {
             switch art {
             case .daten, .notfall: formular
+            case .tennis: tennis
             case .einwilligungen: rollend { einwilligungen }
             case .bank: rollend { bank }
             case .passwort: PasswortAendern(zu: zu, gespeichert: gespeichert)
@@ -42,6 +44,7 @@ struct KontoBlattInhalt: View {
         switch art {
         case .daten: "Meine Daten"
         case .notfall: "Notfallkontakt"
+        case .tennis: TennisLogik.titel
         case .einwilligungen: "Einwilligungen"
         case .bank: "Bankverbindung & Mandat"
         case .passwort: "Passwort ändern"
@@ -104,6 +107,25 @@ struct KontoBlattInhalt: View {
                     onErneut: erneut
                 )
             }
+        }
+    }
+
+    // MARK: - Tennis
+
+    /// Erst wenn my_onboarding() geladen ist; sonst wuerde Speichern Leeres schicken.
+    @ViewBuilder private var tennis: some View {
+        if let f = inhalt?.tennis.fehler {
+            rollend { Fehlerzeile(text: f, onErneut: erneut) }
+        } else {
+            TennisFormular(
+                stand: inhalt?.tennis.wert ?? nil,
+                zu: zu,
+                speichern: { lk, nuliga, interesse in
+                    await Onboardingdaten(client: sitzung.client)
+                        .speichereTennis(lk: lk, nuligaId: nuliga, mannschaftInteresse: interesse)
+                },
+                gespeichert: gespeichert
+            )
         }
     }
 
@@ -227,6 +249,91 @@ private struct Stammdatenformular: View {
             } else {
                 meldung = r
                 fehlerFeld = r.feld
+            }
+        }
+    }
+}
+
+// MARK: - Tennis
+
+/**
+ * Dieselben Felder wie der Onboarding-Schritt (SchrittTennis), aufgebaut wie
+ * das Stammdatenformular: Speichern angeheftet darunter, der Fehler am Feld.
+ */
+private struct TennisFormular: View {
+    let stand: OnboardingZustand.Tennis?
+    let zu: () -> Void
+    let speichern: (String, String, Bool) async -> Ergebnis
+    let gespeichert: (String) -> Void
+
+    @State private var lk = ""
+    @State private var nuliga = ""
+    @State private var interesse = false
+    @State private var bereit = false
+    @State private var meldung: Ergebnis?
+    @State private var laeuft = false
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
+                BlattKopf(titel: TennisLogik.titel, zu: zu)
+                Text(TennisLogik.lkWarum).leise().fixedSize(horizontal: false, vertical: true)
+                if let meldung, meldung.feld == nil {
+                    KontoHinweis(text: meldung.meldung, ok: meldung.ok)
+                }
+                KontoFeld(
+                    label: LkEingabe.beschriftung,
+                    text: Binding(get: { lk }, set: { lk = $0; feldGeaendert(TennisLogik.feldLk) }),
+                    fehler: fehler(TennisLogik.feldLk),
+                    hinweis: LkEingabe.hinweis,
+                    tastatur: .numbersAndPunctuation,
+                    grossschreibung: .characters
+                )
+                KontoFeld(
+                    label: TennisLogik.nuligaLabel,
+                    text: Binding(get: { nuliga }, set: { nuliga = $0; feldGeaendert(TennisLogik.feldNuliga) }),
+                    fehler: fehler(TennisLogik.feldNuliga),
+                    grossschreibung: .never
+                )
+                KontoGruppe {
+                    OnboardingSchalter(label: TennisLogik.interesseLabel, an: $interesse, gesperrt: laeuft)
+                }
+            }
+            .padding(Tokens.Abstand.rand)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .safeAreaInset(edge: .bottom) {
+            GelberKnopf(text: laeuft ? "Speichert…" : "Speichern", gesperrt: laeuft, aktion: absenden)
+                .padding(.horizontal, Tokens.Abstand.rand)
+                .padding(.vertical, Tokens.Abstand.s)
+                .background(Farbe.bg)
+        }
+        // Der Entwurf startet beim gespeicherten Stand.
+        .onAppear {
+            guard !bereit else { return }
+            bereit = true
+            (lk, nuliga, interesse) = TennisLogik.entwurf(stand)
+        }
+    }
+
+    private func fehler(_ feld: String) -> String? {
+        meldung?.feld == feld ? meldung?.meldung : nil
+    }
+
+    private func feldGeaendert(_ feld: String) {
+        if meldung?.feld == feld { meldung = nil }
+    }
+
+    private func absenden() {
+        guard !laeuft else { return }
+        laeuft = true
+        Task {
+            let r = await speichern(lk, nuliga, interesse)
+            laeuft = false
+            if r.ok {
+                gespeichert(r.meldung)
+            } else {
+                meldung = r
             }
         }
     }
