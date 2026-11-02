@@ -4,15 +4,19 @@ import {
   LK_WICHTIG_TEXT,
   MANNSCHAFT_INTERESSE_HINWEIS,
   MANNSCHAFT_INTERESSE_TEXT,
+  MANNSCHAFT_TEXT,
+  meineMannschaftLesen,
   tennisKurzfassung,
   translateDbError,
   type OnboardingZustand,
 } from "@tcm/core";
-import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
+import Link from "next/link";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { Fehlerzustand } from "@/components/Fehlerzustand";
 import { KontoUnterseite } from "@/components/KontoUnterseite";
 import { Stammdatenkarte, type Feld } from "@/components/Stammdatenkarte";
 import { tennisAngabenSpeichern } from "../aktionen";
+import { telefonFreigabeSpeichern } from "../mannschaft/aktionen";
 
 export const dynamic = "force-dynamic";
 
@@ -20,23 +24,19 @@ export const dynamic = "force-dynamic";
  * Tennis - LK, nuLiga-ID und Mannschaftsinteresse nach dem Onboarding
  * (Vereinsentscheidung vom 02.11.2026). Dieselben Felder wie der
  * Onboarding-Schritt; gelesen über my_onboarding(), geschrieben über
- * save_my_tennis. Mannschaft und Mannschaftsführer setzt nur der Vorstand,
- * sie stehen hier nur zum Ansehen.
+ * save_my_tennis. Wer in einer Mannschaft ist, gibt hier außerdem seine
+ * Telefonnummer für den Mannschaftsführer frei (set_team_phone_visible).
  */
 export default async function TennisSeite() {
   const supabase = await createServerSupabase();
-  const angemeldet = await getCurrentMember();
-  const meineId = angemeldet?.member?.id;
 
-  const [zustandRes, ichRes] = await Promise.all([
+  const [zustandRes, mannschaftRes] = await Promise.all([
     supabase.rpc("my_onboarding"),
-    meineId
-      ? supabase.from("members").select("is_team_captain, teams(name)").eq("id", meineId).maybeSingle()
-      : Promise.resolve({ data: null }),
+    supabase.rpc("meine_mannschaft"),
   ]);
 
   const tennis = (zustandRes.data as unknown as OnboardingZustand | null)?.tennis ?? null;
-  const ich = ichRes.data;
+  const mannschaft = mannschaftRes.error ? null : meineMannschaftLesen(mannschaftRes.data);
 
   const felder: Feld[] = tennis
     ? [
@@ -66,11 +66,28 @@ export default async function TennisSeite() {
           <Stammdatenkarte titel="Tennis" ohneTitel felder={felder} aktion={tennisAngabenSpeichern} />
         </>
       )}
-      {ich?.teams && (
-        <p className="beschreibung">
-          Mannschaft: {ich.teams.name}
-          {ich.is_team_captain ? " · Mannschaftsführer" : ""}. Das trägt der Vorstand ein.
-        </p>
+      {mannschaft && (
+        <>
+          <p className="beschreibung">
+            Mannschaft: {mannschaft.name}
+            {mannschaft.ich_bin_mf ? " · Mannschaftsführer" : ""}.{" "}
+            <Link href="/konto/mannschaft">Zur Mannschaft</Link>
+          </p>
+          <Stammdatenkarte
+            titel="Mannschaft"
+            felder={[
+              {
+                name: "team_phone_visible",
+                label: MANNSCHAFT_TEXT.telefonZustimmung,
+                art: "schalter",
+                wert: mannschaft.telefon_sichtbar,
+                hinweis: "Im Kader steht dann deine Mobilnummer, sonst deine Telefonnummer.",
+                breit: true,
+              },
+            ]}
+            aktion={telefonFreigabeSpeichern}
+          />
+        </>
       )}
     </KontoUnterseite>
   );

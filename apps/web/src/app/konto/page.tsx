@@ -2,6 +2,9 @@ import Link from "next/link";
 import {
   berlinDay,
   formatCents,
+  mannschaftEintragSichtbar,
+  mannschaftKurzfassung,
+  meineMannschaftLesen,
   sumOpenDrinks,
   tennisKurzfassung,
   translateDbError,
@@ -42,7 +45,17 @@ export default async function KontoSeite() {
   const angemeldet = await getCurrentMember();
   const meineId = angemeldet?.member?.id;
 
-  const [forderungenRes, arbeitsdienstRes, einsaetzeRes, ichRes, mitgliedschaftRes, getraenkeRes, onboardingRes] =
+  const [
+    forderungenRes,
+    arbeitsdienstRes,
+    einsaetzeRes,
+    ichRes,
+    mitgliedschaftRes,
+    getraenkeRes,
+    onboardingRes,
+    mannschaftRes,
+    einladungenRes,
+  ] =
     await Promise.all([
       supabase.rpc("my_charges"),
       supabase.rpc("my_work_duty", {}),
@@ -63,6 +76,9 @@ export default async function KontoSeite() {
       supabase.rpc("my_drink_purchases"),
       // Für die Kurzfassung unter "Tennis"; liefert die Angaben auch nach dem Onboarding.
       supabase.rpc("my_onboarding"),
+      // Für den Eintrag "Mannschaft": sichtbar mit Mannschaft oder Einladung.
+      supabase.rpc("meine_mannschaft"),
+      supabase.rpc("meine_mannschaft_einladungen"),
     ]);
 
   // Eine gescheiterte Abfrage ist nicht "Nichts offen" (B14).
@@ -96,6 +112,10 @@ export default async function KontoSeite() {
   const tennisStand = onboardingRes.error
     ? undefined
     : tennisKurzfassung((onboardingRes.data as unknown as OnboardingZustand | null)?.tennis);
+  // Ohne Antwort der Datenbank fehlt der Eintrag lieber, als falsch zu stehen.
+  const mannschaft = mannschaftRes.error ? null : meineMannschaftLesen(mannschaftRes.data);
+  const offeneEinladungen = einladungenRes.error ? 0 : (einladungenRes.data ?? []).length;
+  const mannschaftSichtbar = mannschaftEintragSichtbar(mannschaft, offeneEinladungen);
 
   return (
     <>
@@ -246,6 +266,14 @@ export default async function KontoSeite() {
               <Eintrag href="/konto/daten" symbol="konto" titel="Meine Daten" />
               <Eintrag href="/konto/notfall" symbol="telefon" titel="Notfallkontakt" />
               <Eintrag href="/konto/tennis" symbol="ball" titel="Tennis" text={tennisStand} />
+              {mannschaftSichtbar && (
+                <Eintrag
+                  href="/konto/mannschaft"
+                  symbol="mannschaft"
+                  titel="Mannschaft"
+                  text={mannschaftKurzfassung(mannschaft, offeneEinladungen)}
+                />
+              )}
               <Eintrag href="/konto/einwilligungen" symbol="haken" titel="Einwilligungen" />
               <Eintrag href="/konto/bank" symbol="kasse" titel="Bankverbindung & Mandat" />
             </nav>
@@ -279,6 +307,7 @@ const PFADE: Record<string, string> = {
   telefon: "M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z",
   haken: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11",
   kasse: "M2 7h20v12H2zM2 11h20M6 15h4",
+  mannschaft: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.1a4 4 0 0 1 0 7.8M18 14.2a7 7 0 0 1 4 6.8",
   ball: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM4.9 4.9c3.1 3.1 3.1 11.1 0 14.2M19.1 4.9c-3.1 3.1-3.1 11.1 0 14.2",
 };
 

@@ -1825,6 +1825,33 @@ dl.angaben dt { color: var(--muted); font-size: 14px; }
 dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 
 .konto-unterseite { max-width: 720px; }
+
+/* Konto › Mannschaft: Einladungen, Kader, Vorschläge. Zeilen wie die
+   Forderungen: links wer, rechts der Knopf; die Rückfrage bricht darunter um. */
+.mannschaft-abschnitt { margin-bottom: 22px; }
+.mannschaft-zeile {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 10px 12px; padding: 14px 16px;
+}
+.mannschaft-zeile .wer { flex: 1 1 220px; min-width: 0; display: grid; gap: 4px; }
+.mannschaft-zeile .wer b { font-size: 15.5px; font-weight: 600; overflow-wrap: anywhere; }
+.mannschaft-zeile .wer small { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
+.mannschaft-zeile.ausgegraut .wer b { color: var(--ink-2); font-weight: 500; }
+.mannschaft-zeile.einladung { align-items: flex-start; }
+.mannschaft-telefon { font-weight: 600; color: var(--blue-ink); }
+.mannschaft-zeile .knopfreihe, .mannschaft-frage .knopfreihe, .mannschaft-antwort .knopfreihe {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.mannschaft-frage, .mannschaft-antwort { flex: 1 1 100%; display: grid; gap: 10px; }
+.mannschaft-frage p { margin: 0; font-size: 14.5px; color: var(--ink); }
+.mannschaft-antwort .hinweis, .mannschaft-antwort .sperrgrund { margin: 0; }
+.mannschaft-haken { display: flex; gap: 10px; align-items: flex-start; margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); cursor: pointer; }
+.mannschaft-haken input { width: auto; flex: none; margin: 3px 0 0; accent-color: var(--blue); }
+.mannschaft-haken small { display: block; margin-top: 2px; font-size: 13px; font-weight: 400; color: var(--ink-2); }
+.mannschaft-austreten { margin-top: 4px; }
+.mannschaft-suche { margin: 0 0 10px; }
+.mannschaft-abschnitt > .beschreibung { margin: 6px 4px 0; font-size: 13.5px; color: var(--ink-2); }
+.gruppe > .leer-zeile { padding: 14px 16px; color: var(--muted); }
 /* Abstand zwischen Kopf und Karte: Luft, damit die Karte nicht am Titel klebt (U56). */
 .konto-unterseite > .unterseite-kopf { margin-bottom: 22px; }
 .bank-ohne-mandat p { margin: 0; }

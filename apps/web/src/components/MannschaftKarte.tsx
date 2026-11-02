@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { mannschaftsfuehrerHinweis } from "@tcm/core";
 import { mannschaftSetzen } from "@/app/admin/mitglieder/[id]/aktionen";
 
 interface Props {
@@ -37,10 +38,21 @@ export function MannschaftKarte(props: Props) {
   // Stillgelegte Mannschaften bleiben waehlbar, wenn das Mitglied schon drin
   // steht - sonst liesse sich der Stand nicht einmal mehr anzeigen.
   const auswahl = props.mannschaften.filter((m) => m.active || m.id === props.mannschaftId);
+  // Der gespeicherte Stand, nicht die Auswahl: das Recht gilt erst nach dem Speichern.
+  const eigene = props.mannschaftsfuehrer ? props.mannschaften.find((m) => m.id === props.mannschaftId) : undefined;
 
   return (
     <section className="karte einstellungen" aria-label="Mannschaft">
       <h2 className="dpl">Mannschaft</h2>
+
+      {/* Das MF-Häkchen ist seit dem 02.11.2026 ein Recht: einladen und
+          austragen, nur in der eigenen Mannschaft. Das soll der Vorstand
+          beim Setzen sehen. */}
+      {eigene && (
+        <p className="hinweis" data-testid="mf-hinweis">
+          {mannschaftsfuehrerHinweis(eigene.name)}
+        </p>
+      )}
 
       {meldung && (
         <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">
@@ -85,7 +97,8 @@ export function MannschaftKarte(props: Props) {
           Mannschaftsführer
         </label>
         <span className="beschreibung">
-          Je Mannschaft nur einer. Steht dort schon jemand, wird das Speichern abgewiesen.
+          Je Mannschaft nur einer. Steht dort schon jemand, wird das Speichern abgewiesen. Der
+          Mannschaftsführer darf in seine Mannschaft einladen und Spieler austragen.
         </span>
       </div>
 

@@ -8,6 +8,7 @@
  */
 
 import { minutesOf } from "./booking";
+import { istMannschaftsNachricht } from "./mannschaft";
 
 const BERLIN = "Europe/Berlin";
 const tagFormat = new Intl.DateTimeFormat("sv-SE", { timeZone: BERLIN });
@@ -224,7 +225,7 @@ export function notificationSymbol(kind: string): NotificationSymbol {
   if (kind === "event_cancelled") return "storno";
   if (kind.startsWith("booking_") || kind === "player_left") return "platz";
   if (kind.startsWith("charge_")) return "geld";
-  if (kind.startsWith("application_")) return "person";
+  if (kind.startsWith("application_") || kind.startsWith("team_")) return "person";
   return "glocke";
 }
 
@@ -242,6 +243,21 @@ export function notificationZiel(
     web: `/verein/veranstaltungen/${n.event_id}`,
     app: `/verein/veranstaltung/${n.event_id}`,
   };
+}
+
+/**
+ * Wohin eine Nachricht im Web fuehrt, samt Linktext. Wie notificationZiel,
+ * dazu die Mannschafts-Nachrichten (team_invited, team_invitation_answered,
+ * team_removed, team_left) auf /konto/mannschaft. notificationZiel bleibt
+ * unveraendert, weil die eingefrorene Expo-App den App-Pfad daraus nutzt und
+ * dort keine Mannschaftsseite hat.
+ */
+export function notificationWebZiel(
+  n: { kind?: string | null; event_id?: string | null },
+): { href: string; text: string } | null {
+  if (istMannschaftsNachricht(n.kind)) return { href: "/konto/mannschaft", text: "Zur Mannschaft" };
+  const ziel = notificationZiel(n);
+  return ziel ? { href: ziel.web, text: "Zur Veranstaltung" } : null;
 }
 
 /**

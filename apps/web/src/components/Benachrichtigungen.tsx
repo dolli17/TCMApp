@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
-  groupNotifications, notificationSymbol, notificationZiel, relativeTimeLabel, type NotificationSymbol,
+  groupNotifications, notificationSymbol, notificationWebZiel, relativeTimeLabel, type NotificationSymbol,
 } from "@tcm/core";
 import {
   alsGelesenMarkieren, ladeBenachrichtigungen, type Benachrichtigung,
@@ -159,15 +159,14 @@ export function Benachrichtigungen({ ungelesen, label }: { ungelesen: number; la
                             <small className="tnum">{relativeTimeLabel(n.created_at)}</small>
                           </span>
                           <span className="body">{n.body}</span>
-                          {notificationZiel(n) && (
-                            <Link
-                              href={notificationZiel(n)!.web}
-                              className="nachricht-link"
-                              onClick={() => dialog.current?.close()}
-                            >
-                              Zur Veranstaltung
-                            </Link>
-                          )}
+                          {(() => {
+                            const ziel = notificationWebZiel(n);
+                            return ziel ? (
+                              <Link href={ziel.href} className="nachricht-link" onClick={() => dialog.current?.close()}>
+                                {ziel.text}
+                              </Link>
+                            ) : null;
+                          })()}
                         </span>
                       </li>
                     ))}
