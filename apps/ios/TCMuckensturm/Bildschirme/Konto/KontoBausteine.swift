@@ -77,19 +77,27 @@ struct Pfeil: View {
 struct KontoEintrag: View {
     let titel: String
     let symbol: String
+    /// Leise Zeile unter dem Titel, etwa der Stand beim Bereich Tennis.
+    var unterzeile: String?
     let aktion: () -> Void
 
     var body: some View {
         Button(action: aktion) {
             HStack(spacing: 12) {
                 Symbolkachel(symbol: symbol)
-                Text(titel)
-                    .font(Schrift.text(.halbfett, 15.5))
-                    .foregroundStyle(Farbe.ink)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(titel)
+                        .font(Schrift.text(.halbfett, 15.5))
+                        .foregroundStyle(Farbe.ink)
+                    if let unterzeile, !unterzeile.isEmpty {
+                        Text(unterzeile).leise().fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 Pfeil()
             }
             .padding(.horizontal, 16)
+            .padding(.vertical, unterzeile == nil ? 0 : 10)
             .frame(minHeight: 56)
         }
         .buttonStyle(ZeilenDruck())
