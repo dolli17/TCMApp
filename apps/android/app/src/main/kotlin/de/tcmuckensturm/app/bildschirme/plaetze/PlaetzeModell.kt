@@ -28,6 +28,7 @@ import de.tcmuckensturm.app.daten.Mitglied
 import de.tcmuckensturm.app.daten.PlatzErgebnis
 import de.tcmuckensturm.app.daten.PlatzQuelle
 import de.tcmuckensturm.app.daten.TagesBelegung
+import de.tcmuckensturm.kern.Suchfilter
 import de.tcmuckensturm.kern.Zeit
 import java.time.Instant
 import kotlin.coroutines.cancellation.CancellationException
@@ -336,10 +337,19 @@ class PlaetzeModell(
     }
 
     /** Der Zeitpunkt wird in Europe/Berlin gebildet, nicht in der Zeitzone des Telefons. */
-    fun buchen(courtId: String, tag: String, start: Int, typ: String, mitglieder: List<String>, gaeste: List<String>, sucht: Boolean) {
+    fun buchen(
+        courtId: String,
+        tag: String,
+        start: Int,
+        typ: String,
+        mitglieder: List<String>,
+        gaeste: List<String>,
+        sucht: Boolean,
+        filter: Suchfilter = Suchfilter.OFFEN,
+    ) {
         val beginn = Zeit.berlinTime(tag, start)
         aktion(Markierung.Stelle(courtId, beginn)) {
-            quelle.bucheplatz(courtId, beginn, typ, mitglieder, gaeste, sucht)
+            quelle.bucheplatz(courtId, beginn, typ, mitglieder, gaeste, sucht, filter)
         }
     }
 
@@ -352,7 +362,9 @@ class PlaetzeModell(
 
     fun sperreAufheben(id: String) = aktion { quelle.hebeSperreAuf(id) }
 
-    fun ausschreiben(id: String, gesucht: Boolean) = aktion(Markierung.Buchung(id)) { quelle.sucheMitspieler(id, gesucht) }
+    /** Suche an/aus oder - mit nurFilter - nur den Filter einer laufenden Suche aendern. */
+    fun ausschreiben(id: String, gesucht: Boolean, filter: Suchfilter = Suchfilter.OFFEN, nurFilter: Boolean = false) =
+        aktion(Markierung.Buchung(id)) { quelle.sucheMitspieler(id, gesucht, filter, nurFilter) }
 
     fun beitreten(id: String) = aktion(Markierung.Buchung(id)) { quelle.spieleMit(id) }
 

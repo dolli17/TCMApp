@@ -80,6 +80,7 @@ import de.tcmuckensturm.app.ui.tokens.Radius
 import de.tcmuckensturm.app.ui.tokens.Schrift
 import de.tcmuckensturm.kern.Geld
 import de.tcmuckensturm.kern.Platzplan
+import de.tcmuckensturm.kern.Suchfilter
 import de.tcmuckensturm.kern.Zeit
 import java.time.Instant
 import kotlin.coroutines.cancellation.CancellationException
@@ -311,6 +312,7 @@ private fun ColumnScope.BuchenInhalt(m: PlaetzeModell, b: Fenster.Buchen, kicker
     var mitglieder by remember { mutableStateOf(listOf<String>()) }
     var gaeste by remember { mutableStateOf(listOf<String>()) }
     var sucht by remember { mutableStateOf(false) }
+    var filter by remember { mutableStateOf(Suchfilter.OFFEN) }
     var suchen by remember { mutableStateOf(false) }
     var fokusAnfrage by remember { mutableIntStateOf(0) }
 
@@ -373,7 +375,10 @@ private fun ColumnScope.BuchenInhalt(m: PlaetzeModell, b: Fenster.Buchen, kicker
         suchenWechsel = { suchen = it },
     )
 
-    if (nochPlatz) GesuchtKarte(sucht) { sucht = it }
+    if (nochPlatz) {
+        GesuchtKarte(sucht) { sucht = it }
+        if (sucht) SuchfilterKarte(filter, deaktiviert = m.laeuft) { filter = it }
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         FehlerText(m.fensterFehler)
@@ -391,7 +396,7 @@ private fun ColumnScope.BuchenInhalt(m: PlaetzeModell, b: Fenster.Buchen, kicker
                 }
             },
         ) {
-            m.buchen(b.courtId, b.tag, start, art, mitglieder, gaeste, sucht)
+            m.buchen(b.courtId, b.tag, start, art, mitglieder, gaeste, sucht, if (sucht && nochPlatz) filter else Suchfilter.OFFEN)
         }
         Fussnote("Stornieren geht bis Spielbeginn")
     }
@@ -498,6 +503,8 @@ private fun ColumnScope.VerwaltenInhalt(m: PlaetzeModell, b: TagesBelegung, tag:
         if (v.laeuftSchon) Leise("Die Spielzeit läuft bereits – Änderungen nur mit Platzrechten.")
         Verwalten.suchtText(b)?.let {
             Text(it, style = TcmSchrift.text(Schrift.gewichtFett, Schrift.klein), color = f.goldInk)
+            // Wer nur mitspielen kann, sieht, an wen sich die Suche richtet.
+            if (!v.darfVerwalten) PlaetzeLogik.nurFuerText(b.suchfilter)?.let { nur -> Leise(nur) }
         }
     }
 
@@ -531,7 +538,7 @@ private fun ColumnScope.VerwaltenInhalt(m: PlaetzeModell, b: TagesBelegung, tag:
     }
 
     if (!v.nurStorno && v.darfVerwalten && ((b.frei ?: 0) > 0 || b.partnerWanted == true)) {
-        GesuchtKarte(b.partnerWanted == true, deaktiviert = m.laeuft) { an -> m.ausschreiben(b.bookingId, an) }
+        Ausschreiben(m, b)
     }
 
     if (bearbeitenOffen && v.kannSperreAendern) {
@@ -605,6 +612,37 @@ private fun ColumnScope.VerwaltenInhalt(m: PlaetzeModell, b: TagesBelegung, tag:
                     umsetzOffen = true
                     stornoOffen = false
                 }
+            }
+        }
+    }
+}
+
+/**
+ * "Mitspieler gesucht" einer bestehenden Buchung mit "Nur für …".
+ * Abschalten geht sofort. Beim Einschalten klappt erst der Filter auf, und
+ * "Suche starten" schreibt aus - das Blatt schliesst nach jeder gelungenen
+ * Aktion, der Filter waere sonst nicht mehr einstellbar. Bei laufender Suche
+ * steht der gespeicherte Filter da; geaendert wird er mit "Suche ändern".
+ */
+@Composable
+private fun Ausschreiben(m: PlaetzeModell, b: TagesBelegung) {
+    val gesucht = b.partnerWanted == true
+    val gespeichert = remember(b) { b.suchfilter }
+    var an by remember(b) { mutableStateOf(gesucht) }
+    var filter by remember(b) { mutableStateOf(gespeichert) }
+
+    GesuchtKarte(an, deaktiviert = m.laeuft) { neu ->
+        if (!neu && gesucht) m.ausschreiben(b.bookingId, false) else an = neu
+    }
+    if (an) {
+        SuchfilterKarte(filter, deaktiviert = m.laeuft) { filter = it }
+        if (!gesucht) {
+            Hauptknopf(if (m.laeuft) "Wird ausgeschrieben …" else "Suche starten", gesperrt = m.laeuft) {
+                m.ausschreiben(b.bookingId, true, filter)
+            }
+        } else if (filter != gespeichert) {
+            Hauptknopf(if (m.laeuft) "Wird gespeichert …" else "Suche ändern", gesperrt = m.laeuft) {
+                m.ausschreiben(b.bookingId, true, filter, nurFilter = true)
             }
         }
     }

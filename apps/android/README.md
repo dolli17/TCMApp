@@ -42,6 +42,18 @@ Die ersten vier aus Robolectric mit `fontScale = 2f`, die `geraet-*.png` aus dem
 Beispieldaten aus `PlatzAttrappe` (`PlaetzeBildschirmfotoTest`), ohne Netz. Das Buchungsblatt
 erscheint in den Bildern ohne das Fenster des `ModalBottomSheet`.
 
+#### Mitspielersuche mit Filter (Spur A10)
+
+| Buchen mit Filter | Buchen, dunkel | Eigene Suche | Suche ändern, dunkel |
+|---|---|---|---|
+| ![Buchen hell](docs/plaetze-suchfilter-buchen-hell.png) | ![Buchen dunkel](docs/plaetze-suchfilter-buchen-dunkel.png) | ![Eigene Suche](docs/plaetze-suchfilter-eigene-hell.png) | ![Suche ändern](docs/plaetze-suchfilter-aendern-dunkel.png) |
+
+„Nur für …“ unter „Mitspieler gesucht“: LK-Bereich von–bis (Schieber, fein mit Minus/Plus in
+0,1-Schritten) und Alle/Damen/Herren. Standard LK 1–25 und Alle heißt keine Einschränkung; dann
+gehen die neuen Parameter gar nicht erst an `create_booking`/`set_partner_wanted`. Offene Spiele
+(Home, Freie Zeiten) und das Mitspielen-Blatt zeigen den Zusatz („LK 10–16 · Herren“). Logik in
+`kern/Suchfilter.kt`, Vertrag in der Datenbank-Spur (open_matches, join_booking filtern).
+
 ### Verein
 
 Getränke mit Korb, Veranstaltungen, Detail mit Anmeldung, Warteliste, Arbeitsdienst (`VereinBildschirmfotoTest`, Beispieldaten, JETZT ist Dienstag, 20.10.2026, 12:00):

@@ -17,9 +17,12 @@ import de.tcmuckensturm.app.daten.TagesBelegung
 import de.tcmuckensturm.kern.Belegung
 import de.tcmuckensturm.kern.Belegungsmerkmale
 import de.tcmuckensturm.kern.BookingTypeInfo
+import de.tcmuckensturm.kern.DbFehler
 import de.tcmuckensturm.kern.Geld
 import de.tcmuckensturm.kern.Platzplan
+import de.tcmuckensturm.kern.PostgresFehler
 import de.tcmuckensturm.kern.Startseite
+import de.tcmuckensturm.kern.Suchfilter
 import de.tcmuckensturm.kern.TimelineKind
 import de.tcmuckensturm.kern.Zeit
 import de.tcmuckensturm.kern.formatiert
@@ -212,6 +215,30 @@ object PlaetzeLogik {
         } else {
             "$n Buchungen liegen im Weg. Sie werden abgesagt, die Mitglieder bekommen Bescheid."
         }
+
+    // ---- Mitspielersuche mit Filter ----------------------------------------------
+
+    /** Was join_booking sagt, wenn man nicht zur Suche passt (lk-vertrag, check_violation). */
+    const val SUCHE_PASST_NICHT_TEXT = "Diese Suche richtet sich an andere Spieler (LK oder Damen/Herren)."
+
+    /**
+     * Der Fehler beim Mitspielen. Den deutschen Satz der Datenbank zeigt
+     * translateDbError unveraendert; kaeme check_violation ohne ihn, stuende
+     * dort nur "Die Eingabe verletzt eine Regel." - dann lieber, worum es geht.
+     */
+    fun beitretenFehler(fehler: PostgresFehler): String {
+        val text = DbFehler.translateDbError(fehler)
+        return if (fehler.code == "23514" && text == DbFehler.codeTexte["23514"]) SUCHE_PASST_NICHT_TEXT else text
+    }
+
+    fun ausschreibText(gesucht: Boolean, nurFilter: Boolean): String = when {
+        gesucht && nurFilter -> "Die Suche ist geändert."
+        gesucht -> "Die Buchung steht jetzt bei den offenen Spielen."
+        else -> "Die Buchung ist nicht mehr ausgeschrieben."
+    }
+
+    /** Der Hinweis fuer alle, die eine eingeschraenkte Suche sehen: "Nur für LK 10–16 · Herren." */
+    fun nurFuerText(filter: Suchfilter): String? = filter.zusatz?.let { "Nur für $it." }
 }
 
 /**

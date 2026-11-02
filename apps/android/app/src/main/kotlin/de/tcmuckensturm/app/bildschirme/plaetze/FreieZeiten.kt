@@ -267,7 +267,8 @@ private fun Zeile(m: PlaetzeModell, z: FreeSlotRow<TagesBelegung>, istOffen: Boo
                 for (c in sucht) {
                     val b = c.status.belegung ?: continue
                     val typ = b.typeName ?: "Spiel"
-                    val text = "${name(c.courtId)} · $typ sucht noch ${b.frei ?: 1}"
+                    val nur = b.suchfilter.zusatz
+                    val text = "${name(c.courtId)} · $typ sucht noch ${b.frei ?: 1}" + (nur?.let { " · $it" } ?: "")
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -276,7 +277,8 @@ private fun Zeile(m: PlaetzeModell, z: FreeSlotRow<TagesBelegung>, istOffen: Boo
                             .belegungsFlaeche(TimelineKind.SUCHT, f, 14.dp)
                             .clickable(role = Role.Button) { m.oeffne(b) }
                             .clearAndSetSemantics {
-                                contentDescription = "${name(c.courtId)}, $typ sucht noch ${b.frei ?: 1}, mitspielen"
+                                contentDescription = "${name(c.courtId)}, $typ sucht noch ${b.frei ?: 1}" +
+                                    (nur?.let { ", nur für $it" } ?: "") + ", mitspielen"
                                 role = Role.Button
                                 onClick { m.oeffne(b); true }
                             }

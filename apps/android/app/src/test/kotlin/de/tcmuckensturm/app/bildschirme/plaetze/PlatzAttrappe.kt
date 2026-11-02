@@ -10,6 +10,7 @@ import de.tcmuckensturm.app.daten.Mitglied
 import de.tcmuckensturm.app.daten.PlatzErgebnis
 import de.tcmuckensturm.app.daten.PlatzQuelle
 import de.tcmuckensturm.app.daten.TagesBelegung
+import de.tcmuckensturm.kern.Suchfilter
 import de.tcmuckensturm.kern.Zeit
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
@@ -52,6 +53,7 @@ class PlatzAttrappe(
             bookingId = "sucht", courtId = "p4", startsAt = zeit(18 * 60), endsAt = zeit(19 * 60), kind = "booking",
             typeCode = "doppel", typeName = "Doppel", ownerMemberId = "m3", ownerName = "Jonas Berg", partnerWanted = true,
             frei = 2, players = listOf("Anna Schmidt"), playerMemberIds = listOf("m4"), guestNames = emptyList(),
+            partnerLkVon = 10.0, partnerLkBis = 16.0, partnerFuer = "male",
         )
         val SPERRE = TagesBelegung(
             bookingId = "sperre", courtId = "p3", startsAt = zeit(19 * 60), endsAt = zeit(21 * 60), kind = "blocking",
@@ -88,6 +90,12 @@ class PlatzAttrappe(
 
     var belegung = listOf(EIGENE, TRAINING, FREMD, SUCHT, SPERRE, BELEGT)
     var kontingent = Kontingent(used = 1, allowed = 3)
+
+    /** Der Filter des letzten create_booking bzw. set_partner_wanted. */
+    var letzterFilter: Suchfilter? = null
+
+    /** Gesetzt, lehnt join_booking mit diesem Satz ab. */
+    var beitretenFehler: String? = null
 
     /** Wie oft der Tagesplan gelesen wurde. */
     var tagesplanAufrufe = 0
@@ -138,7 +146,11 @@ class PlatzAttrappe(
         mitspieler: List<String>,
         gaeste: List<String>,
         sucheMitspieler: Boolean,
-    ) = ok("create_booking", "$courtId@${Zeit.iso(beginn)}", "Platz gebucht.")
+        filter: Suchfilter,
+    ): PlatzErgebnis {
+        letzterFilter = filter
+        return ok("create_booking", "$courtId@${Zeit.iso(beginn)}", "Platz gebucht.")
+    }
 
     override suspend fun aendereMitspieler(bookingId: String, mitglieder: List<String>, gaeste: List<String>) =
         ok("update_booking_players", bookingId, "Mitspieler aktualisiert.")
@@ -151,10 +163,13 @@ class PlatzAttrappe(
 
     override suspend fun hebeSperreAuf(bookingId: String) = ok("cancel_booking", bookingId, "Die Sperrung ist aufgehoben.")
 
-    override suspend fun spieleMit(bookingId: String) = ok("join_booking", bookingId, "Du bist eingetragen. Viel Spaß!")
+    override suspend fun spieleMit(bookingId: String) = beitretenFehler?.let { PlatzErgebnis(ok = false, meldung = it) }
+        ?: ok("join_booking", bookingId, "Du bist eingetragen. Viel Spaß!")
 
-    override suspend fun sucheMitspieler(bookingId: String, gesucht: Boolean) =
-        ok("set_partner_wanted", bookingId, "Die Buchung steht jetzt bei den offenen Spielen.")
+    override suspend fun sucheMitspieler(bookingId: String, gesucht: Boolean, filter: Suchfilter, nurFilter: Boolean): PlatzErgebnis {
+        letzterFilter = filter
+        return ok("set_partner_wanted", bookingId, PlaetzeLogik.ausschreibText(gesucht, nurFilter))
+    }
 
     override suspend fun setzeUm(bookingId: String, platzId: String, tag: String, minute: Int, grund: String?) =
         ok("move_booking", bookingId, "Die Buchung ist umgesetzt.")
