@@ -608,7 +608,7 @@ test.describe("Kiosk", () => {
  * Buchers, weil er als einziger neben dem Mitglied ein bekanntes Konto hat.
  */
 test.describe("Meine Buchungen und Benachrichtigungen", () => {
-  test("eingetragen werden, benachrichtigt werden, in der eigenen Liste stehen", async ({
+  test("eingetragen werden, benachrichtigt werden, austragen storniert die Buchung", async ({
     page,
   }) => {
     // 1. Wie heisst das Testmitglied? Der Name steht in der Seitenleiste.
@@ -667,18 +667,38 @@ test.describe("Meine Buchungen und Benachrichtigungen", () => {
     await page.reload();
     await expect(page.locator(".seitenkopf .glocke-zahl")).toHaveCount(0);
 
-    // 5. Aufraeumen: der Bucher storniert ueber seine eigene Liste.
-    await anmelden(page, NUTZER.admin);
-    await page.goto("/plan/meine");
-    const eigener = page
+    // 5. Das Mitglied traegt sich aus. Das storniert die ganze Buchung, und
+    //    die Nachfrage sagt das vorher. Raeumt zugleich auf.
+    const meiner = page
       .locator("section.meine .termin")
       .filter({ hasText: platz })
       .filter({ hasText: startzeit })
       .filter({ hasText: listendatum })
       .first();
-    await eigener.getByRole("button", { name: "Stornieren" }).click();
-    await eigener.getByRole("button", { name: "Wirklich stornieren" }).click();
+    await meiner.getByRole("button", { name: "Austragen" }).click();
+    await expect(meiner.locator(".hinweis")).toContainText("ganze Buchung storniert");
+    await expect(meiner.locator(".hinweis")).toContainText("Alle Beteiligten werden");
+    await meiner.getByRole("button", { name: "Austragen und stornieren" }).click();
     await expect(page.locator(".hinweis.erfolg")).toContainText("storniert", { timeout: 15_000 });
+    await expect(meiner).toHaveCount(0);
+
+    // 6. Der Bucher erfaehrt, wer sich ausgetragen hat und dass storniert ist.
+    await anmelden(page, NUTZER.admin);
+    await page.goto("/plan/meine");
+    const [jahr, monat, tagImMonat] = tag.split("-");
+    const austragen = `${name} hat sich ausgetragen. Die Buchung am ${tagImMonat}.${monat}.${jahr} um ${startzeit} Uhr auf ${platz} ist storniert.`;
+    await page.locator(".seitenkopf button.glocke").click();
+    await expect(
+      page.locator("dialog.fenster .nachrichtenliste li").filter({ hasText: austragen }).first(),
+    ).toBeVisible({ timeout: 15_000 });
+    await page.keyboard.press("Escape");
+    await expect(
+      page
+        .locator("section.meine .termin")
+        .filter({ hasText: platz })
+        .filter({ hasText: startzeit })
+        .filter({ hasText: listendatum }),
+    ).toHaveCount(0);
   });
 });
 

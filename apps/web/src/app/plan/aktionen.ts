@@ -230,7 +230,9 @@ export async function sperreAufheben(bookingId: string): Promise<AktionsErgebnis
  *
  * Nicht ueber update_booking_players: die gehoert dem Bucher und wuerde einem
  * Mitspieler erlauben, die ganze Besetzung umzuwerfen. leave_booking kennt nur
- * den eigenen Platz - und prueft, ob danach noch genug Leute da sind.
+ * den eigenen Platz. Wer sich austraegt, storniert damit die ganze Buchung;
+ * Bucher und uebrige Mitspieler werden benachrichtigt (Vereinsentscheidung
+ * vom 02.11.2026).
  */
 export async function austragen(bookingId: string): Promise<AktionsErgebnis> {
   const supabase = await createServerSupabase();
@@ -243,7 +245,7 @@ export async function austragen(bookingId: string): Promise<AktionsErgebnis> {
 
   revalidatePath("/plan");
   revalidatePath("/plan/spiele");
-  return { ok: true, meldung: "Du bist ausgetragen." };
+  return { ok: true, meldung: "Du bist ausgetragen. Die Buchung ist storniert." };
 }
 
 /** Die Buchung fuer andere oeffnen oder wieder schliessen. Nur der Bucher. */

@@ -2,7 +2,8 @@
 -- Haertung Welle 3: Sperre, Datum, Status (B6, B10, B21, B23)
 --
 --   1. join_booking, update_booking_players und leave_booking sperren die
---      Buchungszeile mit FOR UPDATE (B6). Ohne die Sperre zaehlen zwei
+--      Buchungszeile mit FOR UPDATE (B6; leave_booking wird ueber den
+--      Quelltext geprueft, siehe dort). Ohne die Sperre zaehlen zwei
 --      gleichzeitige "Mitspielen" dieselbe Besetzung und ueberbuchen. Echte
 --      Nebenlaeufigkeit laesst sich in einer Testtransaktion nicht herstellen.
 --      Geprueft wird deshalb die Sperre selbst, ueber pgrowlocks. xmax allein
@@ -88,29 +89,38 @@ begin
   return next ok('For Update' = any (tests.sperrmodi(v_id)), 'update_booking_players sperrt die Buchung');
 end; $f$;
 
+/**
+ * Seit 20261102111411_austragen_storniert.sql storniert leave_booking die
+ * Buchung. Das Update erzeugt eine neue Zeilenversion, und pgrowlocks sieht
+ * nur noch deren FOR-KEY-SHARE, nicht mehr die Sperre auf der alten. Die
+ * Sperre zaehlt aber weiter: ohne sie lesen zwei gleichzeitige Austritte
+ * beide "aktiv" und benachrichtigen doppelt. Deshalb wird hier der Quelltext
+ * geprueft, und das Storno selbst.
+ */
 create or replace function tests.test_welle3_leave_booking_sperrt_die_buchung()
 returns setof text language plpgsql as $f$
-declare a record; b record; c record; d record; v_court uuid := tests.fixture_court(); v_id uuid;
+declare a record; b record; v_court uuid := tests.fixture_court(); v_id uuid;
         s1 timestamptz := tests.naechster_slot(2, 19);
 begin
   select * into a from tests.fixture_user() limit 1;
   select * into b from tests.fixture_user() limit 1;
-  select * into c from tests.fixture_user() limit 1;
-  select * into d from tests.fixture_user() limit 1;
-  -- Ein Doppel zu viert: ohne b bleiben drei, die Untergrenze haelt.
   insert into public.bookings (court_id, member_id, slot, booking_type_id)
   values (v_court, a.member_id, tstzrange(s1, s1 + interval '1 hour'),
-          (select id from public.booking_types where code = 'doppel'))
+          (select id from public.booking_types where code = 'einzel'))
   returning id into v_id;
-  insert into public.booking_players (booking_id, member_id)
-  values (v_id, b.member_id), (v_id, c.member_id), (v_id, d.member_id);
-  return next ok(not 'For Update' = any (tests.sperrmodi(v_id)), 'Vorher ist die Buchung nicht gesperrt');
+  insert into public.booking_players (booking_id, member_id) values (v_id, b.member_id);
+
+  return next ok(
+    (select p.prosrc ~* 'from public\.bookings where id = p_booking_id for update'
+       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public' and p.proname = 'leave_booking'),
+    'leave_booking liest die Buchung mit FOR UPDATE');
 
   perform tests.act_as(b.auth_id);
   perform public.leave_booking(v_id);
+  return next throws_ok(format('select public.leave_booking(%L)', v_id),
+    '23514', 'Diese Buchung ist storniert.', 'Ein zweiter Austritt findet die Buchung storniert vor');
   perform set_config('role', 'postgres', true);
-
-  return next ok('For Update' = any (tests.sperrmodi(v_id)), 'leave_booking sperrt die Buchung');
 end; $f$;
 
 -- ---------------------------------------------------------------------------

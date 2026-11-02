@@ -69,7 +69,7 @@ Die Spalte „Wo“ nennt die Wrapper-Funktion in `apps/mobile/src/lib` und die 
 | `my_bookings` | – (`p_ab` bleibt beim Standard) | `booking_id, starts_at, ends_at, court_name, kind, type_code, type_name, title, owner_name, bin_bucher, players` | `ladeMeineBuchungen`: Home, Spiele | wirft |
 | `open_matches` | – (`p_von`, `p_bis` Standard) | `booking_id, starts_at, ends_at, court_name, type_code, type_name, owner_member_id, owner_name, players, frei, bin_dabei` | `ladeOffeneSpiele`: Home, Spiele | wirft |
 | `join_booking` | `p_booking_id` | – | `spieleMit`: Plätze, Spiele | Meldung. Erfolg: „Du bist eingetragen. Viel Spaß!“ |
-| `leave_booking` | `p_booking_id` | – | `verlasseBuchung`: Spiele | Meldung (etwa: Spielzeit hat begonnen). Austragen geht auch unter der Untergrenze, die Buchung sucht dann Mitspieler. Erfolg: „Du bist ausgetragen.“ |
+| `leave_booking` | `p_booking_id` | – | `verlasseBuchung`: Spiele | Meldung (etwa: Spielzeit hat begonnen). **Austragen storniert die ganze Buchung** (seit 02.11.2026); Bucher und übrige Mitspieler bekommen eine `booking_cancelled`-Nachricht „`<Name>` hat sich ausgetragen. Die Buchung am … ist storniert.“ Die Nachfrage vorher sagt das: „Trägst du dich aus, wird die ganze Buchung storniert. Alle Beteiligten werden benachrichtigt.“ Erfolg: „Du bist ausgetragen. Die Buchung ist storniert.“ |
 | `set_partner_wanted` | `p_booking_id`, `p_wanted` | – | `sucheMitspieler`: Plätze, Buchungsfenster | Meldung. Erfolg je nach Richtung „Die Buchung steht jetzt bei den offenen Spielen.“ bzw. „Die Buchung ist nicht mehr ausgeschrieben.“ |
 | `member_directory` | `p_query` (Suchtext, leer = alle) | `{id, first_name, last_name}` | `ladeVerzeichnis`: Plätze (Mitspielerauswahl) | wirft |
 
