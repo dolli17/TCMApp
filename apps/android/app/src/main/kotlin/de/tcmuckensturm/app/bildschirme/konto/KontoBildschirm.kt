@@ -82,6 +82,7 @@ import de.tcmuckensturm.app.daten.EigenesGetraenk
 import de.tcmuckensturm.app.daten.Forderung
 import de.tcmuckensturm.app.daten.Initialen
 import de.tcmuckensturm.app.daten.Kontodaten
+import de.tcmuckensturm.app.daten.Mannschaftsdaten
 import de.tcmuckensturm.app.daten.MeinProfil
 import de.tcmuckensturm.app.daten.Startdaten
 import de.tcmuckensturm.app.navigation.HauptTab
@@ -120,7 +121,11 @@ data class KontoZustand(
     val aktualisiert: Boolean = false,
 )
 
-class KontoModell(private val konto: Kontodaten, private val start: Startdaten) : ViewModel() {
+class KontoModell(
+    private val konto: Kontodaten,
+    private val start: Startdaten,
+    private val mannschaft: Mannschaftsdaten,
+) : ViewModel() {
     private val _zustand = MutableStateFlow(KontoZustand())
     val zustand: StateFlow<KontoZustand> = _zustand.asStateFlow()
 
@@ -132,13 +137,13 @@ class KontoModell(private val konto: Kontodaten, private val start: Startdaten) 
     fun laden(art: Art) {
         if (art == Art.NACHLADEN) _zustand.update { it.copy(aktualisiert = true) }
         viewModelScope.launch {
-            val neu = lade(konto, start)
+            val neu = lade(konto, start, mannschaft)
             _zustand.update { KontoZustand(inhalt = neu, laedt = false, aktualisiert = false) }
         }
     }
 
     companion object {
-        suspend fun lade(k: Kontodaten, s: Startdaten): KontoInhalt = coroutineScope {
+        suspend fun lade(k: Kontodaten, s: Startdaten, m: Mannschaftsdaten): KontoInhalt = coroutineScope {
             val profil = async { Abschnitt.von { k.profil() } }
             val forderungen = async { Abschnitt.von { k.forderungen() } }
             val getraenke = async { Abschnitt.von { s.eigeneGetraenke() } }
@@ -146,6 +151,8 @@ class KontoModell(private val konto: Kontodaten, private val start: Startdaten) 
             val mandat = async { Abschnitt.von { k.mandat() } }
             val merkmale = async { Abschnitt.von { k.merkmale() } }
             val tennis = async { Abschnitt.von { k.tennis() } }
+            val mannschaft = async { Abschnitt.von { m.meineMannschaft() } }
+            val einladungen = async { Abschnitt.von { m.einladungen() } }
             KontoInhalt(
                 profil = profil.await(),
                 forderungen = forderungen.await(),
@@ -154,6 +161,8 @@ class KontoModell(private val konto: Kontodaten, private val start: Startdaten) 
                 mandat = mandat.await(),
                 merkmale = merkmale.await(),
                 tennis = tennis.await(),
+                mannschaft = mannschaft.await(),
+                einladungen = einladungen.await(),
             )
         }
     }
@@ -162,21 +171,22 @@ class KontoModell(private val konto: Kontodaten, private val start: Startdaten) 
 // ---- Bildschirm -------------------------------------------------------------
 
 @Composable
-fun KontoBildschirm() {
+fun KontoBildschirm(zuMannschaft: () -> Unit = {}) {
     val sitzung = LocalSitzung.current
     val context = LocalContext.current
     val links = LocalUriHandler.current
     val zuTab = LocalZuTab.current
     val scope = rememberCoroutineScope()
     val kontodaten = remember(sitzung) { Kontodaten(sitzung.client) }
-    val modell = viewModel { KontoModell(kontodaten, Startdaten(sitzung.client)) }
+    val mannschaftsdaten = remember(sitzung) { Mannschaftsdaten(sitzung.client) }
+    val modell = viewModel { KontoModell(kontodaten, Startdaten(sitzung.client), mannschaftsdaten) }
     val zustand by modell.zustand.collectAsStateWithLifecycle()
     val speicher = remember { ErscheinungsbildSpeicher.fuer(context) }
     val erscheinungsbild by speicher.wahl.collectAsStateWithLifecycle(Erscheinungsbild.SYSTEM)
     val snackbar = remember { SnackbarHostState() }
     var blatt by rememberSaveable { mutableStateOf<KontoBlatt?>(null) }
     var abmeldenFragen by rememberSaveable { mutableStateOf(false) }
-    val aktionen = remember(sitzung) { SitzungsAktionen(kontodaten, sitzung) }
+    val aktionen = remember(sitzung) { SitzungsAktionen(kontodaten, sitzung, mannschaftsdaten) }
 
     LaunchedEffect(Unit) { modell.erscheinen() }
 
@@ -192,6 +202,7 @@ fun KontoBildschirm() {
                 datenschutz = sitzung.umgebung.webLink("/datenschutz"),
                 impressum = sitzung.umgebung.webLink("/impressum"),
                 oeffnen = { blatt = it },
+                zuMannschaft = zuMannschaft,
                 erneut = { modell.laden(KontoModell.Art.NACHLADEN) },
                 erscheinungsbildWaehlen = { neu -> scope.launch { speicher.setzen(neu) } },
                 link = { links.openUri(it) },
@@ -254,6 +265,8 @@ fun KontoAnsicht(
     /** "Mitteilungen aufs Handy"; im Betrieb PushSchalter, in den Screenshot-Tests ohne Geraet. */
     push: @Composable () -> Unit = { PushSchalterAnsicht(an = false, symbol = true) },
     jetzt: Instant = Instant.now(),
+    /** Der Bildschirm Mannschaft (KontoMannschaft). */
+    zuMannschaft: () -> Unit = {},
 ) {
     val f = TcmTheme.farben
     Column(
@@ -278,7 +291,7 @@ fun KontoAnsicht(
         Profilkopf(d.profil, nochmal)
         Abrechnung(d.forderungen, d.getraenke, nochmal, jetzt)
         ArbeitsdienstKarte(d.dienst, nochmal)
-        Einstellungen(d, erscheinungsbild, oeffnen, erscheinungsbildWaehlen, push)
+        Einstellungen(d, erscheinungsbild, oeffnen, zuMannschaft, erscheinungsbildWaehlen, push)
         KontoGruppe(Modifier.padding(top = Abstand.s)) {
             // Datenschutz und Impressum liegen im Web; ohne Basisadresse (lokal) fehlen die Zeilen.
             if (datenschutz != null && impressum != null) {
@@ -472,6 +485,7 @@ private fun Einstellungen(
     d: KontoInhalt,
     erscheinungsbild: Erscheinungsbild,
     oeffnen: (KontoBlatt) -> Unit,
+    zuMannschaft: () -> Unit,
     erscheinungsbildWaehlen: (Erscheinungsbild) -> Unit,
     push: @Composable () -> Unit,
 ) {
@@ -488,6 +502,18 @@ private fun Einstellungen(
             TennisSymbol,
             untertitel = if (tennis.fehler == null) KontoLogik.tennisUebersicht(tennis.wert) else null,
         ) { oeffnen(KontoBlatt.TENNIS) }
+        // Nur mit Mannschaft oder offener Einladung; ein Ladefehler blendet den Eintrag aus.
+        val mannschaft = d.mannschaft.wert
+        val einladungen = d.einladungen.wert
+        if (MannschaftLogik.zeigeEintrag(mannschaft, einladungen)) {
+            KontoLinie()
+            KontoEintrag(
+                MannschaftLogik.TITEL,
+                MannschaftSymbol,
+                untertitel = MannschaftLogik.eintragUntertitel(mannschaft, einladungen),
+                aktion = zuMannschaft,
+            )
+        }
         if (KontoLogik.zeigeEinwilligungen(d.merkmale.wert)) {
             KontoLinie()
             KontoEintrag("Einwilligungen", Icons.Outlined.CheckCircle) { oeffnen(KontoBlatt.EINWILLIGUNGEN) }

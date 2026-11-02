@@ -15,6 +15,7 @@
 package de.tcmuckensturm.app.push
 
 import android.os.Bundle
+import de.tcmuckensturm.app.bildschirme.konto.MannschaftLogik
 import de.tcmuckensturm.app.navigation.HauptTab
 import de.tcmuckensturm.kern.Weiterleitung
 
@@ -24,6 +25,9 @@ sealed interface PushZiel {
 
     /** Eine Veranstaltung (/verein/veranstaltung/<id>): ihr Detail im Tab Verein */
     data class Veranstaltung(val id: String) : PushZiel
+
+    /** Konto -> Mannschaft (/konto/mannschaft und die kinds team_*) */
+    data object Mannschaft : PushZiel
 
     /** Ein anderer Pfad der App, der zu einem Tab gehoert */
     data class Tab(val tab: HauptTab) : PushZiel
@@ -37,6 +41,8 @@ sealed interface PushZiel {
          * @return null, wenn die Nachricht kein Ziel nennt - dann oeffnet sich die App einfach.
          */
         fun aus(daten: Map<String, String>): PushZiel? {
+            // Hinweise zur Mannschaft fuehren dorthin, auch wenn der Pfad nur /nachrichten nennt.
+            if (MannschaftLogik.istMannschaftsNachricht(daten["kind"])) return Mannschaft
             daten["ziel"]?.let(::ausPfad)?.let { return it }
             daten["event_id"]?.takeIf(::istKennung)?.let { return Veranstaltung(it) }
             val kind = daten["kind"]
@@ -54,7 +60,7 @@ sealed interface PushZiel {
                 null, "home" -> Tab(HauptTab.HOME)
                 "nachrichten" -> Nachrichten
                 "plaetze" -> Tab(HauptTab.PLAETZE)
-                "konto" -> Tab(HauptTab.KONTO)
+                "konto" -> if (teile.getOrNull(1) == "mannschaft") Mannschaft else Tab(HauptTab.KONTO)
                 "verein" ->
                     if (teile.size == 3 && teile[1] == "veranstaltung" && istKennung(teile[2])) {
                         Veranstaltung(teile[2])

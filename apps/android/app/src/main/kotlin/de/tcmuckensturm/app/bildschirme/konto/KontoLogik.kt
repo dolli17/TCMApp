@@ -15,6 +15,8 @@ import de.tcmuckensturm.app.daten.Arbeitsdienst
 import de.tcmuckensturm.app.daten.EigenesGetraenk
 import de.tcmuckensturm.app.daten.Forderung
 import de.tcmuckensturm.app.daten.MeinMandat
+import de.tcmuckensturm.app.daten.MeineEinladung
+import de.tcmuckensturm.app.daten.MeineMannschaft
 import de.tcmuckensturm.app.daten.MeinProfil
 import de.tcmuckensturm.app.daten.MerkmalZeile
 import de.tcmuckensturm.app.daten.OnboardingZustand
@@ -35,6 +37,10 @@ data class KontoInhalt(
     val merkmale: Abschnitt<List<MerkmalZeile>>,
     /** Aus my_onboarding(); null, wenn kein Mitglied angemeldet ist. */
     val tennis: Abschnitt<OnboardingZustand.Tennis?> = Abschnitt.Wert(null),
+    /** meine_mannschaft(); null ohne Mannschaft. */
+    val mannschaft: Abschnitt<MeineMannschaft?> = Abschnitt.Wert(null),
+    /** Offene Einladungen an mich (meine_mannschaft_einladungen). */
+    val einladungen: Abschnitt<List<MeineEinladung>> = Abschnitt.Wert(emptyList()),
 )
 
 /** Ein Merkmal mit allen seinen Werten (buendeln in MerkmaleKarte.tsx). */

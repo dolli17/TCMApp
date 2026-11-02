@@ -142,6 +142,22 @@ export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
 export ANDROID_HOME=$HOME/Library/Android/sdk
 ```
 
+### Mannschaft (Spur MA)
+
+| MF, hell | MF, dunkel | Einladung, hell | Einladung, dunkel | Annehmen | MF kann nicht wechseln | Spieler hinzufügen | Suche, dunkel |
+|---|---|---|---|---|---|---|---|
+| ![MF hell](docs/mannschaft-mf-hell.png) | ![MF dunkel](docs/mannschaft-mf-dunkel.png) | ![Einladung hell](docs/mannschaft-einladung-hell.png) | ![Einladung dunkel](docs/mannschaft-einladung-dunkel.png) | ![Annehmen](docs/mannschaft-annehmen-hell.png) | ![Gesperrt](docs/mannschaft-gesperrt-dunkel.png) | ![Suche](docs/mannschaft-suche-hell.png) | ![Suche dunkel](docs/mannschaft-suche-dunkel.png) |
+
+Konto → „Mannschaft“ (eigenes Ziel `KontoMannschaft`, sichtbar mit Mannschaft oder offener
+Einladung): oben Einladungen an mich mit Annehmen (Telefon-Freigabe, Wechselhinweis bzw.
+MF-Sperre) und Ablehnen, darunter der Kader. Der Mannschaftsführer lädt über „Spieler hinzufügen“
+ein (Suche über `mannschaft_kandidaten`, Marken „Interesse“ und „spielt in …“, Eingeladene
+ausgegraut), zieht offene Einladungen zurück, trägt Spieler aus und sieht freigegebene Nummern
+(antippbar). Spieler können austreten. Im Tennis-Blatt steht mit Mannschaft der Schalter
+„Mannschaftsführer darf meine Telefonnummer sehen“. Push (`team_*` oder `/konto/mannschaft`) und
+Neuigkeiten führen auf den Bildschirm. Daten in `daten/Mannschaftsdaten.kt`, Texte und Regeln in
+`MannschaftLogik` (`MannschaftLogikTest`), Bilder aus `MannschaftBildfotoTest`.
+
 ## Bauen und testen
 
 ```bash

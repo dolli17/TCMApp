@@ -43,6 +43,7 @@ object DbFehler {
         "teams_name_lower_key" to "Eine Mannschaft mit diesem Namen gibt es schon.",
         "members_one_captain_per_team" to "Diese Mannschaft hat schon einen Mannschaftsführer.",
         "members_captain_needs_team" to "Mannschaftsführer geht nur mit Mannschaft.",
+        "team_invitations_eine_offene" to "Dieses Mitglied ist schon eingeladen.",
     )
 
     val codeTexte: Map<String, String> = mapOf(

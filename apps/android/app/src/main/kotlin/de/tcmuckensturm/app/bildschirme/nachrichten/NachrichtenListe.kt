@@ -53,6 +53,8 @@ import de.tcmuckensturm.app.bildschirme.Leerzustand
 import de.tcmuckensturm.app.bildschirme.grosseSchrift
 import de.tcmuckensturm.app.bildschirme.home.HomeLogik
 import de.tcmuckensturm.app.bildschirme.karte
+import de.tcmuckensturm.app.bildschirme.konto.LocalZuMannschaft
+import de.tcmuckensturm.app.bildschirme.konto.MannschaftLogik
 import de.tcmuckensturm.app.bildschirme.mitTrennung
 import de.tcmuckensturm.app.daten.Benachrichtigung
 import de.tcmuckensturm.app.theme.TcmSchrift
@@ -146,6 +148,14 @@ fun NachrichtZeile(
 ) {
     val f = TcmTheme.farben
     val ziel = Startseite.notificationZiel(n.eventId)
+    // Ohne Veranstaltung: Hinweise zur Mannschaft fuehren auf den Bildschirm Mannschaft.
+    val zuMannschaft = LocalZuMannschaft.current.takeIf { ziel == null && MannschaftLogik.istMannschaftsNachricht(n.kind) }
+    val tippen: (() -> Unit)? = when {
+        ziel != null -> { { zuVeranstaltung(ziel.eventId) } }
+        zuMannschaft != null -> zuMannschaft
+        else -> null
+    }
+    val wohin = if (ziel != null) "Öffnet die Veranstaltung" else "Öffnet die Mannschaft"
     val label = HomeLogik.nachrichtLabel(n, neu, jetzt)
     val symbolGrund = when {
         hervorheben -> if (neu) f.surf else f.surf2
@@ -155,12 +165,12 @@ fun NachrichtZeile(
         Modifier
             .fillMaxWidth()
             .background(if (hervorheben && neu) f.goldSoft else Color.Transparent)
-            .then(if (ziel != null) Modifier.clickable(role = Role.Button) { zuVeranstaltung(ziel.eventId) } else Modifier)
+            .then(if (tippen != null) Modifier.clickable(role = Role.Button, onClick = tippen) else Modifier)
             .clearAndSetSemantics {
-                contentDescription = if (ziel != null) "$label. Öffnet die Veranstaltung" else label
-                if (ziel != null) {
+                contentDescription = if (tippen != null) "$label. $wohin" else label
+                if (tippen != null) {
                     role = Role.Button
-                    onClick { zuVeranstaltung(ziel.eventId); true }
+                    onClick { tippen(); true }
                 }
             }
             .padding(vertical = 14.dp, horizontal = 16.dp),
@@ -216,9 +226,9 @@ fun NachrichtZeile(
                 maxLines = zeilen ?: Int.MAX_VALUE,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (ziel != null) {
+            if (tippen != null) {
                 Text(
-                    "Zur Veranstaltung ›",
+                    if (ziel != null) "Zur Veranstaltung ›" else "Zur Mannschaft ›",
                     style = TcmSchrift.text(Schrift.gewichtHalbfett, 13.5.sp),
                     color = f.blueInk,
                     modifier = Modifier.padding(top = 2.dp),

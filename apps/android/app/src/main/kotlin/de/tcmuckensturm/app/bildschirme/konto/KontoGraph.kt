@@ -1,13 +1,15 @@
 /*
  * Tab Konto: Navigationsgraph und Einstieg
  *
- * Ein Ziel: die Seite KontoBildschirm. Die Formulare (Meine Daten,
+ * Zwei Ziele: die Seite KontoBildschirm und darunter Mannschaft
+ * (MannschaftBildschirm). Die Formulare (Meine Daten,
  * Notfallkontakt, Einwilligungen, Mandat, Passwort, Kuendigung) sind Bottom
  * Sheets darueber, keine eigenen Ziele - wie die Blaetter in iOS und Expo.
  */
 
 package de.tcmuckensturm.app.bildschirme.konto
 
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -22,8 +24,21 @@ data object KontoGraph
 @Serializable
 data object KontoStart
 
-fun NavGraphBuilder.kontoGraph(@Suppress("UNUSED_PARAMETER") nav: NavHostController) {
+/** Konto -> Mannschaft: Kader, Einladungen, MF-Funktionen. */
+@Serializable
+data object KontoMannschaft
+
+/**
+ * Oeffnet von ueberall den Bildschirm Mannschaft (Tab Konto) - fuer die
+ * Glocke und die Neuigkeiten; HauptTabs stellt es bereit. null in Tests.
+ */
+val LocalZuMannschaft = staticCompositionLocalOf<(() -> Unit)?> { null }
+
+fun NavGraphBuilder.kontoGraph(nav: NavHostController) {
     navigation<KontoGraph>(startDestination = KontoStart) {
-        composable<KontoStart> { KontoBildschirm() }
+        composable<KontoStart> {
+            KontoBildschirm(zuMannschaft = { nav.navigate(KontoMannschaft) { launchSingleTop = true } })
+        }
+        composable<KontoMannschaft> { MannschaftBildschirm(zurueck = { nav.popBackStack() }) }
     }
 }

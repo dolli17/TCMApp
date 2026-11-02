@@ -378,3 +378,16 @@ val TennisSymbol: ImageVector by lazy {
             moveTo(18.4f, 5.6f); curveTo(14.8f, 9.2f, 14.8f, 14.8f, 18.4f, 18.4f)
         }.build()
 }
+
+/** Zwei Koepfe fuer "Mannschaft" - im Grundsatz der Symbole fehlt er (groups). */
+val MannschaftSymbol: ImageVector by lazy {
+    ImageVector.Builder("Mannschaft", 24.dp, 24.dp, 24f, 24f)
+        .path(stroke = SolidColor(Color.Black), strokeLineWidth = 2f) {
+            // Vorne: Kopf und Schultern
+            moveTo(9f, 4f); arcToRelative(3.5f, 3.5f, 0f, true, true, 0f, 7f); arcToRelative(3.5f, 3.5f, 0f, true, true, 0f, -7f); close()
+            moveTo(2.5f, 20f); curveTo(2.5f, 16.2f, 5.4f, 14f, 9f, 14f); curveTo(12.6f, 14f, 15.5f, 16.2f, 15.5f, 20f)
+            // Dahinter: der zweite Spieler
+            moveTo(15.5f, 4.3f); arcToRelative(3.2f, 3.2f, 0f, false, true, 0f, 6.4f)
+            moveTo(17.5f, 14.2f); curveTo(19.9f, 14.8f, 21.5f, 16.8f, 21.5f, 20f)
+        }.build()
+}
