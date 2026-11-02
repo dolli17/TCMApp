@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { lkNormalisieren, translateDbError } from "@tcm/core";
+import { tennisEingabePruefen, translateDbError } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 
 export interface AktionsErgebnis {
@@ -147,16 +147,15 @@ export async function tennisSpeichern(d: {
   nuliga_id: string;
   mannschaft_interesse: boolean;
 }): Promise<AktionsErgebnis> {
-  // Gespeichert wird einheitlich "LK14,5", damit open_matches die LK lesen kann.
-  const lk = lkNormalisieren(d.tennis_lk);
-  if (!lk.ok) return { ok: false, meldung: lk.meldung };
+  // Gespeichert wird einheitlich "LK14,5", damit open_matches die LK lesen
+  // kann. Dieselbe Prüfung nutzt das Konto (konto/aktionen.ts).
+  const eingabe = tennisEingabePruefen(d);
+  if (!eingabe.ok) return { ok: false, meldung: eingabe.meldung };
   const supabase = await createServerSupabase();
-  const { error } = await supabase.rpc("save_my_tennis", {
-    p_tennis_lk: lk.wert ?? undefined,
-    p_nuliga_id: leer(d.nuliga_id),
-    p_mannschaft_interesse: d.mannschaft_interesse,
-  });
+  const { error } = await supabase.rpc("save_my_tennis", eingabe.args);
   if (error) return { ok: false, meldung: translateDbError(error) };
+  revalidatePath("/konto");
+  revalidatePath("/konto/tennis");
   return fertig();
 }
 

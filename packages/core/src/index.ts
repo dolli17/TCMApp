@@ -12,6 +12,7 @@ export * from "./courtStatus";
 export * from "./freeSlots";
 export * from "./offeneSpiele";
 export * from "./mitspielerFilter";
+export * from "./tennisAngaben";
 export * from "./admin";
 export * from "./rollen";
 export * from "./forderungen";
