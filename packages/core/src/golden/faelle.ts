@@ -586,6 +586,18 @@ const translateDbErrorFaelle: GoldenEingabe[] = [
     message: "Beim LK-Bereich darf „von“ nicht größer sein als „bis“.",
     code: "22023",
   }),
+  fehler("Doppelte Einladung in die Mannschaft", {
+    message: 'duplicate key value violates unique constraint "team_invitations_eine_offene"',
+    code: "23505",
+  }),
+  fehler("MF-Wechselsperre wird durchgereicht", {
+    message: "Du bist Mannschaftsführer von Herren 30. Das kann nur der Vorstand ändern.",
+    code: "23514",
+  }),
+  fehler("Abgelaufene Einladung wird durchgereicht", {
+    message: "Diese Einladung ist abgelaufen.",
+    code: "23514",
+  }),
   fehler("Meldung ohne Satzzeichen nicht", { message: "something went wrong", code: "23514" }),
   fehler("Meldung mit violates nicht", {
     message: 'new row violates row-level security policy for table "members".',

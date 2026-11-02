@@ -78,6 +78,36 @@
     "output": "Beim LK-Bereich darf „von“ nicht größer sein als „bis“."
   },
   {
+    "name": "Doppelte Einladung in die Mannschaft",
+    "input": {
+      "error": {
+        "message": "duplicate key value violates unique constraint \"team_invitations_eine_offene\"",
+        "code": "23505"
+      }
+    },
+    "output": "Dieses Mitglied ist schon eingeladen."
+  },
+  {
+    "name": "MF-Wechselsperre wird durchgereicht",
+    "input": {
+      "error": {
+        "message": "Du bist Mannschaftsführer von Herren 30. Das kann nur der Vorstand ändern.",
+        "code": "23514"
+      }
+    },
+    "output": "Du bist Mannschaftsführer von Herren 30. Das kann nur der Vorstand ändern."
+  },
+  {
+    "name": "Abgelaufene Einladung wird durchgereicht",
+    "input": {
+      "error": {
+        "message": "Diese Einladung ist abgelaufen.",
+        "code": "23514"
+      }
+    },
+    "output": "Diese Einladung ist abgelaufen."
+  },
+  {
     "name": "Meldung ohne Satzzeichen nicht",
     "input": {
       "error": {

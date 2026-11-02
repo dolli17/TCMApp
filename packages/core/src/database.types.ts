@@ -1438,6 +1438,7 @@ export type Database = {
           status: Database["public"]["Enums"]["member_status"]
           street: string | null
           team_id: string | null
+          team_phone_visible: boolean
           tennis_lk: string | null
           title: string | null
           updated_at: string
@@ -1483,6 +1484,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["member_status"]
           street?: string | null
           team_id?: string | null
+          team_phone_visible?: boolean
           tennis_lk?: string | null
           title?: string | null
           updated_at?: string
@@ -1528,6 +1530,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["member_status"]
           street?: string | null
           team_id?: string | null
+          team_phone_visible?: boolean
           tennis_lk?: string | null
           title?: string | null
           updated_at?: string
@@ -1966,6 +1969,61 @@ export type Database = {
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_invitations: {
+        Row: {
+          answered_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          member_id: string
+          status: string
+          team_id: string
+        }
+        Insert: {
+          answered_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          member_id: string
+          status?: string
+          team_id: string
+        }
+        Update: {
+          answered_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          member_id?: string
+          status?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_invitations_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_invitations_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -2945,6 +3003,35 @@ export type Database = {
         Args: { p_auth_user_id: string; p_member_id: string }
         Returns: undefined
       }
+      mannschaft_austragen: {
+        Args: { p_member_id: string }
+        Returns: undefined
+      }
+      mannschaft_einladen: { Args: { p_member_id: string }; Returns: string }
+      mannschaft_einladung_beantworten: {
+        Args: {
+          p_annehmen: boolean
+          p_invitation_id: string
+          p_telefon_sichtbar?: boolean
+        }
+        Returns: undefined
+      }
+      mannschaft_einladung_zurueckziehen: {
+        Args: { p_invitation_id: string }
+        Returns: undefined
+      }
+      mannschaft_kandidaten: {
+        Args: { p_suche?: string }
+        Returns: {
+          aktuelle_mannschaft: string
+          eingeladen: boolean
+          first_name: string
+          last_name: string
+          mannschaft_interesse: boolean
+          member_id: string
+          tennis_lk: string
+        }[]
+      }
       mark_application_spam: {
         Args: { p_application_id: string }
         Returns: undefined
@@ -3000,6 +3087,21 @@ export type Database = {
           grund: string
           onboarding_offen: boolean
           zugang: boolean
+        }[]
+      }
+      meine_mannschaft: { Args: never; Returns: Json }
+      meine_mannschaft_einladungen: {
+        Args: never
+        Returns: {
+          annehmen_moeglich: boolean
+          created_at: string
+          eingeladen_von: string
+          expires_at: string
+          hinweis: string
+          id: string
+          team_id: string
+          team_name: string
+          wechsel_von: string
         }[]
       }
       member_attributes: {
@@ -3510,6 +3612,10 @@ export type Database = {
       }
       set_setting: {
         Args: { p_key: string; p_value: string }
+        Returns: undefined
+      }
+      set_team_phone_visible: {
+        Args: { p_visible: boolean }
         Returns: undefined
       }
       setting_int: { Args: { p_key: string }; Returns: number }
