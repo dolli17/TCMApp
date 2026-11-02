@@ -230,7 +230,7 @@ begin
 end; $f$;
 
 -- ---------------------------------------------------------------------------
--- 3.2 Mitspieler ohne Zustimmung
+-- 3.2 Mitspieler ohne Zustimmung (seit 02.11.2026: Austragen storniert)
 -- ---------------------------------------------------------------------------
 
 create or replace function tests.test_audit_opfer_kommt_raus()
@@ -256,13 +256,15 @@ begin
     'und danach zur selben Zeit selbst buchen');
   perform set_config('role', 'postgres', true);
 
-  return next is((select partner_wanted from public.bookings where id = v_id), true,
-    'Die Buchung sucht jetzt Mitspieler');
-  return next is((select status::text from public.bookings where id = v_id), 'active',
-    'und bleibt bestehen');
+  -- Seit dem 02.11.2026 storniert das Austragen die ganze Buchung, statt
+  -- Mitspieler zu suchen (20261102111411_austragen_storniert.sql).
+  return next is((select status::text from public.bookings where id = v_id), 'cancelled',
+    'Die Buchung ist danach storniert');
+  return next is((select partner_wanted from public.bookings where id = v_id), false,
+    'und sucht keine Mitspieler');
   return next ok(exists (select 1 from public.notifications
-                          where member_id = a.member_id and kind = 'player_left'
-                            and body like '%sucht jetzt Mitspieler%'),
+                          where member_id = a.member_id and kind = 'booking_cancelled'
+                            and body like '%hat sich ausgetragen. Die Buchung am % ist storniert.'),
     'Der Bucher erfaehrt es');
 end; $f$;
 

@@ -559,16 +559,20 @@ describe("sich austragen", () => {
     expect(rpc).toHaveBeenCalledWith("leave_booking", { p_booking_id: "buchung-1" });
   });
 
+  it("sagt, dass die Buchung damit storniert ist", async () => {
+    rpc.mockResolvedValue({ error: null });
+    const r = await verlasseBuchung("buchung-1");
+    expect(r.ok).toBe(true);
+    expect(r.meldung).toContain("storniert");
+  });
+
   it("reicht die Begründung der Datenbank durch", async () => {
     rpc.mockResolvedValue({
-      error: {
-        code: "23514",
-        message: "Ohne dich waeren es zu wenige Spieler. Bitte sag dem Bucher Bescheid.",
-      },
+      error: { code: "23514", message: "Die Spielzeit hat bereits begonnen." },
     });
     const r = await verlasseBuchung("buchung-1");
     expect(r.ok).toBe(false);
-    expect(r.meldung).toContain("zu wenige Spieler");
+    expect(r.meldung).toContain("begonnen");
   });
 });
 

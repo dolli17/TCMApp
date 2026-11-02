@@ -69,41 +69,111 @@ end; $f$;
 -- leave_booking
 -- ---------------------------------------------------------------------------
 
-create or replace function tests.test_leave_booking_mitspieler_traegt_sich_aus()
+/**
+ * Wer sich austraegt, storniert die ganze Buchung (Vereinsentscheidung vom
+ * 02.11.2026). Bucher und uebrige Mitspieler erfahren in einer Nachricht, wer
+ * gegangen ist; der Austragende selbst bekommt keine.
+ */
+create or replace function tests.test_leave_booking_storniert_die_buchung()
 returns setof text language plpgsql as $f$
 declare a record; b record; c record; v_court uuid := tests.fixture_court(); v_id uuid;
         s1 timestamptz := tests.naechster_slot(2, 9); v_anzahl integer;
+begin
+  select * into a from tests.fixture_user(null, 'Bucherin') limit 1;
+  select * into b from tests.fixture_user(null, 'Bleibt') limit 1;
+  select * into c from tests.fixture_user(null, 'Geht') limit 1;
+  perform tests.act_as(a.auth_id);
+  -- Ein volles Doppel: auch ohne c waere die Untergrenze erreicht. Storniert
+  -- wird trotzdem, die Regel haengt nicht an der Besetzung.
+  select public.create_booking(v_court, s1, 'doppel',
+                               array[b.member_id, c.member_id], array['Gast']) into v_id;
+  perform set_config('role', 'postgres', true);
+
+  perform tests.act_as(c.auth_id);
+  return next lives_ok(format('select public.leave_booking(%L)', v_id),
+    'Ein Mitspieler kann sich austragen');
+  perform set_config('role', 'postgres', true);
+
+  return next is((select status::text from public.bookings where id = v_id), 'cancelled',
+    'Danach ist die Buchung storniert');
+  return next is((select cancelled_by from public.bookings where id = v_id), c.member_id,
+    'storniert von dem, der sich ausgetragen hat');
+  return next is((select partner_wanted from public.bookings where id = v_id), false,
+    'und sucht keine Mitspieler');
+  return next is(
+    (select status::text from public.charges where booking_id = v_id and kind = 'guest'),
+    'waived', 'Die Gastgebuehr des Buchers wird erlassen');
+
+  return next is(
+    (select count(*)::integer from public.notifications
+      where member_id = a.member_id and kind = 'booking_cancelled'
+        and body like '% hat sich ausgetragen. Die Buchung am % ist storniert.'
+        and body like '%Geht%'),
+    1, 'Der Bucher erfaehrt, wer sich ausgetragen hat und dass storniert ist');
+  return next is(
+    (select count(*)::integer from public.notifications
+      where member_id = b.member_id and kind = 'booking_cancelled' and body like '%Geht%'),
+    1, 'Ebenso der uebrige Mitspieler');
+  return next is(
+    (select count(*)::integer from public.notifications
+      where member_id in (a.member_id, b.member_id)
+        and kind in ('booking_cancelled', 'player_left')),
+    2, 'Je eine Nachricht, keine zusaetzliche Storno- oder Austragen-Nachricht');
+  return next is(
+    (select count(*)::integer from public.notifications
+      where member_id = c.member_id and kind in ('booking_cancelled', 'player_left')),
+    0, 'Der Austragende bekommt keine Nachricht');
+end; $f$;
+
+/**
+ * Noch nicht verschickte "Du bist eingetragen" zu der Buchung sind mit dem
+ * Storno hinfaellig und fallen weg; es bleibt nur die Storno-Nachricht.
+ */
+create or replace function tests.test_leave_booking_hebt_eintragen_auf()
+returns setof text language plpgsql as $f$
+declare a record; b record; c record; v_court uuid := tests.fixture_court(); v_id uuid;
+        s1 timestamptz := tests.naechster_slot(2, 10);
 begin
   select * into a from tests.fixture_user() limit 1;
   select * into b from tests.fixture_user() limit 1;
   select * into c from tests.fixture_user() limit 1;
   perform tests.act_as(a.auth_id);
-  -- Doppel mit drei Spielern: einer darf gehen, dann sind es noch drei
-  -- inklusive Bucher... also genau die Untergrenze. Deshalb hier vier.
-  select public.create_booking(v_court, s1, 'doppel',
-                               array[b.member_id, c.member_id]) into v_id;
-  perform set_config('role', 'postgres', true);
-
-  -- Unter der Untergrenze kommt man seit dem Security-Audit (3.2) trotzdem
-  -- raus; das prueft 43_security_audit.sql. Hier der gewoehnliche Fall: ein
-  -- vierter Spieler, dann reicht es auch ohne den, der geht.
-  perform tests.act_as(a.auth_id);
-  perform public.update_booking_players(v_id, array[b.member_id, c.member_id], array['Gast']);
+  select public.create_booking(v_court, s1, 'doppel', array[b.member_id, c.member_id]) into v_id;
   perform set_config('role', 'postgres', true);
 
   perform tests.act_as(c.auth_id);
-  return next lives_ok(format('select public.leave_booking(%L)', v_id),
-    'Mit genug Spielern darf sich ein Mitspieler austragen');
+  perform public.leave_booking(v_id);
   perform set_config('role', 'postgres', true);
 
-  select count(*)::integer into v_anzahl
-  from public.booking_players where booking_id = v_id and member_id = c.member_id;
-  return next is(v_anzahl, 0, 'Er steht danach nicht mehr in der Besetzung');
+  return next is(
+    (select count(*)::integer from public.notifications
+      where booking_id = v_id and kind = 'booking_added'),
+    0, 'Unverschickte Eintragen-Nachrichten zur Buchung sind weg');
+  return next is(
+    (select array_agg(kind order by kind) from public.notifications where member_id = b.member_id),
+    array['booking_cancelled'], 'Der uebrige Mitspieler bekommt nur die Storno-Nachricht');
+end; $f$;
 
-  select count(*)::integer into v_anzahl
-  from public.notifications
-  where member_id = a.member_id and kind = 'player_left';
-  return next is(v_anzahl, 1, 'Der Bucher wird benachrichtigt');
+create or replace function tests.test_leave_booking_nach_spielbeginn_verboten()
+returns setof text language plpgsql as $f$
+declare a record; b record; v_court uuid := tests.fixture_court(); v_id uuid;
+begin
+  select * into a from tests.fixture_user() limit 1;
+  select * into b from tests.fixture_user() limit 1;
+  -- Direkt angelegt: create_booking nimmt keine laufende Stunde an.
+  insert into public.bookings (court_id, member_id, slot, booking_type_id)
+  values (v_court, a.member_id, tstzrange(now() - interval '10 minutes', now() + interval '50 minutes'),
+          (select id from public.booking_types where code = 'einzel'))
+  returning id into v_id;
+  insert into public.booking_players (booking_id, member_id) values (v_id, b.member_id);
+
+  perform tests.act_as(b.auth_id);
+  return next throws_ok(
+    format('select public.leave_booking(%L)', v_id),
+    '23514', 'Die Spielzeit hat bereits begonnen.', 'Nach Spielbeginn kann sich niemand mehr austragen');
+  perform set_config('role', 'postgres', true);
+  return next is((select status::text from public.bookings where id = v_id), 'active',
+    'Die Buchung bleibt dann bestehen');
 end; $f$;
 
 create or replace function tests.test_leave_booking_bucher_darf_nicht()

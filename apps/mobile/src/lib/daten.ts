@@ -658,13 +658,14 @@ export async function ladeMeineBuchungen() {
 /**
  * Sich selbst aus einer fremden Buchung austragen.
  *
- * Nicht ueber update_booking_players - die gehoert dem Bucher. leave_booking
- * prueft zusaetzlich, ob danach noch genug Spieler uebrig sind.
+ * Nicht ueber update_booking_players - die gehoert dem Bucher. Wer sich
+ * austraegt, storniert damit die ganze Buchung; leave_booking benachrichtigt
+ * Bucher und uebrige Mitspieler.
  */
 export async function verlasseBuchung(bookingId: string): Promise<Ergebnis> {
   const { error } = await supabase.rpc("leave_booking", { p_booking_id: bookingId });
   if (error) return { ok: false, meldung: translateDbError(error) };
-  return { ok: true, meldung: "Du bist ausgetragen." };
+  return { ok: true, meldung: "Du bist ausgetragen. Die Buchung ist storniert." };
 }
 
 export async function ladeBenachrichtigungen(limit = 30) {

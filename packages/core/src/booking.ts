@@ -492,7 +492,7 @@ export interface BookingActions {
   cancel: boolean;
   /** Mitspieler aendern (update_booking_players) */
   editPlayers: boolean;
-  /** Sich als Mitspieler austragen (leave_booking) */
+  /** Sich als Mitspieler austragen (leave_booking, storniert die ganze Buchung) */
   leave: boolean;
   /** Sich als Mitspieler eintragen (join_booking) */
   join: boolean;
@@ -507,9 +507,9 @@ export interface BookingActions {
  * aendern - etwa wenn ein Platz waehrend der Spielzeit gesperrt wird.
  * Austragen und Mitspielen enden mit dem Beginn fuer alle.
  *
- * Nicht geprueft wird, was die Liste nicht weiss: ob nach dem Austragen
- * noch genug Spieler bleiben oder ob das Kontingent reicht. Das sagt die
- * Datenbank beim Absenden.
+ * Austragen storniert die ganze Buchung (leave_booking), eine Untergrenze
+ * spielt dabei keine Rolle. Nicht geprueft wird, was die Liste nicht weiss:
+ * ob das Kontingent reicht. Das sagt die Datenbank beim Absenden.
  */
 export function bookingActions(opts: {
   startsAt: string | Date;

@@ -86,6 +86,8 @@ export function MeineBuchungen({ buchungen, jetzt }: {
           const offen = nachfrage === b.booking_id;
           // Wer gebucht hat, storniert; wer eingetragen ist, traegt sich aus -
           // beides nur bis Spielbeginn, so wie cancel_booking und leave_booking.
+          // Austragen storniert die ganze Buchung, deshalb sagt die Nachfrage
+          // das ausdruecklich.
           const darf = bookingActions({ startsAt: b.starts_at, own: b.bin_bucher, joined: !b.bin_bucher, now: new Date(jetzt) });
           const moeglich = b.bin_bucher ? darf.cancel : darf.leave;
           const vorbei = bis.getTime() <= new Date(jetzt).getTime();
@@ -107,6 +109,12 @@ export function MeineBuchungen({ buchungen, jetzt }: {
                   {!b.bin_bucher && b.owner_name ? ` · gebucht von ${b.owner_name}` : ""}
                   {b.players.length > 0 ? ` · mit ${b.players.join(", ")}` : ""}
                 </div>
+                {offen && !b.bin_bucher && (
+                  <p className="hinweis" role="alert">
+                    Trägst du dich aus, wird die ganze Buchung storniert. Alle Beteiligten werden
+                    benachrichtigt.
+                  </p>
+                )}
               </div>
 
               <div className="termin-tat">
@@ -120,7 +128,7 @@ export function MeineBuchungen({ buchungen, jetzt }: {
                       disabled={laeuft}
                       onClick={() => ausfuehren(b.booking_id, b.bin_bucher ? "storno" : "austragen")}
                     >
-                      {b.bin_bucher ? "Wirklich stornieren" : "Wirklich austragen"}
+                      {b.bin_bucher ? "Wirklich stornieren" : "Austragen und stornieren"}
                     </button>
                     <button
                       type="button"

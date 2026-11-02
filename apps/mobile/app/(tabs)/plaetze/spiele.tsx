@@ -166,6 +166,12 @@ export default function Spiele() {
               )}
             </View>
 
+            {/* Austragen storniert die ganze Buchung - das muss vor dem Tippen dastehen. */}
+            {aufgeklappt && moeglich && gefragt && !b.bin_bucher && (
+              <Text style={[stil.leise, { marginBottom: 8 }]} accessibilityRole="alert">
+                Trägst du dich aus, wird die ganze Buchung storniert. Alle Beteiligten werden benachrichtigt.
+              </Text>
+            )}
             {aufgeklappt && moeglich && (
               <Pressable
                 disabled={laeuft}
@@ -183,7 +189,7 @@ export default function Spiele() {
               >
                 <Text style={{ color: farben.redInk, fontSize: 15, fontFamily: "Barlow_700Bold" }}>
                   {gefragt
-                    ? b.bin_bucher ? "Wirklich stornieren" : "Wirklich austragen"
+                    ? b.bin_bucher ? "Wirklich stornieren" : "Austragen und stornieren"
                     : b.bin_bucher ? "Buchung stornieren" : "Mich austragen"}
                 </Text>
               </Pressable>

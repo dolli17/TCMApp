@@ -98,7 +98,7 @@ data class BookingActions(
     val cancel: Boolean,
     /** Mitspieler aendern (update_booking_players) */
     val editPlayers: Boolean,
-    /** Sich als Mitspieler austragen (leave_booking) */
+    /** Sich als Mitspieler austragen (leave_booking, storniert die ganze Buchung) */
     val leave: Boolean,
     /** Sich als Mitspieler eintragen (join_booking) */
     val join: Boolean,
