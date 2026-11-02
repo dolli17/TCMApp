@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
-import { alsListendatum, anmelden, NUTZER, oeffneFreieStunde, tagIn } from "./hilfen";
+import { createClient } from "@supabase/supabase-js";
+import { alsListendatum, anmelden, NUTZER, oeffneFreieStunde, PASSWORT, tagIn } from "./hilfen";
 
 /**
  * Mitspielersuche mit „Nur für …“ (Vereinsentscheidung vom 02.11.2026).
@@ -9,8 +10,12 @@ import { alsListendatum, anmelden, NUTZER, oeffneFreieStunde, tagIn } from "./hi
  *
  * Das Testmitglied (mitglied@) hat im Seed keine LK und ist als Dame
  * eingetragen. Eine Suche „LK 10–16 · Herren“ schließt es also gleich doppelt
- * aus: open_matches zeigt sie nicht, und join_booking lehnt ab, wenn es über
- * den Plan doch versucht wird. Erst mit 1–25 und Alle darf es mitspielen.
+ * aus: open_matches zeigt sie nicht, und join_booking lehnt ab. Erst mit
+ * 1–25 und Alle darf es mitspielen.
+ *
+ * Die Ablehnung wird direkt über die RPC geprüft: ob der Plan die Suche einem
+ * Nichtpassenden noch zeigt, regelt day_schedule (fix/suche-filter-belegung
+ * blendet sie aus), und dann gibt es dort keinen Knopf mehr.
  */
 
 const TAG = tagIn(6);
@@ -23,6 +28,18 @@ function offeneKarte(page: Page) {
     .filter({ hasText: PLATZ })
     .filter({ hasText: ZEIT })
     .filter({ hasText: alsListendatum(TAG) });
+}
+
+/** Ein Client mit der Sitzung eines Testkontos, wie die App ihn hat. */
+async function clientAls(email: string) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+    { auth: { persistSession: false } },
+  );
+  const { error } = await supabase.auth.signInWithPassword({ email, password: PASSWORT });
+  expect(error).toBeNull();
+  return supabase;
 }
 
 async function oeffneBuchung(page: Page) {
@@ -69,13 +86,17 @@ test.describe("Mitspielersuche mit Filter", () => {
     await expect(page.locator("section.offen")).toBeVisible();
     await expect(offeneKarte(page)).toHaveCount(0);
 
-    // ... und über den Plan lehnt join_booking mit verständlichem Text ab.
-    const fremd = await oeffneBuchung(page);
-    await expect(fremd.locator(".gesucht-text")).toContainText("LK 10–16 · Herren");
-    await fremd.getByRole("button", { name: "Mitspielen" }).click();
-    await expect(fremd.getByRole("alert")).toContainText("Diese Suche richtet sich an andere Spieler", {
-      timeout: 15_000,
-    });
+    // ... und join_booking lehnt mit verständlichem Text ab.
+    const admin = await clientAls(NUTZER.admin);
+    const { data: offen, error: offenFehler } = await admin.rpc("open_matches", {});
+    expect(offenFehler).toBeNull();
+    const buchung = (offen ?? []).find(
+      (o) => o.court_name === PLATZ && o.fuer === "male" && o.starts_at.startsWith(TAG),
+    );
+    expect(buchung, "die eingeschränkte Suche des Admins").toBeTruthy();
+    const mitglied = await clientAls(NUTZER.mitglied);
+    const { error: abgelehnt } = await mitglied.rpc("join_booking", { p_booking_id: buchung!.booking_id });
+    expect(abgelehnt?.message).toContain("Diese Suche richtet sich an andere Spieler");
 
     // Der Bucher lockert die Suche auf 1–25 und Alle.
     await anmelden(page, NUTZER.admin);

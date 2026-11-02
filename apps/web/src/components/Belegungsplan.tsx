@@ -557,8 +557,13 @@ export function Belegungsplan(props: Props) {
                         className={klasse}
                         style={stil}
                         onClick={() => oeffneVerwalten(b)}
-                        aria-label={`Buchung ${alsUhrzeit(lokaleMinuten(b.starts_at))} auf ${platz.name} verwalten`}
                       >
+                        {/* Kein aria-label: der Name muss den sichtbaren Text
+                            enthalten (axe label-content-name-mismatch, etwa
+                            "sucht 1"). Der Vorspann gibt nur den Zusammenhang. */}
+                        <span className="sr-only">
+                          Buchung {alsUhrzeit(lokaleMinuten(b.starts_at))} auf {platz.name} verwalten:{" "}
+                        </span>
                         {inhalt}
                       </button>
                     ) : (
