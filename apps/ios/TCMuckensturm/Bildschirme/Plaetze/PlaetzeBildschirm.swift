@@ -10,15 +10,73 @@
  * Ob gebucht werden kann, entscheidet canStartAt (Kern); durchgesetzt wird
  * es ausschliesslich in create_booking. Der Plan haelt sich ueber Realtime
  * aktuell und laedt beim Zurueckkehren in den Vordergrund nach.
+ *
+ * Oben unter dem Titel der Umschalter Belegung | Meine & offene Spiele
+ * (Bereichsreiter.tsx). Die Sicht liegt im PlaetzeZustand, den HauptTabs
+ * haelt - so fuehren Home, Push und Widgets ueber `zuPlaetze` gezielt hin.
  */
 
 import SwiftUI
 
+@MainActor @Observable
+final class PlaetzeZustand {
+    var sicht: PlaetzeSicht = .belegung
+    /// Die offenen Spiele oben (U75) - wer ueber "Mitspielen" kommt, sucht sie.
+    var offeneZuerst = false
+
+    func oeffne(_ ziel: PlaetzeZiel) {
+        switch ziel {
+        case .belegung:
+            sicht = .belegung
+        case let .spiele(offen):
+            offeneZuerst = offen
+            sicht = .spiele
+        }
+    }
+
+    /// Per Umschalter: die Spiele wieder in der gewohnten Reihenfolge.
+    func wechsle(zu neu: PlaetzeSicht) {
+        if neu == .spiele { offeneZuerst = false }
+        sicht = neu
+    }
+}
+
+extension View {
+    /// Haengt die Plaetze an die Tabs (HauptTabs): stellt den Zustand und `zuPlaetze` bereit.
+    func plaetzeTab(_ zustand: PlaetzeZustand, tab: Binding<HauptTab>) -> some View {
+        environment(zustand)
+            .environment(\.zuPlaetze) { ziel in
+                zustand.oeffne(ziel)
+                tab.wrappedValue = .plaetze
+            }
+    }
+}
+
 struct PlaetzeBildschirm: View {
     @Environment(Sitzung.self) private var sitzung
+    @Environment(PlaetzeZustand.self) private var zustand
 
     var body: some View {
-        PlaetzeInhalt(modell: PlaetzeModell(client: sitzung.client))
+        switch zustand.sicht {
+        case .belegung: PlaetzeInhalt(modell: PlaetzeModell(client: sitzung.client))
+        case .spiele: SpieleBildschirm()
+        }
+    }
+}
+
+/// Grosser Kopf und Umschalter, oben in beiden Sichten.
+struct PlaetzeKopf: View {
+    @Environment(PlaetzeZustand.self) private var zustand
+    let name: MeinName?
+
+    var body: some View {
+        GrosserKopf(titel: "Plätze", name: name)
+        KontoSegmente(
+            beschriftung: "Ansicht",
+            optionen: PlaetzeSicht.allCases.map { ($0, $0.label) },
+            gewaehlt: zustand.sicht
+        ) { zustand.wechsle(zu: $0) }
+        .padding(.bottom, Tokens.Abstand.xs)
     }
 }
 
@@ -31,7 +89,7 @@ private struct PlaetzeInhalt: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                    GrosserKopf(titel: "Plätze", name: m.meinName)
+                    PlaetzeKopf(name: m.meinName)
                     Datumszeile(modell: m)
                     if m.tagwahlOffen { Tagwahl(modell: m) }
                     if let f = m.ladeFehler {

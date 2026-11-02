@@ -213,6 +213,13 @@ struct Platzdaten: Sendable {
         }
     }
 
+    /// Als Mitspieler austragen - das storniert die ganze Buchung, die Datenbank benachrichtigt alle.
+    func verlasseBuchung(_ bookingId: String) async -> PlatzErgebnis {
+        await schreibe("Du bist ausgetragen, die Buchung ist storniert.") {
+            try await client.rpc("leave_booking", params: ["p_booking_id": bookingId]).execute()
+        }
+    }
+
     private struct GesuchtParameter: Encodable {
         let p_booking_id: String
         let p_wanted: Bool

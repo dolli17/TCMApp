@@ -223,6 +223,8 @@ enum WidgetInhalt {
 enum WidgetLink {
     static let home = "/home"
     static let plaetze = "/plaetze"
+    /// Meine & offene Spiele
+    static let spiele = "/plaetze/spiele"
 
     static func veranstaltung(_ id: String) -> String {
         "/verein/veranstaltung/\(id)"

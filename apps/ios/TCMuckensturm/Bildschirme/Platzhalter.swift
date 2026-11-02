@@ -11,6 +11,7 @@ import SwiftUI
 struct HauptTabs: View {
     @State private var tab: HauptTab = .home
     @State private var verein = VereinZustand()
+    @State private var plaetze = PlaetzeZustand()
     @State private var verwaltung = VerwaltungZugang()
     @Environment(Sitzung.self) private var sitzung
 
@@ -40,9 +41,10 @@ struct HauptTabs: View {
         // Home fuehrt auf Bildschirme, die es nativ noch nicht gibt: bis dahin der passende Tab.
         .environment(\.zuTab) { tab = $0 }
         // Getippte Push-Nachrichten oeffnen ihr Ziel (App/PushNavigation.swift). Innen, damit
-        // zuVerein aus vereinTab schon gilt.
+        // zuVerein aus vereinTab und zuPlaetze aus plaetzeTab schon gelten.
         .pushZiele($tab)
         .vereinTab(verein, tab: $tab)
+        .plaetzeTab(plaetze, tab: $tab)
         #if DEBUG
         // Fuer Bildschirmfotos per simctl (README): `-TCMTab konto` oeffnet den Tab.
         .task {
@@ -52,6 +54,10 @@ struct HauptTabs: View {
                 // Die Verwaltung erst, wenn ich() die Rechte bestaetigt hat.
                 if ziel[argumente[i + 1]] == .verwaltung { await verwaltung.pruefen(sitzung.client) }
                 tab = ziel[argumente[i + 1]] ?? tab
+            }
+            // `-TCMPlaetze spiele|offen` oeffnet die Spiele, mit `offen` die offenen Spiele oben.
+            if let i = argumente.firstIndex(of: "-TCMPlaetze"), i + 1 < argumente.count {
+                plaetze.oeffne(argumente[i + 1] == "belegung" ? .belegung : .spiele(offeneZuerst: argumente[i + 1] == "offen"))
             }
         }
         #endif

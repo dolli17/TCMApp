@@ -14,10 +14,27 @@ final class PushTests: XCTestCase {
         XCTAssertEqual(PushZiel.aus(["ziel": "/nachrichten"]), .nachrichten)
         XCTAssertEqual(PushZiel.aus(["ziel": "/verein/veranstaltung/\(id)", "kind": "event_reminder", "event_id": id]),
                        .veranstaltung(id: id))
-        XCTAssertEqual(PushZiel.aus(["ziel": "/plaetze?tag=2026-10-30"]), .tab(.plaetze))
+        XCTAssertEqual(PushZiel.aus(["ziel": "/plaetze?tag=2026-10-30"]), .plaetze(.belegung))
         XCTAssertEqual(PushZiel.aus(["ziel": "/konto"]), .tab(.konto))
         XCTAssertEqual(PushZiel.aus(["ziel": "/"]), .tab(.home))
         XCTAssertEqual(PushZiel.aus(["ziel": "/verein"]), .tab(.verein))
+    }
+
+    /// Die alten Adressen der Expo-App und des Webs fuehren auf Meine & offene Spiele.
+    func testZielSpiele() {
+        XCTAssertEqual(PushZiel.ausPfad("/plaetze"), .plaetze(.belegung))
+        XCTAssertEqual(PushZiel.ausPfad("/plaetze/spiele"), .plaetze(.spiele(offeneZuerst: false)))
+        XCTAssertEqual(PushZiel.ausPfad("/plaetze/meine"), .plaetze(.spiele(offeneZuerst: false)))
+        XCTAssertEqual(PushZiel.ausPfad("/plaetze/offen"), .plaetze(.spiele(offeneZuerst: true)))
+        XCTAssertEqual(PushZiel.ausPfad("/plaetze/spiele?zeige=offen"), .plaetze(.spiele(offeneZuerst: true)))
+        XCTAssertEqual(PushZiel.ausPfad("/plaetze/spiele?a=1&zeige=offen#x"), .plaetze(.spiele(offeneZuerst: true)))
+        XCTAssertEqual(PushZiel.ausPfad("/plaetze/spiele#zeige=offen"), .plaetze(.spiele(offeneZuerst: false)))
+        XCTAssertEqual(PushZiel.ausPfad("/plan"), .plaetze(.belegung))
+        XCTAssertEqual(PushZiel.ausPfad("/plan/meine"), .plaetze(.spiele(offeneZuerst: false)))
+        XCTAssertEqual(PushZiel.ausPfad("/plan/offen"), .plaetze(.spiele(offeneZuerst: true)))
+        XCTAssertEqual(PushZiel.ausPfad("/plan/spiele"), .plaetze(.spiele(offeneZuerst: false)))
+        // Unbekanntes darunter: wenigstens der Tab
+        XCTAssertEqual(PushZiel.ausPfad("/plaetze/gibtsnicht"), .tab(.plaetze))
     }
 
     /// Ohne brauchbaren Pfad entscheiden event_id, dann kind.

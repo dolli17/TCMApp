@@ -18,6 +18,8 @@ enum PushZiel: Equatable, Sendable {
     case nachrichten
     /// Eine Veranstaltung (/verein/veranstaltung/<id>): ihr Detail im Tab Verein
     case veranstaltung(id: String)
+    /// Plaetze: /plaetze die Belegung, /plaetze/spiele, /meine, /offen die Spiele (auch /plan/… aus dem Web)
+    case plaetze(PlaetzeZiel)
     /// Ein anderer Pfad der App, der zu einem Tab gehoert
     case tab(HauptTab)
 
@@ -37,16 +39,23 @@ enum PushZiel: Equatable, Sendable {
     /// Der Pfad aus `ziel`, wie expo-router ihn oeffnen wuerde.
     static func ausPfad(_ pfad: String) -> PushZiel? {
         guard istSichererPfad(pfad) else { return nil }
-        let ohneAbfrage = pfad.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false)[0]
-            .split(separator: "#", maxSplits: 1, omittingEmptySubsequences: false)[0]
-        let teile = ohneAbfrage.split(separator: "/").map(String.init)
+        let ohneAnker = pfad.split(separator: "#", maxSplits: 1, omittingEmptySubsequences: false)[0]
+        let teileMitAbfrage = ohneAnker.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false)
+        let teile = teileMitAbfrage[0].split(separator: "/").map(String.init)
+        let abfrage = teileMitAbfrage.count > 1 ? teileMitAbfrage[1].split(separator: "&").map(String.init) : []
         switch teile.first {
         case nil, "home":
             return .tab(.home)
         case "nachrichten":
             return .nachrichten
-        case "plaetze":
-            return .tab(.plaetze)
+        case "plaetze", "plan":
+            // Die alten Adressen /plaetze/meine und /plaetze/offen fuehren wie in der Expo-App auf die Spiele.
+            switch teile.count > 1 ? teile[1] : nil {
+            case nil: return .plaetze(.belegung)
+            case "spiele", "meine": return .plaetze(.spiele(offeneZuerst: abfrage.contains("zeige=offen")))
+            case "offen": return .plaetze(.spiele(offeneZuerst: true))
+            default: return .tab(.plaetze)
+            }
         case "konto":
             return .tab(.konto)
         case "verein":

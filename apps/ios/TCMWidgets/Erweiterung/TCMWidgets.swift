@@ -123,7 +123,7 @@ struct SpieleWidget: Widget {
         StaticConfiguration(kind: "TCMSpiele", provider: Anbieter(takt: WidgetZeitplan.taktTermine)) { e in
             FamilienAnsicht { familie in
                 SpieleWidgetAnsicht(zustand: e.zustand, jetzt: e.date, familie: familie)
-                    .widgetURL(WidgetUmgebung.link(e.zustand == .abgemeldet ? WidgetLink.home : WidgetLink.plaetze))
+                    .widgetURL(WidgetUmgebung.link(e.zustand == .abgemeldet ? WidgetLink.home : WidgetLink.spiele))
             }
         }
         .configurationDisplayName("Meine nächsten Spiele")
