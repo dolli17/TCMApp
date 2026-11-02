@@ -197,14 +197,92 @@ begin
     'open_matches liefert den LK-Bereich');
   return next is(v_zeile.fuer, 'female', 'open_matches liefert für wen');
 
-  -- day_schedule zeigt jede Buchung samt Filter, auch wer nicht passt: das
-  -- ist der Platzplan, nicht die Suche.
-  perform tests.act_as(x.auth_id);
+  -- Der Bucher bekommt die Filter auch im Platzplan, damit das Buchungsblatt
+  -- sie zeigen und aendern kann.
+  perform tests.act_as(a.auth_id);
   select * into v_zeile from public.day_schedule(v_tag) ds where ds.booking_id = v_id;
   perform set_config('role', 'postgres', true);
   return next is(array[v_zeile.partner_lk_von, v_zeile.partner_lk_bis], array[1.5, 5]::numeric[],
-    'day_schedule liefert den LK-Bereich');
-  return next is(v_zeile.partner_fuer, 'female', 'day_schedule liefert für wen');
+    'day_schedule liefert dem Bucher den LK-Bereich');
+  return next is(v_zeile.partner_fuer, 'female', 'day_schedule liefert dem Bucher für wen');
+end; $f$;
+
+-- ---------------------------------------------------------------------------
+-- day_schedule: eingeschraenkte Suche nur fuer Passende und Beteiligte
+-- ---------------------------------------------------------------------------
+
+/** Die eigene Zeile dieses Mitglieds aus day_schedule (null, wenn keine). */
+create or replace function tests.plan_zeile(p_auth uuid, p_booking uuid)
+returns table (da boolean, partner_wanted boolean, partner_lk_von numeric,
+               partner_lk_bis numeric, partner_fuer text, frei integer, bin_dabei boolean)
+language plpgsql as $f$
+declare v_tag date; v record;
+begin
+  select (lower(b.slot) at time zone 'Europe/Berlin')::date into v_tag
+  from public.bookings b where b.id = p_booking;
+  perform tests.act_as(p_auth);
+  select ds.* into v from public.day_schedule(v_tag) ds where ds.booking_id = p_booking;
+  perform set_config('role', 'postgres', true);
+  if v.booking_id is not null then
+    return query select true, v.partner_wanted, v.partner_lk_von, v.partner_lk_bis,
+                        v.partner_fuer, v.frei, v.bin_dabei;
+  end if;
+end; $f$;
+
+create or replace function tests.test_suche_day_schedule()
+returns setof text language plpgsql as $f$
+declare a record; c record; adm record; wart record; x record; passt record;
+        v_court uuid := tests.fixture_court(); v_id uuid; v_offen uuid; z record;
+begin
+  -- Suche an Damen mit LK 1-5; alle ausser "passt" passen nicht.
+  select * into a     from tests.spieler(null, 'male') limit 1;
+  select * into c     from tests.spieler(null, 'male') limit 1;
+  select * into adm   from tests.spieler(null, 'male', 'admin') limit 1;
+  select * into wart  from tests.spieler(null, 'male', 'groundskeeper') limit 1;
+  select * into x     from tests.spieler(null, 'male') limit 1;
+  select * into passt from tests.spieler('LK3', 'female') limit 1;
+
+  v_id := tests.suche(a.auth_id, v_court, tests.naechster_slot(4, 10), 1.5, 5, 'female',
+                      array[c.member_id]);
+  v_offen := tests.suche(a.auth_id, v_court, tests.naechster_slot(4, 14), null, null, null);
+
+  -- Wer nicht passt: Buchung steht im Plan, aber ohne Suche und ohne Filter.
+  select * into z from tests.plan_zeile(x.auth_id, v_id);
+  return next ok(z.da, 'Nicht-Passender sieht die Buchung weiter im Plan');
+  return next is(z.partner_wanted, false, 'Nicht-Passender: partner_wanted ist false');
+  return next ok(z.partner_lk_von is null and z.partner_lk_bis is null and z.partner_fuer is null,
+    'Nicht-Passender: keine Filter');
+  return next is(z.frei, 2, 'Nicht-Passender: frei bleibt unverändert');
+  return next is(z.bin_dabei, false, 'Nicht-Passender: bin_dabei bleibt unverändert');
+
+  -- Wer passt, sieht Suche und Filter.
+  select * into z from tests.plan_zeile(passt.auth_id, v_id);
+  return next ok(z.partner_wanted, 'Passendes Mitglied: partner_wanted ist true');
+  return next is(array[z.partner_lk_von, z.partner_lk_bis], array[1.5, 5]::numeric[],
+    'Passendes Mitglied: LK-Bereich');
+  return next is(z.partner_fuer, 'female', 'Passendes Mitglied: für wen');
+
+  -- Bucher, Eingetragene, Admin und Platzwart sehen sie immer.
+  select * into z from tests.plan_zeile(a.auth_id, v_id);
+  return next ok(z.partner_wanted and z.partner_fuer = 'female', 'Bucher: Suche und Filter');
+  select * into z from tests.plan_zeile(c.auth_id, v_id);
+  return next ok(z.partner_wanted and z.partner_fuer = 'female' and z.bin_dabei,
+    'Eingetragener: Suche und Filter');
+  select * into z from tests.plan_zeile(adm.auth_id, v_id);
+  return next ok(z.partner_wanted and z.partner_fuer = 'female', 'Admin: Suche und Filter');
+  select * into z from tests.plan_zeile(wart.auth_id, v_id);
+  return next ok(z.partner_wanted and z.partner_fuer = 'female', 'Platzwart: Suche und Filter');
+
+  -- Suche ohne Einschraenkung sieht jeder.
+  select * into z from tests.plan_zeile(x.auth_id, v_offen);
+  return next ok(z.partner_wanted, 'Suche ohne Filter: jeder sieht partner_wanted');
+
+  -- Ohne Suche bleibt partner_wanted false, auch fuer den Bucher.
+  perform tests.act_as(a.auth_id);
+  perform public.set_partner_wanted(v_offen, false);
+  perform set_config('role', 'postgres', true);
+  select * into z from tests.plan_zeile(a.auth_id, v_offen);
+  return next is(z.partner_wanted, false, 'Ohne Suche: partner_wanted false');
 end; $f$;
 
 -- ---------------------------------------------------------------------------
