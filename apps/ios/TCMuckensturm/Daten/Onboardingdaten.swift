@@ -241,8 +241,10 @@ struct Onboardingdaten: Sendable {
     }
 
     func speichereTennis(lk: String, nuligaId: String, mannschaftInteresse: Bool) async -> Ergebnis {
+        // Zahl 1–25, hoechstens eine Nachkommastelle; gespeichert wird "LK14,5"
+        guard let lkNormal = LkEingabe.normalisiert(lk) else { return .fehler(LkEingabe.fehlerText) }
         var params: [String: AnyJSON] = ["p_mannschaft_interesse": .bool(mannschaftInteresse)]
-        if !Profil.trim(lk).isEmpty { params["p_tennis_lk"] = .string(Profil.trim(lk)) }
+        if !lkNormal.isEmpty { params["p_tennis_lk"] = .string(lkNormal) }
         if !Profil.trim(nuligaId).isEmpty { params["p_nuliga_id"] = .string(Profil.trim(nuligaId)) }
         return await schreiben("Gespeichert.") {
             try await client.rpc("save_my_tennis", params: params).execute()

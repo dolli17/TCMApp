@@ -197,6 +197,8 @@ struct KontoFeld: View {
     let label: String
     @Binding var text: String
     var fehler: String?
+    /// Leiser Satz unter dem Feld, solange kein Fehler dasteht.
+    var hinweis: String?
     var inhaltsTyp: UITextContentType?
     var tastatur: UIKeyboardType = .default
     var grossschreibung: TextInputAutocapitalization = .sentences
@@ -229,9 +231,15 @@ struct KontoFeld: View {
                     .strokeBorder(fehler != nil ? Farbe.red : Farbe.rahmen, lineWidth: 1.5)
             )
             .accessibilityLabel(label)
-            .accessibilityHint(fehler ?? "")
+            .accessibilityHint(fehler ?? hinweis ?? "")
             if let fehler {
                 KontoHinweis(text: fehler).padding(.top, -1)
+            } else if let hinweis {
+                Text(hinweis)
+                    .font(Schrift.text(.normal, Tokens.Schrift.klein, relativeTo: .footnote))
+                    .foregroundStyle(Farbe.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityHidden(true)
             }
         }
     }

@@ -394,6 +394,13 @@ private struct OffeneSpiele: View {
                         .foregroundStyle(Farbe.ink)
                         .lineLimit(1)
                     Text(HomeLogik.offenesSpielZeile(o)).leise().lineLimit(1)
+                    if let zusatz = SpieleLogik.filterZusatz(o) {
+                        Text(zusatz)
+                            .font(Schrift.text(.fett, Tokens.Schrift.klein))
+                            .foregroundStyle(Farbe.goldInk)
+                            .lineLimit(1)
+                            .accessibilityLabel("Nur für \(o.suchfilter.vorleseText)")
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if o.binDabei == true {

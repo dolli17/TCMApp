@@ -205,6 +205,11 @@ enum PlaetzeLogik {
             : "Sperrung geändert."
     }
 
+    /// Meldung nach dem Aendern des Filters einer laufenden Suche.
+    static func filterGespeichert(_ f: Suchfilter) -> String {
+        f.kurztext.map { "Die Suche ist jetzt eingeschränkt: \($0)." } ?? "Die Suche gilt jetzt für alle."
+    }
+
     static func verdraengenText(_ n: Int) -> String {
         "\(n) \(n == 1 ? "Buchung" : "Buchungen") verdrängen"
     }
@@ -276,9 +281,10 @@ struct Verwalten: Equatable {
     /// Ein Grundfeld gibt es beim Absagen eines Serientermins und beim Stornieren einer Buchung.
     var grundFeld: Bool { serientermin || !nurStorno }
 
-    /// "Hier wird noch ein Mitspieler gesucht." bzw. "… werden noch 2 Mitspieler …"
+    /// "Hier wird noch ein Mitspieler gesucht." bzw. "… werden noch 2 Mitspieler …", dazu "Eingeschränkt: LK 10–16 · Herren."
     static func suchtText(_ b: TagesBelegung) -> String? {
         guard b.partnerWanted == true, let frei = b.frei, frei > 0 else { return nil }
-        return "Hier \(frei == 1 ? "wird noch ein Mitspieler" : "werden noch \(frei) Mitspieler") gesucht."
+        let satz = "Hier \(frei == 1 ? "wird noch ein Mitspieler" : "werden noch \(frei) Mitspieler") gesucht."
+        return b.suchfilter.kurztext.map { "\(satz) Eingeschränkt: \($0)." } ?? satz
     }
 }

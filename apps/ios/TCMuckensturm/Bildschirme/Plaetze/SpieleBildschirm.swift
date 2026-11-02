@@ -312,6 +312,13 @@ private struct SpielKarte: View {
                     Text(SpieleLogik.besetzung(o))
                         .font(Schrift.text(.normal, 14))
                         .foregroundStyle(Farbe.ink2)
+                    if let zusatz = SpieleLogik.filterZusatz(o) {
+                        Text(zusatz)
+                            .font(Schrift.text(.fett, Tokens.Schrift.klein))
+                            .foregroundStyle(Farbe.goldInk)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityLabel("Nur für \(o.suchfilter.vorleseText)")
+                    }
                     if let dabei = text.dabei {
                         Text(dabei)
                             .font(Schrift.text(.normal, 14))
