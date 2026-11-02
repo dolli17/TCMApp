@@ -42,7 +42,7 @@ object Beispiele {
     val offen = listOf(
         OffenesSpiel(
             "o1", "2026-09-28T16:00:00Z", "2026-09-28T17:30:00Z", courtName = "Platz 2", typeName = "Doppel",
-            ownerName = "Erika Muster", frei = 2, binDabei = false,
+            ownerName = "Erika Muster", frei = 2, binDabei = false, lkVon = 10.0, lkBis = 16.0, fuer = "male",
         ),
         OffenesSpiel(
             "o2", "2026-09-30T08:00:00Z", "2026-09-30T09:00:00Z", courtName = "Platz 4", typeName = "Einzel",

@@ -588,6 +588,16 @@ private fun OffeneSpiele(offen: Abschnitt<List<OffenesSpiel>>, erneut: Erneut, z
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(HomeLogik.offenesSpielZeile(o), style = leise, color = f.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                HomeLogik.offenesSpielFilter(o)?.let {
+                    Text(
+                        it,
+                        style = TcmSchrift.text(Schrift.gewichtFett, Schrift.klein),
+                        color = f.goldInk,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.semantics { contentDescription = "Nur für $it" },
+                    )
+                }
             }
             if (o.binDabei == true) {
                 Text("Dabei", style = TcmSchrift.text(Schrift.gewichtFett, Schrift.klein), color = f.muted)

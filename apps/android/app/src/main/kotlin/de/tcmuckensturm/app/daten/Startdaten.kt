@@ -16,6 +16,7 @@ import de.tcmuckensturm.kern.BuchungsSlot
 import de.tcmuckensturm.kern.Getraenkekauf
 import de.tcmuckensturm.kern.MitgliedEvent
 import de.tcmuckensturm.kern.PlanSlot
+import de.tcmuckensturm.kern.Suchfilter
 import de.tcmuckensturm.kern.ZahlOderText
 import de.tcmuckensturm.kern.Zeitraum
 import io.github.jan.supabase.SupabaseClient
@@ -61,7 +62,13 @@ data class OffenesSpiel(
     val players: List<String?>? = null,
     val frei: Int? = null,
     @SerialName("bin_dabei") val binDabei: Boolean? = null,
-) : Zeitraum
+    @Serializable(ZahlOderText::class) @SerialName("lk_von") val lkVon: Double? = null,
+    @Serializable(ZahlOderText::class) @SerialName("lk_bis") val lkBis: Double? = null,
+    val fuer: String? = null,
+) : Zeitraum {
+    /** Fuer wen die Suche gilt; ohne die Spalten (aeltere Datenbank) keine Einschraenkung. */
+    val suchfilter: Suchfilter get() = Suchfilter.aus(lkVon, lkBis, fuer)
+}
 
 /** Eine Belegung aus day_schedule (Home und Plaetze). */
 @Serializable
@@ -84,7 +91,13 @@ data class TagesBelegung(
     val players: List<String?>? = null,
     @SerialName("player_member_ids") val playerMemberIds: List<String?>? = null,
     @SerialName("guest_names") val guestNames: List<String?>? = null,
-) : PlanSlot, BuchungsSlot
+    @Serializable(ZahlOderText::class) @SerialName("partner_lk_von") val partnerLkVon: Double? = null,
+    @Serializable(ZahlOderText::class) @SerialName("partner_lk_bis") val partnerLkBis: Double? = null,
+    @SerialName("partner_fuer") val partnerFuer: String? = null,
+) : PlanSlot, BuchungsSlot {
+    /** Der aktuelle Filter der Mitspielersuche; ohne die Spalten keine Einschraenkung. */
+    val suchfilter: Suchfilter get() = Suchfilter.aus(partnerLkVon, partnerLkBis, partnerFuer)
+}
 
 /** Die eine Zeile aus booking_settings. */
 @Serializable

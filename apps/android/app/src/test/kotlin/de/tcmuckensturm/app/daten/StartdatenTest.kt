@@ -124,4 +124,21 @@ class StartdatenTest {
         val ohne: List<Ich> = lies("""[{"member_id":null,"first_name":null,"kiosk":true}]""")
         assertNull(ohne.first().name)
     }
+
+    @Test
+    fun offenesSpielMitFilter() {
+        val o: List<OffenesSpiel> = lies(
+            """
+            [{"booking_id":"o1","starts_at":"2026-10-29T15:00:00+00:00","ends_at":"2026-10-29T16:00:00+00:00",
+              "frei":1,"lk_von":10,"lk_bis":16.0,"fuer":"male"},
+             {"booking_id":"o2","starts_at":"2026-10-29T15:00:00+00:00","ends_at":"2026-10-29T16:00:00+00:00",
+              "frei":1,"lk_von":null,"lk_bis":"16.5","fuer":null},
+             {"booking_id":"o3","starts_at":"2026-10-29T15:00:00+00:00","ends_at":"2026-10-29T16:00:00+00:00","frei":1}]
+            """,
+        )
+        assertEquals("LK 10–16 · Herren", HomeLogik.offenesSpielFilter(o[0]))
+        assertEquals("bis LK 16,5", HomeLogik.offenesSpielFilter(o[1]))
+        // Aeltere Datenbank ohne die Spalten: kein Zusatz
+        assertNull(HomeLogik.offenesSpielFilter(o[2]))
+    }
 }

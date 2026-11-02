@@ -152,6 +152,9 @@ object HomeLogik {
 
     fun offenesSpielZeile(o: OffenesSpiel): String = "${o.courtName ?: ""} · ${o.ownerName ?: ""}"
 
+    /** An wen sich die Suche richtet: "LK 10–16 · Herren", "bis LK 16", "Damen"; ohne Einschraenkung null. */
+    fun offenesSpielFilter(o: OffenesSpiel): String? = o.suchfilter.zusatz
+
     fun deinStand(
         getraenke: Abschnitt<List<EigenesGetraenk>>,
         dienst: Abschnitt<Arbeitsdienst?>,

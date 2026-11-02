@@ -2,6 +2,8 @@ package de.tcmuckensturm.app.bildschirme.plaetze
 
 import de.tcmuckensturm.app.daten.Kontingent
 import de.tcmuckensturm.app.daten.PlatzErgebnis
+import de.tcmuckensturm.kern.SuchFuer
+import de.tcmuckensturm.kern.Suchfilter
 import de.tcmuckensturm.kern.Zeit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -111,6 +113,40 @@ class PlaetzeModellTest {
         // Berliner Zeit, nicht die des Geraets: 17:00 im Winter ist 16:00 UTC.
         assertEquals("create_booking:p2@2026-10-29T16:00:00.000Z", quelle.geschrieben.last())
         assertFalse(m.laeuft)
+    }
+
+    @Test
+    fun buchenGibtDenFilterNurBeiSucheWeiter() = runTest {
+        val quelle = PlatzAttrappe()
+        val m = geladen(quelle)
+        val filter = Suchfilter(100, 160, SuchFuer.DAMEN)
+        m.buchen("p2", PlatzAttrappe.TAG, 17 * 60, "doppel", emptyList(), emptyList(), sucht = true, filter = filter)
+        runCurrent()
+        assertEquals(filter, quelle.letzterFilter)
+    }
+
+    @Test
+    fun filterAendernMeldetDieGeaenderteSuche() = runTest {
+        val quelle = PlatzAttrappe()
+        val m = geladen(quelle)
+        m.oeffne(PlatzAttrappe.EIGENE)
+        m.ausschreiben("eigen", true, Suchfilter(bis = 160), nurFilter = true)
+        runCurrent()
+        assertEquals("set_partner_wanted:eigen", quelle.geschrieben.last())
+        assertEquals(Suchfilter(bis = 160), quelle.letzterFilter)
+        assertEquals("Die Suche ist geändert.", m.meldung?.text)
+        assertNull(m.fenster)
+    }
+
+    @Test
+    fun passtManNichtZurSucheBleibtDerSatzImBlatt() = runTest {
+        val quelle = PlatzAttrappe().apply { beitretenFehler = PlaetzeLogik.SUCHE_PASST_NICHT_TEXT }
+        val m = geladen(quelle)
+        m.oeffne(PlatzAttrappe.SUCHT)
+        m.beitreten("sucht")
+        runCurrent()
+        assertTrue(m.fenster is Fenster.Bestehend)
+        assertEquals(PlaetzeLogik.SUCHE_PASST_NICHT_TEXT, m.fensterFehler)
     }
 
     @Test

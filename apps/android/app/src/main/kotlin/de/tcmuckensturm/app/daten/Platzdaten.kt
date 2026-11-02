@@ -19,6 +19,7 @@ import de.tcmuckensturm.app.bildschirme.plaetze.PlaetzeLogik
 import de.tcmuckensturm.kern.BookingTypeInfo
 import de.tcmuckensturm.kern.DbFehler
 import de.tcmuckensturm.kern.Platzplan
+import de.tcmuckensturm.kern.Suchfilter
 import de.tcmuckensturm.kern.Zeit
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
@@ -37,6 +38,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.add
@@ -120,6 +122,7 @@ interface PlatzQuelle {
         mitspieler: List<String>,
         gaeste: List<String>,
         sucheMitspieler: Boolean,
+        filter: Suchfilter,
     ): PlatzErgebnis
 
     suspend fun aendereMitspieler(bookingId: String, mitglieder: List<String>, gaeste: List<String>): PlatzErgebnis
@@ -132,7 +135,8 @@ interface PlatzQuelle {
 
     suspend fun spieleMit(bookingId: String): PlatzErgebnis
 
-    suspend fun sucheMitspieler(bookingId: String, gesucht: Boolean): PlatzErgebnis
+    /** Suche an/aus; bei an gilt `filter` (auch zum Aendern eines bestehenden Filters). */
+    suspend fun sucheMitspieler(bookingId: String, gesucht: Boolean, filter: Suchfilter, nurFilter: Boolean): PlatzErgebnis
 
     suspend fun setzeUm(bookingId: String, platzId: String, tag: String, minute: Int, grund: String?): PlatzErgebnis
 
@@ -154,6 +158,45 @@ interface PlatzQuelle {
         grund: String,
         verdraengen: Boolean,
     ): PlatzErgebnis
+}
+
+// ---- Parameter ----------------------------------------------------------------------
+
+/**
+ * Die Filter der Mitspielersuche gehen nur mit, wenn sie etwas einschraenken:
+ * so bleiben die Aufrufe ohne Filter dieselben wie vorher und laufen auch
+ * gegen eine Datenbank ohne die neuen Parameter.
+ */
+private fun JsonObjectBuilder.filter(filter: Suchfilter, von: String, bis: String, fuer: String) {
+    filter.lkVon?.let { put(von, it) }
+    filter.lkBis?.let { put(bis, it) }
+    filter.fuer.code?.let { put(fuer, it) }
+}
+
+/** Die Parameter von create_booking; ohne Suche kein Filter. */
+fun buchungsParameter(
+    courtId: String,
+    beginn: Instant,
+    typ: String,
+    mitspieler: List<String>,
+    gaeste: List<String>,
+    sucheMitspieler: Boolean,
+    filter: Suchfilter,
+): JsonObject = buildJsonObject {
+    put("p_court_id", courtId)
+    put("p_starts_at", Zeit.iso(beginn))
+    put("p_booking_type_code", typ)
+    putJsonArray("p_player_member_ids") { mitspieler.forEach { add(it) } }
+    putJsonArray("p_guest_names") { gaeste.forEach { add(it) } }
+    put("p_partner_wanted", sucheMitspieler)
+    if (sucheMitspieler) filter(filter, "p_partner_lk_von", "p_partner_lk_bis", "p_partner_fuer")
+}
+
+/** Die Parameter von set_partner_wanted; fehlende Filter setzt die Datenbank auf null. */
+fun ausschreibParameter(bookingId: String, gesucht: Boolean, filter: Suchfilter): JsonObject = buildJsonObject {
+    put("p_booking_id", bookingId)
+    put("p_wanted", gesucht)
+    if (gesucht) filter(filter, "p_lk_von", "p_lk_bis", "p_fuer")
 }
 
 // ---- Laden und Schreiben --------------------------------------------------------
@@ -238,18 +281,9 @@ class Platzdaten(private val client: SupabaseClient) : PlatzQuelle {
         mitspieler: List<String>,
         gaeste: List<String>,
         sucheMitspieler: Boolean,
+        filter: Suchfilter,
     ) = schreibe("Platz gebucht.") {
-        rpc(
-            "create_booking",
-            buildJsonObject {
-                put("p_court_id", courtId)
-                put("p_starts_at", Zeit.iso(beginn))
-                put("p_booking_type_code", typ)
-                putJsonArray("p_player_member_ids") { mitspieler.forEach { add(it) } }
-                putJsonArray("p_guest_names") { gaeste.forEach { add(it) } }
-                put("p_partner_wanted", sucheMitspieler)
-            },
-        )
+        rpc("create_booking", buchungsParameter(courtId, beginn, typ, mitspieler, gaeste, sucheMitspieler, filter))
     }
 
     /** Tauscht die Mitspieler komplett aus; leere Gastnamen fallen weg. */
@@ -284,21 +318,20 @@ class Platzdaten(private val client: SupabaseClient) : PlatzQuelle {
     override suspend fun hebeSperreAuf(bookingId: String) =
         schreibe("Die Sperrung ist aufgehoben.") { rpc("cancel_booking", mitGrund(bookingId, null)) }
 
-    override suspend fun spieleMit(bookingId: String) = schreibe("Du bist eingetragen. Viel Spaß!") {
+    /** Passt man nicht zur Suche (LK, Damen/Herren), lehnt join_booking mit check_violation ab. */
+    override suspend fun spieleMit(bookingId: String): PlatzErgebnis = try {
         rpc("join_booking", buildJsonObject { put("p_booking_id", bookingId) })
+        PlatzErgebnis(ok = true, meldung = "Du bist eingetragen. Viel Spaß!")
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        PlatzErgebnis(ok = false, meldung = PlaetzeLogik.beitretenFehler(postgresFehler(e)))
     }
 
-    override suspend fun sucheMitspieler(bookingId: String, gesucht: Boolean) = schreibe(
-        if (gesucht) "Die Buchung steht jetzt bei den offenen Spielen." else "Die Buchung ist nicht mehr ausgeschrieben.",
-    ) {
-        rpc(
-            "set_partner_wanted",
-            buildJsonObject {
-                put("p_booking_id", bookingId)
-                put("p_wanted", gesucht)
-            },
-        )
-    }
+    override suspend fun sucheMitspieler(bookingId: String, gesucht: Boolean, filter: Suchfilter, nurFilter: Boolean) =
+        schreibe(PlaetzeLogik.ausschreibText(gesucht, nurFilter)) {
+            rpc("set_partner_wanted", ausschreibParameter(bookingId, gesucht, filter))
+        }
 
     // ---- Platzrechte ----------------------------------------------------------------
 

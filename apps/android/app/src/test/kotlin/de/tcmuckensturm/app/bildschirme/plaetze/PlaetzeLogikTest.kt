@@ -6,6 +6,9 @@ import de.tcmuckensturm.app.daten.SupabaseVerbindung
 import de.tcmuckensturm.app.daten.TagesBelegung
 import de.tcmuckensturm.kern.BookingTypeInfo
 import de.tcmuckensturm.kern.Platzplan
+import de.tcmuckensturm.kern.PostgresFehler
+import de.tcmuckensturm.kern.SuchFuer
+import de.tcmuckensturm.kern.Suchfilter
 import de.tcmuckensturm.kern.Zeit
 import java.time.Duration
 import java.time.Instant
@@ -35,6 +38,7 @@ class PlaetzeLogikTest {
                 is String -> JsonPrimitive(v)
                 is Boolean -> JsonPrimitive(v)
                 is Int -> JsonPrimitive(v)
+                is Double -> JsonPrimitive(v)
                 else -> error("Unbekannter Typ $v")
             }
         }
@@ -279,5 +283,45 @@ class PlaetzeLogikTest {
         assertEquals(listOf("Eva", null), b.players)
         assertNull(b.guestNames)
         assertNull(b.isOwn)
+    }
+
+    // ---- Mitspielersuche mit Filter ----------------------------------------------
+
+    @Test
+    fun suchfilterAusDaySchedule() {
+        val b = belegung("partner_wanted" to true, "frei" to 1, "partner_lk_von" to 10, "partner_lk_bis" to 16.5, "partner_fuer" to "male")
+        assertEquals(Suchfilter(100, 165, SuchFuer.HERREN), b.suchfilter)
+        assertEquals("Nur für LK 10–16,5 · Herren.", PlaetzeLogik.nurFuerText(b.suchfilter))
+        // numeric kann auch als Text kommen
+        assertEquals(123, belegung("partner_lk_von" to "12.3").suchfilter.von)
+        // Aeltere Datenbank ohne die Spalten: keine Einschraenkung
+        assertEquals(Suchfilter.OFFEN, belegung().suchfilter)
+        assertNull(PlaetzeLogik.nurFuerText(belegung().suchfilter))
+    }
+
+    @Test
+    fun beitretenFehlerVerstaendlich() {
+        // Den Satz der Datenbank unveraendert
+        val satz = "Diese Suche richtet sich an andere Spieler (LK oder Damen/Herren)."
+        assertEquals(satz, PlaetzeLogik.beitretenFehler(PostgresFehler(code = "23514", message = satz)))
+        val anders = "Diese Suche ist nur für Damen."
+        assertEquals(anders, PlaetzeLogik.beitretenFehler(PostgresFehler(code = "23514", message = anders)))
+        // check_violation ohne lesbaren Satz: nicht "Die Eingabe verletzt eine Regel."
+        assertEquals(
+            PlaetzeLogik.SUCHE_PASST_NICHT_TEXT,
+            PlaetzeLogik.beitretenFehler(PostgresFehler(code = "23514", message = "new row violates check constraint")),
+        )
+        // Andere Fehler wie gehabt
+        assertEquals(
+            "Dafür fehlt dir die Berechtigung.",
+            PlaetzeLogik.beitretenFehler(PostgresFehler(code = "42501", message = "permission denied")),
+        )
+    }
+
+    @Test
+    fun ausschreibText() {
+        assertEquals("Die Buchung steht jetzt bei den offenen Spielen.", PlaetzeLogik.ausschreibText(true, false))
+        assertEquals("Die Suche ist geändert.", PlaetzeLogik.ausschreibText(true, true))
+        assertEquals("Die Buchung ist nicht mehr ausgeschrieben.", PlaetzeLogik.ausschreibText(false, false))
     }
 }

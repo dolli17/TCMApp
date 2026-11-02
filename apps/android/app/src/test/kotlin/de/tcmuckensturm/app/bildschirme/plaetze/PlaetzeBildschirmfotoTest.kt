@@ -12,10 +12,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -141,5 +146,65 @@ class PlaetzeBildschirmfotoTest {
     @Test
     fun sperrung() = modell(Ansicht.FREIE_ZEITEN, platzrechte = true).let { m ->
         foto("plaetze-sperrung", dunkel = false) { Blatt(m, Fenster.Bestehend(PlatzAttrappe.SPERRE, "Platz 3", PlatzAttrappe.TAG)) }
+    }
+
+    // ---- Mitspielersuche mit Filter ------------------------------------------------------
+
+    /** Zeichnet erst, dann wird im Blatt getippt, dann fotografiert. */
+    private fun fotoNach(name: String, dunkel: Boolean, inhalt: @Composable () -> Unit, tippen: () -> Unit) {
+        compose.setContent { TcmTheme(dunkel = dunkel) { inhalt() } }
+        compose.waitForIdle()
+        tippen()
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("../docs/$name.png")
+    }
+
+    /** Die beiden Griffe des LK-Schiebers. */
+    private fun lkSchieber(von: Float, bis: Float) {
+        val griffe = compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsActions.SetProgress))
+        griffe[0].performSemanticsAction(SemanticsActions.SetProgress) { it(von) }
+        griffe[1].performSemanticsAction(SemanticsActions.SetProgress) { it(bis) }
+    }
+
+    private fun buchenMitFilter(name: String, dunkel: Boolean) = modell(Ansicht.FREIE_ZEITEN).let { m ->
+        fotoNach(name, dunkel, { Blatt(m, buchen) }) {
+            compose.onNodeWithText("Mitspieler gesucht").performClick()
+            compose.waitForIdle()
+            lkSchieber(100f, 160f)
+            compose.onNodeWithText("Herren").performClick()
+            compose.onNodeWithText("Für wen").performScrollTo()
+        }
+    }
+
+    @Test
+    fun buchenMitFilterHell() = buchenMitFilter("plaetze-suchfilter-buchen-hell", dunkel = false)
+
+    @Test
+    fun buchenMitFilterDunkel() = buchenMitFilter("plaetze-suchfilter-buchen-dunkel", dunkel = true)
+
+    /** Die eigene Buchung sucht schon, nur für Damen ab LK 12,5. */
+    private val eigeneSucht = Fenster.Bestehend(
+        PlatzAttrappe.EIGENE.copy(
+            players = emptyList(), playerMemberIds = emptyList(), frei = 1, partnerWanted = true,
+            partnerLkVon = 12.5, partnerFuer = "female",
+        ),
+        "Platz 1",
+        PlatzAttrappe.TAG,
+    )
+
+    @Test
+    fun eigeneSucheHell() = modell(Ansicht.FREIE_ZEITEN).let { m ->
+        fotoNach("plaetze-suchfilter-eigene-hell", dunkel = false, { Blatt(m, eigeneSucht) }) {
+            compose.onNodeWithText("Für wen").performScrollTo()
+        }
+    }
+
+    /** Geaendert: bis LK 18 - dann erscheint "Suche ändern". */
+    @Test
+    fun eigeneSucheAendernDunkel() = modell(Ansicht.FREIE_ZEITEN).let { m ->
+        fotoNach("plaetze-suchfilter-aendern-dunkel", dunkel = true, { Blatt(m, eigeneSucht) }) {
+            lkSchieber(125f, 180f)
+            compose.onNodeWithText("Suche ändern").performScrollTo()
+        }
     }
 }
