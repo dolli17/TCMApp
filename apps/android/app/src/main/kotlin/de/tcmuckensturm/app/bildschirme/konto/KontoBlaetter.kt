@@ -2,7 +2,8 @@
  * Die Blaetter des Kontos (Bottom Sheets)
  *
  * Wie Bildschirme/Konto/KontoBlaetter.swift der iOS-App: Meine Daten und
- * Notfallkontakt (Stammdatenformular.tsx), Einwilligungen
+ * Notfallkontakt (Stammdatenformular.tsx), Tennis (wie der Onboarding-Schritt,
+ * SchrittTennis), Einwilligungen
  * (MerkmaleKarte.tsx), Bankverbindung & Mandat (MandatAnsicht), Passwort
  * aendern und die Kuendigung (KontoloeschungFormular.tsx). "Passwort ändern"
  * ist neu gegenueber der Expo-App und nimmt dieselben Regeln wie "Passwort
@@ -75,9 +76,13 @@ import de.tcmuckensturm.app.bildschirme.Hinweis
 import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.bildschirme.LeiserKnopf
 import de.tcmuckensturm.app.bildschirme.anmeldung.AnmeldeFeld
+import de.tcmuckensturm.app.bildschirme.onboarding.OnboardingLogik
+import de.tcmuckensturm.app.bildschirme.onboarding.OnboardingSchalter
 import de.tcmuckensturm.app.daten.Ergebnis
 import de.tcmuckensturm.app.daten.Kontodaten
 import de.tcmuckensturm.app.daten.MeinMandat
+import de.tcmuckensturm.app.daten.MeinProfil
+import de.tcmuckensturm.app.daten.OnboardingZustand
 import de.tcmuckensturm.app.start.PasswortRegeln
 import de.tcmuckensturm.app.start.PasswortTexte
 import de.tcmuckensturm.app.start.Sitzung
@@ -93,6 +98,9 @@ import kotlinx.coroutines.launch
 interface KontoAktionen {
     suspend fun speichereProfil(neu: Map<String, String>, alt: Map<String, String>): Ergebnis
     suspend fun speichereNotfallkontakt(werte: Map<String, String>): Ergebnis
+
+    /** save_my_tennis: immer alle drei Werte, die LK schon normalisiert, leer heisst keine. */
+    suspend fun speichereTennis(lk: String, nuligaId: String, mannschaftInteresse: Boolean): Ergebnis
     suspend fun setzeMerkmal(code: String, option: String? = null, text: String? = null): Ergebnis
     suspend fun entferneMerkmal(code: String, option: String? = null): Ergebnis
 
@@ -105,6 +113,8 @@ interface KontoAktionen {
 class SitzungsAktionen(private val daten: Kontodaten, private val sitzung: Sitzung) : KontoAktionen {
     override suspend fun speichereProfil(neu: Map<String, String>, alt: Map<String, String>) = daten.speichereProfil(neu, alt)
     override suspend fun speichereNotfallkontakt(werte: Map<String, String>) = daten.speichereNotfallkontakt(werte)
+    override suspend fun speichereTennis(lk: String, nuligaId: String, mannschaftInteresse: Boolean) =
+        daten.speichereTennis(lk, nuligaId, mannschaftInteresse)
     override suspend fun setzeMerkmal(code: String, option: String?, text: String?) = daten.setzeMerkmal(code, option, text)
     override suspend fun entferneMerkmal(code: String, option: String?) = daten.entferneMerkmal(code, option)
 
@@ -116,6 +126,7 @@ class SitzungsAktionen(private val daten: Kontodaten, private val sitzung: Sitzu
 fun KontoBlatt.titel(): String = when (this) {
     KontoBlatt.DATEN -> "Meine Daten"
     KontoBlatt.NOTFALL -> "Notfallkontakt"
+    KontoBlatt.TENNIS -> "Tennis"
     KontoBlatt.EINWILLIGUNGEN -> "Einwilligungen"
     KontoBlatt.BANK -> "Bankverbindung & Mandat"
     KontoBlatt.PASSWORT -> "Passwort ändern"
@@ -191,6 +202,15 @@ fun KontoBlattInhalt(
                         speichern = { neu -> aktionen.speichereNotfallkontakt(neu) },
                         gespeichert = gespeichert,
                     )
+                }
+            }
+            KontoBlatt.TENNIS -> {
+                val t = inhalt?.tennis
+                val fehler = t?.fehler
+                if (fehler != null) {
+                    Rollend(art.titel(), zu) { Fehlerzeile(fehler, erneut = erneut) }
+                } else {
+                    TennisFormular(art.titel(), t?.wert, inhalt?.profil?.wert, aktionen, zu, gespeichert)
                 }
             }
             KontoBlatt.EINWILLIGUNGEN -> Rollend(art.titel(), zu) {
@@ -319,6 +339,91 @@ private fun ColumnScope.Stammdatenformular(
                 tastatur = feld.tastatur,
                 gross = feld.gross,
             )
+        }
+    }
+}
+
+// ---- Tennis -----------------------------------------------------------------
+
+/**
+ * LK, nuLiga-ID und Mannschaftsinteresse - dieselben Felder, Texte und
+ * Pruefungen wie der Onboarding-Schritt. Mannschaft und Mannschaftsfuehrer
+ * traegt der Vorstand ein; sie stehen hier nur zum Lesen.
+ */
+@Composable
+private fun ColumnScope.TennisFormular(
+    titel: String,
+    tennis: OnboardingZustand.Tennis?,
+    profil: MeinProfil?,
+    aktionen: KontoAktionen,
+    zu: () -> Unit,
+    gespeichert: (String) -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    var lk by rememberSaveable { mutableStateOf(tennis?.tennisLk ?: "") }
+    var nuliga by rememberSaveable { mutableStateOf(tennis?.nuligaId ?: "") }
+    var interesse by rememberSaveable { mutableStateOf(tennis?.mannschaftInteresse ?: false) }
+    var fehlerFeld by remember { mutableStateOf<String?>(null) }
+    var meldung by remember { mutableStateOf<Ergebnis?>(null) }
+    var laeuft by remember { mutableStateOf(false) }
+
+    val absenden: () -> Unit = absenden@{
+        if (laeuft) return@absenden
+        when (val e = KontoLogik.pruefeTennis(lk, nuliga)) {
+            is KontoLogik.TennisEingabe.Fehler -> {
+                meldung = Ergebnis.fehler(e.meldung, e.feld)
+                fehlerFeld = e.feld
+            }
+            is KontoLogik.TennisEingabe.Ok -> {
+                laeuft = true
+                scope.launch {
+                    val r = aktionen.speichereTennis(e.lk ?: "", e.nuligaId, interesse)
+                    laeuft = false
+                    if (r.ok) {
+                        gespeichert(r.meldung)
+                    } else {
+                        meldung = r
+                        fehlerFeld = r.feld
+                    }
+                }
+            }
+        }
+    }
+    val feldFehler = { feld: String -> if (fehlerFeld == feld) meldung?.meldung else null }
+
+    Box(Modifier.padding(horizontal = Abstand.rand)) { BlattKopf(titel, zu) }
+    Spacer(Modifier.size(Abstand.m))
+    MitKnopf(knopf = { Hauptknopf(if (laeuft) "Speichert…" else "Speichern", gesperrt = laeuft, aktion = absenden) }) {
+        Leise(KontoLogik.TENNIS_ERKLAERUNG)
+        val m = meldung
+        if (m != null && fehlerFeld == null) Hinweis(m.meldung, m.ok)
+        KontoFeld(
+            label = OnboardingLogik.LK_LABEL,
+            wert = lk,
+            aendern = {
+                if (fehlerFeld == "tennis_lk") fehlerFeld = null
+                lk = it
+            },
+            fehler = feldFehler("tennis_lk"),
+            tastatur = KeyboardType.Decimal,
+            gross = KeyboardCapitalization.None,
+        )
+        if (feldFehler("tennis_lk") == null) Leise(OnboardingLogik.LK_HINWEIS)
+        KontoFeld(
+            label = KontoLogik.NULIGA_LABEL,
+            wert = nuliga,
+            aendern = {
+                if (fehlerFeld == "nuliga_id") fehlerFeld = null
+                nuliga = it
+            },
+            fehler = feldFehler("nuliga_id"),
+            gross = KeyboardCapitalization.None,
+        )
+        KontoGruppe {
+            OnboardingSchalter(label = KontoLogik.TENNIS_INTERESSE, an = interesse, umschalten = { interesse = it })
+        }
+        KontoLogik.mannschaftText(profil)?.let {
+            Leise("Mannschaft: $it. Das trägt der Vorstand ein.")
         }
     }
 }

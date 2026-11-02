@@ -81,6 +81,18 @@ targetSdk 36, gelaufen auf dem API-35-Emulator.
 Weitere Bilder (je hell und dunkel, mit Ladefehler, beim Laden) unter `docs/konto-*.png`, aus
 `KontoBildfotoTest` mit Beispieldaten ohne Netz.
 
+#### Tennis im Konto
+
+| Tennis, hell | Tennis, dunkel | Ohne Angaben |
+|---|---|---|
+| ![Tennis hell](docs/konto-tennis-hell.png) | ![Tennis dunkel](docs/konto-tennis-dunkel.png) | ![Tennis leer](docs/konto-tennis-leer.png) |
+
+Unter „Notfallkontakt“ steht der Eintrag „Tennis“ mit dem Stand („LK14,5 · nuLiga 12345678 ·
+Interesse an Mannschaft“ oder „Noch keine Angaben“). Das Blatt nimmt die Felder, Texte und die
+LK-Prüfung des Onboarding-Schritts (`OnboardingLogik.lkNormalisieren`). Gelesen wird über
+`my_onboarding()`, geschrieben über `save_my_tennis`, beides über `Onboardingdaten`. Die Mannschaft
+trägt der Vorstand ein und steht nur zum Lesen da.
+
 ### Verwaltung (Spur A7)
 
 | Plätze | Plätze, dunkel | Serien | Serien, dunkel | Sperren | Serie anlegen | Serie ändern | Schrift 200 % |

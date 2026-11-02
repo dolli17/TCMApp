@@ -127,18 +127,22 @@ private val zeilenSchrift @Composable get() = TcmSchrift.text(Schrift.gewichtHal
 
 /** Eine Einstellung, die ein Blatt oeffnet (Eintrag in konto.tsx). */
 @Composable
-fun KontoEintrag(titel: String, symbol: ImageVector, aktion: () -> Unit) {
+fun KontoEintrag(titel: String, symbol: ImageVector, untertitel: String? = null, aktion: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
             .clickable(role = Role.Button, onClick = aktion)
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp, vertical = if (untertitel != null) 10.dp else 0.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Symbolkachel(symbol)
-        Text(titel, style = zeilenSchrift, color = TcmTheme.farben.ink, modifier = Modifier.weight(1f))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(titel, style = zeilenSchrift, color = TcmTheme.farben.ink)
+            // Der Stand unter dem Titel ("LK14,5 · nuLiga 12345678")
+            if (untertitel != null) Text(untertitel, style = leise.copy(color = TcmTheme.farben.muted))
+        }
         Pfeil()
     }
 }
@@ -361,4 +365,16 @@ val BankSymbol: ImageVector by lazy {
         moveTo(2f, 22f); horizontalLineToRelative(19f); verticalLineToRelative(-3f); horizontalLineTo(2f); close()
         moveTo(11.5f, 1f); lineTo(2f, 6f); verticalLineToRelative(2f); horizontalLineToRelative(19f); verticalLineTo(6f); close()
     }.build()
+}
+
+/** Ein Tennisball fuer "Tennis" - im Grundsatz der Symbole fehlt er (sports_tennis). */
+val TennisSymbol: ImageVector by lazy {
+    ImageVector.Builder("Tennis", 24.dp, 24.dp, 24f, 24f)
+        .path(stroke = SolidColor(Color.Black), strokeLineWidth = 2f) {
+            // Der Ball
+            moveTo(12f, 3f); arcToRelative(9f, 9f, 0f, true, true, 0f, 18f); arcToRelative(9f, 9f, 0f, true, true, 0f, -18f); close()
+            // Die beiden Naehte
+            moveTo(5.6f, 5.6f); curveTo(9.2f, 9.2f, 9.2f, 14.8f, 5.6f, 18.4f)
+            moveTo(18.4f, 5.6f); curveTo(14.8f, 9.2f, 14.8f, 14.8f, 18.4f, 18.4f)
+        }.build()
 }

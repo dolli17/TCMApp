@@ -14,6 +14,7 @@ import de.tcmuckensturm.app.daten.Forderung
 import de.tcmuckensturm.app.daten.MeinMandat
 import de.tcmuckensturm.app.daten.MeinProfil
 import de.tcmuckensturm.app.daten.MerkmalZeile
+import de.tcmuckensturm.app.daten.OnboardingZustand
 import de.tcmuckensturm.app.push.PushSchalterAnsicht
 import de.tcmuckensturm.app.theme.Erscheinungsbild
 import de.tcmuckensturm.app.theme.TcmTheme
@@ -73,6 +74,7 @@ object KontoBeispiel {
                 MerkmalZeile(code = "ehrung", name = "Ehrung", valueKind = "text", textValue = "25 Jahre", selfEditable = true, darfIch = false),
             ),
         ),
+        tennis = Abschnitt.Wert(OnboardingZustand.Tennis(tennisLk = "LK14,5", nuligaId = "12345678", mannschaftInteresse = true)),
     )
 
     /** Ein Fehler je Abschnitt: was geladen wurde, bleibt stehen. */
@@ -84,6 +86,7 @@ object KontoBeispiel {
     val aktionen = object : KontoAktionen {
         override suspend fun speichereProfil(neu: Map<String, String>, alt: Map<String, String>) = Ergebnis.erfolg("Gespeichert.")
         override suspend fun speichereNotfallkontakt(werte: Map<String, String>) = Ergebnis.erfolg("Notfallkontakt gespeichert.")
+        override suspend fun speichereTennis(lk: String, nuligaId: String, mannschaftInteresse: Boolean) = Ergebnis.erfolg("Gespeichert.")
         override suspend fun setzeMerkmal(code: String, option: String?, text: String?) = Ergebnis.erfolg("Gespeichert.")
         override suspend fun entferneMerkmal(code: String, option: String?) = Ergebnis.erfolg("Entfernt.")
         override suspend fun passwortSpeichern(neu: String): String? = null
@@ -166,6 +169,24 @@ class KontoBildfotoTest {
 
     @Test
     fun notfallkontakt() = foto("konto-notfall-hell", dunkel = false) { Blatt(KontoBlatt.NOTFALL) }
+
+    @Test
+    fun tennisHell() = foto("konto-tennis-hell", dunkel = false) { Blatt(KontoBlatt.TENNIS) }
+
+    @Test
+    fun tennisDunkel() = foto("konto-tennis-dunkel", dunkel = true) { Blatt(KontoBlatt.TENNIS) }
+
+    /** Ohne Angaben: leere Felder, der Hinweis zur LK, kein Mannschaftstext. */
+    @Test
+    fun tennisLeer() = foto("konto-tennis-leer", dunkel = false) {
+        Blatt(
+            KontoBlatt.TENNIS,
+            KontoBeispiel.inhalt.copy(
+                tennis = Abschnitt.Wert(OnboardingZustand.Tennis()),
+                profil = Abschnitt.Wert(KontoBeispiel.profil.copy(teamName = null, isTeamCaptain = null)),
+            ),
+        )
+    }
 
     @Test
     fun einwilligungenHell() = foto("konto-einwilligungen-hell", dunkel = false) { Blatt(KontoBlatt.EINWILLIGUNGEN) }

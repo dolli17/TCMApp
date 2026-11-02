@@ -3,7 +3,7 @@
  *
  * Oben wer man ist, darunter was offen ist und der Arbeitsdienst. Die
  * Einstellungen stehen als gruppierte Liste; Meine Daten, Notfallkontakt,
- * Einwilligungen, Mandat, Passwort und die Kuendigung oeffnen je ein Bottom
+ * Tennis, Einwilligungen, Mandat, Passwort und die Kuendigung oeffnen je ein Bottom
  * Sheet (KontoBlaetter.kt), statt als lange Formulare die Seite zu fuellen.
  *
  * Jede Quelle laedt fuer sich: schlaegt eine fehl (etwa das Mandat), zeigt
@@ -109,7 +109,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** Die Blaetter des Kontos. */
-enum class KontoBlatt { DATEN, NOTFALL, EINWILLIGUNGEN, BANK, PASSWORT, LOESCHEN }
+enum class KontoBlatt { DATEN, NOTFALL, TENNIS, EINWILLIGUNGEN, BANK, PASSWORT, LOESCHEN }
 
 // ---- Laden ------------------------------------------------------------------
 
@@ -145,6 +145,7 @@ class KontoModell(private val konto: Kontodaten, private val start: Startdaten) 
             val dienst = async { Abschnitt.von { s.arbeitsdienst() } }
             val mandat = async { Abschnitt.von { k.mandat() } }
             val merkmale = async { Abschnitt.von { k.merkmale() } }
+            val tennis = async { Abschnitt.von { k.tennis() } }
             KontoInhalt(
                 profil = profil.await(),
                 forderungen = forderungen.await(),
@@ -152,6 +153,7 @@ class KontoModell(private val konto: Kontodaten, private val start: Startdaten) 
                 dienst = dienst.await(),
                 mandat = mandat.await(),
                 merkmale = merkmale.await(),
+                tennis = tennis.await(),
             )
         }
     }
@@ -478,6 +480,14 @@ private fun Einstellungen(
         KontoEintrag("Meine Daten", Icons.Outlined.Person) { oeffnen(KontoBlatt.DATEN) }
         KontoLinie()
         KontoEintrag("Notfallkontakt", Icons.Outlined.Phone) { oeffnen(KontoBlatt.NOTFALL) }
+        KontoLinie()
+        // Der Stand in einer Zeile; nach einem Ladefehler keine, das Blatt nennt den Fehler.
+        val tennis = d.tennis
+        KontoEintrag(
+            "Tennis",
+            TennisSymbol,
+            untertitel = if (tennis.fehler == null) KontoLogik.tennisUebersicht(tennis.wert) else null,
+        ) { oeffnen(KontoBlatt.TENNIS) }
         if (KontoLogik.zeigeEinwilligungen(d.merkmale.wert)) {
             KontoLinie()
             KontoEintrag("Einwilligungen", Icons.Outlined.CheckCircle) { oeffnen(KontoBlatt.EINWILLIGUNGEN) }
