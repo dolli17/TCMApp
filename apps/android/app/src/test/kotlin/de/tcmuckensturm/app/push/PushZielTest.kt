@@ -27,6 +27,15 @@ class PushZielTest {
         assertEquals(PushZiel.Tab(HauptTab.VEREIN), PushZiel.aus(mapOf("ziel" to "/verein")))
     }
 
+    /** Hinweise zur Mannschaft oeffnen den Bildschirm Mannschaft, auch wenn der Pfad nur /nachrichten nennt. */
+    @Test
+    fun mannschaft() {
+        assertEquals(PushZiel.Mannschaft, PushZiel.aus(mapOf("ziel" to "/konto/mannschaft")))
+        assertEquals(PushZiel.Mannschaft, PushZiel.aus(mapOf("ziel" to "/nachrichten", "kind" to "team_invited")))
+        assertEquals(PushZiel.Mannschaft, PushZiel.aus(mapOf("kind" to "team_left")))
+        assertEquals(PushZiel.Tab(HauptTab.KONTO), PushZiel.aus(mapOf("ziel" to "/konto/andere")))
+    }
+
     /** Ohne brauchbaren Pfad entscheiden event_id, dann kind. */
     @Test
     fun rueckfall() {

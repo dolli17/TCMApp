@@ -46,6 +46,8 @@ import androidx.navigation.compose.rememberNavController
 import de.tcmuckensturm.app.TcmApp
 import de.tcmuckensturm.app.bildschirme.home.HomeGraph
 import de.tcmuckensturm.app.bildschirme.home.homeGraph
+import de.tcmuckensturm.app.bildschirme.konto.KontoMannschaft
+import de.tcmuckensturm.app.bildschirme.konto.LocalZuMannschaft
 import de.tcmuckensturm.app.bildschirme.konto.kontoGraph
 import de.tcmuckensturm.app.bildschirme.plaetze.plaetzeGraph
 import de.tcmuckensturm.app.bildschirme.verein.VereinGraph
@@ -114,7 +116,11 @@ fun HauptTabsInhalt(
             }
         },
     ) { innen ->
-        CompositionLocalProvider(LocalZuTab provides zuTab) {
+        val zuMannschaft: () -> Unit = {
+            zuTab(HauptTab.KONTO)
+            nav.navigate(KontoMannschaft) { launchSingleTop = true }
+        }
+        CompositionLocalProvider(LocalZuTab provides zuTab, LocalZuMannschaft provides zuMannschaft) {
             // Korb und Reiter des Vereins ueberleben Tab-Wechsel; die Erinnerung an den Korb kommt von hier.
             val vereinOffen = ziel?.hierarchy?.any { it.hasRoute(VereinGraph::class) } == true
             VereinTab(nav, vereinOffen, zuTab) {

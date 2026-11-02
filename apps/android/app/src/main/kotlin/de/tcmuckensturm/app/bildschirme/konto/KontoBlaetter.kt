@@ -82,6 +82,8 @@ import de.tcmuckensturm.app.daten.Ergebnis
 import de.tcmuckensturm.app.daten.Kontodaten
 import de.tcmuckensturm.app.daten.MeinMandat
 import de.tcmuckensturm.app.daten.MeinProfil
+import de.tcmuckensturm.app.daten.Mannschaftsdaten
+import de.tcmuckensturm.app.daten.MeineMannschaft
 import de.tcmuckensturm.app.daten.OnboardingZustand
 import de.tcmuckensturm.app.start.PasswortRegeln
 import de.tcmuckensturm.app.start.PasswortTexte
@@ -107,10 +109,17 @@ interface KontoAktionen {
     /** null bei Erfolg, sonst der Satz fuer die Anzeige. */
     suspend fun passwortSpeichern(neu: String): String?
     suspend fun beantrageKontoloeschung(nachricht: String): Ergebnis
+
+    /** set_team_phone_visible - nur mit Mannschaft. */
+    suspend fun setzeTelefonSichtbar(an: Boolean): Ergebnis
 }
 
 /** Im Betrieb: Kontodaten fuer die RPCs, die Sitzung fuer das Passwort. */
-class SitzungsAktionen(private val daten: Kontodaten, private val sitzung: Sitzung) : KontoAktionen {
+class SitzungsAktionen(
+    private val daten: Kontodaten,
+    private val sitzung: Sitzung,
+    private val mannschaft: Mannschaftsdaten,
+) : KontoAktionen {
     override suspend fun speichereProfil(neu: Map<String, String>, alt: Map<String, String>) = daten.speichereProfil(neu, alt)
     override suspend fun speichereNotfallkontakt(werte: Map<String, String>) = daten.speichereNotfallkontakt(werte)
     override suspend fun speichereTennis(lk: String, nuligaId: String, mannschaftInteresse: Boolean) =
@@ -121,6 +130,8 @@ class SitzungsAktionen(private val daten: Kontodaten, private val sitzung: Sitzu
     // imKonto: ist die Sitzung weg (401, session_not_found), heisst es "neu anmelden" statt "Link abgelaufen".
     override suspend fun passwortSpeichern(neu: String) = sitzung.passwortSpeichern(neu, imKonto = true)
     override suspend fun beantrageKontoloeschung(nachricht: String) = daten.beantrageKontoloeschung(nachricht)
+    override suspend fun setzeTelefonSichtbar(an: Boolean) =
+        mannschaft.telefonSichtbar(an, if (an) MannschaftLogik.TELEFON_AN else MannschaftLogik.TELEFON_AUS)
 }
 
 fun KontoBlatt.titel(): String = when (this) {
@@ -210,7 +221,7 @@ fun KontoBlattInhalt(
                 if (fehler != null) {
                     Rollend(art.titel(), zu) { Fehlerzeile(fehler, erneut = erneut) }
                 } else {
-                    TennisFormular(art.titel(), t?.wert, inhalt?.profil?.wert, aktionen, zu, gespeichert)
+                    TennisFormular(art.titel(), t?.wert, inhalt?.profil?.wert, inhalt?.mannschaft?.wert, aktionen, zu, gespeichert)
                 }
             }
             KontoBlatt.EINWILLIGUNGEN -> Rollend(art.titel(), zu) {
@@ -355,11 +366,14 @@ private fun ColumnScope.TennisFormular(
     titel: String,
     tennis: OnboardingZustand.Tennis?,
     profil: MeinProfil?,
+    mannschaft: MeineMannschaft?,
     aktionen: KontoAktionen,
     zu: () -> Unit,
     gespeichert: (String) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val telefonVorher = mannschaft?.telefonSichtbar ?: false
+    var telefon by rememberSaveable { mutableStateOf(telefonVorher) }
     var lk by rememberSaveable { mutableStateOf(tennis?.tennisLk ?: "") }
     var nuliga by rememberSaveable { mutableStateOf(tennis?.nuligaId ?: "") }
     var interesse by rememberSaveable { mutableStateOf(tennis?.mannschaftInteresse ?: false) }
@@ -377,7 +391,11 @@ private fun ColumnScope.TennisFormular(
             is KontoLogik.TennisEingabe.Ok -> {
                 laeuft = true
                 scope.launch {
-                    val r = aktionen.speichereTennis(e.lk ?: "", e.nuligaId, interesse)
+                    var r = aktionen.speichereTennis(e.lk ?: "", e.nuligaId, interesse)
+                    // Die Freigabe der Nummer geht mit demselben Speichern, aber nur, wenn sie sich geaendert hat.
+                    if (r.ok && mannschaft != null && telefon != telefonVorher) {
+                        r = aktionen.setzeTelefonSichtbar(telefon)
+                    }
                     laeuft = false
                     if (r.ok) {
                         gespeichert(r.meldung)
@@ -422,8 +440,19 @@ private fun ColumnScope.TennisFormular(
         KontoGruppe {
             OnboardingSchalter(label = KontoLogik.TENNIS_INTERESSE, an = interesse, umschalten = { interesse = it })
         }
+        if (mannschaft != null) {
+            // Nur wer in einer Mannschaft ist, kann die Nummer fuer den MF freigeben.
+            KontoGruppe {
+                OnboardingSchalter(
+                    label = MannschaftLogik.TELEFON_SCHALTER,
+                    beschreibung = MannschaftLogik.TELEFON_ERKLAERUNG,
+                    an = telefon,
+                    umschalten = { telefon = it },
+                )
+            }
+        }
         KontoLogik.mannschaftText(profil)?.let {
-            Leise("Mannschaft: $it. Das trägt der Vorstand ein.")
+            Leise("Mannschaft: $it. Mannschaftsführer und Vorstand tragen ein.")
         }
     }
 }

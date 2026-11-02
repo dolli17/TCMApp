@@ -75,6 +75,8 @@ object KontoBeispiel {
             ),
         ),
         tennis = Abschnitt.Wert(OnboardingZustand.Tennis(tennisLk = "LK14,5", nuligaId = "12345678", mannschaftInteresse = true)),
+        mannschaft = Abschnitt.Wert(MannschaftBeispiel.mf),
+        einladungen = Abschnitt.Wert(emptyList()),
     )
 
     /** Ein Fehler je Abschnitt: was geladen wurde, bleibt stehen. */
@@ -91,6 +93,7 @@ object KontoBeispiel {
         override suspend fun entferneMerkmal(code: String, option: String?) = Ergebnis.erfolg("Entfernt.")
         override suspend fun passwortSpeichern(neu: String): String? = null
         override suspend fun beantrageKontoloeschung(nachricht: String) = Ergebnis.erfolg("Dein Antrag ist eingegangen.")
+        override suspend fun setzeTelefonSichtbar(an: Boolean) = Ergebnis.erfolg("Gespeichert.")
     }
 
     val jetzt: Instant = Instant.parse("2026-10-30T10:00:00Z")
@@ -184,6 +187,7 @@ class KontoBildfotoTest {
             KontoBeispiel.inhalt.copy(
                 tennis = Abschnitt.Wert(OnboardingZustand.Tennis()),
                 profil = Abschnitt.Wert(KontoBeispiel.profil.copy(teamName = null, isTeamCaptain = null)),
+                mannschaft = Abschnitt.Wert(null),
             ),
         )
     }

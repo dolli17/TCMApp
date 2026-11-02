@@ -39,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -60,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import de.tcmuckensturm.app.bildschirme.GedeckelteSchrift
 import de.tcmuckensturm.app.bildschirme.Kapsel
 import de.tcmuckensturm.app.bildschirme.home.HomeLogik
+import de.tcmuckensturm.app.bildschirme.konto.LocalZuMannschaft
 import de.tcmuckensturm.app.bildschirme.verein.LocalZuVerein
 import de.tcmuckensturm.app.bildschirme.verein.VereinZiel
 import de.tcmuckensturm.app.daten.Benachrichtigung
@@ -139,15 +141,21 @@ fun Glocke() {
             sheetState = zustand,
             containerColor = TcmTheme.farben.bg,
         ) {
-            GlockenBlattInhalt(
-                blatt = blatt,
-                alleGelesen = { blatt = blatt.copy(alleGesehen = true) },
-                schliessen = schliessen,
-                zuVeranstaltung = { id ->
-                    schliessen()
-                    zuVeranstaltung(id)
-                },
-            )
+            // Ein Hinweis zur Mannschaft schliesst erst das Blatt, dann geht es ins Konto.
+            val zuMannschaft = LocalZuMannschaft.current
+            CompositionLocalProvider(
+                LocalZuMannschaft provides zuMannschaft?.let { weiter -> { schliessen(); weiter() } },
+            ) {
+                GlockenBlattInhalt(
+                    blatt = blatt,
+                    alleGelesen = { blatt = blatt.copy(alleGesehen = true) },
+                    schliessen = schliessen,
+                    zuVeranstaltung = { id ->
+                        schliessen()
+                        zuVeranstaltung(id)
+                    },
+                )
+            }
         }
     }
 }

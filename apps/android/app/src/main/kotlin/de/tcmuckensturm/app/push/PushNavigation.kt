@@ -8,7 +8,8 @@
  *
  * Neuigkeiten oeffnen im Tab Home den Bildschirm "Neuigkeiten" (statt eines
  * Blatts wie in iOS - so fuehrt die Zurueck-Geste dorthin zurueck, wo man war).
- * Eine Veranstaltung oeffnet im Tab Verein ihr Detail (LocalZuVerein).
+ * Eine Veranstaltung oeffnet im Tab Verein ihr Detail (LocalZuVerein), ein
+ * Hinweis zur Mannschaft im Tab Konto den Bildschirm Mannschaft.
  */
 
 package de.tcmuckensturm.app.push
@@ -19,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import de.tcmuckensturm.app.bildschirme.home.Nachrichten
+import de.tcmuckensturm.app.bildschirme.konto.KontoMannschaft
 import de.tcmuckensturm.app.bildschirme.verein.LocalZuVerein
 import de.tcmuckensturm.app.bildschirme.verein.VereinZiel
 import de.tcmuckensturm.app.navigation.HauptTab
@@ -37,6 +39,10 @@ fun PushZieleOeffnen(zentrale: PushZentrale, nav: NavHostController, zuTab: (Hau
                 nav.navigate(Nachrichten) { launchSingleTop = true }
             }
             is PushZiel.Veranstaltung -> zuVerein(VereinZiel.Veranstaltung(z.id))
+            PushZiel.Mannschaft -> {
+                zuTab(HauptTab.KONTO)
+                nav.navigate(KontoMannschaft) { launchSingleTop = true }
+            }
             is PushZiel.Tab -> zuTab(z.tab)
         }
     }
