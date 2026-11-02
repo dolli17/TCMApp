@@ -186,4 +186,38 @@ class OnboardingLogikTest {
          "erziehungsberechtigte":{"name":null,"email":null,"phone":null,"zustimmung_am":null}}
         """
     }
+
+    // ---- LK (Faelle wie packages/core/src/mitspielerFilter.test.ts) ----
+
+    @Test
+    fun lkWirdNormalisiert() {
+        val ok = { w: String? -> OnboardingLogik.LkEingabe.Ok(w) }
+        assertEquals(ok("LK14,5"), OnboardingLogik.lkNormalisieren("14,5"))
+        assertEquals(ok("LK14,5"), OnboardingLogik.lkNormalisieren("LK 14.5"))
+        assertEquals(ok("LK7,0"), OnboardingLogik.lkNormalisieren("7"))
+        assertEquals(ok("LK25,0"), OnboardingLogik.lkNormalisieren(" lk25 "))
+        assertEquals(ok(null), OnboardingLogik.lkNormalisieren("  "))
+    }
+
+    @Test
+    fun lkUngueltigWirdAbgelehnt() {
+        for (e in listOf("30", "0,9", "25,1", "14,55", "Anfänger", "-3")) {
+            assertEquals(e, OnboardingLogik.LkEingabe.Fehler, OnboardingLogik.lkNormalisieren(e))
+        }
+    }
+
+    @Test
+    fun lkZehntelWieDieDatenbank() {
+        assertEquals(123, OnboardingLogik.lkZehntel("LK12,3"))
+        assertEquals(123, OnboardingLogik.lkZehntel("12.3"))
+        assertEquals(10, OnboardingLogik.lkZehntel("1"))
+        assertNull(OnboardingLogik.lkZehntel(null))
+        assertNull(OnboardingLogik.lkZehntel("gut"))
+    }
+
+    @Test
+    fun lkBeschriftungWieVereinbart() {
+        assertEquals("LK oder geschätzte LK", OnboardingLogik.LK_LABEL)
+        assertTrue(OnboardingLogik.LK_HINWEIS.contains("1 ist die beste, 25 die schwächste"))
+    }
 }

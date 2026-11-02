@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { rollenLabel, translateDbError, type AppRole } from "@tcm/core";
+import { lkNormalisieren, rollenLabel, translateDbError, type AppRole } from "@tcm/core";
 import { memberLogin } from "@/lib/supabase/member-login";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -51,6 +51,14 @@ export async function stammdatenSpeichern(formData: FormData): Promise<AktionsEr
 
   if (Object.keys(patch).length === 0) {
     return { ok: false, meldung: "Nichts geändert." };
+  }
+
+  // Die LK einheitlich als "LK14,5" - open_matches muss sie lesen können.
+  // Leer heißt: keine LK (null).
+  if (typeof patch.tennis_lk === "string") {
+    const lk = lkNormalisieren(patch.tennis_lk);
+    if (!lk.ok) return { ok: false, meldung: lk.meldung };
+    patch.tennis_lk = lk.wert;
   }
 
   // Die E-Mail ist zugleich die Anmeldung. Sie geht über die Edge Function,

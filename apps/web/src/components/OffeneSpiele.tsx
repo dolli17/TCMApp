@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { bookingActions, offenesSpielText } from "@tcm/core";
+import { bookingActions, offenesSpielText, partnerFilterAusZeile, partnerFilterText } from "@tcm/core";
 import { mitspielen } from "@/app/plan/aktionen";
 import { Leerzustand } from "@/components/Leerzustand";
 
@@ -17,6 +17,10 @@ export interface OffenesSpiel {
   players: string[];
   frei: number;
   bin_dabei: boolean;
+  /** "Nur für …" der Suche; null = offen */
+  lk_von?: number | string | null;
+  lk_bis?: number | string | null;
+  fuer?: string | null;
 }
 
 const TAG = new Intl.DateTimeFormat("de-DE", {
@@ -84,6 +88,7 @@ export function OffeneSpiele({
           const bis = new Date(s.ends_at);
           const eigenes = eigene.includes(s.booking_id);
           const text = offenesSpielText(s, eigenes);
+          const zusatz = partnerFilterText(partnerFilterAusZeile(s));
           const darf = bookingActions({
             startsAt: s.starts_at, own: eigenes, joined: s.bin_dabei, partnerWanted: true, free: s.frei,
             now: new Date(jetzt),
@@ -105,6 +110,7 @@ export function OffeneSpiele({
                   </span>{" "}
                   · {s.type_name}
                 </div>
+                {zusatz && <div className="mit offen-filter">{zusatz}</div>}
                 {text.dabei && <div className="mit">{text.dabei}</div>}
               </div>
 

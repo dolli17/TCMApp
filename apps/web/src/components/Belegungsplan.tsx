@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   berlinTime, blockingLabel, canStartAt, courtStatusAt, freeCourtsNow, freeGaps, localMinutes, minutesOf,
-  minutesToTime, nextSlotMinute, occupancyKind, timeToMinutes, type TimelineKind,
+  minutesToTime, nextSlotMinute, occupancyKind, timeToMinutes, type PartnerFilter, type TimelineKind,
 } from "@tcm/core";
 import {
   belegungAm, buchen, mitspielen, mitspielerAendern, mitspielerSuchen, serienterminAbsagen,
@@ -33,6 +33,10 @@ export interface Belegung {
   guest_names: string[];
   /** Der Bucher sucht Mitspieler - die Buchung steht bei den offenen Spielen. */
   partner_wanted: boolean;
+  /** "Nur für …": LK-Bereich (1 beste, 25 schwaechste) und Damen/Herren, null = offen. */
+  partner_lk_von?: number | string | null;
+  partner_lk_bis?: number | string | null;
+  partner_fuer?: string | null;
   /** Wie viele Plaetze diese Buchung noch frei hat. */
   frei: number;
   /** Steht das angemeldete Mitglied als Mitspieler drin? */
@@ -292,8 +296,8 @@ export function Belegungsplan(props: Props) {
     starte(async () => ergebnis(await sperreAufheben(bookingId)));
   }
 
-  function ausschreiben(bookingId: string, gesucht: boolean) {
-    starte(async () => ergebnis(await mitspielerSuchen(bookingId, gesucht), { bookingId }));
+  function ausschreiben(bookingId: string, gesucht: boolean, filter?: PartnerFilter, nurFilter?: boolean) {
+    starte(async () => ergebnis(await mitspielerSuchen(bookingId, gesucht, filter, nurFilter), { bookingId }));
   }
 
   function beitreten(bookingId: string) {

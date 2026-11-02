@@ -220,4 +220,34 @@ object OnboardingLogik {
 
     fun deutsch(millis: Long): String =
         isoZuDeutsch(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate().toString())
+
+    // ---- LK (wie lkNormalisieren in packages/core/src/mitspielerFilter.ts) ----
+
+    const val LK_LABEL = "LK oder geschätzte LK"
+    const val LK_HINWEIS = "Keine offizielle LK? Schätz dich ein – 1 ist die beste, 25 die schwächste."
+    const val LK_FEHLER = "Bitte eine LK zwischen 1 und 25 angeben, höchstens eine Nachkommastelle (z. B. 14,5)."
+
+    /** "LK 14,5", "lk14.5", "14", " 3,0 " - hoechstens eine Nachkommastelle. */
+    private val lkForm = Regex("^(?:[lL][kK]\\s*)?([0-9]{1,2})(?:[.,]([0-9]))?$")
+
+    /** Die LK als Zehntel (145 fuer 14,5), wie private.lk_zahl: unlesbar oder ausserhalb 1-25 gibt null. */
+    fun lkZehntel(text: String?): Int? {
+        val m = lkForm.matchEntire((text ?: "").trim()) ?: return null
+        val zehntel = m.groupValues[1].toInt() * 10 + (m.groupValues[2].ifEmpty { "0" }).toInt()
+        return if (zehntel in 10..250) zehntel else null
+    }
+
+    sealed interface LkEingabe {
+        /** wert null heisst: keine LK */
+        data class Ok(val wert: String?) : LkEingabe
+        data object Fehler : LkEingabe
+    }
+
+    /** Eingabe pruefen und so normalisieren, wie sie in members.tennis_lk steht: "LK14,5". Leer bleibt erlaubt. */
+    fun lkNormalisieren(eingabe: String): LkEingabe {
+        val t = eingabe.trim()
+        if (t.isEmpty()) return LkEingabe.Ok(null)
+        val z = lkZehntel(t) ?: return LkEingabe.Fehler
+        return LkEingabe.Ok("LK${z / 10},${z % 10}")
+    }
 }

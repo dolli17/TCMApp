@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   bookingKicker, dayTag, eventDemnaechst, formatCents, freeCourtsNow, localMinutes, minutesOf, minutesToTime,
-  offenesSpielText, relativeTimeLabel, startseitenNeuigkeiten, sumOpenDrinks, timeToMinutes, timelinePosition,
+  offenesSpielText, partnerFilterAusZeile, partnerFilterText, relativeTimeLabel, startseitenNeuigkeiten, sumOpenDrinks, timeToMinutes, timelinePosition,
   timelineSegments, upcomingBookings,
 } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
@@ -225,6 +225,7 @@ export default async function Start() {
               <ul className="offen-liste">
                 {offen.map((o) => {
                   const text = offenesSpielText(o, eigene.has(o.booking_id));
+                  const zusatz = partnerFilterText(partnerFilterAusZeile(o));
                   return (
                     <li key={o.booking_id} className="offen-karte">
                       <span className="datum">
@@ -234,6 +235,7 @@ export default async function Start() {
                       <span className="text">
                         <b>{text.kopf}</b>
                         <small>{o.court_name} · {o.type_name}</small>
+                        {zusatz && <small className="offen-filter">{zusatz}</small>}
                         {text.dabei && <small>{text.dabei}</small>}
                       </span>
                       {o.bin_dabei ? (
