@@ -1,7 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { kontoloeschungMeldung, kontoloeschungPruefen, memberProfileSchema, translateDbError } from "@tcm/core";
+import {
+  kontoloeschungMeldung,
+  kontoloeschungPruefen,
+  memberProfileSchema,
+  tennisEingabePruefen,
+  translateDbError,
+} from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 
 export interface AktionsErgebnis {
@@ -135,6 +141,34 @@ export async function notfallkontaktSpeichern(formData: FormData): Promise<Aktio
   revalidatePath("/konto");
   revalidatePath("/konto/notfall");
   return { ok: true, meldung: "Notfallkontakt gespeichert." };
+}
+
+/**
+ * LK, nuLiga-ID und Mannschaftsinteresse nach dem Onboarding pflegen.
+ *
+ * Dieselbe RPC und dieselbe Prüfung wie der Onboarding-Schritt Tennis. Anders
+ * als bei den Stammdaten gehen immer alle drei Werte mit, auch unveränderte:
+ * save_my_tennis setzt das Interesse sonst auf seinen Default false.
+ */
+export async function tennisAngabenSpeichern(formData: FormData): Promise<AktionsErgebnis> {
+  const angemeldet = await getCurrentMember();
+  if (!angemeldet?.member?.id) return { ok: false, meldung: "Nicht angemeldet." };
+
+  const eingabe = tennisEingabePruefen({
+    tennis_lk: String(formData.get("wert:tennis_lk") ?? ""),
+    nuliga_id: String(formData.get("wert:nuliga_id") ?? ""),
+    // Ein nicht angehaktes Kästchen schickt nichts mit (Stammdatenkarte).
+    mannschaft_interesse: formData.get("wert:mannschaft_interesse") !== null,
+  });
+  if (!eingabe.ok) return { ok: false, meldung: eingabe.meldung };
+
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.rpc("save_my_tennis", eingabe.args);
+  if (error) return { ok: false, meldung: translateDbError(error) };
+
+  revalidatePath("/konto");
+  revalidatePath("/konto/tennis");
+  return { ok: true, meldung: "Gespeichert." };
 }
 
 /**

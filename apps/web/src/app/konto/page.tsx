@@ -1,5 +1,15 @@
 import Link from "next/link";
-import { berlinDay, formatCents, sumOpenDrinks, translateDbError, CHARGE_KIND_LABEL, KONTOLOESCHUNG_TEXT, type ChargeKind } from "@tcm/core";
+import {
+  berlinDay,
+  formatCents,
+  sumOpenDrinks,
+  tennisKurzfassung,
+  translateDbError,
+  CHARGE_KIND_LABEL,
+  KONTOLOESCHUNG_TEXT,
+  type ChargeKind,
+  type OnboardingZustand,
+} from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
 import { AbmeldeKnopf } from "@/components/AbmeldeKnopf";
 import { Fehlerzustand } from "@/components/Fehlerzustand";
@@ -24,7 +34,7 @@ const MONAT = new Intl.DateTimeFormat("de-DE", { month: "long", timeZone: "Europ
  *
  * Oben wer man ist, darunter was offen ist und der Arbeitsdienst. Die
  * Einstellungen stehen als gruppierte Liste; Meine Daten, Notfallkontakt,
- * Einwilligungen und das Mandat haben je eine eigene Unterseite, statt als
+ * Tennis, Einwilligungen und das Mandat haben je eine eigene Unterseite, statt als
  * lange Formulare die Seite zu fuellen.
  */
 export default async function KontoSeite() {
@@ -32,7 +42,7 @@ export default async function KontoSeite() {
   const angemeldet = await getCurrentMember();
   const meineId = angemeldet?.member?.id;
 
-  const [forderungenRes, arbeitsdienstRes, einsaetzeRes, ichRes, mitgliedschaftRes, getraenkeRes] =
+  const [forderungenRes, arbeitsdienstRes, einsaetzeRes, ichRes, mitgliedschaftRes, getraenkeRes, onboardingRes] =
     await Promise.all([
       supabase.rpc("my_charges"),
       supabase.rpc("my_work_duty", {}),
@@ -51,6 +61,8 @@ export default async function KontoSeite() {
             .maybeSingle()
         : Promise.resolve({ data: null }),
       supabase.rpc("my_drink_purchases"),
+      // Für die Kurzfassung unter "Tennis"; liefert die Angaben auch nach dem Onboarding.
+      supabase.rpc("my_onboarding"),
     ]);
 
   // Eine gescheiterte Abfrage ist nicht "Nichts offen" (B14).
@@ -79,6 +91,11 @@ export default async function KontoSeite() {
   const nachname = ich?.last_name ?? angemeldet?.member?.last_name ?? "";
   const initialen = `${vorname.charAt(0)}${nachname.charAt(0)}`.toUpperCase();
   const seit = mitgliedschaftRes.data?.started_on?.slice(0, 4);
+  // Ließ sich der Stand nicht laden, steht die Zeile ohne Kurzfassung da -
+  // "Noch keine Angaben" wäre dann falsch (B14).
+  const tennisStand = onboardingRes.error
+    ? undefined
+    : tennisKurzfassung((onboardingRes.data as unknown as OnboardingZustand | null)?.tennis);
 
   return (
     <>
@@ -228,6 +245,7 @@ export default async function KontoSeite() {
             <nav className="gruppe einstellungen-liste" aria-label="Einstellungen">
               <Eintrag href="/konto/daten" symbol="konto" titel="Meine Daten" />
               <Eintrag href="/konto/notfall" symbol="telefon" titel="Notfallkontakt" />
+              <Eintrag href="/konto/tennis" symbol="ball" titel="Tennis" text={tennisStand} />
               <Eintrag href="/konto/einwilligungen" symbol="haken" titel="Einwilligungen" />
               <Eintrag href="/konto/bank" symbol="kasse" titel="Bankverbindung & Mandat" />
             </nav>
@@ -261,9 +279,10 @@ const PFADE: Record<string, string> = {
   telefon: "M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z",
   haken: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11",
   kasse: "M2 7h20v12H2zM2 11h20M6 15h4",
+  ball: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM4.9 4.9c3.1 3.1 3.1 11.1 0 14.2M19.1 4.9c-3.1 3.1-3.1 11.1 0 14.2",
 };
 
-function Eintrag({ href, symbol, titel }: { href: string; symbol: string; titel: string }) {
+function Eintrag({ href, symbol, titel, text }: { href: string; symbol: string; titel: string; text?: string }) {
   return (
     <Link href={href} className="gruppen-zeile eintrag">
       <span className="symbolkachel" aria-hidden="true">
@@ -271,7 +290,10 @@ function Eintrag({ href, symbol, titel }: { href: string; symbol: string; titel:
           <path d={PFADE[symbol]} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
-      <span className="titel">{titel}</span>
+      <span className="titel">
+        {titel}
+        {text && <small>{text}</small>}
+      </span>
       <span className="pfeil" aria-hidden="true">›</span>
     </Link>
   );

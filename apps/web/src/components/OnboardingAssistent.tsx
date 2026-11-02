@@ -9,6 +9,9 @@ import {
   LK_FELD_LABEL,
   isValidIban,
   lkNormalisieren,
+  MANNSCHAFT_INTERESSE_HINWEIS,
+  MANNSCHAFT_INTERESSE_TEXT,
+  NULIGA_ID_MAX,
   mandatstext,
   normalizeIban,
   type OnboardingSchritt,
@@ -598,7 +601,7 @@ function Tennis({
           <span className="beschreibung">{LK_FELD_HINWEIS}</span>
         )}
       </label>
-      <Feld label="nuLiga-ID" maxLength={40} value={d.nuliga_id} onChange={(e) => setD({ ...d, nuliga_id: e.target.value })} />
+      <Feld label="nuLiga-ID" maxLength={NULIGA_ID_MAX} value={d.nuliga_id} onChange={(e) => setD({ ...d, nuliga_id: e.target.value })} />
       <label className="schalter">
         <input
           type="checkbox"
@@ -606,8 +609,8 @@ function Tennis({
           onChange={(e) => setD({ ...d, mannschaft_interesse: e.target.checked })}
         />
         <span>
-          Ich habe Interesse an einer Mannschaft
-          <small>Der Sportwart meldet sich bei dir.</small>
+          {MANNSCHAFT_INTERESSE_TEXT}
+          <small>{MANNSCHAFT_INTERESSE_HINWEIS}</small>
         </span>
       </label>
       <Knoepfe laeuft={laeuft} text="Speichern und weiter" ueberspringen={ueberspringen} />
