@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  bookingKicker, dayTag, eventDemnaechst, formatCents, freeCourtsNow, localMinutes, minutesOf, minutesToTime,
+  bookingKicker, dayTag, eventDemnaechst, formatCents, freeCourtsNow, localMinutes, minutesOf, minutesToTime, notificationWebZiel,
   offenesSpielText, partnerFilterAusZeile, partnerFilterText, relativeTimeLabel, startseitenNeuigkeiten, sumOpenDrinks, timeToMinutes, timelinePosition,
   timelineSegments, upcomingBookings,
 } from "@tcm/core";
@@ -321,11 +321,14 @@ export default async function Start() {
                         <small>{relativeTimeLabel(n.created_at, jetzt)}</small>
                       </span>
                       <span className="body">{n.body}</span>
-                      {n.event_id && (
-                        <Link href={`/verein/veranstaltungen/${n.event_id}`} className="nachricht-link">
-                          Zur Veranstaltung
-                        </Link>
-                      )}
+                      {(() => {
+                        const ziel = notificationWebZiel(n);
+                        return ziel ? (
+                          <Link href={ziel.href} className="nachricht-link">
+                            {ziel.text}
+                          </Link>
+                        ) : null;
+                      })()}
                     </span>
                   </li>
                 ))}
