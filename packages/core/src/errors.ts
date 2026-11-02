@@ -47,6 +47,7 @@ const CONSTRAINT_TEXTE: Record<string, string> = {
   members_one_captain_per_team:
     "Diese Mannschaft hat schon einen Mannschaftsführer.",
   members_captain_needs_team: "Mannschaftsführer geht nur mit Mannschaft.",
+  team_invitations_eine_offene: "Dieses Mitglied ist schon eingeladen.",
 };
 
 const CODE_TEXTE: Record<string, string> = {

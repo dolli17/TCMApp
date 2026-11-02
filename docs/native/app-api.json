@@ -1401,6 +1401,7 @@
           "status": "enum:member_status",
           "street": "string | null",
           "team_id": "string | null",
+          "team_phone_visible": "boolean",
           "tennis_lk": "string | null",
           "title": "string | null",
           "updated_at": "string"

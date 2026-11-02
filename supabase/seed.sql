@@ -986,3 +986,73 @@ begin
   order by dp.valid_from, dp.drink_item_id
   limit 1;
 end $$;
+
+-- ===========================================================================
+-- Mannschaftsführer lädt ein
+--
+-- mitglied@ führt "Herren 30" (oben). Damit Konto › Mannschaft beim
+-- Durchklicken etwas zeigt:
+--   - zwei Spieler aus "Herren 30" erlauben dem MF ihre Telefonnummer,
+--   - sechs aktive Mitglieder ohne Mannschaft haben Mannschaftsinteresse und
+--     eine LK (stehen in mannschaft_kandidaten oben),
+--   - eine offene Einladung von "Herren 30" an den ersten Interessenten,
+--   - admin@ steht in keiner Mannschaft und hat eine offene Einladung in
+--     "Herren" (Spielerseite: annehmen, ablehnen, Telefon-Häkchen).
+-- Ausgewählt wird nach Namen, damit der Stand bei jedem Reset gleich ist.
+-- ===========================================================================
+
+do $$
+declare
+  v_h30      uuid := (select id from public.teams where name = 'Herren 30');
+  v_herren   uuid := (select id from public.teams where name = 'Herren');
+  v_mf       uuid := 'e2e00000-0000-4000-8000-000000000002';
+  v_admin    uuid := 'e2e00000-0000-4000-8000-000000000001';
+  v_interesse uuid := (select id from public.member_attribute_types where code = 'mannschaft_interesse');
+  v_m        record;
+  v_i        integer := 0;
+  v_erster   uuid;
+  v_herren_mf uuid;
+begin
+  update public.members m
+     set team_phone_visible = true,
+         mobile = coalesce(nullif(btrim(m.mobile), ''), '0171 55500' || s.n)
+    from (select id, row_number() over (order by last_name, first_name) as n
+            from public.members
+           where team_id = v_h30 and not is_team_captain
+           order by last_name, first_name
+           limit 2) s
+   where m.id = s.id;
+
+  for v_m in
+    select m.id
+      from public.members m
+     where m.status = 'active'
+       and m.team_id is null
+       and m.id::text not like 'e2e00000-%'
+       and m.birthday <= current_date - interval '18 years'
+       and m.gender = 'male'
+     order by m.last_name, m.first_name
+     limit 6
+  loop
+    v_i := v_i + 1;
+    v_erster := coalesce(v_erster, v_m.id);
+    update public.members set tennis_lk = (8 + v_i * 2)::text || ',0' where id = v_m.id;
+    insert into public.member_attribute_values (member_id, attribute_type_id, text_value, set_by)
+    values (v_m.id, v_interesse, 'ja', v_admin)
+    on conflict do nothing;
+  end loop;
+
+  if v_erster is not null then
+    insert into public.team_invitations (team_id, member_id, invited_by)
+    values (v_h30, v_erster, v_mf);
+  end if;
+
+  update public.members set team_id = null, is_team_captain = false where id = v_admin;
+  v_herren_mf := (select id from public.members where team_id = v_herren and is_team_captain limit 1);
+  insert into public.team_invitations (team_id, member_id, invited_by)
+  values (v_herren, v_admin, v_herren_mf);
+  insert into public.notifications (member_id, kind, title, body, read_at)
+  values (v_admin, 'team_invited', 'Einladung in eine Mannschaft',
+          format('%s lädt dich in die Mannschaft Herren ein.', private.member_label(v_herren_mf)),
+          null);
+end $$;
