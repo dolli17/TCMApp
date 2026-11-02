@@ -2,7 +2,8 @@ import XCTest
 
 /**
  * Bildschirmfotos vom Buchungsblatt mit "Mitspieler gesucht" und "Nur für …"
- * (LK 10–16 · Herren). Gebucht wird nichts: das Blatt wird nur ausgefuellt.
+ * (LK 10–16 · Herren). testBuchungsblattMitFilter bucht nichts, das Blatt
+ * wird nur ausgefuellt; testBuchenMitFilter bucht nur mit TCM_BUCHEN=1.
  *
  * Braucht heute um 17:00 einen freien Platz (also vor 17 Uhr laufen lassen) im lokalen Stack. Ziel der
  * Bilder: TCM_SCREENSHOTS (beim Aufruf als TEST_RUNNER_TCM_SCREENSHOTS
@@ -20,6 +21,52 @@ final class SuchfilterUITests: XCTestCase {
 
     func testBuchungsblattMitFilter() throws {
         let suffix = ProcessInfo.processInfo.environment["TCM_DARSTELLUNG"] ?? "hell"
+        try blattMitFilter()
+        // So weit hoch, dass Schalter und Filter zusammen zu sehen sind
+        app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Wer spielt mit?'")).firstMatch.swipeUp(velocity: .slow)
+        foto("plaetze-suchfilter-\(suffix)")
+    }
+
+    /**
+     * Bucht wirklich (nur mit TCM_BUCHEN=1, nur lokal): Filter beim Buchen,
+     * dann als Zusatz unter "Offene Spiele" und an der eigenen Buchung
+     * (aus day_schedule). Zum Schluss wird die Buchung wieder storniert.
+     */
+    func testBuchenMitFilter() throws {
+        let umgebung = ProcessInfo.processInfo.environment
+        try XCTSkipUnless(umgebung["TCM_BUCHEN"] == "1", "bucht nur mit TCM_BUCHEN=1")
+        let suffix = umgebung["TCM_DARSTELLUNG"] ?? "hell"
+        try blattMitFilter()
+
+        app.buttons["Platz 1 buchen"].tap()
+        let blatt = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Wer spielt mit?'")).firstMatch
+        XCTAssertTrue(blatt.waitForNonExistence(timeout: 10), "Buchen hat nicht geklappt")
+
+        // Offene Spiele: die eigene Suche mit Zusatz
+        app.buttons["Meine & offene Spiele"].tap()
+        let zusatz = app.staticTexts.matching(NSPredicate(format: "label == 'Nur für LK 10 bis 16 · Herren'")).firstMatch
+        XCTAssertTrue(zusatz.waitForExistence(timeout: 10), "Zusatz fehlt bei den offenen Spielen")
+        zusatz.swipeUp(velocity: .slow)
+        foto("plaetze-spiele-suchfilter-\(suffix)")
+
+        // Eigene Buchung: der Filter kommt aus day_schedule zurueck
+        app.buttons["Belegung"].tap()
+        app.buttons["Übersicht"].tap()
+        let eigene = app.buttons.matching(NSPredicate(format: "label CONTAINS 'deine Buchung'")).firstMatch
+        XCTAssertTrue(eigene.waitForExistence(timeout: 10), "eigene Buchung fehlt im Raster")
+        eigene.tap()
+        let nurFuer = app.buttons.matching(NSPredicate(format: "label == 'Nur für, LK 10 bis 16 · Herren'")).firstMatch
+        XCTAssertTrue(nurFuer.waitForExistence(timeout: 10), "Filter der Buchung fehlt")
+
+        // Aufraeumen
+        let storno = app.buttons["Buchung stornieren"]
+        storno.tap()
+        app.buttons["Wirklich stornieren"].tap()
+        XCTAssertTrue(nurFuer.waitForNonExistence(timeout: 10), "Stornieren hat nicht geklappt")
+    }
+
+    /// Buchungsblatt heute 17:00 auf, Mitspieler gesucht, Nur für LK 10–16 · Herren.
+    private func blattMitFilter() throws {
         app.launch()
         try anmelden()
 
@@ -29,17 +76,15 @@ final class SuchfilterUITests: XCTestCase {
         let zeile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH '17:00 Uhr'")).firstMatch
         XCTAssertTrue(zeile.waitForExistence(timeout: 20), "Zeile 17:00 fehlt")
         zeile.tap()
-        let buchen = app.buttons.matching(NSPredicate(format: "label ENDSWITH 'um 17:00 Uhr buchen'")).firstMatch
-        XCTAssertTrue(buchen.waitForExistence(timeout: 5), "kein freier Platz um 17:00")
+        let buchen = app.buttons.matching(NSPredicate(format: "label == 'Platz 1 um 17:00 Uhr buchen'")).firstMatch
+        XCTAssertTrue(buchen.waitForExistence(timeout: 5), "Platz 1 um 17:00 ist nicht frei")
         buchen.tap()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Wer spielt mit?'")).firstMatch.waitForExistence(timeout: 5))
 
-        // Mitspieler gesucht einschalten
         let schalter = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Mitspieler gesucht'")).firstMatch
         XCTAssertTrue(schalter.waitForExistence(timeout: 5))
         schalter.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
 
-        // "Nur für …" aufklappen, Herren und LK 10–16
         let nurFuer = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Nur für'")).firstMatch
         XCTAssertTrue(nurFuer.waitForExistence(timeout: 5), "Nur für … fehlt")
         nurFuer.tap()
@@ -51,10 +96,6 @@ final class SuchfilterUITests: XCTestCase {
         raeder.element(boundBy: 0).adjust(toPickerWheelValue: "10,0")
         raeder.element(boundBy: 1).adjust(toPickerWheelValue: "16,0")
         XCTAssertTrue(app.staticTexts["LK 10–16 · Herren"].waitForExistence(timeout: 5))
-
-        // So weit hoch, dass Schalter und Filter zusammen zu sehen sind
-        app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Wer spielt mit?'")).firstMatch.swipeUp(velocity: .slow)
-        foto("plaetze-suchfilter-\(suffix)")
     }
 
     /// Wie LokalAnmeldenUITests: mit dem Seed-Konto, falls noch keine Sitzung im Schluesselbund liegt.

@@ -216,12 +216,14 @@ Wie `apps/mobile/app/(tabs)/plaetze/`, Texte wortgleich (`Bildschirme/Plaetze/`)
   der eigenen Buchung (`set_partner_wanted`, „Filter speichern“). Grenzen 1 und 25 gehen als `null`;
   ohne Einschränkung schickt die App die neuen Parameter gar nicht. Den aktuellen Filter liefert
   `day_schedule`, offene Spiele zeigen ihn als Zusatz („LK 10–16 · Herren“, auch auf Home). Durchgesetzt
-  wird er in der Datenbank (`open_matches`, `join_booking`). Bild: UI-Test `SuchfilterUITests` (bucht
-  nichts, braucht heute um 17:00 einen freien Platz).
+  wird er in der Datenbank (`open_matches`, `join_booking`). Bilder: UI-Test `SuchfilterUITests`, braucht
+  heute um 17:00 Platz 1 frei. `testBuchungsblattMitFilter` bucht nichts; `testBuchenMitFilter` bucht nur
+  mit `TEST_RUNNER_TCM_BUCHEN=1` wirklich, prüft den Filter bei den offenen Spielen und an der eigenen
+  Buchung (aus `day_schedule`) und storniert danach wieder.
 
-  | Nur für …, hell | dunkel |
-  |---|---|
-  | ![Suchfilter hell](docs/plaetze-suchfilter-hell.png) | ![Suchfilter dunkel](docs/plaetze-suchfilter-dunkel.png) |
+  | Nur für …, hell | dunkel | Offene Spiele, hell | dunkel |
+  |---|---|---|---|
+  | ![Suchfilter hell](docs/plaetze-suchfilter-hell.png) | ![Suchfilter dunkel](docs/plaetze-suchfilter-dunkel.png) | ![Spiele mit Filter hell](docs/plaetze-spiele-suchfilter-hell.png) | ![Spiele mit Filter dunkel](docs/plaetze-spiele-suchfilter-dunkel.png) |
 - **Sperren und Umsetzen** (mit Platzrechten): zweistufig, wenn Buchungen im Weg liegen
   (`create_blocking`/`update_blocking`, `move_booking`).
 - **Logik:** neue Kernfunktionen in `Kern/Platzplan.swift` (aus `@tcm/core`, gegen die Golden Files
