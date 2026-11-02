@@ -3,6 +3,7 @@ package de.tcmuckensturm.app.bildschirme.konto
 import de.tcmuckensturm.app.daten.Kandidat
 import de.tcmuckensturm.app.daten.MeineEinladung
 import de.tcmuckensturm.app.daten.MeineMannschaft
+import de.tcmuckensturm.app.daten.SupabaseVerbindung
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -124,4 +125,32 @@ class MannschaftLogikTest {
         assertTrue(s.offeneEinladungen.isEmpty())
         assertTrue(s.telefonSichtbar)
     }
+
+    /** Antworten aus dem lokalen Stack (Migration 20261102190115), wie PostgREST sie liefert. */
+    @Test
+    fun echteAntwortenDesStacks() {
+        val m = MeineMannschaft.aus(EchteAntworten.MEINE_MANNSCHAFT)!!
+        assertTrue(m.ichBinMf)
+        assertEquals(listOf("Noah", "Peter", "Emma", "Frieda"), m.kader.map { it.firstName })
+        assertEquals("0171 555001", m.kader[1].telefon)
+        assertEquals("eingeladen am 02.11. · gültig bis 02.12.", MannschaftLogik.offeneEinladungZeile(m.offeneEinladungen.first()))
+
+        val e = SupabaseVerbindung.json.decodeFromString<List<MeineEinladung>>(EchteAntworten.EINLADUNGEN).single()
+        assertEquals("Herren 30", e.teamName)
+        assertNull(MannschaftLogik.einladungHinweis(e))
+        assertEquals("Noah Brandt lädt dich ein · gültig bis 02.12.", MannschaftLogik.einladungZeile(e))
+
+        val k = SupabaseVerbindung.json.decodeFromString<List<Kandidat>>(EchteAntworten.KANDIDATEN)
+        // Die Datenbank speichert die LK ohne "LK"; die App zeigt sie wie im Konto.
+        assertEquals("LK10,0", MannschaftLogik.kandidatZeile(k[0]))
+        assertEquals(listOf("eingeladen", "Interesse"), MannschaftLogik.kandidatMarken(k[0]))
+    }
+}
+
+object EchteAntworten {
+    const val MEINE_MANNSCHAFT = """{"name": "Herren 30", "kader": [{"telefon": null, "last_name": "Brandt", "member_id": "e2e00000-0000-4000-8000-000000000002", "tennis_lk": null, "first_name": "Noah", "is_team_captain": true}, {"telefon": "0171 555001", "last_name": "Becker", "member_id": "c42f6eac-8ce9-99e3-25f5-49d453dbace9", "tennis_lk": null, "first_name": "Peter", "is_team_captain": false}, {"telefon": "0171 555002", "last_name": "Haas", "member_id": "2e74bb73-be91-e286-9861-0cc97525f6e1", "tennis_lk": null, "first_name": "Emma", "is_team_captain": false}, {"telefon": null, "last_name": "Peters", "member_id": "4a3aa298-807f-2dad-a1a1-4f11def1c82e", "tennis_lk": null, "first_name": "Frieda", "is_team_captain": false}], "team_id": "49d1d689-84e2-4552-b67f-077438d2ea5a", "ich_bin_mf": true, "telefon_sichtbar": false, "offene_einladungen": [{"id": "5c11d753-2a30-4904-8cce-4d459d080f70", "last_name": "Neumitglied", "member_id": "e2e00000-0000-4000-8000-000000000004", "created_at": "2026-11-02T19:33:54.130154+00:00", "expires_at": "2026-12-02T19:33:54.130154+00:00", "first_name": "Nora"}]}"""
+
+    const val EINLADUNGEN = """[{"id":"8cdbaa14-0cb0-496d-a427-1cabf7ace550","team_id":"49d1d689-84e2-4552-b67f-077438d2ea5a","team_name":"Herren 30","eingeladen_von":"Noah Brandt","created_at":"2026-11-02T19:33:53.34776+00:00","expires_at":"2026-12-02T19:33:53.34776+00:00","wechsel_von":null,"annehmen_moeglich":true,"hinweis":null}]"""
+
+    const val KANDIDATEN = """[{"member_id":"25c31169-2299-a28e-c06a-d4d6555fdcd6","first_name":"Christian","last_name":"Bauer","tennis_lk":"10,0","mannschaft_interesse":true,"aktuelle_mannschaft":null,"eingeladen":true}]"""
 }

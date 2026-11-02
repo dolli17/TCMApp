@@ -135,4 +135,10 @@ class MannschaftBildfotoTest {
     fun sucheDunkel() = foto("mannschaft-suche-dunkel", dunkel = true) {
         SpielerSucheInhalt("", {}, MannschaftBeispiel.kandidaten, null, gesperrt = false, einladen = {}, zu = {})
     }
+
+    /** Mit der echten Antwort aus dem lokalen Stack (MF Noah Brandt, Herren 30). */
+    @Test
+    fun lokalerStack() = foto("mannschaft-lokal-hell", dunkel = false) {
+        Seite(MeineMannschaft.aus(EchteAntworten.MEINE_MANNSCHAFT))
+    }
 }
