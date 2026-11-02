@@ -8,7 +8,8 @@
  *
  * Neuigkeiten kommen als Blatt ueber den aktuellen Tab; eine Veranstaltung
  * oeffnet im Tab Verein ihr Detail (zuVerein aus Bildschirme/Verein), die
- * Plaetze Belegung oder Spiele (zuPlaetze aus Bildschirme/Plaetze).
+ * Plaetze Belegung oder Spiele (zuPlaetze aus Bildschirme/Plaetze), die
+ * Mannschaft das Konto mit der Mannschaft (zuMannschaft, kontoTab).
  */
 
 import SwiftUI
@@ -24,6 +25,7 @@ private struct PushZieleOeffnen: ViewModifier {
     @Environment(Sitzung.self) private var sitzung
     @Environment(\.zuVerein) private var zuVerein
     @Environment(\.zuPlaetze) private var zuPlaetze
+    @Environment(\.zuMannschaft) private var zuMannschaft
     @Binding var tab: HauptTab
     @State private var nachrichtenOffen = false
 
@@ -59,6 +61,10 @@ private struct PushZieleOeffnen: ViewModifier {
                     nachrichtenOffen = false
                     zuPlaetze(ziel)
                 }
+                .environment(\.zuMannschaft) {
+                    nachrichtenOffen = false
+                    zuMannschaft()
+                }
             }
     }
 
@@ -72,6 +78,9 @@ private struct PushZieleOeffnen: ViewModifier {
         case let .plaetze(ziel):
             nachrichtenOffen = false
             zuPlaetze(ziel)
+        case .mannschaft:
+            nachrichtenOffen = false
+            zuMannschaft()
         case let .tab(neu):
             nachrichtenOffen = false
             tab = neu

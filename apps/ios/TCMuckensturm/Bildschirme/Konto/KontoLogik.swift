@@ -18,6 +18,10 @@ struct KontoInhalt: Sendable {
     let merkmale: Abschnitt<[MerkmalZeile]>
     /// Der Tennis-Teil von my_onboarding(); nil ohne Mitglied.
     let tennis: Abschnitt<OnboardingZustand.Tennis?>
+    /// meine_mannschaft(); nil ohne Mannschaft.
+    let mannschaft: Abschnitt<MeineMannschaft?>
+    /// Offene Einladungen an mich (meine_mannschaft_einladungen).
+    let einladungen: Abschnitt<[MannschaftEinladung]>
 }
 
 /// Ein Merkmal mit allen seinen Werten (buendeln in MerkmaleKarte.tsx).

@@ -2,7 +2,8 @@
  * Die Blaetter des Kontos
  *
  * Meine Daten und Notfallkontakt (Stammdatenformular.tsx), Tennis (wie der
- * Onboarding-Schritt, TennisLogik), Einwilligungen
+ * Onboarding-Schritt, TennisLogik; in einer Mannschaft dazu der Schalter
+ * fuer die Telefonnummer), Einwilligungen
  * (MerkmaleKarte.tsx), Bankverbindung & Mandat (MandatAnsicht), Passwort
  * aendern und die Kuendigung (KontoloeschungFormular.tsx). Inhaltlich wie
  * in der Expo-App; "Passwort ändern" ist neu und nimmt dieselben Regeln wie
@@ -117,12 +118,17 @@ struct KontoBlattInhalt: View {
         if let f = inhalt?.tennis.fehler {
             rollend { Fehlerzeile(text: f, onErneut: erneut) }
         } else {
+            // Nur wer in einer Mannschaft ist, bekommt den Telefon-Schalter (set_team_phone_visible).
+            let telefonVorher = (inhalt?.mannschaft.wert ?? nil)?.telefonSichtbar
             TennisFormular(
                 stand: inhalt?.tennis.wert ?? nil,
+                telefonSichtbar: telefonVorher,
                 zu: zu,
-                speichern: { lk, nuliga, interesse in
-                    await Onboardingdaten(client: sitzung.client)
+                speichern: { lk, nuliga, interesse, telefon in
+                    let r = await Onboardingdaten(client: sitzung.client)
                         .speichereTennis(lk: lk, nuligaId: nuliga, mannschaftInteresse: interesse)
+                    guard r.ok, let telefon, telefon != telefonVorher else { return r }
+                    return await Mannschaftsdaten(client: sitzung.client).setzeTelefonSichtbar(telefon)
                 },
                 gespeichert: gespeichert
             )
@@ -262,13 +268,16 @@ private struct Stammdatenformular: View {
  */
 private struct TennisFormular: View {
     let stand: OnboardingZustand.Tennis?
+    /// nil ohne Mannschaft: dann fehlt der Schalter fuer die Telefonnummer.
+    let telefonSichtbar: Bool?
     let zu: () -> Void
-    let speichern: (String, String, Bool) async -> Ergebnis
+    let speichern: (String, String, Bool, Bool?) async -> Ergebnis
     let gespeichert: (String) -> Void
 
     @State private var lk = ""
     @State private var nuliga = ""
     @State private var interesse = false
+    @State private var telefon = false
     @State private var bereit = false
     @State private var meldung: Ergebnis?
     @State private var laeuft = false
@@ -297,6 +306,15 @@ private struct TennisFormular: View {
                 )
                 KontoGruppe {
                     OnboardingSchalter(label: TennisLogik.interesseLabel, an: $interesse, gesperrt: laeuft)
+                    if telefonSichtbar != nil {
+                        KontoLinie()
+                        OnboardingSchalter(
+                            label: MannschaftLogik.telefonLabel,
+                            beschreibung: MannschaftLogik.telefonBeschreibung,
+                            an: $telefon,
+                            gesperrt: laeuft
+                        )
+                    }
                 }
             }
             .padding(Tokens.Abstand.rand)
@@ -313,6 +331,7 @@ private struct TennisFormular: View {
             guard !bereit else { return }
             bereit = true
             (lk, nuliga, interesse) = TennisLogik.entwurf(stand)
+            telefon = telefonSichtbar ?? false
         }
     }
 
@@ -328,7 +347,7 @@ private struct TennisFormular: View {
         guard !laeuft else { return }
         laeuft = true
         Task {
-            let r = await speichern(lk, nuliga, interesse)
+            let r = await speichern(lk, nuliga, interesse, telefonSichtbar == nil ? nil : telefon)
             laeuft = false
             if r.ok {
                 gespeichert(r.meldung)

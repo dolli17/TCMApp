@@ -10,6 +10,10 @@
  * Jede Quelle laedt fuer sich: schlaegt eine fehl (etwa das Mandat), zeigt
  * nur ihr Abschnitt den Fehler, und der Rest der Seite bleibt gefuellt.
  *
+ * "Mannschaft" erscheint mit Mannschaft oder offenen Einladungen und fuehrt
+ * auf einen eigenen Bildschirm (MannschaftBildschirm.swift). Dorthin geht es
+ * auch aus Push und Neuigkeiten ueber `zuMannschaft` (kontoTab).
+ *
  * "Mitteilungen aufs Handy" meldet die APNs-Marke an und ab (App/PushSchalter.swift).
  */
 
@@ -20,8 +24,30 @@ enum KontoBlatt: String, Identifiable {
     var id: String { rawValue }
 }
 
+/// Der Pfad im Konto; HauptTabs haelt ihn, damit Push und Neuigkeiten hinfuehren.
+@MainActor @Observable
+final class KontoZustand {
+    var pfad: [KontoZiel] = []
+
+    func oeffne(_ ziel: KontoZiel) {
+        pfad = [ziel]
+    }
+}
+
+extension View {
+    /// Haengt das Konto an die Tabs (HauptTabs): stellt den Zustand und `zuMannschaft` bereit.
+    func kontoTab(_ zustand: KontoZustand, tab: Binding<HauptTab>) -> some View {
+        environment(zustand)
+            .environment(\.zuMannschaft) {
+                zustand.oeffne(.mannschaft)
+                tab.wrappedValue = .konto
+            }
+    }
+}
+
 struct KontoBildschirm: View {
     @Environment(Sitzung.self) private var sitzung
+    @Environment(KontoZustand.self) private var zustand
     @AppStorage(Erscheinungsbild.schluessel) private var erscheinungsbild: Erscheinungsbild = .system
     @State private var inhalt: KontoInhalt?
     @State private var laedt = true
@@ -33,7 +59,8 @@ struct KontoBildschirm: View {
     @State private var rollenZu: String?
 
     var body: some View {
-        NavigationStack {
+        @Bindable var z = zustand
+        NavigationStack(path: $z.pfad) {
             ScrollViewReader { leser in
                 ScrollView {
                     VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
@@ -74,6 +101,13 @@ struct KontoBildschirm: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+            // Beschriftet den Zurueck-Knopf in der Mannschaft.
+            .navigationTitle("Konto")
+            .navigationDestination(for: KontoZiel.self) { ziel in
+                switch ziel {
+                case .mannschaft: MannschaftBildschirm()
+                }
+            }
         }
         .task {
             await laden(.erstes)
@@ -126,6 +160,22 @@ struct KontoBildschirm: View {
                     symbol: "tennisball",
                     unterzeile: d.tennis.fehler == nil ? TennisLogik.uebersicht(d.tennis.wert ?? nil) : nil
                 ) { blatt = .tennis }
+                if MannschaftLogik.zeigeEintrag(
+                    profilTeam: d.profil.wert??.teamName,
+                    mannschaft: d.mannschaft.wert ?? nil,
+                    einladungen: d.einladungen.wert?.count ?? 0
+                ) {
+                    KontoLinie()
+                    KontoEintrag(
+                        titel: MannschaftLogik.titel,
+                        symbol: "person.3",
+                        unterzeile: MannschaftLogik.uebersicht(
+                            mannschaft: d.mannschaft.wert ?? nil,
+                            profilTeam: d.profil.wert??.teamName,
+                            einladungen: d.einladungen.wert?.count ?? 0
+                        )
+                    ) { zustand.oeffne(.mannschaft) }
+                }
                 if KontoLogik.zeigeEinwilligungen(d.merkmale.wert) {
                     KontoLinie()
                     KontoEintrag(titel: "Einwilligungen", symbol: "checkmark.square") { blatt = .einwilligungen }
@@ -190,13 +240,16 @@ struct KontoBildschirm: View {
         if art == .nachladen { aktualisiert = true }
         if art != .still { meldung = nil }
         inhalt = await Self.lade(
-            Kontodaten(client: sitzung.client), Startdaten(client: sitzung.client), Onboardingdaten(client: sitzung.client)
+            Kontodaten(client: sitzung.client), Startdaten(client: sitzung.client), Onboardingdaten(client: sitzung.client),
+            Mannschaftsdaten(client: sitzung.client)
         )
         laedt = false
         aktualisiert = false
     }
 
-    nonisolated static func lade(_ k: Kontodaten, _ s: Startdaten, _ o: Onboardingdaten) async -> KontoInhalt {
+    nonisolated static func lade(
+        _ k: Kontodaten, _ s: Startdaten, _ o: Onboardingdaten, _ m: Mannschaftsdaten
+    ) async -> KontoInhalt {
         async let profil = Abschnitt.von { try await k.profil() }
         async let forderungen = Abschnitt.von { try await k.forderungen() }
         async let getraenke = Abschnitt.von { try await s.eigeneGetraenke() }
@@ -204,6 +257,8 @@ struct KontoBildschirm: View {
         async let mandat = Abschnitt.von { try await k.mandat() }
         async let merkmale = Abschnitt.von { try await k.merkmale() }
         async let tennis = Abschnitt.von { try await o.laden()?.tennis }
+        async let mannschaft = Abschnitt.von { try await m.mannschaft() }
+        async let einladungen = Abschnitt.von { try await m.einladungen() }
         return await KontoInhalt(
             profil: profil,
             forderungen: forderungen,
@@ -211,7 +266,9 @@ struct KontoBildschirm: View {
             dienst: dienst,
             mandat: mandat,
             merkmale: merkmale,
-            tennis: tennis
+            tennis: tennis,
+            mannschaft: mannschaft,
+            einladungen: einladungen
         )
     }
 }
