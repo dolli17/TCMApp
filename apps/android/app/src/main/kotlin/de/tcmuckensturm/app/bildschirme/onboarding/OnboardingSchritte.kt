@@ -468,15 +468,27 @@ fun SchrittTennis(k: OnboardingKontext) {
     var lk by remember { mutableStateOf(t.tennisLk ?: "") }
     var nuliga by remember { mutableStateOf(t.nuligaId ?: "") }
     var interesse by remember { mutableStateOf(t.mannschaftInteresse) }
+    var lkGeprueft by remember { mutableStateOf(false) }
+    val lkEingabe = OnboardingLogik.lkNormalisieren(lk)
+    val lkFehler = if (lkGeprueft && lkEingabe is OnboardingLogik.LkEingabe.Fehler) OnboardingLogik.LK_FEHLER else null
 
-    KontoFeld("LK (etwa 18,4)", lk, { lk = it }, tastatur = KeyboardType.Decimal)
+    KontoFeld(OnboardingLogik.LK_LABEL, lk, { lk = it }, fehler = lkFehler, tastatur = KeyboardType.Decimal)
+    if (lkFehler == null) Leise(OnboardingLogik.LK_HINWEIS)
     KontoFeld("nuLiga-ID", nuliga, { nuliga = it }, gross = KeyboardCapitalization.None)
     KontoGruppe {
         OnboardingSchalter(label = "Interesse an einer Mannschaft", an = interesse, umschalten = { interesse = it })
     }
     OnboardingKnoepfe(k) {
-        val r = k.aktionen.speichereTennis(lk, nuliga, interesse)
-        if (r.ok) k.weiter() else r
+        when (lkEingabe) {
+            OnboardingLogik.LkEingabe.Fehler -> {
+                lkGeprueft = true
+                Ergebnis.fehler(OnboardingLogik.LK_FEHLER)
+            }
+            is OnboardingLogik.LkEingabe.Ok -> {
+                val r = k.aktionen.speichereTennis(lkEingabe.wert ?: "", nuliga, interesse)
+                if (r.ok) k.weiter() else r
+            }
+        }
     }
 }
 

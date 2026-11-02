@@ -1496,6 +1496,17 @@ li.chip { padding-right: 4px; }
 }
 .gesucht-karte > span { display: grid; gap: 2px; flex: 1; }
 .gesucht-karte b { font-size: 16px; }
+/* "Nur für …" unter dem Schalter: Damen/Herren und LK-Bereich */
+fieldset.suchfilter { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 10px; }
+fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
+.lk-bereich { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; gap: 10px; }
+.lk-bereich label { display: grid; gap: 4px; margin: 0; }
+.lk-bereich input { width: 100%; font-variant-numeric: tabular-nums; }
+.lk-strich { padding-bottom: 12px; color: var(--muted); }
+.suchfilter-hinweis { font-size: 13px; line-height: 1.4; color: var(--muted); }
+.suchfilter-block { display: grid; gap: 10px; justify-items: start; }
+.suchfilter-block > fieldset { justify-self: stretch; }
+.offen-filter { font-weight: 700; color: var(--gold-ink); }
 .gesucht-karte small { font-size: 13px; line-height: 1.4; color: var(--muted); }
 .schalter-feld {
   appearance: none; -webkit-appearance: none; position: relative; flex: 0 0 auto;

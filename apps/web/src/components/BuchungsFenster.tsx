@@ -2,8 +2,9 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
-  berlinTime, blockingLabel, bookingActions, bookingTypeInfo, checkPlayers, missingPlayers, otherPlayersLabel,
-  timeToMinutes, umsetzZiele,
+  berlinTime, blockingLabel, bookingActions, bookingTypeInfo, checkPlayers, istEingeschraenkt, lkText,
+  missingPlayers, otherPlayersLabel, partnerFilterAusEingabe, partnerFilterAusZeile, partnerFilterText,
+  timeToMinutes, umsetzZiele, LK_MAX, LK_MIN, type PartnerFilter,
 } from "@tcm/core";
 import type { AktionsErgebnis, TagesBelegung } from "@/app/plan/aktionen";
 import {
@@ -58,7 +59,8 @@ interface Props {
     verdraengen: boolean,
   ) => Promise<number | null>;
   onSperreAufheben: (bookingId: string) => void;
-  onAusschreiben: (bookingId: string, gesucht: boolean) => void;
+  /** nurFilter: die Suche lief schon, nur "Nur für …" aendert sich. */
+  onAusschreiben: (bookingId: string, gesucht: boolean, filter?: PartnerFilter, nurFilter?: boolean) => void;
   onBeitreten: (bookingId: string) => void;
   onSchliessen: () => void;
 }
@@ -156,6 +158,84 @@ function GesuchtKarte({ an, onWechsel, deaktiviert }: {
   );
 }
 
+/** Was in den drei Feldern von "Nur für …" steht - als Text, wie getippt. */
+interface FilterFelder { von: string; bis: string; fuer: string }
+
+/** Felder aus einem gespeicherten Filter; offene Grenzen zeigen 1 bzw. 25. */
+function filterFelder(f: PartnerFilter): FilterFelder {
+  return {
+    von: lkText(f.lkVon ?? LK_MIN),
+    bis: lkText(f.lkBis ?? LK_MAX),
+    fuer: f.fuer ?? "",
+  };
+}
+
+const FUER_AUSWAHL = [
+  { wert: "", text: "Alle" },
+  { wert: "female", text: "Damen" },
+  { wert: "male", text: "Herren" },
+] as const;
+
+/**
+ * "Nur für …" unter "Mitspieler gesucht": LK-Bereich und Damen/Herren.
+ *
+ * Standard ist 1–25 und Alle, also keine Einschraenkung. Mit name-Attributen
+ * im Buchen-Formular, ohne im Verwalten-Blatt (dort schickt ein eigener Knopf).
+ */
+function SuchFilter({ felder, onFelder, mitNamen, deaktiviert }: {
+  felder: FilterFelder;
+  onFelder: (f: FilterFelder) => void;
+  mitNamen?: boolean;
+  deaktiviert?: boolean;
+}) {
+  const kennung = useId();
+  return (
+    <fieldset className="suchfilter" disabled={deaktiviert}>
+      <legend>Nur für …</legend>
+      <div className="segment-leiste" role="radiogroup" aria-label="Für wen">
+        {FUER_AUSWAHL.map((a) => (
+          <label key={a.wert} className="segment">
+            <input
+              type="radio"
+              name={mitNamen ? "partnerFuer" : `${kennung}-fuer`}
+              value={a.wert}
+              checked={felder.fuer === a.wert}
+              onChange={() => onFelder({ ...felder, fuer: a.wert })}
+            />
+            <span>{a.text}</span>
+          </label>
+        ))}
+      </div>
+      <div className="lk-bereich">
+        <label>
+          <span>LK von</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            name={mitNamen ? "lkVon" : undefined}
+            value={felder.von}
+            maxLength={6}
+            onChange={(e) => onFelder({ ...felder, von: e.target.value })}
+          />
+        </label>
+        <span className="lk-strich" aria-hidden="true">–</span>
+        <label>
+          <span>LK bis</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            name={mitNamen ? "lkBis" : undefined}
+            value={felder.bis}
+            maxLength={6}
+            onChange={(e) => onFelder({ ...felder, bis: e.target.value })}
+          />
+        </label>
+      </div>
+      <small className="suchfilter-hinweis">1 ist die beste LK, 25 die schwächste. 1 bis 25 heißt: alle.</small>
+    </fieldset>
+  );
+}
+
 function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buchen" }> }) {
   const platz = props.plaetze.find((p) => p.id === props.fenster.courtId);
   const stunde = props.fenster.stunde;
@@ -173,6 +253,7 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
   const [mitglieder, setMitglieder] = useState<string[]>([]);
   const [gaeste, setGaeste] = useState<string[]>([]);
   const [sucheMitspieler, setSucheMitspieler] = useState(false);
+  const [filter, setFilter] = useState<FilterFelder>(() => filterFelder({ lkVon: null, lkBis: null, fuer: null }));
   const [sperrgrund, setSperrgrund] = useState<string | null>(null);
   // Vorgabe bleibt die Platzpflege, wie vor der Kategoriewahl; sonst die erste.
   const [sperrart, setSperrart] = useState(
@@ -204,9 +285,10 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
     : 0;
   // Der Grund steht ueber dem Knopf (HANDOFF: Meldungen ueber dem Knopf) und
   // sagt, was als Naechstes zu tun ist - nicht, gegen welche Regel man verstoesst.
+  const filterPruefung = sucheMitspieler && nochPlatz ? partnerFilterAusEingabe(filter.von, filter.bis, filter.fuer) : null;
   const sperrHinweis = fehlen > 0
     ? `Noch ${fehlen} Mitspieler wählen${nochPlatz ? " – oder „Mitspieler gesucht“ einschalten" : ""}.`
-    : besetzungFehlt;
+    : filterPruefung && !filterPruefung.ok ? filterPruefung.meldung : besetzungFehlt;
   const hinweisId = useId();
   const suche = useRef<MitspielerHandle>(null);
 
@@ -296,6 +378,7 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
         />
 
         {nochPlatz && <GesuchtKarte an={sucheMitspieler} onWechsel={setSucheMitspieler} />}
+        {nochPlatz && sucheMitspieler && <SuchFilter felder={filter} onFelder={setFilter} mitNamen />}
 
         <div className="blatt-fuss">
           <Fehler text={props.fehler} />
@@ -411,6 +494,14 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
   const [umsetzOffen, setUmsetzOffen] = useState(false);
   const [bearbeitenOffen, setBearbeitenOffen] = useState(false);
   const [grund, setGrund] = useState("");
+  const gespeicherterFilter = partnerFilterAusZeile({
+    lk_von: b.partner_lk_von, lk_bis: b.partner_lk_bis, fuer: b.partner_fuer,
+  });
+  const [filter, setFilter] = useState<FilterFelder>(() => filterFelder(gespeicherterFilter));
+  const filterPruefung = partnerFilterAusEingabe(filter.von, filter.bis, filter.fuer);
+  const filterGeaendert =
+    filterPruefung.ok && JSON.stringify(filterPruefung.filter) !== JSON.stringify(gespeicherterFilter);
+  const filterZusatz = istEingeschraenkt(gespeicherterFilter) ? partnerFilterText(gespeicherterFilter) : null;
 
   const art = props.arten.find((a) => a.code === b.type_code);
   const maxWeitere = Math.max((art?.max_players ?? 4) - 1, 0);
@@ -489,7 +580,8 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
 
         {b.partner_wanted && b.frei > 0 && (
           <p className="gesucht-text">
-            Hier {b.frei === 1 ? "wird noch ein Mitspieler" : `werden noch ${b.frei} Mitspieler`} gesucht.
+            Hier {b.frei === 1 ? "wird noch ein Mitspieler" : `werden noch ${b.frei} Mitspieler`} gesucht
+            {filterZusatz ? ` (${filterZusatz})` : ""}.
           </p>
         )}
 
@@ -538,8 +630,32 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           <GesuchtKarte
             an={b.partner_wanted}
             deaktiviert={props.laeuft}
-            onWechsel={(an) => props.onAusschreiben(b.booking_id, an)}
+            onWechsel={(an) =>
+              props.onAusschreiben(b.booking_id, an, an && filterPruefung.ok ? filterPruefung.filter : undefined)
+            }
           />
+        )}
+
+        {/* Den Filter einer laufenden Suche zeigen und aendern. Vor dem
+            Einschalten bleibt er verborgen: dann gilt, was beim Schalten in
+            den Feldern steht - Standard 1–25 und Alle. */}
+        {!nurStorno && darfVerwalten && b.partner_wanted && (
+          <div className="suchfilter-block">
+            <SuchFilter felder={filter} onFelder={setFilter} deaktiviert={props.laeuft} />
+            {!filterPruefung.ok && <p className="hinweis fehler" role="alert">{filterPruefung.meldung}</p>}
+            {filterGeaendert && (
+              <button
+                type="button"
+                className="knopf klein"
+                disabled={props.laeuft}
+                onClick={() =>
+                  filterPruefung.ok && props.onAusschreiben(b.booking_id, true, filterPruefung.filter, true)
+                }
+              >
+                Suche anpassen
+              </button>
+            )}
+          </div>
         )}
 
         {bearbeitenOffen && kannSperreAendern && (

@@ -4,6 +4,7 @@ import {
   berlinDay,
   formatCents,
   isoDateLabel,
+  LK_FELD_LABEL,
   PROTOKOLL_BEREICHE,
   protokollBereich,
   protokollVorgang,
@@ -113,7 +114,7 @@ const FELD_LABEL: Record<string, string> = {
   status: "Status",
   is_trainer: "Trainer",
   nationality_code: "Nationalität",
-  tennis_lk: "Leistungsklasse",
+  tennis_lk: "LK",
   nuliga_id: "nuLiga-Id",
   playing_right: "Spielberechtigung",
   playing_right_since: "Spielberechtigt seit",
@@ -262,7 +263,13 @@ export default async function MitgliedSeite({
   ];
 
   const sportfelder: Feld[] = [
-    { name: "tennis_lk", label: "Leistungsklasse", art: "text", wert: m.tennis_lk, hinweis: "z. B. LK12.3" },
+    {
+      name: "tennis_lk",
+      label: LK_FELD_LABEL,
+      art: "text",
+      wert: m.tennis_lk,
+      hinweis: "Zahl von 1 (beste) bis 25, z. B. 14,5. Ohne offizielle LK eine Schätzung.",
+    },
     { name: "nuliga_id", label: "nuLiga-Id", art: "text", wert: m.nuliga_id },
     {
       name: "playing_right",

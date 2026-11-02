@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { translateDbError } from "@tcm/core";
+import { partnerFilterAusEingabe, translateDbError, type PartnerFilter } from "@tcm/core";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export interface AktionsErgebnis {
@@ -29,6 +29,18 @@ export async function buchen(formData: FormData): Promise<AktionsErgebnis> {
     return { ok: false, meldung: "Platz oder Zeitpunkt fehlt." };
   }
 
+  // "Nur für …" zaehlt nur, wenn wirklich gesucht wird.
+  let filter: PartnerFilter | null = null;
+  if (sucheMitspieler) {
+    const e = partnerFilterAusEingabe(
+      String(formData.get("lkVon") ?? ""),
+      String(formData.get("lkBis") ?? ""),
+      String(formData.get("partnerFuer") ?? ""),
+    );
+    if (!e.ok) return { ok: false, meldung: e.meldung };
+    filter = e.filter;
+  }
+
   const { error } = await supabase.rpc("create_booking", {
     p_court_id: courtId,
     p_starts_at: startsAt,
@@ -36,6 +48,7 @@ export async function buchen(formData: FormData): Promise<AktionsErgebnis> {
     p_player_member_ids: mitspieler,
     p_guest_names: gaeste,
     p_partner_wanted: sucheMitspieler,
+    ...filterParameter(filter, "p_partner_lk_von", "p_partner_lk_bis", "p_partner_fuer"),
   });
 
   if (error) {
@@ -248,16 +261,42 @@ export async function austragen(bookingId: string): Promise<AktionsErgebnis> {
   return { ok: true, meldung: "Du bist ausgetragen. Die Buchung ist storniert." };
 }
 
-/** Die Buchung fuer andere oeffnen oder wieder schliessen. Nur der Bucher. */
+/**
+ * Nur die gesetzten Grenzen als Parameter. Was fehlt, ist in der Datenbank
+ * null - und ohne Filter sieht der Aufruf genau aus wie vor dem Filter.
+ */
+function filterParameter<V extends string, B extends string, F extends string>(
+  filter: PartnerFilter | null,
+  von: V,
+  bis: B,
+  fuer: F,
+): Partial<Record<V | B, number> & Record<F, string>> {
+  if (!filter) return {};
+  return {
+    ...(filter.lkVon !== null ? { [von]: filter.lkVon } : {}),
+    ...(filter.lkBis !== null ? { [bis]: filter.lkBis } : {}),
+    ...(filter.fuer !== null ? { [fuer]: filter.fuer } : {}),
+  } as Partial<Record<V | B, number> & Record<F, string>>;
+}
+
+/**
+ * Die Buchung fuer andere oeffnen, wieder schliessen oder den Filter "Nur
+ * für …" aendern. Nur der Bucher. set_partner_wanted setzt bei gesucht=true
+ * den Filter jedes Mal neu; fehlende Grenzen heissen offen.
+ */
 export async function mitspielerSuchen(
   bookingId: string,
   gesucht: boolean,
+  filter?: PartnerFilter,
+  /** Die Suche war schon an, nur der Filter aendert sich. */
+  nurFilter = false,
 ): Promise<AktionsErgebnis> {
   const supabase = await createServerSupabase();
 
   const { error } = await supabase.rpc("set_partner_wanted", {
     p_booking_id: bookingId,
     p_wanted: gesucht,
+    ...filterParameter(gesucht ? (filter ?? null) : null, "p_lk_von", "p_lk_bis", "p_fuer"),
   });
 
   if (error) return { ok: false, meldung: translateDbError(error) };
@@ -266,9 +305,11 @@ export async function mitspielerSuchen(
   revalidatePath("/plan/spiele");
   return {
     ok: true,
-    meldung: gesucht
-      ? "Die Buchung steht jetzt bei den offenen Spielen."
-      : "Die Buchung ist nicht mehr ausgeschrieben.",
+    meldung: !gesucht
+      ? "Die Buchung ist nicht mehr ausgeschrieben."
+      : nurFilter
+        ? "Die Suche ist angepasst."
+        : "Die Buchung steht jetzt bei den offenen Spielen.",
   };
 }
 

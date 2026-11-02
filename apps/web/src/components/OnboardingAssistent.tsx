@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
+  LK_FELD_FEHLER,
+  LK_FELD_HINWEIS,
+  LK_FELD_LABEL,
   isValidIban,
+  lkNormalisieren,
   mandatstext,
   normalizeIban,
   type OnboardingSchritt,
@@ -572,10 +576,28 @@ function Tennis({
     nuliga_id: t.nuliga_id ?? "",
     mannschaft_interesse: t.mannschaft_interesse,
   });
+  const [lkGeprueft, setLkGeprueft] = useState(false);
+  const lkOk = lkNormalisieren(d.tennis_lk).ok;
   return (
-    <Formular onSubmit={() => speichere(d)}>
-      <p className="unterzeile">Hilft dem Sportwart bei Mannschaften und Turnieren.</p>
-      <Feld label="Leistungsklasse (LK)" maxLength={20} value={d.tennis_lk} onChange={(e) => setD({ ...d, tennis_lk: e.target.value })} placeholder="z. B. 18,4" />
+    <Formular onSubmit={() => (lkOk ? speichere(d) : setLkGeprueft(true))}>
+      <p className="unterzeile">Hilft dem Sportwart bei Mannschaften und Turnieren und bei der Suche nach Mitspielern.</p>
+      <label>
+        <span>{LK_FELD_LABEL}</span>
+        <input
+          inputMode="decimal"
+          maxLength={10}
+          value={d.tennis_lk}
+          onChange={(e) => setD({ ...d, tennis_lk: e.target.value })}
+          onBlur={() => setLkGeprueft(true)}
+          placeholder="z. B. 18,4"
+          aria-invalid={lkGeprueft && !lkOk}
+        />
+        {lkGeprueft && !lkOk ? (
+          <span className="beschreibung fehlertext">{LK_FELD_FEHLER}</span>
+        ) : (
+          <span className="beschreibung">{LK_FELD_HINWEIS}</span>
+        )}
+      </label>
       <Feld label="nuLiga-ID" maxLength={40} value={d.nuliga_id} onChange={(e) => setD({ ...d, nuliga_id: e.target.value })} />
       <label className="schalter">
         <input
