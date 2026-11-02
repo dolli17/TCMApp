@@ -13,8 +13,11 @@ import { istLokalerStack, sqlLokal } from "./lokale-db";
  * Nummer und trägt ihn wieder aus. Der Admin ist hier nur Mitglied: seine
  * Rechte spielen beim Annehmen keine Rolle.
  *
- * Mannschaft, Telefon und Einladungen des Admins setzt der Test vorher per
- * psql auf einen festen Stand und schreibt sie am Ende zurück.
+ * Der lokale Stack wird von anderen Spuren mitbenutzt. Der Seed gibt dem
+ * Admin eine offene Einladung in "Herren", die beim Annehmen geschlossen
+ * wird. Deshalb sichert der Test Mannschaft, Telefon und Einladungen des
+ * Admins vorher, schreibt sie am Ende genau so zurück und löscht nur, was
+ * der Lauf selbst angelegt hat (Einladung, Benachrichtigungen).
  */
 
 const NUMMER = "0171 5550123";
@@ -54,8 +57,9 @@ function sqlText(wert: string | null): string {
   return wert === null ? "null" : `'${wert.replace(/'/g, "''")}'`;
 }
 
-/** Einladungen an den Admin weg, damit jeder Lauf bei null anfängt. */
-const EINLADUNGEN_WEG = `delete from public.team_invitations where member_id = '${MITGLIED_ID.admin}';`;
+type Einladung = { id: string; team_id: string; status: string; answered_at: string | null; expires_at: string };
+
+const MANNSCHAFTS_ARTEN = "('team_invited', 'team_invitation_answered', 'team_removed', 'team_left')";
 
 async function neueSeite(browser: Browser, email: string): Promise<Page> {
   const kontext = await browser.newContext();
@@ -69,33 +73,55 @@ test.describe("Konto › Mannschaft", () => {
   test.skip(!istLokalerStack(), "setzt den Stand per psql, nur gegen den lokalen Stack");
 
   test("MF lädt ein, Mitglied nimmt mit Telefon an, MF sieht die Nummer und trägt aus", async ({ browser }) => {
+    // Zwei Konten, gut ein Dutzend Seitenaufrufe: mehr als die üblichen 45 s.
+    test.setTimeout(180_000);
     const admin = await client(NUTZER.admin);
     const { data, error } = await admin
       .from("members")
-      .select("first_name, last_name, team_id, is_team_captain, mobile, team_phone_visible")
+      .select("first_name, last_name, team_id, is_team_captain, mobile")
       .eq("id", MITGLIED_ID.admin)
       .single();
     expect(error).toBeNull();
-    const vorher = data as Stand;
+    // team_phone_visible hat keinen Spalten-Grant; den Stand liefert meine_mannschaft().
+    const { data: adminMannschaft } = await admin.rpc("meine_mannschaft");
+    const vorher = {
+      ...(data as Omit<Stand, "team_phone_visible">),
+      team_phone_visible: (adminMannschaft as { telefon_sichtbar?: boolean } | null)?.telefon_sichtbar === true,
+    };
     const name = `${vorher.first_name} ${vorher.last_name}`;
 
-    // Fester Ausgangsstand: ohne Mannschaft, mit Mobilnummer, ohne Einladung.
+    const { data: einladungenDaten, error: einladungenFehler } = await admin
+      .from("team_invitations")
+      .select("id, team_id, status, answered_at, expires_at")
+      .eq("member_id", MITGLIED_ID.admin);
+    expect(einladungenFehler).toBeNull();
+    const einladungenVorher = (einladungenDaten ?? []) as Einladung[];
+    const start = new Date(Date.now() - 5_000).toISOString();
+
+    const mitglied = await client(NUTZER.mitglied);
+    const { data: mm } = await mitglied.rpc("meine_mannschaft");
+    const mmStand = mm as { ich_bin_mf?: boolean; name?: string; team_id?: string } | null;
+    expect(mmStand?.ich_bin_mf, "Testmitglied ist im Seed MF").toBe(true);
+    const mannschaft = mmStand!.name!;
+    const teamId = mmStand!.team_id!;
+    // Eine alte Einladung in diese Mannschaft (abgebrochener Lauf) stünde im Weg.
+    expect(einladungenVorher.filter((e) => e.team_id === teamId && e.status === "offen")).toEqual([]);
+
+    // Fester Ausgangsstand: ohne Mannschaft, mit Mobilnummer.
     sqlLokal(
-      `${EINLADUNGEN_WEG}
-       update public.members set team_id = null, is_team_captain = false, team_phone_visible = false,
+      `update public.members set team_id = null, is_team_captain = false, team_phone_visible = false,
               mobile = ${sqlText(NUMMER)} where id = '${MITGLIED_ID.admin}';`,
       "Ausgangsstand für den Admin ließ sich nicht setzen",
     );
 
-    const mitglied = await client(NUTZER.mitglied);
-    const { data: mm } = await mitglied.rpc("meine_mannschaft");
-    expect((mm as { ich_bin_mf?: boolean; name?: string } | null)?.ich_bin_mf, "Testmitglied ist im Seed MF").toBe(true);
-    const mannschaft = (mm as { name: string }).name;
-
-    const mf = await neueSeite(browser, NUTZER.mitglied);
-    const eingeladener = await neueSeite(browser, NUTZER.admin);
+    const kontexte: Page[] = [];
 
     try {
+      const mf = await neueSeite(browser, NUTZER.mitglied);
+      kontexte.push(mf);
+      const eingeladener = await neueSeite(browser, NUTZER.admin);
+      kontexte.push(eingeladener);
+
       // --- MF lädt ein ---------------------------------------------------
       await mf.goto("/konto");
       await mf.getByRole("link", { name: /^Mannschaft/ }).click();
@@ -110,7 +136,7 @@ test.describe("Konto › Mannschaft", () => {
 
       // --- Mitglied nimmt an, mit Telefon --------------------------------
       await eingeladener.goto("/konto");
-      await expect(eingeladener.getByRole("link", { name: /^Mannschaft/ })).toContainText("1 neue Einladung");
+      await expect(eingeladener.getByRole("link", { name: /^Mannschaft/ })).toContainText("neue Einladung");
       await eingeladener.goto("/konto/mannschaft");
       const einladung = eingeladener.getByTestId("einladung").filter({ hasText: mannschaft });
       await expect(einladung).toContainText(`lädt dich in die Mannschaft ${mannschaft} ein.`);
@@ -142,22 +168,33 @@ test.describe("Konto › Mannschaft", () => {
       await expect(mf.getByTestId("kader-zeile").filter({ hasText: name })).toHaveCount(0);
 
       // Ausgetragen heißt auch: Freigabe zurück auf aus.
-      const { data: nachher } = await admin
-        .from("members")
-        .select("team_id, team_phone_visible")
-        .eq("id", MITGLIED_ID.admin)
-        .single();
-      expect(nachher).toEqual({ team_id: null, team_phone_visible: false });
+      // Ohne Mannschaft liefert meine_mannschaft() null; der Trigger setzt die Freigabe zurück.
+      const { data: nachher } = await admin.rpc("meine_mannschaft");
+      expect(nachher).toBeNull();
     } finally {
-      await mf.context().close();
-      await eingeladener.context().close();
+      // Erst die Daten zurück, dann die Browser: nach einem Timeout schlägt
+      // das Schließen fehl, und der geteilte Stack bliebe verändert.
+      const bekannte = einladungenVorher.map((e) => `'${e.id}'`).join(", ") || "null";
+      const zurueck = einladungenVorher
+        .map(
+          (e) =>
+            `update public.team_invitations set status = ${sqlText(e.status)}, answered_at = ${sqlText(e.answered_at)},
+                    expires_at = ${sqlText(e.expires_at)} where id = '${e.id}';`,
+        )
+        .join("\n");
       sqlLokal(
-        `${EINLADUNGEN_WEG}
+        `delete from public.team_invitations
+          where member_id = '${MITGLIED_ID.admin}' and id not in (${bekannte});
+         ${zurueck}
+         delete from public.notifications
+          where kind in ${MANNSCHAFTS_ARTEN} and created_at >= '${start}'
+            and member_id in ('${MITGLIED_ID.admin}', '${MITGLIED_ID.mitglied}');
          update public.members set team_id = ${sqlText(vorher.team_id)}, is_team_captain = ${vorher.is_team_captain},
                 team_phone_visible = ${vorher.team_phone_visible}, mobile = ${sqlText(vorher.mobile)}
           where id = '${MITGLIED_ID.admin}';`,
         "Stand des Admins ließ sich nicht zurückschreiben",
       );
+      for (const seite of kontexte) await seite.context().close().catch(() => {});
     }
   });
 
