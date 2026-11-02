@@ -5,6 +5,7 @@ import de.tcmuckensturm.app.daten.Forderung
 import de.tcmuckensturm.app.daten.MeinMandat
 import de.tcmuckensturm.app.daten.MeinProfil
 import de.tcmuckensturm.app.daten.MerkmalZeile
+import de.tcmuckensturm.app.daten.OnboardingZustand
 import de.tcmuckensturm.app.daten.SupabaseVerbindung
 import de.tcmuckensturm.app.theme.Erscheinungsbild
 import java.time.Instant
@@ -189,5 +190,56 @@ class KontoLogikTest {
         // Unbekanntes oder nichts Gespeichertes folgt dem System.
         assertEquals(Erscheinungsbild.SYSTEM, Erscheinungsbild.aus(null))
         assertEquals(Erscheinungsbild.SYSTEM, Erscheinungsbild.aus("bunt"))
+    }
+
+    // ---- Tennis ---------------------------------------------------------------
+
+    @Test
+    fun tennisAusMyOnboarding() {
+        val z = OnboardingZustand.aus(
+            """{"abgeschlossen_am":"2026-10-01T10:00:00Z","tennis":{"tennis_lk":"LK14,5","nuliga_id":"12345678","mannschaft_interesse":true}}""",
+        )!!
+        assertEquals(OnboardingZustand.Tennis("LK14,5", "12345678", true), z.tennis)
+        assertEquals(OnboardingZustand.Tennis(), OnboardingZustand.aus("""{"tennis":{}}""")!!.tennis)
+    }
+
+    @Test
+    fun tennisUebersicht() {
+        assertEquals(
+            "LK14,5 · nuLiga 12345678 · Interesse an Mannschaft",
+            KontoLogik.tennisUebersicht(OnboardingZustand.Tennis("LK14,5", "12345678", true)),
+        )
+        assertEquals("LK8,0", KontoLogik.tennisUebersicht(OnboardingZustand.Tennis("8", null, false)))
+        assertEquals("nuLiga 42", KontoLogik.tennisUebersicht(OnboardingZustand.Tennis(" ", " 42 ", false)))
+        assertEquals("Interesse an Mannschaft", KontoLogik.tennisUebersicht(OnboardingZustand.Tennis(mannschaftInteresse = true)))
+        assertEquals("Noch keine Angaben", KontoLogik.tennisUebersicht(OnboardingZustand.Tennis()))
+        assertEquals("Noch keine Angaben", KontoLogik.tennisUebersicht(null))
+        // Altbestand, der sich nicht normalisieren laesst, bleibt, wie er ist.
+        assertEquals("LK 30", KontoLogik.tennisUebersicht(OnboardingZustand.Tennis("LK 30")))
+    }
+
+    @Test
+    fun tennisPruefen() {
+        assertEquals(KontoLogik.TennisEingabe.Ok("LK14,5", "123"), KontoLogik.pruefeTennis(" lk 14.5 ", " 123 "))
+        assertEquals(KontoLogik.TennisEingabe.Ok("LK1,0", ""), KontoLogik.pruefeTennis("1", ""))
+        assertEquals(KontoLogik.TennisEingabe.Ok("LK25,0", ""), KontoLogik.pruefeTennis("25,0", ""))
+        assertEquals(KontoLogik.TennisEingabe.Ok(null, ""), KontoLogik.pruefeTennis("  ", "  "))
+        for (falsch in listOf("0,9", "25,1", "14,55", "abc", "26")) {
+            val e = KontoLogik.pruefeTennis(falsch, "")
+            assertTrue(falsch, e is KontoLogik.TennisEingabe.Fehler && e.feld == "tennis_lk")
+        }
+        assertEquals(KontoLogik.TennisEingabe.Ok(null, "x".repeat(40)), KontoLogik.pruefeTennis("", "x".repeat(40)))
+        assertEquals(
+            KontoLogik.TennisEingabe.Fehler("nuliga_id", KontoLogik.NULIGA_FEHLER),
+            KontoLogik.pruefeTennis("", "x".repeat(41)),
+        )
+    }
+
+    @Test
+    fun mannschaftNurLesend() {
+        assertEquals("Damen 30 · Mannschaftsführer", KontoLogik.mannschaftText(MeinProfil(teamName = "Damen 30", isTeamCaptain = true)))
+        assertEquals("Herren 40", KontoLogik.mannschaftText(MeinProfil(teamName = "Herren 40", isTeamCaptain = false)))
+        assertNull(KontoLogik.mannschaftText(MeinProfil(teamName = "")))
+        assertNull(KontoLogik.mannschaftText(null))
     }
 }

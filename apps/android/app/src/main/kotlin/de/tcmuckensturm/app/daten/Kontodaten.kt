@@ -6,6 +6,9 @@
  * ueber RPCs: statt der Tabellen members, memberships und sepa_mandates
  * nimmt die native App mein_profil(), mein_mandat(), save_my_profile und
  * save_my_notfallkontakt (docs/native/app-api.md, "Neu fuer die nativen Apps").
+ * Den Bereich Tennis (LK, nuLiga-ID, Mannschaftsinteresse) lesen und
+ * schreiben dieselben RPCs wie im Onboarding: my_onboarding und
+ * save_my_tennis, ueber Onboardingdaten.
  *
  * Lesende Aufrufe werfen den uebersetzten Satz als `Meldung`, schreibende
  * geben ein `Ergebnis` zurueck, dessen Meldung im Formular erscheint.
@@ -121,6 +124,8 @@ data class Ergebnis(
 // ---- Laden und Speichern ----------------------------------------------------
 
 class Kontodaten(private val client: SupabaseClient) {
+    private val onboarding by lazy { Onboardingdaten(client) }
+
     private suspend fun <T> uebersetzt(aufruf: suspend () -> T): T = try {
         aufruf()
     } catch (e: CancellationException) {
@@ -190,6 +195,13 @@ class Kontodaten(private val client: SupabaseClient) {
             client.postgrest.rpc("save_my_notfallkontakt", parameter(params))
         }
     }
+
+    /** Der Tennis-Teil aus my_onboarding(); ohne Mitglied null. Liefert die RPC auch nach dem Onboarding. */
+    suspend fun tennis(): OnboardingZustand.Tennis? = onboarding.laden()?.tennis
+
+    /** save_my_tennis wie im Onboarding; das Interesse geht immer mit, sonst loescht die RPC es. */
+    suspend fun speichereTennis(lk: String, nuligaId: String, mannschaftInteresse: Boolean): Ergebnis =
+        onboarding.speichereTennis(lk, nuligaId, mannschaftInteresse)
 
     /** Optionale Parameter fehlen, statt null zu sein (Grundsaetze in app-api.md). */
     suspend fun setzeMerkmal(code: String, option: String? = null, text: String? = null): Ergebnis =

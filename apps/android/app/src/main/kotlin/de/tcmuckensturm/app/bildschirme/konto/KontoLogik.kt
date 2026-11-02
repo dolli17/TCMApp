@@ -10,12 +10,14 @@
 package de.tcmuckensturm.app.bildschirme.konto
 
 import de.tcmuckensturm.app.bildschirme.home.Abschnitt
+import de.tcmuckensturm.app.bildschirme.onboarding.OnboardingLogik
 import de.tcmuckensturm.app.daten.Arbeitsdienst
 import de.tcmuckensturm.app.daten.EigenesGetraenk
 import de.tcmuckensturm.app.daten.Forderung
 import de.tcmuckensturm.app.daten.MeinMandat
 import de.tcmuckensturm.app.daten.MeinProfil
 import de.tcmuckensturm.app.daten.MerkmalZeile
+import de.tcmuckensturm.app.daten.OnboardingZustand
 import de.tcmuckensturm.kern.Forderungen
 import de.tcmuckensturm.kern.Merkmaltexte
 import de.tcmuckensturm.kern.Zahlen
@@ -31,6 +33,8 @@ data class KontoInhalt(
     val dienst: Abschnitt<Arbeitsdienst?>,
     val mandat: Abschnitt<MeinMandat?>,
     val merkmale: Abschnitt<List<MerkmalZeile>>,
+    /** Aus my_onboarding(); null, wenn kein Mitglied angemeldet ist. */
+    val tennis: Abschnitt<OnboardingZustand.Tennis?> = Abschnitt.Wert(null),
 )
 
 /** Ein Merkmal mit allen seinen Werten (buendeln in MerkmaleKarte.tsx). */
@@ -228,4 +232,51 @@ object KontoLogik {
     /** Die Optionen, die noch nicht gesetzt sind ("+ Option"). */
     fun freieOptionen(m: Merkmal): List<MerkmalZeile.Option> =
         m.optionen.filter { o -> m.werte.none { it.option == o.value } }
+
+    // ---- Tennis ---------------------------------------------------------------
+
+    const val TENNIS_ERKLAERUNG = "Die LK bestimmt, welche Mitspielersuchen du siehst."
+    const val TENNIS_INTERESSE = "Interesse an einer Mannschaft"
+    const val TENNIS_LEER = "Noch keine Angaben"
+    const val NULIGA_LABEL = "nuLiga-ID"
+
+    /** Wie in save_my_tennis */
+    const val NULIGA_MAX = 40
+    const val NULIGA_FEHLER = "Die nuLiga-ID darf höchstens 40 Zeichen lang sein."
+
+    /** "LK14,5 · nuLiga 12345678 · Interesse an Mannschaft", ohne Angaben "Noch keine Angaben". */
+    fun tennisUebersicht(t: OnboardingZustand.Tennis?): String {
+        if (t == null) return TENNIS_LEER
+        val lk = t.tennisLk?.trim().orEmpty()
+        val nuliga = t.nuligaId?.trim().orEmpty()
+        val teile = listOfNotNull(
+            lk.takeIf { it.isNotEmpty() }?.let { (OnboardingLogik.lkNormalisieren(it) as? OnboardingLogik.LkEingabe.Ok)?.wert ?: it },
+            nuliga.takeIf { it.isNotEmpty() }?.let { "nuLiga $it" },
+            "Interesse an Mannschaft".takeIf { t.mannschaftInteresse },
+        )
+        return if (teile.isEmpty()) TENNIS_LEER else teile.joinToString(" · ")
+    }
+
+    sealed interface TennisEingabe {
+        /** lk normalisiert ("LK14,5") oder null, nuligaId getrimmt */
+        data class Ok(val lk: String?, val nuligaId: String) : TennisEingabe
+        data class Fehler(val feld: String, val meldung: String) : TennisEingabe
+    }
+
+    /** Dieselbe Pruefung wie der Onboarding-Schritt; Feldnamen wie die Spalten. */
+    fun pruefeTennis(lk: String, nuligaId: String): TennisEingabe {
+        val wert = when (val e = OnboardingLogik.lkNormalisieren(lk)) {
+            OnboardingLogik.LkEingabe.Fehler -> return TennisEingabe.Fehler("tennis_lk", OnboardingLogik.LK_FEHLER)
+            is OnboardingLogik.LkEingabe.Ok -> e.wert
+        }
+        val nuliga = nuligaId.trim()
+        if (nuliga.length > NULIGA_MAX) return TennisEingabe.Fehler("nuliga_id", NULIGA_FEHLER)
+        return TennisEingabe.Ok(wert, nuliga)
+    }
+
+    /** Was der Vorstand eintraegt, nur lesend: "Damen 30 · Mannschaftsführer". Ohne Mannschaft null. */
+    fun mannschaftText(p: MeinProfil?): String? {
+        val team = p?.teamName?.takeIf { it.isNotEmpty() } ?: return null
+        return if (p.isTeamCaptain == true) "$team · Mannschaftsführer" else team
+    }
 }
