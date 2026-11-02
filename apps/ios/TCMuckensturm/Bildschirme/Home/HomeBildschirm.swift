@@ -5,8 +5,8 @@
  * Schnellaktionen, welche Plaetze gerade frei sind, wer Mitspieler sucht,
  * was demnaechst im Verein ansteht, der laufende Monat und die letzten
  * Neuigkeiten. Nur Lesen - gebucht und eingetragen wird auf den
- * Bildschirmen, auf die die Knoepfe fuehren (bis es sie nativ gibt: der
- * passende Tab; Getraenke und Veranstaltungen ueber zuVerein).
+ * Bildschirmen, auf die die Knoepfe fuehren: Belegung und Spiele ueber
+ * zuPlaetze, Getraenke und Veranstaltungen ueber zuVerein.
  *
  * Alle Abschnitte laden parallel und jeder fuer sich: schlaegt einer fehl,
  * steht dort der Fehler, und der Rest bleibt gefuellt.
@@ -132,7 +132,7 @@ private struct Wischreihe<Inhalt: View>: View {
 // MARK: - Als Naechstes
 
 private struct AlsNaechstes: View {
-    @Environment(\.zuTab) private var zuTab
+    @Environment(\.zuPlaetze) private var zuPlaetze
     let termine: Abschnitt<[MeineBuchung]>
     let erneut: Erneut
 
@@ -141,7 +141,7 @@ private struct AlsNaechstes: View {
         let kommende = Startseite.upcomingBookings(termine.wert ?? [], now: jetzt)
         Kopfzeile(
             titel: "Als Nächstes",
-            link: kommende.isEmpty ? nil : ("Alle", "Alle Termine", { zuTab(.plaetze) })
+            link: kommende.isEmpty ? nil : ("Alle", "Alle Termine", { zuPlaetze(.spiele(offeneZuerst: false)) })
         )
         if let f = termine.fehler {
             Fehlerzeile(text: f, laeuft: erneut.laeuft, onErneut: erneut.aktion)
@@ -151,13 +151,13 @@ private struct AlsNaechstes: View {
             Leerzustand(
                 titel: "Noch nichts geplant",
                 text: "Such dir einen Platz – heute ist noch einiges frei.",
-                handlung: ("Platz buchen", { zuTab(.plaetze) })
+                handlung: ("Platz buchen", { zuPlaetze(.belegung) })
             )
         }
         if !kommende.isEmpty {
             Wischreihe {
                 ForEach(Array(kommende.enumerated()), id: \.element.id) { i, t in
-                    TerminKarte(t: t, erste: i == 0, jetzt: jetzt) { zuTab(.plaetze) }
+                    TerminKarte(t: t, erste: i == 0, jetzt: jetzt) { zuPlaetze(.belegung) }
                 }
             }
         }
@@ -247,14 +247,15 @@ private struct TerminKarte: View {
 // MARK: - Schnellaktionen
 
 private struct Schnellaktionen: View {
-    @Environment(\.zuTab) private var zuTab
+    @Environment(\.zuPlaetze) private var zuPlaetze
     @Environment(\.zuVerein) private var zuVerein
     @Environment(\.dynamicTypeSize) private var textgroesse
 
     private struct Kachel: Identifiable {
         let text: String
         let symbol: String
-        let ziel: HauptTab
+        /// nil: die Getraenke im Verein
+        let ziel: PlaetzeZiel?
         var gelb = false
         var id: String { text }
     }
@@ -263,15 +264,15 @@ private struct Schnellaktionen: View {
         // Bei grosser Schrift untereinander, Symbol neben dem Text (U5).
         let gestapelt = textgroesse >= .xxLarge
         let kacheln = [
-            Kachel(text: "Platz buchen", symbol: "calendar.badge.plus", ziel: .plaetze, gelb: true),
-            Kachel(text: "Getränk eintragen", symbol: "wineglass", ziel: .verein),
-            Kachel(text: "Mitspielen", symbol: "person.badge.plus", ziel: .plaetze),
+            Kachel(text: "Platz buchen", symbol: "calendar.badge.plus", ziel: .belegung, gelb: true),
+            Kachel(text: "Getränk eintragen", symbol: "wineglass", ziel: nil),
+            Kachel(text: "Mitspielen", symbol: "person.badge.plus", ziel: .spiele(offeneZuerst: true)),
         ]
         let layout = gestapelt ? AnyLayout(VStackLayout(spacing: 10)) : AnyLayout(HStackLayout(alignment: .top, spacing: 10))
         layout {
             ForEach(kacheln) { k in
                 let tinte = k.gelb ? Farbe.onGold : Farbe.ink
-                Button { k.ziel == .verein ? zuVerein(.getraenke) : zuTab(k.ziel) } label: {
+                Button { if let ziel = k.ziel { zuPlaetze(ziel) } else { zuVerein(.getraenke) } } label: {
                     let symbol = Image(systemName: k.symbol)
                         .font(.system(size: 20, weight: k.gelb ? .semibold : .regular))
                         .foregroundStyle(tinte)
@@ -306,23 +307,23 @@ private struct Schnellaktionen: View {
 // MARK: - Jetzt frei
 
 private struct JetztFrei: View {
-    @Environment(\.zuTab) private var zuTab
+    @Environment(\.zuPlaetze) private var zuPlaetze
     let frei: Abschnitt<FreiDaten>
     let erneut: Erneut
 
     var body: some View {
         let karten = frei.wert.map { HomeLogik.jetztFreiKarten($0, jetzt: Date()) } ?? []
-        Kopfzeile(titel: "Jetzt frei", link: ("Alle Plätze", nil, { zuTab(.plaetze) }))
+        Kopfzeile(titel: "Jetzt frei", link: ("Alle Plätze", nil, { zuPlaetze(.belegung) }))
         if let f = frei.fehler {
             Fehlerzeile(text: f, laeuft: erneut.laeuft, onErneut: erneut.aktion)
         }
         if frei.wert != nil && karten.isEmpty {
-            Leerzustand(text: "Gerade ist kein Platz frei.", handlung: ("Belegung ansehen", { zuTab(.plaetze) }))
+            Leerzustand(text: "Gerade ist kein Platz frei.", handlung: ("Belegung ansehen", { zuPlaetze(.belegung) }))
         }
         if !karten.isEmpty {
             Wischreihe(abstand: 10) {
                 ForEach(karten) { k in
-                    Button { zuTab(.plaetze) } label: {
+                    Button { zuPlaetze(.belegung) } label: {
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
                                 Text(k.name)
@@ -353,14 +354,14 @@ private struct JetztFrei: View {
 // MARK: - Offene Spiele
 
 private struct OffeneSpiele: View {
-    @Environment(\.zuTab) private var zuTab
+    @Environment(\.zuPlaetze) private var zuPlaetze
     let offen: Abschnitt<[OffenesSpiel]>
     let erneut: Erneut
 
     var body: some View {
         let liste = HomeLogik.offeneSpiele(offen.wert ?? [])
         let jetzt = Date()
-        Kopfzeile(titel: "Offene Spiele", link: ("Alle", "Alle offenen Spiele", { zuTab(.plaetze) }))
+        Kopfzeile(titel: "Offene Spiele", link: ("Alle", "Alle offenen Spiele", { zuPlaetze(.spiele(offeneZuerst: true)) }))
         if let f = offen.fehler {
             Fehlerzeile(text: f, laeuft: erneut.laeuft, onErneut: erneut.aktion)
         }
@@ -398,7 +399,7 @@ private struct OffeneSpiele: View {
                 if o.binDabei == true {
                     Text("Dabei").font(Schrift.text(.fett, Tokens.Schrift.klein)).foregroundStyle(Farbe.muted)
                 } else {
-                    Button { zuTab(.plaetze) } label: {
+                    Button { zuPlaetze(.spiele(offeneZuerst: true)) } label: {
                         Text("Mitspielen")
                             .font(Schrift.text(.fett, 14))
                             .foregroundStyle(Farbe.onGold)

@@ -250,7 +250,11 @@ final class WidgetTests: XCTestCase {
         XCTAssertEqual(PushZiel.ausPfad(pfad), .veranstaltung(id: "4f1c-9a"))
 
         XCTAssertEqual(WidgetLink.url(WidgetLink.plaetze, schema: "tcm")?.absoluteString, "tcm://plaetze")
-        XCTAssertEqual(WidgetLink.pfad(aus: URL(string: "tcm://plaetze")!, schema: "tcm").flatMap(PushZiel.ausPfad), .tab(.plaetze))
+        XCTAssertEqual(WidgetLink.pfad(aus: URL(string: "tcm://plaetze")!, schema: "tcm").flatMap(PushZiel.ausPfad), .plaetze(.belegung))
+        // "Meine nächsten Spiele" fuehrt auf die Spiele-Sicht
+        let spiele = try XCTUnwrap(WidgetLink.url(WidgetLink.spiele, schema: "tcm"))
+        XCTAssertEqual(spiele.absoluteString, "tcm://plaetze/spiele")
+        XCTAssertEqual(WidgetLink.pfad(aus: spiele, schema: "tcm").flatMap(PushZiel.ausPfad), .plaetze(.spiele(offeneZuerst: false)))
         XCTAssertEqual(WidgetLink.pfad(aus: URL(string: "tcm://home")!, schema: "tcm").flatMap(PushZiel.ausPfad), .tab(.home))
         XCTAssertEqual(WidgetLink.pfad(aus: URL(string: "tcm://verein")!, schema: "tcm").flatMap(PushZiel.ausPfad), .tab(.verein))
     }

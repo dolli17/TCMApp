@@ -187,6 +187,11 @@ xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMTab konto -TCMKontoBla
 | ![Freie Zeiten hell](docs/plaetze-freie-zeiten-offen-hell.png) | ![Raster hell](docs/plaetze-raster-hell.png) | ![Buchen hell](docs/plaetze-buchen-hell.png) | ![Eigene Buchung hell](docs/plaetze-eigene-buchung-hell.png) |
 | ![Freie Zeiten dunkel](docs/plaetze-freie-zeiten-offen-dunkel.png) | ![Raster dunkel](docs/plaetze-raster-dunkel.png) | ![Buchen dunkel](docs/plaetze-buchen-dunkel.png) | ![Eigene Buchung dunkel](docs/plaetze-eigene-buchung-dunkel.png) |
 
+| Spiele | Offene zuerst | Leer |
+|---|---|---|
+| ![Spiele hell](docs/plaetze-spiele-hell.png) | ![Offene zuerst hell](docs/plaetze-spiele-offen-hell.png) | ![Leer hell](docs/plaetze-spiele-leer-hell.png) |
+| ![Spiele dunkel](docs/plaetze-spiele-dunkel.png) | ![Offene zuerst dunkel](docs/plaetze-spiele-offen-dunkel.png) | ![Leer dunkel](docs/plaetze-spiele-leer-dunkel.png) |
+
 Wie `apps/mobile/app/(tabs)/plaetze/`, Texte wortgleich (`Bildschirme/Plaetze/`).
 
 - **Belegungsplan:** Tag wählen bis `lead_days`, zwei Ansichten (Raster Plätze × Zeit, Freie Zeiten
@@ -197,6 +202,14 @@ Wie `apps/mobile/app/(tabs)/plaetze/`, Texte wortgleich (`Bildschirme/Plaetze/`)
   gesucht“, Kontingent (`my_booking_quota`), Fehler über `translateDbError`.
 - **Eigene Buchung:** Mitspieler ändern, stornieren mit Grund (zweistufig), Serientermin absagen,
   Mitspielersuche umschalten; offene Spiele anderer: mitspielen.
+- **Meine & offene Spiele** (`SpieleBildschirm.swift`, Umschalter oben unter dem Titel): „Deine Termine“
+  aus `my_bookings` – als Bucher stornieren (`cancel_booking`), als Mitspieler austragen (`leave_booking`),
+  beides nur bis Spielbeginn, über das Menü „…“ mit Rückfrage. Austragen storniert die ganze Buchung, das
+  sagt die Rückfrage („Austragen und Buchung stornieren?“). „Offene Spiele“ aus `open_matches` mit
+  Mitspielen (`join_booking`). Danach laden beide Listen neu. Wer über „Mitspielen“ oder „Alle“ bei den
+  offenen Spielen auf Home kommt, sieht die offenen Spiele oben (`PlaetzeZustand`, `zuPlaetze`). Logik in
+  `SpieleLogik.swift` (`SpieleLogikTests`, Golden File `offenesSpielText`). Bildschirmfotos ohne Klicks:
+  `-TCMTab plaetze -TCMPlaetze spiele|offen`.
 - **Sperren und Umsetzen** (mit Platzrechten): zweistufig, wenn Buchungen im Weg liegen
   (`create_blocking`/`update_blocking`, `move_booking`).
 - **Logik:** neue Kernfunktionen in `Kern/Platzplan.swift` (aus `@tcm/core`, gegen die Golden Files
@@ -367,7 +380,8 @@ Wie `apps/mobile/src/lib/push.ts`, aber direkt über APNs (`App/PushAnmeldung.sw
   Nachrichten des Vorbesitzers.
 - **Tippen:** Der App-Delegate (`PushAppDelegate`) gibt `ziel`, `kind` und `event_id` an `PushZiel.aus`
   (reine Funktion, nur eigene Pfade wie `sichererWeiterPfad`). `/nachrichten` öffnet die Neuigkeiten als
-  Blatt, `/verein/veranstaltung/<id>` das Detail im Verein, `/plaetze`, `/konto` usw. den Tab. Das Ziel
+  Blatt, `/verein/veranstaltung/<id>` das Detail im Verein, `/plaetze` die Belegung, `/plaetze/spiele`,
+  `/plaetze/meine` und `/plaetze/offen` (auch `/plan/…` aus dem Web) die Spiele, `/konto` usw. den Tab. Das Ziel
   wartet, bis die Tabs stehen, also auch beim Kaltstart (`App/PushNavigation.swift`).
 - **Entitlement** `aps-environment` = `APS_UMGEBUNG`: `development` für Lokal und Dev, `production`
   für Prod (`Konfiguration/*.xcconfig`). Marken aus `development` gelten nur mit `APNS_UMGEBUNG=sandbox`
@@ -424,7 +438,8 @@ Erweiterung `TCMWidgets` (WidgetKit), Bundle-ID `<App>.widgets` je Konfiguration
   ohne Netz weiterrücken. Ohne Daten erneut nach 15 Minuten.
 - **Ohne Sitzung:** „In der App anmelden“. Vor dem ersten Entsperren ist der Schlüsselbund nicht lesbar; das
   Widget zeigt deshalb einen vorhandenen Schnappschuss noch bis zu 12 Stunden weiter.
-- **Tippen** öffnet die App über das eigene Schema (`tcm://plaetze`, `tcm://verein/veranstaltung/<id>`,
+- **Tippen** öffnet die App über das eigene Schema (`tcm://plaetze/spiele` bei „Meine nächsten Spiele“,
+  `tcm://plaetze`, `tcm://verein/veranstaltung/<id>`,
   `WidgetLink`); die App führt dorthin wie bei einer Push-Nachricht (`PushZiel.ausPfad`, `PushNavigation`).
   Zum Testen ohne Klicks: `xcrun simctl launch booted de.tcmuckensturm.app.lokal -TCMLink tcmlokal://plaetze`.
 - **Geteilter Code:** `TCMWidgets/Gemeinsam/` gehört zu App und Erweiterung; die Erweiterung bekommt dazu
@@ -483,7 +498,7 @@ TCMuckensturmTests/
   deutsche Namen im Code, unabhängig von der Gerätesprache.
 - **Home:** wie `apps/mobile/app/(tabs)/home.tsx`, jeder Abschnitt lädt für sich (Fehler mit
   „Erneut versuchen“), Pull-to-refresh, stilles Nachladen beim Zurückkehren. Was auf Bildschirme
-  zeigt, die es nativ noch nicht gibt (Buchen, Spiele), wechselt vorerst auf den passenden Tab
+  zeigt, die es nativ noch nicht gibt (Buchen), wechselt vorerst auf den passenden Tab
   (`Bildschirme/Navigation.swift`, `zuTab`); Getränke und Veranstaltungen öffnet `zuVerein` gezielt.
 - **Schrift:** Barlow und Barlow Semi Condensed als TTF aus `@expo-google-fonts` (Version 0.4.1),
   Lizenz SIL OFL 1.1 in `Ressourcen/Schriften/OFL.txt`.
@@ -491,7 +506,7 @@ TCMuckensturmTests/
 ## Was noch fehlt
 
 - Prod-Werte (`Konfiguration/Prod.xcconfig`) und ein App-Store-Eintrag für die native App
-- Plätze: Bereich „Meine & offene Spiele“ (`plaetze/spiele.tsx`), Sprünge aus Home direkt ins
+- Plätze: Sprünge aus Home direkt ins
   Buchungsblatt (`?buchen=jetzt`, `?buchung=…`), mitlaufender Tabellenkopf in Freie Zeiten
 - Schwebende Tab-Leiste und kompakte Kopfzeile wie in der Expo-App (heute die System-TabView)
 - Fragment-Zweig der Passwort-Links entfernen, sobald die Cloud-Vorlagen token_hash schicken (S20, gemeinsam mit Expo-App und Web)

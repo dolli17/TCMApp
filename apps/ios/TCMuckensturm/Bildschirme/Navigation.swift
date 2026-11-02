@@ -1,10 +1,11 @@
 /**
  * Wechsel zwischen den Tabs
  *
- * Home fuehrt auf Bildschirme, die es nativ noch nicht gibt (Buchen, Spiele).
+ * Home fuehrt auf Bildschirme, die es nativ noch nicht gibt (Buchen).
  * Bis dahin landet ein Tippen auf dem passenden Tab - Plaetze oder Konto.
  * HauptTabs setzt `zuTab`. In den Verein geht es mit `zuVerein` gezielt:
- * auf einen Reiter oder gleich in eine Veranstaltung (Bildschirme/Verein).
+ * auf einen Reiter oder gleich in eine Veranstaltung (Bildschirme/Verein);
+ * in die Plaetze mit `zuPlaetze` auf Belegung oder Spiele.
  */
 
 import SwiftUI
@@ -42,5 +43,25 @@ extension EnvironmentValues {
     var zuVerein: @MainActor @Sendable (VereinZiel) -> Void {
         get { self[ZuVereinSchluessel.self] }
         set { self[ZuVereinSchluessel.self] = newValue }
+    }
+}
+
+/// Wohin im Tab Plaetze.
+enum PlaetzeZiel: Hashable, Sendable {
+    /// Der Belegungsplan
+    case belegung
+    /// Meine & offene Spiele; offeneZuerst wie ?zeige=offen in der Expo-App
+    case spiele(offeneZuerst: Bool)
+}
+
+private struct ZuPlaetzeSchluessel: EnvironmentKey {
+    static let defaultValue: @MainActor @Sendable (PlaetzeZiel) -> Void = { _ in }
+}
+
+extension EnvironmentValues {
+    /// Wechselt in den Tab Plaetze, auf die Belegung oder die Spiele (siehe plaetzeTab).
+    var zuPlaetze: @MainActor @Sendable (PlaetzeZiel) -> Void {
+        get { self[ZuPlaetzeSchluessel.self] }
+        set { self[ZuPlaetzeSchluessel.self] = newValue }
     }
 }
