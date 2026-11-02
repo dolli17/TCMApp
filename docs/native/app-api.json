@@ -112,6 +112,9 @@
           "p_guest_names?": {
             "liste": "string"
           },
+          "p_partner_fuer?": "string",
+          "p_partner_lk_bis?": "number",
+          "p_partner_lk_von?": "number",
           "p_partner_wanted?": "boolean",
           "p_player_member_ids?": {
             "liste": "string"
@@ -185,6 +188,9 @@
             "kind": "enum:booking_kind",
             "owner_member_id": "string",
             "owner_name": "string",
+            "partner_fuer": "string",
+            "partner_lk_bis": "number",
+            "partner_lk_von": "number",
             "partner_wanted": "boolean",
             "player_member_ids": {
               "liste": "string"
@@ -674,6 +680,9 @@
             "court_name": "string",
             "ends_at": "string",
             "frei": "number",
+            "fuer": "string",
+            "lk_bis": "number",
+            "lk_von": "number",
             "owner_member_id": "string",
             "owner_name": "string",
             "players": {
@@ -820,6 +829,9 @@
       "args": {
         "objekt": {
           "p_booking_id": "string",
+          "p_fuer?": "string",
+          "p_lk_bis?": "number",
+          "p_lk_von?": "number",
           "p_wanted": "boolean"
         }
       },
