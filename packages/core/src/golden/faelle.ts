@@ -578,6 +578,14 @@ const translateDbErrorFaelle: GoldenEingabe[] = [
     message: "Robin Heinzler spielt zu dieser Zeit schon auf Platz 2.",
     code: "23514",
   }),
+  fehler("Mitspielersuche passt nicht wird durchgereicht", {
+    message: "Diese Suche richtet sich an andere Spieler (LK oder Damen/Herren).",
+    code: "23514",
+  }),
+  fehler("Ungültiger LK-Bereich wird durchgereicht", {
+    message: "Beim LK-Bereich darf „von“ nicht größer sein als „bis“.",
+    code: "22023",
+  }),
   fehler("Meldung ohne Satzzeichen nicht", { message: "something went wrong", code: "23514" }),
   fehler("Meldung mit violates nicht", {
     message: 'new row violates row-level security policy for table "members".',

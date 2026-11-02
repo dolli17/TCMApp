@@ -48,6 +48,18 @@ describe("translateDbError", () => {
     expect(isSlotConflict(fehler)).toBe(false);
   });
 
+  it("reicht die Meldungen der Mitspielersuche mit Filtern durch", () => {
+    // join_booking lehnt ab, wer nicht zur Suche passt; create_booking und
+    // set_partner_wanted pruefen den LK-Bereich. Beides ist schon Klartext.
+    for (const fehler of [
+      { message: "Diese Suche richtet sich an andere Spieler (LK oder Damen/Herren).", code: "23514" },
+      { message: "Beim LK-Bereich darf „von“ nicht größer sein als „bis“.", code: "22023" },
+    ]) {
+      expect(translateDbError(fehler)).toBe(fehler.message);
+      expect(isSlotConflict(fehler)).toBe(false);
+    }
+  });
+
   it("reicht eine Meldung ohne Satzzeichen NICHT durch", () => {
     // Ohne Punkt gilt sie als technischer Text; der Benutzer bekommt den
     // allgemeinen Satz zum Fehlercode.

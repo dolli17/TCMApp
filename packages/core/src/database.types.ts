@@ -325,6 +325,9 @@ export type Database = {
           id: string
           kind: Database["public"]["Enums"]["booking_kind"]
           member_id: string | null
+          partner_fuer: string | null
+          partner_lk_bis: number | null
+          partner_lk_von: number | null
           partner_wanted: boolean
           series_id: string | null
           slot: unknown
@@ -345,6 +348,9 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["booking_kind"]
           member_id?: string | null
+          partner_fuer?: string | null
+          partner_lk_bis?: number | null
+          partner_lk_von?: number | null
           partner_wanted?: boolean
           series_id?: string | null
           slot: unknown
@@ -365,6 +371,9 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["booking_kind"]
           member_id?: string | null
+          partner_fuer?: string | null
+          partner_lk_bis?: number | null
+          partner_lk_von?: number | null
           partner_wanted?: boolean
           series_id?: string | null
           slot?: unknown
@@ -2404,6 +2413,9 @@ export type Database = {
           p_booking_type_code: string
           p_court_id: string
           p_guest_names?: string[]
+          p_partner_fuer?: string
+          p_partner_lk_bis?: number
+          p_partner_lk_von?: number
           p_partner_wanted?: boolean
           p_player_member_ids?: string[]
           p_starts_at: string
@@ -2496,6 +2508,9 @@ export type Database = {
           kind: Database["public"]["Enums"]["booking_kind"]
           owner_member_id: string
           owner_name: string
+          partner_fuer: string
+          partner_lk_bis: number
+          partner_lk_von: number
           partner_wanted: boolean
           player_member_ids: string[]
           players: string[]
@@ -3249,6 +3264,9 @@ export type Database = {
           court_name: string
           ends_at: string
           frei: number
+          fuer: string
+          lk_bis: number
+          lk_von: number
           owner_member_id: string
           owner_name: string
           players: string[]
@@ -3481,7 +3499,13 @@ export type Database = {
         Returns: undefined
       }
       set_partner_wanted: {
-        Args: { p_booking_id: string; p_wanted: boolean }
+        Args: {
+          p_booking_id: string
+          p_fuer?: string
+          p_lk_bis?: number
+          p_lk_von?: number
+          p_wanted: boolean
+        }
         Returns: undefined
       }
       set_setting: {
