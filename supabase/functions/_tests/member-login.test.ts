@@ -54,7 +54,13 @@ function vorgaben(): Router {
     }))
     .rpc("protokoll_zugang", () => ({ json: null }))
     // Ohne Angabe hat niemand volle Rechte: Sperren und Löschen gehen durch.
-    .route("GET", "/rest/v1/member_roles", () => ({ json: [] }));
+    .route("GET", "/rest/v1/member_roles", () => ({ json: [] }))
+    // Seit supabase-js 2.119 holt auth.admin.deleteUser den Login vor dem
+    // DELETE per GET (supabase-js#2751). Ein Test, der den Login gezielt
+    // vorgibt, überschreibt das mit einer eigenen Route.
+    .route("GET", /^\/auth\/v1\/admin\/users\/[0-9a-f-]{36}$/, (a) => ({
+      json: benutzer(a.pfad.split("/").pop()!),
+    }));
 }
 
 async function rufe(
