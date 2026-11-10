@@ -42,13 +42,13 @@ herdr worktree create --branch feature/xyz --base main   # oder: git worktree ad
 scripts/worktree-einrichten.sh <pfad-zum-worktree>       # Env-Dateien kopieren, pnpm install
 ```
 
-Die Env-Dateien (`.env`, `apps/web/.env.local`, `apps/mobile/.env`) sind gitignored. Ein neuer Worktree hat sie deshalb nicht, das Skript kopiert sie aus dem Haupt-Checkout.
+Die Env-Dateien (`.env`, `apps/web/.env.local`) sind gitignored. Ein neuer Worktree hat sie deshalb nicht, das Skript kopiert sie aus dem Haupt-Checkout.
 
 Worauf es dabei ankommt:
 
 - **Die lokale Supabase gibt es nur einmal** für alle Worktrees (Ports 54321–54327). `db reset`, pgTAP und E2E in einem Worktree stören jeden anderen, der gerade die Datenbank nutzt. Branches mit eigenen Migrationen überschreiben sich gegenseitig den lokalen Stand. Faustregel: **höchstens ein Feature mit Migrationen gleichzeitig**. UI, Web, Doku und Tests laufen gut daneben. Die vollständige Prüfung macht ohnehin die CI, mit frischer Datenbank pro PR.
 - **Zeitstempel von Migrationen:** Eine neue Migration muss jünger sein als die neueste schon gemergte. Sonst lehnt `supabase db push` sie in Dev oder Prod ab, weil sie vor einer bereits eingespielten Migration läge. Die CI prüft das. Schlägt die Prüfung fehl, die Datei vor dem Merge mit aktuellem Zeitstempel umbenennen (`date -u +%Y%m%d%H%M%S`).
-- **Ports:** Web (3000) und Expo (8081) gibt es je nur einmal. Für einen zweiten Server eigene Ports nehmen: `pnpm dev -- -p 3001` bzw. `expo start --port 8082`.
+- **Ports:** Web (3000) gibt es nur einmal. Für einen zweiten Server einen eigenen Port nehmen: `pnpm dev -- -p 3001`.
 - **Konfliktträchtige Dateien:** `pnpm-lock.yaml` und `packages/core/src/database.types.ts`. Neue Pakete und Typ-Generierung möglichst nicht in mehreren Branches gleichzeitig.
 - **Nacheinander mergen**, jeweils mit „Squash and merge“. Jeder Merge deployt Dev. Ein Branch, der danach Konflikte hat, holt sich `main` per `git merge origin/main`.
 - **Aufräumen:** Nach dem Merge den Worktree entfernen (`herdr worktree remove` bzw. `git worktree remove <pfad>`). Den Remote-Branch löscht GitHub automatisch.
@@ -66,7 +66,7 @@ Worauf es dabei ankommt:
    3. Web
    4. Smoke-Test
    5. Tag `vX.Y.Z` und GitHub-Release
-7. **App:** Bei Änderungen in `apps/mobile` den Tag auschecken und `eas build --profile production` plus Submit ausführen (`apps/mobile/RELEASE.md`). App-Builds laufen bewusst nicht automatisch.
+7. **Apps:** Bei Änderungen in `apps/ios` bzw. `apps/android` den Tag auschecken und die App bauen und hochladen (iOS: `apps/ios/scripts/testflight.sh`, siehe `apps/ios/README.md`, Abschnitt TestFlight). App-Builds laufen bewusst nicht automatisch.
 
 ### Release-Checkliste (in den Release-PR kopieren)
 
@@ -74,9 +74,9 @@ Worauf es dabei ankommt:
 - [ ] `version` in package.json hochgezählt, CI grün
 - [ ] Änderungen auf Dev von Testern geprüft
 - [ ] Neue Migrationen sind abwärtskompatibel (alte App-Versionen laufen weiter)
-- [ ] Neue Env-Variablen/Secrets in Prod gesetzt (Server-.env, `supabase secrets set`, eas.json)
+- [ ] Neue Env-Variablen/Secrets in Prod gesetzt (Server-.env, `supabase secrets set`, xcconfig/Gradle der Apps)
 - [ ] Einmalige Snippets für neue Features in Prod ausgeführt (Cron, Vault, siehe supabase/snippets)
-- [ ] App-Build nötig? Wenn ja, nach dem Deploy `eas build --profile production`
+- [ ] App-Build nötig? Wenn ja, nach dem Deploy iOS (`apps/ios/scripts/testflight.sh`) bzw. Android bauen
 ```
 
 ## Hotfix-Ablauf

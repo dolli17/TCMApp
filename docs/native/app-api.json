@@ -1,6 +1,6 @@
 {
   "$kommentar": "ERZEUGT von packages/core/scripts/app-api.ts aus packages/core/src/database.types.ts - NICHT VON HAND AENDERN. Neu erzeugen mit: pnpm --filter @tcm/core build:app-api. Lesefassung mit Fehlertexten: docs/native/app-api.md",
-  "typen": "Einfache Typen als Text (string, number, boolean, Json, null, undefined, enum:<name>, auch mit ' | '), sonst {liste}, {objekt} oder {oder}. Ein '?' am Feldnamen heisst optional. Rueckgabe {liste: {objekt}} ist eine Tabelle (setof), undefined heisst void. rpcs ruft die Expo-App auf, nativ sind die RPCs nur fuer die nativen Apps (Ersatz der Tabellenzugriffe, siehe tabellen.*.ersatz).",
+  "typen": "Einfache Typen als Text (string, number, boolean, Json, null, undefined, enum:<name>, auch mit ' | '), sonst {liste}, {objekt} oder {oder}. Ein '?' am Feldnamen heisst optional. Rueckgabe {liste: {objekt}} ist eine Tabelle (setof), undefined heisst void. rpcs rief die fruehere Expo-App auf (wo: Datei dort), nativ sind die RPCs nur fuer die nativen Apps (Ersatz der Tabellenzugriffe, siehe tabellen.*.ersatz).",
   "rpcs": {
     "booking_settings": {
       "args": {

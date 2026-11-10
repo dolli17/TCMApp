@@ -1,8 +1,8 @@
 /**
- * notification-pushes gegen nachgebildetes PostgREST, Expo, APNs und FCM (N7).
+ * notification-pushes gegen nachgebildetes PostgREST, APNs und FCM (N7).
  *
- * Geprüft wird die Aufteilung nach Anbieter (`geraete`), der Rückfall auf
- * `tokens`, fehlende Konfiguration, das Stilllegen toter Geräte und die
+ * Geprüft wird die Aufteilung nach Anbieter (`geraete`), dass nichts mehr an
+ * Expo geht, fehlende Konfiguration, das Stilllegen toter Geräte und die
  * Freigabe nach vorübergehenden Fehlern. Die Schlüssel für APNs und das
  * Dienstkonto entstehen zur Laufzeit; die Signaturen werden mit dem
  * öffentlichen Gegenstück geprüft.
@@ -88,7 +88,6 @@ async function jwtPruefen(
 function empfaenger(n: number, geraete: { token: string; provider: string }[] | undefined, felder = {}) {
   return {
     member_id: `m-${n}`,
-    tokens: (geraete ?? []).filter((g) => g.provider === "expo").map((g) => g.token),
     notification_ids: [`n-${n}`],
     items: [{
       kind: "event_changed",
@@ -107,9 +106,6 @@ function vorgaben(abzuholen: unknown[]): Router {
     .rpc("claim_notification_pushes", () => ({ json: abzuholen }))
     .rpc("release_notification_pushes", () => ({ json: null }))
     .rpc("disable_push_token", () => ({ json: null }))
-    .route("POST", "/--/api/v2/push/send", (a) => ({
-      json: { data: (a.koerper as unknown[]).map(() => ({ status: "ok" })) },
-    }))
     .route("POST", APNS_PFAD, () => new Response(null, { status: 200 }))
     .route("POST", "/token", () => ({ json: { access_token: "ya29.zugriff", expires_in: 3600 } }))
     .route("POST", FCM_PFAD, () => ({ json: { name: "projects/tcm-test/messages/1" } }));
@@ -136,10 +132,9 @@ const apnsMarke = (a: Aufruf) => decodeURIComponent(a.pfad.replace(APNS_PFAD, ""
 // Aufteilung nach Anbieter
 // ---------------------------------------------------------------------------
 
-Deno.test("Aufteilung: Expo an exp.host, APNs und FCM direkt, je mit Ziel und Daten", async () => {
+Deno.test("Aufteilung: APNs und FCM direkt, je mit Ziel und Daten", async () => {
   const router = vorgaben([
     empfaenger(1, [
-      { token: "ExponentPushToken[a]", provider: "expo" },
       { token: "aabbcc", provider: "apns" },
       { token: "fcm-1", provider: "fcm" },
       { token: "fcm-2", provider: "fcm" },
@@ -147,18 +142,7 @@ Deno.test("Aufteilung: Expo an exp.host, APNs und FCM direkt, je mit Ziel und Da
   ]);
   const r = await rufe(router);
   assertEquals(r.status, 200);
-  assertEquals(r.koerper, { ok: true, empfaenger: 1, gesendet: 4, stillgelegt: 0, uebersprungen: 0 });
-
-  // Expo unverändert: nur die Expo-Marke, Daten nur das Ziel.
-  const [expo] = router.an("/--/api/v2/push/send");
-  assertEquals(expo.koerper, [{
-    to: "ExponentPushToken[a]",
-    title: "Hinweis 1",
-    body: "Text",
-    sound: "default",
-    badge: 1,
-    data: { ziel: "/verein/veranstaltung/e-1" },
-  }]);
+  assertEquals(r.koerper, { ok: true, empfaenger: 1, gesendet: 3, stillgelegt: 0, uebersprungen: 0 });
 
   // APNs: Produktion, Bundle-ID als Topic, Alert, signiertes JWT.
   const [apns] = router.an(APNS_PFAD);
@@ -212,13 +196,18 @@ Deno.test("APNS_UMGEBUNG=sandbox geht an den Sandbox-Rechner", async () => {
   assertEquals(router.an(APNS_PFAD)[0].host, "api.sandbox.push.apple.com");
 });
 
-Deno.test("ohne geraete (ältere Datenbank): tokens gehen wie bisher an Expo", async () => {
-  const router = vorgaben([{ ...empfaenger(1, undefined), tokens: ["ExponentPushToken[alt]"] }]);
+Deno.test("nichts mehr an Expo: ein altes expo-Gerät wird übersprungen, geraete null schadet nicht", async () => {
+  const router = vorgaben([
+    empfaenger(1, [{ token: "ExponentPushToken[alt]", provider: "expo" }, { token: "aabbcc", provider: "apns" }]),
+    { ...empfaenger(2, undefined), geraete: null },
+  ]);
   const r = await rufe(router);
+  assertEquals(r.status, 200);
   assertEquals(r.koerper.gesendet, 1);
-  assertEquals((router.an("/--/api/v2/push/send")[0].koerper as { to: string }[])[0].to, "ExponentPushToken[alt]");
-  assertEquals(router.an(APNS_PFAD), []);
+  assertEquals(r.koerper.uebersprungen, 1);
+  assertEquals(router.an(APNS_PFAD).map(apnsMarke), ["aabbcc"]);
   assertEquals(router.an(FCM_PFAD), []);
+  assertEquals(router.aufrufe.filter((a) => a.host === "exp.host"), []);
 });
 
 Deno.test("mehrere Posten: Sammeltitel, kind nur bei einer Art, event_id nur bei einer Veranstaltung", async () => {
@@ -241,17 +230,16 @@ Deno.test("mehrere Posten: Sammeltitel, kind nur bei einer Art, event_id nur bei
 // Fehlende Konfiguration und Trockenlauf
 // ---------------------------------------------------------------------------
 
-Deno.test("ohne APNs- und FCM-Konfiguration: diese Geräte übersprungen, Expo läuft, Log ohne Marken", async () => {
+Deno.test("ohne APNs- und FCM-Konfiguration: Geräte übersprungen, Log ohne Marken", async () => {
   const router = vorgaben([
     empfaenger(1, [
-      { token: "ExponentPushToken[a]", provider: "expo" },
       { token: "geheime-apns-marke", provider: "apns" },
       { token: "geheime-fcm-marke", provider: "fcm" },
     ]),
   ]);
   const r = await rufe(router, { PUSH_AKTIV: "true" });
   assertEquals(r.status, 200);
-  assertEquals(r.koerper.gesendet, 1);
+  assertEquals(r.koerper.gesendet, 0);
   assertEquals(r.koerper.uebersprungen, 2);
   assertEquals(router.an(APNS_PFAD), []);
   assertEquals(router.an(FCM_PFAD), []);
@@ -270,20 +258,19 @@ Deno.test("unvollständige APNs-Konfiguration oder kaputtes Dienstkonto gilt als
   assertEquals(fcmKonfiguration(DIENSTKONTO)?.projektId, "tcm-test");
 });
 
-Deno.test("Trockenlauf ohne PUSH_AKTIV: zeigt auch die direkten Nachrichten, schickt nichts", async () => {
+Deno.test("Trockenlauf ohne PUSH_AKTIV: zeigt die Nachrichten, schickt nichts", async () => {
   const { PUSH_AKTIV: _, ...ohne } = ALLES;
   const router = vorgaben([
-    empfaenger(1, [{ token: "ExponentPushToken[a]", provider: "expo" }, { token: "aabbcc", provider: "apns" }]),
+    empfaenger(1, [{ token: "aabbcc", provider: "apns" }, { token: "fcm-1", provider: "fcm" }]),
   ]);
   const r = await rufe(router, ohne);
   assertEquals(r.koerper.trockenlauf, true);
-  assertEquals((r.koerper.nachrichten as unknown[]).length, 1);
-  assertEquals((r.koerper.direkt as { anbieter: string; to: string }[]).map((d) => [d.anbieter, d.to]), [[
-    "apns",
-    "aabbcc",
-  ]]);
-  assertEquals(router.an("/--/api/v2/push/send"), []);
+  assertEquals((r.koerper.direkt as { anbieter: string; to: string }[]).map((d) => [d.anbieter, d.to]), [
+    ["apns", "aabbcc"],
+    ["fcm", "fcm-1"],
+  ]);
   assertEquals(router.an(APNS_PFAD), []);
+  assertEquals(router.an(FCM_PFAD), []);
 });
 
 // ---------------------------------------------------------------------------
@@ -350,8 +337,8 @@ Deno.test("vorübergehender Fehler: freigegeben wird nur, was auf keinem Gerät 
     empfaenger(1, [{ token: "nur-apns", provider: "apns" }]),
     // iPhone weg, aber Android kam an: abgehakt lassen.
     empfaenger(2, [{ token: "auch-apns", provider: "apns" }, { token: "fcm-2", provider: "fcm" }]),
-    // Expo kam an.
-    empfaenger(3, [{ token: "ExponentPushToken[c]", provider: "expo" }]),
+    // Nur Android, kam an.
+    empfaenger(3, [{ token: "fcm-3", provider: "fcm" }]),
   ]).route("POST", APNS_PFAD, () => ({ status: 503, json: { reason: "ServiceUnavailable" } }));
   const r = await rufe(router);
   assertEquals(r.status, 502);
@@ -363,19 +350,19 @@ Deno.test("vorübergehender Fehler: freigegeben wird nur, was auf keinem Gerät 
   assertEquals(stillgelegt(router), []);
 });
 
-Deno.test("Expo-Stapel scheitert, APNs kommt an: nur die Expo-Empfänger werden frei, tote Marken trotzdem stillgelegt", async () => {
+Deno.test("FCM gestört, APNs kommt an: nur die reinen Android-Empfänger werden frei, tote Marken trotzdem stillgelegt", async () => {
   const router = vorgaben([
-    empfaenger(1, [{ token: "ExponentPushToken[a]", provider: "expo" }]),
-    empfaenger(2, [{ token: "ExponentPushToken[b]", provider: "expo" }, { token: "ios-2", provider: "apns" }]),
+    empfaenger(1, [{ token: "fcm-a", provider: "fcm" }]),
+    empfaenger(2, [{ token: "fcm-b", provider: "fcm" }, { token: "ios-2", provider: "apns" }]),
     empfaenger(3, [{ token: "tot", provider: "apns" }]),
   ])
-    .route("POST", "/--/api/v2/push/send", () => ({ status: 500, json: {} }))
+    .route("POST", FCM_PFAD, () => ({ status: 503, json: { error: { code: 503, status: "UNAVAILABLE" } } }))
     .route("POST", APNS_PFAD, (a) =>
       apnsMarke(a) === "tot" ? { status: 410, json: { reason: "Unregistered" } } : new Response(null, { status: 200 })
     );
   const r = await rufe(router);
   assertEquals(r.status, 502);
-  assertMatch(String(r.koerper.meldung), /Expo antwortete mit 500/);
+  assertMatch(String(r.koerper.meldung), /FCM antwortete mit 503 UNAVAILABLE/);
   const [freigabe] = router.an("/rest/v1/rpc/release_notification_pushes");
   assertEquals((freigabe.koerper as { p_ids: string[] }).p_ids, ["n-1"]);
   assertEquals(stillgelegt(router), ["tot"]);

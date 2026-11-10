@@ -1836,7 +1836,7 @@ export type Database = {
           last_seen_at?: string
           member_id: string
           platform: string
-          provider?: string
+          provider: string
           token: string
         }
         Update: {
@@ -2407,7 +2407,6 @@ export type Database = {
           items: Json
           member_id: string
           notification_ids: string[]
-          tokens: string[]
         }[]
       }
       close_billing_period: {

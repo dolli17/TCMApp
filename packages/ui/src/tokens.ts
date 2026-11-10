@@ -8,8 +8,9 @@
  *
  * DIESE DATEI IST DIE QUELLE. tokens.css wird daraus erzeugt
  * (pnpm --filter @tcm/ui build:css). Ein Test vergleicht beide Wert für Wert,
- * damit sie nicht auseinanderlaufen - Web liest CSS-Variablen, Expo dieses
- * Objekt, und beide müssen dieselbe App zeigen.
+ * damit sie nicht auseinanderlaufen. Web liest CSS-Variablen, die nativen
+ * Apps die daraus erzeugten Tokens.swift und Tokens.kt (build:native), und
+ * alle müssen dieselbe App zeigen.
  */
 
 export const farben = {
@@ -168,10 +169,11 @@ export const schatten = {
 } as const;
 
 /**
- * Dieselben Schatten für React Native.
+ * Dieselben Schatten für die nativen Apps (Quelle von build:native). Die Form
+ * stammt aus React Native (shadow* und elevation), daher der Name.
  *
  * Bewusst ein zweites Objekt und keine Umrechnung aus `schatten`: die CSS legt
- * zwei Schatten übereinander, React Native kennt pro View genau einen und
+ * zwei Schatten übereinander, eine native View kennt genau einen und
  * Android nur eine einzige elevation-Stufe. Eine Konvertierungsfunktion würde
  * eine Genauigkeit vortäuschen, die es nicht gibt. Die Werte hier bilden die
  * kräftigere zweite Lage der CSS nach - das ist die, die man sieht.

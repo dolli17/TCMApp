@@ -33,15 +33,9 @@ out/
 .next/
 next-env.d.ts
 
-# Expo / React Native
-.expo/
-.expo-shared/
+# Signierschluessel (Android). Build-Ausgaben der nativen Apps stehen in
+# apps/ios/.gitignore und apps/android/.gitignore.
 *.jks
-android/
-ios/
-# Die nativen Apps sind kein Expo-Prebuild, sondern Quelle (eigene .gitignore darin).
-!apps/ios/
-!apps/android/
 
 # ---------------------------------------------------------------------------
 # Supabase CLI

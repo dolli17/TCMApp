@@ -8,17 +8,17 @@
 --
 -- Reihenfolge der Inbetriebnahme:
 --
---   1. Ein Expo-Projekt anlegen (eas init) und die Kennung in app.json unter
---      extra.eas.projectId eintragen. Ohne sie bekommt die App gar keine Marke
---   2. Fuer iOS einen APNs-Schluessel im Apple-Entwicklerkonto erzeugen und im
---      Expo-Konto hinterlegen. Das ist der Schritt mit Vorlauf - er dauert
---      Tage, nicht Minuten
---   3. Einen Development Build erzeugen und auf einem echten Geraet
---      installieren. In Expo Go kommt kein Remote-Push an, und der Simulator
---      liefert ueberhaupt keine Marke
+--   1. Fuer iOS einen APNs-Schluessel (.p8) im Apple-Entwicklerkonto
+--      erzeugen. Das ist der Schritt mit Vorlauf - er dauert Tage, nicht
+--      Minuten. Fuer Android ein Firebase-Projekt mit Dienstkonto anlegen
+--      (apps/android/README.md, Push)
+--   2. Die Werte als Secrets setzen: APNS_KEY_ID, APNS_TEAM_ID,
+--      APNS_PRIVATE_KEY, APNS_BUNDLE_ID, APNS_UMGEBUNG bzw.
+--      FCM_SERVICE_ACCOUNT (Namen und Bedeutung in .env.example). Fehlt ein
+--      Anbieter, ueberspringt die Function nur dessen Geraete
+--   3. Die App auf einem echten Geraet installieren und Benachrichtigungen
+--      einschalten. Der Simulator liefert keine echte APNs-Marke
 --   4. supabase secrets set PUSH_AKTIV=true
---      (optional EXPO_ACCESS_TOKEN=..., falls im Expo-Konto die erhoehte
---      Sicherheit fuer Push eingeschaltet ist)
 --   5. Erst von Hand pruefen: als Admin die Funktion aufrufen und die Antwort
 --      lesen. Ohne PUSH_AKTIV zeigt sie im Trockenlauf die fertigen
 --      Nachrichten, ohne etwas zu senden

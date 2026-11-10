@@ -4,8 +4,8 @@ import { istLokalerStack, sqlLokal } from "./lokale-db";
  * Die beiden Onboarding-Konten des Seeds zurücksetzen (neu@, kind@).
  *
  * Die Onboarding-Tests schließen die Einrichtung wirklich ab, und auch die
- * App (apps/mobile) testet mit denselben Konten gegen dieselbe lokale
- * Datenbank. Statt sich auf den Seed-Zustand zu verlassen, stellt dieser
+ * nativen Apps (apps/ios, apps/android) testen mit denselben Konten gegen
+ * dieselbe lokale Datenbank. Statt sich auf den Seed-Zustand zu verlassen, stellt dieser
  * Schritt ihn vor jedem Lauf wieder her: kein Mandat, keine Zustimmungen,
  * keine Erziehungsberechtigten, Onboarding offen.
  *

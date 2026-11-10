@@ -1,6 +1,6 @@
 // Nur fuer scripts/testflight.sh (xcodebuild -xcconfig): ein Prod-Build
-// (Bundle de.tcmuckensturm.app) gegen das Dev-Projekt, wie die Expo-Builds
-// fuer TestFlight. Die Werte stehen auch in Dev.xcconfig.
+// (Bundle de.tcmuckensturm.app) gegen das Dev-Projekt, solange Prod.xcconfig
+// keine Werte hat. Die Werte stehen auch in Dev.xcconfig.
 //
 // Hier nur Backend-Werte: -xcconfig gilt fuer alle Targets, Bundle-IDs und
 // Namen duerfen deshalb nicht hier stehen.

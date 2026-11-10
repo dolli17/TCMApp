@@ -4,8 +4,8 @@
 #   scripts/testflight.sh <buildnummer> [version]
 #
 # Gebaut wird die Konfiguration Prod (Bundle de.tcmuckensturm.app, dieselbe
-# App wie die Expo-Builds bis 16), aber gegen das Dev-Projekt - genau wie die
-# Expo-Builds (apps/mobile/eas.json). Prod.xcconfig hat noch keine Werte; die
+# App wie die frueheren Expo-Builds bis 16), aber gegen das Dev-Projekt.
+# Prod.xcconfig hat noch keine Werte; die
 # Dev-Werte kommen hier nur fuer diesen Lauf dazu (Konfiguration/TestFlight.xcconfig).
 #
 # Signiert wird automatisch (-allowProvisioningUpdates) mit dem Apple-Konto,

@@ -1,14 +1,15 @@
 /**
  * Nachrichten in Stapeln verschicken und sagen, was wieder freizugeben ist.
  *
- * Die Edge Functions notification-mails und notification-pushes haken erst ab
- * und senden dann. Scheitert ein Stapel, gaben sie bisher alle abgeholten
+ * Die Edge Function notification-mails hakt erst ab und sendet dann
+ * (notification-pushes ebenso, aber je Gerät ohne Stapel, siehe deren
+ * zustellung.ts). Scheitert ein Stapel, gaben sie bisher alle abgeholten
  * Benachrichtigungen frei, auch die aus Stapeln, die schon draußen waren. Der
  * nächste Lauf schickte die dann ein zweites Mal (B9). Freigegeben wird jetzt
  * nur, was nachweislich nicht rausging.
  *
  * Wie dienstschluessel.ts hier statt neben den Functions, damit es testbar
- * ist. Neben beiden Functions liegt ein Symlink hierher. Keine Importe: die
+ * ist. Neben notification-mails liegt ein Symlink hierher. Keine Importe: die
  * Functions laufen in Deno.
  */
 

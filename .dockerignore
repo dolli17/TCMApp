@@ -4,7 +4,8 @@
 **/.env*
 **/.DS_Store
 .git
-apps/mobile
+apps/ios
+apps/android
 apps/web/playwright-report
 apps/web/test-results
 supabase

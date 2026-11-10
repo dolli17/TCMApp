@@ -156,7 +156,6 @@ export async function ladeFunction(
     "MAIL_FROM",
     "MAILPIT_URL",
     "PUSH_AKTIV",
-    "EXPO_ACCESS_TOKEN",
     "APNS_KEY_ID",
     "APNS_TEAM_ID",
     "APNS_PRIVATE_KEY",

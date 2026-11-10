@@ -20,7 +20,7 @@ fi
 
 echo "Worktree:      $ZIEL ($(git -C "$ZIEL" branch --show-current))"
 echo "Env-Dateien aus $HAUPT"
-for datei in .env apps/web/.env.local apps/mobile/.env; do
+for datei in .env apps/web/.env.local; do
   if [ ! -f "$HAUPT/$datei" ]; then
     echo "  -  $datei fehlt auch im Haupt-Checkout"
   elif [ -f "$ZIEL/$datei" ]; then

@@ -7,16 +7,16 @@
  * HTTP-Aufruf hinweg gibt es keine Transaktionsklammer, und eine verlorene
  * Nachricht ist der bessere Fehler als dreihundert doppelte.
  *
- * Zwei Dinge sind hier anders als beim Mailversand:
+ * Drei Dinge sind hier anders als beim Mailversand:
  *
- *   - Ein Push-Ziel kann dauerhaft tot sein. Meldet Expo „DeviceNotRegistered",
- *     wird das Gerät stillgelegt; sonst wüchse die Tabelle mit jeder
+ *   - Ein Push-Ziel kann dauerhaft tot sein. Meldet APNs oder FCM das Gerät
+ *     als abgemeldet, wird es stillgelegt; sonst wüchse die Tabelle mit jeder
  *     Neuinstallation weiter.
  *   - Ein Mitglied hat womöglich mehrere Geräte. Jede Nachricht geht an alle.
- *   - Es gibt drei Wege hinaus: Geräte der Expo-App über exp.host, die der
- *     nativen Apps direkt über APNs (iOS) und FCM (Android). Welcher Weg,
- *     steht je Gerät in `geraete` (provider). Fehlt die Konfiguration für
- *     APNs oder FCM, bleiben diese Geräte liegen, Expo läuft weiter.
+ *   - Es gibt zwei Wege hinaus: direkt über APNs (iOS) und FCM (Android).
+ *     Welcher Weg, steht je Gerät in `geraete` (provider). Fehlt die
+ *     Konfiguration für einen Anbieter, bleiben dessen Geräte liegen, der
+ *     andere läuft weiter.
  *
  * Ohne gesetzte Konfiguration läuft alles bis auf das Senden — derselbe
  * Trockenlauf wie beim Mailversand, damit sich die Kette lokal gefahrlos
@@ -27,8 +27,6 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { pushMeldung } from "./pushvorlage.ts";
 // Symlink auf packages/core/src/dienstschluessel.ts, dort unter Test.
 import { istDienstschluessel } from "./dienstschluessel.ts";
-// Symlink auf packages/core/src/versandstapel.ts, dort unter Test.
-import { inStapelnSenden, type Sendung } from "./versandstapel.ts";
 import { Apns, apnsKonfiguration } from "./apns.ts";
 import { Fcm, fcmKonfiguration } from "./fcm.ts";
 import {
@@ -43,9 +41,7 @@ import {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-/** Nur nötig, wenn im Expo-Konto die erhöhte Sicherheit für Push aktiv ist. */
-const EXPO_ACCESS_TOKEN = Deno.env.get("EXPO_ACCESS_TOKEN") ?? "";
-/** Abschaltbar, damit ein Trockenlauf ohne Expo-Konto möglich bleibt. */
+/** Abschaltbar, damit ein Trockenlauf ohne APNs- und FCM-Zugang möglich bleibt. */
 const PUSH_AKTIV = (Deno.env.get("PUSH_AKTIV") ?? "").toLowerCase() === "true";
 
 /** APNS_KEY_ID, APNS_TEAM_ID, APNS_PRIVATE_KEY, APNS_BUNDLE_ID, APNS_UMGEBUNG */
@@ -66,13 +62,8 @@ const zusteller: Record<string, Zusteller | null> = {
   })() : null,
 };
 
-const EXPO_ENDPUNKT = "https://exp.host/--/api/v2/push/send";
-
 /** Wie viele Benachrichtigungen ein Lauf höchstens anfasst. */
 const JE_LAUF = 200;
-
-/** Expo nimmt bis zu 100 Nachrichten je Stapel. */
-const STAPEL = 100;
 
 /** So viele Aufrufe an APNs bzw. FCM laufen gleichzeitig. */
 const GLEICHZEITIG = 20;
@@ -87,28 +78,18 @@ interface Posten {
 
 interface Empfaenger {
   member_id: string;
-  tokens: string[];
   notification_ids: string[];
   items: Posten[];
-  /** Alle aktiven Geräte mit Anbieter; fehlt bei einer älteren Datenbank. */
-  geraete?: Geraet[] | null;
+  /** Alle aktiven Geräte mit Anbieter, neueste zuerst. */
+  geraete: Geraet[] | null;
 }
 
-/** Eine Nachricht an ein Gerät der nativen Apps. */
+/** Eine Nachricht an ein Gerät. */
 interface Direkt {
   anbieter: "apns" | "fcm";
   marke: string;
   meldung: Meldung;
   ids: string[];
-}
-
-interface Nachricht {
-  to: string;
-  title: string;
-  body: string;
-  sound: string;
-  badge: number;
-  data: Record<string, string>;
 }
 
 function antwort(koerper: Record<string, unknown>, status = 200): Response {
@@ -179,26 +160,13 @@ Deno.serve(async (req) => {
 
   // Je Gerät eine Nachricht: ein Mitglied kann Telefon und Tablet angemeldet
   // haben, und beide sollen es erfahren.
-  const sendungen: Sendung<Nachricht>[] = [];
   const direkt: Direkt[] = [];
   const uebersprungen: Record<string, number> = {};
   for (const e of empfaenger) {
     // Texte und Ziel aus @tcm/core (pushvorlage.ts), dort getestet.
     const m = pushMeldung(e.items);
-    for (const geraet of geraeteVon(e)) {
-      if (geraet.provider === "expo") {
-        sendungen.push({
-          nachricht: {
-            to: geraet.token,
-            title: m.titel,
-            body: m.text,
-            sound: "default",
-            badge: e.items.length,
-            data: { ziel: m.ziel },
-          },
-          ids: e.notification_ids,
-        });
-      } else if ((geraet.provider === "apns" || geraet.provider === "fcm") && zusteller[geraet.provider]) {
+    for (const geraet of e.geraete ?? []) {
+      if ((geraet.provider === "apns" || geraet.provider === "fcm") && zusteller[geraet.provider]) {
         direkt.push({
           anbieter: geraet.provider,
           marke: geraet.token,
@@ -217,73 +185,36 @@ Deno.serve(async (req) => {
   }
   const nUebersprungen = Object.values(uebersprungen).reduce((a, b) => a + b, 0);
 
-  const nachrichten = sendungen.map((s) => s.nachricht);
-
   if (!PUSH_AKTIV) {
     // Trockenlauf: nichts senden, aber zeigen, was rausgegangen wäre.
     // Freigegeben wird trotzdem nicht - sonst liefe der nächste Lauf in
     // dieselbe Ausgabe, und lokal entstünde eine Endlosschleife.
-    console.warn(
-      `Trockenlauf: ${nachrichten.length + direkt.length} Push an ${empfaenger.length} Empfänger`,
-    );
+    console.warn(`Trockenlauf: ${direkt.length} Push an ${empfaenger.length} Empfänger`);
     return antwort({
       ok: true,
       trockenlauf: true,
       empfaenger: empfaenger.length,
-      nachrichten,
       direkt: direkt.map((d) => ({ anbieter: d.anbieter, to: d.marke, ...d.meldung })),
       uebersprungen: nUebersprungen,
     });
   }
 
-  const kopfzeilen: Record<string, string> = { "Content-Type": "application/json" };
-  if (EXPO_ACCESS_TOKEN) kopfzeilen.Authorization = `Bearer ${EXPO_ACCESS_TOKEN}`;
-
   let gesendet = 0;
   const abgemeldet: string[] = [];
 
-  // Expo in Stapeln, APNs und FCM je Gerät, beides zugleich. Ein Ausfall bei
-  // Apple hält Android nicht auf und umgekehrt.
-  const [expo, zustellungen] = await Promise.all([
-    inStapelnSenden(sendungen, STAPEL, async (stapel) => {
-      const res = await fetch(EXPO_ENDPUNKT, {
-        method: "POST",
-        headers: kopfzeilen,
-        body: JSON.stringify(stapel),
-      });
+  // Je Gerät ein Aufruf, APNs und FCM zugleich. Ein Ausfall bei Apple hält
+  // Android nicht auf und umgekehrt.
+  const zustellungen = await nebenlaeufig(
+    direkt,
+    GLEICHZEITIG,
+    (d): Promise<Zustellung> => zusteller[d.anbieter]!(d.marke, d.meldung),
+  );
 
-      if (!res.ok) {
-        throw new Error(`Expo antwortete mit ${res.status}`);
-      }
-
-      const ergebnis = await res.json() as {
-        data?: { status: string; details?: { error?: string } }[];
-      };
-
-      // Die Belege kommen in derselben Reihenfolge wie die Nachrichten.
-      (ergebnis.data ?? []).forEach((beleg, index) => {
-        if (beleg.status === "ok") {
-          gesendet += 1;
-          return;
-        }
-        if (beleg.details?.error === "DeviceNotRegistered") {
-          const ziel = stapel[index]?.to;
-          if (ziel) abgemeldet.push(ziel);
-        }
-      });
-    }),
-    nebenlaeufig(direkt, GLEICHZEITIG, (d): Promise<Zustellung> => zusteller[d.anbieter]!(d.marke, d.meldung)),
-  ]);
-
-  // Was ein früherer Stapel oder ein anderes Gerät schon zugestellt hat,
-  // bleibt abgehakt (B9). Freigegeben wird nur, was vorübergehend scheiterte.
-  const expoFrei = new Set(expo.freizugeben);
-  const zugestellt = sendungen.flatMap((s) => s.ids).filter((id) => !expoFrei.has(id));
-  const gescheitert = [...expo.freizugeben];
+  // Was ein anderes Gerät schon zugestellt hat, bleibt abgehakt (B9).
+  // Freigegeben wird nur, was vorübergehend scheiterte.
+  const zugestellt: string[] = [];
+  const gescheitert: string[] = [];
   const fehlermeldungen: string[] = [];
-  if (expo.fehler !== null) {
-    fehlermeldungen.push(expo.fehler instanceof Error ? expo.fehler.message : "Versand gescheitert.");
-  }
 
   zustellungen.forEach((z, i) => {
     const d = direkt[i]!;
@@ -337,15 +268,9 @@ Deno.serve(async (req) => {
   });
 });
 
-/** Die Geräte eines Empfängers; ohne `geraete` (ältere Datenbank) die Expo-Marken wie bisher. */
-function geraeteVon(e: Empfaenger): Geraet[] {
-  if (Array.isArray(e.geraete)) return e.geraete;
-  return (e.tokens ?? []).map((token) => ({ token, provider: "expo" }));
-}
-
 /**
- * Was die native App beim Tippen braucht: das Ziel wie bei Expo, dazu die Art
- * und die Veranstaltung, wenn alle Posten dieselbe haben.
+ * Was die App beim Tippen braucht: das Ziel (Pfad aus pushvorlage.ts), dazu
+ * die Art und die Veranstaltung, wenn alle Posten dieselbe haben.
  */
 function daten(items: Posten[], ziel: string): Record<string, string> {
   const d: Record<string, string> = { ziel };

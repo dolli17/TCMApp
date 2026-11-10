@@ -1,7 +1,11 @@
 # TC Muckensturm – native iOS-App
 
 Grundgerüst der nativen App (Swift 6, SwiftUI, iOS 17+, nur iPhone, Hochformat, Deutsch).
-Die Expo-App in `apps/mobile` bleibt unverändert, bis diese App fertig ist. Web und Supabase bleiben.
+Sie hat die frühere Expo-App abgelöst (gleiche Bundle-ID). Web und Supabase bleiben.
+
+Die Expo-App (`apps/mobile`) ist aus dem Repo entfernt. Verweise wie „wie `apps/mobile/…`“ hier
+und in den Quelltexten nennen die Vorlage der Portierung; nachlesen lässt sie sich in der
+Git-Historie (`git show 9097399:apps/mobile/…`).
 
 | Anmeldung | Home, hell | Home, dunkel |
 |---|---|---|
@@ -88,14 +92,14 @@ nicht (braucht einen macOS-Runner).
 | Konfiguration | Supabase | Bundle-ID | Name auf dem Home-Bildschirm | URL-Schema | SITE_URL |
 |---|---|---|---|---|---|
 | `Lokal` | lokaler Stack (`127.0.0.1:54321`), Werte aus `Konfiguration/Lokal.geheim.xcconfig` (gitignored) | `de.tcmuckensturm.app.lokal` | TCM Lokal | `tcmlokal` | – |
-| `Dev` | Dev-Projekt, Werte aus `apps/mobile/eas.json` (öffentlicher Publishable Key) | `de.tcmuckensturm.app.dev` | TCM Dev | `tcmdev` | `https://dev.tennisclub-muckensturm.de` |
+| `Dev` | Dev-Projekt, Werte in `Konfiguration/Dev.xcconfig` (öffentlicher Publishable Key) | `de.tcmuckensturm.app.dev` | TCM Dev | `tcmdev` | `https://dev.tennisclub-muckensturm.de` |
 | `Prod` | **TODO** – Werte fehlen noch, der Build zeigt den Hinweis „Konfiguration fehlt“ | `de.tcmuckensturm.app` | TC Muckensturm | `tcm` | `https://app.tennisclub-muckensturm.de` |
 
 - Werte stehen in `Konfiguration/*.xcconfig` und kommen über die `Info.plist` (`TCMSupabaseURL`,
   `TCMSupabaseKey`, `TCMSiteURL`, `TCMAppGroup`, `TCMURLSchema`) in die App (`App/Umgebung.swift`).
 - In xcconfig beginnt mit `//` ein Kommentar. Adressen deshalb als `https:/$()/beispiel.de`.
-- `scripts/lokal-konfigurieren.sh` liest `apps/mobile/.env` und nimmt die Werte nur, wenn die
-  Adresse lokal ist; sonst `apps/web/.env.local`. „Lokal“ läuft so nie gegen Dev oder Prod. Von
+- `scripts/lokal-konfigurieren.sh` liest `apps/web/.env.local` und nimmt die Werte nur, wenn die
+  Adresse lokal ist. „Lokal“ läuft so nie gegen Dev oder Prod. Von
   Hand geht es mit `Konfiguration/Lokal.geheim.xcconfig.example`.
 - Schemes: `TCMuckensturm` (Run/Test mit Lokal, Archive mit Dev), `TCMuckensturm Dev` (Run/Archive mit Dev).
 - Team `93Z2KKGMV7`, automatisches Signieren.
@@ -461,7 +465,7 @@ ASC_KEY_PATH=~/Documents/Apple/AuthKey_<id>.p8 ASC_KEY_ID=<id> ASC_ISSUER_ID=<is
   scripts/testflight.sh <buildnummer> [version]
 ```
 
-Baut die Konfiguration Prod (Bundle `de.tcmuckensturm.app`, dieselbe App wie die Expo-Builds bis 16) gegen das Dev-Projekt, wie die Expo-Builds auch (`Konfiguration/TestFlight.xcconfig`), und lädt sie zu App Store Connect hoch. Die Buildnummer muss höher sein als jede bisherige.
+Baut die Konfiguration Prod (Bundle `de.tcmuckensturm.app`, dieselbe App wie die früheren Expo-Builds bis 16) gegen das Dev-Projekt (`Konfiguration/TestFlight.xcconfig`), und lädt sie zu App Store Connect hoch. Die Buildnummer muss höher sein als jede bisherige.
 
 - **Signieren:** Ein Apple-Konto des Teams muss in Xcode unter Settings → Accounts angemeldet sein. Xcode legt dann Zertifikat und Profile an und meldet App Group, Associated Domains und Push an. Der API-Schlüssel allein reicht dafür nicht (App Groups gibt es in der API nicht, das automatische Signieren lehnt ihn ab).
 - **Hochladen:** mit dem API-Schlüssel von App Store Connect, über die Umgebung, nicht im Repo.
@@ -567,7 +571,7 @@ TCMuckensturmTests/
 - Plätze: Sprünge aus Home direkt ins
   Buchungsblatt (`?buchen=jetzt`, `?buchung=…`), mitlaufender Tabellenkopf in Freie Zeiten
 - Schwebende Tab-Leiste und kompakte Kopfzeile wie in der Expo-App (heute die System-TabView)
-- Fragment-Zweig der Passwort-Links entfernen, sobald die Cloud-Vorlagen token_hash schicken (S20, gemeinsam mit Expo-App und Web)
+- Fragment-Zweig der Passwort-Links entfernen, sobald die Cloud-Vorlagen token_hash schicken (S20, gemeinsam mit Android und Web)
 - Widgets: auf einem echten Gerät ungetestet (braucht die Registrierung unten); interaktive Widgets
   (App Intents) und Live Activities für laufende Spiele
 - Widgets: Bundle-IDs der Erweiterung (`de.tcmuckensturm.app.widgets`, `.dev.widgets`, `.lokal.widgets`) im
@@ -576,7 +580,6 @@ TCMuckensturmTests/
   Apple Developer Portal und den APNs-Schlüssel als Edge-Secret (`docs/native-apps.md`, Push). Getestet ist
   bisher nur im Simulator (Marke, `register_push_token`, `simctl push`, Ziele)
 - Onboarding: Bildschirmfotos dunkel
-- Übernahme der Sitzung aus der Expo-App (expo-secure-store), damit Mitglieder nach dem Umstieg angemeldet bleiben
 - App Groups und Associated Domains im Apple Developer Portal für `.dev`/`.lokal` registrieren (für Geräte-Builds)
 - `Package.resolved` ist nicht eingecheckt (liegt im erzeugten `.xcodeproj`): die transitiven Pakete von supabase-swift werden beim ersten Bauen aufgelöst
 - CI für iOS (macOS-Runner)

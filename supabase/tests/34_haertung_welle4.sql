@@ -255,9 +255,9 @@ begin
   update public.push_tokens set disabled_at = now() where token = c.token;
 
   perform tests.act_as(b.auth_id);
-  return next throws_ok(format($q$select public.register_push_token(%L, 'ios')$q$, a.token),
+  return next throws_ok(format($q$select public.register_push_token(%L, 'ios', null, 'apns')$q$, a.token),
     '23514', null, 'Ein aktives Geraet eines anderen Mitglieds haengt niemand um');
-  return next lives_ok(format($q$select public.register_push_token(%L, 'android')$q$, c.token),
+  return next lives_ok(format($q$select public.register_push_token(%L, 'android', null, 'fcm')$q$, c.token),
     'Ein stillgelegtes schon');
   perform set_config('role', 'postgres', true);
 
@@ -269,7 +269,7 @@ begin
     'ohne Stilllegung');
 
   perform tests.act_as(a.auth_id);
-  return next lives_ok(format($q$select public.register_push_token(%L, 'ios')$q$, a.token),
+  return next lives_ok(format($q$select public.register_push_token(%L, 'ios', null, 'apns')$q$, a.token),
     'Das eigene Geraet erneut anmelden geht');
   perform set_config('role', 'postgres', true);
 
@@ -277,7 +277,7 @@ begin
   perform set_config('request.jwt.claims', null, true);
   update public.members set status = 'archived' where id = a.member_id;
   perform tests.act_as(b.auth_id);
-  return next lives_ok(format($q$select public.register_push_token(%L, 'ios')$q$, a.token),
+  return next lives_ok(format($q$select public.register_push_token(%L, 'ios', null, 'apns')$q$, a.token),
     'Das Geraet eines Archivierten zieht um');
   perform set_config('role', 'postgres', true);
 end; $f$;

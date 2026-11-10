@@ -76,7 +76,7 @@ android {
             buildConfigField("String", "SUPABASE_URL", lokal.getProperty("supabase.url", "").alsBuildConfig())
             buildConfigField("String", "SUPABASE_KEY", lokal.getProperty("supabase.key", "").alsBuildConfig())
             buildConfigField("String", "SITE_URL", "".alsBuildConfig())
-            // Nicht tcm: das ist die Expo-App, die im selben Emulator liegen kann.
+            // Nicht tcm: das ist die Prod-App, die im selben Emulator liegen kann.
             buildConfigField("String", "URL_SCHEMA", "tcmlokal".alsBuildConfig())
             manifestPlaceholders["urlSchema"] = "tcmlokal"
         }

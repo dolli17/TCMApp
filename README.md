@@ -39,7 +39,7 @@ späterer `camt`-Import liefern würde.
 ## Technik
 
 - **Backend**: Supabase (Postgres, Auth, RLS, Edge Functions, Storage)
-- **Mobile**: Expo / React Native
+- **Mobile**: native Apps – iOS (Swift/SwiftUI), Android (Kotlin/Compose)
 - **Web**: Next.js (Mitglieder-Web, Admin-Dashboard, Kiosk)
 - **Tests**: pgTAP (Datenbank), Vitest (Logik), Playwright (E2E)
 
@@ -47,9 +47,10 @@ späterer `camt`-Import liefern würde.
 
 ```
 apps/web         Next.js – Mitglieder-Web, Admin-Dashboard, Kiosk-Route
-apps/mobile      Expo – Mitglieder-App für iOS und Android
+apps/ios         Swift/SwiftUI – Mitglieder-App für iOS
+apps/android     Kotlin/Compose – Mitglieder-App für Android
 packages/core    Geschäftslogik, Zod-Schemas, generierte Datenbank-Typen
-packages/ui      geteilte Komponenten
+packages/ui      Design-Tokens (CSS für Web, Swift/Kotlin für die Apps), Logo
 supabase/        Migrationen, RLS-Policies, RPCs, Edge Functions, pgTAP-Tests
 tools/import     eBuSy-Import (läuft erst zum Cutover)
 ```
@@ -110,10 +111,10 @@ Abbild: `apps/web/Dockerfile`, Dienst: `deploy/web/docker-compose.yml`. Die
 Werte (Domain, Supabase-URL und -Key) stehen auf dem Server in
 `/docker/tcm-web*/.env`.
 
-Die App unter `apps/mobile` liest ihre Supabase-Werte aus `apps/mobile/.env`
-(`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`) und startet mit
-`pnpm --filter @tcm/mobile ios`. Wie sie in TestFlight kommt, steht in
-[`apps/mobile/RELEASE.md`](apps/mobile/RELEASE.md).
+Die nativen Apps bauen und testen sich ohne pnpm: iOS mit Xcode bzw.
+`xcodebuild`, Android mit Gradle. Konfigurationen, Push und TestFlight stehen in
+[`apps/ios/README.md`](apps/ios/README.md), das Android-Gegenstück in
+[`apps/android/README.md`](apps/android/README.md).
 
 Während der gesamten Entwicklung enthält die Datenbank **ausschließlich synthetische Daten**.
 Echte Mitgliederdaten kommen erst beim Cutover ins Spiel.

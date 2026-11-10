@@ -10,6 +10,6 @@
 
 APP_BUNDLE_SUFFIX = .lokal
 TCM_ANZEIGENAME = TCM Lokal
-// Nicht tcm: das ist die Expo-App, die im selben Simulator liegen kann.
+// Nicht tcm: das ist die Prod-App, die im selben Simulator liegen kann.
 APP_URL_SCHEME = tcmlokal
 APS_UMGEBUNG = development
