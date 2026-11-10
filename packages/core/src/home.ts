@@ -249,8 +249,8 @@ export function notificationZiel(
  * Wohin eine Nachricht im Web fuehrt, samt Linktext. Wie notificationZiel,
  * dazu die Mannschafts-Nachrichten (team_invited, team_invitation_answered,
  * team_removed, team_left) auf /konto/mannschaft. notificationZiel bleibt
- * unveraendert, weil die eingefrorene Expo-App den App-Pfad daraus nutzt und
- * dort keine Mannschaftsseite hat.
+ * unveraendert, weil die nativen Apps den App-Pfad daraus portiert haben
+ * (Startseite.notificationZiel) und Mannschafts-Nachrichten selbst fuehren.
  */
 export function notificationWebZiel(
   n: { kind?: string | null; event_id?: string | null },

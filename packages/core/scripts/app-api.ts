@@ -1,13 +1,14 @@
 /**
  * Der API-Vertrag der App, maschinenlesbar (docs/native/app-api.json).
  *
- * Welche RPCs, Tabellen, Realtime-Kanaele und Auth-Aufrufe die Expo-App
- * benutzt, steht unten von Hand (NUTZUNG) - das ist die Liste, die die
- * nativen Apps abdecken muessen. Parameter, Rueckgaben und Spalten kommen
- * aus packages/core/src/database.types.ts, also aus dem Schema selbst.
+ * Welche RPCs, Tabellen, Realtime-Kanaele und Auth-Aufrufe die App benutzt,
+ * steht unten von Hand - das ist die Liste, die die nativen Apps abdecken
+ * muessen. Erhoben wurde sie an der frueheren Expo-App (apps/mobile, bis
+ * Commit 9097399 in der Git-Historie); die Angaben "wo" nennen Dateien und
+ * Funktionen dort. Parameter, Rueckgaben und Spalten kommen aus
+ * packages/core/src/database.types.ts, also aus dem Schema selbst.
  *
- * Der Test app-api.test.ts haelt beides fest: die JSON passt zu den Typen,
- * und die Liste passt zu dem, was apps/mobile wirklich aufruft. Die
+ * Der Test app-api.test.ts haelt fest, dass die JSON zu den Typen passt. Die
  * menschenlesbare Fassung mit Fehlertexten steht in docs/native/app-api.md.
  *
  * Neu erzeugen mit: pnpm --filter @tcm/core build:app-api
@@ -19,7 +20,7 @@ import ts from "typescript";
 // Was die App benutzt
 // ---------------------------------------------------------------------------
 
-/** Wo eine RPC in der App aufgerufen wird: Datei unter apps/mobile/src/lib und Funktion. */
+/** Wo die fruehere Expo-App eine RPC aufrief: Datei unter apps/mobile/src/lib und Funktion. */
 export const RPCS: Record<string, string[]> = {
   booking_settings: ["daten.ts ladeBuchungseinstellungen"],
   cancel_booking: ["daten.ts storniereBuchung", "daten.ts hebeSperreAuf"],
@@ -76,8 +77,8 @@ export const RPCS: Record<string, string[]> = {
 
 /**
  * RPCs, die nur die nativen Apps brauchen: der Ersatz fuer die direkten
- * Tabellenzugriffe (TABELLEN, ersatz). Die Expo-App ruft sie nicht auf, sie
- * stehen deshalb nicht in RPCS. Je RPC ein Satz, wofuer sie da ist.
+ * Tabellenzugriffe (TABELLEN, ersatz). Die fruehere Expo-App rief sie nicht
+ * auf, sie stehen deshalb nicht in RPCS. Je RPC ein Satz, wofuer sie da ist.
  */
 export const NATIVE_RPCS: Record<string, string> = {
   booking_types_aktiv: "Aktive Buchungsarten (p_applies_to = booking) bzw. Sperrarten (blocking), nach sort_order.",
@@ -97,7 +98,7 @@ export const NATIVE_RPCS: Record<string, string> = {
 };
 
 export interface Tabellenzugriff {
-  /** Datei unter apps/mobile/src/lib und Funktion */
+  /** Datei unter apps/mobile/src/lib (fruehere Expo-App) und Funktion */
   wo: string;
   art: "select" | "update";
   /** Gelesene bzw. geschriebene Spalten, wie im Aufruf; "teams(name)" ist ein eingebetteter Fremdschluessel */
@@ -542,7 +543,7 @@ export function appApi(databaseTypes: string): unknown {
       "Einfache Typen als Text (string, number, boolean, Json, null, undefined, enum:<name>, auch mit ' | '), " +
       "sonst {liste}, {objekt} oder {oder}. Ein '?' am Feldnamen heisst optional. " +
       "Rueckgabe {liste: {objekt}} ist eine Tabelle (setof), undefined heisst void. " +
-      "rpcs ruft die Expo-App auf, nativ sind die RPCs nur fuer die nativen Apps (Ersatz der Tabellenzugriffe, " +
+      "rpcs rief die fruehere Expo-App auf (wo: Datei dort), nativ sind die RPCs nur fuer die nativen Apps (Ersatz der Tabellenzugriffe, " +
       "siehe tabellen.*.ersatz).",
     rpcs,
     nativ,

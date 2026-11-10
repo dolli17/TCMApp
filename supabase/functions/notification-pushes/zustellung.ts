@@ -2,13 +2,13 @@
  * Was APNs und FCM gemeinsam haben: eine Nachricht je Gerät und eine
  * Antwort, die sagt, ob das Gerät noch lebt.
  *
- * Anders als bei Expo gibt es keine Stapel. Jedes Gerät ist ein eigener
- * Aufruf, und ein Fehler betrifft nur dieses Gerät. Deshalb bricht hier nichts
- * beim ersten Fehler ab wie in inStapelnSenden: Ist Apple kurz weg, sollen
- * die Android-Geräte ihre Nachricht trotzdem bekommen.
+ * Es gibt keine Stapel. Jedes Gerät ist ein eigener Aufruf, und ein Fehler
+ * betrifft nur dieses Gerät. Deshalb bricht hier nichts beim ersten Fehler
+ * ab: Ist Apple kurz weg, sollen die Android-Geräte ihre Nachricht trotzdem
+ * bekommen.
  */
 
-export type Anbieter = "expo" | "apns" | "fcm";
+export type Anbieter = "apns" | "fcm";
 
 export interface Geraet {
   token: string;
@@ -57,9 +57,9 @@ export async function nebenlaeufig<T, E>(
 
 /**
  * Was am Ende wieder freizugeben ist: was irgendwo vorübergehend scheiterte,
- * aber auf keinem anderen Weg rausging. Wie in inStapelnSenden fehlt eine
- * Nachricht lieber auf dem zweiten Gerät, als dass das erste sie doppelt
- * bekommt.
+ * aber auf keinem anderen Weg rausging. Wie beim Mailversand (inStapelnSenden
+ * in versandstapel.ts) fehlt eine Nachricht lieber auf dem zweiten Gerät, als
+ * dass das erste sie doppelt bekommt.
  */
 export function freizugeben(gescheitert: Iterable<string>, zugestellt: Iterable<string>): string[] {
   const draussen = new Set(zugestellt);

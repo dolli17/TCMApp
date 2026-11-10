@@ -9,10 +9,10 @@
 --   3. save_my_profile und save_my_notfallkontakt laufen als Aufrufer, also
 --      ueber Policy, Spalten-Grant und guard_member_self_update. Andere
 --      Spalten nehmen sie gar nicht erst an.
---   4. push_tokens.provider: Standard 'expo', nur expo/apns/fcm.
---      register_push_token geht weiter mit zwei Parametern,
---      claim_notification_pushes liefert die Anbieter mit und in tokens nur
---      Expo-Marken.
+--   4. push_tokens.provider: kein Standard, nur apns/fcm (seit
+--      push_ohne_expo). register_push_token verlangt p_provider,
+--      claim_notification_pushes liefert je Empfaenger die Geraete mit
+--      Anbieter.
 --
 -- Fixtures aus 02_rls.sql (fixture_user, act_as), 03_rpc_bookings.sql
 -- (fixture_court), 13_lastschrift.sql (fixture_mandat), 17_mannschaften.sql
@@ -313,11 +313,11 @@ begin
   select * into a from tests.fixture_user(null, 'Telefon') limit 1;
   select * into b from tests.fixture_user(null, 'Tablet') limit 1;
   select * into adm from tests.fixture_user('admin', 'Admin') limit 1;
-  insert into public.push_tokens (member_id, token, platform) values
-    (a.member_id, 'zz-eigen', 'ios'),
-    (b.member_id, 'zz-fremd', 'ios');
-  insert into public.push_tokens (member_id, token, platform, disabled_at)
-  values (a.member_id, 'zz-aus', 'ios', now());
+  insert into public.push_tokens (member_id, token, platform, provider) values
+    (a.member_id, 'zz-eigen', 'ios', 'apns'),
+    (b.member_id, 'zz-fremd', 'ios', 'apns');
+  insert into public.push_tokens (member_id, token, platform, provider, disabled_at)
+  values (a.member_id, 'zz-aus', 'ios', 'apns', now());
 
   perform tests.act_as(a.auth_id);
   v_eigen := public.push_token_aktiv(' zz-eigen ');
@@ -372,28 +372,36 @@ end; $f$;
 
 create or replace function tests.test_app_push_provider()
 returns setof text language plpgsql as $f$
-declare a record; b record; v_n1 uuid; v_n2 uuid; v_prov text; z record;
+declare a record; b record; v_n1 uuid; v_n2 uuid; z record;
 begin
-  select * into a from tests.fixture_user(null, 'Expo') limit 1;
-  select * into b from tests.fixture_user(null, 'Nativ') limit 1;
+  select * into a from tests.fixture_user(null, 'Apns') limit 1;
+  select * into b from tests.fixture_user(null, 'Fcm') limit 1;
 
-  insert into public.push_tokens (member_id, token, platform) values (a.member_id, 'zz-direkt', 'ios');
-  return next is((select provider from public.push_tokens where token = 'zz-direkt'), 'expo',
-    'provider: Standard ist expo');
+  return next throws_ok(
+    format($$insert into public.push_tokens (member_id, token, platform) values (%L, 'zz-ohne', 'ios')$$,
+           a.member_id),
+    '23502', null, 'provider: ohne Anbieter kein Geraet (kein Standard mehr)');
+  return next throws_ok(
+    format($$insert into public.push_tokens (member_id, token, platform, provider) values (%L, 'zz-expo', 'ios', 'expo')$$,
+           a.member_id),
+    '23514', null, 'provider: expo gibt es nicht mehr');
   return next throws_ok(
     format($$insert into public.push_tokens (member_id, token, platform, provider) values (%L, 'zz-gcm', 'android', 'gcm')$$,
            a.member_id),
-    '23514', null, 'provider: nur expo, apns oder fcm');
+    '23514', null, 'provider: nur apns oder fcm');
+  insert into public.push_tokens (member_id, token, platform, provider) values (a.member_id, 'zz-direkt', 'ios', 'apns');
 
   perform tests.act_as(a.auth_id);
-  perform public.register_push_token('ExponentPushToken[zz-a]', 'ios');
-  perform public.register_push_token(p_token => 'zz-apns-a', p_platform => 'ios',
-                                     p_device_name => 'iPhone', p_provider => 'apns');
+  return next throws_ok($$select public.register_push_token('ExponentPushToken[zz-a]', 'ios')$$, '23514',
+    'Ohne Push-Anbieter (apns oder fcm) lässt sich kein Gerät anmelden.',
+    'register_push_token: ohne p_provider abgelehnt (Aufruf der alten Expo-App)');
+  return next throws_ok($$select public.register_push_token('zz-x', 'ios', null, 'expo')$$, '23514',
+    'Unbekannter Push-Anbieter "expo".', 'register_push_token: expo abgelehnt');
   return next throws_ok($$select public.register_push_token('zz-x', 'ios', null, 'gcm')$$, '23514',
     'Unbekannter Push-Anbieter "gcm".', 'register_push_token: unbekannter Anbieter abgelehnt');
+  perform public.register_push_token(p_token => 'zz-apns-a', p_platform => 'ios',
+                                     p_device_name => 'iPhone', p_provider => 'apns');
   perform set_config('role', 'postgres', true);
-  return next is((select provider from public.push_tokens where token = 'ExponentPushToken[zz-a]'), 'expo',
-    'register_push_token: mit zwei Parametern wie bisher, Anbieter expo');
   return next is((select provider from public.push_tokens where token = 'zz-apns-a'), 'apns',
     'register_push_token: mit p_provider apns');
 
@@ -419,16 +427,16 @@ begin
   create temp table zz_claim on commit drop as
     select * from public.claim_notification_pushes(1000) c where c.member_id in (a.member_id, b.member_id);
 
+  return next ok(not exists (
+      select 1 from pg_proc p cross join lateral unnest(p.proargnames) as n(name)
+       where p.oid = 'public.claim_notification_pushes(integer)'::regprocedure and n.name = 'tokens'),
+    'claim_notification_pushes: keine Spalte tokens mehr (das waren nur Expo-Marken)');
+
   select * into z from zz_claim where member_id = a.member_id;
-  return next is(z.tokens, array['ExponentPushToken[zz-a]'],
-    'claim_notification_pushes: tokens enthält nur Expo-Marken');
-  return next is((select jsonb_agg(g order by g->>'token') from jsonb_array_elements(z.geraete) g),
-                 '[{"token": "ExponentPushToken[zz-a]", "provider": "expo"},
-                   {"token": "zz-apns-a", "provider": "apns"}]'::jsonb,
+  return next is(z.geraete, '[{"token": "zz-apns-a", "provider": "apns"}]'::jsonb,
     'claim_notification_pushes: geraete mit Anbieter, ohne stillgelegte');
 
   select * into z from zz_claim where member_id = b.member_id;
-  return next is(z.tokens, '{}'::text[], 'claim_notification_pushes: ohne Expo-Marke leer, nicht null');
   return next is(z.geraete, '[{"token": "zz-fcm-b", "provider": "fcm"}]'::jsonb,
     'claim_notification_pushes: auch ein Mitglied nur mit FCM bekommt seine Nachricht');
 end; $f$;

@@ -3,7 +3,7 @@
  *
  * Es gibt bewusst nur den Weg ueber den anon key. Der service_role key umgeht
  * RLS vollstaendig und hat in keiner Anwendung etwas zu suchen - weder im
- * Browser noch in der Expo-App noch in einer Server-Komponente, die dem
+ * Browser noch in den nativen Apps noch in einer Server-Komponente, die dem
  * Benutzer antwortet. Wo Backend-Rechte gebraucht werden (Seed, Import,
  * Beitragslauf), laeuft das ueber Skripte oder Edge Functions mit eigener
  * Umgebung.
@@ -23,7 +23,7 @@ export function createTcmClient(config: ClientConfig): TcmClient {
   if (!config.url || !config.anonKey) {
     throw new Error(
       "Supabase-Zugangsdaten fehlen. NEXT_PUBLIC_SUPABASE_URL und " +
-        "NEXT_PUBLIC_SUPABASE_ANON_KEY beziehungsweise die EXPO_PUBLIC_-Varianten setzen.",
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY setzen.",
     );
   }
 

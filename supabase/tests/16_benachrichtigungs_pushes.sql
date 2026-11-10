@@ -19,10 +19,10 @@ returns table (member_id uuid, auth_id uuid, token text) language plpgsql as $f$
 declare u record; v_token text;
 begin
   select * into u from tests.fixture_user() limit 1;
-  v_token := 'ExponentPushToken[zz-' || substr(u.member_id::text, 1, 8) || ']';
+  v_token := 'zz-apns-' || substr(u.member_id::text, 1, 8);
 
-  insert into public.push_tokens (member_id, token, platform, device_name)
-  values (u.member_id, v_token, 'ios', 'Testgeraet');
+  insert into public.push_tokens (member_id, token, platform, device_name, provider)
+  values (u.member_id, v_token, 'ios', 'Testgeraet', 'apns');
 
   return query select u.member_id, u.auth_id, v_token;
 end; $f$;
@@ -156,7 +156,7 @@ begin
   update public.push_tokens set disabled_at = now() where token = a.token;
 
   perform set_config('request.jwt.claim.sub', b.auth_id::text, true);
-  perform public.register_push_token(a.token, 'ios', 'Familientelefon');
+  perform public.register_push_token(a.token, 'ios', 'Familientelefon', 'apns');
   perform set_config('request.jwt.claim.sub', null, true);
 
   select member_id into v_besitzer from public.push_tokens where token = a.token;

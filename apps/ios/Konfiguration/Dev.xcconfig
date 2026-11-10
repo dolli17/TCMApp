@@ -1,5 +1,5 @@
-// Dev: das Dev-Projekt (Branch main). Werte aus apps/mobile/eas.json
-// (build.base.env) - oeffentlicher Publishable Key, darf ins Repo.
+// Dev: das Dev-Projekt (Branch main). Oeffentlicher Publishable Key, darf ins
+// Repo.
 
 #include "Basis.xcconfig"
 

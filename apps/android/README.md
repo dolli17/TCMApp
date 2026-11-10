@@ -1,8 +1,12 @@
 # TC Muckensturm – native Android-App
 
 Grundgerüst der nativen App (Kotlin, Jetpack Compose, Android 8.0+ / API 26, nur Telefon,
-Hochformat, Deutsch). Gegenstück zu `apps/ios` (Spur N2). Die Expo-App in `apps/mobile` bleibt
-unverändert, bis diese App fertig ist. Web und Supabase bleiben.
+Hochformat, Deutsch). Gegenstück zu `apps/ios` (Spur N2). Sie hat die frühere Expo-App abgelöst
+(gleiches Package). Web und Supabase bleiben.
+
+Die Expo-App (`apps/mobile`) ist aus dem Repo entfernt. Verweise wie „wie `apps/mobile/…`“ hier
+und in den Quelltexten nennen die Vorlage der Portierung; nachlesen lässt sie sich in der
+Git-Historie (`git show 9097399:apps/mobile/…`).
 
 | Anmelden (helles System) | Anmelden (dunkles System) | Kein Zugang | Tabs, hell | Tabs, dunkel |
 |---|---|---|---|---|

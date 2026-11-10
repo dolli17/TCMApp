@@ -3,7 +3,7 @@
 Stand: 11.10.2026 · Status: **geplant, noch nicht umgesetzt**
 
 ## Kontext
-Heute gibt es nur **ein** Cloud-Projekt (`xvjqqjiweogtfpfgeoqz`, Free). Dorthin zeigen Web und alle EAS-Profile. (`scripts/e2e.sh` zeigte bis 20.10.2026 ebenfalls dorthin; seitdem läuft E2E nur noch lokal.) Daneben gibt es nur den lokalen Stack.
+Heute gibt es nur **ein** Cloud-Projekt (`xvjqqjiweogtfpfgeoqz`, Free). Dorthin zeigen Web und die nativen Apps (Dev-Konfiguration und TestFlight-Build). (`scripts/e2e.sh` zeigte bis 20.10.2026 ebenfalls dorthin; seitdem läuft E2E nur noch lokal.) Daneben gibt es nur den lokalen Stack.
 
 Für den Rollout an den ganzen Verein soll Prod geschützt sein. Entwickeln und Testen passiert in Dev und lokal, und nach Prod geht nur, was bewusst freigegeben wurde.
 
@@ -39,7 +39,7 @@ Grundregeln:
 - **Auth:** Redirect-URLs und Site-URL auf `https://dev.tennisclub-muckensturm.de` sowie `tcmdev://passwort-setzen` stellen.
 - **Selbstregistrierung aus (S1):** Dashboard → Authentication → Sign In / Providers → „Allow new users to sign up“ ausschalten. Sonst kann sich jemand mit der Adresse eines künftigen Mitglieds registrieren, und `loginAnlegen` übernimmt dieses Konto beim Anlegen. Lokal steht `enable_signup = false` unter `[auth]` in `supabase/config.toml`, die Cloud übernimmt das nicht von selbst. Den Provider „Email“ **nicht** abschalten, ebenso wenig `[auth.email] enable_signup`: Das sperrt alle Passwort-Anmeldungen (`email_provider_disabled`). Prüfen: `POST /auth/v1/signup` mit dem Publishable Key antwortet mit `signup_disabled`. *Dev: am 21.10.2026 ausgeschaltet.*
 - **Edge-Secrets:** `SITE_URL`, `MAIL_FROM=dev-noreply@…`, einen eigenen Resend-Key für Dev. Ohne `RESEND_API_KEY` nimmt das Antragsformular keine Anträge mehr an, weil die Bestätigungsmail nicht rausgeht (S22, Edge Function `mitgliedsantrag`).
-- **Cloud-Mailvorlagen auf token_hash umstellen, danach Fragment-Zweig in App und Web entfernen (S20).** Dashboard → Authentication → Email Templates: „Invite user“ und „Reset password“ mit dem Text aus `supabase/templates/einladung.html` bzw. `passwort.html` (Link `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=…`). App und Web nehmen seit PR #53 beide Formen an, die Reihenfolge von Vorlage und App-Build ist also egal. Erst wenn Dev **und** Prod umgestellt sind und keine alten Links mehr gelten (24 Stunden), den `#access_token`-Zweig in `apps/mobile/src/lib/passwortlink.ts` bzw. `app/passwort-setzen.tsx` und in `apps/web/src/app/passwort-setzen/page.tsx` gemeinsam entfernen.
+- **Cloud-Mailvorlagen auf token_hash umstellen, danach Fragment-Zweig in App und Web entfernen (S20).** Dashboard → Authentication → Email Templates: „Invite user“ und „Reset password“ mit dem Text aus `supabase/templates/einladung.html` bzw. `passwort.html` (Link `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=…`). App und Web nehmen seit PR #53 beide Formen an, die Reihenfolge von Vorlage und App-Build ist also egal. Erst wenn Dev **und** Prod umgestellt sind und keine alten Links mehr gelten (24 Stunden), den `#access_token`-Zweig in den nativen Apps (`apps/ios/TCMuckensturm/App/Passwortlink.swift`, `apps/android/…/start/Passwortlink.kt`) und in `apps/web/src/app/passwort-setzen/page.tsx` gemeinsam entfernen.
 
 ### 2. Konfiguration als Code
 - In `supabase/config.toml` Abschnitte `[remotes.dev]` und `[remotes.prod]` mit `project_id` anlegen, dazu jeweils `site_url` und `additional_redirect_urls`.
@@ -81,24 +81,16 @@ Grundregeln:
 - **DNS bei IONOS:** `dev` als A- und AAAA-Eintrag auf den Server.
 - **Umstellung:** Der heutige Container wird zu `tcm-web-dev`. `app.` zeigt erst auf Prod, wenn Prod fertig ist; bis dahin kann `app.` auf Dev bleiben.
 
-### 5. iOS: Dev-App und Prod-App
-- **`apps/mobile/app.json` → `app.config.ts`:**
-  - Abhängig von `APP_VARIANT=dev`: Name „TCM Dev“, Bundle-ID und Package `de.tcmuckensturm.app.dev`, Scheme `tcmdev`, Icon mit Band „DEV“.
-  - Sonst bleibt alles wie heute.
-  - Redirect-Ziele in `anmelden.tsx` und `konto.tsx` nehmen das Scheme aus der Konfiguration.
-- **`apps/mobile/eas.json`:**
-  - `base` enthält keine Supabase-Werte mehr.
-  - Profil **`dev`** (store-Distribution, `APP_VARIANT=dev`, Dev-URL/Key/SITE_URL) für TestFlight der Dev-App.
-  - Profil **`production`** mit Prod-URL/Key und `app.`-SITE_URL.
-  - `simulator` und `preview` zeigen auf Dev.
-  - Submit-Profile `dev` und `production` mit je eigener `ascAppId`.
+### 5. Apps: Dev-App und Prod-App
+Die Expo-App ist abgelöst (10.11.2026). Die nativen Apps haben Dev und Prod schon als eigene Konfigurationen: iOS `Konfiguration/Dev.xcconfig` und `Prod.xcconfig` (Bundle-ID `de.tcmuckensturm.app.dev` bzw. `de.tcmuckensturm.app`, Schema `tcmdev` bzw. `tcm`), Android die Varianten `dev` und `prod` in `apps/android/app/build.gradle.kts`.
+- **Prod-Werte eintragen:** Supabase-URL, Publishable Key und `SITE_URL` von Prod in `Prod.xcconfig` bzw. die Android-Variante `prod`. Bis dahin baut `apps/ios/scripts/testflight.sh` die Prod-App gegen Dev (`Konfiguration/TestFlight.xcconfig`).
 - **App Store Connect:** zweite App „TCM Dev“ anlegen (neue Bundle-ID; Push-Capability und APNs-Key gelten für beide). Die Tester kommen in deren interne TestFlight-Gruppe. Die echte App bekommt später die Mitglieder.
-- **Vorsicht:** Ein alter Build 11 zeigt auf das heutige Projekt, also nach der Umstellung auf **Dev**. Für den Rollout braucht es deshalb einen neuen `production`-Build gegen Prod.
+- **Vorsicht:** Bisherige TestFlight-Builds der Prod-App zeigen auf das heutige Projekt, also nach der Umstellung auf **Dev**. Für den Rollout braucht es einen neuen Build gegen Prod.
 - **Migrationen bleiben rückwärtskompatibel:** Alte App-Versionen sprechen weiter mit Prod. Erst erweitern, später aufräumen.
 
 ### 6. Lokal und Schutz vor Verwechslung
 - **`scripts/e2e.sh`** lädt nicht mehr die Cloud-`.env`, sondern immer den lokalen Stack. E2E läuft nie gegen Dev oder Prod. **Erledigt (20.10.2026):** zusätzlich bricht `apps/web/playwright.config.ts` vor dem ersten Test ab, wenn eine Adresse nicht lokal ist.
-- **Env-Dateien:** Root-`.env` und `apps/mobile/.env` zeigen auf Dev. Es gibt **keine** Prod-Schlüssel auf dem Mac außer im Passwortmanager. `.env.example` bekommt Platzhalter statt der echten Ref.
+- **Env-Dateien:** Die Root-`.env` zeigt auf Dev. Es gibt **keine** Prod-Schlüssel auf dem Mac außer im Passwortmanager. `.env.example` bekommt Platzhalter statt der echten Ref.
 - **Prod-Datenbank** nur über ein neues Skript `scripts/prod-migrate.sh <tag>`:
   - prüft, ob der Tag existiert und der Arbeitsbaum sauber ist;
   - zeigt `supabase migration list` und die ausstehenden Migrationen;
@@ -123,7 +115,6 @@ Grundregeln:
 ### 8. Optional später
 - ~~GitHub Actions~~: erledigt, siehe `.github/workflows/` und `CONTRIBUTING.md`.
 - Uptime-Prüfung für `app.` (z. B. UptimeRobot) und Mail an dich.
-- EAS Update (OTA) mit Kanälen `dev`/`production` für schnelle JS-Korrekturen.
 
 ### 9. Go-Live-Reihenfolge
 1. Schritte 1, 2, 6: Dev sauber, Absicherungen, Tests grün.
@@ -135,7 +126,6 @@ Grundregeln:
 
 ## Kritische Dateien
 - **Neu:**
-  - `apps/mobile/app.config.ts` (ersetzt `app.json`)
   - `scripts/prod-migrate.sh`
   - `deploy/db/sicherung.sh`
   - `supabase/env/README.md`
@@ -143,11 +133,11 @@ Grundregeln:
   - Komponente für das Dev-Band
 - **Ändern:**
   - `deploy/web/deploy.sh`, `deploy/web/docker-compose.yml`, `apps/web/Dockerfile`
-  - `apps/mobile/eas.json`
+  - `apps/ios/Konfiguration/Prod.xcconfig`, `apps/android/app/build.gradle.kts`
   - `supabase/config.toml`
   - `scripts/e2e.sh`, `.env.example`
   - `apps/web/src/app/layout.tsx`
-  - `README.md`, `apps/mobile/RELEASE.md`
+  - `README.md`, `apps/ios/README.md`, `apps/android/README.md`
 - **Wiederverwenden:**
   - Snippets in `supabase/snippets/`
   - `public.ist_testadresse`

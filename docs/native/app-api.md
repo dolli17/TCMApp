@@ -1,10 +1,10 @@
 # API-Vertrag der App
 
-Stand: 29.10.2026 · Quelle: Expo-App in `apps/mobile` (Datenschicht `src/lib/daten.ts`, `src/lib/push.ts`, `src/lib/verwaltung/*.ts`)
+Stand: 10.11.2026 · Quelle: die frühere Expo-App in `apps/mobile` (Datenschicht `src/lib/daten.ts`, `src/lib/push.ts`, `src/lib/verwaltung/*.ts`). Sie ist aus dem Repo entfernt; nachlesen in der Git-Historie (`git show 9097399:apps/mobile/…`).
 
 Hier steht, was die App mit Supabase spricht: 51 RPCs, 9 direkte Tabellenzugriffe, ein Realtime-Kanal und die Auth-Aufrufe. Die nativen Apps (iOS, Android) müssen genau das abdecken, nicht mehr und nicht weniger. Statt der Tabellenzugriffe nehmen sie die RPCs aus [„Neu für die nativen Apps“](#neu-für-die-nativen-apps). Fahrplan: [`native-apps.md`](../native-apps.md).
 
-**Maschinenlesbar:** [`app-api.json`](app-api.json). Sie enthält Parameter und Rückgaben jeder RPC, die Spalten der Tabellen und die Werte der Enums. Erzeugt wird sie aus `packages/core/src/database.types.ts` mit `pnpm --filter @tcm/core build:app-api`. Der Test `packages/core/src/app-api.test.ts` prüft, dass sie aktuell ist und dass die Liste zu `apps/mobile` passt. Ruft die Expo-App eine neue RPC auf, schlägt er fehl.
+**Maschinenlesbar:** [`app-api.json`](app-api.json). Sie enthält Parameter und Rückgaben jeder RPC, die Spalten der Tabellen und die Werte der Enums. Erzeugt wird sie aus `packages/core/src/database.types.ts` mit `pnpm --filter @tcm/core build:app-api`. Der Test `packages/core/src/app-api.test.ts` prüft, dass sie aktuell ist. Braucht eine native App eine neue RPC, kommt sie von Hand in `packages/core/scripts/app-api.ts`.
 
 ## Grundsätze
 
@@ -41,11 +41,11 @@ Was die App darüber hinaus auswertet, steht bei der jeweiligen RPC in der Spalt
 | `getSession()`, `onAuthStateChange` | `app/index.tsx` (Weiche) | Ohne Sitzung zur Anmeldung, mit Sitzung `mein_zugang` fragen. |
 | `getUser()` | `ladeIchSelbst`, `ladeVeranstaltung` | `auth.uid` für `members.auth_user_id`. Nativ nicht nötig: `ich()` liefert die `member_id`, `events_fuer_mitglied` die eigene Forderung. |
 
-Die Sitzung liegt in der Expo-App im SecureStore. Nativ kommt sie in die Keychain (mit App Group, damit Widgets lesen können) bzw. in den Android Keystore.
+Die Sitzung lag in der Expo-App im SecureStore. Nativ liegt sie in der Keychain (mit App Group, damit Widgets lesen können) bzw. in den Android Keystore.
 
 ## RPCs
 
-Die Spalte „Wo“ nennt die Wrapper-Funktion in `apps/mobile/src/lib` und die Bildschirme in `apps/mobile/app`. Parameter stehen so da, wie die App sie füllt. Die genauen Typen stehen in `app-api.json`.
+Die Spalte „Wo“ nennt die Wrapper-Funktion in `apps/mobile/src/lib` und die Bildschirme in `apps/mobile/app` der früheren Expo-App. Parameter stehen so da, wie die App sie füllt. Die genauen Typen stehen in `app-api.json`.
 
 ### Start und Zugang
 
@@ -137,12 +137,12 @@ Vor dem Absenden prüft die Verwaltung die Eingaben selbst. Uhrzeit: „Uhrzeit 
 
 | RPC | Parameter | Rückgabe | Wo | Fehler |
 |---|---|---|---|---|
-| `register_push_token` | `p_token` (heute Expo-Token), `p_platform` (`ios`, `android`), `p_device_name`; nativ zusätzlich `p_provider` (`apns`, `fcm`, Standard `expo`) | – | `push.ts registriereGeraet`: Konto, Onboarding | Meldung. Erfolg: „Benachrichtigungen sind eingeschaltet.“ |
+| `register_push_token` | `p_token` (APNs- bzw. FCM-Marke), `p_platform` (`ios`, `android`), `p_device_name`, `p_provider` (`apns`, `fcm`, Pflicht) | – | `push.ts registriereGeraet`: Konto, Onboarding | Meldung. Erfolg: „Benachrichtigungen sind eingeschaltet.“ |
 | `remove_push_token` | `p_token` | – | `push.ts meldeGeraetAb`: Konto, Onboarding, vor dem Abmelden | Meldung |
 
-Die nativen Apps registrieren APNs- bzw. FCM-Tokens mit dem optionalen Parameter `p_provider` (`expo`, `apns`, `fcm`, Standard `expo`). Die Expo-App schickt ihn nicht und bleibt bei `expo`. Ein anderer Wert: „Unbekannter Push-Anbieter "…".“ Die Regel S26 bleibt: Eine Marke, die noch für ein anderes Mitglied mit Zugang aktiv ist, zieht nicht um.
+Die nativen Apps registrieren APNs- bzw. FCM-Tokens mit `p_provider` (`apns`, `fcm`). Seit Migration `20261110165905_push_ohne_expo.sql` ist er Pflicht; ohne ihn: „Ohne Push-Anbieter (apns oder fcm) lässt sich kein Gerät anmelden.“, ein anderer Wert (auch `expo`): „Unbekannter Push-Anbieter "…".“ Die Regel S26 bleibt: Eine Marke, die noch für ein anderes Mitglied mit Zugang aktiv ist, zieht nicht um.
 
-Der Versand (`claim_notification_pushes`, nur Edge Function `notification-pushes`) liefert je Empfänger zusätzlich `geraete` = `[{token, provider}]`, neueste zuerst. `tokens` enthält nur Expo-Marken. Die Function verschickt nach `provider`: Expo über `exp.host`, APNs und FCM direkt (N7, siehe `docs/native-apps.md`, Abschnitt Push). Für die native App kommen als Daten `ziel`, `kind` und `event_id` mit (die letzten beiden nur, wenn eindeutig); bei APNs neben `aps`, bei FCM in `data`.
+Der Versand (`claim_notification_pushes`, nur Edge Function `notification-pushes`) liefert je Empfänger `geraete` = `[{token, provider}]`, neueste zuerst (die frühere Spalte `tokens` mit den Expo-Marken ist entfallen). Die Function verschickt nach `provider` direkt über APNs und FCM (N7, siehe `docs/native-apps.md`, Abschnitt Push). Als Daten kommen `ziel`, `kind` und `event_id` mit (die letzten beiden nur, wenn eindeutig); bei APNs neben `aps`, bei FCM in `data`.
 
 ## Neu für die nativen Apps
 

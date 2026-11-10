@@ -7,7 +7,6 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/dist/**",
       "**/.next/**",
-      "**/.expo/**",
       "**/coverage/**",
       "**/playwright-report/**",
       "**/*.types.ts",
