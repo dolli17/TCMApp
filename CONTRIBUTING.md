@@ -26,10 +26,12 @@ Ein eigenes Staging gibt es bewusst nicht: Dev mit den Testern ist die Abnahme, 
 
 Die CI (`.github/workflows/ci.yml`) läuft bei jedem PR auf `main` oder `production`:
 
-- **`verify`** prüft zuerst, ob neue Migrationen jünger sind als die neueste im Ziel-Branch (siehe „Parallel arbeiten“). Dann führt er `pnpm verify` aus (Typecheck, Lint, Vitest, pgTAP gegen einen lokalen Supabase-Stack im Runner), danach `pnpm test:functions` (Deno-Tests der Edge Functions, ohne Stack) und baut das Web mit `next build`.
+- **`verify`** prüft zuerst, ob neue Migrationen jünger sind als die neueste im Ziel-Branch (siehe „Parallel arbeiten“), und ob `packages/core/src/database.types.ts` zu den Migrationen passt (sonst lokal `pnpm db:reset && pnpm db:types`). Dann führt er `pnpm verify` aus (Typecheck, Lint, Vitest, pgTAP gegen einen lokalen Supabase-Stack im Runner), danach `pnpm test:functions` (Deno-Tests der Edge Functions, ohne Stack) und baut das Web mit `next build`.
+- **`e2e`** lässt Playwright (Chromium) gegen einen eigenen lokalen Stack im Runner laufen, mit Edge Runtime und Mailpit. Der Ablauf ist `scripts/e2e.sh` wie lokal (`pnpm e2e`).
+- **`android`** (`./gradlew test`) und **`ios`** (`xcodebuild test`, Unit-Tests im Simulator, macOS-Runner) laufen nur, wenn der PR `apps/android` bzw. `apps/ios`, die Golden Files (`packages/core/golden`), die erzeugten Tokens (`packages/ui/generated`) oder `ci.yml` selbst ändert. Die UI-Tests der iOS-App brauchen den lokalen Stack und laufen weiter nur lokal.
 - **`release-check`** läuft nur bei PRs nach `production`. Er prüft zwei Dinge: Die Quelle ist `main` oder `hotfix/*`, und den Tag `v<version>` gibt es noch nicht.
 
-Playwright-E2E läuft nicht in der CI, sondern lokal mit `pnpm e2e` gegen den lokalen Stack.
+`verify` und `e2e` sind Pflicht-Checks, `android` und `ios` (noch) nicht: Ein roter Lauf dort ist sichtbar, sperrt den Merge aber nicht.
 
 Nur gegen den lokalen Stack, nie gegen Dev oder Prod: `apps/web/playwright.config.ts` bricht vor dem ersten Test ab, wenn `NEXT_PUBLIC_SUPABASE_URL`, `E2E_BASE_URL` oder `SUPABASE_FUNCTIONS_URL` nicht auf `127.0.0.1`/`localhost` zeigen. Werte kommen aus `apps/web/.env.local`, exportierte Shell-Variablen haben aber Vorrang. `scripts/e2e.sh` (Build, Server neu starten, Playwright) lädt deshalb nur `apps/web/.env.local`, nie die Root-`.env`, und bricht ebenfalls ab, wenn die URL nicht lokal ist oder der Stack nicht antwortet.
 
@@ -99,8 +101,8 @@ Ein Hotfix möglichst **ohne Migration**. Braucht er doch eine und liegen auf `m
 ### GitHub (Repo `dolli17/TCMApp`)
 
 - **Merge-Optionen:** Squash und Merge-Commit an, Rebase aus. Squash-Titel aus dem PR-Titel. Head-Branches nach dem Merge automatisch löschen.
-- **Ruleset `main`:** PR Pflicht (0 Approvals), Status-Check `verify` Pflicht, erlaubte Merge-Arten Squash und Merge (Merge nur für Hotfix-Rückführungen), kein Force-Push, kein Löschen, kein Bypass.
-- **Ruleset `production`:** PR Pflicht, Checks `verify` und `release-check` Pflicht, nur Merge-Commit, kein Force-Push, kein Löschen, kein Bypass.
+- **Ruleset `main`:** PR Pflicht (0 Approvals), Status-Checks `verify` und `e2e` Pflicht, erlaubte Merge-Arten Squash und Merge (Merge nur für Hotfix-Rückführungen), kein Force-Push, kein Löschen, kein Bypass.
+- **Ruleset `production`:** PR Pflicht, Checks `verify`, `e2e` und `release-check` Pflicht, nur Merge-Commit, kein Force-Push, kein Löschen, kein Bypass.
 - **Ruleset Tags `v*`:** Löschen und Ändern verboten.
 - **Environment `dev`:** Deploy-Branches `main` und Tags `v*`.
 - **Environment `production`:** Deploy-Branches `production` und Tags `v*`, Required Reviewer `dolli17`.
