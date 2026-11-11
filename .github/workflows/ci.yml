@@ -1,6 +1,7 @@
 # Prüft jeden Pull Request, bevor er nach main oder production darf.
-# Die Jobnamen "verify" und "release-check" sind in den Rulesets als
+# Die Jobnamen "verify", "e2e" und "release-check" sind in den Rulesets als
 # Pflicht-Checks eingetragen - beim Umbenennen dort mitändern.
+# "android" und "ios" laufen nur, wenn der PR die jeweilige App berührt.
 
 name: CI
 
@@ -64,6 +65,17 @@ jobs:
       - name: Supabase starten
         run: pnpm exec supabase start -x studio,imgproxy,logflare,vector,mailpit,supavisor,edge-runtime
 
+      # Wer eine Migration anlegt und "pnpm db:types" vergisst, bekäme sonst
+      # einen grünen Typecheck gegen veraltete Typen. Die CLI kommt aus dem
+      # Lockfile, lokal und hier erzeugt also dieselbe Version die Datei.
+      - name: database.types.ts passt zu den Migrationen
+        run: |
+          pnpm exec supabase gen types typescript --local > /tmp/database.types.ts
+          if ! diff -u packages/core/src/database.types.ts /tmp/database.types.ts; then
+            echo "::error file=packages/core/src/database.types.ts::Die Typen passen nicht zu den Migrationen. Lokal 'pnpm db:reset && pnpm db:types' ausführen und die Datei einchecken (danach 'pnpm --filter @tcm/core build:app-api')."
+            exit 1
+          fi
+
       - name: pnpm verify (Typecheck, Lint, Vitest, pgTAP)
         run: pnpm verify
 
@@ -79,7 +91,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" \
             pnpm --filter @tcm/web build
 
-  # End-to-End gegen den lokalen Stack im Runner (T2). Noch kein Pflicht-Check.
+  # End-to-End gegen den lokalen Stack im Runner (T2). Pflicht-Check wie verify.
   # Anders als in verify laufen hier Edge Runtime (member-login) und Mailpit
   # (Einladungsmails) mit. Der Ablauf selbst ist scripts/e2e.sh wie lokal.
   e2e:
@@ -137,6 +149,143 @@ jobs:
           path: |
             apps/web/playwright-report/
             apps/web/test-results/
+          retention-days: 14
+
+  # Welche nativen Apps berührt der PR? Die Apps binden Dateien von außerhalb
+  # ihres Ordners ein: die Golden Files (Vertrag mit @tcm/core, als
+  # Testressource) und die erzeugten Tokens (als Quelltext). Ändert sich dort
+  # etwas, müssen die nativen Tests ebenfalls laufen.
+  native-aenderungen:
+    runs-on: ubuntu-latest
+    outputs:
+      android: ${{ steps.pfade.outputs.android }}
+      ios: ${{ steps.pfade.outputs.ios }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Geänderte Pfade
+        id: pfade
+        env:
+          ZIEL: origin/${{ github.base_ref }}
+        run: |
+          DATEIEN="$(git diff --name-only "$ZIEL"...HEAD)"
+          GEMEINSAM='^(packages/core/golden/|packages/ui/generated/|\.github/workflows/ci\.yml$)'
+          for APP in android ios; do
+            if grep -qE "^apps/$APP/|$GEMEINSAM" <<< "$DATEIEN"; then
+              echo "$APP=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "$APP=false" >> "$GITHUB_OUTPUT"
+            fi
+          done
+          cat "$GITHUB_OUTPUT"
+
+  # JVM-Tests der Android-App: :kern gegen die Golden Files (JUnit 5), :app mit
+  # Robolectric. Roborazzi zeichnet dabei nichts auf (nur mit
+  # recordRoborazziLokalDebug), die Bilder in apps/android/docs bleiben unberührt.
+  android:
+    needs: native-aenderungen
+    if: needs.native-aenderungen.outputs.android == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/android
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      # gradle.properties verbietet das Nachladen (android.builder.sdkDownload=false),
+      # deshalb hier genau die Pakete aus apps/android/README.md.
+      - name: Android-SDK-Pakete
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-37.0" "build-tools;37.0.0"
+
+      - name: Tests (./gradlew test)
+        run: ./gradlew test --stacktrace
+
+      - name: Testberichte hochladen
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: android-testberichte
+          path: |
+            apps/android/app/build/reports/tests/
+            apps/android/kern/build/reports/tests/
+          retention-days: 14
+
+  # Unit-Tests der iOS-App im Simulator (Scheme TCMuckensturm, Konfiguration
+  # Lokal). Die UI-Tests brauchen den lokalen Stack und ein angemeldetes
+  # Seed-Konto und laufen hier nicht. Signiert wird nicht: im Simulator genügt
+  # die Ad-hoc-Signatur, ein Team-Zertifikat gibt es im Runner nicht.
+  ios:
+    needs: native-aenderungen
+    if: needs.native-aenderungen.outputs.ios == 'true'
+    runs-on: macos-26
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: apps/ios
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: XcodeGen
+        run: |
+          command -v xcodegen > /dev/null || brew install xcodegen
+          xcodegen --version
+
+      # Kein Stack im Runner: die Vorlage mit Platzhalter-Schlüssel reicht, kein
+      # Unit-Test spricht mit Supabase (WidgetTests überspringt den einen, der es täte).
+      - name: Projekt erzeugen
+        run: |
+          cp Konfiguration/Lokal.geheim.xcconfig.example Konfiguration/Lokal.geheim.xcconfig
+          xcodegen generate
+
+      - name: Simulator wählen
+        id: simulator
+        run: |
+          xcodebuild -version
+          UDID="$(xcrun simctl list devices available -j \
+            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))] | last | .udid')"
+          if [ -z "$UDID" ] || [ "$UDID" = null ]; then
+            echo "::error::Kein iPhone-Simulator im Runner gefunden."
+            xcrun simctl list devices available
+            exit 1
+          fi
+          xcrun simctl list devices available | grep "$UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Tests (xcodebuild test)
+        env:
+          UDID: ${{ steps.simulator.outputs.udid }}
+        run: |
+          set -o pipefail
+          mkdir -p build
+          xcodebuild test -project TCMuckensturm.xcodeproj -scheme TCMuckensturm \
+            -destination "platform=iOS Simulator,id=$UDID" \
+            -derivedDataPath build/DerivedData \
+            -resultBundlePath build/Tests.xcresult \
+            -skipPackagePluginValidation -skipMacroValidation \
+            | tee build/xcodebuild.log | grep -E "^(Test (Suite|Case)|\*\*|.*(error|warning: unable|Executed).*)" || true
+          tail -5 build/xcodebuild.log
+          grep -q "\*\* TEST SUCCEEDED \*\*" build/xcodebuild.log
+
+      - name: Log und Ergebnis hochladen
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: ios-testergebnis
+          path: |
+            apps/ios/build/xcodebuild.log
+            apps/ios/build/Tests.xcresult
           retention-days: 14
 
   # Nach production dürfen nur main (Release) und hotfix/* (Hotfix), und die
