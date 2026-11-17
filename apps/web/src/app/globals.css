@@ -156,7 +156,7 @@ main#inhalt:focus { outline: none; }
 .avatar {
   width: 44px; height: 44px; border-radius: 22px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--brand); color: var(--on-brand); font-weight: 700; font-size: 15px;
+  background: var(--blue-soft); color: var(--blue-ink); font-family: var(--font-display); font-weight: 700; font-size: 15px;
   text-decoration: none;
 }
 a.avatar:hover { text-decoration: none; }
@@ -283,7 +283,7 @@ body :is(
   padding: 3px 8px; border-radius: 99px;
   background: var(--blue-soft); color: var(--blue-ink);
 }
-.marke-klein.gold { background: var(--gold-soft); color: var(--gold-ink); }
+.marke-klein.gold { background: var(--blue-soft); color: var(--blue-ink); }
 .marke-klein.grau { background: var(--chip); color: var(--ink-2); }
 .marke-klein.blau { background: var(--blue-soft); color: var(--blue-ink); }
 /* Forderungsarten (ArtMarke): mehrere nebeneinander, etwa je Lastschrift */
@@ -607,7 +607,7 @@ dialog.fenster::backdrop { background: rgba(3,8,14,.62); backdrop-filter: blur(2
   border: 1px solid color-mix(in srgb, var(--blue) 35%, transparent);
   border-radius: 99px; padding: 4px 5px 4px 11px; font-size: 13px; font-weight: 600;
 }
-.marken li.gast:not(.chip) { background: var(--gold-soft); color: var(--ink); border-color: var(--gold-line); }
+.marken li.gast:not(.chip) { background: var(--chip); color: var(--ink); border-color: var(--line-2); }
 .marken li:not(.chip) button {
   border: 0; background: transparent; color: inherit; cursor: pointer;
   font-size: 16px; line-height: 1; padding: 0 4px; border-radius: 99px;
@@ -1174,7 +1174,7 @@ fieldset.segmente legend { padding: 0; margin-bottom: 8px; font-size: 15px; font
 }
 .chip .avatar { width: 32px; height: 32px; border-radius: 16px; font-size: 12px; }
 .chip.ich .avatar { background: var(--gold); color: var(--on-gold); }
-.chip.gast .avatar { background: var(--gold-soft); color: var(--gold-ink); }
+.chip.gast .avatar { background: var(--surf-3); color: var(--ink-2); }
 .chip.leer { background: transparent; border: 1.5px dashed var(--line-2); color: var(--muted); }
 .chip.leer .avatar { background: transparent; }
 li.chip { padding-right: 4px; }
@@ -1383,41 +1383,46 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
 .symbolkachel svg { width: 18px; height: 18px; }
 
 /* ---------------------------------------------------------------------------
-   Getränke (docs/design/clubhaus, AppGetraenke)
+   Getränke (docs/design/stitch, Entwurf "Getränke")
    --------------------------------------------------------------------------- */
+/* Weiße Karte statt blauer Fläche: kräftiges Blau gehört der einen Hauptaktion. */
 .monatskarte {
-  position: relative; overflow: hidden; margin: 8px 0 4px; padding: 20px;
-  border-radius: var(--radius-kartegross); background: var(--brand); color: var(--on-brand);
+  margin: 8px 0 4px; padding: 20px 22px;
+  border-radius: var(--radius-kartegross); background: var(--surf); color: var(--ink);
+  border: 1px solid var(--line); box-shadow: var(--shadow);
 }
-.monatskarte .platzlinien {
-  position: absolute; right: 0; top: 0; width: 350px; height: 150px;
-  fill: none; stroke: color-mix(in srgb, var(--on-brand) 12%, transparent); stroke-width: 2;
-}
-.monatskarte .kicker { position: relative; color: var(--on-brand); opacity: .85; }
-.monatskarte .summe { position: relative; font-size: 44px; font-weight: 700; line-height: 1; margin-top: 8px; }
-.monatskarte p { position: relative; margin: 8px 0 0; font-size: 14px; opacity: .9; }
+.monatskarte .platzlinien { display: none; }
+.monatskarte .kicker { display: flex; align-items: center; gap: 8px; }
+.monatskarte .kicker::before { content: ""; width: 8px; height: 8px; border-radius: 4px; background: var(--blue); }
+.monatskarte .summe { font-family: var(--font-display); font-size: var(--font-size-hero); font-weight: 700; line-height: 1; margin-top: 10px; letter-spacing: -1px; }
+.monatskarte p { margin: 10px 0 0; font-size: 14px; color: var(--ink-2); }
 
+/* Eine Liste in einer Karte; die gewählte Zeile ist hellblau. */
 .getraenke-kacheln {
-  list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
+  list-style: none; margin: 0; padding: 0; overflow: hidden;
+  background: var(--surf); border: 1px solid var(--line); border-radius: var(--radius-karte); box-shadow: var(--shadow);
 }
 .getraenke-kacheln li {
-  min-height: 124px; padding: 14px; border-radius: var(--radius-karte);
-  display: flex; flex-direction: column; justify-content: space-between; gap: 10px;
-  background: var(--surf); border: 1px solid var(--line); box-shadow: var(--shadow);
+  min-height: 72px; padding: 12px 14px 12px 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  /* scroll-margin hält die angetippte Zeile über Korb- und Tab-Leiste. */
+  scroll-margin-bottom: calc(26px + 64px + 14px + 68px + 16px + env(safe-area-inset-bottom));
 }
-/* Gewählt: kräftiger neutraler Rand statt Gelb - gelb ist allein „Eintragen“ (U72).
-   scroll-margin hält die angetippte Kachel über Korb- und Tab-Leiste. */
-.getraenke-kacheln li { scroll-margin-bottom: calc(26px + 64px + 14px + 68px + 16px + env(safe-area-inset-bottom)); }
-.getraenke-kacheln li.gewaehlt { border: 2px solid var(--ink-2); padding: 13px; }
-.getraenke-kacheln b { display: block; font-size: 17px; }
-.getraenke-kacheln small { display: block; font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+.getraenke-kacheln li + li { border-top: 1px solid var(--line); }
+.getraenke-kacheln li.gewaehlt { background: var(--blue-soft); }
+.getraenke-kacheln li.gewaehlt :is(b, small) { color: var(--blue-ink); }
+.getraenke-kacheln b { display: block; font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+.getraenke-kacheln small { display: block; font-size: 14px; color: var(--ink-2); margin-top: 2px; }
 .zaehler { display: flex; justify-content: flex-end; align-items: center; gap: 4px; }
 .zaehler button {
   width: 44px; height: 44px; border: 0; border-radius: 22px; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--surf-2); color: var(--ink);
+  background: var(--blue-soft); color: var(--blue-ink);
 }
+.zaehler output { color: var(--blue-ink); }
+.getraenke-kacheln li.gewaehlt .zaehler { background: var(--surf); border-radius: 99px; padding: 3px; box-shadow: var(--shadow-sm); }
+.getraenke-kacheln li.gewaehlt .zaehler button { width: 38px; height: 38px; background: var(--surf-2); color: var(--ink-2); }
+.getraenke-kacheln li.gewaehlt .zaehler button:last-child { background: var(--blue); color: var(--on-brand); }
 .zaehler button:disabled { opacity: .4; cursor: not-allowed; }
 .zaehler button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .zaehler svg { width: 16px; height: 16px; }
@@ -1438,6 +1443,7 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
   font: inherit; font-size: 14px; font-weight: 700; min-height: 44px; padding: 0 4px;
 }
 .leise-rot:disabled { opacity: .5; }
+.zuletzt .leise-rot { color: var(--blue-ink); }
 
 /* Die Leiste zum Eintragen: am Telefon über der schwebenden Leiste,
    ab 768 px am unteren Rand des Inhalts */
@@ -1446,21 +1452,19 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
   bottom: calc(26px + 64px + 14px + env(safe-area-inset-bottom));
   min-height: 68px; padding: 8px 8px 8px 20px; border-radius: 24px;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  background: var(--ink); color: var(--bg); box-shadow: var(--shadow-float);
+  border-radius: 99px; padding-left: 24px;
+  background: var(--surf); color: var(--ink); border: 1px solid var(--line); box-shadow: var(--shadow-float);
 }
-.eintragen-leiste b { display: block; font-size: 15px; }
-.eintragen-leiste small { display: block; font-size: 13px; opacity: .7; }
-.eintragen-leiste .knopf { min-height: 52px; border-radius: 18px; padding: 0 24px; font-family: var(--font-text); font-size: 16px; font-weight: 800; }
+.eintragen-leiste b { display: block; font-family: var(--font-display); font-size: 16px; }
+.eintragen-leiste small { display: block; font-family: var(--font-display); font-size: 11px; letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted); }
+.eintragen-leiste .knopf { min-height: 52px; padding: 0 24px; }
 /* Am Telefon liegt die Leiste über dem Inhalt: unten so viel Platz mehr, dass
-   die letzten Kacheln darüber zu stehen kommen (U72). Solange sie da ist,
-   tritt die gelbe Markierung des Tabs zurück - die eine gelbe Fläche ist
-   dann „Eintragen“. */
+   die letzten Zeilen darüber zu stehen kommen (U72). */
 @media (max-width: 767px) {
   .inhalt:has(.eintragen-leiste) { padding-bottom: calc(110px + 68px + 14px + env(safe-area-inset-bottom)); }
-  body:has(.eintragen-leiste) .schwebeleiste a[aria-current="page"] { background: var(--surf-3); color: var(--ink); }
 }
 /* U17: Der Korb ist noch nicht gebucht - das soll man sehen, nicht nur lesen. */
-.eintragen-leiste small.offen { opacity: 1; font-weight: 700; }
+.eintragen-leiste small.offen { font-weight: 700; }
 .eintragen-leiste .knopf:not(:disabled) { animation: eintragen-ruf 1.6s ease-out 2; }
 @keyframes eintragen-ruf {
   0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--blue) 70%, transparent); }
@@ -1494,7 +1498,7 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
   display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 11px;
   font-size: 11.5px; font-weight: 700; background: var(--surf-2); color: var(--ink-2);
 }
-.statusmarke.gelb { background: var(--gold-soft); color: var(--gold-ink); }
+.statusmarke.gelb { background: var(--blue-soft); color: var(--blue-ink); }
 .statusmarke.rot { background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red-ink); }
 details.frueher { margin: 0 0 12px; }
 details.frueher summary, .arbeitsdienst-karte summary {
@@ -1507,7 +1511,7 @@ details.frueher .gruppe { margin-top: 8px; }
 .arbeitsdienst-karte .kopfzeile b { font-size: 15.5px; }
 .arbeitsdienst-karte .kopfzeile span { font-size: 19px; font-weight: 700; }
 .arbeitsdienst-karte .balken { height: 8px; border-radius: 4px; background: var(--surf-2); margin-top: 12px; overflow: hidden; }
-.arbeitsdienst-karte .balken i { display: block; height: 100%; border-radius: 4px; background: var(--green); }
+.arbeitsdienst-karte .balken i { display: block; height: 100%; border-radius: 4px; background: var(--blue); }
 .arbeitsdienst-karte p { margin: 10px 0 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
 .arbeitsdienst-karte details { margin-top: 10px; }
 .einsaetze { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; font-size: 13.5px; }
@@ -1689,9 +1693,6 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .statusmarke { height: 24px; padding: 0 9px; border-radius: 12px; font-size: 12px; }
 .statusmarke.gruen { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green-ink); }
 /* Die Toene kommen aus @tcm/ui (avatarToene), die App nimmt dieselben. */
-.avatar.ton-1 { background: var(--avatar-1); }
-.avatar.ton-2 { background: var(--avatar-2); }
-.avatar.ton-3 { background: var(--avatar-3); }
 .zugang { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
 .zugang::before { content: ""; width: 8px; height: 8px; border-radius: 4px; background: var(--muted); }
 .zugang.aktiv::before { background: var(--green); }
@@ -1816,27 +1817,27 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .je-zahler .leer-klein { padding: 0 20px 20px; }
 .naechster-schritt {
   display: flex; flex-direction: column; gap: 12px; padding: 22px;
-  border-radius: var(--radius-karte); background: var(--brand); color: var(--on-brand);
+  border-radius: var(--radius-karte); background: var(--blue-soft); color: var(--ink);
 }
 .naechster-schritt { position: relative; overflow: hidden; border-radius: 26px; }
 .naechster-schritt > :not(.linien) { position: relative; }
 .naechster-schritt .linien {
   position: absolute; right: 0; top: 0; width: 350px; height: 196px;
-  fill: none; stroke: color-mix(in srgb, var(--on-brand) 13%, transparent); stroke-width: 2;
+  fill: none; stroke: color-mix(in srgb, var(--blue) 14%, transparent); stroke-width: 2;
 }
-.naechster-schritt .kicker { color: var(--on-brand); opacity: .7; }
+.naechster-schritt .kicker { color: var(--blue-ink); }
 .naechster-schritt .titel { font-size: 24px; font-weight: 800; letter-spacing: -.3px; line-height: 1.15; }
-.naechster-schritt p { margin: 0; font-size: 14px; line-height: 1.5; opacity: .85; }
+.naechster-schritt p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
 .naechster-schritt .knopf { height: 50px; padding: 0 16px; border-radius: 14px; font-size: 15px; text-decoration: none; }
 .naechster-schritt .knopf.haupt { box-shadow: none; }
 /* Auf Blau in Weiss wie der übrige Text der Karte, als eigene Zeile. */
 .naechster-schritt .sperrgrund { color: inherit; flex-basis: 100%; }
 .naechster-schritt.quer { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; }
 .naechster-schritt.quer > div { display: grid; gap: 8px; flex: 1 1 360px; }
-.knopf.auf-blau { background: color-mix(in srgb, var(--on-brand) 16%, transparent); color: var(--on-brand); border-color: transparent; }
-.knopf.auf-blau:hover { background: color-mix(in srgb, var(--on-brand) 24%, transparent); }
+.knopf.auf-blau { background: var(--surf); color: var(--blue-ink); border-color: transparent; }
+.knopf.auf-blau:hover { background: var(--surf-2); }
 .knopf.gesperrt, .knopf.gesperrt:disabled {
-  background: color-mix(in srgb, var(--on-brand) 14%, transparent); color: color-mix(in srgb, var(--on-brand) 80%, transparent); opacity: 1; box-shadow: none;
+  background: var(--surf-3); color: var(--muted); opacity: 1; box-shadow: none;
 }
 .sperrgrund { margin: -2px 0 0; padding: 0 0 0 18px; font-size: 13px; line-height: 1.45; }
 .sperrgrund li + li { margin-top: 4px; }
@@ -1861,7 +1862,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 
 /* ---------------------------------------------------------------------------
-   Kiosk (Entwurf Kiosk): immer dunkel, drei Spalten, alles ab 48 px hoch
+   Kiosk (docs/design/stitch, Entwurf "Getränke an der Theke"): drei Spalten, alles ab 48 px hoch
    --------------------------------------------------------------------------- */
 .kiosk {
   height: 100dvh; box-sizing: border-box; overflow: hidden;
@@ -1915,7 +1916,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 .kiosk-treffer button.an { border: 2px solid var(--blue); background: var(--blue-soft); }
 .kiosk-treffer .avatar { width: 46px; height: 46px; border-radius: 23px; font-size: 16px; font-weight: 800; }
-.kiosk-treffer button.an .avatar { background: var(--blue); color: var(--on-brand); }
+.kiosk-treffer button.an .avatar { background: var(--surf); color: var(--blue-ink); }
 .kiosk-treffer .name { flex: 1; font-size: 19px; font-weight: 700; }
 .kiosk-treffer svg { width: 24px; height: 24px; color: var(--blue); }
 .kiosk-hinweis { margin: 4px 2px; font-size: 16px; color: var(--muted); }
@@ -2041,7 +2042,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .listenzeile .titel { font-size: 16px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .listenzeile .kontext { font-size: 13px; color: var(--muted); line-height: 1.35; }
 .hinweis-rechts { flex: 0 0 auto; font-size: 13px; font-weight: 700; text-align: right; }
-.hinweis-rechts.gold { color: var(--gold-ink); }
+.hinweis-rechts.gold { color: var(--blue-ink); }
 .hinweis-rechts.rot { color: var(--red-ink); }
 .hinweis-rechts.gruen { color: var(--green-ink); }
 .hinweis-rechts.leise { color: var(--muted); font-weight: 600; }
@@ -2160,16 +2161,16 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .aufgabe-gross {
   position: relative; overflow: hidden; min-height: 196px; box-sizing: border-box;
   display: flex; flex-direction: column; gap: 6px; padding: 20px;
-  border-radius: 26px; background: var(--brand); color: var(--on-brand);
+  border-radius: 26px; background: var(--blue-soft); color: var(--ink);
 }
 .aufgabe-gross > :not(.linien) { position: relative; }
 .aufgabe-gross .linien {
   position: absolute; right: 0; top: 0; width: 350px; height: 196px;
-  fill: none; stroke: color-mix(in srgb, var(--on-brand) 13%, transparent); stroke-width: 2;
+  fill: none; stroke: color-mix(in srgb, var(--blue) 14%, transparent); stroke-width: 2;
 }
-.aufgabe-gross .kicker { color: var(--on-brand); opacity: .85; }
+.aufgabe-gross .kicker { color: var(--blue-ink); }
 .aufgabe-gross .titel { font-size: 28px; font-weight: 800; letter-spacing: -.4px; line-height: 1.08; margin-top: 2px; }
-.aufgabe-gross p { margin: 0; font-size: 14.5px; opacity: .9; }
+.aufgabe-gross p { margin: 0; font-size: 14.5px; color: var(--ink-2); }
 .aufgabe-gross .knopf { margin-top: auto; align-self: flex-start; min-height: 44px; padding: 0 18px; border-radius: 22px; font-family: var(--font-text); font-size: 15px; font-weight: 800; text-decoration: none; }
 @media (min-width: 1100px) {
   .aufgabe-gross { min-height: 200px; padding: 26px 28px; border-radius: 28px; }
@@ -2247,7 +2248,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
    Wert einen Bildschirm weit auseinander */
 .mitglied-detail:has(> .mitglied-uebersicht) { max-width: 760px; }
 .mitglied-profil { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
-.mitglied-profil .avatar.gross { width: 88px; height: 88px; border-radius: 44px; font-size: 30px; font-weight: 800; background: var(--brand); }
+.mitglied-profil .avatar.gross { width: 88px; height: 88px; border-radius: 44px; font-size: 30px; font-weight: 700; }
 .mitglied-profil h1, .mitglied-profil h2 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -.4px; line-height: 1.1; }
 .mitglied-profil .meta { font-size: 14px; color: var(--muted); margin-top: 4px; }
 .mitglied-profil .marken-reihe { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 10px; }
@@ -2273,8 +2274,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .dienst-karte .zeile.klein { font-size: 13.5px; font-weight: 400; color: var(--muted); }
 .dienst-karte .link { font-size: 14px; font-weight: 700; color: var(--blue-ink); }
 .dienst-karte .balken { height: 8px; border-radius: 4px; background: var(--surf-2); overflow: hidden; }
-.dienst-karte .balken i { display: block; height: 100%; border-radius: 4px; background: var(--green); }
-.gold-ink { color: var(--gold-ink); font-weight: 700; }
+.dienst-karte .balken i { display: block; height: 100%; border-radius: 4px; background: var(--blue); }
+.gold-ink { color: var(--blue-ink); font-weight: 700; }
 .mitglied-ende .listenzeile { min-height: 52px; }
 /* Der Zurück-Link ist ein volles Tippziel (44 px), auch am Telefon (U56). */
 .unterseite-kopf .zurueck {
@@ -2343,7 +2344,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 .onboarding-schritte li.erledigt > :is(a, span) { color: var(--ink); }
 .onboarding-schritte li.erledigt .punkt { background: var(--green-satt); border-color: transparent; color: var(--on-brand); }
-.onboarding-schritte li.aktuell > :is(a, span) { background: var(--blue); color: var(--on-brand); font-weight: 700; }
+.onboarding-schritte li.aktuell > :is(a, span) { background: var(--blue-soft); color: var(--blue-ink); font-weight: 700; }
 .onboarding-schritte li.aktuell small { color: inherit; }
 .onboarding-knoepfe { display: grid; gap: 10px; margin-top: 6px; }
 .mandatstext {
@@ -2363,8 +2364,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 
 /* Kasse: der Hinweis auf fehlende Bankangaben ist kein Fehler (U50) */
-.hinweis.gold { background: var(--gold-soft); color: var(--ink); }
-.hinweis.gold a { color: var(--gold-ink); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.hinweis.gold { background: var(--blue-soft); color: var(--ink); }
+.hinweis.gold a { color: var(--blue-ink); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 
 /* Forderungen: eine Chipreihe für die Art, der Stand als Auswahlfeld (U51) */
 .forderungs-filter { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
@@ -2389,7 +2390,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .einzug-kopf .nr {
   flex: none; width: 32px; height: 32px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--brand); color: var(--on-brand); font-weight: 700;
+  background: var(--blue-soft); color: var(--blue-ink); font-weight: 700;
 }
 .einzug-gruppen { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; }
 .einzug-gruppe {
@@ -2410,8 +2411,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .einzug-wer .kachel small { color: var(--muted); font-size: 13px; }
 .einzug-wer .kachel.gruen { background: color-mix(in srgb, var(--green) 14%, transparent); }
 .einzug-wer .kachel.gruen b { color: var(--green-ink); }
-.einzug-wer .kachel.gelb { background: var(--gold-soft); }
-.einzug-wer .kachel.gelb b { color: var(--gold-ink); }
+.einzug-wer .kachel.gelb { background: var(--blue-soft); }
+.einzug-wer .kachel.gelb b { color: var(--blue-ink); }
 .einzug-beispiel { border: 1px solid var(--line); border-radius: var(--radius-knopf); padding: 12px 16px; }
 .einzug-beispiel summary { font-weight: 600; cursor: pointer; }
 .einzug-beispiel .nachricht { margin-top: 12px; padding: 14px 16px; border-radius: 10px; background: var(--surf-2); font-size: 14.5px; }
@@ -2435,7 +2436,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 .geld-erklaerung li { display: grid; gap: 4px; padding: 14px; border-radius: var(--radius-knopf); background: var(--surf-2); }
 .geld-erklaerung li span { color: var(--ink-2); font-size: 14px; line-height: 1.45; }
-.marke-klein.gelb { background: var(--gold-soft); color: var(--gold-ink); }
+.marke-klein.gelb { background: var(--blue-soft); color: var(--blue-ink); }
 /* „Zu tun“: der Titel ist die Aufgabe und darf umbrechen; am Telefon fuehrt
    die ganze Zeile weiter, der Text rechts entfaellt. */
 .liste-gruppe.zu-tun .listenzeile .titel { white-space: normal; }
@@ -2545,7 +2546,7 @@ dialog.fenster:not(.blatt) > .fenster-rueckfrage { margin: 8px 22px 0; }
 .event-karte:hover { text-decoration: none; border-color: color-mix(in srgb, var(--blue) 35%, var(--line)); }
 .event-karte > .datum-kachel {
   flex: 0 0 auto; width: 52px; height: 56px; align-content: center; border-radius: 14px;
-  background: var(--brand); color: var(--on-brand);
+  background: var(--blue-soft); color: var(--blue-ink);
 }
 .event-karte > .datum-kachel.vorbei { background: var(--surf-2); color: var(--ink-2); }
 .event-karte-text { display: grid; gap: 3px; min-width: 0; }
@@ -2558,16 +2559,16 @@ dialog.fenster:not(.blatt) > .fenster-rueckfrage { margin: 8px 22px 0; }
 
 .event-kopf {
   position: relative; overflow: hidden; margin: 0 0 16px; padding: 18px 20px 22px;
-  border-radius: var(--radius-kartegross); background: var(--brand); color: var(--on-brand);
+  border-radius: var(--radius-kartegross); background: var(--blue-soft); color: var(--ink);
 }
 .event-kopf > :not(.platzlinien) { position: relative; }
 .event-kopf .platzlinien {
   position: absolute; right: 0; top: 0; width: 350px; height: 150px;
-  fill: none; stroke: color-mix(in srgb, var(--on-brand) 12%, transparent); stroke-width: 2;
+  fill: none; stroke: color-mix(in srgb, var(--blue) 14%, transparent); stroke-width: 2;
 }
-.event-kopf .zurueck { color: var(--on-brand); opacity: .85; display: inline-block; margin-bottom: 10px; }
-.event-kopf .pagetitle { color: var(--on-brand); margin: 8px 0 4px; overflow-wrap: anywhere; }
-.event-kopf p { margin: 0; opacity: .9; }
+.event-kopf .zurueck { color: var(--blue-ink); display: inline-block; margin-bottom: 10px; }
+.event-kopf .pagetitle { color: var(--ink); margin: 8px 0 4px; overflow-wrap: anywhere; }
+.event-kopf p { margin: 0; color: var(--ink-2); }
 
 .event-raster { display: grid; gap: 16px; }
 .event-haupt, .event-seite { display: grid; gap: 16px; align-content: start; min-width: 0; }
@@ -2577,7 +2578,7 @@ dialog.fenster:not(.blatt) > .fenster-rueckfrage { margin: 8px 22px 0; }
 .eckdaten dd { margin: 0; display: grid; gap: 4px; min-width: 0; }
 .eckdaten dd small { color: var(--muted); font-size: 13px; line-height: 1.45; }
 .eckdaten .balken { display: block; height: 8px; border-radius: 4px; background: var(--surf-2); overflow: hidden; }
-.eckdaten .balken i { display: block; height: 100%; border-radius: 4px; background: var(--green); }
+.eckdaten .balken i { display: block; height: 100%; border-radius: 4px; background: var(--blue); }
 .karte.beschreibung p { margin: 0; white-space: pre-line; line-height: 1.55; }
 
 .event-mein h2, .event-anmelden h2 { margin: 0 0 12px; font-size: 20px; }

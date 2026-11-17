@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
-import logo from "@tcm/ui/logo-weiss.png";
+import logo from "@tcm/ui/logo.png";
+import logoWeiss from "@tcm/ui/logo-weiss.png";
 import {
   basketAfterBatch, basketSummary, changeBasket, drinkBatchReport, formatCents, MAX_DRINK_QUANTITY,
   type DrinkBasket, type DrinkBatchResult,
@@ -220,10 +221,11 @@ export function KioskOberflaeche({
   }
 
   return (
-    <div className="kiosk immer-dunkel">
+    <div className="kiosk">
       <header className="kiosk-kopf">
         <div>
-          <Image src={logo} alt="TC Muckensturm" height={36} priority />
+          <Image src={logo} alt="TC Muckensturm" height={36} priority className="logo-hell" />
+          <Image src={logoWeiss} alt="TC Muckensturm" height={36} priority className="logo-dunkel" />
           <span className="trenner" aria-hidden="true" />
           <h1>Getränke an der Theke</h1>
         </div>

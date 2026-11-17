@@ -42,10 +42,14 @@ Fließtext. Beide liegen auf dem eigenen Server.
 - [x] Tokens (`packages/ui/src/tokens.ts`): Farben, Radien, Schriftgrößen
 - [x] Web: Schriften, Knopfstufen, Navigation, Auswahl in Blau
 - [x] Web: Startseite nach dem Entwurf „Home“ (ausgedünnt)
-- [ ] Web: Screens einzeln an die Entwürfe angleichen (Plätze, Blätter,
-      Verein, Konto, Anmeldung, Verwaltung, Kiosk)
-- [ ] iOS und Android: Rollen der Farben (dort ist Gelb noch Hauptaktion),
-      Schriftdateien, Screens
+- [x] Web: Plätze als ein Raster für alle Breiten (keine „Freien Zeiten“ mehr)
+- [x] Web: Anmeldung, Passwort, Antrag, Onboarding, Rechtstexte und Kiosk hell
+- [x] Web: Getränke als Liste, Monatskarte weiß; Avatare, Fortschrittsbalken,
+      Statusmarken und die großen Karten der Verwaltung ohne Gelb und ohne
+      dunkelblaue Flächen
+- [x] iOS und Android: Schriftdateien (DM Sans, Space Grotesk)
+- [ ] iOS und Android: Rollen der Farben, Startseite, Screens
+      (Branches `feature/design-stitch-ios`, `feature/design-stitch-android`)
 
 ## Entwürfe im Repo
 
