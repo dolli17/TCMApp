@@ -53,7 +53,7 @@ final class SuchfilterUITests: XCTestCase {
         let eigene = app.buttons.matching(NSPredicate(format: "label CONTAINS 'deine Buchung'")).firstMatch
         XCTAssertTrue(eigene.waitForExistence(timeout: 10), "eigene Buchung fehlt im Raster")
         eigene.tap()
-        let nurFuer = app.buttons.matching(NSPredicate(format: "label == 'Nur für, LK 10 bis 16 · Herren'")).firstMatch
+        let nurFuer = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Nur für, LK 10 bis 16 · Herren'")).firstMatch
         XCTAssertTrue(nurFuer.waitForExistence(timeout: 10), "Filter der Buchung fehlt")
 
         // Aufraeumen
@@ -79,17 +79,17 @@ final class SuchfilterUITests: XCTestCase {
         XCTAssertTrue(schalter.waitForExistence(timeout: 5))
         schalter.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
 
-        let nurFuer = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Nur für'")).firstMatch
-        XCTAssertTrue(nurFuer.waitForExistence(timeout: 5), "Nur für … fehlt")
-        nurFuer.tap()
+        // "Nur für …" steht offen unter dem Schalter: Herren waehlen, LK mit Plus und Minus auf 10 bis 16.
         let herren = app.buttons["Herren"]
-        XCTAssertTrue(herren.waitForExistence(timeout: 5))
+        XCTAssertTrue(herren.waitForExistence(timeout: 5), "Nur für … fehlt")
         herren.tap()
-        let raeder = app.pickerWheels
-        XCTAssertTrue(raeder.element(boundBy: 1).waitForExistence(timeout: 5))
-        raeder.element(boundBy: 0).adjust(toPickerWheelValue: "10,0")
-        raeder.element(boundBy: 1).adjust(toPickerWheelValue: "16,0")
-        XCTAssertTrue(app.staticTexts["LK 10–16 · Herren"].waitForExistence(timeout: 5))
+        let vonHoch = app.buttons["LK von erhöhen"]
+        let bisRunter = app.buttons["LK bis verringern"]
+        XCTAssertTrue(vonHoch.waitForExistence(timeout: 5))
+        for _ in 0..<9 { vonHoch.tap() }
+        for _ in 0..<9 { bisRunter.tap() }
+        let stand = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Nur für, LK 10 bis 16 · Herren'")).firstMatch
+        XCTAssertTrue(stand.waitForExistence(timeout: 5), "Filter steht nicht auf LK 10–16 · Herren")
     }
 
     /// Tippt im Belegungsplan auf die freie Flaeche eines Platzes, genau bei `minute`.

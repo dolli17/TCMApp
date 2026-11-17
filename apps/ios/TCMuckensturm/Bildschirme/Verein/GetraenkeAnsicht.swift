@@ -61,7 +61,12 @@ struct GetraenkeAnsicht: View {
             VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
                 VereinKopf()
                 if let fehler {
-                    Fehlerzeile(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
+                    // Ohne Inhalt der ganze Fehlerzustand, sonst die Zeile ueber dem alten Stand.
+                    if inhalt == nil {
+                        Fehlerzustand(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
+                    } else {
+                        Fehlerzeile(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
+                    }
                 }
                 if laedt && inhalt == nil {
                     ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)
@@ -181,11 +186,14 @@ struct GetraenkeAnsicht: View {
                     aus: laeuft || menge >= Getraenke.maxMenge
                 ) { aendern(a.id, 1) }
             }
+            // Gesammeltes: Minus, Zahl und Plus in einer weissen Kapsel (Entwurf "Getraenke Auswahl").
+            .padding(menge > 0 ? 3 : 0)
+            .background { if menge > 0 { Capsule().fill(Farbe.surf).overlay(Capsule().strokeBorder(Farbe.line2, lineWidth: 1)) } }
         }
         .padding(.vertical, 12)
         .padding(.leading, 20)
         .padding(.trailing, 14)
-        .frame(minHeight: 72)
+        .frame(minHeight: 76)
         .background(menge > 0 ? Farbe.blueSoft : Color.clear)
         .animation(.easeOut(duration: 0.15), value: menge > 0)
     }
@@ -295,7 +303,6 @@ struct GetraenkeAnsicht: View {
         async let karte = d.getraenkekarte()
         async let buchungen = d.eigeneGetraenke()
         async let fenster = d.stornoFenster()
-        async let name = try? Startdaten(client: d.client).meinName()
         do {
             let neu = try await GetraenkeInhalt(karte: karte, buchungen: buchungen, stornoFenster: fenster)
             inhalt = neu
@@ -305,7 +312,6 @@ struct GetraenkeAnsicht: View {
             // Still nachgeladen bleibt der alte Stand stehen; der Fehler steht oben.
             fehler = Meldung.aus(error).text
         }
-        if let n = await name { zustand.name = n }
         #if DEBUG
         // Fuer Bildschirmfotos per simctl (README): `-TCMVereinKorb` legt zwei Artikel in den Korb.
         if art == .erstes, zustand.korb.isEmpty, ProcessInfo.processInfo.arguments.contains("-TCMVereinKorb") {

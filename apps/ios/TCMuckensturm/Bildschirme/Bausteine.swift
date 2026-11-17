@@ -47,15 +47,15 @@ private struct KartenStil: ViewModifier {
 // MARK: - Kopf
 
 /**
- * Der grosse Titel-Kopf (GrosserKopf.tsx): optional ein Kicker, Titel in
- * 34/800, rechts Glocke und Avatar. Der Titel darf zweizeilig werden (U52).
+ * Der grosse Titel-Kopf (docs/design/stitch): Kicker, Titel, optional eine
+ * leise Zeile, rechts die Glocke. Der Titel darf zweizeilig werden (U52).
+ * Ins Konto fuehrt der Tab; einen Avatar gibt es im Kopf nicht mehr.
  */
 struct GrosserKopf: View {
     let titel: String
     var kicker: String? = "TC Muckensturm"
     /// Leise Zeile unter dem Titel ("8 Plaetze · 08 bis 21 Uhr")
     var unterzeile: String?
-    var name: MeinName?
 
     var body: some View {
         HStack(alignment: .center, spacing: Tokens.Abstand.m) {
@@ -75,33 +75,10 @@ struct GrosserKopf: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            HStack(spacing: 10) {
-                Glocke()
-                Avatar(name: name)
-            }
+            Glocke()
         }
         .padding(.top, 16)
         .padding(.bottom, Tokens.Abstand.m)
-    }
-}
-
-/// Initialen auf Hellblau; fuehrt ins Konto. Kraeftiges Blau bleibt der Hauptaktion.
-struct Avatar: View {
-    @Environment(\.zuTab) private var zuTab
-    let name: MeinName?
-
-    var body: some View {
-        Button { zuTab(.konto) } label: {
-            Text(HomeLogik.initialen(name))
-                .font(Schrift.display(.fett, 15))
-                .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                .foregroundStyle(Farbe.blueInk)
-                .frame(width: 44, height: 44)
-                .background(Farbe.blueSoft, in: Circle())
-                .overlay(Circle().strokeBorder(Farbe.blue.opacity(0.22), lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Konto")
     }
 }
 
@@ -160,6 +137,38 @@ struct Leerzustand: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .karte(radius: titel != nil ? Tokens.Radius.karteGross : Tokens.Radius.karte, padding: titel != nil ? 22 : 18)
+    }
+}
+
+/**
+ * Fehler, wenn noch gar nichts geladen ist (docs/design/stitch, "Verein
+ * Fehlerzustand"): mittig ein Symbol, der Satz und neutral "Erneut versuchen".
+ * Steht schon Inhalt da, bleibt es bei der Fehlerzeile darueber.
+ */
+struct Fehlerzustand: View {
+    let text: String
+    var laeuft = false
+    let onErneut: () -> Void
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "icloud.slash")
+                .font(.system(size: 22, weight: .medium))
+                .foregroundStyle(Farbe.ink2)
+                .frame(width: 56, height: 56)
+                .background(Farbe.chip, in: Circle())
+                .accessibilityHidden(true)
+            Text(text)
+                .font(Schrift.display(.halbfett, 18, relativeTo: .title3))
+                .foregroundStyle(Farbe.ink)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Knopf(laeuft ? "Wird geladen…" : "Erneut versuchen", stufe: .leise, gesperrt: laeuft, aktion: onErneut)
+                .padding(.top, 6)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, Tokens.Abstand.m)
+        .padding(.top, 96)
     }
 }
 

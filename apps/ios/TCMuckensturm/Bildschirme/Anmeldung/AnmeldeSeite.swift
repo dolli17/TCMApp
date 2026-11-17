@@ -16,6 +16,8 @@ struct AnmeldeSeite<Inhalt: View>: View {
     var unterzeile: String?
     @ViewBuilder let inhalt: Inhalt
 
+    @Environment(Sitzung.self) private var sitzung
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -40,6 +42,19 @@ struct AnmeldeSeite<Inhalt: View>: View {
                 .padding(.top, 56)
                 .padding(.bottom, Tokens.Abstand.abschnitt)
                 VStack(spacing: Tokens.Abstand.l) { inhalt }
+                // Unten leise Datenschutz und Impressum (liegen im Web; lokal ohne Adresse fehlen sie).
+                if let datenschutz = sitzung.umgebung.webLink("/datenschutz"), let impressum = sitzung.umgebung.webLink("/impressum") {
+                    HStack(spacing: 8) {
+                        Link("Datenschutz", destination: datenschutz)
+                        Text("·").accessibilityHidden(true)
+                        Link("Impressum", destination: impressum)
+                    }
+                    .font(Schrift.text(.normal, Tokens.Schrift.klein))
+                    .tint(Farbe.muted)
+                    .foregroundStyle(Farbe.muted)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .padding(.top, Tokens.Abstand.abschnitt)
+                }
             }
             .frame(maxWidth: 420)
             .padding(.horizontal, 24)

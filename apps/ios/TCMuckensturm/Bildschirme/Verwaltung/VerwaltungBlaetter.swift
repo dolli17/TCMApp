@@ -34,30 +34,16 @@ struct VerwaltungBlattInhalt: View {
 
 // MARK: - Bausteine
 
-/// Rahmen eines Blatts: Kopf, Unterzeile, Inhalt zum Rollen.
-private struct BlattRahmen<Inhalt: View>: View {
+/// Rahmen eines Blatts wie bei Buchung und Konto: Kopf fest, Inhalt rollt, Aktionen unten fest.
+private struct BlattRahmen<Inhalt: View, Fuss: View>: View {
     let titel: String
     var unterzeile: String?
     let zu: () -> Void
     @ViewBuilder let inhalt: Inhalt
+    @ViewBuilder let fuss: Fuss
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                BlattKopf(titel: titel, zu: zu)
-                if let unterzeile {
-                    Text(unterzeile)
-                        .font(Schrift.text(.normal, 14))
-                        .foregroundStyle(Farbe.ink2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                inhalt
-            }
-            .padding(.horizontal, Tokens.Abstand.rand)
-            .padding(.top, 24)
-            .padding(.bottom, 32)
-        }
-        .scrollDismissesKeyboard(.interactively)
+        KontoBlattGeruest(titel: titel, unterzeile: unterzeile, zu: zu) { inhalt } fuss: { fuss }
     }
 }
 
@@ -66,10 +52,7 @@ private struct Feldname: View {
     let text: String
 
     var body: some View {
-        Text(text)
-            .font(Schrift.text(.halbfett, Tokens.Schrift.klein, relativeTo: .footnote))
-            .foregroundStyle(Farbe.ink2)
-            .accessibilityAddTraits(.isHeader)
+        Text(text).kicker().accessibilityAddTraits(.isHeader)
     }
 }
 
@@ -104,12 +87,14 @@ private struct Chips<Wert: Hashable>: View {
 private struct Folgen: View {
     let text: String
     var zeilen: [String] = []
+    /// Rot, wenn Buchungen verdraengt wuerden
+    var rot = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(text)
                 .font(Schrift.text(.fett, 14))
-                .foregroundStyle(Farbe.ink)
+                .foregroundStyle(rot ? Farbe.redInk : Farbe.ink)
                 .fixedSize(horizontal: false, vertical: true)
             ForEach(zeilen, id: \.self) { z in
                 Text(z).font(Schrift.text(.normal, 13.5)).foregroundStyle(Farbe.ink).monospacedDigit()
@@ -117,8 +102,8 @@ private struct Folgen: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 20))
-        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Farbe.line2, lineWidth: 1))
+        .background(rot ? Farbe.red.opacity(0.08) : Farbe.surf2, in: RoundedRectangle(cornerRadius: 20))
+        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(rot ? Farbe.red.opacity(0.4) : Farbe.line2, lineWidth: 1))
         .accessibilityElement(children: .combine)
     }
 }
@@ -155,23 +140,36 @@ private struct SperrenBlatt: View {
     var body: some View {
         let plaetze = stand.aktivePlaetze
         let alleGewaehlt = !plaetze.isEmpty && gewaehlt.count == plaetze.count
-        BlattRahmen(
+        return BlattRahmen(
             titel: "Plätze sperren",
             unterzeile: "Regen, Turnier, Platzpflege. Bestehende Buchungen werden erst nach Rückfrage verdrängt.",
             zu: { modell.blatt = nil }
         ) {
-            Chips(
-                label: "Plätze",
-                optionen: plaetze.map { ($0.id, VerwaltungLogik.platzChip($0.shortName)) } + [(Self.alle, alleGewaehlt ? "Keinen" : "Alle")],
-                gewaehlt: { $0 == Self.alle ? alleGewaehlt : gewaehlt.contains($0) }
-            ) { id in
-                kollisionen = nil
-                if id == Self.alle {
-                    gewaehlt = alleGewaehlt ? [] : plaetze.map(\.id)
-                } else if gewaehlt.contains(id) {
-                    gewaehlt.removeAll { $0 == id }
-                } else {
-                    gewaehlt.append(id)
+            // Plaetze als Raster gleich breiter Pillen, rechts "Alle" und "Keinen" (Entwurf "Plaetze sperren").
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline, spacing: 18) {
+                    Feldname(text: "Plätze")
+                    Spacer(minLength: 0)
+                    verweis("Alle", aus: alleGewaehlt) { gewaehlt = plaetze.map(\.id) }
+                    verweis("Keinen", aus: gewaehlt.isEmpty) { gewaehlt = [] }
+                }
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+                    ForEach(plaetze) { p in
+                        let aktiv = gewaehlt.contains(p.id)
+                        Button {
+                            kollisionen = nil
+                            if aktiv { gewaehlt.removeAll { $0 == p.id } } else { gewaehlt.append(p.id) }
+                        } label: {
+                            Text(VerwaltungLogik.platzChip(p.shortName))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                                .frame(maxWidth: .infinity)
+                                .auswahlPille(aktiv, hoehe: 48, rand: 6)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Plätze \(VerwaltungLogik.platzChip(p.shortName))")
+                        .accessibilityAddTraits(aktiv ? [.isSelected] : [])
+                    }
                 }
             }
             KontoFeld(label: "Tag (TT.MM.JJJJ)", text: geaendert($tag), tastatur: .numbersAndPunctuation)
@@ -179,18 +177,50 @@ private struct SperrenBlatt: View {
                 KontoFeld(label: "Von (HH:MM)", text: geaendert($von), tastatur: .numbersAndPunctuation)
                 KontoFeld(label: "Bis (HH:MM)", text: geaendert($bis), tastatur: .numbersAndPunctuation)
             }
-            Chips(label: "Kategorie", optionen: stand.blockungsarten.map { ($0.code, $0.name ?? $0.code) }, gewaehlt: { $0 == art }) {
-                art = $0
-                kollisionen = nil
+            // Die Kategorie als Auswahlfeld statt als Chipreihe
+            VStack(alignment: .leading, spacing: 7) {
+                Feldname(text: "Kategorie")
+                Menu {
+                    ForEach(stand.blockungsarten, id: \.code) { a in
+                        Button(a.name ?? a.code) {
+                            art = a.code
+                            kollisionen = nil
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Text(stand.blockungsarten.first { $0.code == art }.map { $0.name ?? $0.code } ?? "")
+                            .font(Schrift.text(.normal, Tokens.Schrift.normal))
+                            .foregroundStyle(Farbe.ink)
+                        Spacer(minLength: 8)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Farbe.muted)
+                    }
+                    .padding(.horizontal, 20)
+                    .frame(minHeight: 52)
+                    .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
+                    .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.feld).strokeBorder(Farbe.line2, lineWidth: 1))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Kategorie")
+                .accessibilityValue(stand.blockungsarten.first { $0.code == art }.map { $0.name ?? $0.code } ?? "")
             }
             KontoFeld(label: "Grund (freiwillig)", text: $grund)
 
             if let fehler { KontoHinweis(text: fehler) }
-            if let kollisionen { Folgen(text: PlaetzeLogik.imWegText(kollisionen)) }
-
+            // Was im Weg liegt, steht rot ueber den Knoepfen.
+            if let kollisionen { Folgen(text: PlaetzeLogik.imWegText(kollisionen), rot: true) }
+        } fuss: {
             if let kollisionen {
-                GefahrKnopf(text: PlaetzeLogik.verdraengenText(kollisionen), gesperrt: laeuft) { absenden(verdraengen: true) }
-                LeiserKnopf(text: "Doch nicht") { self.kollisionen = nil }
+                // Rot gefuellt nur als Bestaetigung, daneben der neutrale Weg zurueck.
+                HStack(spacing: 10) {
+                    Knopf(PlaetzeLogik.verdraengenText(kollisionen), stufe: .gefahr, breit: true, eng: true, gesperrt: laeuft) {
+                        absenden(verdraengen: true)
+                    }
+                    Knopf("Doch nicht", stufe: .leise, eng: true) { self.kollisionen = nil }
+                }
             } else {
                 Hauptknopf(
                     text: laeuft ? "Wird gesperrt…" : "Sperren",
@@ -205,6 +235,23 @@ private struct SperrenBlatt: View {
             if bis.isEmpty { bis = stand.schluss }
             if art.isEmpty { art = stand.blockungsarten.first?.code ?? "platzpflege" }
         }
+    }
+
+    private func verweis(_ text: String, aus: Bool, aktion: @escaping () -> Void) -> some View {
+        Button {
+            kollisionen = nil
+            aktion()
+        } label: {
+            Text(text)
+                .font(Schrift.display(.halbfett, 15))
+                .foregroundStyle(Farbe.blueInk)
+                .frame(minHeight: 32)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(aus)
+        .opacity(aus ? 0.4 : 1)
+        .accessibilityLabel("\(text) Plätze wählen")
     }
 
     /// Jede Aenderung macht eine alte Kollisionszahl ungueltig.
@@ -279,6 +326,9 @@ private struct SerieAnlegenBlatt: View {
                         VerwaltungLogik.kollisionsZeile(startsAt: $0.startsAt, mitglied: $0.conflictMemberName, art: $0.conflictKind)
                     }
                 )
+            }
+        } fuss: {
+            if let vorschau {
                 Hauptknopf(
                     text: laeuft ? "Wird angelegt…" : VerwaltungLogik.anlegenText(termine: vorschau.count, kollisionen: kollisionen.count),
                     gesperrt: laeuft
@@ -386,16 +436,7 @@ private struct SerieBlatt: View {
             KontoFeld(label: "Titel", text: $titel)
 
             if let fehler { KontoHinweis(text: fehler) }
-            if let kollisionen {
-                Folgen(text: PlaetzeLogik.imWegText(kollisionen))
-                GefahrKnopf(text: PlaetzeLogik.verdraengenText(kollisionen), gesperrt: laeuft) { speichern(verdraengen: true) }
-            } else {
-                Hauptknopf(
-                    text: laeuft ? "Wird gespeichert…" : "Änderung speichern",
-                    gesperrt: laeuft || titel.trimmingCharacters(in: .whitespaces).isEmpty
-                ) { speichern(verdraengen: false) }
-            }
-            LeiserKnopf(text: "Abbrechen") { modell.blatt = nil }
+            if let kollisionen { Folgen(text: PlaetzeLogik.imWegText(kollisionen), rot: true) }
 
             // Zerstoerendes am Ende, mit Rueckfrage im Blatt (Regel 4).
             KontoGruppe {
@@ -410,6 +451,20 @@ private struct SerieBlatt: View {
                 }
             }
             .padding(.top, Tokens.Abstand.s)
+        } fuss: {
+            HStack(spacing: 10) {
+                if let kollisionen {
+                    Knopf(PlaetzeLogik.verdraengenText(kollisionen), stufe: .gefahr, breit: true, eng: true, gesperrt: laeuft) {
+                        speichern(verdraengen: true)
+                    }
+                } else {
+                    Knopf(
+                        laeuft ? "Wird gespeichert…" : "Änderung speichern", stufe: .haupt, breit: true, eng: true,
+                        gesperrt: laeuft || titel.trimmingCharacters(in: .whitespaces).isEmpty
+                    ) { speichern(verdraengen: false) }
+                }
+                Knopf("Abbrechen", stufe: .leise, eng: true) { modell.blatt = nil }
+            }
         }
     }
 

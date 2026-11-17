@@ -51,7 +51,7 @@ struct SpieleBildschirm: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                    PlaetzeKopf(name: inhalt?.name)
+                    PlaetzeKopf()
                     if laedt && inhalt == nil {
                         ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)
                     } else if let d = inhalt {
@@ -174,7 +174,8 @@ private struct DeineTermine: View {
 
     var body: some View {
         let liste = SpieleLogik.termine(termine.wert ?? [], jetzt: jetzt)
-        KontoAbschnitt(titel: "Deine Termine")
+        Kopfzeile(titel: "Deine Termine", zaehler: liste.isEmpty ? nil : SpieleLogik.terminZaehler(liste.count))
+            .padding(.top, Tokens.Abstand.s)
         if let f = termine.fehler {
             Fehlerzeile(text: f, laeuft: erneut.laeuft, onErneut: erneut.aktion)
         }
@@ -184,74 +185,88 @@ private struct DeineTermine: View {
                 handlung: ("Belegung ansehen", { zustand.wechsle(zu: .belegung) })
             )
         }
-        ForEach(Array(liste.enumerated()), id: \.element.id) { i, b in
-            TerminZeile(
-                b: b, hervorgehoben: SpieleLogik.hervorgehoben(b, index: i, jetzt: jetzt),
-                jetzt: jetzt, laeuft: laeuft, fragen: fragen
-            )
+        ForEach(liste) { b in
+            TerminKarte(b: b, jetzt: jetzt, laeuft: laeuft, fragen: fragen)
         }
     }
 }
 
-private struct TerminZeile: View {
+/**
+ * Ein eigener Termin (docs/design/stitch, "Meine & offene Spiele"): gross die
+ * Uhrzeit, rechts der gelbe Marker, darunter Tag, Platz und Mitspieler; im
+ * Fuss der Karte der Weg zum Stornieren bzw. Austragen.
+ */
+private struct TerminKarte: View {
     let b: MeineBuchung
-    let hervorgehoben: Bool
     let jetzt: Date
     let laeuft: Bool
     let fragen: (MeineBuchung, TerminAktion) -> Void
 
     var body: some View {
         let aktion = SpieleLogik.aktion(b, jetzt: jetzt)
-        HStack(spacing: 14) {
-            VStack(spacing: 1) {
-                Text(SpieleLogik.kachelTag(b, jetzt: jetzt))
-                    .font(Schrift.display(.fett, Tokens.Schrift.kicker))
-                    .tracking(0.8)
-                Text(SpieleLogik.uhrzeit(b.startsAt))
-                    .font(Schrift.display(.fett, 21))
-                    .monospacedDigit()
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 6) {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .center, spacing: 10) { zeit; Spacer(minLength: 0); marker }
+                    VStack(alignment: .leading, spacing: 6) { zeit; marker }
+                }
+                (Text(Startseite.dayLabel(startsAt: b.startsAt, now: jetzt)).foregroundStyle(Farbe.ink)
+                    + Text(" · \(SpieleLogik.terminTitel(b)) · \(SpieleLogik.terminZeile(b))").foregroundStyle(Farbe.muted))
+                    .font(Schrift.text(.normal, 15.5))
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .foregroundStyle(Farbe.ink)
-            .dynamicTypeSize(...DynamicTypeSize.xLarge)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            .frame(width: 60, height: 64)
-            .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 20))
-            .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(hervorgehoben ? Farbe.line2 : Farbe.line, lineWidth: 1))
-
-            VStack(alignment: .leading, spacing: 3) {
-                // Gelb heisst "deins": das selbst gebuchte Spiel.
-                if b.binBucher == true { DeinMarker("Dein Spiel") }
-                Text(SpieleLogik.terminTitel(b))
-                    .font(Schrift.display(.halbfett, Tokens.Schrift.normal))
-                    .foregroundStyle(Farbe.ink)
-                    .lineLimit(2)
-                Text(SpieleLogik.terminZeile(b)).leise().lineLimit(3)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(SpieleLogik.terminLabel(b, jetzt: jetzt))
 
-            if let aktion {
-                Menu {
-                    Button(SpieleLogik.aktionText(aktion), systemImage: aktion == .stornieren ? "xmark.circle" : "person.badge.minus", role: .destructive) {
-                        fragen(b, aktion)
+            Farbe.line.frame(height: 1).padding(.top, 16)
+            HStack(spacing: 10) {
+                if let aktion {
+                    if aktion == .stornieren {
+                        Text("Stornieren geht bis Spielbeginn")
+                            .font(Schrift.text(.normal, Tokens.Schrift.klein))
+                            .foregroundStyle(Farbe.muted)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(Farbe.ink2)
-                        .frame(width: 44, height: 44)
-                        .background(Farbe.chip, in: Circle())
+                    Spacer(minLength: 0)
+                    Button { fragen(b, aktion) } label: {
+                        Text(SpieleLogik.aktionText(aktion))
+                            .font(Schrift.display(.halbfett, 15))
+                            .foregroundStyle(Farbe.redInk)
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(laeuft)
+                    .opacity(laeuft ? 0.5 : 1)
+                    .accessibilityLabel(SpieleLogik.optionenLabel(b, jetzt: jetzt))
+                } else {
+                    Text("läuft").leise().frame(minHeight: 44)
+                    Spacer(minLength: 0)
                 }
-                .disabled(laeuft)
-                .opacity(laeuft ? 0.5 : 1)
-                .accessibilityLabel(SpieleLogik.optionenLabel(b, jetzt: jetzt))
-            } else {
-                Text("läuft").leise().accessibilityHidden(true)
             }
+            .padding(.top, 4)
         }
-        .karte(radius: Tokens.Radius.karte, padding: 16)
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+        .padding(.bottom, 6)
+        .karte(radius: Tokens.Radius.karte, padding: nil)
+    }
+
+    private var zeit: some View {
+        Text(HomeLogik.zeitSpanne(b))
+            .font(Schrift.display(.fett, 26, relativeTo: .title))
+            .tracking(-0.6)
+            .monospacedDigit()
+            .foregroundStyle(Farbe.ink)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+    }
+
+    /// Gelb heisst "deins": das selbst gebuchte Spiel und das, bei dem man eingetragen ist.
+    private var marker: some View {
+        DeinMarker(b.binBucher == true ? "Dein Spiel" : "Du bist dabei")
     }
 }
 
@@ -268,9 +283,10 @@ private struct OffeneSpieleListe: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            KontoAbschnitt(titel: "Offene Spiele")
+            Kopfzeile(titel: "Offene Spiele", zaehler: "Mitspieler gesucht")
             Text("Hier fehlt noch jemand. Ein Tipp genügt.").leise()
         }
+        .padding(.top, Tokens.Abstand.m)
         if let f = offen.fehler {
             Fehlerzeile(text: f, laeuft: erneut.laeuft, onErneut: erneut.aktion)
         }
@@ -286,6 +302,11 @@ private struct OffeneSpieleListe: View {
     }
 }
 
+/**
+ * Ein offenes Spiel wie auf der Startseite: "Morgen, 10:00" mit der Spielform
+ * als hellblauer Marke, darunter Platz und wer dabei ist, rechts "Mitspielen"
+ * oder der gelbe Marker "Du bist dabei".
+ */
 private struct SpielKarte: View {
     let o: OffenesSpiel
     let eigene: Set<String>
@@ -295,73 +316,57 @@ private struct SpielKarte: View {
 
     var body: some View {
         let text = SpieleLogik.offenesSpielText(o, eigene: eigene)
-        let leute = SpieleLogik.leute(o)
-        let frei = max(o.frei ?? 0, 0)
-        VStack(alignment: .leading, spacing: 14) {
-            Text(text.kopf)
-                .font(Schrift.display(.halbfett, 17))
-                .foregroundStyle(Farbe.ink)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityAddTraits(.isHeader)
-            HStack(alignment: .top, spacing: 10) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(SpieleLogik.spielKicker(o, jetzt: jetzt)).kicker()
-                    Text("\(SpieleLogik.uhrzeit(o.startsAt)) – \(SpieleLogik.uhrzeit(o.endsAt))")
-                        .font(Schrift.display(.fett, 26, relativeTo: .title))
-                        .monospacedDigit()
-                        .foregroundStyle(Farbe.ink)
-                        .padding(.top, 1)
-                    Text(SpieleLogik.besetzung(o))
+        let wann = HomeLogik.offenesSpielWann(o, jetzt: jetzt)
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) { wannText(wann); BlaueMarke(o.typeName ?? "") }
+                    VStack(alignment: .leading, spacing: 4) { wannText(wann); BlaueMarke(o.typeName ?? "") }
+                }
+                Text(text.kopf)
+                    .font(Schrift.text(.normal, 14.5))
+                    .foregroundStyle(Farbe.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("\(Platzplan.nichtLeer(o.courtName) ?? "") · \(SpieleLogik.besetzung(o))")
+                    .font(Schrift.text(.normal, 14))
+                    .foregroundStyle(Farbe.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let zusatz = SpieleLogik.filterZusatz(o) {
+                    Text(zusatz)
+                        .font(Schrift.text(.halbfett, Tokens.Schrift.klein))
+                        .foregroundStyle(Farbe.blueInk)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityLabel("Nur für \(o.suchfilter.vorleseText)")
+                }
+                if let dabei = text.dabei {
+                    Text(dabei)
                         .font(Schrift.text(.normal, 14))
-                        .foregroundStyle(Farbe.ink2)
-                    if let zusatz = SpieleLogik.filterZusatz(o) {
-                        Text(zusatz)
-                            .font(Schrift.text(.fett, Tokens.Schrift.klein))
-                            .foregroundStyle(Farbe.blueInk)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityLabel("Nur für \(o.suchfilter.vorleseText)")
-                    }
-                    if let dabei = text.dabei {
-                        Text(dabei)
-                            .font(Schrift.text(.normal, 14))
-                            .foregroundStyle(Farbe.ink2)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                        .foregroundStyle(Farbe.muted)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityElement(children: .combine)
-                BlaueMarke("sucht \(frei)").accessibilityHidden(true)
             }
-            HStack {
-                HStack(spacing: -6) {
-                    ForEach(Array(leute.enumerated()), id: \.offset) { _, n in
-                        Text(SpieleLogik.initialen(n))
-                            .font(Schrift.display(.fett, Tokens.Schrift.kicker))
-                            .foregroundStyle(Farbe.ink2)
-                            .frame(width: 36, height: 36)
-                            .background(Farbe.surf3, in: Circle())
-                            .overlay(Circle().strokeBorder(Farbe.surf, lineWidth: 2))
-                    }
-                    ForEach(0..<frei, id: \.self) { _ in
-                        Circle()
-                            .fill(Farbe.surf)
-                            .overlay(Circle().strokeBorder(Farbe.blueInk.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2])))
-                            .frame(width: 36, height: 36)
-                    }
-                }
-                .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Dabei: \(leute.joined(separator: ", "))")
-                Spacer(minLength: 8)
-                if o.binDabei == true {
-                    // Gelb heisst "deins".
-                    DeinMarker("Du bist dabei")
-                } else if SpieleLogik.darfMitspielen(o, eigene: eigene, jetzt: jetzt) {
-                    Knopf("Mitspielen", groesse: .klein, gesperrt: laeuft, aktion: mitspielen)
-                        .accessibilityLabel(SpieleLogik.mitspielenLabel(o, jetzt: jetzt))
-                }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            if o.binDabei == true {
+                // Gelb heisst "deins".
+                DeinMarker("Du bist dabei")
+            } else if SpieleLogik.darfMitspielen(o, eigene: eigene, jetzt: jetzt) {
+                Knopf("Mitspielen", groesse: .klein, gesperrt: laeuft, aktion: mitspielen)
+                    .accessibilityLabel(SpieleLogik.mitspielenLabel(o, jetzt: jetzt))
             }
         }
-        .karte(radius: Tokens.Radius.karte, padding: 18)
+        .padding(.leading, 20)
+        .padding(.trailing, 16)
+        .padding(.vertical, 16)
+        .karte(radius: Tokens.Radius.karte, padding: nil)
+    }
+
+    private func wannText(_ wann: String) -> some View {
+        Text(wann)
+            .font(Schrift.display(.halbfett, 17))
+            .monospacedDigit()
+            .foregroundStyle(Farbe.ink)
+            .lineLimit(1)
+            .accessibilityAddTraits(.isHeader)
     }
 }

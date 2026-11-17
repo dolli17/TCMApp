@@ -76,31 +76,43 @@ struct Pfeil: View {
 /// Eine Einstellung, die ein Blatt oeffnet (Eintrag in konto.tsx).
 struct KontoEintrag: View {
     let titel: String
-    let symbol: String
-    /// Leise Zeile unter dem Titel, etwa der Stand beim Bereich Tennis.
+    /// Leiser Stand rechts vor dem Pfeil, etwa "LK 14,2" beim Bereich Tennis.
     var unterzeile: String?
     let aktion: () -> Void
 
     var body: some View {
         Button(action: aktion) {
+            // Ohne Symbol wie im Entwurf "Konto": links der Titel, rechts der Stand und der Pfeil.
             HStack(spacing: 12) {
-                Symbolkachel(symbol: symbol)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(titel)
-                        .font(Schrift.text(.halbfett, 15.5))
-                        .foregroundStyle(Farbe.ink)
-                    if let unterzeile, !unterzeile.isEmpty {
-                        Text(unterzeile).leise().fixedSize(horizontal: false, vertical: true)
-                    }
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 12) { name; Spacer(minLength: 0); stand }
+                    VStack(alignment: .leading, spacing: 2) { name; stand }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 Pfeil()
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, unterzeile == nil ? 0 : 10)
-            .frame(minHeight: 56)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+            .frame(minHeight: 60)
         }
         .buttonStyle(ZeilenDruck())
+    }
+
+    private var name: some View {
+        Text(titel)
+            .font(Schrift.text(.normal, 17))
+            .foregroundStyle(Farbe.ink)
+            .lineLimit(1)
+    }
+
+    @ViewBuilder private var stand: some View {
+        if let unterzeile, !unterzeile.isEmpty {
+            Text(unterzeile)
+                .font(Schrift.text(.normal, 15))
+                .foregroundStyle(Farbe.muted)
+                .lineLimit(2)
+                .multilineTextAlignment(.trailing)
+        }
     }
 }
 
@@ -133,16 +145,19 @@ struct KontoVerweis: View {
 /// Graue Marke im Profilkopf ("Mitglied seit 2019")
 struct KontoMarke: View {
     let text: String
+    /// Hellblau fuer die eigene Rolle ("Mannschaftsführer")
+    var blau = false
 
     var body: some View {
         Text(text)
             .font(Schrift.text(.halbfett, Tokens.Schrift.klein))
-            .foregroundStyle(Farbe.ink2)
-            .padding(.horizontal, 10)
+            .foregroundStyle(blau ? Farbe.blueInk : Farbe.ink2)
+            .padding(.horizontal, 12)
             .lineLimit(1)
             .padding(.vertical, 3)
-            .frame(minHeight: 26)
-            .background(Farbe.chip, in: Capsule())
+            .frame(minHeight: 28)
+            .background(blau ? Farbe.blueSoft : Farbe.chip, in: Capsule())
+            .overlay(Capsule().strokeBorder(blau ? Farbe.blue.opacity(0.22) : Farbe.line, lineWidth: 1))
     }
 }
 

@@ -54,7 +54,11 @@ final class OnboardingUITests: XCTestCase {
         sichtbar(iban)
         iban.tap()
         iban.typeText("DE89370400440532013000")
-        umlegen("Ich erteile dieses Mandat")
+        // Die Zustimmung ist ein Haken vor dem Satz, kein Schalter.
+        let haken = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Ich erteile dieses Mandat'")).firstMatch
+        XCTAssertTrue(haken.waitForExistence(timeout: 10), "Zustimmung fehlt")
+        sichtbar(haken)
+        haken.tap()
         foto("onboarding-sepa-\(suffix)")
         weiter("Mandat erteilen")
 

@@ -30,7 +30,7 @@ struct PushSchalter: View {
                 if let symbol { Symbolkachel(symbol: symbol) }
                 VStack(alignment: .leading, spacing: 3) {
                     Text(Self.titel)
-                        .font(Schrift.text(.halbfett, 15.5))
+                        .font(Schrift.text(.normal, 17))
                         .foregroundStyle(Farbe.ink)
                     if symbol == nil, let text = meldung ?? beschreibung {
                         Text(text).leise().fixedSize(horizontal: false, vertical: true)
@@ -39,14 +39,14 @@ struct PushSchalter: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 Toggle(Self.titel, isOn: Binding(get: { an }, set: { umschalten($0) }))
                     .labelsHidden()
-                    .tint(Farbe.green)
+                    .tint(Farbe.blue)
                     .disabled(laeuft)
             }
             if symbol != nil, let meldung {
                 Text(meldung).leise().padding(.leading, 44).fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .frame(minHeight: 56)
         .accessibilityElement(children: .contain)

@@ -25,7 +25,12 @@ struct VeranstaltungenAnsicht: View {
             VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
                 VereinKopf()
                 if let fehler {
-                    Fehlerzeile(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
+                    // Ohne Inhalt der ganze Fehlerzustand, sonst die Zeile ueber dem alten Stand.
+                    if events == nil {
+                        Fehlerzustand(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
+                    } else {
+                        Fehlerzeile(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
+                    }
                 }
                 if laedt && events == nil {
                     ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)
@@ -77,14 +82,12 @@ struct VeranstaltungenAnsicht: View {
     private func laden(_ art: Art) async {
         if art == .nachladen { aktualisiert = true }
         let d = Vereinsdaten(client: sitzung.client)
-        async let name = try? Startdaten(client: d.client).meinName()
         do {
             events = try await d.veranstaltungen()
             fehler = nil
         } catch {
             fehler = Meldung.aus(error).text
         }
-        if let n = await name { zustand.name = n }
         laedt = false
         aktualisiert = false
     }

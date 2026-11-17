@@ -36,6 +36,8 @@ struct HauptTabs: View {
                     .tag(HauptTab.verwaltung)
             }
         }
+        // Umriss-Symbole wie im Entwurf; die Tab-Leiste fuellt sie sonst.
+        .environment(\.symbolVariants, .none)
         .environment(verwaltung)
         .task { await verwaltung.pruefen(sitzung.client) }
         .tint(Farbe.blue)

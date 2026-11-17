@@ -32,7 +32,6 @@ struct MannschaftBildschirm: View {
     @State private var telefonSichtbar = false
     @State private var austragenFrage: KaderMitglied?
     @State private var austretenFrage = false
-    @State private var sucheOffen = false
 
     private var daten: Mannschaftsdaten { Mannschaftsdaten(client: sitzung.client) }
 
@@ -59,12 +58,6 @@ struct MannschaftBildschirm: View {
         .navigationBarTitleDisplayMode(.inline)
         .tint(Farbe.blueInk)
         .task { await laden(nachladen: false) }
-        .sheet(isPresented: $sucheOffen, onDismiss: { Task { await laden(nachladen: false) } }) {
-            KandidatenSuche(daten: daten) { sucheOffen = false }
-                .background(Farbe.bg)
-                .presentationDragIndicator(.visible)
-                .presentationCornerRadius(Tokens.Radius.blatt)
-        }
         .alert(
             austragenFrage.map { MannschaftLogik.austragenFrage($0, team: teamName) } ?? "",
             isPresented: Binding(get: { austragenFrage != nil }, set: { if !$0 { austragenFrage = nil } }),
@@ -93,17 +86,12 @@ struct MannschaftBildschirm: View {
 
     private var kopf: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(MannschaftLogik.titel).kicker()
-            Text(aktuell?.name ?? "Meine Mannschaft")
+            // Gross der Titel; die Mannschaft selbst steht ueber dem Kader (Entwurf "Mannschaft").
+            Text(MannschaftLogik.titel)
                 .font(Schrift.display(.fett, Tokens.Schrift.seitentitel, relativeTo: .largeTitle))
                 .tracking(Tokens.Schrift.laufweiteTitel)
                 .foregroundStyle(Farbe.ink)
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
                 .accessibilityAddTraits(.isHeader)
-            if aktuell?.ichBinMf == true {
-                KontoMarke(text: "Du bist Mannschaftsführer")
-            }
         }
         .padding(.top, Tokens.Abstand.s)
     }
@@ -151,18 +139,20 @@ struct MannschaftBildschirm: View {
                 }
                 LeiserKnopf(text: "Abbrechen", gesperrt: laeuft) { annehmenBei = nil }
             } else {
+                // Annehmen links in Blau, Ablehnen neutral daneben (Entwurf "Mannschaft Mitglied").
                 HStack(spacing: Tokens.Abstand.s) {
-                    LeiserKnopf(text: "Ablehnen", gesperrt: laeuft) { beantworten(e, annehmen: false) }
-                    // Hellblau: bei mehreren Einladungen gaebe es sonst mehrere Hauptaktionen.
-                    Knopf("Annehmen", breit: true, gesperrt: laeuft) {
+                    Knopf("Annehmen", stufe: .haupt, breit: true, gesperrt: laeuft) {
                         telefonSichtbar = false
                         annehmenBei = e.id
                     }
+                    LeiserKnopf(text: "Ablehnen", gesperrt: laeuft) { beantworten(e, annehmen: false) }
                 }
             }
         }
+        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .karte(radius: Tokens.Radius.karte, padding: 16)
+        .background(Farbe.blueSoft, in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
+        .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.karte).strokeBorder(Farbe.blue.opacity(0.22), lineWidth: 1))
     }
 
     // MARK: - Mannschaft
@@ -171,18 +161,27 @@ struct MannschaftBildschirm: View {
         if let f = mannschaft?.fehler {
             Fehlerzeile(text: f, laeuft: aktualisiert) { Task { await laden(nachladen: true) } }
         } else if let m = aktuell {
-            if m.ichBinMf {
-                Text(MannschaftLogik.mfErklaerung).leise().fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, Tokens.Abstand.xs)
-                Hauptknopf(text: "Spieler hinzufügen", gesperrt: laeuft) { sucheOffen = true }
-                offeneEinladungen(m)
-            }
+            // Erst der Kader, dann die offenen Einladungen, dann das Hinzufuegen.
             kader(m)
             if m.ichBinMf {
+                offeneEinladungen(m)
+                KontoAbschnitt(titel: "Spieler hinzufügen")
+                Text(MannschaftLogik.mfErklaerung).leise().fixedSize(horizontal: false, vertical: true)
+                KandidatenSuche(daten: daten) { Task { await laden(nachladen: false) } }
                 Text(MannschaftLogik.mfKannNichtAustreten).leise().fixedSize(horizontal: false, vertical: true)
-            } else {
-                LeiserKnopf(text: "Aus Mannschaft austreten", rot: true, gesperrt: laeuft) { austretenFrage = true }
                     .padding(.top, Tokens.Abstand.s)
+            } else {
+                // Der Weg hinaus ist ein roter Verweis; die Bestaetigung fragt nach.
+                Button { austretenFrage = true } label: {
+                    Text("Aus Mannschaft austreten")
+                        .font(Schrift.display(.halbfett, 16))
+                        .foregroundStyle(Farbe.redInk)
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(laeuft)
+                .padding(.top, Tokens.Abstand.m)
             }
         } else if (einladungen?.wert ?? []).isEmpty {
             Leerzustand(text: MannschaftLogik.keineMannschaft)
@@ -196,23 +195,24 @@ struct MannschaftBildschirm: View {
             KontoGruppe {
                 ForEach(Array(liste.enumerated()), id: \.element.id) { i, e in
                     if i > 0 { KontoLinie() }
-                    HStack(spacing: 12) {
+                    HStack(spacing: 14) {
+                        Kuerzel(vorname: e.firstName, nachname: e.lastName)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(MannschaftLogik.name(e.firstName, e.lastName))
-                                .font(Schrift.text(.halbfett, 15.5))
+                                .font(Schrift.text(.normal, 17))
                                 .foregroundStyle(Farbe.ink)
                             Text(MannschaftLogik.offeneUnterzeile(e)).leise()
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityElement(children: .combine)
-                        KleinerKnopf(text: "Zurückziehen", gesperrt: laeuft) {
+                        RoterVerweis(text: "Zurückziehen", gesperrt: laeuft) {
                             ausfuehren { await daten.zurueckziehen(e) }
                         }
                         .accessibilityLabel("Einladung an \(MannschaftLogik.name(e.firstName, e.lastName)) zurückziehen")
                     }
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 16)
-                    .frame(minHeight: 60)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 18)
+                    .frame(minHeight: 68)
                 }
             }
         }
@@ -220,7 +220,7 @@ struct MannschaftBildschirm: View {
 
     private func kader(_ m: MeineMannschaft) -> some View {
         Group {
-            KontoAbschnitt(titel: "Kader")
+            KontoAbschnitt(titel: "Kader \(m.name)")
             KontoGruppe {
                 if m.kader.isEmpty {
                     Text("Noch niemand im Kader.").leise()
@@ -236,12 +236,18 @@ struct MannschaftBildschirm: View {
     }
 
     private func kaderZeile(_ k: KaderMitglied, _ m: MeineMannschaft) -> some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(MannschaftLogik.name(k.firstName, k.lastName))
-                    .font(Schrift.text(.halbfett, 15.5))
-                    .foregroundStyle(Farbe.ink)
-                Text(MannschaftLogik.kaderUnterzeile(k)).leise()
+        HStack(alignment: .center, spacing: 14) {
+            Kuerzel(vorname: k.firstName, nachname: k.lastName)
+            VStack(alignment: .leading, spacing: 3) {
+                // Name, daneben die Marken: gelb "du" (deins), hellblau die Rolle.
+                UmbruchStapel(abstand: 8, zeilenabstand: 4) {
+                    Text(MannschaftLogik.name(k.firstName, k.lastName))
+                        .font(Schrift.text(.normal, 17))
+                        .foregroundStyle(Farbe.ink)
+                    if m.ichBinMf && k.isTeamCaptain == true { DeinMarker("du") }
+                    if k.isTeamCaptain == true { BlaueMarke("Mannschaftsführer") }
+                }
+                Text(MannschaftLogik.lk(k.tennisLk) ?? "ohne LK").leise()
                 if let telefon = MannschaftLogik.telefonZeile(k, in: m) {
                     if let link = MannschaftLogik.telefonLink(k.telefon) {
                         Link(destination: link) {
@@ -258,13 +264,13 @@ struct MannschaftBildschirm: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if MannschaftLogik.darfAustragen(k, in: m) {
-                KleinerKnopf(text: "Austragen", rot: true, gesperrt: laeuft) { austragenFrage = k }
+                RoterVerweis(text: "Austragen", gesperrt: laeuft) { austragenFrage = k }
                     .accessibilityLabel("\(MannschaftLogik.name(k.firstName, k.lastName)) austragen")
             }
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 16)
-        .frame(minHeight: 60)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 18)
+        .frame(minHeight: 68)
     }
 
     // MARK: - Aktionen
@@ -313,7 +319,8 @@ struct MannschaftBildschirm: View {
  */
 private struct KandidatenSuche: View {
     let daten: Mannschaftsdaten
-    let zu: () -> Void
+    /// Nach einer Einladung: die offenen Einladungen oben neu laden.
+    let eingeladen: () -> Void
 
     @State private var suche = ""
     @State private var liste: [MannschaftKandidat]?
@@ -322,52 +329,62 @@ private struct KandidatenSuche: View {
     @State private var laeuft: String?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                BlattKopf(titel: "Spieler hinzufügen", zu: zu)
-                KontoFeld(label: MannschaftLogik.sucheLabel, text: $suche, inhaltsTyp: .name, grossschreibung: .words)
-                if let meldung {
-                    KontoHinweis(text: meldung.meldung, ok: meldung.ok)
-                }
-                if let fehler {
-                    Fehlerzeile(text: fehler) { Task { await suchen(sofort: true) } }
-                } else if let liste {
-                    if liste.isEmpty {
-                        Leerzustand(text: MannschaftLogik.keineKandidaten)
-                    } else {
-                        KontoGruppe {
-                            ForEach(Array(liste.enumerated()), id: \.element.id) { i, k in
-                                if i > 0 { KontoLinie() }
-                                zeile(k)
-                            }
+        VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
+            // Das Suchfeld mit Lupe steht gleich im Bildschirm, darunter die Vorschlaege.
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(Farbe.muted)
+                    .accessibilityHidden(true)
+                TextField("", text: $suche, prompt: Text(MannschaftLogik.sucheLabel).foregroundStyle(Farbe.muted))
+                    .textContentType(.name)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .font(Schrift.text(.normal, Tokens.Schrift.normal))
+                    .foregroundStyle(Farbe.ink)
+                    .accessibilityLabel(MannschaftLogik.sucheLabel)
+            }
+            .padding(.horizontal, 20)
+            .frame(minHeight: 52)
+            .background(Farbe.surf2, in: Capsule())
+            .overlay(Capsule().strokeBorder(Farbe.line2, lineWidth: 1))
+            if let meldung {
+                KontoHinweis(text: meldung.meldung, ok: meldung.ok)
+            }
+            if let fehler {
+                Fehlerzeile(text: fehler) { Task { await suchen(sofort: true) } }
+            } else if let liste {
+                if liste.isEmpty {
+                    Leerzustand(text: MannschaftLogik.keineKandidaten)
+                } else {
+                    KontoGruppe {
+                        ForEach(Array(liste.enumerated()), id: \.element.id) { i, k in
+                            if i > 0 { KontoLinie() }
+                            zeile(k)
                         }
                     }
-                } else {
-                    ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 24)
                 }
+            } else {
+                ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 24)
             }
-            .padding(Tokens.Abstand.rand)
         }
-        .scrollDismissesKeyboard(.interactively)
         .task(id: suche) { await suchen(sofort: false) }
     }
 
     private func zeile(_ k: MannschaftKandidat) -> some View {
         let frei = MannschaftLogik.kannEinladen(k)
         return HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(MannschaftLogik.name(k.firstName, k.lastName))
-                    .font(Schrift.text(.halbfett, 15.5))
-                    .foregroundStyle(Farbe.ink)
-                Text(MannschaftLogik.kandidatUnterzeile(k)).leise()
-                let marken = MannschaftLogik.kandidatMarken(k)
-                if !marken.isEmpty {
-                    HStack(spacing: 6) {
-                        ForEach(marken, id: \.text) { m in
-                            MarkeKlein(text: m.text, ton: m.ton == .gruen ? .gruen : .grau)
-                        }
+            VStack(alignment: .leading, spacing: 3) {
+                // Name und Marken in einer Zeile: "Interesse" hellblau, der Rest grau.
+                UmbruchStapel(abstand: 8, zeilenabstand: 4) {
+                    Text(MannschaftLogik.name(k.firstName, k.lastName))
+                        .font(Schrift.text(.normal, 17))
+                        .foregroundStyle(Farbe.ink)
+                    ForEach(MannschaftLogik.kandidatMarken(k), id: \.text) { m in
+                        MarkeKlein(text: m.text, ton: m.ton == .gruen ? .blau : .grau)
                     }
                 }
+                Text(MannschaftLogik.kandidatUnterzeile(k)).leise()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
@@ -377,9 +394,9 @@ private struct KandidatenSuche: View {
             ) { einladen(k) }
             .accessibilityLabel(frei ? "\(MannschaftLogik.name(k.firstName, k.lastName)) einladen" : "Schon eingeladen")
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 16)
-        .frame(minHeight: 60)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 18)
+        .frame(minHeight: 68)
         .opacity(frei ? 1 : 0.5)
     }
 
@@ -390,7 +407,10 @@ private struct KandidatenSuche: View {
             let r = await daten.einladen(k)
             laeuft = nil
             meldung = r
-            if r.ok, let l = liste { liste = MannschaftLogik.alsEingeladen(l, k.memberId) }
+            if r.ok, let l = liste {
+                liste = MannschaftLogik.alsEingeladen(l, k.memberId)
+                eingeladen()
+            }
         }
     }
 
@@ -423,6 +443,42 @@ private struct KleinerKnopf: View {
 
     var body: some View {
         Knopf(text, stufe: rot ? .gefahrLeise : .zweit, groesse: .klein, gesperrt: gesperrt, aktion: aktion)
+    }
+}
+
+/// Initialen im hellblauen Kreis vor einem Namen.
+private struct Kuerzel: View {
+    let vorname: String?
+    let nachname: String?
+
+    var body: some View {
+        Text(KontoLogik.initialen(vorname: vorname ?? "", nachname: nachname ?? ""))
+            .font(Schrift.display(.halbfett, 14))
+            .dynamicTypeSize(...DynamicTypeSize.xLarge)
+            .foregroundStyle(Farbe.blueInk)
+            .frame(width: 40, height: 40)
+            .background(Farbe.blueSoft, in: Circle())
+            .accessibilityHidden(true)
+    }
+}
+
+/// Roter Textverweis rechts in einer Zeile: Austragen, Zurueckziehen. Bestaetigt wird danach.
+private struct RoterVerweis: View {
+    let text: String
+    var gesperrt = false
+    let aktion: () -> Void
+
+    var body: some View {
+        Button(action: aktion) {
+            Text(text)
+                .font(Schrift.display(.halbfett, 15))
+                .foregroundStyle(Farbe.redInk)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(gesperrt)
+        .opacity(gesperrt ? 0.5 : 1)
     }
 }
 

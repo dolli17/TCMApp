@@ -96,6 +96,11 @@ enum SpieleLogik {
         Zeit.minutesToTime(Zeit.minutesOf(iso))
     }
 
+    /// Rechts neben "Deine Termine": "1 Buchung", "2 Buchungen"
+    static func terminZaehler(_ n: Int) -> String {
+        n == 1 ? "1 Buchung" : "\(n) Buchungen"
+    }
+
     /// "Platz 1 · Einzel"
     static func terminTitel(_ b: MeineBuchung) -> String {
         [b.courtName, b.typeName].compactMap { Platzplan.nichtLeer($0) }.joined(separator: " · ")
