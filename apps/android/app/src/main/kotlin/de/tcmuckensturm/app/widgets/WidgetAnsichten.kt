@@ -4,7 +4,7 @@
  * Wie TCMWidgets/Gemeinsam/WidgetAnsichten.swift der iOS-App. Farben aus den
  * Vereins-Tokens (Hell/Dunkel), hell und dunkel folgen dem System wie in
  * iOS. Material You (dynamische Farben) nimmt das Widget bewusst nicht - die
- * Flaechen sind Vereinsblau und Weiss; vom System kommen nur die Ecken
+ * Flaechen sind hell (surf), Gelb markiert nur Eigenes; vom System kommen nur die Ecken
  * (system_app_widget_background_radius).
  *
  * Schrift: RemoteViews koennen keine eigenen Schriften laden, Barlow geht im
@@ -65,22 +65,18 @@ object WidgetFarbe {
         night = wahl(Dunkel).let { it.copy(alpha = it.alpha * deckkraft) },
     )
 
-    val brand = token { it.brand }
-    val onBrand = token { it.onBrand }
-    val onBrandLeise = token(0.85f) { it.onBrand }
-    val onBrandFast = token(0.92f) { it.onBrand }
-    val onBrandLinie = token(0.18f) { it.onBrand }
+    val blueInk = token { it.blueInk }
+    val blueSoft = token { it.blueSoft }
     val gold = token { it.gold }
-    val onGold = token { it.onGold }
     val goldInk = token { it.goldInk }
     val goldSoft = token { it.goldSoft }
+    val linie = token { it.line }
     val surf = token { it.surf }
     val surf2 = token { it.surf2 }
     val ink = token { it.ink }
     val ink2 = token { it.ink2 }
     val muted = token { it.muted }
     val greenInk = token { it.greenInk }
-    val greenLeise = token(0.15f) { it.green }
 
     fun leiste(art: LeistenArt): ColorProvider = when (art) {
         LeistenArt.LEER -> surf2
@@ -92,8 +88,8 @@ object WidgetFarbe {
     }
 
     private val leisteFrei = token(0.55f) { it.green }
-    private val leisteBelegt = token { it.blue }
-    private val leisteSucht = token(0.6f) { it.goldLine }
+    private val leisteBelegt = token { it.line2 }
+    private val leisteSucht = token(0.55f) { it.blue }
     private val leisteGesperrt = token(0.55f) { it.rahmen }
 }
 
@@ -166,11 +162,11 @@ fun SpieleWidgetAnsicht(zustand: WidgetZustand, jetzt: Instant, familie: WidgetF
     val zeilen = WidgetInhalt.spiele(s.termine.orEmpty(), jetzt, hoechstens = if (mittel) 3 else 1)
     val geladen = s.termine != null
 
-    Column(modifier = GlanceModifier.flaeche(WidgetFarbe.brand, aktion)) {
+    Column(modifier = GlanceModifier.flaeche(WidgetFarbe.surf, aktion)) {
         Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Kicker(
                 if (mittel) "Meine nächsten Spiele" else zeilen.firstOrNull()?.kicker ?: "Meine Spiele",
-                WidgetFarbe.onBrandLeise,
+                WidgetFarbe.muted,
                 zeilen = if (mittel) 1 else 2,
                 modifier = GlanceModifier.defaultWeight(),
             )
@@ -183,21 +179,21 @@ fun SpieleWidgetAnsicht(zustand: WidgetZustand, jetzt: Instant, familie: WidgetF
             }
             mittel -> {
                 zeilen.forEachIndexed { i, z ->
-                    if (i > 0) Box(modifier = GlanceModifier.fillMaxWidth().height(1.dp).background(WidgetFarbe.onBrandLinie)) {}
+                    if (i > 0) Box(modifier = GlanceModifier.fillMaxWidth().height(1.dp).background(WidgetFarbe.linie)) {}
                     SpielZeileAnsicht(z)
                 }
                 Spacer(GlanceModifier.defaultWeight())
             }
             else -> {
                 val z = zeilen.first()
-                Text(z.beginn, modifier = GlanceModifier.padding(top = 2.dp), style = anzeige(38.sp, WidgetFarbe.onBrand), maxLines = 1)
+                Text(z.beginn, modifier = GlanceModifier.padding(top = 2.dp), style = anzeige(38.sp, WidgetFarbe.ink), maxLines = 1)
                 Text(
                     listOf(z.platz, z.art).filter { it.isNotEmpty() }.joinToString(" · "),
-                    style = text(14.sp, WidgetFarbe.onBrand, FontWeight.Bold),
+                    style = text(14.sp, WidgetFarbe.ink, FontWeight.Bold),
                     maxLines = 1,
                 )
                 Spacer(GlanceModifier.defaultWeight())
-                Text(z.mit, style = text(12.sp, WidgetFarbe.onBrandLeise), maxLines = 2)
+                Text(z.mit, style = text(12.sp, WidgetFarbe.muted), maxLines = 2)
             }
         }
     }
@@ -210,12 +206,12 @@ private fun SpielZeileAnsicht(z: SpielZeile) {
             .semantics { contentDescription = "${z.kicker}, ${z.zeit}, ${z.platz}" },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(z.beginn, modifier = GlanceModifier.width(62.dp), style = anzeige(22.sp, WidgetFarbe.onBrand), maxLines = 1)
+        Text(z.beginn, modifier = GlanceModifier.width(62.dp), style = anzeige(22.sp, WidgetFarbe.ink), maxLines = 1)
         Column(modifier = GlanceModifier.defaultWeight()) {
-            Text(z.kicker, style = anzeige(12.sp, WidgetFarbe.gold), maxLines = 1)
+            Text(z.kicker, style = anzeige(12.sp, WidgetFarbe.muted), maxLines = 1)
             Text(
                 listOf(z.platz, z.art, z.mit).filter { it.isNotEmpty() }.joinToString(" · "),
-                style = text(13.sp, WidgetFarbe.onBrandFast, FontWeight.Medium),
+                style = text(13.sp, WidgetFarbe.ink2, FontWeight.Medium),
                 maxLines = 1,
             )
         }
@@ -226,10 +222,10 @@ private fun SpielZeileAnsicht(z: SpielZeile) {
 private fun SpieleLeer(geladen: Boolean) {
     Text(
         if (geladen) "Noch nichts geplant" else "Termine konnten nicht geladen werden.",
-        style = text(16.sp, WidgetFarbe.onBrand, FontWeight.Bold),
+        style = text(16.sp, WidgetFarbe.ink, FontWeight.Bold),
         maxLines = 2,
     )
-    Text("Platz buchen ›", modifier = GlanceModifier.padding(top = 2.dp), style = text(13.sp, WidgetFarbe.gold, FontWeight.Medium))
+    Text("Platz buchen ›", modifier = GlanceModifier.padding(top = 2.dp), style = text(13.sp, WidgetFarbe.blueInk, FontWeight.Medium))
 }
 
 // ---- Plaetze jetzt --------------------------------------------------------------
@@ -378,12 +374,12 @@ fun VeranstaltungWidgetAnsicht(zustand: WidgetZustand, jetzt: Instant, familie: 
 private fun Kachel(e: WidgetVeranstaltung) {
     val kachel = Veranstaltungen.eventDatumKachel(e.startsAt)
     Column(
-        modifier = GlanceModifier.width(46.dp).height(50.dp).background(WidgetFarbe.gold).rund(8),
+        modifier = GlanceModifier.width(46.dp).height(50.dp).background(WidgetFarbe.surf2).rund(12),
         verticalAlignment = Alignment.CenterVertically,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(kachel.tag, style = anzeige(22.sp, WidgetFarbe.onGold), maxLines = 1)
-        Text(kachel.monat.uppercase(), style = anzeige(11.sp, WidgetFarbe.onGold), maxLines = 1)
+        Text(kachel.tag, style = anzeige(22.sp, WidgetFarbe.ink), maxLines = 1)
+        Text(kachel.monat.uppercase(), style = anzeige(11.sp, WidgetFarbe.ink), maxLines = 1)
     }
 }
 
@@ -395,14 +391,14 @@ private fun VeranstaltungTitel(e: WidgetVeranstaltung) {
     }
 }
 
-/** Wie eventMeineMarke: angemeldet gruen, Warteliste und "Anmelden" gelb. */
+/** Gelb heisst "deins": die eigene Anmeldung; Warteliste und "Anmelden" hellblau. */
 @Composable
 private fun Marke(marke: String) {
     val dabei = marke.startsWith("Angemeldet")
     Box(
-        modifier = GlanceModifier.background(if (dabei) WidgetFarbe.greenLeise else WidgetFarbe.goldSoft).rund(12)
+        modifier = GlanceModifier.background(if (dabei) WidgetFarbe.goldSoft else WidgetFarbe.blueSoft).rund(12)
             .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
-        Text(marke, style = text(12.sp, if (dabei) WidgetFarbe.greenInk else WidgetFarbe.goldInk, FontWeight.Bold), maxLines = 1)
+        Text(marke, style = text(12.sp, if (dabei) WidgetFarbe.goldInk else WidgetFarbe.blueInk, FontWeight.Bold), maxLines = 1)
     }
 }

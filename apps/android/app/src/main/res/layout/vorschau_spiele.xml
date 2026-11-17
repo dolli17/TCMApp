@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/widget_brand"
+    android:background="@color/widget_surf"
     android:orientation="vertical"
     android:padding="14dp"
     tools:ignore="HardcodedText,NestedWeights,Overdraw">
@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-condensed"
         android:text="HEUTE · IN 4 STUNDEN"
-        android:textColor="@color/widget_on_brand_leise"
+        android:textColor="@color/widget_muted"
         android:textSize="12sp"
         android:textStyle="bold" />
 
@@ -23,7 +23,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-condensed"
         android:text="18:00"
-        android:textColor="@color/widget_on_brand"
+        android:textColor="@color/widget_ink"
         android:textSize="38sp"
         android:textStyle="bold" />
 
@@ -31,7 +31,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Platz 1 · Einzel"
-        android:textColor="@color/widget_on_brand"
+        android:textColor="@color/widget_ink"
         android:textSize="14sp"
         android:textStyle="bold" />
 
@@ -45,6 +45,6 @@
         android:layout_height="wrap_content"
         android:maxLines="2"
         android:text="mit Mara Beispiel"
-        android:textColor="@color/widget_on_brand_leise"
+        android:textColor="@color/widget_muted"
         android:textSize="12sp" />
 </LinearLayout>
