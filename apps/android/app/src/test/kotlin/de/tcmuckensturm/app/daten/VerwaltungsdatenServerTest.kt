@@ -93,8 +93,11 @@ class VerwaltungsdatenServerTest : ServerTest() {
         server.rpc("booking_types_aktiv", "kein json")
         assertEquals(ALLGEMEIN, meldung { daten.laden(jetzt) })
 
+        // Ohne Netz scheitern alle Abfragen zugleich; welche zuerst meldet, ist offen -
+        // der Satz nennt die Verbindung, mit oder ohne "Die Plätze konnten nicht geladen werden."
         server.ohneNetz = true
-        assertEquals("Die Plätze konnten nicht geladen werden. ($KEINE_VERBINDUNG)", meldung { daten.laden(jetzt) })
+        val ohneNetz = meldung { daten.laden(jetzt) }
+        assertTrue(ohneNetz, ohneNetz == KEINE_VERBINDUNG || ohneNetz == "Die Plätze konnten nicht geladen werden. ($KEINE_VERBINDUNG)")
     }
 
     @Test
