@@ -2935,3 +2935,60 @@ fieldset.geschlecht[aria-invalid="true"] .segment { border-color: var(--red); }
 .wahlkarte:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 2px; }
 .wahlkarten .beschreibung { margin: 0; }
 label.schalter > .schalter-feld, .auth .sheet label.schalter > .schalter-feld { flex: 0 0 auto; width: 52px; height: 32px; min-height: 0; margin: 0; padding: 0; }
+
+/* --- Verwaltung · Übersicht (Entwurf "Übersicht Desktop") ------------------
+   Eine Spalte in der Reihenfolge des Entwurfs: Heute zu tun, Einzug, vier
+   Kennzahlen nebeneinander, darunter die Anlage über die volle Breite. */
+@media (min-width: 1024px) {
+  .uebersicht-raster { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .uebersicht-raster > .uebersicht-spalte { display: contents; }
+  .uebersicht .kennzahlen.zwei { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .uebersicht .kennzahlen.zwei .wert { font-size: 34px; }
+  .uebersicht .anlage-heute .mini-zeitleiste.gross { height: 22px; border-radius: 8px; }
+  .uebersicht .anlage-heute .mini-zeitleiste.gross i { border-radius: 8px; }
+}
+/* Die erste Aufgabe ist eine weiße Karte; kräftig blau ist allein ihr Knopf */
+.uebersicht .aufgabe-gross { background: var(--surf); border: 1px solid var(--line); min-height: 0; gap: 8px; }
+.uebersicht .aufgabe-gross .linien { display: none; }
+.uebersicht .aufgabe-gross .kicker { align-self: flex-start; padding: 3px 9px; border-radius: 8px; background: var(--chip); color: var(--ink-2); font-size: 11px; }
+.uebersicht .aufgabe-gross .titel { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -.2px; line-height: 1.2; margin-top: 6px; }
+.uebersicht .aufgabe-gross .knopf { margin-top: 14px; }
+.uebersicht .kennzahl, .uebersicht .karte, .uebersicht .liste-gruppe { box-shadow: none; }
+.uebersicht .kennzahl .label { font-family: var(--font-display); font-size: 11.5px; font-weight: 700; letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted); }
+/* "Jetzt" ist eine Auskunft, kein Alarm: blau statt rot */
+.anlage-heute .mini-zeitleiste b { background: var(--blue); }
+.geldweg-balken li.erledigt { background: var(--blue); opacity: .45; }
+
+/* --- Verwaltung · Arbeitsdienst und Kasse (Entwürfe Desktop) --------------- */
+.verwaltung .kennzahl, .verwaltung .liste-gruppe, .verwaltung > .karte, .verwaltung section.karte { box-shadow: none; }
+.jahrwahl { margin: 0; flex-wrap: nowrap; }
+.dienst-balken { display: none; }
+@media (min-width: 1024px) {
+  .dienst-balken { display: block; width: clamp(120px, 22vw, 260px); height: 6px; border-radius: 3px; background: var(--surf-3); overflow: hidden; margin-right: 18px; align-self: center; }
+  .dienst-balken i { display: block; height: 100%; border-radius: 3px; background: var(--blue); }
+}
+@media (min-width: 1024px) {
+  .neben:has(> .dienst-balken) { display: grid; grid-template-columns: auto auto; align-items: center; justify-items: end; }
+  .neben:has(> .dienst-balken) > .dienst-balken { grid-row: 1 / span 2; }
+  .neben:has(> .dienst-balken) > :not(.dienst-balken) { grid-column: 2; }
+}
+/* Erledigte Schritte sind blau wie im Entwurf - Grün gibt es in der Palette nicht als Fortschrittsfarbe */
+.geldweg li.erledigt > i, .mini-geldweg li.erledigt { background: var(--blue); }
+.geldweg li.erledigt .nr { background: var(--blue); color: var(--on-brand); }
+.geldweg li.aktuell > i { background: color-mix(in srgb, var(--blue) 45%, var(--surf-3)); }
+
+/* --- Kiosk (Entwurf "Kiosk") ----------------------------------------------
+   Lange Getränkenamen brechen in der Kachel um statt herauszulaufen; die
+   Spalte "Eintragen" ist eine Karte wie im Entwurf, "Wer" steht frei. */
+.kiosk-kacheln .name { overflow-wrap: anywhere; hyphens: auto; font-family: var(--font-display); font-size: 18px; }
+.kiosk-kacheln .kachel-knopf { min-width: 0; }
+.kiosk-kacheln .preis { font-size: 15px; font-weight: 500; color: var(--muted); }
+.kiosk-kacheln li.an .kachel-knopf { background: var(--blue-soft); }
+.kiosk-eintragen { border: 1px solid var(--line); border-radius: var(--radius-karte); background: var(--surf); padding: 22px; }
+.kiosk-wer { border: 0; background: transparent; box-shadow: none; padding-inline: 0; }
+.kiosk-eintragen .zusammen { flex-direction: column; align-items: flex-start; gap: 2px; border-top: 1px solid var(--line); }
+.kiosk-eintragen .zusammen span { font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted); }
+.kiosk-eintragen .zusammen b { font-size: 36px; }
+/* Ja/Nein im Veranstaltungsformular: Schalter rechts, Aussage links */
+.veranstaltungs-formular label.schalter { display: flex; flex-direction: row-reverse; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; }
+.veranstaltungs-formular label.schalter > span { margin: 0; font-family: var(--font-text); font-size: 16px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink); }
