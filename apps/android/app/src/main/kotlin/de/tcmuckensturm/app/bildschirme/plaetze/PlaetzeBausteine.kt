@@ -30,6 +30,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
@@ -53,6 +54,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -72,6 +74,7 @@ import androidx.compose.ui.unit.sp
 import de.tcmuckensturm.app.bildschirme.GedeckelteSchrift
 import de.tcmuckensturm.app.bildschirme.Kapsel
 import de.tcmuckensturm.app.bildschirme.LeiserKnopf
+import de.tcmuckensturm.app.bildschirme.grosseSchrift
 import de.tcmuckensturm.app.theme.TcmSchrift
 import de.tcmuckensturm.app.theme.TcmTheme
 import de.tcmuckensturm.app.ui.tokens.Palette
@@ -264,12 +267,13 @@ fun Rundknopf(
     beschriftung: String,
     aus: Boolean = false,
     hintergrund: Color = TcmTheme.farben.surf2,
+    groesse: Dp = 48.dp,
     aktion: () -> Unit,
     symbol: @Composable () -> Unit,
 ) {
     Box(
         Modifier
-            .size(48.dp)
+            .size(groesse)
             .alpha(if (aus) 0.4f else 1f)
             .clip(CircleShape)
             .background(hintergrund)
@@ -283,7 +287,15 @@ fun Rundknopf(
 
 /** Ein Eingabefeld wie stil.feld: bg, Rahmen, Radius 16. */
 @Composable
-fun Eingabe(platzhalter: String, bedienName: String, text: String, wechsel: (String) -> Unit, modifier: Modifier = Modifier) {
+fun Eingabe(
+    platzhalter: String,
+    bedienName: String,
+    text: String,
+    wechsel: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    /** Ein Symbol vorn, etwa die Lupe im Suchfeld. */
+    symbol: ImageVector? = null,
+) {
     val f = TcmTheme.farben
     val stil = TcmSchrift.text(Schrift.gewichtNormal, 16.sp)
     BasicTextField(
@@ -299,9 +311,16 @@ fun Eingabe(platzhalter: String, bedienName: String, text: String, wechsel: (Str
             .border(1.dp, f.line2, RoundedCornerShape(Radius.feld))
             .semantics { contentDescription = bedienName },
         decorationBox = { feld ->
-            Box(Modifier.padding(horizontal = 20.dp, vertical = 14.dp), contentAlignment = Alignment.CenterStart) {
-                if (text.isEmpty()) Text(platzhalter, style = stil, color = f.muted)
-                feld()
+            Row(
+                Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (symbol != null) Icon(symbol, contentDescription = null, tint = f.muted, modifier = Modifier.size(20.dp))
+                Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                    if (text.isEmpty()) Text(platzhalter, style = stil, color = f.muted)
+                    feld()
+                }
             }
         },
     )
@@ -311,37 +330,103 @@ fun Eingabe(platzhalter: String, bedienName: String, text: String, wechsel: (Str
 data class Segment<T>(val wert: T, val label: String, val aus: Boolean = false)
 
 @Composable
-fun <T> Segmente(beschriftung: String, optionen: List<Segment<T>>, wert: T, wahl: (T) -> Unit, modifier: Modifier = Modifier) {
+fun <T> Segmente(beschriftung: String, optionen: List<Segment<T>>, wert: T, wahl: (T) -> Unit, modifier: Modifier = Modifier) =
+    Pillengitter(beschriftung, optionen, spalten = maxOf(optionen.size, 1), gewaehlt = { it == wert }, modifier = modifier, wahl = wahl)
+
+/**
+ * Gleich breite Pillen in Zeilen (Beginn, Spielform, Platz): gewaehlt hellblau
+ * mit blauer Kante und blauer Schrift, sonst weiss mit Linie.
+ */
+@Composable
+fun <T> Pillengitter(
+    beschriftung: String,
+    optionen: List<Segment<T>>,
+    spalten: Int,
+    gewaehlt: (T) -> Boolean,
+    modifier: Modifier = Modifier,
+    mehrfach: Boolean = false,
+    wahl: (T) -> Unit,
+) {
     val f = TcmTheme.farben
-    Row(
-        modifier
-            .fillMaxWidth()
-            .semantics { contentDescription = beschriftung },
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    // Bei grosser Schrift weniger Spalten, sonst bricht die Uhrzeit um.
+    val jeZeile = if (grosseSchrift(1.5f)) minOf(spalten, 2) else spalten
+    Column(
+        modifier.fillMaxWidth().semantics { contentDescription = beschriftung },
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        for (o in optionen) {
-            val aktiv = o.wert == wert
-            // Gewaehlt: hellblau mit blauer Kante und blauer Schrift; sonst weiss mit Linie.
-            Box(
-                Modifier
-                    .weight(1f)
-                    .heightIn(min = 48.dp)
-                    .alpha(if (o.aus) 0.35f else 1f)
-                    .clip(Kapsel)
-                    .background(if (aktiv) f.blueSoft else f.surf)
-                    .border(if (aktiv) 1.5.dp else 1.dp, if (aktiv) f.blue else f.line2, Kapsel)
-                    .clickable(enabled = !o.aus, role = Role.RadioButton) { wahl(o.wert) }
-                    .semantics { selected = aktiv }
-                    .padding(horizontal = 6.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    o.label,
-                    style = TcmSchrift.display(Schrift.gewichtHalbfett, 15.sp).copy(fontFeatureSettings = "tnum"),
-                    color = if (aktiv) f.blueInk else f.ink,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+        for (zeile in optionen.chunked(jeZeile)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (o in zeile) {
+                    val aktiv = gewaehlt(o.wert)
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .heightIn(min = 52.dp)
+                            .alpha(if (o.aus) 0.35f else 1f)
+                            .clip(Kapsel)
+                            .background(if (aktiv) f.blueSoft else f.surf)
+                            .border(if (aktiv) 1.5.dp else 1.dp, if (aktiv) f.blue else f.line2, Kapsel)
+                            .selectable(
+                                selected = aktiv,
+                                enabled = !o.aus,
+                                role = if (mehrfach) Role.Checkbox else Role.RadioButton,
+                            ) { wahl(o.wert) }
+                            .padding(horizontal = 6.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            o.label,
+                            style = TcmSchrift.display(Schrift.gewichtHalbfett, 16.sp).copy(fontFeatureSettings = "tnum"),
+                            color = if (aktiv) f.blueInk else f.ink,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+                repeat(jeZeile - zeile.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
+/** Ein Wert mit Minus und Plus in einer Pille (Uhrzeit, LK), darueber sein Name. */
+@Composable
+fun Schrittfeld(
+    name: String,
+    wert: String,
+    wertLabel: String,
+    wenigerLabel: String,
+    mehrLabel: String,
+    wenigerAus: Boolean,
+    mehrAus: Boolean,
+    weniger: () -> Unit,
+    mehr: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val f = TcmTheme.farben
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(name, style = TcmSchrift.text(Schrift.gewichtMittel, 14.sp), color = f.ink2)
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .background(f.surf, Kapsel)
+                .border(1.dp, f.line2, Kapsel)
+                .padding(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Rundknopf(wenigerLabel, aus = wenigerAus, groesse = 44.dp, aktion = weniger) {
+                Text("−", style = TcmSchrift.display(Schrift.gewichtFett, 20.sp), color = f.ink)
+            }
+            Text(
+                wert,
+                style = TcmSchrift.display(Schrift.gewichtFett, 18.sp).copy(fontFeatureSettings = "tnum"),
+                color = f.ink,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                modifier = Modifier.weight(1f).semantics { contentDescription = wertLabel },
+            )
+            Rundknopf(mehrLabel, aus = mehrAus, groesse = 44.dp, aktion = mehr) {
+                Icon(Icons.Filled.Add, contentDescription = null, tint = f.ink, modifier = Modifier.size(18.dp))
             }
         }
     }
@@ -398,10 +483,10 @@ fun GesuchtKarte(an: Boolean, deaktiviert: Boolean = false, wechsel: (Boolean) -
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("Mitspieler gesucht", style = TcmSchrift.display(Schrift.gewichtHalbfett, 16.sp), color = f.ink)
+            Text("Mitspieler gesucht", style = TcmSchrift.display(Schrift.gewichtHalbfett, 17.sp), color = f.ink)
             Text(
                 "Dein Spiel erscheint unter „Offene Spiele“. Wer mag, trägt sich selbst ein.",
-                style = TcmSchrift.text(Schrift.gewichtNormal, 13.sp),
+                style = TcmSchrift.text(Schrift.gewichtNormal, 14.sp).copy(lineHeight = 20.sp),
                 color = f.muted,
             )
         }

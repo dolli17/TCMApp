@@ -157,6 +157,44 @@ class PlaetzeBildschirmfotoTest {
         foto("plaetze-sperrung", dunkel = false) { Blatt(m, Fenster.Bestehend(PlatzAttrappe.SPERRE, "Platz 3", PlatzAttrappe.TAG)) }
     }
 
+    // ---- Weitere Ansichten des Blatts ---------------------------------------------------
+
+    /** Zweiter Schritt beim Stornieren: rot gefuellt neben "Abbrechen". */
+    @Test
+    fun stornierenBestaetigen() = modell().let { m ->
+        fotoNach("plaetze-stornieren-bestaetigen", dunkel = false, { Blatt(m, eigene) }) {
+            compose.onNodeWithText("Buchung stornieren").performClick()
+        }
+    }
+
+    @Test
+    fun umsetzenHell() = modell(platzrechte = true).let { m ->
+        fotoNach("plaetze-umsetzen-hell", dunkel = false, { Blatt(m, eigene) }) {
+            compose.onNodeWithText("Umsetzen").performScrollTo().performClick()
+        }
+    }
+
+    @Test
+    fun umsetzenDunkel() = modell(platzrechte = true).let { m ->
+        fotoNach("plaetze-umsetzen-dunkel", dunkel = true, { Blatt(m, eigene) }) {
+            compose.onNodeWithText("Umsetzen").performScrollTo().performClick()
+        }
+    }
+
+    @Test
+    fun sperrungBearbeiten() = modell(platzrechte = true).let { m ->
+        fotoNach("plaetze-sperrung-bearbeiten", dunkel = false, { Blatt(m, Fenster.Bestehend(PlatzAttrappe.SPERRE, "Platz 3", PlatzAttrappe.TAG)) }) {
+            compose.onNodeWithText("Sperrung bearbeiten").performClick()
+        }
+    }
+
+    @Test
+    fun stattdessenSperren() = modell(platzrechte = true).let { m ->
+        fotoNach("plaetze-sperren", dunkel = false, { Blatt(m, buchen) }) {
+            compose.onNodeWithText("Stattdessen sperren").performScrollTo().performClick()
+        }
+    }
+
     // ---- Mitspielersuche mit Filter ------------------------------------------------------
 
     /** Zeichnet erst, dann wird im Blatt getippt, dann fotografiert. */
@@ -181,7 +219,7 @@ class PlaetzeBildschirmfotoTest {
             compose.waitForIdle()
             lkSchieber(100f, 160f)
             compose.onNodeWithText("Herren").performClick()
-            compose.onNodeWithText("Für wen", ignoreCase = true).performScrollTo()
+            compose.onNodeWithText("1 ist die beste, 25 die schwächste").performScrollTo()
         }
     }
 
@@ -204,7 +242,7 @@ class PlaetzeBildschirmfotoTest {
     @Test
     fun eigeneSucheHell() = modell().let { m ->
         fotoNach("plaetze-suchfilter-eigene-hell", dunkel = false, { Blatt(m, eigeneSucht) }) {
-            compose.onNodeWithText("Für wen", ignoreCase = true).performScrollTo()
+            compose.onNodeWithText("1 ist die beste, 25 die schwächste").performScrollTo()
         }
     }
 

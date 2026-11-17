@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.tcmuckensturm.app.bildschirme.Leise
+import de.tcmuckensturm.app.bildschirme.NebeneinanderOderUntereinander
 import de.tcmuckensturm.app.theme.TcmSchrift
 import de.tcmuckensturm.app.theme.TcmTheme
 import de.tcmuckensturm.app.ui.tokens.Radius
@@ -55,6 +56,7 @@ fun SuchfilterKarte(filter: Suchfilter, deaktiviert: Boolean = false, aendern: (
     Column(
         Modifier
             .fillMaxWidth()
+            .background(f.surf2, form)
             .border(1.dp, f.line, form)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -69,8 +71,19 @@ fun SuchfilterKarte(filter: Suchfilter, deaktiviert: Boolean = false, aendern: (
             )
         }
 
+        // Fuer wen: Alle, Damen, Herren.
+        Segmente("Für wen", SuchFuer.entries.map { Segment(it, it.label, aus = deaktiviert) }, filter.fuer, { aendern(filter.copy(fuer = it)) })
+
+        // Von und Bis nebeneinander (fein, je 0,1); der Schieber darunter fuer grob.
         Column {
-            Feldname("LK-Bereich", "1 ist die beste, 25 die schwächste")
+            NebeneinanderOderUntereinander(abstand = 12.dp) { breite ->
+                LkSchritt("Von", filter.von, aus = deaktiviert, kleiner = filter.von <= Suchfilter.MIN, groesser = filter.von >= filter.bis, breite) {
+                    aendern(filter.mitVon(it))
+                }
+                LkSchritt("Bis", filter.bis, aus = deaktiviert, kleiner = filter.bis <= filter.von, groesser = filter.bis >= Suchfilter.MAX, breite) {
+                    aendern(filter.mitBis(it))
+                }
+            }
             RangeSlider(
                 value = filter.von.toFloat()..filter.bis.toFloat(),
                 onValueChange = { r ->
@@ -85,21 +98,9 @@ fun SuchfilterKarte(filter: Suchfilter, deaktiviert: Boolean = false, aendern: (
                     activeTrackColor = f.blue,
                     inactiveTrackColor = f.surf3,
                 ),
-                modifier = Modifier.semantics { contentDescription = "LK-Bereich ${filter.bereichText}" },
+                modifier = Modifier.padding(top = 4.dp).semantics { contentDescription = "LK-Bereich ${filter.bereichText}" },
             )
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                LkSchritt("Von", filter.von, aus = deaktiviert, kleiner = filter.von <= Suchfilter.MIN, groesser = filter.von >= filter.bis) {
-                    aendern(filter.mitVon(it))
-                }
-                LkSchritt("Bis", filter.bis, aus = deaktiviert, kleiner = filter.bis <= filter.von, groesser = filter.bis >= Suchfilter.MAX) {
-                    aendern(filter.mitBis(it))
-                }
-            }
-        }
-
-        Column {
-            Feldname("Für wen")
-            Segmente("Für wen", SuchFuer.entries.map { Segment(it, it.label, aus = deaktiviert) }, filter.fuer, { aendern(filter.copy(fuer = it)) })
+            Leise("1 ist die beste, 25 die schwächste")
         }
 
         if (filter.lkBis != null) {
@@ -110,30 +111,17 @@ fun SuchfilterKarte(filter: Suchfilter, deaktiviert: Boolean = false, aendern: (
 
 /** Eine LK-Grenze mit Minus und Plus, je 0,1. */
 @Composable
-private fun LkSchritt(name: String, zehntel: Int, aus: Boolean, kleiner: Boolean, groesser: Boolean, wert: (Int) -> Unit) {
-    val f = TcmTheme.farben
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(f.surf2, RoundedCornerShape(Radius.feld))
-            .padding(4.dp)
-            .padding(start = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(name, style = TcmSchrift.text(Schrift.gewichtHalbfett, 15.sp), color = f.ink2, modifier = Modifier.weight(1f))
-        Rundknopf("$name LK 0,1 niedriger", aus = aus || kleiner, hintergrund = f.surf3, aktion = { wert(zehntel - 1) }) {
-            Text("−", style = TcmSchrift.display(Schrift.gewichtFett, 20.sp), color = f.ink)
-        }
-        Text(
-            lkGenau(zehntel),
-            style = TcmSchrift.display(Schrift.gewichtFett, 20.sp).copy(fontFeatureSettings = "tnum"),
-            color = f.ink,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.widthIn(min = 56.dp).semantics { contentDescription = "$name LK ${lkGenau(zehntel)}" },
-        )
-        Rundknopf("$name LK 0,1 höher", aus = aus || groesser, hintergrund = f.surf3, aktion = { wert(zehntel + 1) }) {
-            Icon(Icons.Filled.Add, contentDescription = null, tint = f.ink, modifier = Modifier.size(18.dp))
-        }
-    }
+private fun LkSchritt(name: String, zehntel: Int, aus: Boolean, kleiner: Boolean, groesser: Boolean, modifier: Modifier, wert: (Int) -> Unit) {
+    Schrittfeld(
+        name = "LK ${name.lowercase()}",
+        wert = lkGenau(zehntel),
+        wertLabel = "$name LK ${lkGenau(zehntel)}",
+        wenigerLabel = "$name LK 0,1 niedriger",
+        mehrLabel = "$name LK 0,1 höher",
+        wenigerAus = aus || kleiner,
+        mehrAus = aus || groesser,
+        weniger = { wert(zehntel - 1) },
+        mehr = { wert(zehntel + 1) },
+        modifier = modifier,
+    )
 }
