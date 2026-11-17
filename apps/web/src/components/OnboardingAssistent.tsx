@@ -104,36 +104,45 @@ export function OnboardingAssistent({
       : "Ein paar Angaben, dann kannst du loslegen.";
 
   return (
-    <AnmeldeBuehne titel={`${schritt.titel}.`} unterzeile={unterzeile} breit>
-      <div className="onboarding-kopf">
-        <span className="kicker">
-          {abgeschlossen ? "Optional" : "Konto einrichten"} · Schritt {position} von {sichtbar.length}
-        </span>
-        <AbmeldeKnopf alsText />
-      </div>
-
-      <ol className="onboarding-schritte" aria-label="Fortschritt">
-        {sichtbar.map((s) => {
-          const klasse = s.key === aktuell ? "aktuell" : s.erledigt ? "erledigt" : "";
-          const inhalt = (
-            <>
-              <span className="punkt" aria-hidden="true">{s.erledigt && s.key !== aktuell ? "✓" : ""}</span>
-              {s.titel}
-              {!s.pflicht && <small> (optional)</small>}
-            </>
-          );
-          return (
-            <li key={s.key} className={klasse} aria-current={s.key === aktuell ? "step" : undefined}>
-              {s.erreichbar && s.key !== aktuell ? (
-                <Link href={`/onboarding?schritt=${s.key}`}>{inhalt}</Link>
-              ) : (
-                <span>{inhalt}</span>
-              )}
-            </li>
-          );
-        })}
-      </ol>
-
+    <AnmeldeBuehne
+      titel={`${schritt.titel}.`}
+      unterzeile={unterzeile}
+      breit
+      vorspann={
+        /* Entwurf "Onboarding": Kicker mit dem Schritt, rechts Abmelden, darunter
+           der Fortschritt als schmale Leiste. Jedes Stück der Leiste ist ein
+           Schritt; erreichbare bleiben Links. */
+        <div className="onboarding-vorspann">
+          <div className="onboarding-kopf">
+            <span className="kicker">
+              {abgeschlossen ? "Optional" : "Konto einrichten"} · Schritt {position} von {sichtbar.length}
+            </span>
+            <AbmeldeKnopf alsText />
+          </div>
+          <ol className="onboarding-schritte" aria-label="Fortschritt">
+            {sichtbar.map((s) => {
+              const klasse = s.key === aktuell ? "aktuell" : s.erledigt ? "erledigt" : "";
+              const inhalt = (
+                <span className="sr-only">
+                  {s.titel}
+                  {!s.pflicht && " (optional)"}
+                  {s.erledigt && s.key !== aktuell && " – erledigt"}
+                </span>
+              );
+              return (
+                <li key={s.key} className={klasse} aria-current={s.key === aktuell ? "step" : undefined}>
+                  {s.erreichbar && s.key !== aktuell ? (
+                    <Link href={`/onboarding?schritt=${s.key}`} title={s.titel}>{inhalt}</Link>
+                  ) : (
+                    <span>{inhalt}</span>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      }
+    >
       {meldung && (
         <div className="hinweis fehler" role="alert">
           {meldung}
@@ -296,17 +305,21 @@ function Stammdaten({
         <Feld label="Vorname" required autoComplete="given-name" {...feld("first_name")} />
         <Feld label="Nachname" required autoComplete="family-name" {...feld("last_name")} />
         <Feld label="Geburtstag" type="date" required {...feld("birthday")} />
-        <label>
-          <span>Geschlecht</span>
-          <select required {...feld("gender")}>
-            <option value="" disabled>
-              Bitte wählen
-            </option>
-            <option value="female">weiblich</option>
-            <option value="male">männlich</option>
-            <option value="diverse">divers</option>
-          </select>
-        </label>
+        {/* Drei Möglichkeiten sind Pillen, kein Auswahlfeld (Entwurf "Deine Daten") */}
+        <fieldset className="segmente geschlecht">
+          <legend>Geschlecht</legend>
+          <div className="segment-leiste">
+            {([["female", "weiblich"], ["male", "männlich"], ["diverse", "divers"]] as const).map(([wert, text]) => (
+              <label key={wert} className="segment">
+                <input
+                  type="radio" name="gender" value={wert} required
+                  checked={d.gender === wert} onChange={() => setD({ ...d, gender: wert })}
+                />
+                <span>{text}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <Feld label="Mobil" type="tel" autoComplete="tel" {...feld("mobile")} />
         <Feld label="Festnetz" type="tel" {...feld("phone")} beschreibung="Eine der beiden Nummern genügt." />
         <Feld label="Straße und Hausnummer" required autoComplete="street-address" {...feld("street")} />
@@ -553,6 +566,8 @@ function Einwilligungen({
         <label key={m.code} className="schalter">
           <input
             type="checkbox"
+            role="switch"
+            className="schalter-feld"
             checked={gewaehlt.includes(m.code)}
             onChange={(e) => setGewaehlt(e.target.checked ? [...gewaehlt, m.code] : gewaehlt.filter((c) => c !== m.code))}
           />
@@ -605,6 +620,8 @@ function Tennis({
       <label className="schalter">
         <input
           type="checkbox"
+          role="switch"
+          className="schalter-feld"
           checked={d.mannschaft_interesse}
           onChange={(e) => setD({ ...d, mannschaft_interesse: e.target.checked })}
         />
@@ -627,17 +644,17 @@ function Einstellungen({
   const [wert, setWert] = useState(zustand.einstellungen.booking_mail ?? "alle");
   return (
     <Formular onSubmit={() => speichere(wert)}>
-      <label>
-        <span>E-Mails zu Buchungen</span>
-        <select value={wert} onChange={(e) => setWert(e.target.value)}>
-          {BUCHUNGSMAIL.map((b) => (
-            <option key={b.wert} value={b.wert}>
-              {b.label}
-            </option>
-          ))}
-        </select>
-        <span className="beschreibung">Etwa wenn ein Platz gesperrt oder du aus einem Spiel ausgetragen wirst.</span>
-      </label>
+      {/* Entwurf "App-Einstellungen": jede Möglichkeit eine Karte, die gewählte hellblau */}
+      <fieldset className="segmente wahlkarten" aria-describedby="onb-mail-hinweis">
+        <legend>E-Mails zu Buchungen</legend>
+        {BUCHUNGSMAIL.map((b) => (
+          <label key={b.wert} className="wahlkarte">
+            <span>{b.label}</span>
+            <input type="radio" name="booking_mail" value={b.wert} checked={wert === b.wert} onChange={() => setWert(b.wert)} />
+          </label>
+        ))}
+        <p className="beschreibung" id="onb-mail-hinweis">Etwa wenn ein Platz gesperrt oder du aus einem Spiel ausgetragen wirst.</p>
+      </fieldset>
       <p className="beschreibung">
         Push-Nachrichten schaltest du in der App unter „Konto“ ein, sobald du dich dort anmeldest.
       </p>

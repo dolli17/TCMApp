@@ -109,7 +109,7 @@ export function VeranstaltungsFormular({
       <section className="karte gross abschnitt" aria-labelledby="h-anm">
         <h2 id="h-anm" className="dpl">Anmeldung</h2>
         <label className="schalter">
-          <input type="checkbox" checked={f.anmeldung} onChange={(e) => setze("anmeldung", e.target.checked)} />
+          <input type="checkbox" role="switch" className="schalter-feld" checked={f.anmeldung} onChange={(e) => setze("anmeldung", e.target.checked)} />
           <span>Mitglieder melden sich an</span>
         </label>
         {f.anmeldung && (
@@ -130,7 +130,7 @@ export function VeranstaltungsFormular({
               </label>
             </div>
             <label className="schalter">
-              <input type="checkbox" checked={f.begleitung} onChange={(e) => setze("begleitung", e.target.checked)} />
+              <input type="checkbox" role="switch" className="schalter-feld" checked={f.begleitung} onChange={(e) => setze("begleitung", e.target.checked)} />
               <span>Begleitpersonen erlaubt</span>
             </label>
             <p className="hinweis">
@@ -160,7 +160,7 @@ export function VeranstaltungsFormular({
         {f.anmeldung ? (
           <>
             <label className="schalter">
-              <input type="checkbox" checked={f.gebuehr} onChange={(e) => setze("gebuehr", e.target.checked)} />
+              <input type="checkbox" role="switch" className="schalter-feld" checked={f.gebuehr} onChange={(e) => setze("gebuehr", e.target.checked)} />
               <span>Es wird eine Gebühr fällig</span>
             </label>
             {f.gebuehr && (
@@ -184,7 +184,7 @@ export function VeranstaltungsFormular({
 
       {entwurf ? (
         <label className="schalter">
-          <input type="checkbox" checked={benachrichtigen} onChange={(e) => setBenachrichtigen(e.target.checked)} />
+          <input type="checkbox" role="switch" className="schalter-feld" checked={benachrichtigen} onChange={(e) => setBenachrichtigen(e.target.checked)} />
           <span>Mitglieder beim Veröffentlichen benachrichtigen</span>
         </label>
       ) : (

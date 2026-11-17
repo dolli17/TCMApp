@@ -14,6 +14,8 @@ export interface Feld {
   /** Nur bei art: "auswahl". */
   optionen?: { wert: string; label: string }[];
   breit?: boolean;
+  /** Teilt sich die Zeile mit dem Nachbarfeld (Vorname | Nachname, PLZ | Ort). */
+  halb?: boolean;
   /** Nur bei den eigenen Daten; fremde Datensätze füllt der Browser nicht aus. */
   autoComplete?: string;
 }
@@ -30,6 +32,10 @@ interface Props {
   gesperrtGrund?: string;
   /** Den Titel nur als Namen der Karte führen, wenn die Seite ihn schon als Überschrift trägt. */
   ohneTitel?: boolean;
+  /** Die eine Hauptaktion der Seite: "Speichern" kräftig blau über die volle Breite (Konto). */
+  hauptaktion?: boolean;
+  /** Nur Schalter: jede Änderung wird sofort gespeichert, ein Knopf entfällt. */
+  sofort?: boolean;
 }
 
 function eingabetyp(art: FeldArt): string {
@@ -91,7 +97,29 @@ export function Stammdatenkarte(props: Props) {
           {props.felder.map((f) => {
             const wert = alsText(f.wert);
             return (
-              <label key={f.name} className={f.breit ? "breit" : undefined}>
+              f.art === "schalter" ? (
+                /* Ja/Nein ist ein Schalter: Text links, Schalter rechts (docs/design/stitch) */
+                <label key={f.name} className="schalter-zeile breit">
+                  <span className="text">
+                    <b>{f.label}</b>
+                    {f.hinweis && <small>{f.hinweis}</small>}
+                  </span>
+                  {/* Ein ausgeschalteter Schalter schickt gar nichts mit. Das
+                      Begleitfeld sagt dem Server Action, dass es ihn gibt. */}
+                  <input type="hidden" name={`schalter:${f.name}`} value="1" />
+                  <input
+                    type="checkbox"
+                    role="switch"
+                    className="schalter-feld"
+                    name={`wert:${f.name}`}
+                    defaultChecked={wert === "true"}
+                    disabled={props.gesperrt || (props.sofort && laeuft)}
+                    onChange={props.sofort ? (e) => e.currentTarget.form?.requestSubmit() : undefined}
+                  />
+                  <input type="hidden" name={`alt:${f.name}`} value={wert} />
+                </label>
+              ) : (
+              <label key={f.name} className={f.breit ? "breit" : f.halb ? "halb" : undefined}>
                 <span>{f.label}</span>
 
                 {f.art === "auswahl" ? (
@@ -102,20 +130,6 @@ export function Stammdatenkarte(props: Props) {
                       </option>
                     ))}
                   </select>
-                ) : f.art === "schalter" ? (
-                  <>
-                    {/* Ein nicht angehaktes Kästchen schickt gar nichts mit.
-                        Das Begleitfeld sagt dem Server Action, dass es diesen
-                        Schalter überhaupt gibt. */}
-                    <input type="hidden" name={`schalter:${f.name}`} value="1" />
-                    <input
-                      type="checkbox"
-                      name={`wert:${f.name}`}
-                      defaultChecked={wert === "true"}
-                      disabled={props.gesperrt}
-                      style={{ width: "auto" }}
-                    />
-                  </>
                 ) : (
                   <input
                     type={eingabetyp(f.art)}
@@ -129,6 +143,7 @@ export function Stammdatenkarte(props: Props) {
                 {f.hinweis && <span className="beschreibung">{f.hinweis}</span>}
                 <input type="hidden" name={`alt:${f.name}`} value={wert} />
               </label>
+              )
             );
           })}
         </div>
@@ -141,8 +156,8 @@ export function Stammdatenkarte(props: Props) {
           </div>
         )}
 
-        {!props.gesperrt && (
-          <button className="knopf" disabled={laeuft}>
+        {!props.gesperrt && !props.sofort && (
+          <button className={props.hauptaktion ? "knopf haupt gross block" : "knopf"} disabled={laeuft}>
             {laeuft ? "Wird gespeichert…" : "Speichern"}
           </button>
         )}

@@ -42,8 +42,13 @@ const PFLICHT: { name: string; leer: string }[] = [
 function pruefe(form: HTMLFormElement): Record<string, string> {
   const fehler: Record<string, string> = {};
   for (const f of PFLICHT) {
+    // Bei der Geschlechtswahl ist es eine Gruppe von Radioknöpfen; auch sie hat `value`.
     const feld = form.elements.namedItem(f.name) as HTMLInputElement | HTMLSelectElement | null;
     if (!feld) continue;
+    if (feld instanceof RadioNodeList) {
+      if (!feld.value) fehler[f.name] = f.leer;
+      continue;
+    }
     if (!feld.value.trim()) fehler[f.name] = f.leer;
     else if (f.name === "email" && feld.validity.typeMismatch) {
       fehler[f.name] = "Diese E-Mail-Adresse stimmt nicht – bitte prüfen, etwa name@beispiel.de.";
@@ -72,7 +77,8 @@ export function Antragsformular({ optionen }: { optionen: FormularOption[] }) {
     setFehler(neu);
     const erstes = PFLICHT.find((f) => neu[f.name]);
     if (erstes) {
-      (form.elements.namedItem(erstes.name) as HTMLElement | null)?.focus();
+      const ziel = form.elements.namedItem(erstes.name);
+      ((ziel instanceof RadioNodeList ? ziel[0] : ziel) as HTMLElement | null)?.focus();
       return;
     }
     const fd = new FormData(form);
@@ -135,14 +141,14 @@ export function Antragsformular({ optionen }: { optionen: FormularOption[] }) {
       {/* Der Fehler steht neben dem label, nicht darin: sonst wäre er Teil
           des Feldnamens und würde zweimal vorgelesen. */}
       <div className="formraster">
-        <div className="feld">
+        <div className="feld halb">
           <label>
             <span>Vorname</span>
             <input {...pflicht("first_name")} autoComplete="given-name" />
           </label>
           {fehlerText("first_name")}
         </div>
-        <div className="feld">
+        <div className="feld halb">
           <label>
             <span>Nachname</span>
             <input {...pflicht("last_name")} autoComplete="family-name" />
@@ -156,18 +162,23 @@ export function Antragsformular({ optionen }: { optionen: FormularOption[] }) {
           </label>
           {fehlerText("birthday")}
         </div>
+        {/* Drei Möglichkeiten sind Pillen, kein Auswahlfeld (Entwurf "Antrag") */}
         <div className="feld">
-          <label>
-            <span>Geschlecht</span>
-            <select {...pflicht("gender")} defaultValue="">
-              <option value="" disabled>
-                Bitte wählen
-              </option>
-              <option value="female">weiblich</option>
-              <option value="male">männlich</option>
-              <option value="diverse">divers</option>
-            </select>
-          </label>
+          <fieldset
+            className="segmente geschlecht"
+            aria-invalid={fehler.gender ? true : undefined}
+            aria-describedby={fehler.gender ? "antrag-gender-fehler" : undefined}
+          >
+            <legend>Geschlecht</legend>
+            <div className="segment-leiste">
+              {([["female", "weiblich"], ["male", "männlich"], ["diverse", "divers"]] as const).map(([wert, text]) => (
+                <label key={wert} className="segment">
+                  <input type="radio" name="gender" value={wert} required />
+                  <span>{text}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
           {fehlerText("gender")}
         </div>
         <div className="feld">

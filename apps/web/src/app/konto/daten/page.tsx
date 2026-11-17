@@ -22,14 +22,14 @@ export default async function MeineDatenSeite() {
 
   const felder: Feld[] = ich
     ? [
-        { name: "first_name", label: "Vorname", art: "text", wert: ich.first_name, autoComplete: "given-name" },
-        { name: "last_name", label: "Nachname", art: "text", wert: ich.last_name, autoComplete: "family-name" },
+        { name: "first_name", halb: true, label: "Vorname", art: "text", wert: ich.first_name, autoComplete: "given-name" },
+        { name: "last_name", halb: true, label: "Nachname", art: "text", wert: ich.last_name, autoComplete: "family-name" },
         { name: "title", label: "Titel", art: "text", wert: ich.title, autoComplete: "honorific-prefix" },
         { name: "phone", label: "Telefon", art: "tel", wert: ich.phone, autoComplete: "home tel" },
         { name: "mobile", label: "Mobil", art: "tel", wert: ich.mobile, autoComplete: "mobile tel" },
         { name: "street", label: "Straße und Hausnummer", art: "text", wert: ich.street, breit: true, autoComplete: "street-address" },
-        { name: "postcode", label: "PLZ", art: "text", wert: ich.postcode, autoComplete: "postal-code" },
-        { name: "city", label: "Ort", art: "text", wert: ich.city, autoComplete: "address-level2" },
+        { name: "postcode", halb: true, label: "PLZ", art: "text", wert: ich.postcode, autoComplete: "postal-code" },
+        { name: "city", halb: true, label: "Ort", art: "text", wert: ich.city, autoComplete: "address-level2" },
       ]
     : [];
 
@@ -42,6 +42,7 @@ export default async function MeineDatenSeite() {
         <Stammdatenkarte
           titel="Meine Daten"
           ohneTitel
+          hauptaktion
           felder={felder}
           aktion={eigeneDatenSpeichern}
         />

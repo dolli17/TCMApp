@@ -40,8 +40,8 @@ export default async function TennisSeite() {
 
   const felder: Feld[] = tennis
     ? [
-        { name: "tennis_lk", label: LK_FELD_LABEL, art: "text", wert: tennis.tennis_lk, hinweis: LK_FELD_HINWEIS },
-        { name: "nuliga_id", label: "nuLiga-ID", art: "text", wert: tennis.nuliga_id },
+        { name: "tennis_lk", halb: true, label: LK_FELD_LABEL, art: "text", wert: tennis.tennis_lk, hinweis: LK_FELD_HINWEIS },
+        { name: "nuliga_id", halb: true, label: "nuLiga-ID", art: "text", wert: tennis.nuliga_id },
         {
           name: "mannschaft_interesse",
           label: MANNSCHAFT_INTERESSE_TEXT,
@@ -60,21 +60,28 @@ export default async function TennisSeite() {
       )}
       {tennis && (
         <>
-          <p className="beschreibung" data-testid="tennis-stand">
-            Aktuell: {tennisKurzfassung(tennis)}
+          {/* Entwurf "Tennis": der Stand groß in einer Karte, darunter die Felder */}
+          <p className="karte stand-karte" data-testid="tennis-stand">
+            <span className="kicker">Aktuell: </span>
+            <b className="dpl">{tennisKurzfassung(tennis)}</b>
           </p>
-          <Stammdatenkarte titel="Tennis" ohneTitel felder={felder} aktion={tennisAngabenSpeichern} />
+          <Stammdatenkarte titel="Tennis" ohneTitel hauptaktion felder={felder} aktion={tennisAngabenSpeichern} />
         </>
       )}
       {mannschaft && (
         <>
-          <p className="beschreibung">
-            Mannschaft: {mannschaft.name}
-            {mannschaft.ich_bin_mf ? " · Mannschaftsführer" : ""}.{" "}
-            <Link href="/konto/mannschaft">Zur Mannschaft</Link>
+          <div className="karte mannschaft-box">
+          <p className="kopf">
+            <b className="dpl">
+              Mannschaft: {mannschaft.name}
+              {mannschaft.ich_bin_mf ? " · Mannschaftsführer" : ""}.
+            </b>{" "}
+            <Link href="/konto/mannschaft" className="textknopf">Zur Mannschaft</Link>
           </p>
           <Stammdatenkarte
             titel="Mannschaft"
+            ohneTitel
+            sofort
             felder={[
               {
                 name: "team_phone_visible",
@@ -87,6 +94,7 @@ export default async function TennisSeite() {
             ]}
             aktion={telefonFreigabeSpeichern}
           />
+          </div>
         </>
       )}
     </KontoUnterseite>

@@ -37,12 +37,15 @@ export function BestaetigterKnopf({
   bestaetigen,
   aktion,
   leise = true,
+  rot = false,
 }: {
   label: string;
   frage: string;
   bestaetigen: string;
   aktion: () => Promise<AktionsErgebnis>;
   leise?: boolean;
+  /** Als roter Textknopf rechts in der Zeile (Entwurf "Mannschaft"). */
+  rot?: boolean;
 }) {
   const melden = useContext(MeldungKontext);
   const [offen, setOffen] = useState(false);
@@ -50,7 +53,7 @@ export function BestaetigterKnopf({
 
   if (!offen) {
     return (
-      <button type="button" className={`knopf klein${leise ? " leise" : ""}`} onClick={() => setOffen(true)}>
+      <button type="button" className={rot ? "leise-rot" : `knopf klein${leise ? " leise" : ""}`} onClick={() => setOffen(true)}>
         {label}
       </button>
     );
@@ -88,18 +91,20 @@ export function AktionsKnopf({
   aktion,
   gesperrt,
   leise = false,
+  rot = false,
 }: {
   label: string;
   aktion: () => Promise<AktionsErgebnis>;
   gesperrt?: boolean;
   leise?: boolean;
+  rot?: boolean;
 }) {
   const melden = useContext(MeldungKontext);
   const [laeuft, starte] = useTransition();
   return (
     <button
       type="button"
-      className={`knopf klein${leise ? " leise" : ""}`}
+      className={rot ? "leise-rot" : `knopf klein${leise ? " leise" : ""}`}
       disabled={laeuft || gesperrt}
       onClick={() =>
         starte(async () => {
@@ -167,7 +172,7 @@ export function EinladungAntwort({ einladung }: { einladung: MeineMannschaftsEin
     <div className="mannschaft-antwort" role="group" aria-label={`Einladung in ${einladung.team_name} annehmen`}>
       {hinweis && <p className="hinweis">{hinweis.text}</p>}
       <label className="mannschaft-haken" htmlFor={kaestchen}>
-        <input id={kaestchen} type="checkbox" checked={telefon} onChange={(e) => setTelefon(e.target.checked)} />
+        <input id={kaestchen} type="checkbox" role="switch" className="schalter-feld" checked={telefon} onChange={(e) => setTelefon(e.target.checked)} />
         <span>
           {MANNSCHAFT_TEXT.telefonZustimmung}
           <small>{MANNSCHAFT_TEXT.telefonZustimmungHinweis}</small>

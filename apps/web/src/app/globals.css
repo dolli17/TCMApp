@@ -232,13 +232,28 @@ label > span {
   display: block; font-size: 15px; font-weight: 600;
   color: var(--ink-2); margin-bottom: 7px;
 }
+/* Feldnamen sind Kicker über dem Feld (docs/design/stitch, alle Formulare):
+   Space Grotesk, Versalien, 12 px. Nicht bei Häkchen und Schaltern - dort ist
+   der Text die Aussage selbst. :where hält die Regel so schwach wie die oben. */
+label:where(:not(:has(> input[type="checkbox"], > input[type="radio"]))) > span:first-child {
+  font-family: var(--font-display); font-size: var(--font-size-kicker); font-weight: 700;
+  letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
 label > span.beschreibung { font-size: 14px; font-weight: 400; margin: 6px 0 0; }
 input, select, textarea {
   font: inherit; width: 100%;
-  background: var(--surf); color: var(--ink);
+  background: var(--surf-2); color: var(--ink);
   border: 1.5px solid var(--rahmen); border-radius: var(--radius-feld);
-  padding: 13px 14px;
+  padding: 13px 18px;
 }
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select) { min-height: 52px; }
+select { appearance: none; -webkit-appearance: none; padding-right: 44px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23596A7D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 16px center; background-size: 20px; }
+select[multiple] { background-image: none; padding-right: 18px; }
+/* Zwei oder drei Felder nebeneinander (Entwurf: Vorname | Nachname, Von | Bis) */
+.feldreihe { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 12px; }
+.feldreihe > :is(label, .feld) { margin-bottom: 0; }
 /* Fokus: der Rand wird kräftig blau, der Hof darum hebt ihn ab. Nur der
    Hof in blue-soft war auf hellem Grund kaum zu sehen (U47). */
 textarea, select[multiple] { border-radius: 20px; }
@@ -352,12 +367,18 @@ body:has(.eintragen-leiste) .toast-ort {
 /* Ein Ladefehler (components/Fehlerzustand.tsx): nicht wie "nichts da",
    sondern mit Grund und "Erneut versuchen". */
 .fehlerzustand {
-  margin: var(--space-l) auto; max-width: 520px; padding: 20px;
-  border-radius: var(--radius-karte); background: var(--surf);
-  border: 1.5px solid color-mix(in srgb, var(--red) 35%, var(--line));
-  text-align: center; color: var(--ink-2);
+  margin: 12vh auto var(--space-l); max-width: 520px; padding: 20px;
+  display: grid; justify-items: center; text-align: center; color: var(--ink-2);
 }
+.fehlerzustand .symbolkreis { width: 60px; height: 60px; border-radius: 30px; margin-bottom: 18px; background: var(--chip); color: var(--ink-2); }
+.fehlerzustand .symbolkreis svg { width: 28px; height: 28px; }
 .fehlerzustand p { margin: 0 0 12px; }
+.fehlerzustand .knopf { margin-top: 12px; min-width: 220px; }
+.fehlerzustand.kompakt {
+  display: block; border-radius: var(--radius-karte); background: var(--surf);
+  border: 1.5px solid color-mix(in srgb, var(--red) 35%, var(--line));
+}
+.fehlerzustand.kompakt .knopf { margin-top: 0; min-width: 0; }
 .fehlerzustand .titel { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--ink); }
 .fehlerzustand.kompakt { margin: 12px 0; max-width: none; padding: 14px 16px; text-align: left; }
 .fehlerzustand.kompakt .titel { font-size: 16px; margin-bottom: 4px; }
@@ -460,7 +481,7 @@ table.liste .zahl {
 .nachrichtenliste li + li { border-top: 1px solid var(--line); }
 .nachrichtenliste li.neu { background: var(--blue-soft); }
 .nachrichtenliste .symbol {
-  width: 40px; height: 40px; border-radius: 12px; flex: 0 0 auto;
+  width: 40px; height: 40px; border-radius: 20px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--surf-2); color: var(--ink-2);
 }
@@ -468,7 +489,18 @@ table.liste .zahl {
 .nachrichtenliste .symbol svg { width: 20px; height: 20px; }
 .nachrichtenliste .text { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .nachrichtenliste .titelzeile { display: flex; justify-content: space-between; gap: 8px; }
-.nachrichtenliste strong { font-size: 15px; }
+.nachrichtenliste strong { font-family: var(--font-display); font-size: 15.5px; font-weight: 600; }
+/* Ungelesen: ein Punkt vor dem Titel, zusätzlich zur hellblauen Zeile */
+.nachrichtenliste li.neu strong::before {
+  content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 4px; margin-right: 8px;
+  background: var(--blue); vertical-align: 2px;
+}
+.nachrichtengruppe > .kicker { font-size: 11px; }
+.blatt.nachrichten .fenster-kopf > .textknopf { margin-left: auto; align-self: center; white-space: nowrap; }
+.blatt.nachrichten .fenster-kopf > .textknopf + .fenster-zu { margin-left: 0; }
+.blatt.nachrichten .fenster-kopf h2 { font-size: 26px; overflow-wrap: anywhere; }
+.blatt.nachrichten .fenster-inhalt { display: block; }
+@media (max-width: 767px) { dialog.fenster.blatt.nachrichten { min-height: 72dvh; } }
 .nachrichtenliste small { flex: 0 0 auto; font-size: 12px; color: var(--muted); }
 .nachrichtenliste .body { font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
 .fenster-kopf > .knopf { align-self: center; margin-left: auto; white-space: nowrap; }
@@ -961,6 +993,9 @@ a.heute-karte:hover { text-decoration: none; border-color: var(--line-2); }
   font-size: 15px; font-weight: 600; color: var(--muted); text-decoration: none;
 }
 .segtoggle a:hover { text-decoration: none; color: var(--ink); }
+@media (min-width: 360px) and (max-width: 767px) {
+  .segtoggle.plan-segmente a { font-size: 14px; padding: 0 6px; white-space: nowrap; }
+}
 .segtoggle a[aria-current="page"] {
   background: var(--seg-aktiv); color: var(--ink); font-weight: 700; box-shadow: var(--shadow-sm);
 }
@@ -1113,6 +1148,29 @@ button.beleg:hover, button.beleg:focus-visible {
 }
 
 /* --- Spiele --------------------------------------------------------------- */
+/* Entwurf "Meine & offene Spiele": je Termin eine Karte - Zeit groß, Marke
+   rechts, eine Zeile wo und mit wem, im Fuß hinter einer Linie die Handlung. */
+.sectionlabel { align-items: baseline; gap: 12px; }
+.sectionlabel .neben { font-size: 13.5px; color: var(--muted); }
+.sectionlabel .kicker { font-size: 11px; }
+.terminliste { gap: 12px; }
+.spiel-karte { display: grid; gap: 6px; padding: 20px 22px 8px; box-shadow: none; }
+.spiel-karte .kopf { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.spiel-karte .zeit { font-size: 28px; font-weight: 700; letter-spacing: -.6px; line-height: 1.1; }
+.spiel-karte .wo { margin: 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.spiel-karte .wo strong { color: var(--ink); font-weight: 600; }
+.spiel-karte .hinweis { margin: 6px 0 0; }
+.spiel-karte .fuss {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  min-height: 52px; margin-top: 10px; padding: 4px 0; border-top: 1px solid var(--line);
+}
+.spiel-karte .fuss .mit { font-size: 13px; color: var(--muted); }
+.spiel-karte .fuss .leise-rot { font-family: var(--font-display); font-size: 15px; font-weight: 600; padding: 0; }
+.spiel-karte .fuss .knopf-paar { flex: 1; padding: 6px 0 8px; }
+.spiel-karte .fuss .knopf-paar .knopf { min-height: 44px; }
+.terminliste .offen-karte { align-items: flex-start; }
+.offen-karte .text strong { font-size: 15px; font-weight: 600; }
+
 .spiele-abschnitt .sectionlabel { margin-top: var(--space-l); }
 .spiele-abschnitt + .spiele-abschnitt .sectionlabel { margin-top: var(--space-abschnitt); }
 
@@ -1139,8 +1197,62 @@ dialog.fenster.blatt.breit { width: min(680px, calc(100vw - 24px)); }
 .blatt .fenster-inhalt > label { margin-bottom: 0; }
 .blatt .sperrbereich { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 18px; gap: 10px; }
 .blatt .sperrbereich .fenster-fuss { border-top: 0; padding-top: 0; margin-top: 0; }
-.blatt-unterzeile { margin: -6px 0 0; font-weight: 600; }
-.gesucht-text { margin: 0; font-size: 13px; font-weight: 700; color: var(--blue-ink); }
+.blatt-titel { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.sucht-pille {
+  display: inline-flex; align-items: center; min-height: 26px; padding: 0 12px; border-radius: 99px;
+  background: var(--blue-soft); color: var(--blue-ink); border: 1px solid color-mix(in srgb, var(--blue) 22%, transparent);
+  font-family: var(--font-display); font-size: 12.5px; font-weight: 600; white-space: nowrap;
+}
+/* Eine Zeile mit Symbol: Spielform und Bucher, das neue Ziel beim Umsetzen */
+.blatt-info {
+  display: flex; align-items: center; gap: 12px; margin: 0; padding: 12px 16px;
+  border-radius: var(--radius-karte); background: var(--surf-2); border: 1px solid var(--line);
+  font-family: var(--font-display); font-size: 15.5px; font-weight: 600; color: var(--ink);
+}
+.blatt-info p { margin: 0; font-family: var(--font-text); font-size: 14.5px; font-weight: 400; line-height: 1.45; color: var(--ink-2); }
+.blatt-info p b { color: var(--ink); font-weight: 600; }
+.symbolkreis {
+  width: 40px; height: 40px; border-radius: 20px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--blue-soft); color: var(--blue-ink);
+}
+.symbolkreis svg { width: 20px; height: 20px; }
+/* Eine Zeile, die weiterführt: "Umsetzen" */
+.blatt-zeile {
+  display: flex; align-items: center; gap: 14px; width: 100%; min-height: 76px; padding: 12px 16px;
+  border-radius: var(--radius-karte); background: var(--surf-2); border: 1px solid var(--line);
+  font: inherit; text-align: left; color: var(--ink); cursor: pointer;
+}
+.blatt-zeile:hover { border-color: var(--line-2); }
+.blatt-zeile:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.blatt-zeile .text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.blatt-zeile b { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+.blatt-zeile small { font-size: 14px; color: var(--ink-2); }
+.blatt-zeile .pfeil { width: 20px; height: 20px; flex: 0 0 auto; color: var(--muted); }
+.gesucht-text { display: flex; align-items: flex-start; gap: 8px; margin: -6px 2px 0; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
+.gesucht-text svg { width: 18px; height: 18px; flex: 0 0 auto; margin-top: 1px; }
+/* Zwei Knöpfe nebeneinander im Fuß: die Entscheidung und "Doch nicht" */
+.knopf-paar { display: flex; gap: 10px; }
+.knopf-paar .knopf { flex: 1 1 auto; min-width: 0; min-height: 56px; padding: 0 14px; text-align: center; }
+/* Zerstörendes vor der Rückfrage: roter Text mit Symbol, keine Fläche */
+.gefahr-link {
+  justify-self: center; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px;
+  border: 0; border-radius: 99px; background: transparent; cursor: pointer;
+  font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--red-ink);
+}
+.gefahr-link svg { width: 20px; height: 20px; }
+.gefahr-link:hover { background: color-mix(in srgb, var(--red) 8%, transparent); }
+.gefahr-link:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.gefahr-link:disabled { opacity: .5; cursor: not-allowed; }
+.textknopf {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; border: 0; border-radius: 10px;
+  background: transparent; cursor: pointer; text-decoration: none;
+  font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--blue-ink);
+}
+.textknopf:hover { text-decoration: underline; }
+.textknopf:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.blatt .sperrbereich { justify-items: center; }
+.blatt .fenster-inhalt > .hinweis { margin: 0; }
 
 /* Abschnitte im Blatt (Entwurf "Platz buchen"): Kicker als Überschrift,
    darunter gleich breite Pillen - gewählt hellblau mit blauem Rand. */
@@ -1158,15 +1270,25 @@ fieldset.segmente legend, .mitspieler .feldname, fieldset.suchfilter legend {
   font-family: var(--font-display); font-size: 16px; font-weight: 500; color: var(--ink); cursor: pointer; margin: 0;
 }
 .segment input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
-.segment span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
+.segment span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; margin: 0; font: inherit; color: inherit; }
 .segment:has(input:checked) { font-weight: 600; }
 .segment:has(input:disabled) { opacity: .4; cursor: not-allowed; }
 .segment:has(input:disabled) input { cursor: not-allowed; }
 .segment:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 2px; }
 /* Beim Umsetzen koennen es zwanzig Startzeiten sein: sie brechen um, statt
    in eine Leiste gequetscht zu werden. */
-.umsetz-zeiten .segment-leiste { flex-wrap: wrap; }
-.umsetz-zeiten .segment { flex: 0 0 auto; min-width: 64px; }
+.umsetz-zeiten .segment-leiste { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.umsetz-plaetze .segment-leiste { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+:is(.umsetz-zeiten, .umsetz-plaetze) .segment { height: 48px; font-size: 15px; font-weight: 600; }
+/* Tage als hohe Pillen wie die Tagesleiste des Plans; der gewählte Tag kräftig blau */
+.tage-leiste { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 3px; margin: -3px; }
+.tage-leiste::-webkit-scrollbar { display: none; }
+.segment.tag { flex: 0 0 58px; height: 72px; }
+.segment.tag span { display: grid; justify-items: center; gap: 3px; padding: 0; }
+.segment.tag small { font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.segment.tag b { font-size: 18px; font-weight: 600; line-height: 1; }
+body .segment.tag:has(input:checked) { background: var(--blue); color: var(--on-brand); border-color: transparent; box-shadow: none; }
+.segment.tag:has(input:checked) small { color: inherit; }
 
 .mitspieler .feldname .umfang { font-weight: 500; }
 .chips, .marken { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -1189,6 +1311,20 @@ li.chip { padding-right: 4px; }
 }
 .chip button:hover { background: var(--surf-3); }
 .chips { margin-bottom: 10px; }
+/* Blatt "Eigenes Spiel": jede Person eine Zeile mit Avatar, freie Plätze gestrichelt */
+.mitspieler.zeilen .chips, .mitspieler.zeilen .marken { display: grid; gap: 10px; }
+.mitspieler.zeilen .chip {
+  height: auto; min-height: 64px; padding: 0 10px 0 16px; gap: 12px; border-radius: var(--radius-karte);
+  font-size: 16px; font-weight: 600;
+}
+.mitspieler.zeilen .chip .avatar { width: 40px; height: 40px; border-radius: 20px; font-size: 13px; }
+.mitspieler.zeilen .chip .name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.mitspieler.zeilen .chip button { width: 44px; height: 44px; border-radius: 22px; flex: 0 0 auto; color: var(--muted); }
+.mitspieler.zeilen .chip.leer .avatar { border: 1.5px dashed var(--line-2); color: var(--muted); }
+.mitspieler.zeilen .chip.leer .avatar svg { width: 20px; height: 20px; }
+.mitspieler.zeilen .chip.leer .name { font-style: italic; font-weight: 500; text-align: left; }
+.mitspieler.zeilen .suche input { background: var(--surf); }
+.mitspieler.zeilen > .chips:last-child { margin-bottom: 0; }
 .mitspieler .suche { position: relative; }
 .mitspieler .suche .lupe { position: absolute; left: 18px; top: 17px; width: 20px; height: 20px; color: var(--muted); pointer-events: none; }
 .mitspieler .suche input {
@@ -1223,7 +1359,7 @@ fieldset.suchfilter { border: 0; padding: 0; margin: 0; min-width: 0; display: g
 .suchfilter-block { display: grid; gap: 10px; justify-items: start; }
 .suchfilter-block > fieldset { justify-self: stretch; }
 .offen-filter { font-weight: 700; color: var(--blue-ink); }
-.gesucht-karte small { font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.gesucht-karte small { font-size: 14px; font-weight: 400; line-height: 1.5; color: var(--ink-2); }
 .schalter-feld {
   appearance: none; -webkit-appearance: none; position: relative; flex: 0 0 auto;
   width: 52px; height: 32px; margin: 0; border-radius: 16px; cursor: pointer;
@@ -1240,6 +1376,12 @@ fieldset.suchfilter { border: 0; padding: 0; margin: 0; min-width: 0; display: g
 .schalter-feld:disabled { opacity: .5; cursor: not-allowed; }
 
 .blatt-fuss { display: grid; gap: 10px; border-top: 1px solid var(--line); margin: 4px -20px 0; padding: 16px 20px 0; }
+/* Der Fuß bleibt stehen, der Inhalt läuft darunter durch (Entwürfe der Blätter).
+   Der negative Rand zieht ihn über das Polster des Blatts, wie .haftend. */
+.blatt .blatt-fuss {
+  position: sticky; bottom: -22px; z-index: 2; background: var(--surf);
+  margin-bottom: -22px; padding-bottom: 22px;
+}
 .blatt-fuss .hinweis { margin: 0; }
 /* Der nächste Schritt über dem gesperrten Knopf: in Schrift, nicht im
    Grau des Knopfs, damit klar ist, was fehlt (U65). */
@@ -1263,7 +1405,7 @@ fieldset.suchfilter { border: 0; padding: 0; margin: 0; min-width: 0; display: g
     animation: blatt-rein .26s cubic-bezier(.2, .8, .3, 1);
   }
   .blatt .griff { display: block; width: 38px; height: 5px; border-radius: 3px; background: var(--line-2); margin: 0 auto 6px; }
-  .blatt .fenster-fuss.haftend {
+  .blatt .fenster-fuss.haftend, .blatt .blatt-fuss {
     bottom: calc(-22px - env(safe-area-inset-bottom));
     margin-bottom: calc(-22px - env(safe-area-inset-bottom));
     padding-bottom: calc(22px + env(safe-area-inset-bottom));
@@ -1528,6 +1670,101 @@ details.frueher .gruppe { margin-top: 8px; }
 .erscheinungsbild p { margin: 0 0 10px; font-size: 15.5px; font-weight: 600; }
 .erscheinungsbild .segtoggle { margin: 0; }
 
+/* Entwurf "Konto" */
+.konto-kopf { margin-bottom: 4px; }
+.konto-kopf .pagetitle { margin-top: 4px; }
+.profilkopf .avatar.gross { width: 76px; height: 76px; border-radius: 38px; font-size: 24px; font-weight: 700; border: 1px solid color-mix(in srgb, var(--blue) 22%, transparent); }
+.profilkopf h1 { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -.3px; margin-top: 12px; }
+.profil-marken span { background: var(--chip); border: 1px solid var(--line); }
+.gruppe.forderungen, .gruppe.einstellungen-liste { box-shadow: none; }
+.forderung .was { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.forderung .was b { font-family: var(--font-display); }
+.forderung .was small { flex-basis: 100%; order: 3; }
+.forderung .betrag, .forderungen .summe .betrag { font-size: 17px; }
+.forderungen .summe { background: transparent; }
+.forderungen .summe span:first-child { font-family: var(--font-display); font-size: 15.5px; color: var(--ink); }
+.arbeitsdienst-karte { box-shadow: none; padding: 20px 22px; }
+.arbeitsdienst-karte .kopfzeile { flex-direction: column; align-items: flex-start; gap: 6px; }
+.arbeitsdienst-karte .kopfzeile b.kicker { font-size: 12px; }
+.arbeitsdienst-karte .kopfzeile span { font-size: 36px; line-height: 1; letter-spacing: -1px; }
+.einstellungen-liste .gruppen-zeile { font-family: var(--font-display); font-weight: 500; font-size: 16px; }
+.gruppen-zeile .wert { flex: 0 1 auto; min-width: 0; text-align: right; font-family: var(--font-text); font-size: 14px; font-weight: 400; color: var(--muted); }
+.gruppen-zeile svg.pfeil { width: 18px; height: 18px; flex: 0 0 auto; }
+.erscheinungsbild { padding: 8px 0 0; }
+.erscheinungsbild p.kicker { margin: 0 2px 8px; font-size: 11px; font-weight: 700; }
+.konto-fuss {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0 4px;
+  margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--line);
+}
+.konto-fuss > a, .konto-fuss > .gruppen-zeile {
+  display: inline-flex; align-items: center; width: auto; min-height: 44px; padding: 0 12px; border-radius: 10px;
+  font-size: 14.5px; font-weight: 500; color: var(--ink-2); text-decoration: none;
+}
+.konto-fuss > .gruppen-zeile.rot { color: var(--ink); font-weight: 700; }
+.konto-fuss > a:hover { text-decoration: underline; }
+.konto-kuendigen { margin: 4px 0 0; text-align: center; }
+.konto-kuendigen .gefahr-link { font-size: 14.5px; text-decoration: none; }
+
+/* Schalter mit Text: Aussage links, Schalter rechts, Erklärung klein darunter */
+.schalter-zeile {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0; padding: 6px 0; cursor: pointer;
+}
+.schalter-zeile .text { display: grid; gap: 3px; margin: 0; min-width: 0; }
+.schalter-zeile .text b { font-family: var(--font-text); font-size: 16px; font-weight: 500; color: var(--ink); line-height: 1.35; }
+.schalter-zeile .text small { font-size: 14px; font-weight: 400; color: var(--ink-2); line-height: 1.4; }
+.formraster > .schalter-zeile { grid-column: 1 / -1; }
+
+/* Unterseiten des Kontos (Entwürfe "Meine Daten", "Tennis"): Felder frei auf
+   der Seite, je zwei nebeneinander wo es passt, unten die eine Hauptaktion. */
+.konto-unterseite .karte.einstellungen { border: 0; box-shadow: none; padding: 0; background: transparent; border-radius: 0; margin-bottom: 20px; }
+.konto-unterseite .formraster { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+.konto-unterseite .formraster > label { grid-column: 1 / -1; }
+.konto-unterseite .formraster > label.halb { grid-column: auto; }
+.konto-unterseite form > .knopf.block { margin-top: 22px; }
+.konto-unterseite form > .hinweis { margin: 16px 0 0; }
+.stand-karte { display: grid; gap: 6px; margin: 0 0 20px; padding: 20px 22px; box-shadow: none; }
+.stand-karte b { font-size: 30px; font-weight: 700; letter-spacing: -.6px; line-height: 1.15; overflow-wrap: anywhere; }
+.mannschaft-box { box-shadow: none; padding: 16px 20px; margin-bottom: 20px; }
+.mannschaft-box .kopf { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; margin: 0 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.mannschaft-box .kopf b { font-size: 16px; font-weight: 600; }
+.mannschaft-box .karte.einstellungen { margin: 0; }
+.mannschaft-box .formraster { gap: 0; }
+/* Rückweg als runder Knopf mit Text wie im Entwurf */
+.unterseite-kopf .zurueck { gap: 6px; font-family: var(--font-display); }
+
+/* Einwilligungen (Entwurf): je Einwilligung eine Karte, Ja/Nein klein rechts oben */
+.karte.einstellungen.einwilligungs-karten { border: 0; box-shadow: none; padding: 0; background: transparent; border-radius: 0; display: grid; gap: 14px; }
+.karte.einstellungen.einwilligungs-karten > .einstellung {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: start;
+  margin: 0; padding: 20px 22px; border: 1px solid var(--line); border-radius: var(--radius-karte); background: var(--surf);
+}
+.einwilligungs-karten > .einstellung > * { grid-column: 1 / -1; }
+.einwilligungs-karten > .einstellung > .titel { grid-column: 1; grid-row: 1; font-family: var(--font-display); font-size: 17px; font-weight: 600; line-height: 1.3; }
+.einwilligungs-karten > .einstellung > .titel { align-self: center; }
+.einwilligungs-karten > .einstellung > .titel + .beschreibung { margin: 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.einwilligungs-karten > .einstellung > .segtoggle:not(.mehrere) { grid-column: 2; grid-row: 1; width: auto; margin: 0; padding: 3px; }
+.einwilligungs-karten > .einstellung > .segtoggle:not(.mehrere) button { min-width: 52px; min-height: 44px; padding: 0 14px; font-size: 14px; }
+.einwilligungs-karten > .einstellung > .segtoggle.mehrere { margin: 8px 0 0; }
+.einwilligungs-karten > .einstellung > .beschreibung.erteilt { margin: 8px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--muted); }
+.einwilligungs-karten > .einstellung > .zeilen-meldung:empty { display: none; }
+
+/* Bank und Mandat (Entwurf): Tabelle mit Kicker links, Wert rechts */
+dl.angaben.mandat { box-shadow: none; }
+dl.angaben.mandat > div { align-items: center; padding: 16px 20px; }
+dl.angaben.mandat dt {
+  font-family: var(--font-display); font-size: var(--font-size-kicker); font-weight: 700;
+  letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted);
+}
+dl.angaben.mandat dd { font-family: var(--font-display); font-weight: 500; font-size: 16px; overflow-wrap: anywhere; }
+dl.angaben.mandat > .kopf { background: var(--surf-2); }
+
+.kuendigen .erklaerung { padding: 18px 20px; margin-bottom: 20px; border: 1px solid var(--line); border-radius: var(--radius-karte); background: var(--surf-2); color: var(--ink-2); }
+.kuendigen .erklaerung p { margin: 0; font-size: 15.5px; line-height: 1.5; }
+.kuendigen .erklaerung p + p { margin-top: 10px; }
+.kuendigen textarea { border-radius: 20px; min-height: 140px; }
+.knopf-stapel { display: grid; gap: 10px; margin-top: 22px; }
+.knopf-stapel p { margin: 0 0 4px; }
+
 dl.angaben { margin: 0 0 12px; }
 dl.angaben > div { display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px; }
 dl.angaben dt { color: var(--muted); font-size: 14px; }
@@ -1542,8 +1779,12 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
   gap: 10px 12px; padding: 14px 16px;
 }
-.mannschaft-zeile .wer { flex: 1 1 220px; min-width: 0; display: grid; gap: 4px; }
-.mannschaft-zeile .wer b { font-size: 15.5px; font-weight: 600; overflow-wrap: anywhere; }
+.mannschaft-zeile .wer { flex: 1 1 0; min-width: 0; display: grid; gap: 3px; }
+.mannschaft-zeile .wer b { font-family: var(--font-display); font-size: 16.5px; font-weight: 500; overflow-wrap: anywhere; }
+.mannschaft-zeile .wer b .dein-marker { margin-left: 8px; vertical-align: 2px; }
+.mannschaft-zeile > .avatar { flex: 0 0 auto; }
+.mannschaft-zeile > .leise-rot { flex: 0 0 auto; }
+.mannschaft-abschnitt > .gruppe { box-shadow: none; }
 .mannschaft-zeile .wer small { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
 .mannschaft-zeile.ausgegraut .wer b { color: var(--ink-2); font-weight: 500; }
 .mannschaft-zeile.einladung { align-items: flex-start; }
@@ -1554,8 +1795,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .mannschaft-frage, .mannschaft-antwort { flex: 1 1 100%; display: grid; gap: 10px; }
 .mannschaft-frage p { margin: 0; font-size: 14.5px; color: var(--ink); }
 .mannschaft-antwort .hinweis, .mannschaft-antwort .sperrgrund { margin: 0; }
-.mannschaft-haken { display: flex; gap: 10px; align-items: flex-start; margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); cursor: pointer; }
-.mannschaft-haken input { width: auto; flex: none; margin: 3px 0 0; accent-color: var(--blue); }
+.mannschaft-haken { display: flex; flex-direction: row-reverse; justify-content: space-between; gap: 14px; align-items: center; margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); cursor: pointer; }
+.mannschaft-haken input { flex: none; margin: 0; }
 .mannschaft-haken small { display: block; margin-top: 2px; font-size: 13px; font-weight: 400; color: var(--ink-2); }
 .mannschaft-austreten { margin-top: 4px; }
 .mannschaft-suche { margin: 0 0 10px; }
@@ -2125,9 +2366,15 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 /* Folgen vor dem Absenden (Regel 5) */
 .folgen {
-  display: flex; gap: 12px; padding: 12px 14px; border-radius: 16px;
+  display: flex; gap: 12px; padding: 14px 16px; border-radius: 20px;
   background: var(--surf-2); border: 1px solid var(--line); font-size: 14px; line-height: 1.4;
 }
+/* Etwas geht dabei verloren (Buchungen werden verdrängt): rot abgesetzt */
+.folgen.warnung {
+  background: color-mix(in srgb, var(--red) 7%, var(--surf)); color: var(--red-ink);
+  border-color: color-mix(in srgb, var(--red) 35%, transparent);
+}
+.folgen.warnung svg { width: 20px; height: 20px; flex: 0 0 auto; margin-top: 1px; }
 /* Grosse Tippfelder fuer Uhrzeit und Datum */
 .tippfelder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .tippfeld {
@@ -2147,13 +2394,19 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .knopf.gross { min-height: 56px; font-size: 16px; }
 /* Chips statt Auswahlliste bei bis zu acht Optionen */
 .chipwahl { border: 0; margin: 0; padding: 0; }
-.chipwahl legend { padding: 0; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
-.chipwahl > div { display: grid; grid-template-columns: repeat(var(--spalten, 7), minmax(0, 1fr)); gap: 6px; }
-.chipwahl button {
-  height: 44px; border: 0; border-radius: 14px; cursor: pointer;
-  background: var(--surf-2); color: var(--ink-2); font: inherit; font-size: 13.5px; font-weight: 700;
+.chipwahl legend, .chipwahl .legende-text {
+  padding: 0; margin-bottom: 10px; font-family: var(--font-display); font-size: var(--font-size-kicker); font-weight: 700;
+  letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted);
 }
-.chipwahl button[aria-pressed="true"] { background: var(--blue-soft); color: var(--blue-ink); box-shadow: inset 0 0 0 1.5px var(--blue); }
+.chipwahl-kopf { display: flex; justify-content: space-between; align-items: center; margin: -10px 0 0; }
+.chipwahl-kopf .legende-text { margin: 0; }
+.chipwahl > div:not(.chipwahl-kopf) { display: grid; grid-template-columns: repeat(var(--spalten, 7), minmax(0, 1fr)); gap: 8px; }
+.chipwahl > div:not(.chipwahl-kopf) button {
+  height: 48px; padding: 0; border: 1px solid var(--line-2); border-radius: 99px; cursor: pointer;
+  background: var(--surf); color: var(--ink); font-family: var(--font-display); font-size: 15px; font-weight: 600;
+}
+.chipwahl > div:not(.chipwahl-kopf) button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.chipwahl > div:not(.chipwahl-kopf) button[aria-pressed="true"] { background: var(--blue-soft); color: var(--blue-ink); box-shadow: inset 0 0 0 1.5px var(--blue); }
 
 /* Uebersicht als Home (Verwaltung v2, Regel 7) */
 .uebersicht-raster { display: grid; gap: 28px; align-items: start; }
@@ -2334,24 +2587,17 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   margin-bottom: 14px;
 }
-.onboarding-schritte {
-  list-style: none; margin: 0 0 20px; padding: 0;
-  display: flex; flex-wrap: wrap; gap: 6px;
-}
-.onboarding-schritte li > :is(a, span) {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 10px; border-radius: 999px; font-size: 13px; text-decoration: none;
-  background: var(--chip); color: var(--ink-2);
-}
-.onboarding-schritte li small { font-size: 11px; color: var(--muted); }
-.onboarding-schritte .punkt {
-  width: 16px; height: 16px; border-radius: 8px; border: 1.5px solid currentColor;
-  display: inline-flex; align-items: center; justify-content: center; font-size: 10px; line-height: 1;
-}
-.onboarding-schritte li.erledigt > :is(a, span) { color: var(--ink); }
-.onboarding-schritte li.erledigt .punkt { background: var(--green-satt); border-color: transparent; color: var(--on-brand); }
-.onboarding-schritte li.aktuell > :is(a, span) { background: var(--blue-soft); color: var(--blue-ink); font-weight: 700; }
-.onboarding-schritte li.aktuell small { color: inherit; }
+.onboarding-vorspann { margin-bottom: 22px; }
+.onboarding-kopf .knopf { border: 0; background: transparent; box-shadow: none; padding: 0 6px; font-weight: 500; color: var(--ink-2); }
+/* Fortschritt als schmale Leiste: ein Stück je Schritt, das Ziel bleibt 44 px hoch */
+.onboarding-schritte { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; }
+.onboarding-schritte li { flex: 1 1 0; min-width: 0; }
+.onboarding-schritte li > :is(a, span) { display: flex; align-items: center; height: 20px; }
+.onboarding-schritte li > a { height: 44px; margin: -12px 0; }
+.onboarding-schritte li > :is(a, span)::before { content: ""; flex: 1; height: 4px; border-radius: 2px; background: var(--surf-3); }
+.onboarding-schritte li:is(.erledigt, .aktuell) > :is(a, span)::before { background: var(--blue); }
+.onboarding-schritte li.erledigt > :is(a, span)::before { opacity: .45; }
+.onboarding-schritte li > a:focus-visible { outline: 2px solid var(--blue); outline-offset: -8px; border-radius: 6px; }
 .onboarding-knoepfe { display: grid; gap: 10px; margin-top: 6px; }
 .mandatstext {
   white-space: pre-wrap; font-family: inherit; font-size: 14px; line-height: 1.5;
@@ -2540,59 +2786,86 @@ dialog.fenster:not(.blatt) > .fenster-rueckfrage { margin: 8px 22px 0; }
    --------------------------------------------------------------------------- */
 .event-monat { margin-bottom: 20px; }
 .event-monat-titel {
-  margin: 0 0 8px; font-size: 13px; font-weight: 700; letter-spacing: .06em;
-  text-transform: uppercase; color: var(--muted);
+  margin: 0 0 8px; font-family: var(--font-display); font-size: var(--font-size-kicker); font-weight: 700;
+  letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted);
 }
-.event-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.event-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 .event-karte {
-  display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px;
+  display: flex; gap: 16px; align-items: center; padding: 18px 20px;
   border-radius: var(--radius-karte, 18px); background: var(--surf); border: 1px solid var(--line);
   color: var(--ink); text-decoration: none; min-width: 0;
 }
 .event-karte:hover { text-decoration: none; border-color: color-mix(in srgb, var(--blue) 35%, var(--line)); }
+/* Datum als weiße Kachel mit Linie (Entwurf "Veranstaltungen"), nicht als Farbfläche */
 .event-karte > .datum-kachel {
-  flex: 0 0 auto; width: 52px; height: 56px; align-content: center; border-radius: 14px;
-  background: var(--blue-soft); color: var(--blue-ink);
+  flex: 0 0 auto; width: 56px; height: 64px; align-content: center; border-radius: 16px;
+  background: var(--surf-2); border: 1px solid var(--line); color: var(--ink);
 }
+.event-karte > .datum-kachel small { color: var(--muted); }
+.event-karte .event-marken { justify-content: space-between; }
+.event-karte .event-marken .marke-klein { font-size: 12px; padding: 3px 10px; }
+.event-karte .event-marken .marke-klein:first-child { background: var(--chip); color: var(--ink-2); }
+/* Die eigene Anmeldung ist gelb - "deins" */
+.event-karte .event-marken .marke-klein.gruen { background: var(--gold); color: var(--on-gold); }
 .event-karte > .datum-kachel.vorbei { background: var(--surf-2); color: var(--ink-2); }
-.event-karte-text { display: grid; gap: 3px; min-width: 0; }
-.event-karte-text .titel { font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
-.event-karte-text small { color: var(--muted); font-size: 13.5px; }
-.event-karte-text .zeile { font-size: 13.5px; font-weight: 700; }
+.event-karte-text { flex: 1; display: grid; gap: 3px; min-width: 0; }
+.event-karte-text .titel { font-family: var(--font-display); font-size: 18px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; margin-top: 2px; }
+.event-karte-text small { color: var(--ink-2); font-size: 15px; }
+.event-karte-text .zeile { font-size: 13.5px; color: var(--muted); }
 .event-karte.vorbei .titel { color: var(--ink-2); }
 .event-marken { display: flex; flex-wrap: wrap; gap: 6px; }
 .event-vergangen-link { margin: 4px 0 0; text-align: center; font-weight: 600; }
 
-.event-kopf {
-  position: relative; overflow: hidden; margin: 0 0 16px; padding: 18px 20px 22px;
-  border-radius: var(--radius-kartegross); background: var(--blue-soft); color: var(--ink);
+.event-kopf { margin: 0 0 18px; }
+.rueck-kreis {
+  width: 44px; height: 44px; border-radius: 22px; margin-bottom: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surf-2); border: 1px solid var(--line); color: var(--ink);
 }
-.event-kopf > :not(.platzlinien) { position: relative; }
-.event-kopf .platzlinien {
-  position: absolute; right: 0; top: 0; width: 350px; height: 150px;
-  fill: none; stroke: color-mix(in srgb, var(--blue) 14%, transparent); stroke-width: 2;
-}
-.event-kopf .zurueck { color: var(--blue-ink); display: inline-block; margin-bottom: 10px; }
-.event-kopf .pagetitle { color: var(--ink); margin: 8px 0 4px; overflow-wrap: anywhere; }
-.event-kopf p { margin: 0; color: var(--ink-2); }
+.rueck-kreis:hover { background: var(--chip); text-decoration: none; }
+.rueck-kreis svg { width: 20px; height: 20px; }
+.event-kopf .event-marken .marke-klein:first-child { background: var(--chip); color: var(--ink-2); font-size: 12px; padding: 3px 10px; }
+.event-kopf .pagetitle { margin: 10px 0 4px; overflow-wrap: anywhere; }
+.event-kopf p { margin: 0; color: var(--ink-2); font-size: 15px; }
 
 .event-raster { display: grid; gap: 16px; }
 .event-haupt, .event-seite { display: grid; gap: 16px; align-content: start; min-width: 0; }
-.eckdaten dl { margin: 0; display: grid; gap: 14px; }
-.eckdaten dl > div { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; }
-.eckdaten dt { color: var(--muted); font-size: 13.5px; }
-.eckdaten dd { margin: 0; display: grid; gap: 4px; min-width: 0; }
-.eckdaten dd small { color: var(--muted); font-size: 13px; line-height: 1.45; }
-.eckdaten .balken { display: block; height: 8px; border-radius: 4px; background: var(--surf-2); overflow: hidden; }
-.eckdaten .balken i { display: block; height: 100%; border-radius: 4px; background: var(--blue); }
+/* Eckdaten als Tabelle: Kicker links, Wert rechts, Linie dazwischen */
+.karte.eckdaten { padding: 0; box-shadow: none; overflow: hidden; }
+.eckdaten dl { margin: 0; }
+.eckdaten dl > div {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 4px 16px;
+  padding: 16px 20px;
+}
+.eckdaten dl > div + div { border-top: 1px solid var(--line); }
+.eckdaten dt {
+  font-family: var(--font-display); font-size: var(--font-size-kicker); font-weight: 700;
+  letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted);
+}
+.eckdaten dd { margin: 0; display: grid; gap: 4px; min-width: 0; text-align: right; font-weight: 600; }
+.eckdaten dd small { color: var(--muted); font-size: 13px; font-weight: 400; line-height: 1.45; }
+.eckdaten dd.balken { grid-column: 1 / -1; display: block; height: 6px; margin-top: 6px; border-radius: 3px; background: var(--surf-3); overflow: hidden; }
+.eckdaten .balken i { display: block; height: 100%; border-radius: 3px; background: var(--blue); }
+.event-text { padding: 2px 4px; }
+.event-text p { margin: 0; white-space: pre-line; line-height: 1.55; color: var(--ink-2); }
 .karte.beschreibung p { margin: 0; white-space: pre-line; line-height: 1.55; }
 
 .event-mein h2, .event-anmelden h2 { margin: 0 0 12px; font-size: 20px; }
-.event-mein.angemeldet {
-  background: color-mix(in srgb, var(--green) 10%, var(--surf));
-  border-color: color-mix(in srgb, var(--green) 35%, transparent);
+.event-mein, .event-anmelden { box-shadow: none; padding: 22px; }
+.event-mein .kopf { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+.event-mein .kopf h2 { margin: 0; }
+/* Die eigene Anmeldung: hellblaue Karte, der Haken gelb ("deins") */
+.event-mein .haken {
+  width: 44px; height: 44px; border-radius: 22px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center; background: var(--gold); color: var(--on-gold);
 }
-.event-mein.wartet { background: var(--gold-soft); border-color: var(--gold-line); }
+.event-mein .haken svg { width: 22px; height: 22px; }
+.event-mein.angemeldet {
+  background: var(--blue-soft); border-color: color-mix(in srgb, var(--blue) 22%, transparent);
+}
+.event-mein.angemeldet .knopf:not(.haupt):not(.gefahr) { background: var(--surf); }
+.event-mein.wartet { background: var(--surf-2); }
+.event-knoepfe { align-items: center; }
 .event-mein p { margin: 0 0 8px; }
 .event-mein .betrag b { font-size: 20px; }
 .event-knoepfe, .event-abmelden-frage { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
@@ -2613,3 +2886,112 @@ dialog.fenster:not(.blatt) > .fenster-rueckfrage { margin: 8px 22px 0; }
 }
 .veranstaltung-aktionen .knopfreihe .schalter { align-items: center; margin: 0 8px 0 0; }
 .nachricht-link { display: inline-block; margin-top: 4px; font-size: 13.5px; font-weight: 600; }
+
+/* Suchfeld auf der Mannschaftsseite als Pille wie die übrigen Felder */
+.mannschaft-suche .suchfeld { border-radius: var(--radius-feld); background: var(--surf-2); min-height: 52px; }
+
+/* --- Zugang (Entwürfe "Anmelden", "Antrag") ------------------------------- */
+.passwort-feld { position: relative; }
+.passwort-feld input { padding-right: 112px; }
+.passwort-feld > button {
+  position: absolute; right: 6px; bottom: 4px; min-height: 44px; min-width: 44px; padding: 0 14px;
+  border: 0; border-radius: 22px; background: transparent; cursor: pointer;
+  font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--blue-ink);
+}
+.passwort-feld > button:hover { background: var(--chip); }
+.auth .vergessen a, .auth .antrag-hinweis a { text-decoration: none; }
+.auth .sheet form .rechtliches { margin-top: 28px; }
+fieldset.geschlecht .segment { height: 48px; font-size: 15px; border-radius: 24px; }
+fieldset.geschlecht .segment:has(input:checked) { background: var(--blue-soft); border-color: var(--blue); color: var(--blue-ink); }
+fieldset.geschlecht[aria-invalid="true"] .segment { border-color: var(--red); }
+.auth.antragsseite .formraster { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+.auth.antragsseite .formraster > * { grid-column: 1 / -1; }
+.auth.antragsseite .formraster > .feld.halb { grid-column: auto; }
+.auth.antragsseite .plz-ort { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 12px; }
+.auth.antragsseite .sheet h2.dpl { margin: 14px 0 0; padding-top: 22px; border-top: 1px solid var(--line); font-size: 20px; }
+@media (max-width: 767px) {
+  /* Am Telefon steht der Antrag frei auf weißem Grund, ohne Karte */
+  .auth.antragsseite .sheet { width: 100%; border: 0; border-radius: 0; background: transparent; padding: 8px 24px 36px; }
+}
+.auth .sheet label.segment > span { font: inherit; letter-spacing: 0; text-transform: none; color: inherit; margin: 0; }
+/* Ja/Nein-Kästchen in den Zugangsseiten als Schalter */
+.auth .sheet label.schalter { display: flex; align-items: center; justify-content: space-between; flex-direction: row-reverse; gap: 14px; }
+
+.auth .sheet label > span.beschreibung, .auth .sheet label > span.feldhinweis {
+  font-family: var(--font-text); font-size: 13.5px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--ink-2); margin: 6px 0 0;
+}
+.auth .sheet label.schalter > span small { display: block; margin-top: 2px; font-size: 13.5px; font-weight: 400; color: var(--muted); }
+.auth .sheet label.schalter > span { font-size: 16px; color: var(--ink); }
+.auth .sheet label.schalter:has(.schalter-feld) { padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius-karte); }
+.wahlkarten { display: grid; gap: 10px; }
+.wahlkarten legend { float: left; width: 100%; }
+.wahlkarte {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 0; min-height: 64px; padding: 14px 20px;
+  border: 1px solid var(--line-2); border-radius: var(--radius-karte); background: var(--surf); cursor: pointer;
+}
+.auth .sheet label.wahlkarte > span, .wahlkarte > span { font-family: var(--font-display); font-size: 17px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink); margin: 0; }
+.wahlkarte input { width: 22px; height: 22px; flex: none; margin: 0; accent-color: var(--blue); }
+.wahlkarte:has(input:checked) { background: var(--blue-soft); border-color: var(--blue); }
+.wahlkarte:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 2px; }
+.wahlkarten .beschreibung { margin: 0; }
+label.schalter > .schalter-feld, .auth .sheet label.schalter > .schalter-feld { flex: 0 0 auto; width: 52px; height: 32px; min-height: 0; margin: 0; padding: 0; }
+
+/* --- Verwaltung · Übersicht (Entwurf "Übersicht Desktop") ------------------
+   Eine Spalte in der Reihenfolge des Entwurfs: Heute zu tun, Einzug, vier
+   Kennzahlen nebeneinander, darunter die Anlage über die volle Breite. */
+@media (min-width: 1024px) {
+  .uebersicht-raster { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .uebersicht-raster > .uebersicht-spalte { display: contents; }
+  .uebersicht .kennzahlen.zwei { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .uebersicht .kennzahlen.zwei .wert { font-size: 34px; }
+  .uebersicht .anlage-heute .mini-zeitleiste.gross { height: 22px; border-radius: 8px; }
+  .uebersicht .anlage-heute .mini-zeitleiste.gross i { border-radius: 8px; }
+}
+/* Die erste Aufgabe ist eine weiße Karte; kräftig blau ist allein ihr Knopf */
+.uebersicht .aufgabe-gross { background: var(--surf); border: 1px solid var(--line); min-height: 0; gap: 8px; }
+.uebersicht .aufgabe-gross .linien { display: none; }
+.uebersicht .aufgabe-gross .kicker { align-self: flex-start; padding: 3px 9px; border-radius: 8px; background: var(--chip); color: var(--ink-2); font-size: 11px; }
+.uebersicht .aufgabe-gross .titel { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -.2px; line-height: 1.2; margin-top: 6px; }
+.uebersicht .aufgabe-gross .knopf { margin-top: 14px; }
+.uebersicht .kennzahl, .uebersicht .karte, .uebersicht .liste-gruppe { box-shadow: none; }
+.uebersicht .kennzahl .label { font-family: var(--font-display); font-size: 11.5px; font-weight: 700; letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted); }
+/* "Jetzt" ist eine Auskunft, kein Alarm: blau statt rot */
+.anlage-heute .mini-zeitleiste b { background: var(--blue); }
+.geldweg-balken li.erledigt { background: var(--blue); opacity: .45; }
+
+/* --- Verwaltung · Arbeitsdienst und Kasse (Entwürfe Desktop) --------------- */
+.verwaltung .kennzahl, .verwaltung .liste-gruppe, .verwaltung > .karte, .verwaltung section.karte { box-shadow: none; }
+.jahrwahl { margin: 0; flex-wrap: nowrap; }
+.dienst-balken { display: none; }
+@media (min-width: 1024px) {
+  .dienst-balken { display: block; width: clamp(120px, 22vw, 260px); height: 6px; border-radius: 3px; background: var(--surf-3); overflow: hidden; margin-right: 18px; align-self: center; }
+  .dienst-balken i { display: block; height: 100%; border-radius: 3px; background: var(--blue); }
+}
+@media (min-width: 1024px) {
+  .neben:has(> .dienst-balken) { display: grid; grid-template-columns: auto auto; align-items: center; justify-items: end; }
+  .neben:has(> .dienst-balken) > .dienst-balken { grid-row: 1 / span 2; }
+  .neben:has(> .dienst-balken) > :not(.dienst-balken) { grid-column: 2; }
+}
+/* Erledigte Schritte sind blau wie im Entwurf - Grün gibt es in der Palette nicht als Fortschrittsfarbe */
+.geldweg li.erledigt > i, .mini-geldweg li.erledigt { background: var(--blue); }
+.geldweg li.erledigt .nr { background: var(--blue); color: var(--on-brand); }
+.geldweg li.aktuell > i { background: color-mix(in srgb, var(--blue) 45%, var(--surf-3)); }
+
+/* --- Kiosk (Entwurf "Kiosk") ----------------------------------------------
+   Lange Getränkenamen brechen in der Kachel um statt herauszulaufen; die
+   Spalte "Eintragen" ist eine Karte wie im Entwurf, "Wer" steht frei. */
+.kiosk-kacheln .name { overflow-wrap: anywhere; hyphens: auto; font-family: var(--font-display); font-size: 18px; }
+.kiosk-kacheln .kachel-knopf { min-width: 0; }
+.kiosk-kacheln .preis { font-size: 15px; font-weight: 500; color: var(--muted); }
+.kiosk-kacheln li.an .kachel-knopf { background: var(--blue-soft); }
+.kiosk-eintragen { border: 1px solid var(--line); border-radius: var(--radius-karte); background: var(--surf); padding: 22px; }
+.kiosk-wer { border: 0; background: transparent; box-shadow: none; padding-inline: 0; }
+.kiosk-eintragen .zusammen { flex-direction: column; align-items: flex-start; gap: 2px; border-top: 1px solid var(--line); }
+.kiosk-eintragen .zusammen span { font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted); }
+.kiosk-eintragen .zusammen b { font-size: 36px; }
+/* Ja/Nein im Veranstaltungsformular: Schalter rechts, Aussage links */
+.veranstaltungs-formular label.schalter { display: flex; flex-direction: row-reverse; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; }
+.veranstaltungs-formular label.schalter > span { margin: 0; font-family: var(--font-text); font-size: 16px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink); }
+/* Die Spielkarten tragen weiter die Klasse .termin (Anker der Tests), aber nicht deren Zeilenaufbau */
+.spiel-karte.termin { align-items: stretch; }
+.offen-karte.termin { flex-wrap: nowrap; }

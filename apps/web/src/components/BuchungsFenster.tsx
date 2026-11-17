@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   berlinTime, blockingLabel, bookingActions, bookingTypeInfo, checkPlayers, istEingeschraenkt, lkText,
   missingPlayers, otherPlayersLabel, partnerFilterAusEingabe, partnerFilterAusZeile, partnerFilterText,
@@ -34,6 +34,8 @@ interface Props {
   startzeiten: number[];
   rasterMinuten: number;
   anzeigeMinuten: number;
+  /** Wie viele Tage im Voraus der Plan reicht - so weit geht die Tagesleiste beim Umsetzen. */
+  vorlaufTage: number;
   /** Gastgebuehr je Gast in Cent. */
   gastgebuehrCents: number;
   /** Vorstand, App Admin oder Platzwart: sperren und fremde Buchungen verwalten. */
@@ -112,14 +114,17 @@ export function BuchungsFenster(props: Props) {
   );
 }
 
-function Kopf({ kicker, titel, onSchliessen }: {
-  kicker: string; titel: string; onSchliessen: () => void;
+function Kopf({ kicker, titel, marke, onSchliessen }: {
+  kicker: string; titel: string; marke?: ReactNode; onSchliessen: () => void;
 }) {
   return (
     <div className="fenster-kopf">
-      {/* Entwurf "Platz buchen": erst groß die Zeit, darunter Platz und Tag */}
+      {/* Entwurf "Platz buchen": erst groß die Zeit (mit Marke), darunter Platz und Tag */}
       <div>
-        <h2 className="tnum">{titel}</h2>
+        <div className="blatt-titel">
+          <h2 className="tnum">{titel}</h2>
+          {marke}
+        </div>
         <p className="blatt-wo">{kicker}</p>
       </div>
       <button type="button" className="fenster-zu" onClick={onSchliessen} aria-label="Schließen">
@@ -128,6 +133,15 @@ function Kopf({ kicker, titel, onSchliessen }: {
         </svg>
       </button>
     </div>
+  );
+}
+
+function SperrSymbol() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" focusable="false">
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="m6 18 12-12" />
+    </svg>
   );
 }
 
@@ -302,6 +316,89 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
     setGaeste(gaeste.slice(0, Math.max(0, max - m.length)));
   }
 
+  // Sperren ist eine eigene Ansicht des Blatts (Entwurf "Plätze sperren"):
+  // Titel, Kategorie, Grund und unten die beiden Knöpfe.
+  if (sperrgrund !== null) {
+    return (
+      <>
+        <Kopf
+          titel="Platz sperren"
+          kicker={`${platz?.name ?? "Platz"} · ${tagText(props.datum)}`}
+          onSchliessen={props.onSchliessen}
+        />
+        <div className="fenster-inhalt">
+          <label>
+            <span>Kategorie</span>
+            <select
+              value={sperrart}
+              onChange={(e) => {
+                setSperrart(e.target.value);
+                setSperrKollisionen(null);
+              }}
+            >
+              {props.blockungsarten.map((a) => (
+                <option key={a.code} value={a.code}>{a.name}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Grund (freiwillig)</span>
+            <input
+              type="text"
+              value={sperrgrund}
+              placeholder="z. B. nach Regen"
+              onChange={(e) => setSperrgrund(e.target.value)}
+            />
+          </label>
+          <p className="blatt-info">
+            <span className="symbolkreis" aria-hidden="true"><SperrSymbol /></span>
+            <span className="tnum">
+              Gesperrt wird {alsUhrzeit(stunde)}–{alsUhrzeit(stunde + props.anzeigeMinuten)} Uhr
+              auf {platz?.name ?? "diesem Platz"}.
+            </span>
+          </p>
+          {sperrKollisionen !== null && <Verdraengt anzahl={sperrKollisionen} />}
+          <div className="blatt-fuss">
+            <Fehler text={props.fehler} />
+            <div className="knopf-paar">
+              <button
+                type="button"
+                className={sperrKollisionen === null ? "knopf haupt" : "knopf gefahr"}
+                disabled={props.laeuft}
+                onClick={async () => {
+                  const offen = await props.onSperren(
+                    props.fenster.courtId,
+                    stunde,
+                    sperrart,
+                    sperrgrund,
+                    sperrKollisionen !== null,
+                  );
+                  setSperrKollisionen(offen);
+                }}
+              >
+                {sperrKollisionen === null
+                  ? "Sperren"
+                  : `${sperrKollisionen} ${
+                      sperrKollisionen === 1 ? "Buchung" : "Buchungen"
+                    } verdrängen`}
+              </button>
+              <button
+                type="button"
+                className="knopf leise"
+                onClick={() => {
+                  setSperrgrund(null);
+                  setSperrKollisionen(null);
+                }}
+              >
+                Doch nicht
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Kopf
@@ -405,78 +502,9 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
           Knopf darin wuerde beim Enter im Suchfeld mitfeuern. */}
       {props.darfPlaetze && (
         <div className="fenster-inhalt sperrbereich">
-          {sperrgrund === null ? (
-            <button
-              type="button"
-              className="knopf leise klein"
-              onClick={() => setSperrgrund("")}
-            >
-              Stattdessen sperren
-            </button>
-          ) : (
-            <>
-              <label>
-                <span>Kategorie</span>
-                <select
-                  value={sperrart}
-                  onChange={(e) => {
-                    setSperrart(e.target.value);
-                    setSperrKollisionen(null);
-                  }}
-                >
-                  {props.blockungsarten.map((a) => (
-                    <option key={a.code} value={a.code}>{a.name}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Grund (freiwillig)</span>
-                <input
-                  type="text"
-                  value={sperrgrund}
-                  placeholder="z. B. nach Regen"
-                  onChange={(e) => setSperrgrund(e.target.value)}
-                />
-              </label>
-              <p className="mit">
-                Gesperrt wird {alsUhrzeit(stunde)}–{alsUhrzeit(stunde + props.anzeigeMinuten)} Uhr
-                auf {platz?.name ?? "diesem Platz"}.
-              </p>
-              <div className="fenster-fuss">
-                <button
-                  type="button"
-                  className={sperrKollisionen === null ? "knopf leise" : "knopf gefahr"}
-                  disabled={props.laeuft}
-                  onClick={async () => {
-                    const offen = await props.onSperren(
-                      props.fenster.courtId,
-                      stunde,
-                      sperrart,
-                      sperrgrund,
-                      sperrKollisionen !== null,
-                    );
-                    setSperrKollisionen(offen);
-                  }}
-                >
-                  {sperrKollisionen === null
-                    ? "Sperren"
-                    : `${sperrKollisionen} ${
-                        sperrKollisionen === 1 ? "Buchung" : "Buchungen"
-                      } verdrängen`}
-                </button>
-                <button
-                  type="button"
-                  className="knopf leise"
-                  onClick={() => {
-                    setSperrgrund(null);
-                    setSperrKollisionen(null);
-                  }}
-                >
-                  Doch nicht
-                </button>
-              </div>
-            </>
-          )}
+          <button type="button" className="textknopf" onClick={() => setSperrgrund("")}>
+            Stattdessen sperren
+          </button>
         </div>
       )}
     </>
@@ -485,6 +513,7 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
 
 function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "verwalten" }> }) {
   const b = props.fenster.belegung;
+  const kennung = useId();
   const platz = props.plaetze.find((p) => p.id === b.court_id);
 
   const [mitglieder, setMitglieder] = useState<string[]>(b.player_member_ids ?? []);
@@ -552,22 +581,42 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
     gelb: b.is_own,
   };
 
+  if (umsetzOffen && kannUmsetzen) {
+    return <UmsetzBereich {...props} belegung={b} onZu={() => setUmsetzOffen(false)} />;
+  }
+  if (bearbeitenOffen && kannSperreAendern) {
+    return <SperreBearbeiten {...props} sperre={b} onZu={() => setBearbeitenOffen(false)} />;
+  }
+
+  const eigenesSpiel = b.is_own && !nurStorno && !istSerientermin;
+  const sucht = b.partner_wanted && b.frei > 0;
+
   return (
     <>
       <Kopf
-        kicker={`${platz?.name ?? "Platz"} · ${tagText(props.datum)}`}
+        kicker={`${platz?.name ?? "Platz"} · ${tagText(props.datum)}${eigenesSpiel ? ` · ${b.type_name}` : ""}`}
         titel={`${alsUhrzeit(lokaleMinuten(b.starts_at))} – ${alsUhrzeit(lokaleMinuten(b.ends_at))}`}
+        marke={
+          eigenesSpiel
+            ? <span className="dein-marker">Dein Spiel</span>
+            : sucht ? <span className="sucht-pille">Mitspieler gesucht</span> : null
+        }
         onSchliessen={props.onSchliessen}
       />
 
       <div className="fenster-inhalt">
-        <p className="blatt-unterzeile">
-          {istSerientermin
-            ? `${b.title ?? b.type_name} · Serientermin`
-            : nurStorno
-              ? `Gesperrt · ${sperre.kategorie}`
-              : `${b.type_name} · gebucht von ${b.is_own ? "dir" : (b.owner_name ?? "unbekannt")}`}
-        </p>
+        {/* Entwurf "Offenes Spiel": Spielform und Bucher als eigene Zeile mit Symbol.
+            Beim eigenen Spiel sagt das die Marke "Dein Spiel", die Spielform steht im Kopf. */}
+        {!eigenesSpiel && <p className="blatt-info">
+          <span className="symbolkreis" aria-hidden="true"><BallSymbol /></span>
+          <span>
+            {istSerientermin
+              ? `${b.title ?? b.type_name} · Serientermin`
+              : nurStorno
+                ? `Gesperrt · ${sperre.kategorie}`
+                : `${b.type_name} · gebucht von ${b.is_own ? "dir" : (b.owner_name ?? "unbekannt")}`}
+          </span>
+        </p>}
         {nurStorno && !istSerientermin && sperre.grund && <p className="mit">{sperre.grund}</p>}
 
         {props.darfPlaetze && !b.is_own && !nurStorno && (
@@ -577,15 +626,9 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           <p className="hinweis">Die Spielzeit läuft bereits – Änderungen nur mit Platzrechten.</p>
         )}
 
-        {b.partner_wanted && b.frei > 0 && (
-          <p className="gesucht-text">
-            Hier {b.frei === 1 ? "wird noch ein Mitspieler" : `werden noch ${b.frei} Mitspieler`} gesucht
-            {filterZusatz ? ` (${filterZusatz})` : ""}.
-          </p>
-        )}
-
         {!nurStorno && darfVerwalten && (
           <Mitspielersuche
+            zeilen
             kopf={bucher}
             verzeichnis={props.verzeichnis.filter((m) => m.id !== b.owner_member_id)}
             mitglieder={mitglieder}
@@ -599,10 +642,10 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
         )}
 
         {!nurStorno && !darfVerwalten && (
-          <div className="mitspieler">
+          <div className="mitspieler zeilen">
             <p className="feldname">Wer spielt mit?</p>
             <div className="chips">
-              <span className="chip">
+              <span className={`chip${bucher.gelb ? " ich" : ""}`}>
                 <span className="avatar" aria-hidden="true">{bucher.initialen}</span>
                 <span className="name">{bucher.name}</span>
               </span>
@@ -617,12 +660,22 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
               })}
               {Array.from({ length: b.frei }, (_, i) => (
                 <span key={`frei${i}`} className="chip leer">
-                  <span className="avatar" aria-hidden="true" />
+                  <span className="avatar" aria-hidden="true"><PersonPlus /></span>
                   <span className="name">frei</span>
                 </span>
               ))}
             </div>
           </div>
+        )}
+
+        {sucht && (
+          <p className="gesucht-text">
+            <InfoSymbol />
+            <span>
+              Hier {b.frei === 1 ? "wird noch ein Mitspieler" : `werden noch ${b.frei} Mitspieler`} gesucht
+              {filterZusatz ? ` (${filterZusatz})` : ""}.
+            </span>
+          </p>
         )}
 
         {!nurStorno && darfVerwalten && (b.frei > 0 || b.partner_wanted) && (
@@ -657,8 +710,28 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           </div>
         )}
 
-        {bearbeitenOffen && kannSperreAendern && (
-          <SperreBearbeiten {...props} sperre={b} onZu={() => setBearbeitenOffen(false)} />
+        {/* Umsetzen ist die Ausnahme, wenn ein Platz ausfaellt: eine eigene
+            Zeile, die das Blatt "Umsetzen" oeffnet (Entwurf "Eigenes Spiel"). */}
+        {kannUmsetzen && (
+          <button
+            type="button"
+            className="blatt-zeile"
+            aria-label="Umsetzen"
+            aria-describedby={`${kennung}-umsetzen`}
+            onClick={() => {
+              setUmsetzOffen(true);
+              setStornoOffen(false);
+            }}
+          >
+            <span className="symbolkreis" aria-hidden="true"><UmsetzSymbol /></span>
+            <span className="text">
+              <b>Umsetzen</b>
+              <small id={`${kennung}-umsetzen`}>Anderer Platz oder andere Zeit</small>
+            </span>
+            <svg className="pfeil" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="m9 6 6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         )}
 
         {darfVerwalten && stornoOffen && !(nurStorno && !istSerientermin) && (
@@ -675,10 +748,8 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           </label>
         )}
 
-        {!bearbeitenOffen && (
         <div className="blatt-fuss">
-          {/* Beim Umsetzen steht der Fehler dort, wo geklickt wurde. */}
-          <Fehler text={umsetzOffen ? null : props.fehler} />
+          <Fehler text={props.fehler} />
 
           {kannSperreAendern && !stornoOffen && (
             <button
@@ -702,45 +773,50 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
             </button>
           )}
 
-          {!nurStorno && darfVerwalten && (
+          {/* Erst wenn sich an der Besetzung etwas geaendert hat, gibt es
+              etwas zu speichern (Entwurf "Mitspieler entfernt"). */}
+          {!nurStorno && darfVerwalten && geaendert && !stornoOffen && (
             <button
               type="button"
               className="knopf haupt gross block"
-              disabled={props.laeuft || !geaendert}
+              disabled={props.laeuft}
               onClick={() => props.onSpeichern(b.booking_id, mitglieder, gaeste)}
             >
               {props.laeuft ? "Wird gespeichert…" : "Mitspieler speichern"}
             </button>
           )}
-          {!nurStorno && darfVerwalten && !props.laeuft && (
-            <SperrGrund grund={geaendert ? null : "Noch nichts geändert."} />
-          )}
 
           {!darfVerwalten ? null : stornoOffen ? (
-            <button
-              type="button"
-              className="knopf gefahr block"
-              disabled={props.laeuft || (grundNoetig && grund.trim() === "")}
-              onClick={() =>
-                istSerientermin
-                  ? props.onTerminAbsagen(b.booking_id, grund)
-                  : nurStorno
-                    ? props.onSperreAufheben(b.booking_id)
-                    : props.onStornieren(b.booking_id, grund)
-              }
-            >
-              {istSerientermin ? "Termin wirklich absagen" : nurStorno ? "Wirklich aufheben" : "Wirklich stornieren"}
-            </button>
+            <div className="knopf-paar">
+              <button
+                type="button"
+                className="knopf gefahr"
+                disabled={props.laeuft || (grundNoetig && grund.trim() === "")}
+                onClick={() =>
+                  istSerientermin
+                    ? props.onTerminAbsagen(b.booking_id, grund)
+                    : nurStorno
+                      ? props.onSperreAufheben(b.booking_id)
+                      : props.onStornieren(b.booking_id, grund)
+                }
+              >
+                {istSerientermin ? "Termin wirklich absagen" : nurStorno ? "Wirklich aufheben" : "Wirklich stornieren"}
+              </button>
+              <button type="button" className="knopf leise" disabled={props.laeuft} onClick={() => setStornoOffen(false)}>
+                Doch nicht
+              </button>
+            </div>
           ) : (
             <button
               type="button"
-              className="knopf gefahr-leise block"
+              className="gefahr-link"
               disabled={props.laeuft}
-              onClick={() => {
-                setStornoOffen(true);
-                setUmsetzOffen(false);
-              }}
+              onClick={() => setStornoOffen(true)}
             >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                <path d="m9 9 6 6M15 9l-6 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
               {istSerientermin
                 ? "Fällt diese Woche aus"
                 : nurStorno
@@ -748,33 +824,56 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
                   : "Buchung stornieren"}
             </button>
           )}
+          {stornoOffen && grundNoetig && grund.trim() === "" && !props.laeuft && (
+            <SperrGrund grund="Erst einen Grund eingeben." />
+          )}
 
           {b.is_own && !nurStorno && !laeuftSchon && <p className="fussnote">Stornieren geht bis Spielbeginn</p>}
         </div>
-        )}
       </div>
-
-      {/* Abgesetzt wie das Sperren: Umsetzen ist die Ausnahme, wenn ein Platz
-          ausfaellt - nicht das, was man an einer Buchung gewoehnlich tut. */}
-      {kannUmsetzen && (
-        <div className="fenster-inhalt sperrbereich">
-          {umsetzOffen ? (
-            <UmsetzBereich {...props} belegung={b} onZu={() => setUmsetzOffen(false)} />
-          ) : (
-            <button
-              type="button"
-              className="knopf leise klein"
-              onClick={() => {
-                setUmsetzOffen(true);
-                setStornoOffen(false);
-              }}
-            >
-              Umsetzen
-            </button>
-          )}
-        </div>
-      )}
     </>
+  );
+}
+
+function BallSymbol() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" focusable="false">
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M5.2 6.8c2.6 2.9 2.6 7.5 0 10.4M18.8 6.8c-2.6 2.9-2.6 7.5 0 10.4" />
+    </svg>
+  );
+}
+
+function PersonPlus() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" focusable="false">
+      <circle cx="10" cy="8.5" r="3.2" />
+      <path d="M4 19c.6-3.2 3-5 6-5s5.4 1.8 6 5M18.5 6.5v5M16 9h5" />
+    </svg>
+  );
+}
+
+function InfoSymbol() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5.5M12 7.6v.2" />
+    </svg>
+  );
+}
+
+/** Buchungen im Weg einer Sperrung: was mit ihnen geschieht, bevor der zweite Knopf sie verdrängt. */
+function Verdraengt({ anzahl }: { anzahl: number }) {
+  return (
+    <div className="folgen warnung" role="status">
+      <InfoSymbol />
+      <div>
+        <b>
+          {anzahl} {anzahl === 1 ? "Buchung liegt" : "Buchungen liegen"} im Weg.
+        </b>{" "}
+        {anzahl === 1 ? "Sie wird" : "Sie werden"} abgesagt, die Mitglieder bekommen Bescheid.
+      </div>
+    </div>
   );
 }
 
@@ -786,6 +885,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
  */
 function SperreBearbeiten(props: Props & { sperre: Belegung; onZu: () => void }) {
   const b = props.sperre;
+  const kennung = useId();
   const anfangVon = lokaleMinuten(b.starts_at);
   const dauer = Math.round((new Date(b.ends_at).getTime() - new Date(b.starts_at).getTime()) / 60_000);
   const [plaetze, setPlaetze] = useState<string[]>([b.court_id]);
@@ -814,97 +914,102 @@ function SperreBearbeiten(props: Props & { sperre: Belegung; onZu: () => void })
     setKollisionen(await props.onSperreAendern(b.booking_id, plaetze, vonMin, bisMin, art, grund, verdraengen));
   }
 
+  const platzName = props.plaetze.find((p) => p.id === b.court_id)?.name ?? "Platz";
+
   return (
-    <div className="sperre-bearbeiten">
-      <fieldset className="chipwahl" style={{ ["--spalten" as string]: Math.min(props.plaetze.length, 8) }}>
-        <legend>Plätze</legend>
-        <div>
-          {props.plaetze.map((p) => {
-            const an = plaetze.includes(p.id);
-            return (
-              <button
-                key={p.id}
-                type="button"
-                className="dpl"
-                aria-pressed={an}
-                aria-label={p.name}
-                onClick={() => neu(setPlaetze)(an ? plaetze.filter((x) => x !== p.id) : [...plaetze, p.id])}
-              >
-                {p.short_name.replace(/^P/, "")}
-              </button>
-            );
-          })}
-        </div>
-      </fieldset>
-
-      <div className="tippfelder">
-        <label className="tippfeld">
-          <span>Von</span>
-          <input type="time" step={props.rasterMinuten * 60} value={von} onChange={(e) => neu(setVon)(e.target.value)} />
-        </label>
-        <label className="tippfeld">
-          <span>Bis</span>
-          <input type="time" step={props.rasterMinuten * 60} value={bis} onChange={(e) => neu(setBis)(e.target.value)} />
-        </label>
-      </div>
-
-      <label>
-        <span>Kategorie</span>
-        <select value={art} onChange={(e) => neu(setArt)(e.target.value)}>
-          {arten.map((a) => (
-            <option key={a.code} value={a.code}>{a.name}</option>
-          ))}
-        </select>
-      </label>
-      <label>
-        <span>Grund (freiwillig)</span>
-        <input type="text" value={grund} placeholder="z. B. nach Regen" onChange={(e) => setGrund(e.target.value)} />
-      </label>
-
-      <div className="blatt-fuss">
-        <Fehler text={props.fehler} />
-        {!zeitOk && <p className="fussnote">Das Ende muss nach dem Beginn liegen.</p>}
-        {kollisionen !== null && (
-          <div className="folgen" role="status">
-            <div>
-              <b>
-                {kollisionen} {kollisionen === 1 ? "Buchung liegt" : "Buchungen liegen"} im Weg.
-              </b>{" "}
-              {kollisionen === 1 ? "Sie wird" : "Sie werden"} abgesagt, die Mitglieder bekommen Bescheid.
-            </div>
+    <>
+      <Kopf titel="Sperrung bearbeiten" kicker={`${platzName} · ${tagText(props.datum)}`} onSchliessen={props.onSchliessen} />
+      <div className="fenster-inhalt sperre-bearbeiten">
+        <div className="chipwahl" role="group" aria-labelledby={`${kennung}-plaetze`} style={{ ["--spalten" as string]: 4 }}>
+          <div className="chipwahl-kopf">
+            <span className="legende-text" id={`${kennung}-plaetze`}>Plätze</span>
+            <span>
+              <button type="button" className="textknopf" onClick={() => neu(setPlaetze)(props.plaetze.map((p) => p.id))}>Alle</button>
+              <button type="button" className="textknopf" onClick={() => neu(setPlaetze)([])}>Keinen</button>
+            </span>
           </div>
-        )}
-        {kollisionen === null ? (
-          <button
-            type="button"
-            className="knopf haupt gross block"
-            disabled={props.laeuft || plaetze.length === 0 || !zeitOk}
-            onClick={() => void speichern(false)}
-          >
-            {props.laeuft ? "Wird gespeichert…" : "Änderungen speichern"}
-          </button>
-        ) : null}
-        {kollisionen === null && !props.laeuft && (
-          <SperrGrund
-            grund={plaetze.length === 0 ? "Erst einen Platz wählen." : !zeitOk ? "Das Ende muss nach dem Beginn liegen." : null}
-          />
-        )}
-        {kollisionen === null ? null : (
-          <button type="button" className="knopf gefahr block" disabled={props.laeuft} onClick={() => void speichern(true)}>
-            {kollisionen} {kollisionen === 1 ? "Buchung" : "Buchungen"} verdrängen
-          </button>
-        )}
-        <button type="button" className="knopf leise block" onClick={props.onZu}>
-          Doch nicht
-        </button>
+          <div>
+            {props.plaetze.map((p) => {
+              const an = plaetze.includes(p.id);
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className="dpl"
+                  aria-pressed={an}
+                  aria-label={p.name}
+                  onClick={() => neu(setPlaetze)(an ? plaetze.filter((x) => x !== p.id) : [...plaetze, p.id])}
+                >
+                  {p.short_name.replace(/^P/, "")}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="feldreihe">
+          <label>
+            <span>Von</span>
+            <input type="time" step={props.rasterMinuten * 60} value={von} onChange={(e) => neu(setVon)(e.target.value)} />
+          </label>
+          <label>
+            <span>Bis</span>
+            <input type="time" step={props.rasterMinuten * 60} value={bis} onChange={(e) => neu(setBis)(e.target.value)} />
+          </label>
+        </div>
+
+        <label>
+          <span>Kategorie</span>
+          <select value={art} onChange={(e) => neu(setArt)(e.target.value)}>
+            {arten.map((a) => (
+              <option key={a.code} value={a.code}>{a.name}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Grund (freiwillig)</span>
+          <input type="text" value={grund} placeholder="z. B. nach Regen" onChange={(e) => setGrund(e.target.value)} />
+        </label>
+
+        {kollisionen !== null && <Verdraengt anzahl={kollisionen} />}
+
+        <div className="blatt-fuss">
+          <Fehler text={props.fehler} />
+          {!zeitOk && <p className="fussnote">Das Ende muss nach dem Beginn liegen.</p>}
+          <div className="knopf-paar">
+            {kollisionen === null ? (
+              <button
+                type="button"
+                className="knopf haupt"
+                disabled={props.laeuft || plaetze.length === 0 || !zeitOk}
+                onClick={() => void speichern(false)}
+              >
+                {props.laeuft ? "Wird gespeichert…" : "Änderungen speichern"}
+              </button>
+            ) : (
+              <button type="button" className="knopf gefahr" disabled={props.laeuft} onClick={() => void speichern(true)}>
+                {kollisionen} {kollisionen === 1 ? "Buchung" : "Buchungen"} verdrängen
+              </button>
+            )}
+            <button type="button" className="knopf leise" onClick={props.onZu}>
+              Doch nicht
+            </button>
+          </div>
+          {kollisionen === null && !props.laeuft && (
+            <SperrGrund
+              grund={plaetze.length === 0 ? "Erst einen Platz wählen." : !zeitOk ? "Das Ende muss nach dem Beginn liegen." : null}
+            />
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
 const KURZTAG = new Intl.DateTimeFormat("de-DE", {
   weekday: "short", day: "2-digit", month: "2-digit", timeZone: "UTC",
 });
+const WOCHENTAG_KURZ = new Intl.DateTimeFormat("de-DE", { weekday: "short", timeZone: "UTC" });
 const berlinTag = (d: Date) =>
   new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(d);
 
@@ -921,6 +1026,13 @@ function UmsetzBereich(props: Props & { belegung: Belegung; onZu: () => void }) 
   const kennung = useId();
   const laeuftSchon = new Date(b.starts_at).getTime() <= props.jetzt.getTime();
   const heute = berlinTag(props.jetzt);
+  // Die Tagesleiste reicht so weit wie der Plan, mindestens zwei Wochen.
+  const tage = Array.from({ length: Math.max(props.vorlaufTage, 13) + 1 }, (_, i) => {
+    const d = new Date(`${heute}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + i);
+    return d.toISOString().slice(0, 10);
+  });
+  if (!tage.includes(props.datum)) tage.unshift(props.datum);
 
   const [tag, setTag] = useState(props.datum);
   const [andererTag, setAndererTag] = useState<{ tag: string; belegung: TagesBelegung[] } | null>(null);
@@ -982,119 +1094,161 @@ function UmsetzBereich(props: Props & { belegung: Belegung; onZu: () => void }) 
   const grundNoetig = !b.is_own;
   const bereit = platz !== undefined && minute !== null && !(grundNoetig && grund.trim() === "");
 
+  const bisherTag = new Intl.DateTimeFormat("de-DE", { weekday: "long", timeZone: "Europe/Berlin" }).format(new Date(b.starts_at));
+  const bisherPlatz = props.plaetze.find((p) => p.id === b.court_id)?.name ?? "Platz";
+
   return (
     <>
-      {laeuftSchon ? (
-        <p className="mit">Die Buchung läuft schon – sie kann nur noch den Platz wechseln.</p>
-      ) : (
-        <label>
-          <span>Tag</span>
-          <input
-            type="date"
-            value={tag}
-            min={heute}
-            onChange={(e) => void tagWaehlen(e.target.value)}
-          />
-        </label>
-      )}
-
-      {ladeFehler ? (
-        <div className="hinweis fehler" role="alert">{ladeFehler}</div>
-      ) : belegung === null ? (
-        <p className="mit">Belegung wird geladen…</p>
-      ) : ziele.length === 0 ? (
-        <p className="mit">An diesem Tag ist kein Platz frei, auf den die Buchung passt.</p>
-      ) : (
-        <>
-          <fieldset className="segmente umsetz-plaetze">
-            <legend>Platz</legend>
-            <div className="segment-leiste">
-              {props.plaetze.map((p) => {
-                const frei = mitZiel.includes(p);
+      <Kopf
+        titel="Umsetzen"
+        kicker={`Bisher: ${bisherPlatz} · ${bisherTag}, ${alsUhrzeit(eigeneMinute)} – ${alsUhrzeit(eigeneMinute + dauer)}`}
+        onSchliessen={props.onSchliessen}
+      />
+      <div className="fenster-inhalt">
+        {laeuftSchon ? (
+          <p className="mit">Die Buchung läuft schon – sie kann nur noch den Platz wechseln.</p>
+        ) : (
+          <fieldset className="segmente umsetz-tage">
+            <legend>Tag</legend>
+            <div className="tage-leiste">
+              {tage.map((t) => {
+                const d = new Date(`${t}T12:00:00Z`);
                 return (
-                  <label key={p.id} className="segment" title={frei ? p.name : `${p.name} ist zu keiner passenden Zeit frei`}>
+                  <label key={t} className="segment tag">
                     <input
                       type="radio"
-                      name={`${kennung}-platz`}
-                      value={p.id}
-                      checked={platz?.id === p.id}
-                      disabled={!frei}
-                      aria-label={p.name}
-                      onChange={() => setPlatzWahl(p.id)}
+                      name={`${kennung}-tag`}
+                      value={t}
+                      checked={tag === t}
+                      aria-label={tagText(t)}
+                      onChange={() => void tagWaehlen(t)}
                     />
-                    <span>{p.short_name || p.name}</span>
+                    <span aria-hidden="true">
+                      <small>{WOCHENTAG_KURZ.format(d).replace(".", "")}</small>
+                      <b className="tnum">{d.getUTCDate()}</b>
+                    </span>
                   </label>
                 );
               })}
             </div>
           </fieldset>
-
-          <fieldset className="segmente umsetz-zeiten">
-            <legend>Beginn</legend>
-            <div className="segment-leiste">
-              {zeiten.map((m) => (
-                <label key={m} className="segment">
-                  <input
-                    type="radio"
-                    name={`${kennung}-beginn`}
-                    value={m}
-                    checked={minute === m}
-                    onChange={() => setMinuteWahl(m)}
-                  />
-                  <span className="tnum">{alsUhrzeit(m)}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        </>
-      )}
-
-      <label>
-        <span>Grund{grundNoetig ? "" : " (freiwillig)"}</span>
-        <input
-          type="text"
-          value={grund}
-          placeholder="z. B. Platz 3 steht unter Wasser"
-          onChange={(e) => setGrund(e.target.value)}
-        />
-      </label>
-
-      {platz && minute !== null && (
-        <p className="mit tnum">
-          Neu: {platz.name} · {KURZTAG.format(new Date(`${tag}T12:00:00Z`))} ·{" "}
-          {alsUhrzeit(minute)}–{alsUhrzeit(minute + dauer)} Uhr. Bucher und Mitspieler werden benachrichtigt.
-        </p>
-      )}
-
-      <Fehler text={props.fehler} />
-      <div className="fenster-fuss">
-        <button
-          type="button"
-          className="knopf haupt"
-          disabled={props.laeuft || !bereit}
-          onClick={() => {
-            if (!platz || minute === null) return;
-            props.onUmsetzen(b.booking_id, platz.id, berlinTime(tag, minute).toISOString(), grund);
-          }}
-        >
-          {props.laeuft ? "Wird umgesetzt…" : "Hierhin umsetzen"}
-        </button>
-        {!props.laeuft && (
-          <SperrGrund
-            grund={
-              platz === undefined || minute === null
-                ? "Erst Platz und Uhrzeit wählen."
-                : grundNoetig && grund.trim() === ""
-                  ? "Erst einen Grund eingeben."
-                  : null
-            }
-          />
         )}
-        <button type="button" className="knopf leise" onClick={props.onZu}>
-          Doch nicht
-        </button>
+
+        {ladeFehler ? (
+          <div className="hinweis fehler" role="alert">{ladeFehler}</div>
+        ) : belegung === null ? (
+          <p className="mit">Belegung wird geladen…</p>
+        ) : ziele.length === 0 ? (
+          <p className="mit">An diesem Tag ist kein Platz frei, auf den die Buchung passt.</p>
+        ) : (
+          <>
+            <fieldset className="segmente umsetz-plaetze">
+              <legend>Platz</legend>
+              <div className="segment-leiste">
+                {props.plaetze.map((p) => {
+                  const frei = mitZiel.includes(p);
+                  return (
+                    <label key={p.id} className="segment" title={frei ? p.name : `${p.name} ist zu keiner passenden Zeit frei`}>
+                      <input
+                        type="radio"
+                        name={`${kennung}-platz`}
+                        value={p.id}
+                        checked={platz?.id === p.id}
+                        disabled={!frei}
+                        aria-label={p.name}
+                        onChange={() => setPlatzWahl(p.id)}
+                      />
+                      <span>{p.name || p.short_name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            <fieldset className="segmente umsetz-zeiten">
+              <legend>Beginn</legend>
+              <div className="segment-leiste">
+                {zeiten.map((m) => (
+                  <label key={m} className="segment">
+                    <input
+                      type="radio"
+                      name={`${kennung}-beginn`}
+                      value={m}
+                      checked={minute === m}
+                      onChange={() => setMinuteWahl(m)}
+                    />
+                    <span className="tnum">{alsUhrzeit(m)}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </>
+        )}
+
+        <label>
+          <span>Grund{grundNoetig ? "" : " (freiwillig)"}</span>
+          <input
+            type="text"
+            value={grund}
+            placeholder="z. B. Platz 3 steht unter Wasser"
+            onChange={(e) => setGrund(e.target.value)}
+          />
+        </label>
+
+        {platz && minute !== null && (
+          <div className="blatt-info neu">
+            <span className="symbolkreis" aria-hidden="true"><UmsetzSymbol /></span>
+            <p className="tnum">
+              <b>
+                Neu: {platz.name} · {KURZTAG.format(new Date(`${tag}T12:00:00Z`))} ·{" "}
+                {alsUhrzeit(minute)}–{alsUhrzeit(minute + dauer)} Uhr.
+              </b>{" "}
+              Bucher und Mitspieler werden benachrichtigt.
+            </p>
+          </div>
+        )}
+
+        <div className="blatt-fuss">
+          <Fehler text={props.fehler} />
+          <div className="knopf-paar">
+            <button
+              type="button"
+              className="knopf haupt"
+              disabled={props.laeuft || !bereit}
+              onClick={() => {
+                if (!platz || minute === null) return;
+                props.onUmsetzen(b.booking_id, platz.id, berlinTime(tag, minute).toISOString(), grund);
+              }}
+            >
+              {props.laeuft ? "Wird umgesetzt…" : "Hierhin umsetzen"}
+            </button>
+            <button type="button" className="knopf leise" onClick={props.onZu}>
+              Doch nicht
+            </button>
+          </div>
+          {!props.laeuft && (
+            <SperrGrund
+              grund={
+                platz === undefined || minute === null
+                  ? "Erst Platz und Uhrzeit wählen."
+                  : grundNoetig && grund.trim() === ""
+                    ? "Erst einen Grund eingeben."
+                    : null
+              }
+            />
+          )}
+        </div>
       </div>
     </>
+  );
+}
+
+function UmsetzSymbol() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" focusable="false">
+      <path d="M8 3v3M16 3v3M4 9h16M12 20H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
+      <path d="M15.5 16.5a3 3 0 1 1 .9 2.1M15.5 19.5v-2.4h2.4" />
+    </svg>
   );
 }
 

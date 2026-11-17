@@ -44,11 +44,14 @@ export default async function VeranstaltungSeite({ params }: { params: Promise<{
 
   return (
     <div className="veranstaltung-mitglied">
+      {/* Entwurf "Veranstaltung": runder Rückweg, Marke, Titel - ohne farbige Fläche.
+          Tag und Uhrzeit stehen in der Tabelle darunter. */}
       <header className="event-kopf">
-        <svg className="platzlinien" viewBox="0 0 350 150" preserveAspectRatio="xMaxYMin slice" aria-hidden="true">
-          <path d="M200 150 L250 0 M350 40 L260 150 M230 80 H350" />
-        </svg>
-        <Link href="/verein/veranstaltungen" className="zurueck">‹ Veranstaltungen</Link>
+        <Link href="/verein/veranstaltungen" className="rueck-kreis" aria-label="Zurück zu den Veranstaltungen">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="m14.5 6-6 6 6 6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
         <div className="event-marken">
           <span className={`marke-klein ${EVENT_KIND_TON[e.kind]}`}>{EVENT_KIND_LABEL[e.kind]}</span>
           {(e.status === "cancelled" || marke.text === "Abgeschlossen") && (
@@ -104,23 +107,23 @@ export default async function VeranstaltungSeite({ params }: { params: Promise<{
                 </div>
               )}
               {e.registration_enabled && (
-                <div>
+                <div className="belegung">
                   <dt>Belegung</dt>
                   <dd>
                     <b>{eventBelegungText(e)}</b>
-                    {anteil != null && (
-                      <span className="balken" aria-hidden="true">
-                        <i style={{ width: `${Math.round(anteil * 100)}%` }} />
-                      </span>
-                    )}
                   </dd>
+                  {anteil != null && (
+                    <dd className="balken" aria-hidden="true">
+                      <i style={{ width: `${Math.round(anteil * 100)}%` }} />
+                    </dd>
+                  )}
                 </div>
               )}
             </dl>
           </section>
 
           {e.description && (
-            <section className="karte beschreibung" aria-label="Beschreibung">
+            <section className="beschreibung event-text" aria-label="Beschreibung">
               <p>{e.description}</p>
             </section>
           )}

@@ -102,7 +102,7 @@ export function Benachrichtigungen({ ungelesen, label }: { ungelesen: number; la
       {offen && (
         <dialog
           ref={dialog}
-          className="fenster"
+          className="fenster blatt nachrichten"
           onClose={() => setOffen(false)}
           onCancel={() => setOffen(false)}
           onClick={(e) => {
@@ -110,13 +110,14 @@ export function Benachrichtigungen({ ungelesen, label }: { ungelesen: number; la
           }}
           aria-label="Benachrichtigungen"
         >
+          <div className="griff" aria-hidden="true" />
           <div className="fenster-kopf">
             <div>
               <h2>Benachrichtigungen</h2>
               <p>Was sich für dich geändert hat</p>
             </div>
             {!alleGesehen && liste?.some((n) => n.read_at === null) && (
-              <button type="button" className="knopf leise klein" onClick={alleGelesen}>
+              <button type="button" className="textknopf" onClick={alleGelesen}>
                 Alle als gelesen
               </button>
             )}
@@ -126,7 +127,9 @@ export function Benachrichtigungen({ ungelesen, label }: { ungelesen: number; la
               onClick={() => dialog.current?.close()}
               aria-label="Schließen"
             >
-              ×
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              </svg>
             </button>
           </div>
 

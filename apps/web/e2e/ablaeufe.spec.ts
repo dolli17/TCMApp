@@ -1624,7 +1624,7 @@ test.describe("Buchung umsetzen", () => {
     // Umsetzen auf einen anderen Tag: dessen Belegung lädt das Blatt nach.
     const fenster = await oeffne(page, alt.platz, alt.zeit);
     await fenster.getByRole("button", { name: "Umsetzen", exact: true }).click();
-    await fenster.getByLabel("Tag", { exact: true }).fill(zielTag);
+    await fenster.locator(`fieldset.umsetz-tage input[value="${zielTag}"]`).check();
     await expect(fenster.locator("fieldset.umsetz-zeiten input:checked")).toHaveCount(1, { timeout: 15_000 });
     const ziel = await gewaehltesZiel(fenster);
 

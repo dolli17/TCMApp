@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { KONTOLOESCHUNG_NACHRICHT_MAX, KONTOLOESCHUNG_TEXT as T } from "@tcm/core";
 import type { AktionsErgebnis } from "@/app/konto/aktionen";
@@ -27,10 +28,14 @@ export function KontoloeschungFormular({ aktion }: { aktion: (fd: FormData) => P
   }
 
   return (
-    <section className="karte einstellungen" aria-label={T.titel}>
-      {T.erklaerung.map((satz) => (
-        <p key={satz}>{satz}</p>
-      ))}
+    <section className="karte einstellungen kuendigen" aria-label={T.titel}>
+      {/* Entwurf "Kündigen": die Erklärung in einer ruhigen Karte, darunter die
+          Nachricht, unten die beiden Knöpfe über die volle Breite. */}
+      <div className="erklaerung">
+        {T.erklaerung.map((satz) => (
+          <p key={satz}>{satz}</p>
+        ))}
+      </div>
 
       {meldung && (
         <div className={`hinweis ${meldung.ok ? "erfolg" : "fehler"}`} role="status">
@@ -52,27 +57,30 @@ export function KontoloeschungFormular({ aktion }: { aktion: (fd: FormData) => P
           </label>
 
           {rueckfrage ? (
-            <div role="group" aria-label="Rückfrage">
+            <div role="group" aria-label="Rückfrage" className="knopf-stapel">
               <p><b>{T.bestaetigungFrage}</b></p>
-              <button type="button" className="knopf gefahr-leise" onClick={senden} disabled={laeuft}>
+              <button type="button" className="knopf gefahr gross block" onClick={senden} disabled={laeuft}>
                 {laeuft ? "Wird gesendet…" : T.bestaetigen}
-              </button>{" "}
-              <button type="button" className="knopf leise" onClick={() => setRueckfrage(false)} disabled={laeuft}>
+              </button>
+              <button type="button" className="knopf leise gross block" onClick={() => setRueckfrage(false)} disabled={laeuft}>
                 {T.abbrechen}
               </button>
             </div>
           ) : (
             // Gefahr statt Blau: der Antrag beendet die Mitgliedschaft (U44).
-            <button
-              type="button"
-              className="knopf gefahr-leise"
-              onClick={() => {
-                setMeldung(null);
-                setRueckfrage(true);
-              }}
-            >
-              {T.absenden}
-            </button>
+            <div className="knopf-stapel">
+              <button
+                type="button"
+                className="knopf gefahr-leise gross block"
+                onClick={() => {
+                  setMeldung(null);
+                  setRueckfrage(true);
+                }}
+              >
+                {T.absenden}
+              </button>
+              <Link href="/konto" className="knopf leise gross block">{T.abbrechen}</Link>
+            </div>
           )}
         </>
       )}

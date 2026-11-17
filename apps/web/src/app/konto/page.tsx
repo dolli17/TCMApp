@@ -120,6 +120,13 @@ export default async function KontoSeite() {
   return (
     <>
       {/* --- Profilkopf ---------------------------------------------------- */}
+      {/* Entwurf "Konto": Kicker und Seitenname, darunter mittig Avatar, Name und Marken */}
+      <div className="plan-kopf konto-kopf">
+        <div>
+          <div className="kicker">TC Muckensturm</div>
+          <p className="pagetitle">Konto</p>
+        </div>
+      </div>
       <header className="profilkopf">
         <span className="avatar gross" aria-hidden="true">{initialen}</span>
         <h1>{vorname} {nachname}</h1>
@@ -220,7 +227,7 @@ export default async function KontoSeite() {
           {dienst && !dienstFehler && (
             <section className="karte arbeitsdienst-karte" aria-label="Arbeitsdienst">
               <div className="kopfzeile">
-                <b>Arbeitsdienst {dienst.year}</b>
+                <b className="kicker">Arbeitsdienst {dienst.year}</b>
                 <span className="dpl tnum">{soll > 0 ? `${ist} / ${soll} h` : `${ist} h`}</span>
               </div>
               {soll > 0 && (
@@ -263,67 +270,51 @@ export default async function KontoSeite() {
           <section aria-labelledby="h-einstellungen">
             <div className="sectionlabel"><h2 id="h-einstellungen">Einstellungen</h2></div>
             <nav className="gruppe einstellungen-liste" aria-label="Einstellungen">
-              <Eintrag href="/konto/daten" symbol="konto" titel="Meine Daten" />
-              <Eintrag href="/konto/notfall" symbol="telefon" titel="Notfallkontakt" />
-              <Eintrag href="/konto/tennis" symbol="ball" titel="Tennis" text={tennisStand} />
+              <Eintrag href="/konto/daten" titel="Meine Daten" />
+              <Eintrag href="/konto/notfall" titel="Notfallkontakt" />
+              <Eintrag href="/konto/tennis" titel="Tennis" text={tennisStand} />
               {mannschaftSichtbar && (
                 <Eintrag
                   href="/konto/mannschaft"
-                  symbol="mannschaft"
+                 
                   titel="Mannschaft"
                   text={mannschaftKurzfassung(mannschaft, offeneEinladungen)}
                 />
               )}
-              <Eintrag href="/konto/einwilligungen" symbol="haken" titel="Einwilligungen" />
-              <Eintrag href="/konto/bank" symbol="kasse" titel="Bankverbindung & Mandat" />
+              <Eintrag href="/konto/einwilligungen" titel="Einwilligungen" />
+              <Eintrag href="/konto/bank" titel="Bankverbindung & Mandat" />
             </nav>
-            <div className="gruppe erscheinungsbild">
-              <p>Erscheinungsbild</p>
+            <div className="erscheinungsbild">
+              <p className="kicker">Erscheinungsbild</p>
               <ThemeUmschalter />
             </div>
           </section>
 
-          <div className="gruppe">
-            <Link href="/datenschutz" className="gruppen-zeile">Datenschutz</Link>
-            <Link href="/impressum" className="gruppen-zeile">Impressum</Link>
+          {/* Entwurf: Rechtliches und Abmelden als eine Zeile Textlinks */}
+          <div className="konto-fuss">
+            <Link href="/datenschutz">Datenschutz</Link>
+            <Link href="/impressum">Impressum</Link>
             <AbmeldeKnopf alsZeile />
           </div>
 
           {/* Abgesetzt, damit niemand sie beim Abmelden streift (U44). */}
-          <div className="gruppe getrennt">
-            <Link href="/konto/loeschen" className="gruppen-zeile eintrag">
-              <span className="titel">{KONTOLOESCHUNG_TEXT.titel}</span>
-              <span className="pfeil" aria-hidden="true">›</span>
-            </Link>
-          </div>
+          <p className="konto-kuendigen">
+            <Link href="/konto/loeschen" className="gefahr-link">{KONTOLOESCHUNG_TEXT.titel}</Link>
+          </p>
         </div>
       </div>
     </>
   );
 }
 
-const PFADE: Record<string, string> = {
-  konto: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
-  telefon: "M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z",
-  haken: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11",
-  kasse: "M2 7h20v12H2zM2 11h20M6 15h4",
-  mannschaft: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.1a4 4 0 0 1 0 7.8M18 14.2a7 7 0 0 1 4 6.8",
-  ball: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM4.9 4.9c3.1 3.1 3.1 11.1 0 14.2M19.1 4.9c-3.1 3.1-3.1 11.1 0 14.2",
-};
-
-function Eintrag({ href, symbol, titel, text }: { href: string; symbol: string; titel: string; text?: string }) {
+function Eintrag({ href, titel, text }: { href: string; titel: string; text?: string }) {
   return (
     <Link href={href} className="gruppen-zeile eintrag">
-      <span className="symbolkachel" aria-hidden="true">
-        <svg viewBox="0 0 24 24" focusable="false">
-          <path d={PFADE[symbol]} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </span>
-      <span className="titel">
-        {titel}
-        {text && <small>{text}</small>}
-      </span>
-      <span className="pfeil" aria-hidden="true">›</span>
+      <span className="titel">{titel}</span>
+      {text && <span className="wert">{text}</span>}
+      <svg className="pfeil" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="m9 6 6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
     </Link>
   );
 }
