@@ -40,9 +40,17 @@ export function Fehlerzustand({
 
   return (
     <div className={`fehlerzustand${kompakt ? " kompakt" : ""}`} role="alert">
+      {/* Entwurf "Fehlerzustand": Symbol im Kreis, Titel, ein Satz, ein neutraler Knopf */}
+      {!kompakt && (
+        <span className="symbolkreis" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" focusable="false">
+            <path d="M7 18a4 4 0 0 1-.6-7.9A6 6 0 0 1 17.6 9 4.5 4.5 0 0 1 17.5 18H7zM4 4l16 16" />
+          </svg>
+        </span>
+      )}
       <p className="titel">{titel}</p>
       <p>{text}</p>
-      <button type="button" className="knopf leise klein" onClick={nochmal} disabled={laeuft}>
+      <button type="button" className={kompakt ? "knopf leise klein" : "knopf leise"} onClick={nochmal} disabled={laeuft}>
         {laeuft ? "Wird geladen…" : "Erneut versuchen"}
       </button>
     </div>

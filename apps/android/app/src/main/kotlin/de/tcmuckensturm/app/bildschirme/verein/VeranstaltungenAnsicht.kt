@@ -14,6 +14,7 @@
 package de.tcmuckensturm.app.bildschirme.verein
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,8 +54,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import de.tcmuckensturm.app.bildschirme.DeinMarker
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
+import de.tcmuckensturm.app.bildschirme.Fehlerzustand
 import de.tcmuckensturm.app.bildschirme.GedeckelteSchrift
+import de.tcmuckensturm.app.bildschirme.Kicker
 import de.tcmuckensturm.app.bildschirme.Kopfzeile
 import de.tcmuckensturm.app.bildschirme.Leerzustand
 import de.tcmuckensturm.app.bildschirme.karte
@@ -176,7 +180,9 @@ fun VeranstaltungenSeite(
             verticalArrangement = Arrangement.spacedBy(Abstand.m),
         ) {
             kopf()
-            stand.fehler?.let { Fehlerzeile(it, stand.aktualisiert, nachladen) }
+            stand.fehler?.let {
+                if (stand.events == null) Fehlerzustand(it, stand.aktualisiert, erneut = nachladen) else Fehlerzeile(it, stand.aktualisiert, nachladen)
+            }
             if (stand.laedt && stand.events == null) {
                 Box(Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = f.muted)
@@ -188,12 +194,7 @@ fun VeranstaltungenSeite(
                 }
                 for (g in gruppen) {
                     Column(Modifier.padding(bottom = Abstand.s), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(
-                            g.titel.uppercase(),
-                            style = TcmSchrift.text(Schrift.gewichtFett, 13.sp, 0.8.sp),
-                            color = f.muted,
-                            modifier = Modifier.semantics { heading() },
-                        )
+                        Kicker(g.titel, Modifier.semantics { heading() })
                         for (e in g.events) EventKarte(e, jetzt) { oeffne(e.id) }
                     }
                 }
@@ -223,30 +224,40 @@ fun EventKarte(e: MitgliedEvent, jetzt: Instant, aufforderung: Boolean = false, 
         color = Color.Transparent,
         modifier = Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = beschreibung },
     ) {
-        Row(Modifier.fillMaxWidth().karte(padding = 14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(
+            Modifier.fillMaxWidth().karte(padding = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Column(
                 Modifier
-                    .size(width = 52.dp, height = 56.dp)
-                    .background(if (vorbei) f.surf2 else f.brand, RoundedCornerShape(14.dp)),
+                    .size(width = 56.dp, height = 60.dp)
+                    .background(f.surf2, RoundedCornerShape(16.dp))
+                    .border(1.dp, f.line, RoundedCornerShape(16.dp)),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                val farbe = if (vorbei) f.ink2 else f.onBrand
+                val farbe = if (vorbei) f.muted else f.ink
                 // Feste Kachel: Schrift gedeckelt wie in iOS (bis xLarge).
                 GedeckelteSchrift {
                     Text(k.tag, style = TcmSchrift.display(Schrift.gewichtFett, 21.sp), color = farbe)
-                    Text(k.monat.uppercase(), style = TcmSchrift.display(Schrift.gewichtFett, Schrift.kicker, 0.6.sp), color = farbe)
+                    Text(k.monat.uppercase(), style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.kicker, 0.6.sp), color = if (vorbei) f.muted else f.ink2)
                 }
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 // Umbrechend: bei grosser Schrift steht die zweite Marke darunter statt mitten im Wort zu brechen.
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                FlowRow(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     MarkeKlein(Veranstaltungen.kindLabel[art] ?: art, Veranstaltungen.kindTon[art] ?: EventTon.GRAU)
-                    marke?.let { MarkeKlein(it.text, it.ton) }
+                    // Gelb heisst "deins": die eigene Anmeldung.
+                    marke?.let { if (e.meinStatus == "registered" && !vorbei) DeinMarker(it.text) else MarkeKlein(it.text, it.ton) }
                 }
-                Text(e.title ?: "", style = TcmSchrift.text(Schrift.gewichtFett, 17.sp).mitTrennung(), color = if (vorbei) f.ink2 else f.ink)
+                Text(e.title ?: "", style = TcmSchrift.display(Schrift.gewichtHalbfett, 17.sp).mitTrennung(), color = if (vorbei) f.ink2 else f.ink)
                 Text(Veranstaltungen.eventKartenZeit(e), style = TcmSchrift.text(Schrift.gewichtNormal, 13.5.sp), color = f.muted)
-                Text(Veranstaltungen.eventKartenZeile(e, jetzt), style = TcmSchrift.text(Schrift.gewichtFett, 13.5.sp), color = f.ink)
+                Text(Veranstaltungen.eventKartenZeile(e, jetzt), style = TcmSchrift.text(Schrift.gewichtHalbfett, 13.5.sp), color = f.ink2)
             }
         }
     }

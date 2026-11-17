@@ -2,7 +2,7 @@
  * Die Benachrichtigungen (NachrichtenListe.tsx)
  *
  * Nach Tagen gruppiert (groupNotifications), je Art ein Symbol
- * (notificationSymbol), relative Zeit, ungelesene auf goldSoft. Dieselbe
+ * (notificationSymbol), relative Zeit, ungelesene auf blueSoft. Dieselbe
  * Liste steht im Blatt hinter der Glocke und auf dem Bildschirm Neuigkeiten.
  *
  * Nennt eine Nachricht eine Veranstaltung, fuehrt ein Tippen dorthin;
@@ -32,7 +32,7 @@ struct AlleGelesenKnopf: View {
     var body: some View {
         Button(action: aktion) {
             Text("Alle als gelesen")
-                .font(Schrift.text(.fett, 14))
+                .font(Schrift.display(.halbfett, 14))
                 .foregroundStyle(Farbe.blueInk)
                 .frame(minHeight: 44)
         }
@@ -79,7 +79,7 @@ struct NachrichtZeile: View {
     let n: Benachrichtigung
     let neu: Bool
     let jetzt: Date
-    /// Auf der Liste liegt Neues auf goldSoft; auf Home nur das Symbol.
+    /// Auf der Liste liegt Neues auf blueSoft; auf Home nur das Symbol.
     var hervorheben = true
     var zeilen: Int?
     var zuVeranstaltung: (String) -> Void
@@ -93,15 +93,16 @@ struct NachrichtZeile: View {
                 .font(.system(size: 17, weight: .medium))
                 .foregroundStyle(neu ? Farbe.ink : Farbe.ink2)
                 .frame(width: 40, height: 40)
-                .background(
-                    hervorheben ? (neu ? Farbe.surf : Farbe.surf2) : (neu ? Farbe.goldSoft : Farbe.surf2),
-                    in: RoundedRectangle(cornerRadius: 12)
-                )
+                .background(hervorheben ? (neu ? Farbe.surf : Farbe.surf2) : (neu ? Farbe.blueSoft : Farbe.surf2), in: Circle())
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    // Ungelesen: der blaue Punkt vor dem Titel.
+                    if neu {
+                        Circle().fill(Farbe.blue).frame(width: 8, height: 8).alignmentGuide(.firstTextBaseline) { $0[.bottom] + 3 }
+                    }
                     Text(n.title ?? "")
-                        .font(Schrift.text(.fett, 15))
+                        .font(Schrift.display(.halbfett, 16))
                         .foregroundStyle(Farbe.ink)
                         .lineLimit(zeilen.map { _ in 2 })
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -110,7 +111,7 @@ struct NachrichtZeile: View {
                         .foregroundStyle(Farbe.muted)
                 }
                 Text(n.body ?? "")
-                    .font(Schrift.text(.normal, 13.5))
+                    .font(Schrift.text(.normal, 14.5))
                     .foregroundStyle(Farbe.ink2)
                     .lineSpacing(2)
                     .lineLimit(zeilen)
@@ -123,10 +124,10 @@ struct NachrichtZeile: View {
                 }
             }
         }
-        .padding(.vertical, 14)
+        .padding(.vertical, 16)
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(hervorheben && neu ? Farbe.goldSoft : Color.clear)
+        .background(hervorheben && neu ? Farbe.blueSoft : Color.clear)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(HomeLogik.nachrichtLabel(n, neu: neu, jetzt: jetzt))
 

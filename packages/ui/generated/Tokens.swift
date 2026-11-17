@@ -59,9 +59,9 @@ public enum Tokens {
         public let segAktivRand: Color
 
         public static let hell = Palette(
-            blue: Color(rgba: 0x1A6FB0FF),
-            blueInk: Color(rgba: 0x0F4C81FF),
-            blueSoft: Color(rgba: 0xE2EFFAFF),
+            blue: Color(rgba: 0x1466A8FF),
+            blueInk: Color(rgba: 0x1466A8FF),
+            blueSoft: Color(rgba: 0xE8F1F8FF),
             gold: Color(rgba: 0xFFD21FFF),
             goldSoft: Color(rgba: 0xFFF6D1FF),
             goldInk: Color(rgba: 0x7A5C00FF),
@@ -74,23 +74,23 @@ public enum Tokens {
             redInk: Color(rgba: 0xA8352DFF),
             brand: Color(rgba: 0x1466A8FF),
             onBrand: Color(rgba: 0xFFFFFFFF),
-            bg: Color(rgba: 0xF3F5F8FF),
+            bg: Color(rgba: 0xFFFFFFFF),
             surf: Color(rgba: 0xFFFFFFFF),
-            surf2: Color(rgba: 0xEEF2F6FF),
-            surf3: Color(rgba: 0xE2E8EFFF),
+            surf2: Color(rgba: 0xF8FAFCFF),
+            surf3: Color(rgba: 0xE2E8F0FF),
             ink: Color(rgba: 0x0A1624FF),
-            ink2: Color(rgba: 0x44566BFF),
+            ink2: Color(rgba: 0x334155FF),
             muted: Color(rgba: 0x596A7DFF),
-            line: Color(rgba: 0xE3E8EEFF),
-            line2: Color(rgba: 0xCBD5E0FF),
+            line: Color(rgba: 0xE2E8F0FF),
+            line2: Color(rgba: 0xCBD5E1FF),
             rahmen: Color(rgba: 0x76869AFF),
-            chip: Color(rgba: 0xEEF2F6FF),
-            glass: Color(rgba: 0xFFFFFFD1),
+            chip: Color(rgba: 0xF1F5F9FF),
+            glass: Color(rgba: 0xFFFFFFE0),
             glassLine: Color(rgba: 0x0A162414),
-            tabAktiv: Color(rgba: 0xFFD21FFF),
-            tabAktivInk: Color(rgba: 0x0A1624FF),
-            navAktiv: Color(rgba: 0x0A1624FF),
-            navAktivInk: Color(rgba: 0xFFFFFFFF),
+            tabAktiv: Color(rgba: 0xE8F1F8FF),
+            tabAktivInk: Color(rgba: 0x1466A8FF),
+            navAktiv: Color(rgba: 0xE8F1F8FF),
+            navAktivInk: Color(rgba: 0x1466A8FF),
             segAktiv: Color(rgba: 0xFFFFFFFF),
             segAktivRand: Color(rgba: 0x44566BFF)
         )
@@ -124,10 +124,10 @@ public enum Tokens {
             chip: Color(rgba: 0x152538FF),
             glass: Color(rgba: 0x162436C7),
             glassLine: Color(rgba: 0xFFFFFF1F),
-            tabAktiv: Color(rgba: 0xFFD21F24),
-            tabAktivInk: Color(rgba: 0xFFD21FFF),
-            navAktiv: Color(rgba: 0xFFD21F1F),
-            navAktivInk: Color(rgba: 0xFFD21FFF),
+            tabAktiv: Color(rgba: 0x3A9BE02E),
+            tabAktivInk: Color(rgba: 0x8CC6F0FF),
+            navAktiv: Color(rgba: 0x3A9BE02E),
+            navAktivInk: Color(rgba: 0x8CC6F0FF),
             segAktiv: Color(rgba: 0x1E3249FF),
             segAktivRand: Color(rgba: 0xB3C2D2FF)
         )
@@ -135,9 +135,9 @@ public enum Tokens {
         /// Folgt der Systemeinstellung. Bildschirme mit festem Theme (die
         /// Anmeldung ist immer dunkel) nehmen `hell` oder `dunkel`.
         public static let system = Palette(
-            blue: Color(hell: 0x1A6FB0FF, dunkel: 0x2478BEFF),
-            blueInk: Color(hell: 0x0F4C81FF, dunkel: 0x8CC6F0FF),
-            blueSoft: Color(hell: 0xE2EFFAFF, dunkel: 0x3A9BE02E),
+            blue: Color(hell: 0x1466A8FF, dunkel: 0x2478BEFF),
+            blueInk: Color(hell: 0x1466A8FF, dunkel: 0x8CC6F0FF),
+            blueSoft: Color(hell: 0xE8F1F8FF, dunkel: 0x3A9BE02E),
             gold: Color(hell: 0xFFD21FFF, dunkel: 0xFFD21FFF),
             goldSoft: Color(hell: 0xFFF6D1FF, dunkel: 0xFFD21F24),
             goldInk: Color(hell: 0x7A5C00FF, dunkel: 0xFFD21FFF),
@@ -150,23 +150,23 @@ public enum Tokens {
             redInk: Color(hell: 0xA8352DFF, dunkel: 0xFF6B61FF),
             brand: Color(hell: 0x1466A8FF, dunkel: 0x1466A8FF),
             onBrand: Color(hell: 0xFFFFFFFF, dunkel: 0xFFFFFFFF),
-            bg: Color(hell: 0xF3F5F8FF, dunkel: 0x07111DFF),
+            bg: Color(hell: 0xFFFFFFFF, dunkel: 0x07111DFF),
             surf: Color(hell: 0xFFFFFFFF, dunkel: 0x0E1A29FF),
-            surf2: Color(hell: 0xEEF2F6FF, dunkel: 0x152538FF),
-            surf3: Color(hell: 0xE2E8EFFF, dunkel: 0x1E3249FF),
+            surf2: Color(hell: 0xF8FAFCFF, dunkel: 0x152538FF),
+            surf3: Color(hell: 0xE2E8F0FF, dunkel: 0x1E3249FF),
             ink: Color(hell: 0x0A1624FF, dunkel: 0xF3F7FBFF),
-            ink2: Color(hell: 0x44566BFF, dunkel: 0xB3C2D2FF),
+            ink2: Color(hell: 0x334155FF, dunkel: 0xB3C2D2FF),
             muted: Color(hell: 0x596A7DFF, dunkel: 0x879AAEFF),
-            line: Color(hell: 0xE3E8EEFF, dunkel: 0xFFFFFF14),
-            line2: Color(hell: 0xCBD5E0FF, dunkel: 0xFFFFFF29),
+            line: Color(hell: 0xE2E8F0FF, dunkel: 0xFFFFFF14),
+            line2: Color(hell: 0xCBD5E1FF, dunkel: 0xFFFFFF29),
             rahmen: Color(hell: 0x76869AFF, dunkel: 0x677C93FF),
-            chip: Color(hell: 0xEEF2F6FF, dunkel: 0x152538FF),
-            glass: Color(hell: 0xFFFFFFD1, dunkel: 0x162436C7),
+            chip: Color(hell: 0xF1F5F9FF, dunkel: 0x152538FF),
+            glass: Color(hell: 0xFFFFFFE0, dunkel: 0x162436C7),
             glassLine: Color(hell: 0x0A162414, dunkel: 0xFFFFFF1F),
-            tabAktiv: Color(hell: 0xFFD21FFF, dunkel: 0xFFD21F24),
-            tabAktivInk: Color(hell: 0x0A1624FF, dunkel: 0xFFD21FFF),
-            navAktiv: Color(hell: 0x0A1624FF, dunkel: 0xFFD21F1F),
-            navAktivInk: Color(hell: 0xFFFFFFFF, dunkel: 0xFFD21FFF),
+            tabAktiv: Color(hell: 0xE8F1F8FF, dunkel: 0x3A9BE02E),
+            tabAktivInk: Color(hell: 0x1466A8FF, dunkel: 0x8CC6F0FF),
+            navAktiv: Color(hell: 0xE8F1F8FF, dunkel: 0x3A9BE02E),
+            navAktivInk: Color(hell: 0x1466A8FF, dunkel: 0x8CC6F0FF),
             segAktiv: Color(hell: 0xFFFFFFFF, dunkel: 0x1E3249FF),
             segAktivRand: Color(hell: 0x44566BFF, dunkel: 0xB3C2D2FF)
         )
@@ -217,29 +217,29 @@ public enum Tokens {
     // MARK: Schrift
 
     public enum Schrift {
-        /// Fliesstext und - in 800 - grosse Titel
-        public static let familieText = "Barlow"
-        /// Uhrzeiten, Zahlen und Kicker
-        public static let familieDisplay = "Barlow Semi Condensed"
+        /// Fliesstext
+        public static let familieText = "DM Sans"
+        /// Titel, Uhrzeiten, Zahlen, Kicker und Knoepfe
+        public static let familieDisplay = "Space Grotesk"
 
         /// PostScript-Namen fuer Font.custom
-        public static let textNormal = "Barlow-Regular"
-        public static let textMittel = "Barlow-Medium"
-        public static let textHalbfett = "Barlow-SemiBold"
-        public static let textFett = "Barlow-Bold"
-        public static let textExtrafett = "Barlow-ExtraBold"
-        public static let displayNormal = "BarlowSemiCondensed-Regular"
-        public static let displayMittel = "BarlowSemiCondensed-Medium"
-        public static let displayHalbfett = "BarlowSemiCondensed-SemiBold"
-        public static let displayFett = "BarlowSemiCondensed-Bold"
-        public static let displayExtrafett = "BarlowSemiCondensed-ExtraBold"
+        public static let textNormal = "DMSans-Regular"
+        public static let textMittel = "DMSans-Medium"
+        public static let textHalbfett = "DMSans-SemiBold"
+        public static let textFett = "DMSans-Bold"
+        public static let textExtrafett = "DMSans-ExtraBold"
+        public static let displayNormal = "SpaceGrotesk-Regular"
+        public static let displayMittel = "SpaceGrotesk-Medium"
+        public static let displayHalbfett = "SpaceGrotesk-SemiBold"
+        public static let displayFett = "SpaceGrotesk-Bold"
+        public static let displayExtrafett = "SpaceGrotesk-Bold"
 
-        public static let kicker: CGFloat = 13
+        public static let kicker: CGFloat = 12
         public static let klein: CGFloat = 13
         public static let normal: CGFloat = 16
-        public static let titel: CGFloat = 22
-        public static let seitentitel: CGFloat = 34
-        public static let hero: CGFloat = 40
+        public static let titel: CGFloat = 20
+        public static let seitentitel: CGFloat = 26
+        public static let hero: CGFloat = 44
 
         public static let gewichtNormal: Font.Weight = .regular
         public static let gewichtMittel: Font.Weight = .medium
@@ -250,11 +250,11 @@ public enum Tokens {
         /// Faktor auf die Schriftgroesse
         public static let zeilenhoehe: CGFloat = 1.45
         /// in Punkt
-        public static let laufweite: CGFloat = 0.1
+        public static let laufweite: CGFloat = 0
         /// in em, also mal Schriftgroesse
-        public static let laufweiteKicker: CGFloat = 0.14
+        public static let laufweiteKicker: CGFloat = 0.08
         /// in Punkt, fuer den Seitentitel
-        public static let laufweiteTitel: CGFloat = -0.6
+        public static let laufweiteTitel: CGFloat = -0.4
     }
 
     // MARK: Abstand und Radius
@@ -269,12 +269,12 @@ public enum Tokens {
     }
 
     public enum Radius {
-        public static let klein: CGFloat = 10
-        public static let feld: CGFloat = 16
-        public static let knopf: CGFloat = 16
-        public static let karte: CGFloat = 22
-        public static let karteGross: CGFloat = 26
-        public static let blatt: CGFloat = 30
+        public static let klein: CGFloat = 12
+        public static let feld: CGFloat = 26
+        public static let knopf: CGFloat = 99
+        public static let karte: CGFloat = 24
+        public static let karteGross: CGFloat = 32
+        public static let blatt: CGFloat = 32
         public static let chip: CGFloat = 99
     }
 }

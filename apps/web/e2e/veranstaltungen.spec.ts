@@ -244,7 +244,8 @@ test.describe("Veranstaltungen für Mitglieder", () => {
       await expect(page).toHaveURL(/\/verein\/veranstaltungen$/);
       await expect(page.getByRole("link", { name: new RegExp(titel) })).toContainText("Angemeldet");
       await page.goto("/");
-      await expect(page.getByRole("heading", { name: "Demnächst im Verein" })).toBeVisible();
+      // Die Startseite zeigt die nächste Veranstaltung als Streifen.
+      await expect(page.locator(".event-streifen")).toBeVisible();
 
       // Abmelden vor dem Anmeldeschluss: kostenlos, die Forderung ist weg.
       await page.goto(`/verein/veranstaltungen/${id}`);

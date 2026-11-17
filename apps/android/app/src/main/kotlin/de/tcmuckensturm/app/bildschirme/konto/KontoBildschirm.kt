@@ -17,9 +17,11 @@
 package de.tcmuckensturm.app.bildschirme.konto
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -71,7 +73,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.tcmuckensturm.app.bildschirme.Erneut
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
+import de.tcmuckensturm.app.bildschirme.GrosserKopf
 import de.tcmuckensturm.app.bildschirme.Hinweis
+import de.tcmuckensturm.app.bildschirme.Kicker
 import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.bildschirme.home.Abschnitt
 import de.tcmuckensturm.app.bildschirme.karte
@@ -85,7 +89,6 @@ import de.tcmuckensturm.app.daten.Kontodaten
 import de.tcmuckensturm.app.daten.Mannschaftsdaten
 import de.tcmuckensturm.app.daten.MeinProfil
 import de.tcmuckensturm.app.daten.Startdaten
-import de.tcmuckensturm.app.navigation.HauptTab
 import de.tcmuckensturm.app.navigation.LocalZuTab
 import de.tcmuckensturm.app.push.PushSchalter
 import de.tcmuckensturm.app.push.PushSchalterAnsicht
@@ -275,11 +278,11 @@ fun KontoAnsicht(
             .background(f.bg)
             .verticalScroll(rememberScrollState())
             .statusBarsPadding()
-            .padding(start = Abstand.rand, end = Abstand.rand, top = 12.dp, bottom = Abstand.abschnitt * 2),
+            .padding(start = Abstand.rand, end = Abstand.rand, bottom = Abstand.abschnitt * 2),
         verticalArrangement = Arrangement.spacedBy(Abstand.m),
     ) {
-        // Kein grosser Titel: oben steht, wer man ist. Die Glocke bleibt rechts und rollt mit weg (U53).
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { glocke() }
+        // Der Kopf wie auf allen Tabs (Entwurf "konto"); darunter steht, wer man ist.
+        GrosserKopf("Konto", glocke = glocke)
         val d = zustand.inhalt
         if (d == null) {
             Box(Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
@@ -319,18 +322,18 @@ private fun Profilkopf(profil: Abschnitt<MeinProfil?>, erneut: Erneut) {
     val nachname = p?.lastName ?: ""
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
-            Modifier.size(88.dp).background(f.brand, CircleShape).clearAndSetSemantics {},
+            Modifier.size(88.dp).background(f.blueSoft, CircleShape).border(1.dp, f.blue.copy(alpha = 0.22f), CircleShape).clearAndSetSemantics {},
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 Initialen.von(vorname, nachname),
-                style = TcmSchrift.text(Schrift.gewichtExtrafett, 30.sp),
-                color = f.onBrand,
+                style = TcmSchrift.display(Schrift.gewichtFett, 30.sp),
+                color = f.blueInk,
             )
         }
         Text(
             "$vorname $nachname",
-            style = TcmSchrift.text(Schrift.gewichtExtrafett, 28.sp),
+            style = TcmSchrift.display(Schrift.gewichtFett, 28.sp),
             color = f.ink,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 14.dp).semantics { heading() },
@@ -409,13 +412,14 @@ private fun Abrechnung(
                     .semantics(mergeDescendants = true) {},
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Zusammen", style = TcmSchrift.text(Schrift.gewichtFett, 14.sp), color = f.ink2, modifier = Modifier.weight(1f))
+                Text("Zusammen", style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp), color = f.ink2, modifier = Modifier.weight(1f))
                 Betrag(Geld.formatCents(summe), groesse = 21f)
             }
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AbrechnungsZeile(titel: String, beschreibung: String?, marke: Statusmarke, betrag: Int) {
     Row(
@@ -428,11 +432,18 @@ private fun AbrechnungsZeile(titel: String, beschreibung: String?, marke: Status
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.weight(1f)) {
-            Text(titel, style = TcmSchrift.text(Schrift.gewichtHalbfett, 15.5.sp), color = TcmTheme.farben.ink, maxLines = 1)
+            // Der Stand steht als Marke gleich hinter dem Titel.
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                itemVerticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(titel, style = TcmSchrift.display(Schrift.gewichtMittel, 16.sp), color = TcmTheme.farben.ink, maxLines = 1)
+                StatusmarkeAnsicht(marke)
+            }
             if (!beschreibung.isNullOrEmpty()) {
                 Text(beschreibung, style = leise.copy(color = TcmTheme.farben.muted), maxLines = 2, modifier = Modifier.padding(top = 2.dp))
             }
-            StatusmarkeAnsicht(marke)
         }
         Betrag(Geld.formatCents(betrag))
     }
@@ -446,27 +457,26 @@ private fun ArbeitsdienstKarte(dienst: Abschnitt<Arbeitsdienst?>, erneut: Erneut
     dienst.fehler?.let { Fehlerzeile("Arbeitsdienst: $it", erneut.laeuft, erneut.aktion) }
     val d = dienst.wert ?: return
     val soll = d.requiredHours ?: 0.0
-    Column(Modifier.fillMaxWidth().karte(padding = 16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "Arbeitsdienst ${d.year ?: ""}",
-                style = TcmSchrift.text(Schrift.gewichtFett, 15.5.sp),
-                color = f.ink,
-                modifier = Modifier.weight(1f),
-            )
-            Betrag(KontoLogik.dienstWert(d))
-        }
+    Column(Modifier.fillMaxWidth().karte(padding = 18.dp)) {
+        // Kicker, darunter gross der Stand, dann der Balken in kraeftigem Blau.
+        Kicker("Arbeitsdienst ${d.year ?: ""}")
+        Text(
+            KontoLogik.dienstWert(d),
+            style = TcmSchrift.display(Schrift.gewichtFett, 34.sp, (-0.8).sp).copy(fontFeatureSettings = "tnum"),
+            color = f.ink,
+            modifier = Modifier.padding(top = 6.dp),
+        )
         if (soll > 0) {
             LinearProgressIndicator(
                 progress = { KontoLogik.dienstAnteil(d).toFloat() },
-                color = f.green,
+                color = f.blue,
                 trackColor = f.surf2,
                 gapSize = 0.dp,
                 drawStopIndicator = {},
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp)
-                    .height(8.dp)
+                    .padding(top = 10.dp)
+                    .height(6.dp)
                     .clearAndSetSemantics { contentDescription = KontoLogik.dienstBedienText(d) },
             )
         }

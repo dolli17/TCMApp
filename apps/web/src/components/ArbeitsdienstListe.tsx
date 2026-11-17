@@ -122,8 +122,15 @@ export function ArbeitsdienstListe({
                     kontext={`${z.arten} · ${Number(z.completed_hours)} von ${Number(z.required_hours)} h${
                       z.eintraege > 0 ? ` · ${z.eintraege} ${z.eintraege === 1 ? "Einsatz" : "Einsätze"}` : ""
                     }`}
+                    avatar={{ kurz: kuerzel(z.member_name), id: z.member_id }}
                     neben={
                       <span className="neben">
+                        {/* Entwurf: der Stand als Balken, daneben die Zahlen */}
+                        {Number(z.required_hours) > 0 && (
+                          <span className="dienst-balken" aria-hidden="true">
+                            <i style={{ width: `${Math.min(100, (Number(z.completed_hours) / Number(z.required_hours)) * 100)}%` }} />
+                          </span>
+                        )}
                         {z.abgerechnet ? (
                           <span className="statusmarke gruen">abgerechnet</span>
                         ) : fehlt > 0 ? (
@@ -336,7 +343,7 @@ function SollKarte({
           </div>
           <button
             type="button"
-            className="knopf gold block gross"
+            className="knopf haupt block gross"
             disabled={laeuft}
             onClick={() =>
               starte(async () => {
@@ -352,4 +359,10 @@ function SollKarte({
       )}
     </section>
   );
+}
+
+/** "Bauer, Georg" → "GB": Vorname zuerst, wie überall bei den Avataren. */
+function kuerzel(name: string): string {
+  const [nach = "", vor = ""] = name.split(",").map((t) => t.trim());
+  return `${vor.charAt(0)}${nach.charAt(0)}`.toUpperCase() || name.charAt(0).toUpperCase();
 }

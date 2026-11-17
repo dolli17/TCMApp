@@ -105,10 +105,15 @@ export default async function MannschaftSeite({ searchParams }: { searchParams: 
                 const tel = telefonHref(s.telefon);
                 return (
                   <li key={s.member_id} className="mannschaft-zeile" data-testid="kader-zeile">
+                    <span className="avatar" aria-hidden="true">{initialen(name)}</span>
                     <div className="wer">
                       <b>
                         {name}
-                        {ich ? " (du)" : ""}
+                        {ich && (
+                          <span className="dein-marker">
+                            <span className="sr-only"> (</span>du<span className="sr-only">)</span>
+                          </span>
+                        )}
                       </b>
                       <small>
                         {s.tennis_lk ?? "ohne LK"}
@@ -127,6 +132,7 @@ export default async function MannschaftSeite({ searchParams }: { searchParams: 
                     {m.ich_bin_mf && !ich && !s.is_team_captain && (
                       <BestaetigterKnopf
                         label="Austragen"
+                        rot
                         frage={MANNSCHAFT_TEXT.austragenFrage(name, m.name)}
                         bestaetigen="Austragen"
                         aktion={austragen.bind(null, s.member_id)}
@@ -159,11 +165,12 @@ export default async function MannschaftSeite({ searchParams }: { searchParams: 
               {m.offene_einladungen.length === 0 && <li className="leer-zeile">{MANNSCHAFT_TEXT.keineOffenen}</li>}
               {m.offene_einladungen.map((e) => (
                 <li key={e.id} className="mannschaft-zeile" data-testid="offene-einladung">
+                  <span className="avatar" aria-hidden="true">{initialen(spielerName(e))}</span>
                   <div className="wer">
                     <b>{spielerName(e)}</b>
                     <small>{verfallText(e.expires_at)}</small>
                   </div>
-                  <AktionsKnopf label="Zurückziehen" leise aktion={einladungZurueckziehen.bind(null, e.id)} />
+                  <AktionsKnopf label="Zurückziehen" rot aktion={einladungZurueckziehen.bind(null, e.id)} />
                 </li>
               ))}
             </ul>
@@ -219,4 +226,10 @@ export default async function MannschaftSeite({ searchParams }: { searchParams: 
       </MannschaftRahmen>
     </KontoUnterseite>
   );
+}
+
+/** Anfangsbuchstaben für den Avatar: erster und letzter Namensteil. */
+function initialen(name: string): string {
+  const teile = name.trim().split(/\s+/);
+  return `${teile[0]?.charAt(0) ?? ""}${teile.length > 1 ? teile[teile.length - 1]!.charAt(0) : ""}`.toUpperCase();
 }

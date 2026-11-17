@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TC Muckensturm - Mitgliedsantrag</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            title: ['"Space Grotesk"', 'sans-serif'],
+            body: ['"DM Sans"', 'sans-serif']
+          },
+          colors: {
+            club: {
+              DEFAULT: '#1466A8',
+              hover: '#0f5287',
+              light: '#E8F1F8'
+            },
+            ink: '#0A1624'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: "DM Sans", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background-color: #ffffff;
+      color: #0A1624;
+    }
+    .font-title {
+      font-family: "Space Grotesk", sans-serif;
+    }
+    input::placeholder, textarea::placeholder {
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-white text-ink min-h-screen flex justify-center selection:bg-club-light selection:text-club">
+
+  <!-- iPhone Container: 393px width -->
+  <div class="w-full max-w-[393px] min-h-screen bg-white flex flex-col relative pb-10">
+
+    <!-- iOS Status Bar (9:41) -->
+    <div class="w-full h-11 pt-3 px-6 flex justify-between items-center text-ink text-sm font-semibold select-none sticky top-0 bg-white/95 backdrop-blur-sm z-30">
+      <span>9:41</span>
+      <div class="flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[17px] leading-none">signal_cellular_alt</span>
+        <span class="material-symbols-outlined text-[17px] leading-none">wifi</span>
+        <span class="material-symbols-outlined text-[19px] leading-none rotate-90">battery_full</span>
+      </div>
+    </div>
+
+    <!-- Top Simple App Bar -->
+    <header class="px-5 pt-2 pb-1 flex items-center justify-between">
+      <a href="#" class="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-slate-700 hover:bg-slate-100 transition-colors">
+        <span class="material-symbols-outlined text-2xl">arrow_back</span>
+      </a>
+      <a href="#" class="text-sm font-medium text-slate-500 hover:text-club transition-colors">
+        Anmelden
+      </a>
+    </header>
+
+    <!-- Scrollable Content with 20px (px-5) Side Margin -->
+    <main class="px-5 pt-3 flex-1 flex flex-col">
+
+      <!-- Header & Kicker -->
+      <div class="mb-8">
+        <p class="font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">TC Muckensturm</p>
+        <h1 class="font-title text-[32px] leading-[1.15] font-bold text-ink tracking-tight mb-2">Mitglied werden.</h1>
+        <p class="text-base text-slate-500 font-normal leading-relaxed">Acht Sandplätze, rund 300 Mitglieder.</p>
+      </div>
+
+      <!-- Form -->
+      <form class="space-y-6 flex-1 flex flex-col" onsubmit="event.preventDefault();">
+
+        <!-- Persönliche Daten -->
+        <div class="space-y-4">
+          
+          <!-- Vorname & Nachname nebeneinander -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Vorname</label>
+              <input type="text" placeholder="z. B. Max" class="w-full h-13 px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[16px] text-ink text-base placeholder-slate-400 focus:outline-none focus:border-club focus:bg-white transition-all duration-150" />
+            </div>
+            <div>
+              <label class="block font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Nachname</label>
+              <input type="text" placeholder="z. B. Mustermann" class="w-full h-13 px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[16px] text-ink text-base placeholder-slate-400 focus:outline-none focus:border-club focus:bg-white transition-all duration-150" />
+            </div>
+          </div>
+
+          <!-- Geburtstag -->
+          <div>
+            <label class="block font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Geburtstag</label>
+            <div class="relative">
+              <input type="text" placeholder="TT.MM.JJJJ" class="w-full h-13 pl-4 pr-11 py-3.5 bg-slate-50 border border-slate-200 rounded-[16px] text-ink text-base placeholder-slate-400 focus:outline-none focus:border-club focus:bg-white transition-all duration-150" />
+              <span class="material-symbols-outlined text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-xl">calendar_today</span>
+            </div>
+          </div>
+
+          <!-- Geschlecht als 3 Pillen -->
+          <div>
+            <label class="block font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Geschlecht</label>
+            <div class="grid grid-cols-3 gap-2.5">
+              <button type="button" class="h-11 rounded-full border border-club bg-club-light text-club font-medium text-sm flex items-center justify-center transition-all duration-150 shadow-sm">
+                weiblich
+              </button>
+              <button type="button" class="h-11 rounded-full border border-slate-200 bg-white text-slate-700 font-medium text-sm flex items-center justify-center hover:bg-slate-50 transition-all duration-150">
+                männlich
+              </button>
+              <button type="button" class="h-11 rounded-full border border-slate-200 bg-white text-slate-700 font-medium text-sm flex items-center justify-center hover:bg-slate-50 transition-all duration-150">
+                divers
+              </button>
+            </div>
+          </div>
+
+          <!-- E-Mail -->
+          <div>
+            <label class="block font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">E-Mail</label>
+            <input type="email" placeholder="deine.adresse@beispiel.de" class="w-full h-13 px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[16px] text-ink text-base placeholder-slate-400 focus:outline-none focus:border-club focus:bg-white transition-all duration-150" />
+          </div>
+
+          <!-- Telefon -->
+          <div>
+            <label class="block font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Telefon</label>
+            <input type="tel" placeholder="+49 171 2345678" class="w-full h-13 px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[16px] text-ink text-base placeholder-slate-400 focus:outline-none focus:border-club focus:bg-white transition-all duration-150" />
+          </div>
+
+          <!-- Straße und Hausnummer -->
+          <div>
+            <label class="block font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Straße und Hausnummer</label>
+            <input type="text" placeholder="Muckensturmstr. 12" class="w-full h-13 px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[16px] text-ink text-base placeholder-slate-400 focus:outline-none focus:border-club focus:bg-white transition-all duration-150" />
+          </div>
+
+          <!-- PLZ und Ort nebeneinander -->
+          <div class="grid grid-cols-[110px_1fr] gap-3">
+            <div>
+              <label class="block font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">PLZ</label>
+              <input type="text" placeholder="70374" maxlength="5" class="w-full h-13 px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[16px] text-ink text-base placeholder-slate-400 focus:outline-none focus:border-club focus:bg-white transition-all duration-150" />
+            </div>
+            <div>
+              <label class="block font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Ort</label>
+              <input type="text" placeholder="Stuttgart" class="w-full h-13 px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[16px] text-ink text-base placeholder-slate-400 focus:outline-none focus:border-club focus:bg-white transition-all duration-150" />
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Trennlinie -->
+        <hr class="border-t border-slate-200 my-2" />
+
+        <!-- Abschnitt Mitgliedschaft -->
+        <div class="space-y-4 pt-1">
+          <h2 class="font-title text-[18px] font-semibold text-ink tracking-tight">Mitgliedschaft</h2>
+
+          <!-- Auswahlfeld Beitragsart -->
+          <div>
+            <label class="block font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Gewünschte Beitragsart (freiwillig)</label>
+            <button type="button" class="w-full h-14 px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[16px] flex items-center justify-between text-left hover:bg-slate-100 transition-colors duration-150 group">
+              <span class="text-ink text-base font-normal">Der Vorstand entscheidet</span>
+              <span class="material-symbols-outlined text-slate-400 group-hover:text-slate-600 transition-colors text-2xl">expand_more</span>
+            </button>
+            <p class="mt-1.5 text-xs text-slate-500">Wir prüfen deine Angaben und ordnen dich passend ein (z. B. Erwachsener, Ermäßigt, Familie).</p>
+          </div>
+
+          <!-- Mehrzeiliges Feld Nachricht an den Vorstand -->
+          <div>
+            <label class="block font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Nachricht an den Vorstand (freiwillig)</label>
+            <textarea rows="3" placeholder="z. B. Vorerfahrungen, Spielstärke oder Fragen zur Mitgliedschaft…" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-[16px] text-ink text-base placeholder-slate-400 focus:outline-none focus:border-club focus:bg-white transition-all duration-150 resize-none leading-relaxed"></textarea>
+          </div>
+
+        </div>
+
+        <!-- Datenschutz Checkbox -->
+        <div class="pt-2">
+          <label class="flex items-start gap-3 cursor-pointer select-none">
+            <div class="relative flex items-center justify-center mt-0.5">
+              <input type="checkbox" checked class="peer sr-only" />
+              <div class="w-5 h-5 rounded-[6px] border border-slate-300 bg-white peer-checked:bg-club peer-checked:border-club transition-all flex items-center justify-center">
+                <span class="material-symbols-outlined text-white text-[16px] font-bold leading-none select-none">check</span>
+              </div>
+            </div>
+            <span class="text-sm text-slate-600 leading-snug">
+              Ich habe die <a href="#" class="text-club underline underline-offset-2 hover:opacity-80">Datenschutzerklärung</a> zur Kenntnis genommen.
+            </span>
+          </label>
+        </div>
+
+        <!-- Buttons & Footer Actions -->
+        <div class="pt-4 pb-2 space-y-4">
+          <!-- Hauptbutton 48px club blue -->
+          <button type="submit" class="w-full h-12 bg-club hover:bg-club-hover active:scale-[0.99] text-white font-title text-[15px] font-medium rounded-full shadow-sm flex items-center justify-center transition-all duration-150">
+            Antrag absenden
+          </button>
+
+          <!-- Darunter ruhig: Schon Mitglied? Anmelden -->
+          <div class="text-center pt-1">
+            <p class="text-sm text-slate-500">
+              Schon Mitglied? 
+              <a href="#" class="text-club font-medium hover:underline ml-1">Anmelden</a>
+            </p>
+          </div>
+        </div>
+
+      </form>
+
+    </main>
+
+    <!-- iOS Home Indicator -->
+    <div class="w-full flex justify-center pb-2 pt-6">
+      <div class="w-32 h-1 bg-slate-300 rounded-full"></div>
+    </div>
+
+  </div>
+
+</body>
+</html>

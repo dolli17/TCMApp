@@ -25,14 +25,19 @@ struct VeranstaltungenAnsicht: View {
             VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
                 VereinKopf()
                 if let fehler {
-                    Fehlerzeile(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
+                    // Ohne Inhalt der ganze Fehlerzustand, sonst die Zeile ueber dem alten Stand.
+                    if events == nil {
+                        Fehlerzustand(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
+                    } else {
+                        Fehlerzeile(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
+                    }
                 }
                 if laedt && events == nil {
                     ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)
                 } else if events != nil {
                     if vergangen {
                         Text("Vergangene Veranstaltungen")
-                            .font(Schrift.text(.fett, Tokens.Schrift.titel, relativeTo: .title2))
+                            .font(Schrift.display(.halbfett, Tokens.Schrift.titel, relativeTo: .title2))
                             .tracking(-0.2)
                             .foregroundStyle(Farbe.ink)
                             .accessibilityAddTraits(.isHeader)
@@ -43,10 +48,7 @@ struct VeranstaltungenAnsicht: View {
                     ForEach(gruppen, id: \.schluessel) { g in
                         VStack(alignment: .leading, spacing: 10) {
                             Text(g.titel)
-                                .font(Schrift.text(.fett, 13))
-                                .tracking(0.8)
-                                .textCase(.uppercase)
-                                .foregroundStyle(Farbe.muted)
+                                .kicker()
                                 .accessibilityAddTraits(.isHeader)
                             ForEach(g.events) { e in
                                 EventKarte(e: e, jetzt: jetzt) { zustand.pfad.append(e.id) }
@@ -56,7 +58,7 @@ struct VeranstaltungenAnsicht: View {
                     }
                     Button { vergangen.toggle() } label: {
                         Text(vergangen ? "Kommende Veranstaltungen" : "Vergangene Veranstaltungen")
-                            .font(Schrift.text(.halbfett, 14))
+                            .font(Schrift.display(.halbfett, 14))
                             .foregroundStyle(Farbe.blueInk)
                             .padding(.horizontal, 12)
                             .frame(minHeight: 44)
@@ -80,14 +82,12 @@ struct VeranstaltungenAnsicht: View {
     private func laden(_ art: Art) async {
         if art == .nachladen { aktualisiert = true }
         let d = Vereinsdaten(client: sitzung.client)
-        async let name = try? Startdaten(client: d.client).meinName()
         do {
             events = try await d.veranstaltungen()
             fehler = nil
         } catch {
             fehler = Meldung.aus(error).text
         }
-        if let n = await name { zustand.name = n }
         laedt = false
         aktualisiert = false
     }

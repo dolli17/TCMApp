@@ -1,0 +1,236 @@
+<!DOCTYPE html><html class="h-full bg-white" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>TC Muckensturm - Tennis</title>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-error": "#ffffff",
+            "on-primary-fixed": "#001d36",
+            "on-secondary-fixed": "#001e2c",
+            "tertiary-fixed-dim": "#ffb77c",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "tertiary": "#743d00",
+            "tertiary-container": "#975100",
+            "surface": "#ffffff",
+            "inverse-surface": "#2f3038",
+            "on-primary": "#ffffff",
+            "on-secondary": "#ffffff",
+            "on-tertiary-fixed": "#2f1500",
+            "secondary-fixed": "#c2e8ff",
+            "on-error-container": "#93000a",
+            "on-secondary-container": "#20627f",
+            "on-secondary-fixed-variant": "#004d67",
+            "surface-tint": "#0761a3",
+            "on-surface-variant": "#414750",
+            "on-primary-container": "#cde2ff",
+            "primary-container": "#1466a8",
+            "surface-variant": "#e3e1ec",
+            "on-tertiary": "#ffffff",
+            "outline-variant": "#c1c7d2",
+            "surface-container": "#eeedf7",
+            "surface-container-high": "#e8e7f1",
+            "background": "#ffffff",
+            "on-primary-fixed-variant": "#00497d",
+            "surface-bright": "#ffffff",
+            "secondary-container": "#a1dcfe",
+            "tertiary-fixed": "#ffdcc3",
+            "inverse-on-surface": "#f1effa",
+            "primary": "#1466A8",
+            "outline": "#717781",
+            "on-background": "#0A1624",
+            "on-surface": "#0A1624",
+            "surface-container-low": "#f4f2fd",
+            "secondary": "#246582",
+            "surface-dim": "#dad9e3",
+            "error": "#ba1a1a",
+            "surface-container-highest": "#e3e1ec",
+            "on-tertiary-container": "#ffd9bd",
+            "secondary-fixed-dim": "#93ceef",
+            "primary-fixed-dim": "#9fcaff",
+            "primary-fixed": "#d1e4ff",
+            "error-container": "#ffdad6",
+            "inverse-primary": "#9fcaff"
+          },
+          fontFamily: {
+            "label-caps": ["Space Grotesk"],
+            "headline-lg-mobile": ["Space Grotesk"],
+            "display-score": ["Space Grotesk"],
+            "headline-lg": ["Space Grotesk"],
+            "body-sm": ["DM Sans"],
+            "numeric-data": ["Space Grotesk"],
+            "body-lg": ["DM Sans"],
+            "headline-sm": ["Space Grotesk"],
+            "display-score-mobile": ["Space Grotesk"]
+          },
+          fontSize: {
+            "label-caps": ["0.6875rem", { lineHeight: "0.875rem", letterSpacing: "0.08em", fontWeight: "700" }],
+            "headline-lg-mobile": ["1.5rem", { lineHeight: "1.75rem", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "display-score": ["4rem", { lineHeight: "4rem", letterSpacing: "-0.04em", fontWeight: "700" }],
+            "headline-lg": ["2rem", { lineHeight: "2.25rem", letterSpacing: "-0.02em", fontWeight: "600" }],
+            "body-sm": ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "0.01em", fontWeight: "400" }],
+            "numeric-data": ["1.125rem", { lineHeight: "1.25rem", letterSpacing: "-0.01em", fontWeight: "500" }],
+            "body-lg": ["1rem", { lineHeight: "1.5rem", letterSpacing: "0em", fontWeight: "400" }],
+            "headline-sm": ["1.125rem", { lineHeight: "1.5rem", letterSpacing: "0em", fontWeight: "600" }],
+            "display-score-mobile": ["2.75rem", { lineHeight: "3rem", letterSpacing: "-0.03em", fontWeight: "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      font-family: 'DM Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-slate-100 flex justify-center min-h-screen text-[#0A1624]">
+<!-- iPhone Canvas Container: 393px × 852px -->
+<main class="w-full max-w-[393px] h-[852px] bg-white relative flex flex-col overflow-hidden shadow-2xl">
+<!-- 1. iOS Status Bar -->
+<header class="w-full h-[44px] pt-3 px-7 flex items-center justify-between shrink-0 bg-white z-20 select-none">
+<span class="font-['Space_Grotesk'] text-[15px] font-semibold tracking-tight text-[#0A1624]">9:41</span>
+<div class="flex items-center space-x-1.5 text-[#0A1624]">
+<!-- Cellular Signal -->
+<svg class="w-4 h-3.5 fill-current" viewBox="0 0 17 12">
+<rect height="4" rx="0.5" width="2.5" x="0" y="8"></rect>
+<rect height="6.5" rx="0.5" width="2.5" x="4" y="5.5"></rect>
+<rect height="9" rx="0.5" width="2.5" x="8" y="3"></rect>
+<rect height="11.5" rx="0.5" width="2.5" x="12" y="0.5"></rect>
+</svg>
+<!-- Wi-Fi -->
+<svg class="w-4 h-3.5 fill-current" viewBox="0 0 16 12">
+<path d="M8 11.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm-4.24-4.24a6 6 0 0 1 8.48 0 .75.75 0 0 0 1.06-1.06 7.5 7.5 0 0 0-10.6 0 .75.75 0 0 0 1.06 1.06zm-2.12-2.12a9 9 0 0 1 12.72 0 .75.75 0 1 0 1.06-1.06 10.5 10.5 0 0 0-14.84 0 .75.75 0 1 0 1.06 1.06z"></path>
+</svg>
+<!-- Battery -->
+<div class="flex items-center">
+<div class="w-5 h-2.5 rounded-sm border border-[#0A1624] p-0.5 flex items-center">
+<div class="w-full h-full bg-[#0A1624] rounded-2xs"></div>
+</div>
+<div class="w-0.5 h-1 bg-[#0A1624] rounded-r-xs ml-0.5"></div>
+</div>
+</div>
+</header>
+<!-- Scrollable Content Canvas -->
+<div class="flex-1 overflow-y-auto px-5 pt-1 pb-32">
+<!-- 2. Navigation / Header (Zurück-Link nach Konto) -->
+<nav class="pt-1">
+<a class="inline-flex items-center gap-0.5 text-[#1466A8] font-semibold text-[14px] cursor-pointer active:opacity-70 transition-opacity -ml-1 font-['Space_Grotesk']" href="#konto"><span class="material-symbols-outlined text-[20px] font-semibold">chevron_left</span><span>Konto</span></a>
+<div class="mt-4 mb-1">
+<h1 class="font-['Space_Grotesk'] text-[24px] font-bold text-[#0A1624] tracking-tight">Tennis</h1>
+</div>
+<p class="font-['DM_Sans'] text-[14px] text-slate-500 leading-snug">
+          Die LK bestimmt, welche Mitspielersuchen du siehst.
+        </p>
+</nav>
+<!-- 3. Karte „Aktuelle LK“ -->
+<section class="rounded-2xl border border-slate-200 bg-white p-5 mt-6">
+<span class="font-['Space_Grotesk'] text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+          AKTUELL
+        </span>
+<div class="font-['Space_Grotesk'] text-[44px] font-bold text-[#0A1624] tracking-tight leading-none mt-2">
+          LK 14,2
+        </div>
+</section>
+<!-- 4. Eingabefelder (LK und NULIGA-ID) -->
+<section class="grid grid-cols-2 gap-3 mt-4">
+<!-- Feld LK -->
+<div class="flex flex-col">
+<label class="font-['Space_Grotesk'] text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 ml-1" for="input-lk">
+            LK
+          </label>
+<input class="w-full h-[52px] rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-5 text-[16px] font-['Space_Grotesk'] font-medium text-[#0A1624] focus:outline-none focus:border-[#1466A8] focus:bg-white transition-all shadow-none" id="input-lk" type="text" value="14,2">
+</div>
+<!-- Feld NULIGA-ID -->
+<div class="flex flex-col">
+<label class="font-['Space_Grotesk'] text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 ml-1" for="input-nuliga">
+            NULIGA-ID
+          </label>
+<input class="w-full h-[52px] rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-5 text-[16px] font-['Space_Grotesk'] font-medium text-[#0A1624] focus:outline-none focus:border-[#1466A8] focus:bg-white transition-all shadow-none" id="input-nuliga" type="text" value="12345678">
+</div>
+</section>
+<!-- 5. Schalterzeile: Interesse an Mannschaft (Zustand: AUS) -->
+<section class="mt-6 pt-2">
+<label class="flex items-center justify-between cursor-pointer select-none py-1">
+<span class="text-[15px] font-medium text-[#0A1624] pr-4">
+            Ich habe Interesse an einer Mannschaft
+          </span>
+<div class="relative shrink-0">
+<input class="sr-only peer" id="toggle-interest" type="checkbox">
+<!-- iOS Toggle Track (OFF: bg-slate-200, ON: peer-checked:bg-[#1466A8]) -->
+<div class="w-[51px] h-[31px] bg-[#E2E8F0] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[20px] peer-checked:bg-[#1466A8] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-200 after:rounded-full after:h-[27px] after:w-[27px] after:transition-all after:shadow-sm"></div>
+</div>
+</label>
+</section>
+<!-- 6. Karte „Mannschaft: Damen 40“ -->
+<section class="rounded-2xl border border-slate-200 bg-white p-5 mt-5">
+<!-- Kopfzeile -->
+<div class="flex items-center justify-between pb-4 border-b border-slate-100">
+<h2 class="font-['Space_Grotesk'] text-[16px] font-bold text-[#0A1624] tracking-tight">
+            Mannschaft: Damen 40
+          </h2>
+<a class="text-[14px] font-semibold text-[#1466A8] hover:underline cursor-pointer font-['Space_Grotesk']" href="#damen40">
+            Zur Mannschaft
+          </a>
+</div>
+<!-- Schalterzeile darunter (Zustand: EIN) -->
+<div class="pt-4">
+<label class="flex items-center justify-between cursor-pointer select-none">
+<span class="text-[14px] font-normal text-[#0A1624] pr-4 leading-snug">
+              Mannschaftsführer darf meine Telefonnummer sehen
+            </span>
+<div class="relative shrink-0">
+<input checked="" class="sr-only peer" id="toggle-phone" type="checkbox">
+<!-- iOS Toggle Track (ON by default) -->
+<div class="w-[51px] h-[31px] bg-[#E2E8F0] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[20px] peer-checked:bg-[#1466A8] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-[27px] after:w-[27px] after:transition-all after:shadow-sm"></div>
+</div>
+</label>
+</div>
+</section>
+</div>
+<!-- 7. Fester Fußbereich (Sticky / Fixed Bottom) -->
+<footer class="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 pt-4 pb-6 px-5 z-30">
+<button class="w-full h-[56px] rounded-full bg-[#1466A8] text-white font-['Space_Grotesk'] font-semibold text-[16px] flex items-center justify-center shadow-none hover:bg-[#0f4f82] active:scale-[0.99] transition-all cursor-pointer" type="button">
+        Speichern
+      </button>
+<!-- iOS Home Indicator -->
+<div class="w-full flex justify-center mt-4">
+<div class="w-32 h-1 bg-slate-900/80 rounded-full"></div>
+</div>
+</footer>
+</main>
+<script>
+    // Micro-interaction for form save feedback
+    document.querySelector('button').addEventListener('click', function() {
+      const originalText = this.textContent;
+      this.textContent = 'Gespeichert';
+      this.classList.add('bg-slate-800');
+      setTimeout(() => {
+        this.textContent = originalText;
+        this.classList.remove('bg-slate-800');
+      }, 1400);
+    });
+  </script>
+
+
+</body></html>

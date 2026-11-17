@@ -64,13 +64,8 @@ struct KontoBildschirm: View {
             ScrollViewReader { leser in
                 ScrollView {
                     VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                        // Kein grosser Titel: oben steht, wer man ist. Die Glocke bleibt
-                        // rechts und scrollt mit dem Profil weg (U53).
-                        HStack {
-                            Spacer()
-                            Glocke()
-                        }
-                        .padding(.top, 12)
+                        // Kopf wie auf den anderen Tabs (Entwurf "Konto"); darunter, wer man ist.
+                        GrosserKopf(titel: "Konto")
 
                         if laedt && inhalt == nil {
                             ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)
@@ -151,13 +146,12 @@ struct KontoBildschirm: View {
         Group {
             KontoAbschnitt(titel: "Einstellungen").id("einstellungen")
             KontoGruppe {
-                KontoEintrag(titel: "Meine Daten", symbol: "person") { blatt = .daten }
+                KontoEintrag(titel: "Meine Daten") { blatt = .daten }
                 KontoLinie()
-                KontoEintrag(titel: "Notfallkontakt", symbol: "phone") { blatt = .notfall }
+                KontoEintrag(titel: "Notfallkontakt") { blatt = .notfall }
                 KontoLinie()
                 KontoEintrag(
                     titel: TennisLogik.titel,
-                    symbol: "tennisball",
                     unterzeile: d.tennis.fehler == nil ? TennisLogik.uebersicht(d.tennis.wert ?? nil) : nil
                 ) { blatt = .tennis }
                 if MannschaftLogik.zeigeEintrag(
@@ -168,7 +162,6 @@ struct KontoBildschirm: View {
                     KontoLinie()
                     KontoEintrag(
                         titel: MannschaftLogik.titel,
-                        symbol: "person.3",
                         unterzeile: MannschaftLogik.uebersicht(
                             mannschaft: d.mannschaft.wert ?? nil,
                             profilTeam: d.profil.wert??.teamName,
@@ -178,28 +171,26 @@ struct KontoBildschirm: View {
                 }
                 if KontoLogik.zeigeEinwilligungen(d.merkmale.wert) {
                     KontoLinie()
-                    KontoEintrag(titel: "Einwilligungen", symbol: "checkmark.square") { blatt = .einwilligungen }
+                    KontoEintrag(titel: "Einwilligungen") { blatt = .einwilligungen }
                 }
                 KontoLinie()
-                KontoEintrag(titel: "Bankverbindung & Mandat", symbol: "building.columns") { blatt = .bank }
+                KontoEintrag(titel: "Bankverbindung & Mandat") { blatt = .bank }
                 KontoLinie()
-                PushSchalter(symbol: "bell")
+                PushSchalter()
                 KontoLinie()
-                KontoEintrag(titel: "Passwort ändern", symbol: "lock") { blatt = .passwort }
+                KontoEintrag(titel: "Passwort ändern") { blatt = .passwort }
                 KontoLinie()
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Erscheinungsbild")
-                        .font(Schrift.text(.halbfett, 15.5))
-                        .foregroundStyle(Farbe.ink)
-                    KontoSegmente(
+                    Text("Erscheinungsbild").kicker()
+                    SegmentLeiste(
                         beschriftung: "Erscheinungsbild",
                         optionen: Erscheinungsbild.allCases.map { ($0, $0.label) },
                         gewaehlt: erscheinungsbild
                     ) { erscheinungsbild = $0 }
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 14)
-                .padding(.bottom, 16)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 18)
             }
         }
     }
@@ -229,7 +220,7 @@ struct KontoBildschirm: View {
             .font(Schrift.text(.halbfett, 15.5))
             .foregroundStyle(Farbe.ink)
             .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 20)
     }
 
     // MARK: - Laden
@@ -285,22 +276,23 @@ private struct Profilkopf: View {
         let nachname = p?.lastName ?? ""
         VStack(spacing: 0) {
             Text(KontoLogik.initialen(vorname: vorname, nachname: nachname))
-                .font(Schrift.text(.extrafett, 30))
+                .font(Schrift.display(.fett, 30))
                 .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                .foregroundStyle(Farbe.onBrand)
+                .foregroundStyle(Farbe.blueInk)
                 .frame(width: 88, height: 88)
-                .background(Farbe.brand, in: Circle())
+                .background(Farbe.blueSoft, in: Circle())
+                .overlay(Circle().strokeBorder(Farbe.blue.opacity(0.22), lineWidth: 1))
                 .accessibilityHidden(true)
             Text("\(vorname) \(nachname)")
-                .font(Schrift.text(.extrafett, 28, relativeTo: .title))
+                .font(Schrift.display(.fett, 28, relativeTo: .title))
                 .foregroundStyle(Farbe.ink)
                 .multilineTextAlignment(.center)
                 .padding(.top, 14)
                 .accessibilityAddTraits(.isHeader)
             let marken = KontoLogik.marken(p)
             if !marken.isEmpty {
-                HStack(spacing: 6) {
-                    ForEach(marken, id: \.self) { KontoMarke(text: $0) }
+                UmbruchStapel(abstand: 6, zeilenabstand: 6, mittig: true) {
+                    ForEach(marken, id: \.self) { KontoMarke(text: $0, blau: $0 == "Mannschaftsführer") }
                 }
                 .padding(.top, 10)
             }
@@ -310,7 +302,7 @@ private struct Profilkopf: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, -8)
+        .padding(.top, 4)
     }
 }
 
@@ -368,12 +360,12 @@ private struct Abrechnung: View {
                         .padding(.horizontal, 16)
                 } else {
                     HStack {
-                        Text("Zusammen").font(Schrift.text(.fett, 14)).foregroundStyle(Farbe.ink2)
+                        Text("Zusammen").font(Schrift.display(.halbfett, 16)).foregroundStyle(Farbe.ink)
                         Spacer()
                         Betrag(text: Geld.formatCents(summe), groesse: 21)
                     }
-                    .padding(.vertical, 14)
-                    .padding(.horizontal, 16)
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, 20)
                     .background(Farbe.surf2)
                     .accessibilityElement(children: .combine)
                 }
@@ -383,21 +375,25 @@ private struct Abrechnung: View {
 
     private func zeile(titel: String, beschreibung: String?, marke: Statusmarke, betrag: Int) -> some View {
         HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(titel)
-                    .font(Schrift.text(.halbfett, 15.5))
+            VStack(alignment: .leading, spacing: 4) {
+                // Titel und Stand in einer Zeile; passt es nicht, steht die Marke darunter.
+                let name = Text(titel)
+                    .font(Schrift.text(.normal, 17))
                     .foregroundStyle(Farbe.ink)
                     .lineLimit(1)
-                if let b = beschreibung, !b.isEmpty {
-                    Text(b).leise().lineLimit(2).padding(.top, 2)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 10) { name.fixedSize(); StatusmarkeAnsicht(marke: marke) }
+                    VStack(alignment: .leading, spacing: 4) { name; StatusmarkeAnsicht(marke: marke) }
                 }
-                StatusmarkeAnsicht(marke: marke)
+                if let b = beschreibung, !b.isEmpty {
+                    Text(b).leise().lineLimit(2)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Betrag(text: Geld.formatCents(betrag))
         }
         .padding(.vertical, 12)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 20)
         .frame(minHeight: 64)
         .accessibilityElement(children: .combine)
     }
@@ -416,22 +412,25 @@ private struct ArbeitsdienstKarte: View {
         if let d = dienst.wert ?? nil {
             let soll = d.requiredHours ?? 0
             VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text("Arbeitsdienst \(d.year.map(String.init) ?? "")")
-                        .font(Schrift.text(.fett, 15.5))
-                        .foregroundStyle(Farbe.ink)
-                    Spacer()
-                    Betrag(text: KontoLogik.dienstWert(d))
-                }
+                // Kicker, darunter gross der Stand (Entwurf "Konto").
+                Text("Arbeitsdienst \(d.year.map(String.init) ?? "")").kicker()
+                Text(KontoLogik.dienstWert(d))
+                    .font(Schrift.display(.fett, 40, relativeTo: .largeTitle))
+                    .tracking(-1)
+                    .monospacedDigit()
+                    .foregroundStyle(Farbe.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .padding(.top, 6)
                 if soll > 0 {
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             Capsule().fill(Farbe.surf2)
-                            Capsule().fill(Farbe.green).frame(width: geo.size.width * KontoLogik.dienstAnteil(d))
+                            Capsule().fill(Farbe.blue).frame(width: geo.size.width * KontoLogik.dienstAnteil(d))
                         }
                     }
-                    .frame(height: 8)
-                    .padding(.top, 12)
+                    .frame(height: 6)
+                    .padding(.top, 10)
                     .accessibilityLabel(
                         "\(HomeLogik.jsZahl(d.completedHours ?? 0)) von \(HomeLogik.jsZahl(soll)) Stunden geleistet"
                     )
@@ -443,7 +442,7 @@ private struct ArbeitsdienstKarte: View {
                     .padding(.top, 10)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .karte(radius: Tokens.Radius.karte, padding: 16)
+            .karte(radius: Tokens.Radius.karte, padding: 20)
         }
     }
 }

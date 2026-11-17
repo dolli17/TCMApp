@@ -17,9 +17,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.sp
-import de.tcmuckensturm.app.bildschirme.anmeldung.AnmeldeSeite
 import de.tcmuckensturm.app.bildschirme.Hauptknopf
-import de.tcmuckensturm.app.bildschirme.anmeldung.LeiserVerweis
+import de.tcmuckensturm.app.bildschirme.LeiserKnopf
+import de.tcmuckensturm.app.bildschirme.anmeldung.AnmeldeSeite
 import de.tcmuckensturm.app.start.LocalSitzung
 import de.tcmuckensturm.app.theme.TcmSchrift
 import de.tcmuckensturm.app.theme.TcmTheme
@@ -49,10 +49,11 @@ fun KeinZugangInhalt(grund: ZugangsGrund, kontakt: String?, zurAnmeldung: () -> 
             color = TcmTheme.farben.ink2,
             modifier = Modifier.fillMaxWidth(),
         )
-        Column(Modifier.padding(top = Abstand.abschnitt), verticalArrangement = Arrangement.spacedBy(Abstand.l)) {
+        Column(Modifier.padding(top = Abstand.abschnitt), verticalArrangement = Arrangement.spacedBy(Abstand.s)) {
             if (kontakt != null) {
                 Hauptknopf("Vorstand kontaktieren") { links.openUri(kontakt) }
-                LeiserVerweis("Mit einem anderen Konto anmelden", aktion = zurAnmeldung)
+                // Die zweite Aktion als leiser Knopf: weiss mit Linie.
+                LeiserKnopf("Mit einem anderen Konto anmelden", aktion = zurAnmeldung)
             } else {
                 Hauptknopf("Zur Anmeldung", aktion = zurAnmeldung)
             }

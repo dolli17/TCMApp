@@ -30,8 +30,6 @@ final class VereinZustand {
     var karte: [Getraenk] = []
     /// Text der Rueckfrage "Noch nicht eingetragen", solange sie offen ist.
     var erinnerung: String?
-    /// Fuer den Avatar im Kopf; laedt der Reiter, der gerade offen ist.
-    var name: MeinName?
 
     var korbSumme: (stueck: Int, betrag: Int) {
         let s = Getraenke.basketSummary(karte, korb)
@@ -144,8 +142,8 @@ struct VereinKopf: View {
     @Environment(VereinZustand.self) private var zustand
 
     var body: some View {
-        GrosserKopf(titel: "Verein", name: zustand.name)
-        KontoSegmente(
+        GrosserKopf(titel: "Verein")
+        SegmentLeiste(
             beschriftung: "Bereich",
             optionen: VereinReiter.allCases.map { ($0, $0.label) },
             gewaehlt: zustand.reiter
@@ -159,7 +157,8 @@ struct Zaehlknopf: View {
     enum Zeichen { case plus, minus }
 
     let zeichen: Zeichen
-    var gelb = false
+    /// Hervorgehoben, sobald schon etwas gezaehlt ist: weiss mit blauer Linie.
+    var betont = false
     let beschriftung: String
     var aus = false
     let aktion: () -> Void
@@ -168,9 +167,10 @@ struct Zaehlknopf: View {
         Button(action: aktion) {
             Image(systemName: zeichen == .plus ? "plus" : "minus")
                 .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(gelb ? Farbe.onGold : Farbe.ink)
+                .foregroundStyle(betont || zeichen == .plus ? Farbe.blueInk : Farbe.ink2)
                 .frame(width: 44, height: 44)
-                .background(gelb ? Farbe.gold : Farbe.surf2, in: Circle())
+                .background(betont ? Farbe.surf : Farbe.chip, in: Circle())
+                .overlay(Circle().strokeBorder(betont ? Farbe.blue : Color.clear, lineWidth: 1.5))
         }
         .buttonStyle(.plain)
         .disabled(aus)
@@ -191,22 +191,5 @@ struct Zaehlerstand: View {
             .foregroundStyle(Farbe.ink)
             .frame(minWidth: 28)
             .accessibilityLabel(label)
-    }
-}
-
-/// Platzlinien in Perspektive, dezent - auf brand (Monatskarte, Kopf im Detail).
-struct Platzlinien: View {
-    var body: some View {
-        Canvas { ctx, groesse in
-            // Wie das SVG der Expo-App: 350 x 150 rechts oben
-            let x0 = groesse.width - 350
-            var p = Path()
-            p.move(to: CGPoint(x: x0 + 200, y: 150)); p.addLine(to: CGPoint(x: x0 + 250, y: 0))
-            p.move(to: CGPoint(x: x0 + 350, y: 40)); p.addLine(to: CGPoint(x: x0 + 260, y: 150))
-            p.move(to: CGPoint(x: x0 + 230, y: 80)); p.addLine(to: CGPoint(x: x0 + 350, y: 80))
-            ctx.stroke(p, with: .color(Farbe.onBrand.opacity(0.12)), lineWidth: 2)
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
     }
 }

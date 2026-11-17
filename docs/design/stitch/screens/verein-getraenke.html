@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="light" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>Getränke - TC Muckensturm</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline-variant": "#c1c7d2",
+            "on-tertiary-fixed": "#2f1500",
+            "surface-container-lowest": "#ffffff",
+            "inverse-primary": "#9fcaff",
+            "surface-container-highest": "#e3e1ec",
+            "on-surface-variant": "#414750",
+            "on-primary-fixed": "#001d36",
+            "on-secondary-container": "#20627f",
+            "on-surface": "#1a1b22",
+            "on-secondary": "#ffffff",
+            "primary-fixed-dim": "#9fcaff",
+            "on-secondary-fixed": "#001e2c",
+            "inverse-surface": "#2f3038",
+            "error-container": "#ffdad6",
+            "on-tertiary": "#ffffff",
+            "primary": "#004e85",
+            "error": "#ba1a1a",
+            "outline": "#717781",
+            "background": "#ffffff",
+            "tertiary": "#743d00",
+            "secondary-container": "#a1dcfe",
+            "surface-variant": "#f4f4f6",
+            "tertiary-fixed": "#ffdcc3",
+            "primary-container": "#1466a8",
+            "surface": "#ffffff",
+            "secondary-fixed-dim": "#93ceef",
+            "on-secondary-fixed-variant": "#004d67",
+            "surface-bright": "#ffffff",
+            "surface-container-high": "#e8e7f1",
+            "surface-container": "#f0f2f5",
+            "on-primary-container": "#cde2ff",
+            "surface-container-low": "#fafafa",
+            "on-error": "#ffffff",
+            "on-primary": "#ffffff",
+            "on-background": "#1a1b22",
+            "surface-dim": "#dad9e3",
+            "secondary-fixed": "#c2e8ff",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "on-tertiary-container": "#ffd9bd",
+            "surface-tint": "#0761a3",
+            "tertiary-container": "#975100",
+            "secondary": "#246582",
+            "tertiary-fixed-dim": "#ffb77c",
+            "primary-fixed": "#d1e4ff",
+            "inverse-on-surface": "#f1effa",
+            "on-primary-fixed-variant": "#00497d",
+            "on-error-container": "#93000a"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "1.5rem",
+            "xl": "2rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "gutter": "1rem",
+            "margin": "1rem",
+            "space-md": "1rem",
+            "space-sm": "0.5rem",
+            "space-xl": "2.5rem",
+            "space-lg": "1.5rem",
+            "margin-desktop": "2rem",
+            "gutter-desktop": "1.5rem"
+          },
+          "fontFamily": {
+            "headline-lg": ["Space Grotesk"],
+            "display-score-mobile": ["Space Grotesk"],
+            "body-sm": ["DM Sans"],
+            "numeric-data": ["Space Grotesk"],
+            "headline-lg-mobile": ["Space Grotesk"],
+            "headline-sm": ["Space Grotesk"],
+            "display-score": ["Space Grotesk"],
+            "label-caps": ["Space Grotesk"],
+            "body-lg": ["DM Sans"]
+          },
+          "fontSize": {
+            "headline-lg": ["2rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "display-score-mobile": ["2.75rem", { "lineHeight": "3rem", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "body-sm": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "numeric-data": ["1.125rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "headline-lg-mobile": ["1.75rem", { "lineHeight": "2rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-sm": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "600" }],
+            "display-score": ["4rem", { "lineHeight": "4rem", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+            "label-caps": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "body-lg": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+</head>
+<body class="bg-white text-on-surface antialiased flex justify-center items-center min-h-screen py-0 selection:bg-primary-container selection:text-white">
+<!-- iPhone Canvas Shell -->
+<main class="w-full max-w-[393px] h-[852px] bg-white relative overflow-hidden flex flex-col justify-between shadow-2xl rounded-[48px] border border-gray-100 select-none">
+<!-- Scrollable Container -->
+<div class="flex-1 overflow-y-auto overflow-x-hidden pb-32 [&amp;::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+<!-- 1. iOS Status Bar -->
+<section class="w-full h-11 px-7 flex items-center justify-between text-on-surface select-none pt-1">
+<span class="font-headline-sm text-body-sm font-semibold tracking-tight text-on-surface">9:41</span>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[17px] leading-none">signal_cellular_4_bar</span>
+<span class="material-symbols-outlined text-[17px] leading-none">wifi</span>
+<span class="material-symbols-outlined text-[20px] leading-none">battery_full</span>
+</div>
+</section>
+<!-- 2. Header: Dezent TC MUCKENSTURM & große Überschrift Getränke -->
+<header class="w-full px-5 pt-3 pb-3">
+<p class="font-label-caps text-label-caps text-outline uppercase tracking-wider">TC Muckensturm</p>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-semibold text-on-surface tracking-tight mt-0.5">Getränke</h1>
+</header>
+<!-- Main Content Column -->
+<div class="px-5 space-y-6">
+<!-- Monatskarte oben -->
+<section class="w-full p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-outline font-semibold">November · läuft noch</span>
+</div>
+<div class="my-1">
+<span class="font-display-score-mobile text-display-score-mobile text-on-surface font-bold tracking-tight">12,50 €</span>
+</div>
+<div class="pt-1 flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-outline">receipt_long</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">7 Entnahmen · wird mit der Monatsabrechnung eingezogen</span>
+</div>
+</section>
+<!-- 'Was nimmst du?' Sektion -->
+<section class="space-y-2.5">
+<div class="flex items-center justify-between px-0.5">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Was nimmst du?</h2>
+</div>
+<!-- Zusammenhängende weiße Karte mit feinen Hairlines -->
+<div class="bg-white border border-gray-200/80 rounded-2xl shadow-sm divide-y divide-gray-100 overflow-hidden">
+<!-- Wasser still -->
+<div class="flex items-center justify-between p-3.5 transition-colors active:bg-gray-50">
+<div class="flex flex-col min-w-0 pr-2">
+<span class="font-headline-sm text-[1rem] leading-tight text-on-surface">Wasser still</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">0,5 l · 1,50 €</span>
+</div>
+<button aria-label="Wasser still hinzufügen" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-primary-container shrink-0 hover:bg-primary-container hover:text-white active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<!-- Wasser spritzig -->
+<div class="flex items-center justify-between p-3.5 transition-colors active:bg-gray-50">
+<div class="flex flex-col min-w-0 pr-2">
+<span class="font-headline-sm text-[1rem] leading-tight text-on-surface">Wasser spritzig</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">0,5 l · 1,50 €</span>
+</div>
+<button aria-label="Wasser spritzig hinzufügen" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-primary-container shrink-0 hover:bg-primary-container hover:text-white active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<!-- Apfelschorle -->
+<div class="flex items-center justify-between p-3.5 transition-colors active:bg-gray-50">
+<div class="flex flex-col min-w-0 pr-2">
+<span class="font-headline-sm text-[1rem] leading-tight text-on-surface">Apfelschorle</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">0,5 l · 1,80 €</span>
+</div>
+<button aria-label="Apfelschorle hinzufügen" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-primary-container shrink-0 hover:bg-primary-container hover:text-white active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<!-- Cola -->
+<div class="flex items-center justify-between p-3.5 transition-colors active:bg-gray-50">
+<div class="flex flex-col min-w-0 pr-2">
+<span class="font-headline-sm text-[1rem] leading-tight text-on-surface">Cola</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">0,33 l · 2,00 €</span>
+</div>
+<button aria-label="Cola hinzufügen" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-primary-container shrink-0 hover:bg-primary-container hover:text-white active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<!-- Bier -->
+<div class="flex items-center justify-between p-3.5 transition-colors active:bg-gray-50">
+<div class="flex flex-col min-w-0 pr-2">
+<span class="font-headline-sm text-[1rem] leading-tight text-on-surface">Bier</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">0,33 l · 2,50 €</span>
+</div>
+<button aria-label="Bier hinzufügen" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-primary-container shrink-0 hover:bg-primary-container hover:text-white active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<!-- Kaffee -->
+<div class="flex items-center justify-between p-3.5 transition-colors active:bg-gray-50">
+<div class="flex flex-col min-w-0 pr-2">
+<span class="font-headline-sm text-[1rem] leading-tight text-on-surface">Kaffee</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Tasse · 1,50 €</span>
+</div>
+<button aria-label="Kaffee hinzufügen" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-primary-container shrink-0 hover:bg-primary-container hover:text-white active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<!-- Brezel -->
+<div class="flex items-center justify-between p-3.5 transition-colors active:bg-gray-50">
+<div class="flex flex-col min-w-0 pr-2">
+<span class="font-headline-sm text-[1rem] leading-tight text-on-surface">Brezel</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">1,20 €</span>
+</div>
+<button aria-label="Brezel hinzufügen" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-primary-container shrink-0 hover:bg-primary-container hover:text-white active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+</section>
+<!-- 'Zuletzt' Sektion -->
+<section class="space-y-2.5">
+<div class="flex items-center justify-between px-0.5">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Zuletzt</h2>
+</div>
+<!-- Zusammenhängende weiße Karte mit Hairlines -->
+<div class="bg-white border border-gray-200/80 rounded-2xl shadow-sm divide-y divide-gray-100 overflow-hidden">
+<!-- Apfelschorle mit Textlink Zurücknehmen -->
+<div class="flex items-center justify-between p-3.5 transition-opacity" id="undo-item">
+<div class="flex flex-col min-w-0 pr-3">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-[0.9375rem] leading-tight text-on-surface truncate">Apfelschorle</span>
+<span class="font-numeric-data text-[0.9375rem] text-on-surface">1,80 €</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">heute, 15:52</span>
+</div>
+<button class="font-label-caps text-label-caps uppercase text-[#1466A8] hover:text-primary active:opacity-70 transition-colors py-1 shrink-0 font-bold" id="undo-btn" type="button">Zurücknehmen</button>
+</div>
+<!-- Wasser still -->
+<div class="flex items-center justify-between p-3.5">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-[0.9375rem] leading-tight text-on-surface truncate">Wasser still</span>
+<span class="font-numeric-data text-[0.9375rem] text-on-surface">1,50 €</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Samstag, 11:20</span>
+</div>
+</div>
+<!-- Bier -->
+<div class="flex items-center justify-between p-3.5">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-[0.9375rem] leading-tight text-on-surface truncate">Bier</span>
+<span class="font-numeric-data text-[0.9375rem] text-on-surface">2,50 €</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Freitag, 19:05</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- 8. Floating Pill Navigation Bar (Exakte Übernahme vom Home-Screen, Verein AKTIV) -->
+<nav aria-label="Hauptnavigation" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between gap-1 p-1.5 max-w-sm w-[calc(100%-2rem)] mx-auto bg-white/90 backdrop-blur-xl rounded-full border border-gray-200/90 shadow-lg shadow-black/5">
+<!-- START (Inaktiv) -->
+<button class="flex flex-col items-center justify-center text-outline px-3 py-1.5 transition-all duration-200 hover:text-primary active:scale-98" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="home">home</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider mt-0.5">Start</span>
+</button>
+<!-- PLÄTZE (Inaktiv) -->
+<button class="flex flex-col items-center justify-center text-outline px-3 py-1.5 transition-all duration-200 hover:text-primary active:scale-98" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="sports_tennis">sports_tennis</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider mt-0.5">Plätze</span>
+</button>
+<!-- VEREIN (Aktiv: hell hinterlegte Pill-Hervorhebung, kräftiges Blau) -->
+<button class="flex flex-col items-center justify-center bg-blue-50 text-[#1466A8] rounded-full px-4 py-1.5 transition-all duration-200 active:scale-98" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="groups" style="font-variation-settings: 'FILL' 1;">groups</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider mt-0.5 font-bold">Verein</span>
+</button>
+<!-- KONTO (Inaktiv) -->
+<button class="flex flex-col items-center justify-center text-outline px-3 py-1.5 transition-all duration-200 hover:text-primary active:scale-98" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="person">person</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider mt-0.5">Konto</span>
+</button>
+</nav>
+<!-- iOS Home Bar Indicator -->
+<div class="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 bg-black/20 rounded-full pointer-events-none z-50"></div>
+</main>
+<script>
+  (function () {
+    const undoBtn = document.getElementById('undo-btn');
+    const undoItem = document.getElementById('undo-item');
+    if (undoBtn && undoItem) {
+      undoBtn.addEventListener('click', function () {
+        undoItem.style.opacity = '0.4';
+        undoBtn.textContent = 'Storniert';
+        undoBtn.disabled = true;
+        undoBtn.classList.remove('text-[#1466A8]');
+        undoBtn.classList.add('text-outline');
+      });
+    }
+  })();
+</script>
+</body></html>

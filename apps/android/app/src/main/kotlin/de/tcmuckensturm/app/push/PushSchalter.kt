@@ -143,7 +143,7 @@ fun PushSchalterAnsicht(
                 // Das Tippen nimmt die ganze Zeile (toggleable), wie bei Material-Listen.
                 onCheckedChange = null,
                 enabled = !laeuft && !gesperrt,
-                colors = SwitchDefaults.colors(checkedTrackColor = f.green, checkedBorderColor = f.green),
+                colors = SwitchDefaults.colors(checkedTrackColor = f.blue, checkedBorderColor = f.blue),
                 modifier = Modifier.alpha(if (laeuft) 0.6f else 1f),
             )
         }

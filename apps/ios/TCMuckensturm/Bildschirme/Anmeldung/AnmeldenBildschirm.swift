@@ -42,7 +42,7 @@ struct AnmeldenBildschirm: View {
                 }
 
                 VStack(spacing: Tokens.Abstand.l) {
-                    GelberKnopf(text: laeuft ? "Anmelden…" : "Anmelden", gesperrt: laeuft, aktion: absenden)
+                    Hauptknopf(text: laeuft ? "Anmelden…" : "Anmelden", gesperrt: laeuft, aktion: absenden)
                     // Der Mitgliedsantrag liegt im Web; ohne Adresse (lokal) bleibt die Zeile weg.
                     if let antrag = sitzung.umgebung.webLink("/antrag") {
                         AnmeldeFusszeile(text: "Noch kein Mitglied?", verweis: "Antrag stellen", ziel: antrag)

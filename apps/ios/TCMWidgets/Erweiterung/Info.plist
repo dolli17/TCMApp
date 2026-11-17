@@ -34,14 +34,15 @@
 	<!-- Dieselben Schriften wie die App (TCMuckensturm/Ressourcen/Schriften, in project.yml eingebunden). -->
 	<key>UIAppFonts</key>
 	<array>
-		<string>Barlow_400Regular.ttf</string>
-		<string>Barlow_500Medium.ttf</string>
-		<string>Barlow_600SemiBold.ttf</string>
-		<string>Barlow_700Bold.ttf</string>
-		<string>Barlow_800ExtraBold.ttf</string>
-		<string>BarlowSemiCondensed_600SemiBold.ttf</string>
-		<string>BarlowSemiCondensed_700Bold.ttf</string>
-		<string>BarlowSemiCondensed_800ExtraBold.ttf</string>
+		<string>DMSans-Regular.ttf</string>
+		<string>DMSans-Medium.ttf</string>
+		<string>DMSans-SemiBold.ttf</string>
+		<string>DMSans-Bold.ttf</string>
+		<string>DMSans-ExtraBold.ttf</string>
+		<string>SpaceGrotesk-Regular.ttf</string>
+		<string>SpaceGrotesk-Medium.ttf</string>
+		<string>SpaceGrotesk-SemiBold.ttf</string>
+		<string>SpaceGrotesk-Bold.ttf</string>
 	</array>
 	<!-- Dieselben Werte wie in der App (Umgebung.swift), gesetzt in Konfiguration/*.xcconfig. -->
 	<key>TCMSupabaseURL</key>

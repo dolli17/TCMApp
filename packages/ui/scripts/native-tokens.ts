@@ -63,6 +63,16 @@ const SCHNITTE = {
   extrafett: { gewicht: schrift.gewicht.extrafett, suffix: "ExtraBold" },
 } as const;
 
+/**
+ * Die beiden Familien der Stitch-Entwürfe. Space Grotesk gibt es nur bis 700:
+ * wer "extrafett" verlangt, bekommt dort den fetten Schnitt.
+ */
+const FAMILIE = {
+  text: { name: "DM Sans", postscript: "DMSans", datei: "dmsans" },
+  display: { name: "Space Grotesk", postscript: "SpaceGrotesk", datei: "spacegrotesk" },
+} as const;
+const displaySuffix = (suffix: string) => (suffix === "ExtraBold" ? "Bold" : suffix);
+
 const KOPF = (kommentar: string) => `${kommentar} ===========================================================================
 ${kommentar} Design-Tokens des TC Muckensturm
 ${kommentar}
@@ -169,17 +179,17 @@ ${schatten("dunkel")}
     // MARK: Schrift
 
     public enum Schrift {
-        /// Fliesstext und - in 800 - grosse Titel
-        public static let familieText = "Barlow"
-        /// Uhrzeiten, Zahlen und Kicker
-        public static let familieDisplay = "Barlow Semi Condensed"
+        /// Fliesstext
+        public static let familieText = "${FAMILIE.text.name}"
+        /// Titel, Uhrzeiten, Zahlen, Kicker und Knoepfe
+        public static let familieDisplay = "${FAMILIE.display.name}"
 
         /// PostScript-Namen fuer Font.custom
 ${Object.entries(SCHNITTE)
-  .map(([name, s]) => `        public static let text${gross(name)} = "Barlow-${s.suffix}"`)
+  .map(([name, s]) => `        public static let text${gross(name)} = "${FAMILIE.text.postscript}-${s.suffix}"`)
   .join("\n")}
 ${Object.entries(SCHNITTE)
-  .map(([name, s]) => `        public static let display${gross(name)} = "BarlowSemiCondensed-${s.suffix}"`)
+  .map(([name, s]) => `        public static let display${gross(name)} = "${FAMILIE.display.postscript}-${displaySuffix(s.suffix)}"`)
   .join("\n")}
 
 ${Object.entries(schrift.groesse)
@@ -339,17 +349,17 @@ ${schatten("dunkel")}
 // Schrift
 
 object Schrift {
-    /** Fliesstext und - in 800 - grosse Titel */
-    const val FAMILIE_TEXT = "Barlow"
-    /** Uhrzeiten, Zahlen und Kicker */
-    const val FAMILIE_DISPLAY = "Barlow Semi Condensed"
+    /** Fliesstext */
+    const val FAMILIE_TEXT = "${FAMILIE.text.name}"
+    /** Titel, Uhrzeiten, Zahlen, Kicker und Knoepfe */
+    const val FAMILIE_DISPLAY = "${FAMILIE.display.name}"
 
     /** Dateinamen unter res/font (Google Fonts, kleingeschrieben) */
 ${Object.entries(SCHNITTE)
-  .map(([name, s]) => `    const val DATEI_TEXT_${name.toUpperCase()} = "barlow_${s.suffix.toLowerCase()}"`)
+  .map(([name, s]) => `    const val DATEI_TEXT_${name.toUpperCase()} = "${FAMILIE.text.datei}_${s.suffix.toLowerCase()}"`)
   .join("\n")}
 ${Object.entries(SCHNITTE)
-  .map(([name, s]) => `    const val DATEI_DISPLAY_${name.toUpperCase()} = "barlowsemicondensed_${s.suffix.toLowerCase()}"`)
+  .map(([name, s]) => `    const val DATEI_DISPLAY_${name.toUpperCase()} = "${FAMILIE.display.datei}_${displaySuffix(s.suffix).toLowerCase()}"`)
   .join("\n")}
 
 ${Object.entries(schrift.groesse)

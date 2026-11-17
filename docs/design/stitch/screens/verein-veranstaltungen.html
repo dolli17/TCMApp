@@ -1,0 +1,254 @@
+<!DOCTYPE html><html class="h-full bg-white" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>TC Muckensturm - Verein</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-low": "#f4f2fd",
+            "on-tertiary": "#ffffff",
+            "on-background": "#1a1b22",
+            "on-primary": "#ffffff",
+            "on-secondary": "#ffffff",
+            "error": "#ba1a1a",
+            "inverse-on-surface": "#f1effa",
+            "secondary-container": "#a1dcfe",
+            "on-secondary-fixed": "#001e2c",
+            "primary-fixed": "#d1e4ff",
+            "inverse-primary": "#9fcaff",
+            "on-error-container": "#93000a",
+            "secondary-fixed-dim": "#93ceef",
+            "on-primary-fixed-variant": "#00497d",
+            "on-secondary-fixed-variant": "#004d67",
+            "secondary": "#246582",
+            "primary-fixed-dim": "#9fcaff",
+            "surface-dim": "#dad9e3",
+            "surface-container-high": "#e8e7f1",
+            "tertiary-container": "#975100",
+            "on-surface-variant": "#414750",
+            "outline": "#717781",
+            "tertiary-fixed-dim": "#ffb77c",
+            "surface-variant": "#e3e1ec",
+            "surface-bright": "#fbf8ff",
+            "on-tertiary-container": "#ffd9bd",
+            "surface-container-highest": "#e3e1ec",
+            "tertiary-fixed": "#ffdcc3",
+            "primary": "#004e85",
+            "on-surface": "#1a1b22",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary-container": "#20627f",
+            "error-container": "#ffdad6",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "inverse-surface": "#2f3038",
+            "surface": "#fbf8ff",
+            "on-error": "#ffffff",
+            "background": "#fbf8ff",
+            "surface-tint": "#0761a3",
+            "surface-container": "#eeedf7",
+            "on-primary-container": "#cde2ff",
+            "outline-variant": "#c1c7d2",
+            "on-tertiary-fixed": "#2f1500",
+            "primary-container": "#1466a8",
+            "secondary-fixed": "#c2e8ff",
+            "on-primary-fixed": "#001d36",
+            "tertiary": "#743d00"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "margin": "1rem",
+            "gutter": "1rem",
+            "space-xl": "2.5rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "margin-desktop": "2rem",
+            "space-lg": "1.5rem",
+            "gutter-desktop": "1.5rem"
+          },
+          "fontFamily": {
+            "display-score-mobile": ["Space Grotesk"],
+            "numeric-data": ["Space Grotesk"],
+            "label-caps": ["Space Grotesk"],
+            "body-sm": ["DM Sans"],
+            "headline-lg-mobile": ["Space Grotesk"],
+            "headline-lg": ["Space Grotesk"],
+            "headline-sm": ["Space Grotesk"],
+            "display-score": ["Space Grotesk"],
+            "body-lg": ["DM Sans"]
+          },
+          "fontSize": {
+            "display-score-mobile": ["2.75rem", { "lineHeight": "3rem", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "numeric-data": ["1.125rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "label-caps": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "body-sm": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "headline-lg-mobile": ["1.5rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-lg": ["2rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-sm": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "600" }],
+            "display-score": ["4rem", { "lineHeight": "4rem", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+            "body-lg": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    body {
+      -webkit-tap-highlight-color: transparent;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#FFFFFF] text-[#0A1624] font-body-lg text-body-lg min-h-screen antialiased flex justify-center">
+<!-- Mobile Viewport Canvas 393px -->
+<main class="w-[393px] min-h-screen bg-[#FFFFFF] relative flex flex-col px-[20px] pb-28 selection:bg-[#E8F1F8] selection:text-[#1466A8]">
+<!-- iOS Native Status Bar -->
+<header class="w-full pt-3 pb-2 flex items-center justify-between text-[#0A1624] select-none shrink-0">
+<span class="font-numeric-data text-numeric-data text-[15px] font-semibold tracking-tight">9:41</span>
+<div class="flex items-center space-x-1.5">
+<span class="material-symbols-outlined text-[17px]">signal_cellular_4_bar</span>
+<span class="material-symbols-outlined text-[17px]">wifi</span>
+<span class="material-symbols-outlined text-[20px] rotate-90">battery_full</span>
+</div>
+</header>
+<!-- Top Screen Header -->
+<section class="mt-4 mb-5">
+<p class="font-label-caps text-label-caps text-[11px] font-bold text-slate-500 tracking-wider uppercase mb-1">
+        TC Muckensturm
+      </p>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-[24px] font-bold text-[#0A1624] tracking-tight">
+        Verein
+      </h1>
+</section>
+<!-- Segment Control (Getränke / Veranstaltungen) -->
+<nav aria-label="Vereins-Kategorien" class="bg-[#F1F5F9] rounded-full p-1 flex items-center mb-6 select-none">
+<button class="flex-1 py-2 text-center text-slate-500 font-numeric-data text-sm font-medium transition-colors hover:text-[#0A1624]" type="button">
+        Getränke
+      </button>
+<button aria-current="page" class="flex-1 py-2 text-center bg-white shadow-sm font-numeric-data text-[#0A1624] font-semibold rounded-full text-sm transition-all" type="button">
+        Veranstaltungen
+      </button>
+</nav>
+<!-- Event List -->
+<section aria-label="Kommende Veranstaltungen" class="flex flex-col space-y-3">
+<!-- Card 1: Herbstfest -->
+<article class="border border-slate-200 bg-white rounded-[20px] p-4 flex items-center space-x-3.5 transition-all active:scale-[0.99]">
+<!-- Date Box -->
+<div class="w-14 h-14 rounded-2xl bg-[#F8FAFC] flex flex-col items-center justify-center shrink-0 border border-[#E2E8F0]"><span class="font-numeric-data text-[20px] leading-tight font-bold text-[#0A1624]">21</span><span class="font-label-caps text-[11px] leading-none font-semibold text-slate-500 uppercase tracking-wide mt-0.5">NOV</span></div>
+<!-- Right Details -->
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="bg-[#F1F5F9] text-slate-700 text-xs px-2.5 py-0.5 rounded-full font-medium font-body-sm text-body-sm">Fest</span>
+<span class="bg-[#FFD21F] text-[#0A1624] text-xs font-bold px-2.5 py-0.5 rounded-full font-numeric-data shadow-sm">Angemeldet · 2</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-base font-bold text-[#0A1624] mt-1.5 truncate">Herbstfest</h2>
+<p class="text-sm font-body-sm text-body-sm text-slate-500 mt-0.5">Samstag, 18:00 Uhr</p>
+<p class="text-xs font-body-sm text-body-sm text-slate-500 mt-1">noch 12 frei</p>
+</div>
+</article>
+<!-- Card 2: Plätze winterfest machen -->
+<article class="border border-slate-200 bg-white rounded-[20px] p-4 flex items-center space-x-3.5 transition-all active:scale-[0.99]">
+<!-- Date Box -->
+<div class="w-14 h-14 rounded-2xl bg-[#F8FAFC] flex flex-col items-center justify-center shrink-0 border border-[#E2E8F0]"><span class="font-numeric-data text-[20px] leading-tight font-bold text-[#0A1624]">28</span><span class="font-label-caps text-[11px] leading-none font-semibold text-slate-500 uppercase tracking-wide mt-0.5">NOV</span></div>
+<!-- Right Details -->
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-start">
+<span class="bg-[#F1F5F9] text-slate-700 text-xs px-2.5 py-0.5 rounded-full font-medium font-body-sm text-body-sm">Arbeitsdienst</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-base font-bold text-[#0A1624] mt-1.5 truncate">Plätze winterfest machen</h2>
+<p class="text-sm font-body-sm text-body-sm text-slate-500 mt-0.5">Samstag, 09:00 Uhr</p>
+<div class="flex items-center justify-between mt-2 pt-0.5">
+<span class="text-xs font-body-sm text-body-sm text-slate-500">noch 5 frei</span>
+<button class="h-[40px] px-5 bg-[#E8F1F8] text-[#1466A8] border border-[#C9DFEF] rounded-full font-numeric-data font-semibold text-[14px] flex items-center justify-center hover:bg-[#d9e9f6] active:scale-95 transition-all" type="button">Anmelden</button>
+</div>
+</div>
+</article>
+<!-- Card 3: Nikolausturnier -->
+<article class="border border-slate-200 bg-white rounded-[20px] p-4 flex items-center space-x-3.5 transition-all active:scale-[0.99]">
+<!-- Date Box -->
+<div class="w-14 h-14 rounded-2xl bg-[#F8FAFC] flex flex-col items-center justify-center shrink-0 border border-[#E2E8F0]"><span class="font-numeric-data text-[20px] leading-tight font-bold text-[#0A1624]">06</span><span class="font-label-caps text-[11px] leading-none font-semibold text-slate-500 uppercase tracking-wide mt-0.5">DEZ</span></div>
+<!-- Right Details -->
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="bg-[#F1F5F9] text-slate-700 text-xs px-2.5 py-0.5 rounded-full font-medium font-body-sm text-body-sm">Fest</span>
+<span class="bg-[#F1F5F9] text-slate-600 border border-slate-200/60 text-xs font-medium px-2.5 py-0.5 rounded-full font-numeric-data">Warteliste</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-base font-bold text-[#0A1624] mt-1.5 truncate">Nikolausturnier</h2>
+<p class="text-sm font-body-sm text-body-sm text-slate-500 mt-0.5">Sonntag, 11:00 Uhr</p>
+<p class="text-xs font-body-sm text-body-sm text-slate-500 mt-1">ausgebucht</p>
+</div>
+</article>
+<!-- Card 4: Mitgliederversammlung -->
+<article class="border border-slate-200 bg-white rounded-[20px] p-4 flex items-center space-x-3.5 transition-all active:scale-[0.99]">
+<!-- Date Box -->
+<div class="w-14 h-14 rounded-2xl bg-[#F8FAFC] flex flex-col items-center justify-center shrink-0 border border-[#E2E8F0]"><span class="font-numeric-data text-[20px] leading-tight font-bold text-[#0A1624]">15</span><span class="font-label-caps text-[11px] leading-none font-semibold text-slate-500 uppercase tracking-wide mt-0.5">JAN</span></div>
+<!-- Right Details -->
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-start">
+<span class="bg-[#F1F5F9] text-slate-700 text-xs px-2.5 py-0.5 rounded-full font-medium font-body-sm text-body-sm">Termin</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-base font-bold text-[#0A1624] mt-1.5 truncate">Mitgliederversammlung</h2>
+<p class="text-sm font-body-sm text-body-sm text-slate-500 mt-0.5">Donnerstag, 19:30 Uhr</p>
+<p class="text-xs font-body-sm text-body-sm text-slate-500 mt-1">Ohne Anmeldung</p>
+</div>
+</article>
+</section>
+<!-- Footer Action -->
+<div class="mt-4 text-center">
+<a class="font-numeric-data text-[14px] text-[#1466A8] font-semibold py-3 inline-block hover:underline active:opacity-75 transition-opacity" href="#">Vergangene Veranstaltungen</a>
+</div>
+<!-- Shared Component: BottomNavBar (Fixed Floating Pill Dock) -->
+<nav aria-label="Hauptnavigation" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between gap-1 p-1.5 max-w-[360px] w-[calc(100%-2rem)] mx-auto bg-white/85 backdrop-blur-xl border border-slate-200 rounded-full shadow-lg shadow-black/5">
+<!-- Tab 1: Start -->
+<a class="flex flex-col items-center justify-center text-outline px-3 py-1.5 transition-all duration-200 hover:text-primary active:scale-95" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="home">home</span>
+<span class="font-label-caps text-[10px] uppercase tracking-wider font-semibold mt-0.5">Start</span>
+</a>
+<!-- Tab 2: Plätze -->
+<a class="flex flex-col items-center justify-center text-outline px-3 py-1.5 transition-all duration-200 hover:text-primary active:scale-95" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="sports_tennis">sports_tennis</span>
+<span class="font-label-caps text-[10px] uppercase tracking-wider font-semibold mt-0.5">Plätze</span>
+</a>
+<!-- Tab 3: Verein (ACTIVE) -->
+<a aria-current="page" class="flex flex-col items-center justify-center bg-[#E8F1F8] text-[#1466A8] rounded-full px-4 py-1.5 transition-all duration-200 active:scale-95" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="groups" data-weight="fill" style="font-variation-settings: 'FILL' 1;">groups</span>
+<span class="font-label-caps text-[10px] uppercase tracking-wider font-bold mt-0.5">Verein</span>
+</a>
+<!-- Tab 4: Konto -->
+<a class="flex flex-col items-center justify-center text-outline px-3 py-1.5 transition-all duration-200 hover:text-primary active:scale-95" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="person">person</span>
+<span class="font-label-caps text-[10px] uppercase tracking-wider font-semibold mt-0.5">Konto</span>
+</a>
+</nav>
+<!-- iOS Home Indicator -->
+<div class="fixed bottom-1 left-1/2 -translate-x-1/2 w-32 h-1 bg-slate-900/20 rounded-full pointer-events-none z-50"></div>
+</main>
+
+
+</body></html>

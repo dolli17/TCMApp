@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-white" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>TC Muckensturm - Passwort vergessen</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-secondary-fixed-variant": "#004d67",
+            "inverse-primary": "#9fcaff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container": "#eeedf7",
+            "secondary-container": "#a1dcfe",
+            "surface": "#ffffff",
+            "primary-fixed-dim": "#9fcaff",
+            "error-container": "#ffdad6",
+            "outline": "#717781",
+            "on-primary": "#ffffff",
+            "secondary": "#246582",
+            "tertiary": "#743d00",
+            "surface-container-low": "#f4f2fd",
+            "surface-bright": "#fbf8ff",
+            "surface-container-high": "#e8e7f1",
+            "surface-container-highest": "#e3e1ec",
+            "on-tertiary-container": "#ffd9bd",
+            "on-primary-fixed": "#001d36",
+            "on-surface": "#1a1b22",
+            "primary": "#004e85",
+            "inverse-on-surface": "#f1effa",
+            "secondary-fixed": "#c2e8ff",
+            "on-tertiary": "#ffffff",
+            "tertiary-fixed": "#ffdcc3",
+            "on-surface-variant": "#414750",
+            "on-tertiary-fixed": "#2f1500",
+            "error": "#ba1a1a",
+            "on-error": "#ffffff",
+            "tertiary-container": "#975100",
+            "background": "#ffffff",
+            "on-primary-fixed-variant": "#00497d",
+            "tertiary-fixed-dim": "#ffb77c",
+            "surface-dim": "#dad9e3",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "primary-container": "#1466a8",
+            "on-secondary": "#ffffff",
+            "inverse-surface": "#2f3038",
+            "on-error-container": "#93000a",
+            "on-background": "#1a1b22",
+            "on-secondary-container": "#20627f",
+            "primary-fixed": "#d1e4ff",
+            "secondary-fixed-dim": "#93ceef",
+            "surface-tint": "#0761a3",
+            "outline-variant": "#c1c7d2",
+            "on-primary-container": "#cde2ff",
+            "surface-variant": "#e3e1ec",
+            "on-secondary-fixed": "#001e2c"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xl": "2.5rem",
+            "gutter": "1rem",
+            "margin": "1rem",
+            "margin-desktop": "2rem",
+            "space-lg": "1.5rem",
+            "gutter-desktop": "1.5rem",
+            "space-md": "1rem",
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem"
+          },
+          "fontFamily": {
+            "display-score-mobile": ["Space Grotesk"],
+            "numeric-data": ["Space Grotesk"],
+            "headline-lg": ["Space Grotesk"],
+            "display-score": ["Space Grotesk"],
+            "headline-sm": ["Space Grotesk"],
+            "label-caps": ["Space Grotesk"],
+            "body-lg": ["DM Sans"],
+            "body-sm": ["DM Sans"],
+            "headline-lg-mobile": ["Space Grotesk"]
+          },
+          "fontSize": {
+            "display-score-mobile": ["2.75rem", { "lineHeight": "3rem", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "numeric-data": ["1.125rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "headline-lg": ["2rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "display-score": ["4rem", { "lineHeight": "4rem", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+            "headline-sm": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "600" }],
+            "label-caps": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "body-lg": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "400" }],
+            "body-sm": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "headline-lg-mobile": ["1.5rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-white text-on-surface antialiased flex justify-center items-start min-h-screen select-none">
+<!-- iPhone Canvas Frame (393px × 852px) -->
+<main class="w-[393px] h-[852px] bg-white relative flex flex-col justify-between overflow-hidden shadow-2xl">
+<!-- Top Block: Status Bar & Main Interactive Form -->
+<div class="w-full flex flex-col">
+<!-- iOS Status Bar -->
+<div class="h-11 w-full pt-3 px-7 flex items-center justify-between text-slate-900 z-30 select-none">
+<span class="font-numeric-data text-[15px] font-semibold tracking-tight text-slate-900">9:41</span>
+<div class="flex items-center space-x-1.5">
+<span class="material-symbols-outlined text-[17px] leading-none text-slate-900" data-icon="signal_cellular_4_bar">signal_cellular_4_bar</span>
+<span class="material-symbols-outlined text-[17px] leading-none text-slate-900" data-icon="wifi">wifi</span>
+<span class="material-symbols-outlined text-[20px] leading-none text-slate-900" data-icon="battery_full">battery_full</span>
+</div>
+</div>
+<!-- Navigation & Form Content Container -->
+<div class="px-5 pt-3">
+<!-- Top Back Navigation -->
+<div class="flex items-center mb-7">
+<a aria-label="Zurück" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 hover:bg-slate-200 active:scale-95 transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="arrow_back">arrow_back</span>
+</a>
+</div>
+<!-- Header Group -->
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-slate-500 uppercase tracking-widest font-bold">TC MUCKENSTURM</span>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-[#0A1624] font-bold tracking-tight mt-1">Passwort vergessen</h1>
+<p class="font-body-sm text-body-sm text-slate-600 mt-2 mb-8 leading-relaxed">
+            Wir schicken dir einen Link, mit dem du ein neues Passwort festlegst.
+          </p>
+</div>
+<!-- Form Area -->
+<form class="flex flex-col w-full" onsubmit="event.preventDefault();">
+<!-- Email Input Group -->
+<div class="w-full flex flex-col mb-1">
+<label class="font-label-caps text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2" for="email-input">
+              E-MAIL
+            </label>
+<div class="relative">
+<input autocomplete="email" class="w-full h-12 bg-slate-50 border border-slate-200 rounded-2xl px-4 text-base text-slate-900 placeholder-slate-400 font-body-sm focus:outline-none focus:bg-white focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all duration-150" id="email-input" name="email" placeholder="deine.adresse@beispiel.de" required="" type="email"/>
+</div>
+</div>
+<!-- Primary Submit Button -->
+<button class="h-12 w-full rounded-full bg-primary-container hover:bg-[#105286] active:scale-[0.98] text-white font-numeric-data font-medium text-base flex items-center justify-center shadow-none transition-all duration-150 mt-6" type="submit">
+            Link anfordern
+          </button>
+<!-- Secondary Return Action -->
+<a class="text-primary-container hover:text-[#105286] active:opacity-75 font-body-sm font-medium text-sm text-center mt-6 transition-colors duration-150" href="#">
+            Zurück zur Anmeldung
+          </a>
+</form>
+</div>
+</div>
+<!-- Bottom Structural Area: Legal Footer & iOS Home Indicator -->
+<div class="w-full pb-2 px-5 flex flex-col items-center">
+<!-- Legal Links -->
+<div class="flex items-center justify-center space-x-1.5 text-xs text-slate-400 font-body-sm mb-4">
+<a class="hover:text-slate-600 transition-colors duration-150" href="#">Datenschutz</a>
+<span>·</span>
+<a class="hover:text-slate-600 transition-colors duration-150" href="#">Impressum</a>
+</div>
+<!-- iOS Home Indicator -->
+<div class="w-32 h-1 bg-slate-300 rounded-full mx-auto mb-2"></div>
+</div>
+</main>
+</body></html>

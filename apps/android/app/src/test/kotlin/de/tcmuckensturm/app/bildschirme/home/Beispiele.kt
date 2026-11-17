@@ -1,10 +1,8 @@
 package de.tcmuckensturm.app.bildschirme.home
 
 import de.tcmuckensturm.app.daten.AktiverPlatz
-import de.tcmuckensturm.app.daten.Arbeitsdienst
 import de.tcmuckensturm.app.daten.Benachrichtigung
 import de.tcmuckensturm.app.daten.Buchungseinstellungen
-import de.tcmuckensturm.app.daten.EigenesGetraenk
 import de.tcmuckensturm.app.daten.MeinName
 import de.tcmuckensturm.app.daten.MeineBuchung
 import de.tcmuckensturm.app.daten.OffenesSpiel
@@ -90,9 +88,6 @@ object Beispiele {
         termine = Abschnitt.Wert(termine),
         frei = Abschnitt.Wert(FreiDaten("2026-09-28", plaetze, belegung, einstellungen, 60)),
         offen = Abschnitt.Wert(offen),
-        getraenke = Abschnitt.Wert(listOf(EigenesGetraenk("g1", totalCents = 1250))),
-        dienst = Abschnitt.Wert(Arbeitsdienst(2026, 10.0, 4.0, 6.0)),
-        neues = Abschnitt.Wert(nachrichten.take(3)),
         events = Abschnitt.Wert(events),
     )
 
@@ -101,9 +96,6 @@ object Beispiele {
         termine = Abschnitt.Wert(emptyList()),
         frei = Abschnitt.Wert(FreiDaten("2026-09-28", plaetze.take(1), listOf(belegung[4].copy(courtId = "c1")), einstellungen, 60)),
         offen = Abschnitt.Wert(emptyList()),
-        getraenke = Abschnitt.Wert(emptyList()),
-        dienst = Abschnitt.Wert(null),
-        neues = Abschnitt.Wert(emptyList()),
         events = Abschnitt.Wert(emptyList()),
     )
 
@@ -112,9 +104,6 @@ object Beispiele {
         termine = Abschnitt.Fehler("Keine Verbindung zum Server."),
         frei = Abschnitt.Fehler("Keine Verbindung zum Server."),
         offen = Abschnitt.Wert(offen.take(1)),
-        getraenke = Abschnitt.Fehler("Keine Verbindung zum Server."),
-        dienst = Abschnitt.Wert(Arbeitsdienst(2026, 10.0, 10.0, 0.0)),
-        neues = Abschnitt.Wert(emptyList()),
         events = Abschnitt.Fehler("Keine Verbindung zum Server."),
     )
 }

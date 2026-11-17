@@ -11,7 +11,6 @@ import {
   sperreAendern, sperreAufheben, stornieren, stundeSperren, umsetzen,
 } from "@/app/plan/aktionen";
 import { BuchungsFenster } from "@/components/BuchungsFenster";
-import { PlanTelefon } from "@/components/PlanTelefon";
 import { Toast, type Meldung } from "@/components/Toast";
 
 export interface Platz { id: string; name: string; short_name: string }
@@ -113,9 +112,14 @@ export type Fenster =
 type Markierung = { bookingId: string } | { courtId: string; startsAt: number };
 const MARKIERT_MS = 5000;
 
-/** 44 Pixel je Stunde im Raster - wie im Entwurf WebPlan. */
-const STUNDE_PX = 44;
-const px = (minuten: number) => (minuten / 60) * STUNDE_PX;
+/**
+ * Die Höhe einer Stunde setzt die CSS (--std: 88 px am Telefon, damit eine
+ * halbe Stunde 44 px hoch und mit dem Finger zu treffen ist, 44 px ab Tablet).
+ */
+const hoehe = (minuten: number, plus = 0) => `calc(var(--std) * ${minuten / 60} + ${plus}px)`;
+
+/** "Platz 3" -> "3"; andere Namen bleiben bei der Kurzform. */
+const nummer = (p: Platz) => p.name.match(/^Platz\s+(.+)$/i)?.[1] ?? p.short_name;
 
 /** Klassen der Bloecke nach der Statustabelle - dieselbe Einordnung wie die Zeitleiste. */
 const ART_KLASSE: Record<TimelineKind, string> = {
@@ -125,10 +129,10 @@ const ART_KLASSE: Record<TimelineKind, string> = {
 /**
  * Der Belegungsplan (Entwurf WebPlan, docs/design/clubhaus).
  *
- * Zwei Darstellungen derselben Daten, die CSS entscheidet: unter 768 px
- * Übersicht und Freie Zeiten wie in der App (PlanTelefon), darueber das
- * Raster mit Bloecken ueber die ganze Dauer einer Belegung. Beides aus einer Komponente, damit die
- * Zustaende nicht auseinanderlaufen.
+ * Eine Darstellung für alle Breiten (docs/design/stitch, Entwurf
+ * "Plätze (Belegungsplan Final)"): das Raster mit den Plätzen als Spalten und
+ * der Zeit von oben nach unten. Am Telefon sind die Spalten schmal, die
+ * Blöcke tragen dort nur "Du" oder "+"; ab Tablet stehen Zeit und Namen darin.
  *
  * Gebucht wird zur vollen oder halben Stunde, immer 60 Minuten. Ob eine Zeit
  * frei ist, entscheidet canStartAt (@tcm/core), durchgesetzt wird es nur in
@@ -397,31 +401,7 @@ export function Belegungsplan(props: Props) {
     <>
       <Toast meldung={meldung} onSchliessen={() => setMeldung(null)} />
 
-      {/* --- Telefon: Übersicht und Freie Zeiten ----------------------------- */}
-      <PlanTelefon
-        datum={props.datum}
-        jetzt={jetzt}
-        istHeute={istHeute}
-        plaetze={props.plaetze}
-        belegungen={props.belegungen}
-        oeffnung={oeffnungMin}
-        schluss={schlussMin}
-        raster={props.rasterMinuten}
-        dauer={props.dauerMinuten}
-        vorlaufTage={props.vorlaufTage}
-        verwaltbar={verwaltbar}
-        markiert={istMarkiert}
-        onBuchen={(courtId, minute) => {
-          if (kontingentAus) {
-            setMeldung({ ok: false, text: "Dein Kontingent ist ausgeschöpft." });
-            return;
-          }
-          oeffneBuchen(courtId, minute);
-        }}
-        onVerwalten={oeffneVerwalten}
-      />
-
-      {/* --- Ab Tablet: Raster mit Bloecken ueber die ganze Dauer ------------ */}
+      {/* --- Das Raster: Bloecke ueber die ganze Dauer ----------------------- */}
       <div className="plan-raster">
         <div className="raster-oben">
           {legende}
@@ -431,7 +411,7 @@ export function Belegungsplan(props: Props) {
         </div>
 
         <div className="raster" role="region" aria-label="Belegung nach Plätzen">
-          <div className="raster-kopf" style={{ gridTemplateColumns: `64px repeat(${props.plaetze.length}, minmax(0, 1fr))` }}>
+          <div className="raster-kopf" style={{ gridTemplateColumns: `var(--zeitspalte) repeat(${props.plaetze.length}, minmax(0, 1fr))` }}>
             <div />
             {props.plaetze.map((platz) => {
               const st = courtStatusAt({
@@ -448,7 +428,8 @@ export function Belegungsplan(props: Props) {
               });
               return (
                 <div key={platz.id} className="spalten-kopf">
-                  <b className="dpl">{platz.name}</b>
+                  <b className="dpl lang">{platz.name}</b>
+                  <b className="dpl kurz" aria-hidden="true">{nummer(platz)}</b>
                   <small className={`status-${st.art}`}>{st.text}</small>
                 </div>
               );
@@ -458,12 +439,12 @@ export function Belegungsplan(props: Props) {
           <div
             className="raster-koerper"
             style={{
-              gridTemplateColumns: `64px repeat(${props.plaetze.length}, minmax(0, 1fr))`,
-              height: px(schlussMin - oeffnungMin),
+              gridTemplateColumns: `var(--zeitspalte) repeat(${props.plaetze.length}, minmax(0, 1fr))`,
+              height: hoehe(schlussMin - oeffnungMin),
             }}
           >
             {vorbeiBis > oeffnungMin && (
-              <div className="vorbei-flaeche" style={{ height: px(vorbeiBis - oeffnungMin) }} aria-hidden="true" />
+              <div className="vorbei-flaeche" style={{ height: hoehe(vorbeiBis - oeffnungMin) }} aria-hidden="true" />
             )}
 
             <div className="raster-zeiten" aria-hidden="true">
@@ -471,7 +452,7 @@ export function Belegungsplan(props: Props) {
                 <span
                   key={m}
                   className={`stunde tnum${istHeute && verdecktVonJetzt(m, lokaleJetzt(jetzt)) ? " verdeckt" : ""}`}
-                  style={{ top: px(m - oeffnungMin) }}
+                  style={{ top: hoehe(m - oeffnungMin) }}
                 >
                   {alsUhrzeit(m)}
                 </span>
@@ -505,7 +486,7 @@ export function Belegungsplan(props: Props) {
                     <div
                       key={`l${l.from}`}
                       className="frei-flaeche"
-                      style={{ top: px(l.from - oeffnungMin) + 2, height: px(l.until - l.from) - 4 }}
+                      style={{ top: hoehe(l.from - oeffnungMin, 2), height: hoehe(l.until - l.from, -4) }}
                       aria-hidden="true"
                     >
                       {l.until - l.from >= props.dauerMinuten && <span>frei bis {alsUhrzeit(l.until)}</span>}
@@ -518,11 +499,11 @@ export function Belegungsplan(props: Props) {
                           key={`f${e.minute}`}
                           type="button"
                           className="frei-slot"
-                          style={{ top: px(e.minute - oeffnungMin), height: px(props.rasterMinuten) }}
+                          style={{ top: hoehe(e.minute - oeffnungMin), height: hoehe(props.rasterMinuten) }}
                           onClick={() => oeffneBuchen(platz.id, e.minute)}
                           aria-label={`${platz.name} um ${alsUhrzeit(e.minute)} buchen`}
                         >
-                          <span className="vorschau" style={{ height: px(props.dauerMinuten) - 4 }}>
+                          <span className="vorschau" style={{ height: hoehe(props.dauerMinuten, -4) }}>
                             + {alsUhrzeit(e.minute)} buchen
                           </span>
                         </button>
@@ -533,7 +514,7 @@ export function Belegungsplan(props: Props) {
                     const von = Math.max(oeffnungMin, lokaleMinuten(b.starts_at));
                     const bis = Math.min(schlussMin, lokaleMinuten(b.ends_at));
                     const klasse = `beleg ${ART_KLASSE[occupancyKind(b)]}${istMarkiert(b) ? " markiert" : ""}`;
-                    const stil = { top: px(von - oeffnungMin) + 2, height: Math.max(px(bis - von) - 4, 18) };
+                    const stil = { top: hoehe(von - oeffnungMin, 2), height: `max(${hoehe(bis - von, -4)}, 18px)` };
                     const inhalt = (
                       <>
                         <span className="zeit tnum">
@@ -577,7 +558,7 @@ export function Belegungsplan(props: Props) {
             })}
 
             {istHeute && lokaleJetzt(jetzt) >= oeffnungMin && lokaleJetzt(jetzt) <= schlussMin && (
-              <div className="jetzt-linie" style={{ top: px(lokaleJetzt(jetzt) - oeffnungMin) }} aria-hidden="true">
+              <div className="jetzt-linie" style={{ top: hoehe(lokaleJetzt(jetzt) - oeffnungMin) }} aria-hidden="true">
                 <span className="tnum">{alsUhrzeit(lokaleJetzt(jetzt))}</span>
               </div>
             )}
@@ -605,6 +586,7 @@ export function Belegungsplan(props: Props) {
           }
           rasterMinuten={props.rasterMinuten}
           anzeigeMinuten={props.anzeigeMinuten}
+          vorlaufTage={props.vorlaufTage}
           gastgebuehrCents={props.gastgebuehrCents}
           darfPlaetze={props.darfPlaetze}
           laeuft={laeuft}
@@ -646,8 +628,8 @@ function stundenmarken(oeffnung: number, schluss: number): number[] {
  * selbst (U67: "13:11 0").
  */
 function verdecktVonJetzt(stunde: number, jetzt: number): boolean {
-  const abstand = px(jetzt - stunde);
-  return abstand > -8 && abstand < 30;
+  const abstand = jetzt - stunde;
+  return abstand > -11 && abstand < 41;
 }
 
 /* --- Legende --------------------------------------------------------------- */
@@ -655,9 +637,9 @@ function verdecktVonJetzt(stunde: number, jetzt: number): boolean {
 function Legende() {
   const eintraege: { name: string; art: TimelineKind | "frei" }[] = [
     { name: "Frei", art: "frei" },
-    { name: "Deine", art: "eigen" },
     { name: "Belegt", art: "belegt" },
-    { name: "Sucht Mitspieler", art: "sucht" },
+    { name: "Dein Spiel", art: "eigen" },
+    { name: "Mitspieler gesucht", art: "sucht" },
     { name: "Training", art: "serie" },
     { name: "Gesperrt", art: "gesperrt" },
   ];

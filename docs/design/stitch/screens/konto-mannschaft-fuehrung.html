@@ -1,0 +1,161 @@
+<!DOCTYPE html><html class="h-full bg-white" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>TC Muckensturm - Mannschaft</title>
+<!-- Google Fonts: Space Grotesk & DM Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f8fafc",
+            "surface-container": "#f1f5f9",
+            "surface-container-high": "#e2e8f0",
+            "surface-container-highest": "#cbd5e1",
+            "on-surface": "#0a1624",
+            "on-surface-variant": "#64748b",
+            "outline": "#717781",
+            "outline-variant": "#e2e8f0",
+            "primary": "#004e85",
+            "primary-container": "#1466a8",
+            "on-primary-container": "#cde2ff",
+            "secondary-container": "#e8f1f8",
+            "on-secondary-container": "#1466a8",
+            "error": "#c4433a",
+            "background": "#ffffff"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2.5rem",
+            "margin": "1.25rem"
+          },
+          "fontFamily": {
+            "display-score": ["Space Grotesk", "sans-serif"],
+            "headline-lg": ["Space Grotesk", "sans-serif"],
+            "headline-lg-mobile": ["Space Grotesk", "sans-serif"],
+            "headline-sm": ["Space Grotesk", "sans-serif"],
+            "label-caps": ["Space Grotesk", "sans-serif"],
+            "numeric-data": ["Space Grotesk", "sans-serif"],
+            "body-lg": ["DM Sans", "sans-serif"],
+            "body-sm": ["DM Sans", "sans-serif"]
+          },
+          "fontSize": {
+            "display-score-mobile": ["2.75rem", { lineHeight: "3rem", letterSpacing: "-0.03em", fontWeight: "700" }],
+            "headline-lg-mobile": ["1.5rem", { lineHeight: "1.75rem", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "headline-sm": ["1.125rem", { lineHeight: "1.5rem", letterSpacing: "0em", fontWeight: "600" }],
+            "label-caps": ["0.6875rem", { lineHeight: "0.875rem", letterSpacing: "0.08em", fontWeight: "700" }],
+            "numeric-data": ["1.125rem", { lineHeight: "1.25rem", letterSpacing: "-0.01em", fontWeight: "500" }],
+            "body-lg": ["1rem", { lineHeight: "1.5rem", letterSpacing: "0em", fontWeight: "400" }],
+            "body-sm": ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "0.01em", fontWeight: "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-slate-100 min-h-screen text-[#0A1624] font-body-sm antialiased flex justify-center">
+<!-- iPhone Canvas Frame (393px) -->
+<main class="w-[393px] min-h-screen bg-white text-[#0A1624] flex flex-col relative shadow-xl overflow-x-hidden">
+<!-- 1. iOS Status Bar (393px baseline) -->
+<header class="w-full h-11 px-6 pt-3 flex items-center justify-between text-[#0A1624] select-none bg-white z-20">
+<span class="font-display-score text-sm font-semibold tracking-tight text-[#0A1624]">9:41</span>
+<div class="flex items-center space-x-1.5">
+<!-- Cellular Signal -->
+<span class="material-symbols-outlined text-[17px] leading-none" data-icon="signal_cellular_alt">signal_cellular_alt</span>
+<!-- Wi-Fi -->
+<span class="material-symbols-outlined text-[17px] leading-none" data-icon="wifi">wifi</span>
+<!-- Battery Icon -->
+<span class="material-symbols-outlined text-[20px] leading-none" data-icon="battery_full">battery_full</span>
+</div>
+</header>
+<!-- Top Navigation / Back Link -->
+<section class="px-5 pt-1">
+<a class="inline-flex items-center -ml-1.5 text-[#1466A8] hover:opacity-80 transition-opacity font-display-score text-sm font-semibold" href="#konto"><span class="material-symbols-outlined text-[22px] leading-none -mr-0.5" data-icon="chevron_left">chevron_left</span><span>Konto</span></a>
+<h1 class="font-headline-lg-mobile text-2xl font-bold tracking-tight text-[#0A1624] mt-2 mb-6">
+        Mannschaft
+      </h1>
+</section>
+<!-- Content Area -->
+<div class="px-5 flex-1 flex flex-col">
+<!-- Abschnitt 1: Kader Damen 40 -->
+<section class="mb-6">
+<h2 class="font-headline-sm text-lg font-semibold text-[#0A1624] mb-3">
+          Kader Damen 40
+        </h2>
+<div class="rounded-2xl border border-slate-200 divide-y divide-slate-100 bg-white overflow-hidden shadow-none">
+<!-- Zeile 1: Anna Berger (du) -->
+<div class="p-4 flex items-center justify-between"><div class="flex items-center space-x-3"><div class="w-10 h-10 rounded-full bg-[#E8F1F8] text-[#1466A8] font-display-score text-sm font-semibold flex items-center justify-center shrink-0">AB</div><div><div class="flex items-center space-x-1.5 flex-wrap"><span class="font-body-sm font-semibold text-[#0A1624]">Anna Berger</span><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-[#FFD21F] text-[#0A1624] font-display-score">du</span><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-[#E8F1F8] text-[#1466A8] font-display-score">Mannschaftsführer</span></div><div class="text-xs font-display-score text-slate-500 mt-0.5">LK 14,2</div></div></div><div class="w-16"></div></div>
+<!-- Zeile 2: Sabine Roth -->
+<div class="p-4 flex items-center justify-between"><div class="flex items-center space-x-3 min-w-0 pr-2"><div class="w-10 h-10 rounded-full bg-[#E8F1F8] text-[#1466A8] font-display-score text-sm font-semibold flex items-center justify-center shrink-0">SR</div><div class="min-w-0"><div class="font-body-sm font-medium text-[#0A1624] truncate">Sabine Roth</div><div class="text-xs text-slate-500 truncate mt-0.5 font-normal"><span class="font-display-score">LK 12,8</span> · 0171 2345678</div></div></div><button class="text-[#C4433A] text-sm font-display-score font-semibold hover:underline shrink-0 active:opacity-75 transition-opacity" type="button">Austragen</button></div>
+<!-- Zeile 3: Petra Lang -->
+<div class="p-4 flex items-center justify-between"><div class="flex items-center space-x-3 min-w-0 pr-2"><div class="w-10 h-10 rounded-full bg-[#E8F1F8] text-[#1466A8] font-display-score text-sm font-semibold flex items-center justify-center shrink-0">PL</div><div class="min-w-0"><div class="font-body-sm font-medium text-[#0A1624] truncate">Petra Lang</div><div class="text-xs text-slate-400 italic truncate mt-0.5">ohne LK · Nummer nicht freigegeben</div></div></div><button class="text-[#C4433A] text-sm font-display-score font-semibold hover:underline shrink-0 active:opacity-75 transition-opacity" type="button">Austragen</button></div>
+<!-- Zeile 4: Claudia Wirth -->
+<div class="p-4 flex items-center justify-between"><div class="flex items-center space-x-3 min-w-0 pr-2"><div class="w-10 h-10 rounded-full bg-[#E8F1F8] text-[#1466A8] font-display-score text-sm font-semibold flex items-center justify-center shrink-0">CW</div><div class="min-w-0"><div class="font-body-sm font-medium text-[#0A1624] truncate">Claudia Wirth</div><div class="text-xs text-slate-500 truncate mt-0.5 font-normal"><span class="font-display-score">LK 16,1</span> · 0160 9876543</div></div></div><button class="text-[#C4433A] text-sm font-display-score font-semibold hover:underline shrink-0 active:opacity-75 transition-opacity" type="button">Austragen</button></div>
+</div>
+</section>
+<!-- Abschnitt 2: Offene Einladungen -->
+<section class="mb-6">
+<h2 class="font-headline-sm text-lg font-semibold text-[#0A1624] mb-3">
+          Offene Einladungen
+        </h2>
+<div class="rounded-2xl border border-slate-200 bg-white p-4 flex items-center justify-between shadow-none"><div class="flex items-center space-x-3 min-w-0 pr-2"><div class="w-10 h-10 rounded-full bg-[#E8F1F8] text-[#1466A8] font-display-score text-sm font-semibold flex items-center justify-center shrink-0">MH</div><div class="min-w-0"><div class="font-body-sm font-medium text-[#0A1624] truncate">Monika Hauser</div><div class="text-xs text-slate-500 mt-0.5">verfällt in 3 Tagen</div></div></div><button class="text-[#C4433A] text-sm font-display-score font-semibold hover:underline shrink-0 active:opacity-75 transition-opacity" type="button">Zurückziehen</button></div>
+</section>
+<!-- Abschnitt 3: Spieler hinzufügen -->
+<section class="mb-4">
+<h2 class="font-headline-sm text-lg font-semibold text-[#0A1624] mb-3">
+          Spieler hinzufügen
+        </h2>
+<!-- Suchfeld -->
+<div class="relative mb-4">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none" data-icon="search">search</span>
+<input class="w-full h-[52px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-[26px] pl-11 pr-4 text-sm text-[#0A1624] placeholder:text-slate-400 focus:outline-none focus:border-[#1466A8] focus:bg-white transition-all font-body-sm" placeholder="Vor- oder Nachname" type="text">
+</div>
+<!-- Vorschläge Listenkarte -->
+<div class="rounded-2xl border border-slate-200 divide-y divide-slate-100 bg-white overflow-hidden shadow-none"><div class="p-3.5 px-4 flex items-center justify-between"><div class="flex items-center space-x-2 min-w-0 pr-2"><span class="font-body-sm font-medium text-[#0A1624] truncate">Julia Brandt</span><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-[#E8F1F8] text-[#1466A8] font-display-score shrink-0">Interesse</span></div><button class="h-10 px-5 rounded-full bg-[#E8F1F8] text-[#1466A8] border border-[#C9DFEF] text-xs font-display-score font-semibold hover:bg-[#dbe9f4] active:scale-95 transition-all shrink-0 flex items-center justify-center" type="button">Einladen</button></div><div class="p-3.5 px-4 flex items-center justify-between"><div class="flex items-center space-x-2 min-w-0 pr-2"><span class="font-body-sm font-medium text-[#0A1624] truncate">Monika Hauser</span><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#F1F5F9] text-[#334155] font-display-score shrink-0">eingeladen</span></div><button class="h-10 px-5 rounded-full bg-[#F1F5F9] text-[#64748B] border border-slate-200 text-xs font-display-score font-semibold cursor-not-allowed shrink-0 flex items-center justify-center" disabled="" type="button">Eingeladen</button></div><div class="p-3.5 px-4 flex items-center justify-between"><div class="flex items-center space-x-2 min-w-0 pr-2"><span class="font-body-sm font-medium text-[#0A1624] truncate">Eva Lorenz</span><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 font-display-score shrink-0">spielt in Damen 30</span></div><button class="h-10 px-5 rounded-full bg-[#E8F1F8] text-[#1466A8] border border-[#C9DFEF] text-xs font-display-score font-semibold hover:bg-[#dbe9f4] active:scale-95 transition-all shrink-0 flex items-center justify-center" type="button">Einladen</button></div></div>
+<!-- Hinweis -->
+<p class="text-xs text-slate-400 mt-2 px-1 font-body-sm">
+          Weitere findest du über die Suche.
+        </p>
+</section>
+</div>
+<!-- Bottom Spacing & iOS Home Indicator -->
+<div class="w-full pt-6 pb-2.5 flex flex-col items-center justify-center">
+<div class="w-32 h-1 bg-slate-900/20 rounded-full"></div>
+</div>
+</main>
+
+
+</body></html>

@@ -39,7 +39,9 @@ export default async function BankSeite() {
           <p><Link href="/impressum#kontakt">So erreichst du den Vorstand</Link></p>
         </div>
       ) : (
-        <dl className="gruppe angaben">
+        <dl className="gruppe angaben mandat">
+          {/* Entwurf "Bank und Mandat": Kopfzeile mit dem Stand des Mandats */}
+          <div className="kopf"><dt>SEPA-Lastschrift</dt><dd><span className="marke-klein blau">Mandat aktiv</span></dd></div>
           <div><dt>Kontoinhaber</dt><dd>{konto?.holder ?? "–"}</dd></div>
           <div><dt>IBAN</dt><dd className="tnum">{konto?.iban_last4 ? `•••• ${konto.iban_last4}` : "–"}</dd></div>
           <div><dt>Bank</dt><dd>{konto?.bank_name ?? "–"}</dd></div>

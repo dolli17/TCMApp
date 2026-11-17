@@ -1,31 +1,33 @@
 /*
- * Home - der Startbildschirm (apps/mobile/app/(tabs)/home.tsx)
+ * Home - die Startseite (docs/design/stitch, Entwurf "start")
  *
- * Wie HomeBildschirm.swift der iOS-App. Was heute zaehlt, auf einen Blick:
- * die eigenen naechsten Termine, drei Schnellaktionen, welche Plaetze gerade
- * frei sind, wer Mitspieler sucht, was demnaechst im Verein ansteht, der
- * laufende Monat und die letzten Neuigkeiten. Nur Lesen - gebucht und
- * eingetragen wird auf den Bildschirmen, auf die die Knoepfe fuehren
- * (Plaetze, Konto; Getraenke und Veranstaltungen ueber LocalZuVerein).
+ * Wie apps/web/src/app/page.tsx: bewusst ausgeduennt und einspaltig. Der
+ * naechste eigene Termin, zwei Aktionen, freie Plaetze, offene Spiele und ein
+ * Streifen zur naechsten Veranstaltung. Der laufende Monat und der
+ * Arbeitsdienst stehen im Konto, Neuigkeiten hinter der Glocke. Nur Lesen -
+ * gebucht und eingetragen wird auf den Bildschirmen, auf die die Knoepfe
+ * fuehren (Plaetze; Getraenke und Veranstaltungen ueber LocalZuVerein).
+ *
+ * Farben: kraeftiges Blau nur "Platz buchen", Gelb nur am eigenen Termin und
+ * an "Du bist dabei".
  *
  * Alle Abschnitte laden parallel und jeder fuer sich: schlaegt einer fehl,
  * steht dort der Fehler, und der Rest bleibt gefuellt. Der Inhalt liegt in
- * einem ViewModel und ueberlebt so Tabwechsel und den Weg zu den Neuigkeiten;
- * zurueck auf Home wird still nachgeladen, ohne Ladekreis.
+ * einem ViewModel und ueberlebt so Tabwechsel; zurueck auf Home wird still
+ * nachgeladen, ohne Ladekreis.
  */
 
 package de.tcmuckensturm.app.bildschirme.home
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,9 +36,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,8 +44,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.ShoppingCart
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -58,51 +55,41 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import de.tcmuckensturm.app.bildschirme.DeinMarker
 import de.tcmuckensturm.app.bildschirme.Erneut
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
-import de.tcmuckensturm.app.bildschirme.GedeckelteSchrift
 import de.tcmuckensturm.app.bildschirme.GrosserKopf
 import de.tcmuckensturm.app.bildschirme.Handlung
-import de.tcmuckensturm.app.bildschirme.Kapsel
 import de.tcmuckensturm.app.bildschirme.Kicker
-import de.tcmuckensturm.app.bildschirme.KopfLink
-import de.tcmuckensturm.app.bildschirme.Kopfzeile
+import de.tcmuckensturm.app.bildschirme.Knopf
+import de.tcmuckensturm.app.bildschirme.Knopfgroesse
+import de.tcmuckensturm.app.bildschirme.Knopfstufe
 import de.tcmuckensturm.app.bildschirme.Leerzustand
-import de.tcmuckensturm.app.bildschirme.MiniZeitleiste
-import de.tcmuckensturm.app.bildschirme.NebeneinanderOderUntereinander
+import de.tcmuckensturm.app.bildschirme.MarkeKlein
 import de.tcmuckensturm.app.bildschirme.grosseSchrift
+import de.tcmuckensturm.app.bildschirme.Zweitknopf
 import de.tcmuckensturm.app.bildschirme.karte
 import de.tcmuckensturm.app.bildschirme.leise
 import de.tcmuckensturm.app.bildschirme.nachrichten.Glocke
 import de.tcmuckensturm.app.bildschirme.nachrichten.GlockeKnopf
-import de.tcmuckensturm.app.bildschirme.nachrichten.NachrichtZeile
-import de.tcmuckensturm.app.bildschirme.nachrichten.Trennlinie
-import de.tcmuckensturm.app.bildschirme.randlos
 import de.tcmuckensturm.app.bildschirme.tippbar
-import de.tcmuckensturm.app.bildschirme.verein.EventKarte
 import de.tcmuckensturm.app.bildschirme.verein.LocalZuVerein
 import de.tcmuckensturm.app.bildschirme.verein.VereinZiel
-import de.tcmuckensturm.app.daten.Benachrichtigung
 import de.tcmuckensturm.app.daten.MeineBuchung
 import de.tcmuckensturm.app.daten.OffenesSpiel
 import de.tcmuckensturm.app.daten.Startdaten
@@ -167,10 +154,6 @@ class HomeModell(
             val einstellungen = async { Abschnitt.von { d.buchungseinstellungen() } }
             val arten = async { Abschnitt.von { d.buchungsarten() } }
             val offen = async { Abschnitt.von { d.offeneSpiele() } }
-            val getraenke = async { Abschnitt.von { d.eigeneGetraenke() } }
-            val dienst = async { Abschnitt.von { d.arbeitsdienst() } }
-            // Drei Benachrichtigungen reichen: ungelesen zuerst, dann die neuesten.
-            val neues = async { Abschnitt.von { d.benachrichtigungen(limit = 3) } }
             val events = async { Abschnitt.von { d.veranstaltungen() } }
 
             val p = plaetze.await()
@@ -192,9 +175,6 @@ class HomeModell(
                 termine = meine.await(),
                 frei = frei,
                 offen = offen.await(),
-                getraenke = getraenke.await(),
-                dienst = dienst.await(),
-                neues = neues.await(),
                 events = events.await(),
             )
         }
@@ -228,7 +208,6 @@ fun HomeBildschirm(zuNachrichten: () -> Unit) {
             zuGetraenken = { zuVerein(VereinZiel.Getraenke) },
             zuVeranstaltung = { zuVerein(VereinZiel.Veranstaltung(it)) },
             zuNachrichten = zuNachrichten,
-            zuVeranstaltungen = { zuVerein(VereinZiel.Veranstaltungen) },
         ),
         nachladen = { modell.laden(nachladen = true) },
         glocke = { Glocke() },
@@ -240,8 +219,8 @@ data class HomeZiele(
     val zuTab: (HauptTab) -> Unit,
     val zuGetraenken: () -> Unit,
     val zuVeranstaltung: (String) -> Unit,
+    /** Der Bildschirm "Neuigkeiten" liegt weiter im Graphen (Push); Home selbst verweist nicht mehr darauf. */
     val zuNachrichten: () -> Unit,
-    val zuVeranstaltungen: () -> Unit = {},
 )
 
 /** Ohne Sitzung und Netz - fuer die Bildschirmfotos. */
@@ -270,9 +249,8 @@ fun HomeAnsicht(
                 .statusBarsPadding()
                 .padding(horizontal = Abstand.rand)
                 .padding(bottom = Abstand.abschnitt * 2),
-            verticalArrangement = Arrangement.spacedBy(Abstand.m),
         ) {
-            GrosserKopf(HomeLogik.titel(d?.name?.vorname), HomeLogik.kicker(jetzt), d?.name, glocke)
+            GrosserKopf(HomeLogik.titel(d?.name?.vorname), name = d?.name, glocke = glocke)
             when {
                 d == null && zustand.laedt -> Box(
                     Modifier
@@ -284,13 +262,15 @@ fun HomeAnsicht(
                 }
                 d != null -> {
                     val erneut = Erneut(zustand.aktualisiert, nachladen)
-                    AlsNaechstes(d.termine, erneut, ziele, jetzt)
-                    Schnellaktionen(ziele)
+                    Column(verticalArrangement = Arrangement.spacedBy(Abstand.m)) {
+                        AlsNaechstes(d.termine, erneut, ziele, jetzt)
+                        Aktionen(ziele)
+                    }
+                    Abschnittskopf("Jetzt frei", HomeLogik.freiZaehler(d.frei, jetzt))
                     JetztFrei(d.frei, erneut, ziele, jetzt)
+                    Abschnittskopf("Offene Spiele", "Mitspieler gesucht")
                     OffeneSpiele(d.offen, erneut, ziele, jetzt)
-                    DemnaechstImVerein(d.events, erneut, ziele, jetzt)
-                    DeinStandKacheln(HomeLogik.deinStand(d.getraenke, d.dienst, jetzt), ziele)
-                    Neuigkeiten(d.neues, erneut, ziele, jetzt)
+                    NaechsteVeranstaltung(d.events, erneut, ziele, jetzt)
                 }
                 else -> Text("Die Startseite konnte nicht geladen werden.", style = leise, color = f.muted)
             }
@@ -298,231 +278,180 @@ fun HomeAnsicht(
     }
 }
 
-/** Waagerecht wischbar, bis an den Bildschirmrand - der Inhalt hat 20 Rand. */
+/** Titel links, rechts ein Kicker als Zaehler oder Einordnung ("3 Plätze", "Mitspieler gesucht"). */
 @Composable
-private fun <T> Wischreihe(
-    eintraege: List<T>,
-    abstand: Int = 12,
-    schluessel: (T) -> Any,
-    inhalt: @Composable (Int, T) -> Unit,
-) {
-    LazyRow(
+private fun Abschnittskopf(titel: String, rechts: String?) {
+    val f = TcmTheme.farben
+    Row(
         Modifier
             .fillMaxWidth()
-            .randlos(),
-        contentPadding = PaddingValues(horizontal = Abstand.rand, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(abstand.dp),
+            .padding(top = Abstand.abschnitt, bottom = Abstand.m),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Abstand.m),
     ) {
-        itemsIndexed(eintraege, key = { _, e -> schluessel(e) }) { i, e -> inhalt(i, e) }
+        Text(
+            titel,
+            style = TcmSchrift.display(Schrift.gewichtFett, Schrift.titel, (-0.2).sp),
+            color = f.ink,
+            modifier = Modifier
+                .weight(1f)
+                .semantics { heading() },
+        )
+        if (rechts != null) Kicker(rechts)
     }
 }
 
 // ---- Als Naechstes ------------------------------------------------------------
 
+/** Eine Karte: der naechste eigene Termin mit gelbem Marker - oder "Noch nichts geplant". */
 @Composable
 private fun AlsNaechstes(termine: Abschnitt<List<MeineBuchung>>, erneut: Erneut, ziele: HomeZiele, jetzt: Instant) {
+    val f = TcmTheme.farben
+    termine.fehler?.let {
+        Fehlerzeile(it, erneut.laeuft, erneut.aktion)
+        return
+    }
     val kommende = Startseite.upcomingBookings(termine.wert.orEmpty(), jetzt)
-    val zuPlaetzen = { ziele.zuTab(HauptTab.PLAETZE) }
-    Kopfzeile("Als Nächstes", if (kommende.isEmpty()) null else KopfLink("Alle", "Alle Termine", zuPlaetzen))
-    termine.fehler?.let { Fehlerzeile(it, erneut.laeuft, erneut.aktion) }
-    if (termine.wert != null && kommende.isEmpty()) {
-        // Sekundaer: die gelbe Kachel "Platz buchen" steht direkt darunter (U43).
-        Leerzustand(
-            titel = "Noch nichts geplant",
-            text = "Such dir einen Platz – heute ist noch einiges frei.",
-            handlung = Handlung("Platz buchen", zuPlaetzen),
+    val erster = kommende.firstOrNull()
+    val basis = Modifier
+        .fillMaxWidth()
+        .karte(radius = Radius.karteGross, padding = 0.dp)
+    if (erster == null) {
+        Column(basis.padding(horizontal = 22.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Kicker("Heute")
+            Text(
+                "Noch nichts geplant",
+                style = TcmSchrift.display(Schrift.gewichtFett, 22.sp),
+                color = f.ink,
+                modifier = Modifier.padding(top = 6.dp),
+            )
+            Text("Such dir einen Platz – heute ist noch einiges frei.", style = TcmSchrift.text(Schrift.gewichtNormal, 15.sp), color = f.ink2)
+        }
+        return
+    }
+    val kicker = Startseite.bookingKicker(erster.startsAt, erster.endsAt, jetzt).split(" · ", limit = 2)
+    val weitere = kommende.size - 1
+    Column(
+        basis
+            .tippbar(HomeLogik.terminLabel(erster, jetzt)) { ziele.zuTab(HauptTab.PLAETZE) }
+            .padding(horizontal = 22.dp, vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Kicker(kicker[0], Modifier.weight(1f))
+            // Gelb heisst "deins": der eigene Termin.
+            kicker.getOrNull(1)?.let { DeinMarker(it) }
+        }
+        Text(
+            buildAnnotatedString {
+                append(Zeit.minutesToTime(Zeit.minutesOf(erster.startsAt)))
+                withStyle(SpanStyle(fontSize = 18.sp, fontWeight = Schrift.gewichtMittel, color = f.muted, letterSpacing = 0.sp)) {
+                    append(" Uhr")
+                }
+            },
+            style = TcmSchrift.display(Schrift.gewichtFett, Schrift.hero, (-1.5).sp).copy(fontFeatureSettings = "tnum"),
+            color = f.ink,
+            maxLines = 1,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+        Text(
+            "${erster.courtName ?: ""} · ${HomeLogik.mitText(erster)}",
+            style = TcmSchrift.text(Schrift.gewichtNormal, 15.sp),
+            color = f.ink2,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (weitere > 0) {
+            Text(
+                HomeLogik.weitereTermine(weitere),
+                style = TcmSchrift.text(Schrift.gewichtHalbfett, 13.sp),
+                color = f.blueInk,
+                modifier = Modifier.padding(top = 6.dp),
+            )
+        }
+    }
+}
+
+// ---- Die zwei Aktionen ----------------------------------------------------------
+
+/** "Platz buchen" ist die eine Hauptaktion der Startseite, "Getränk eintragen" die Zweitaktion. */
+@Composable
+private fun Aktionen(ziele: HomeZiele) {
+    val buchen: @Composable (Modifier) -> Unit = { m ->
+        Knopf(
+            "Platz buchen", m, Knopfstufe.HAUPT, Knopfgroesse.GROSS,
+            breit = false, symbol = Icons.Outlined.AddCircle, eng = true,
+        ) { ziele.zuTab(HauptTab.PLAETZE) }
+    }
+    val getraenk: @Composable (Modifier) -> Unit = { m ->
+        Knopf(
+            "Getränk eintragen", m, Knopfstufe.ZWEIT, Knopfgroesse.GROSS,
+            breit = false, symbol = Icons.Outlined.ShoppingCart, eng = true, aktion = ziele.zuGetraenken,
         )
     }
-    if (kommende.isNotEmpty()) {
-        Wischreihe(kommende, schluessel = { it.bookingId }) { i, t ->
-            TerminKarte(t, erste = i == 0, jetzt = jetzt, aktion = zuPlaetzen)
-        }
-    }
-}
-
-@Composable
-private fun TerminKarte(t: MeineBuchung, erste: Boolean, jetzt: Instant, aktion: () -> Unit) {
-    val f = TcmTheme.farben
-    val tinte = if (erste) f.onBrand else f.ink
-    val form = RoundedCornerShape(Radius.karteGross)
-    val bildschirm = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() }
-    val breite = minOf(318.dp, bildschirm - Abstand.rand * 2 - 32.dp)
-    Box(
-        Modifier
-            .width(breite)
-            .heightIn(min = 216.dp)
-            .clip(form)
-            .background(if (erste) f.brand else f.surf)
-            .then(if (erste) Modifier else Modifier.border(1.dp, f.line, form))
-            .tippbar(HomeLogik.terminLabel(t, jetzt), aktion = aktion),
-    ) {
-        if (erste) {
-            // Platzlinien in Perspektive, dezent, und der Ball
-            Canvas(Modifier.matchParentSize()) {
-                val b = size.width
-                val h = size.height
-                val linie = f.onBrand.copy(alpha = 0.13f)
-                val dicke = 2.dp.toPx()
-                drawLine(linie, Offset(b * 0.47f, h), Offset(b * 0.66f, 0f), dicke)
-                drawLine(linie, Offset(b, 60.dp.toPx()), Offset(b * 0.6f, h), dicke)
-                drawLine(linie, Offset(b * 0.57f, 100.dp.toPx()), Offset(b, 100.dp.toPx()), dicke)
-                drawLine(linie, Offset(b * 0.63f, 40.dp.toPx()), Offset(b, 40.dp.toPx()), dicke)
-                drawCircle(f.gold, 13.dp.toPx(), Offset(b - 33.dp.toPx(), 33.dp.toPx()))
-            }
-        }
-        Column(
-            Modifier
-                .padding(20.dp)
-                .heightIn(min = 216.dp - 40.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Column(Modifier.padding(bottom = 16.dp)) {
-                Kicker(
-                    Startseite.bookingKicker(t.startsAt, t.endsAt, jetzt),
-                    Modifier.padding(end = if (erste) 40.dp else 0.dp),
-                    farbe = if (erste) f.onBrand.copy(alpha = 0.85f) else f.muted,
-                )
-                Text(
-                    HomeLogik.zeitSpanne(t),
-                    style = TcmSchrift.display(Schrift.gewichtFett, Schrift.hero),
-                    color = tinte,
-                    maxLines = 1,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-                Text(
-                    "${t.courtName ?: ""} · ${t.typeName ?: ""}",
-                    style = TcmSchrift.text(Schrift.gewichtHalbfett, 16.sp),
-                    color = tinte.copy(alpha = if (erste) 0.92f else 1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 6.dp),
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    HomeLogik.mitText(t),
-                    style = TcmSchrift.text(Schrift.gewichtNormal, 13.sp),
-                    color = if (erste) f.onBrand.copy(alpha = 0.9f) else f.ink2,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                Box(
-                    Modifier
-                        .heightIn(min = 40.dp)
-                        .clip(Kapsel)
-                        .background(if (erste) f.onBrand.copy(alpha = 0.18f) else f.surf2)
-                        .padding(horizontal = 16.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("Details", style = TcmSchrift.text(Schrift.gewichtFett, 14.sp), color = tinte)
-                }
-            }
-        }
-    }
-}
-
-// ---- Schnellaktionen ----------------------------------------------------------
-
-private data class Kachel(val text: String, val symbol: ImageVector, val aktion: () -> Unit, val gelb: Boolean = false)
-
-@Composable
-private fun Schnellaktionen(ziele: HomeZiele) {
-    val f = TcmTheme.farben
-    val kacheln = listOf(
-        Kachel("Platz buchen", Icons.Outlined.DateRange, { ziele.zuTab(HauptTab.PLAETZE) }, gelb = true),
-        Kachel("Getränk eintragen", Icons.Outlined.ShoppingCart, ziele.zuGetraenken),
-        Kachel("Mitspielen", Icons.Outlined.AddCircle, { ziele.zuTab(HauptTab.PLAETZE) }),
-    )
-    // Bei grosser Schrift untereinander, Symbol neben dem Text (U5).
-    val gestapelt = grosseSchrift()
-
-    @Composable
-    fun KachelInhalt(k: Kachel, modifier: Modifier) {
-        val tinte = if (k.gelb) f.onGold else f.ink
-        val form = RoundedCornerShape(Radius.karte)
-        val symbol = @Composable { Icon(k.symbol, contentDescription = null, tint = tinte, modifier = Modifier.size(22.dp)) }
-        val text = @Composable { Text(k.text, style = TcmSchrift.text(Schrift.gewichtFett, 15.sp), color = tinte) }
-        val basis = modifier
-            .clip(form)
-            .background(if (k.gelb) f.gold else f.surf)
-            .then(if (k.gelb) Modifier else Modifier.border(1.dp, f.line, form))
-            .tippbar(k.text, aktion = k.aktion)
-            .padding(14.dp)
-        if (gestapelt) {
-            Row(
-                basis.heightIn(min = 56.dp - 28.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                symbol()
-                text()
-            }
-        } else {
-            Column(basis.heightIn(min = 96.dp - 28.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                symbol()
-                Spacer(Modifier.height(8.dp))
-                text()
-            }
-        }
-    }
-
-    if (gestapelt) {
-        Column(Modifier.padding(top = Abstand.s), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            for (k in kacheln) KachelInhalt(k, Modifier.fillMaxWidth())
+    // Bei grosser Schrift untereinander (U5); sonst bekommt der laengere Text etwas mehr Breite.
+    if (grosseSchrift()) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            buchen(Modifier.fillMaxWidth())
+            getraenk(Modifier.fillMaxWidth())
         }
     } else {
-        Row(
-            Modifier
-                .padding(top = Abstand.s)
-                .height(IntrinsicSize.Max),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            for (k in kacheln) KachelInhalt(k, Modifier.weight(1f).fillMaxHeight())
+        Row(Modifier.height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            buchen(Modifier.weight(0.9f).fillMaxHeight())
+            getraenk(Modifier.weight(1.1f).fillMaxHeight())
         }
     }
 }
 
 // ---- Jetzt frei ---------------------------------------------------------------
 
+/** Eine Listenkarte: je freiem Platz eine Zeile mit blauem Punkt und "frei bis". */
 @Composable
 private fun JetztFrei(frei: Abschnitt<FreiDaten>, erneut: Erneut, ziele: HomeZiele, jetzt: Instant) {
     val f = TcmTheme.farben
     val karten = frei.wert?.let { HomeLogik.jetztFreiKarten(it, jetzt) }.orEmpty()
     val zuPlaetzen = { ziele.zuTab(HauptTab.PLAETZE) }
-    Kopfzeile("Jetzt frei", KopfLink("Alle Plätze", aktion = zuPlaetzen))
     frei.fehler?.let { Fehlerzeile(it, erneut.laeuft, erneut.aktion) }
     if (frei.wert != null && karten.isEmpty()) {
         Leerzustand("Gerade ist kein Platz frei.", handlung = Handlung("Belegung ansehen", zuPlaetzen))
     }
     if (karten.isNotEmpty()) {
-        Wischreihe(karten, abstand = 10, schluessel = { it.id }) { _, k ->
-            Column(
-                Modifier
-                    .width(150.dp)
-                    .karte(radius = Radius.karte, padding = 0.dp)
-                    .tippbar("${k.name}, frei bis ${k.bis}, buchen", aktion = zuPlaetzen)
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .karte(padding = 0.dp),
+        ) {
+            karten.forEachIndexed { i, k ->
+                if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(f.line))
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .tippbar("${k.name}, frei bis ${k.bis}, buchen", aktion = zuPlaetzen)
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    Box(
+                        Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(f.blue),
+                    )
                     Text(
                         k.name,
-                        style = TcmSchrift.display(Schrift.gewichtFett, 20.sp),
+                        style = TcmSchrift.display(Schrift.gewichtHalbfett, 17.sp),
                         color = f.ink,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
-                    Box(
-                        Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(f.green),
+                    Text(
+                        "frei bis ${k.bis}",
+                        style = TcmSchrift.text(Schrift.gewichtNormal, 14.5.sp).copy(fontFeatureSettings = "tnum"),
+                        color = f.muted,
                     )
                 }
-                Text("frei bis ${k.bis}", style = TcmSchrift.text(Schrift.gewichtHalbfett, 13.sp), color = f.greenInk)
-                MiniZeitleiste(k.segmente, k.jetzt)
             }
         }
     }
@@ -530,198 +459,108 @@ private fun JetztFrei(frei: Abschnitt<FreiDaten>, erneut: Erneut, ziele: HomeZie
 
 // ---- Offene Spiele ------------------------------------------------------------
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun OffeneSpiele(offen: Abschnitt<List<OffenesSpiel>>, erneut: Erneut, ziele: HomeZiele, jetzt: Instant) {
     val f = TcmTheme.farben
     val liste = HomeLogik.offeneSpiele(offen.wert.orEmpty())
     val zuPlaetzen = { ziele.zuTab(HauptTab.PLAETZE) }
-    Kopfzeile("Offene Spiele", KopfLink("Alle", "Alle offenen Spiele", zuPlaetzen))
     offen.fehler?.let { Fehlerzeile(it, erneut.laeuft, erneut.aktion) }
     if (offen.wert != null && liste.isEmpty()) {
         Leerzustand("Gerade sucht niemand Mitspieler.")
     }
-    for (o in liste) {
-        val uhr = Zeit.minutesToTime(Zeit.minutesOf(o.startsAt))
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .karte(radius = Radius.karte, padding = 14.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            val marke = RoundedCornerShape(16.dp)
-            Box(
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        for (o in liste) {
+            val uhr = Zeit.minutesToTime(Zeit.minutesOf(o.startsAt))
+            Row(
                 Modifier
-                    .size(width = 56.dp, height = 60.dp)
-                    .clip(marke)
-                    .background(f.goldSoft),
-                contentAlignment = Alignment.Center,
+                    .fillMaxWidth()
+                    .karte(padding = 0.dp)
+                    .padding(start = 20.dp, end = 16.dp, top = 14.dp, bottom = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Canvas(Modifier.matchParentSize()) {
-                    val dicke = 1.5.dp.toPx()
-                    drawRoundRect(
-                        f.goldLine,
-                        topLeft = Offset(dicke / 2, dicke / 2),
-                        size = Size(size.width - dicke, size.height - dicke),
-                        cornerRadius = CornerRadius(16.dp.toPx()),
-                        style = Stroke(dicke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx()))),
-                    )
-                }
-                // Feste Kachel: Schrift gedeckelt wie in iOS (bis xLarge).
-                GedeckelteSchrift {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        itemVerticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Text(
-                            Startseite.dayTag(o.startsAt, jetzt),
-                            style = TcmSchrift.display(Schrift.gewichtFett, 12.sp, 0.8.sp),
-                            color = f.ink2,
+                            HomeLogik.offenesSpielWann(o, jetzt),
+                            style = TcmSchrift.display(Schrift.gewichtHalbfett, 16.sp).copy(fontFeatureSettings = "tnum"),
+                            color = f.ink,
                         )
-                        Text(uhr, style = TcmSchrift.display(Schrift.gewichtFett, 19.sp), color = f.ink)
+                        // Hellblau: Spielform und wie viele noch fehlen.
+                        MarkeKlein(HomeLogik.offenesSpielTitel(o))
                     }
-                }
-            }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    HomeLogik.offenesSpielTitel(o),
-                    style = TcmSchrift.text(Schrift.gewichtFett, Schrift.normal),
-                    color = f.ink,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(HomeLogik.offenesSpielZeile(o), style = leise, color = f.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                HomeLogik.offenesSpielFilter(o)?.let {
                     Text(
-                        it,
-                        style = TcmSchrift.text(Schrift.gewichtFett, Schrift.klein),
-                        color = f.goldInk,
+                        HomeLogik.offenesSpielZeile(o),
+                        style = TcmSchrift.text(Schrift.gewichtNormal, 14.sp),
+                        color = f.ink2,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.semantics { contentDescription = "Nur für $it" },
                     )
-                }
-            }
-            if (o.binDabei == true) {
-                Text("Dabei", style = TcmSchrift.text(Schrift.gewichtFett, Schrift.klein), color = f.muted)
-            } else {
-                Button(
-                    onClick = zuPlaetzen,
-                    shape = Kapsel,
-                    colors = ButtonDefaults.buttonColors(containerColor = f.gold, contentColor = f.onGold),
-                    contentPadding = PaddingValues(horizontal = 14.dp),
-                    modifier = Modifier.semantics { contentDescription = "Mitspielen: ${o.typeName ?: ""} um $uhr" },
-                ) {
-                    Text("Mitspielen", style = TcmSchrift.text(Schrift.gewichtFett, 14.sp))
-                }
-            }
-        }
-    }
-}
-
-// ---- Demnaechst im Verein ------------------------------------------------------
-
-@Composable
-private fun DemnaechstImVerein(events: Abschnitt<List<MitgliedEvent>>, erneut: Erneut, ziele: HomeZiele, jetzt: Instant) {
-    val liste = Veranstaltungen.eventDemnaechst(events.wert.orEmpty(), jetzt)
-    Kopfzeile("Demnächst im Verein", KopfLink("Alle", "Alle Veranstaltungen", ziele.zuVeranstaltungen))
-    events.fehler?.let { Fehlerzeile(it, erneut.laeuft, erneut.aktion) }
-    if (events.wert != null && liste.isEmpty()) {
-        Leerzustand("Gerade ist nichts geplant.")
-    }
-    for (e in liste) EventKarte(e, jetzt, aufforderung = true) { ziele.zuVeranstaltung(e.id) }
-}
-
-// ---- Dein Stand ---------------------------------------------------------------
-
-@Composable
-private fun DeinStandKacheln(stand: DeinStand, ziele: HomeZiele) {
-    val f = TcmTheme.farben
-    val gross = TcmSchrift.display(Schrift.gewichtFett, 28.sp)
-    Kopfzeile("Dein Stand")
-    // Bei grosser Schrift untereinander, sonst bricht "Arbeitsdienst 2026" mitten im Wort.
-    NebeneinanderOderUntereinander { breite ->
-        StandKachel(stand.getraenkeTitel, stand.getraenkeLabel, ziele.zuGetraenken, breite) {
-            val fehler = stand.getraenkeFehler
-            if (fehler != null) {
-                Text(fehler, style = leise, color = f.redInk)
-            } else {
-                Text(stand.getraenkeWert ?: "", style = gross, color = f.ink)
-                Text("läuft noch", style = leise, color = f.muted)
-            }
-        }
-        StandKachel(stand.dienstTitel, stand.dienstLabel, { ziele.zuTab(HauptTab.KONTO) }, breite) {
-            val fehler = stand.dienstFehler
-            val wert = stand.dienstWert
-            when {
-                fehler != null -> Text(fehler, style = leise, color = f.redInk)
-                wert != null -> {
-                    Text(wert, style = gross, color = f.ink)
-                    Box(
-                        Modifier
-                            .padding(top = 6.dp)
-                            .fillMaxWidth()
-                            .height(6.dp)
-                            .clip(Kapsel)
-                            .background(f.surf2),
-                    ) {
-                        Box(
-                            Modifier
-                                .fillMaxWidth(stand.dienstAnteil.toFloat())
-                                .fillMaxHeight()
-                                .clip(Kapsel)
-                                .background(f.green),
+                    HomeLogik.offenesSpielFilter(o)?.let {
+                        Text(
+                            it,
+                            style = TcmSchrift.text(Schrift.gewichtHalbfett, Schrift.klein),
+                            color = f.blueInk,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.semantics { contentDescription = "Nur für $it" },
                         )
                     }
                 }
-                else -> Text("Kein Soll für dieses Jahr.", style = leise, color = f.muted, modifier = Modifier.padding(top = 4.dp))
+                if (o.binDabei == true) {
+                    DeinMarker("Du bist dabei")
+                } else {
+                    Zweitknopf(
+                        "Mitspielen",
+                        klein = true,
+                        beschreibung = "Mitspielen: ${o.typeName ?: ""} um $uhr",
+                        aktion = zuPlaetzen,
+                    )
+                }
             }
         }
     }
 }
 
+// ---- Demnaechst im Verein: ein Streifen, der Rest steht unter Verein ----------------
+
 @Composable
-private fun StandKachel(
-    titel: String,
-    label: String,
-    aktion: () -> Unit,
-    modifier: Modifier,
-    inhalt: @Composable () -> Unit,
-) {
-    Column(
-        modifier
-            .karte(radius = Radius.karte, padding = 0.dp)
-            .tippbar(label, aktion = aktion)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+private fun NaechsteVeranstaltung(events: Abschnitt<List<MitgliedEvent>>, erneut: Erneut, ziele: HomeZiele, jetzt: Instant) {
+    val f = TcmTheme.farben
+    events.fehler?.let {
+        Box(Modifier.padding(top = Abstand.abschnitt)) { Fehlerzeile(it, erneut.laeuft, erneut.aktion) }
+        return
+    }
+    val e = Veranstaltungen.eventDemnaechst(events.wert.orEmpty(), jetzt, 1).firstOrNull() ?: return
+    val tag = Zeit.datum(e.startsAt)?.let(Zeit::heuteLang) ?: ""
+    val form = RoundedCornerShape(26.dp)
+    Row(
+        Modifier
+            .padding(top = Abstand.abschnitt)
+            .fillMaxWidth()
+            .clip(form)
+            .background(f.blueSoft)
+            .border(1.dp, f.blue.copy(alpha = 0.22f), form)
+            .tippbar("Demnächst im Verein: $tag, ${e.title ?: ""}") { ziele.zuVeranstaltung(e.id) }
+            .heightIn(min = 52.dp)
+            .padding(horizontal = 20.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(titel, style = TcmSchrift.text(Schrift.gewichtHalbfett, 13.sp), color = TcmTheme.farben.muted)
-        inhalt()
-    }
-}
-
-// ---- Neuigkeiten --------------------------------------------------------------
-
-@Composable
-private fun Neuigkeiten(neues: Abschnitt<List<Benachrichtigung>>, erneut: Erneut, ziele: HomeZiele, jetzt: Instant) {
-    // Ungelesenes und die letzte Woche; "Alle" fuehrt auch dann zur ganzen
-    // Liste, wenn nur noch Aelteres da ist.
-    val liste = Startseite.startseitenNeuigkeiten(neues.wert.orEmpty(), jetzt)
-    Kopfzeile(
-        "Neuigkeiten",
-        if (HomeLogik.zeigeAlleNeuigkeiten(neues)) KopfLink("Alle", "Alle Neuigkeiten", ziele.zuNachrichten) else null,
-    )
-    neues.fehler?.let { Fehlerzeile(it, erneut.laeuft, erneut.aktion) }
-    if (neues.wert != null && liste.isEmpty()) {
-        Leerzustand("Keine Neuigkeiten.")
-    }
-    if (liste.isNotEmpty()) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .karte(padding = 0.dp),
-        ) {
-            liste.forEachIndexed { i, n ->
-                if (i > 0) Trennlinie()
-                NachrichtZeile(n, neu = n.readAt == null, jetzt = jetzt, hervorheben = false, zeilen = 3, zuVeranstaltung = ziele.zuVeranstaltung)
-            }
-        }
+        Icon(Icons.Outlined.DateRange, contentDescription = null, tint = f.blueInk, modifier = Modifier.size(20.dp))
+        Text(
+            buildAnnotatedString {
+                append("$tag · ")
+                withStyle(SpanStyle(fontWeight = Schrift.gewichtFett)) { append(e.title ?: "") }
+            },
+            style = TcmSchrift.text(Schrift.gewichtNormal, 14.5.sp),
+            color = f.ink,
+            modifier = Modifier.weight(1f),
+        )
     }
 }

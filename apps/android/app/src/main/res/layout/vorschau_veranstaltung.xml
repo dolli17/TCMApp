@@ -22,7 +22,7 @@
         android:layout_width="46dp"
         android:layout_height="50dp"
         android:layout_marginTop="8dp"
-        android:background="@color/widget_gold"
+        android:background="@color/widget_surf2"
         android:gravity="center"
         android:orientation="vertical">
 
@@ -31,7 +31,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif-condensed"
             android:text="29"
-            android:textColor="@color/widget_on_gold"
+            android:textColor="@color/widget_ink"
             android:textSize="22sp"
             android:textStyle="bold" />
 
@@ -40,7 +40,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif-condensed"
             android:text="SEPT"
-            android:textColor="@color/widget_on_gold"
+            android:textColor="@color/widget_ink"
             android:textSize="11sp"
             android:textStyle="bold" />
     </LinearLayout>

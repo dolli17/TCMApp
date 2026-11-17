@@ -119,7 +119,28 @@ private struct VerwaltungInhalt: View {
         let m = modell
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Tokens.Abstand.m, pinnedViews: [.sectionHeaders]) {
-                GrosserKopf(titel: "Verwaltung", name: m.meinName)
+                // Kopf mit der einen Hauptaktion rechts (Entwurf "Verwaltung Plaetze mobil").
+                HStack(alignment: .center, spacing: Tokens.Abstand.m) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("TC Muckensturm").kicker()
+                        Text("Verwaltung")
+                            .font(Schrift.display(.fett, Tokens.Schrift.seitentitel, relativeTo: .largeTitle))
+                            .tracking(Tokens.Schrift.laufweiteTitel)
+                            .foregroundStyle(Farbe.ink)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .accessibilityAddTraits(.isHeader)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    if m.stand != nil {
+                        let serien = m.ansicht == .serien
+                        Knopf(serien ? "Serie anlegen" : "Plätze sperren", stufe: .haupt, groesse: .klein) {
+                            m.blatt = serien ? .serieAnlegen : .sperren
+                        }
+                    }
+                }
+                .padding(.top, 16)
+                .padding(.bottom, Tokens.Abstand.xs)
                 if let f = m.fehler {
                     Fehlerzeile(text: f, laeuft: m.aktualisiert) { Task { await m.laden(nachladen: true) } }
                 }
@@ -130,7 +151,7 @@ private struct VerwaltungInhalt: View {
                         inhalt(s)
                     } header: {
                         // Klebt beim Scrollen oben wie in Plaetze und Verein (U74).
-                        KontoSegmente(
+                        SegmentLeiste(
                             beschriftung: "Plätze und Serien",
                             optionen: VerwaltungAnsicht.allCases.map { ($0, $0.label) },
                             gewaehlt: m.ansicht
@@ -177,9 +198,6 @@ private struct VerwaltungInhalt: View {
     @ViewBuilder private func inhalt(_ s: VerwaltungsStand) -> some View {
         let m = modell
         let serien = m.ansicht == .serien
-        GelberKnopf(text: serien ? "+ Serie anlegen" : "+ Plätze sperren") {
-            m.blatt = serien ? .serieAnlegen : .sperren
-        }
         if let e = m.meldung {
             KontoHinweis(text: e.meldung, ok: e.ok)
         }
@@ -187,7 +205,7 @@ private struct VerwaltungInhalt: View {
             VerwaltungGruppenkopf(titel: "Laufend", neben: "\(s.serien.count) Serien")
             SerienListe(serien: s.serien) { m.blatt = .serie($0) }
         } else {
-            VerwaltungGruppenkopf(titel: "Jetzt")
+            VerwaltungGruppenkopf(titel: "Jetzt", neben: "\(s.plaetze.filter(\.aktiv).count) Plätze aktiv")
             PlatzListe(plaetze: s.plaetze, zustand: s.zustand)
         }
         if let admin = zugang.admin {
@@ -205,17 +223,14 @@ struct VerwaltungGruppenkopf: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(titel)
-                .font(Schrift.text(.fett, Tokens.Schrift.titel, relativeTo: .title2))
-                .tracking(-0.2)
-                .foregroundStyle(Farbe.ink)
-                .accessibilityAddTraits(.isHeader)
+            Text(titel).kicker().accessibilityAddTraits(.isHeader)
             Spacer(minLength: Tokens.Abstand.s)
             if let neben {
                 Text(neben).leise()
             }
         }
-        .padding(.top, Tokens.Abstand.s)
+        .padding(.horizontal, 4)
+        .padding(.top, Tokens.Abstand.xs)
     }
 }
 
@@ -232,7 +247,7 @@ private struct PlatzListe: View {
                 let jetzt = p.aktiv ? zustand[p.id] : nil
                 let hinweis = VerwaltungLogik.platzHinweis(aktiv: p.aktiv, jetzt: jetzt)
                 let zeile = VerwaltungZeile(
-                    symbol: p.shortName ?? "",
+                    symbol: nil,
                     titel: p.name ?? "",
                     kontext: p.subline,
                     hinweis: hinweis.text,
@@ -287,7 +302,8 @@ private struct SerienListe: View {
 
 /// Eine Zeile der Verwaltung (Listenzeile in Liste.tsx): Kachel, Titel, Kontext, Hinweis rechts.
 struct VerwaltungZeile: View {
-    let symbol: String
+    /// Kachel vor dem Titel (Wochentag einer Serie); die Plaetze stehen ohne.
+    let symbol: String?
     var symbolGold = false
     let titel: String
     var zeit: String?
@@ -298,16 +314,18 @@ struct VerwaltungZeile: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(symbol)
-                .font(Schrift.display(.extrafett, symbolGold ? 14 : 15))
-                .foregroundStyle(symbolGold ? Farbe.goldInk : Farbe.ink)
-                .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                .frame(width: 40, height: 40)
-                .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 12))
-                .accessibilityHidden(true)
+            if let symbol {
+                Text(symbol)
+                    .font(Schrift.display(.fett, symbolGold ? 14 : 15))
+                    .foregroundStyle(symbolGold ? Farbe.blueInk : Farbe.ink)
+                    .dynamicTypeSize(...DynamicTypeSize.xLarge)
+                    .frame(width: 40, height: 40)
+                    .background(symbolGold ? Farbe.blueSoft : Farbe.surf2, in: Circle())
+                    .accessibilityHidden(true)
+            }
             VStack(alignment: .leading, spacing: 1) {
                 Text(titel)
-                    .font(Schrift.text(.fett, 16))
+                    .font(Schrift.text(.normal, 17))
                     .foregroundStyle(Farbe.ink)
                     .lineLimit(1)
                 if let zeit {
@@ -325,26 +343,41 @@ struct VerwaltungZeile: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if let hinweis {
+                // Der Stand als Marke rechts: grau, hellblau fuer Serien, rot fuer Gesperrtes.
                 Text(hinweis)
-                    .font(Schrift.text(ton == .leise ? .halbfett : .fett, 13))
+                    .font(Schrift.text(.halbfett, 13))
                     .foregroundStyle(farbe)
                     .multilineTextAlignment(.trailing)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(grund, in: Capsule())
+                    .overlay(Capsule().strokeBorder(Farbe.line, lineWidth: ton == .leise || ton == .gruen ? 1 : 0))
             }
             if pfeil { Pfeil() }
         }
         .padding(.vertical, 10)
-        .padding(.leading, 16)
+        .padding(.leading, 20)
         .padding(.trailing, 14)
-        .frame(minHeight: 64)
+        .frame(minHeight: 60)
         .contentShape(Rectangle())
+    }
+
+    private var grund: Color {
+        switch ton {
+        case .leise, .gruen: Farbe.chip
+        case .rot: Farbe.red.opacity(0.12)
+        case .gold: Farbe.blueSoft
+        }
     }
 
     private var farbe: Color {
         switch ton {
         case .leise: Farbe.muted
         case .rot: Farbe.redInk
-        case .gold: Farbe.goldInk
-        case .gruen: Farbe.greenInk
+        // "gold" im Kern meint einen Stand, kein "deins": blau.
+        case .gold: Farbe.blueInk
+        // "frei" ist der Normalfall und bleibt grau wie im Entwurf.
+        case .gruen: Farbe.ink2
         }
     }
 }

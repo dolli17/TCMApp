@@ -50,6 +50,13 @@ enum PlaetzeLogik {
         return "\(Zeit.wochentageKurz[wochentag(datum)])., \(kurz)"
     }
 
+    /// Unter dem Titel: "8 Plätze · 08 bis 21 Uhr"; nil, solange keine Plaetze geladen sind.
+    static func kopfzeile(plaetze: Int, oeffnung: Int, schluss: Int) -> String? {
+        guard plaetze > 0 else { return nil }
+        let uhr = { (m: Int) in m % 60 == 0 ? String(format: "%02d", m / 60) : Zeit.minutesToTime(m) }
+        return "\(plaetze) \(plaetze == 1 ? "Platz" : "Plätze") · \(uhr(oeffnung)) bis \(uhr(schluss)) Uhr"
+    }
+
     /// Fuer VoiceOver: "Donnerstag, 15. Oktober"
     static func lesbar(_ datum: String) -> String {
         let (t, m) = tagUndMonat(datum)

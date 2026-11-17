@@ -65,16 +65,15 @@ test.describe("Theme", () => {
 });
 
 test.describe("Anmeldeseiten", () => {
-  test("sind immer dunkel, auch wenn hell gewählt ist", async ({ page }) => {
-    // Die Wahl liegt im Browser; sie gilt ueberall - nur nicht auf der Buehne.
+  test("folgen dem gewählten Theme: hell ist weiß", async ({ page }) => {
+    // Seit dem Stitch-Design gibt es keine erzwungen dunkle Bühne mehr.
     await page.goto("/login");
     await page.evaluate(() => {
       localStorage.setItem("tcm-theme", "hell");
       document.documentElement.setAttribute("data-theme", "hell");
     });
     const grund = await page.locator(".auth").evaluate((el) => getComputedStyle(el).backgroundColor);
-    // #07111D - der Grund des dunklen Themes
-    expect(grund).toBe("rgb(7, 17, 29)");
+    expect(grund).toBe("rgb(255, 255, 255)");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Willkommen zurück auf dem Platz.");
     await expect(page.getByRole("link", { name: "Antrag stellen" })).toBeVisible();
   });
@@ -95,66 +94,24 @@ test.describe("Layout", () => {
       await expect(page.locator(".seitenleiste")).toBeHidden();
     });
 
-    test("die Plätze beginnen am Telefon mit den freien Zeiten", async ({ page }) => {
-      // Ein Raster mit acht Spalten waere auf 390 Pixel unbedienbar. Ohne
-      // gemerkte Wahl kommen zuerst die freien Zeiten, dort sind alle Ziele
-      // gross (U18); die Übersicht mit wischbaren Stunden ist einen Tipp weiter.
+    test("die Plätze zeigen am Telefon denselben Belegungsplan", async ({ page }) => {
+      // Eine Darstellung für alle Breiten (docs/design/stitch): das Raster mit
+      // acht schmalen Spalten, keine zweite Ansicht "Freie Zeiten".
       await anmelden(page);
       await page.goto(`/plan?tag=${morgen()}`);
 
-      await expect(page.locator(".plan-listen")).toBeVisible();
-      await expect(page.locator(".plan-raster")).toBeHidden();
-      await expect(page.getByRole("radio", { name: "Freie Zeiten" })).toHaveAttribute("aria-checked", "true");
-      await expect(page.locator(".plan-listen .fz-knopf").first()).toBeVisible();
-
-      await page.getByRole("radio", { name: "Übersicht" }).click();
-      await expect(page.locator(".plan-listen .tr-platz")).toHaveCount(8);
+      await expect(page.locator(".plan-raster .raster")).toBeVisible();
+      await expect(page.locator(".raster .spalten-kopf")).toHaveCount(8);
+      await expect(page.getByRole("radio", { name: "Freie Zeiten" })).toHaveCount(0);
     });
 
-    test("Ziele am Telefon sind mindestens 44 Pixel groß", async ({ page }) => {
-      // U18: Vorher war eine halbe Stunde im Raster 34 Pixel breit.
+    test("eine halbe Stunde ist am Telefon mindestens 44 Pixel hoch", async ({ page }) => {
+      // U18: mit dem Finger zu treffen.
       await anmelden(page);
       await page.goto(`/plan?tag=${morgen()}`);
 
-      for (const name of ["Übersicht", "Freie Zeiten"]) {
-        const box = await page.getByRole("radio", { name }).boundingBox();
-        expect(box!.height, `Umschalter ${name}`).toBeGreaterThanOrEqual(44);
-      }
-      const zeile = await page.locator(".fz-knopf").first().boundingBox();
-      expect(zeile!.height).toBeGreaterThanOrEqual(44);
-
-      await page.getByRole("radio", { name: "Übersicht" }).click();
-      // Abstand zweier Stundenmarken = eine Stunde; die halbe muss 44 tragen.
-      const marken = page.locator(".tr-kopf span");
-      const [a, b] = [await marken.nth(0).boundingBox(), await marken.nth(1).boundingBox()];
-      expect((b!.x - a!.x) / 2).toBeGreaterThanOrEqual(44);
-      const platz = await page.locator(".tr-zeile").first().boundingBox();
-      expect(platz!.height).toBeGreaterThanOrEqual(44);
-      for (const block of await page.locator(".tr-block").all()) {
-        expect((await block.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-      }
-    });
-
-    test("Freie Zeiten: Wahl bleibt, Zeile klappt auf und öffnet das Blatt", async ({ page }) => {
-      await anmelden(page);
-      // Morgen, damit der Test nicht von der Uhrzeit abhaengt.
-      await page.goto(`/plan?tag=${morgen()}`);
-      // Die gemerkte Wahl schlaegt den Standard
-      await page.getByRole("radio", { name: "Übersicht" }).click();
-      await page.reload();
-      await expect(page.getByRole("radio", { name: "Übersicht" })).toHaveAttribute("aria-checked", "true");
-      await page.getByRole("radio", { name: "Freie Zeiten" }).click();
-      await page.reload();
-      await expect(page.getByRole("radio", { name: "Freie Zeiten" })).toHaveAttribute("aria-checked", "true");
-
-      const zeile = page.locator(".fz-knopf").filter({ hasNot: page.locator(".fz-zahl.keine") }).first();
-      await expect(zeile).toBeVisible();
-      await expect(zeile).toHaveAttribute("aria-label", /Uhr, \d+ Pl(atz|ätze) frei/);
-      await zeile.click();
-      await expect(zeile).toHaveAttribute("aria-expanded", "true");
-
-      await page.locator(".fz-plaetze button").first().click();
-      await expect(page.locator("dialog.fenster")).toBeVisible();
+      const slot = await page.locator(".frei-slot").first().boundingBox();
+      expect(slot!.height).toBeGreaterThanOrEqual(44);
     });
 
     for (const pfad of SEITEN) {
@@ -174,11 +131,8 @@ test.describe("Layout", () => {
       // hält, und von keinem anderen Test belegt (siehe ablaeufe.spec.ts).
       await anmelden(page);
       await page.goto(`/plan?tag=${tagIn(3)}`);
-      await expect(page.getByRole("radio", { name: "Freie Zeiten" })).toHaveAttribute("aria-checked", "true");
-
-      const zeile = page.locator(".fz-zeile").filter({ has: page.getByRole("button", { name: /^14:00 Uhr,/ }) });
-      await zeile.locator(".fz-knopf").click();
-      await zeile.getByRole("button", { name: "Platz 7 um 14:00 Uhr buchen" }).click();
+      const eigen = page.locator('.spalte[aria-label="Platz 7"] .beleg.eigen');
+      await page.getByRole("button", { name: "Platz 7 um 14:00 buchen" }).click();
       const fenster = page.locator("dialog.fenster");
       await expect(fenster).toBeVisible();
       await mitspielerWaehlen(fenster, MITSPIELER.max);
@@ -189,15 +143,14 @@ test.describe("Layout", () => {
       await expect(toast).toContainText("gebucht", { timeout: 15_000 });
       await expect(toast).toBeInViewport();
       expect((await toast.boundingBox())!.y).toBeGreaterThan(844 / 2);
-      await expect(zeile).toHaveClass(/markiert/);
+      await expect(eigen).toHaveClass(/markiert/);
 
-      // Aufräumen über die Übersicht
-      await page.getByRole("radio", { name: "Übersicht" }).click();
-      await page.locator('.tr-zeile[aria-label="Platz 7"] button.tr-block.eigen').click();
+      // Aufräumen
+      await eigen.click();
       await fenster.getByRole("button", { name: "Buchung stornieren" }).click();
       await fenster.getByRole("button", { name: "Wirklich stornieren" }).click();
       await expect(toast).toContainText("storniert", { timeout: 15_000 });
-      await expect(page.locator('.tr-zeile[aria-label="Platz 7"] .tr-block.eigen')).toHaveCount(0);
+      await expect(eigen).toHaveCount(0);
     });
 
     test("die schwebende Leiste eines Admins sprengt die Breite nicht", async ({ page }) => {
@@ -262,16 +215,11 @@ test.describe("Layout", () => {
       await anmelden(page);
       await page.goto("/plan");
 
-      // Eine freie Flaeche im Raster waehlt Platz und Beginn, die Leiste
-      // unten oeffnet das Blatt. Morgen, damit noch etwas frei ist.
+      // Eine freie Zeit im Raster oeffnet das Blatt. Morgen, damit noch etwas frei ist.
       await page.goto(`/plan?tag=${morgen()}`);
-      await page.getByRole("radio", { name: "Übersicht" }).click();
-      const slot = page.locator(".plan-listen button.tr-frei").first();
+      const slot = page.locator(".plan-raster button.frei-slot").first();
       await expect(slot).toBeVisible();
       await slot.click();
-      const leiste = page.locator(".auswahl-leiste");
-      await expect(leiste).toContainText("frei bis");
-      await leiste.getByRole("button", { name: /buchen$/ }).click();
 
       const fenster = page.locator("dialog.fenster");
       await expect(fenster).toBeVisible();
@@ -302,7 +250,6 @@ test.describe("Layout", () => {
       await page.goto("/plan");
 
       await expect(page.locator(".plan-raster .raster")).toBeVisible();
-      await expect(page.locator(".plan-listen")).toBeHidden();
     });
 
     test("freie Zeit zeigt sich auch beim Tastatur-Fokus und öffnet mit Enter", async ({ page }) => {
@@ -362,7 +309,7 @@ test.describe("Layout", () => {
 });
 
 test.describe("Schriften", () => {
-  test("Barlow kommt vom eigenen Server, nicht von Google", async ({ page }) => {
+  test("Die Schriften kommen vom eigenen Server, nicht von Google", async ({ page }) => {
     // Ein Aufruf an fonts.gstatic.com wuerde die IP jedes Mitglieds an Google
     // schicken - in Deutschland abgemahnt und fuer einen Verein vermeidbar.
     const fremdeAufrufe: string[] = [];

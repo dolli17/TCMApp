@@ -19,19 +19,16 @@ struct KeinZugangBildschirm: View {
                 .foregroundStyle(Farbe.ink2)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            VStack(spacing: Tokens.Abstand.l) {
+            // Zwei Knoepfe untereinander: blau der Kontakt, neutral der Weg zu einem anderen Konto.
+            VStack(spacing: 12) {
                 // Der Kontakt steht im Impressum; ohne Adresse (lokal) fuehrt der Knopf zur Anmeldung.
                 if let kontakt = sitzung.umgebung.webLink("/impressum#kontakt") {
                     Link(destination: kontakt) {
-                        Text("Vorstand kontaktieren")
-                            .font(Schrift.text(.extrafett, 17, relativeTo: .headline))
-                            .foregroundStyle(Farbe.onGold)
-                            .frame(maxWidth: .infinity, minHeight: 58)
-                            .background(Farbe.gold, in: RoundedRectangle(cornerRadius: 18))
+                        KnopfFlaeche(stufe: .haupt, breit: true) { Text("Vorstand kontaktieren") }
                     }
-                    LeiserVerweis(text: "Mit einem anderen Konto anmelden") { sitzung.zurAnmeldung() }
+                    LeiserKnopf(text: "Mit einem anderen Konto anmelden") { sitzung.zurAnmeldung() }
                 } else {
-                    GelberKnopf(text: "Zur Anmeldung") { sitzung.zurAnmeldung() }
+                    Hauptknopf(text: "Zur Anmeldung") { sitzung.zurAnmeldung() }
                 }
             }
             .padding(.top, Tokens.Abstand.abschnitt)

@@ -79,7 +79,7 @@ export function EventAnmeldung({
             </button>
             <output className="dpl" aria-label={`${begleitung} ${begleitung === 1 ? "Begleitperson" : "Begleitpersonen"}`}>{begleitung}</output>
             <button
-              type="button" className={begleitung > 0 ? "gelb" : undefined} aria-label="Eine Begleitperson mehr" disabled={begleitung >= MAX_BEGLEITUNG}
+              type="button" aria-label="Eine Begleitperson mehr" disabled={begleitung >= MAX_BEGLEITUNG}
               onClick={() => setBegleitung((b) => Math.min(MAX_BEGLEITUNG, b + 1))}
             >
               <Zeichen d="M12 5v14M5 12h14" />
@@ -102,7 +102,7 @@ export function EventAnmeldung({
       )}
       {/* Was es kostet, steht vor dem Knopf und nicht erst danach. */}
       {!aendern && gebuehr && <p className="unterzeile gebuehr-hinweis">{gebuehr}</p>}
-      <button type="submit" className="knopf gold block" disabled={laeuft}>
+      <button type="submit" className="knopf haupt block" disabled={laeuft}>
         {aendern
           ? e.fee_cents && e.mein_status === "registered"
             ? `Änderung sichern · ${formatCents(eventGebuehrCents(e.fee_cents, begleitung))}`
@@ -123,7 +123,16 @@ export function EventAnmeldung({
     const offen = forderung && ["open", "notified", "returned"].includes(forderung.status);
     return (
       <section className={`karte event-mein ${wartet ? "wartet" : "angemeldet"}`} aria-labelledby="h-mein">
-        <h2 id="h-mein" className="dpl">{wartet ? "Du stehst auf der Warteliste" : "Du bist angemeldet"}</h2>
+        <div className="kopf">
+          {!wartet && (
+            <span className="haken" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="m6 12.5 4 4 8-9" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          )}
+          <h2 id="h-mein" className="dpl">{wartet ? "Du stehst auf der Warteliste" : "Du bist angemeldet"}</h2>
+        </div>
         {hinweis}
         {bearbeiten ? (
           formular(true)
@@ -164,12 +173,12 @@ export function EventAnmeldung({
             ) : (
               <div className="event-knoepfe">
                 {eventAenderbar(e, jetzt) && (
-                  <button type="button" className="knopf leise" onClick={() => { setMeldung(null); setBearbeiten(true); }}>
+                  <button type="button" className="knopf" onClick={() => { setMeldung(null); setBearbeiten(true); }}>
                     Anmeldung ändern
                   </button>
                 )}
                 {eventAbmeldbar(e, jetzt) && (
-                  <button type="button" className="knopf gefahr-leise" onClick={() => setAbmeldenFrage(true)}>
+                  <button type="button" className="gefahr-link" onClick={() => setAbmeldenFrage(true)}>
                     {eventAbmeldenKnopf(e, jetzt)}
                   </button>
                 )}

@@ -89,20 +89,22 @@ function Formular() {
               required
             />
           </label>
-          <label>
-            <span>Passwort</span>
-            <input
-              type={zeigen ? "text" : "password"}
-              value={passwort}
-              onChange={(e) => setPasswort(e.target.value)}
-              autoComplete="current-password"
-              required
-            />
-          </label>
-          <label className="schalter">
-            <input type="checkbox" checked={zeigen} onChange={(e) => setZeigen(e.target.checked)} />
-            <span>Passwort anzeigen</span>
-          </label>
+          {/* Entwurf "Anmelden": "Anzeigen" sitzt im Feld, nicht als Kästchen darunter */}
+          <div className="passwort-feld">
+            <label>
+              <span>Passwort</span>
+              <input
+                type={zeigen ? "text" : "password"}
+                value={passwort}
+                onChange={(e) => setPasswort(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+            </label>
+            <button type="button" aria-pressed={zeigen} aria-label="Passwort anzeigen" onClick={() => setZeigen((z) => !z)}>
+              {zeigen ? "Verbergen" : "Anzeigen"}
+            </button>
+          </div>
 
           <p className="vergessen">
             <Link href="/passwort-vergessen">Passwort vergessen?</Link>
@@ -110,7 +112,7 @@ function Formular() {
 
           {fehler && <div className="hinweis fehler" role="alert">{fehler}</div>}
 
-          <button className="knopf gold gross block" disabled={laeuft}>
+          <button className="knopf haupt gross block" disabled={laeuft}>
             {laeuft ? "Anmelden…" : "Anmelden"}
           </button>
 

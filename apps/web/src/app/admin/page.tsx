@@ -204,7 +204,7 @@ export default async function VerwaltungSeite() {
                     <div className="kicker">Zuerst</div>
                     <b className="titel">{erste.title}</b>
                     <p>{erste.text}</p>
-                    <Link href={erste.href} className="knopf gold">
+                    <Link href={erste.href} className="knopf haupt">
                       {erste.action}
                     </Link>
                   </div>

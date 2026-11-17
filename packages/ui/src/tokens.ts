@@ -1,10 +1,12 @@
 /**
  * Design-Tokens des TC Muckensturm
  *
- * Nach dem Designkonzept "Clubhaus" (docs/design/clubhaus/HANDOFF.md). Die
- * Vereinsfarben stammen aus dem Logo: Blau trägt die Marke, Ballgelb heisst
- * "hier handeln" - nur für die eine Hauptaktion eines Screens, eigene Termine
- * und aktive Auswahl, nicht als Deko.
+ * Nach den Stitch-Entwürfen vom November 2026 (docs/design/stitch/README.md).
+ * Die Vereinsfarben stammen aus dem Logo. Vereinsblau ist der einzige Akzent
+ * und kommt in zwei Tönen vor: kräftig (blue) für die eine Hauptaktion eines
+ * Screens, hell (blueSoft) für alles Zweite und alles Ausgewählte. Ballgelb
+ * heisst "das ist deins" - eigenes Spiel, eigene Anmeldung, der "du"-Marker -
+ * und ist weder Knopf noch Auswahl noch Deko.
  *
  * DIESE DATEI IST DIE QUELLE. tokens.css wird daraus erzeugt
  * (pnpm --filter @tcm/ui build:css). Ein Test vergleicht beide Wert für Wert,
@@ -15,10 +17,10 @@
 
 export const farben = {
   hell: {
-    blue: "#1A6FB0",
-    blueInk: "#0F4C81",
-    blueSoft: "#E2EFFA",
-    // Ballgelb, in beiden Themes gleich. Nie als Textfarbe auf hellem Grund -
+    blue: "#1466A8",
+    blueInk: "#1466A8",
+    blueSoft: "#E8F1F8",
+    // Ballgelb, in beiden Themes gleich, nur für "deins". Nie als Textfarbe auf hellem Grund -
     // dafuer gibt es goldInk. Text auf gold ist immer onGold.
     gold: "#FFD21F",
     goldSoft: "#FFF6D1",
@@ -49,34 +51,34 @@ export const farben = {
     // Flaechen darunter sind so gewaehlt, dass Weiss darauf 4,5:1 haelt.
     onBrand: "#FFFFFF",
 
-    bg: "#F3F5F8",
+    bg: "#FFFFFF",
     surf: "#FFFFFF",
-    surf2: "#EEF2F6",
-    surf3: "#E2E8EF",
+    surf2: "#F8FAFC",
+    surf3: "#E2E8F0",
     ink: "#0A1624",
-    ink2: "#44566B",
+    ink2: "#334155",
     // Abweichung vom Entwurf (dort #5F7185): der erreicht auf surf-2 nur
     // 4,46:1 und auf surf-3 - dort steht "gesperrt" - 4,07:1. Da --muted fuer
     // Hilfstexte in 12 bis 13 Pixel benutzt wird, gilt die Textschwelle von
     // 4,5:1. #596A7D haelt sie auf allen vier Flaechen und behaelt denselben
     // blaugrauen Ton. Der Verein hat Mitglieder bis 92.
     muted: "#596A7D",
-    line: "#E3E8EE",
-    line2: "#CBD5E0",
+    line: "#E2E8F0",
+    line2: "#CBD5E1",
     // Rand von Eingabefeldern und Legendenkaestchen. line2 trennt Flaechen
     // und darf zart sein; ein Feld dagegen muss man finden, also 3:1 auf allen
     // vier Flaechen (U29, WCAG 1.4.11). line2 lag auf surf bei 1,5:1.
     rahmen: "#76869A",
-    chip: "#EEF2F6",
+    chip: "#F1F5F9",
 
     // Schwebende Tab-Leiste
-    glass: "rgba(255,255,255,.82)",
+    glass: "rgba(255,255,255,.88)",
     glassLine: "rgba(10,22,36,.08)",
-    tabAktiv: "#FFD21F",
-    tabAktivInk: "#0A1624",
+    tabAktiv: "#E8F1F8",
+    tabAktivInk: "#1466A8",
     // Aktiver Eintrag der Seitenleiste (Web ab 768 px)
-    navAktiv: "#0A1624",
-    navAktivInk: "#FFFFFF",
+    navAktiv: "#E8F1F8",
+    navAktivInk: "#1466A8",
     // Aktives Segment eines Segment-Schalters: hell surf (mit Schatten), dunkel surf3
     segAktiv: "#FFFFFF",
     // Rand des aktiven Segments. Die Fläche allein hob sich kaum ab - dunkel
@@ -121,10 +123,10 @@ export const farben = {
 
     glass: "rgba(22,36,54,.78)",
     glassLine: "rgba(255,255,255,.12)",
-    tabAktiv: "rgba(255,210,31,.14)",
-    tabAktivInk: "#FFD21F",
-    navAktiv: "rgba(255,210,31,.12)",
-    navAktivInk: "#FFD21F",
+    tabAktiv: "rgba(58,155,224,.18)",
+    tabAktivInk: "#8CC6F0",
+    navAktiv: "rgba(58,155,224,.18)",
+    navAktivInk: "#8CC6F0",
     segAktiv: "#1E3249",
     // 8,5:1 auf surf2
     segAktivRand: "#B3C2D2",
@@ -233,34 +235,34 @@ export const schattenRn = {
 } as const;
 
 /**
- * Barlow für Fließtext und - in 800 - für grosse Titel, Barlow Semi Condensed
- * für Uhrzeiten, Zahlen und Kicker. Die schmale Schnittform prägt den
- * Charakter - ohne sie sieht das Design deutlich beliebiger aus.
+ * DM Sans für Fließtext, Space Grotesk für Titel, Uhrzeiten, Zahlen, Kicker
+ * und Knöpfe. Space Grotesk gibt es nur bis 700 - Titel sind fett, nicht
+ * extrafett.
  */
 export const schrift = {
-  text: "'Barlow', system-ui, sans-serif",
-  display: "'Barlow Semi Condensed', 'Barlow', sans-serif",
+  text: "'DM Sans', system-ui, sans-serif",
+  display: "'Space Grotesk', 'DM Sans', system-ui, sans-serif",
   groesse: {
     /** Semi Condensed 700, Grossbuchstaben, Laufweite laufweiteKicker */
     // vorher 12 - Datum über dem Gruss, Kopf der Blätter (U69)
-    kicker: 13,
+    kicker: 12,
     klein: 13,
     // vorher 15 - am Platz, in der Sonne, liest sich 16 spuerbar besser
     normal: 16,
     /** Abschnittstitel, 700 */
-    titel: 22,
+    titel: 20,
     /** Barlow 800, Laufweite laufweiteTitel */
-    seitentitel: 34,
+    seitentitel: 26,
     /** Uhrzeit auf der Termin-Karte, Semi Condensed 700 */
-    hero: 40,
+    hero: 44,
   },
   gewicht: { normal: 400, mittel: 500, halbfett: 600, fett: 700, extrafett: 800 },
   zeilenhoehe: 1.45,
-  laufweite: 0.1,
+  laufweite: 0,
   /** in em */
-  laufweiteKicker: 0.14,
+  laufweiteKicker: 0.08,
   /** in px, für den Seitentitel */
-  laufweiteTitel: -0.6,
+  laufweiteTitel: -0.4,
 } as const;
 
 /**
@@ -276,14 +278,19 @@ export const abstand = {
   abschnitt: 28,
 } as const;
 
+/**
+ * Alles Bedienbare ist eine Pille: Knöpfe, Auswahl, Chips und Eingabefelder.
+ * Karten sind weich gerundet und liegen mit einer feinen Linie auf Weiss.
+ */
 export const radius = {
-  klein: 10,
-  feld: 16,
-  knopf: 16,
-  karte: 22,
-  karteGross: 26,
+  klein: 12,
+  /** einzeilige Felder sind Pillen (Höhe 52); mehrzeilige nehmen karte */
+  feld: 26,
+  knopf: 99,
+  karte: 24,
+  karteGross: 32,
   /** Bottom-Sheet, nur die oberen Ecken */
-  blatt: 30,
+  blatt: 32,
   chip: 99,
 } as const;
 

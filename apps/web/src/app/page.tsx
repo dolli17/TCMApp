@@ -1,13 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  bookingKicker, dayTag, eventDemnaechst, formatCents, freeCourtsNow, localMinutes, minutesOf, minutesToTime, notificationWebZiel,
-  offenesSpielText, partnerFilterAusZeile, partnerFilterText, relativeTimeLabel, startseitenNeuigkeiten, sumOpenDrinks, timeToMinutes, timelinePosition,
-  timelineSegments, upcomingBookings,
+  bookingKicker, dayTag, eventDemnaechst, freeCourtsNow, minutesOf, minutesToTime,
+  partnerFilterAusZeile, partnerFilterText, timeToMinutes, upcomingBookings,
 } from "@tcm/core";
 import { createServerSupabase, getCurrentMember } from "@/lib/supabase/server";
-import { EventKarte } from "@/components/EventKarte";
-import { MiniZeitleiste } from "@/components/MiniZeitleiste";
 import { alsMitgliedEvent } from "@/lib/veranstaltungen";
 import { Leerzustand } from "@/components/Leerzustand";
 
@@ -17,8 +14,6 @@ const BERLIN = "Europe/Berlin";
 const HEUTE_LANG = new Intl.DateTimeFormat("de-DE", {
   weekday: "long", day: "numeric", month: "long", timeZone: BERLIN,
 });
-const MONAT = new Intl.DateTimeFormat("de-DE", { month: "long", timeZone: BERLIN });
-const JAHR = new Intl.DateTimeFormat("de-DE", { year: "numeric", timeZone: BERLIN });
 
 function heuteInBerlin(): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: BERLIN }).format(new Date());
@@ -27,11 +22,11 @@ function heuteInBerlin(): string {
 const uhr = (iso: string) => minutesToTime(minutesOf(iso));
 
 /**
- * Home - die Startseite (docs/design/clubhaus, Abschnitt 5)
+ * Home - die Startseite (docs/design/stitch, Entwurf "TC Muckensturm - Home")
  *
- * Dieselben Inhalte wie in der App: naechste Termine, Schnellaktionen, freie
- * Plaetze, offene Spiele, der laufende Monat und Neuigkeiten. Ab 768 px im
- * 12er-Raster (links 8, rechts 4), darunter einspaltig.
+ * Bewusst ausgeduennt: der naechste eigene Termin, zwei Aktionen, freie
+ * Plaetze, offene Spiele und ein Streifen zur naechsten Veranstaltung. Der
+ * laufende Monat steht im Konto, Neuigkeiten hinter der Glocke.
  *
  * Nur Lesen. Jede Quelle wird fuer sich geladen; schlaegt eine fehl, zeigt
  * nur ihr Abschnitt den Fehler.
@@ -45,7 +40,7 @@ export default async function Start() {
 
   const heute = heuteInBerlin();
   const supabase = await createServerSupabase();
-  const [meineRes, plaetzeRes, planRes, einstellungRes, artenRes, offenRes, getraenkeRes, dienstRes, neuesRes, eventsRes] =
+  const [meineRes, plaetzeRes, planRes, einstellungRes, artenRes, offenRes, eventsRes] =
     await Promise.all([
       supabase.rpc("my_bookings", {}),
       supabase.from("courts").select("id, name, short_name").eq("active", true).order("position"),
@@ -59,11 +54,6 @@ export default async function Start() {
         .order("sort_order")
         .limit(1),
       supabase.rpc("open_matches", {}),
-      supabase.rpc("my_drink_purchases"),
-      supabase.rpc("my_work_duty", {}),
-      // Ungelesen zuerst, dann die neuesten: drei reichen, denn hinter einer
-      // gelesenen, die zu alt ist, kommen nur noch aeltere.
-      supabase.rpc("my_notifications", { p_limit: 3 }),
       supabase.rpc("events_fuer_mitglied"),
     ]);
 
@@ -78,7 +68,6 @@ export default async function Start() {
   const zu = timeToMinutes(String(einstellungen?.closing_time ?? "21:00"));
   const belegung = planRes.data ?? [];
   const plaetze = plaetzeRes.data ?? [];
-  const jetztMarke = timelinePosition(localMinutes(jetzt), auf, zu);
   const frei = freiFehler
     ? []
     : freeCourtsNow({
@@ -95,250 +84,143 @@ export default async function Start() {
 
   const offen = (offenRes.data ?? []).slice(0, 3);
   const eigene = new Set((meineRes.data ?? []).filter((b) => b.bin_bucher).map((b) => b.booking_id));
-  const dienst = dienstRes.data?.[0] ?? null;
-  const ist = Number(dienst?.completed_hours ?? 0);
-  const soll = Number(dienst?.required_hours ?? 0);
-  const neues = startseitenNeuigkeiten(neuesRes.data ?? [], jetzt);
-  const demnaechst = eventDemnaechst((eventsRes.data ?? []).map(alsMitgliedEvent), jetzt);
+  const demnaechst = eventDemnaechst((eventsRes.data ?? []).map(alsMitgliedEvent), jetzt, 1);
+
+  const [kickerTag, kickerWann] = erster ? bookingKicker(erster.starts_at, erster.ends_at, jetzt).split(" · ") : [];
+  const naechstesEvent = demnaechst[0];
 
   return (
     <div className="home">
       <header className="home-kopf">
-        <div className="kicker">{HEUTE_LANG.format(jetzt)}</div>
+        <div className="kicker">TC Muckensturm</div>
         <h1 className="pagetitle">Hallo, {angemeldet.member.first_name}</h1>
       </header>
 
-      <div className="home-raster">
-        <div className="home-haupt">
-          {/* --- Als Naechstes --------------------------------------------- */}
-          <section aria-labelledby="h-naechstes">
-            <div className="sectionlabel">
-              <h2 id="h-naechstes">Als Nächstes</h2>
-              {termine.length > 0 && <Link href="/plan/spiele">Alle</Link>}
-            </div>
-            {meineRes.error ? (
-              <div className="hinweis fehler">Deine Termine konnten nicht geladen werden.</div>
-            ) : !erster ? (
-              <div className="karte termin-leer">
-                <b>Noch nichts geplant</b>
-                <p className="unterzeile">Such dir einen Platz – heute ist noch einiges frei.</p>
-                {/* Leise: die gelbe Kachel „Platz buchen“ steht direkt darunter (U43). */}
-                <Link href="/plan?buchen=jetzt" className="knopf leise">Platz buchen</Link>
-              </div>
-            ) : (
-              <div className="naechstes">
-                <Link href="/plan/spiele" className="termin-karte gross">
-                  <svg className="platzlinien" viewBox="0 0 318 216" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
-                    <path d="M150 216 L210 0 M318 60 L190 216 M180 100 H318 M200 40 H318" />
-                  </svg>
-                  <span className="ball" aria-hidden="true" />
-                  <span className="termin-inhalt">
-                    <span className="kicker">{bookingKicker(erster.starts_at, erster.ends_at, jetzt)}</span>
-                    <span className="zeit tnum">{uhr(erster.starts_at)} – {uhr(erster.ends_at)}</span>
-                    <span className="ort">{erster.court_name} · {erster.type_name}</span>
-                    <span className="fuss">
-                      <span className="mit">{mitText(erster)}</span>
-                      <span className="details">Details</span>
-                    </span>
-                  </span>
-                  {/* Ab 768 px stehen die folgenden Termine in der grossen Karte. */}
-                  {weitere.length > 0 && (
-                    <span className="weitere">
-                      {weitere.slice(0, 2).map((t) => (
-                        <span key={t.booking_id} className="weiterer">
-                          <small>{bookingKicker(t.starts_at, t.ends_at, jetzt)}</small>
-                          <b>{uhr(t.starts_at)} · {t.court_name} · {t.type_name}</b>
-                        </span>
-                      ))}
-                    </span>
-                  )}
-                </Link>
-                {/* Am Telefon: waagerecht wischbare Karten */}
-                {weitere.map((t) => (
-                  <Link key={t.booking_id} href="/plan/spiele" className="termin-karte klein">
-                    <span className="kicker">{bookingKicker(t.starts_at, t.ends_at, jetzt)}</span>
-                    <span className="zeit tnum">{uhr(t.starts_at)} – {uhr(t.ends_at)}</span>
-                    <span className="ort">{t.court_name} · {t.type_name}</span>
-                  </Link>
-                ))}
-              </div>
+      {/* --- Als Naechstes ------------------------------------------------- */}
+      <section aria-labelledby="h-naechstes">
+        <h2 id="h-naechstes" className="sr-only">Als Nächstes</h2>
+        {meineRes.error ? (
+          <div className="hinweis fehler">Deine Termine konnten nicht geladen werden.</div>
+        ) : !erster ? (
+          <div className="karte heute-karte ohne">
+            <span className="kicker">Heute</span>
+            <b>Noch nichts geplant</b>
+            <span className="ort">Such dir einen Platz – heute ist noch einiges frei.</span>
+          </div>
+        ) : (
+          <Link href="/plan/spiele" className="karte heute-karte">
+            <span className="kopf">
+              <span className="kicker">{kickerTag}</span>
+              {/* Gelb heisst "deins": der eigene Termin. */}
+              {kickerWann && <span className="dein-marker">{kickerWann}</span>}
+            </span>
+            <span className="zeit tnum">
+              {uhr(erster.starts_at)} <small>Uhr</small>
+            </span>
+            <span className="ort">{erster.court_name} · {mitText(erster)}</span>
+            {weitere.length > 0 && (
+              <span className="weitere">
+                und {weitere.length} {weitere.length === 1 ? "weiterer Termin" : "weitere Termine"}
+              </span>
             )}
-          </section>
+          </Link>
+        )}
+      </section>
 
-          {/* --- Schnellaktionen ------------------------------------------- */}
-          <nav className="schnellaktionen" aria-label="Schnellaktionen">
-            {/* Das Blatt geht zur nächsten freien Zeit auf, wie in der App (U68) */}
-            <Link href="/plan?buchen=jetzt" className="gelb">
-              <Pfad d="M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM12 12v6M9 15h6" />
-              Platz buchen
-            </Link>
-            <Link href="/verein/getraenke">
-              <Pfad d="M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8" />
-              Getränk eintragen
-            </Link>
-            <Link href="/plan/spiele">
-              <Pfad d="M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6" />
-              Mitspielen
-            </Link>
-          </nav>
+      {/* --- Die zwei Aktionen ---------------------------------------------- */}
+      <nav className="home-aktionen" aria-label="Schnellaktionen">
+        {/* Das Blatt geht zur nächsten freien Zeit auf, wie in der App (U68) */}
+        <Link href="/plan?buchen=jetzt" className="knopf haupt">
+          <Pfad d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v8M8 12h8" />
+          Platz buchen
+        </Link>
+        <Link href="/verein/getraenke" className="knopf">
+          <Pfad d="M6 3h12l-1.5 5.5a5 5 0 0 1-9 0zM12 14v7M8 21h8" />
+          Getränk eintragen
+        </Link>
+      </nav>
 
-          {/* --- Jetzt frei ------------------------------------------------ */}
-          <section aria-labelledby="h-frei">
-            <div className="sectionlabel">
-              <h2 id="h-frei">Jetzt frei</h2>
-              <Link href="/plan">Zu den Plätzen</Link>
-            </div>
-            {freiFehler ? (
-              <div className="hinweis fehler">Die freien Plätze konnten nicht geladen werden.</div>
-            ) : frei.length === 0 ? (
-              <Leerzustand text="Gerade ist kein Platz frei." aktion={{ href: "/plan", label: "Belegung für später" }} />
-            ) : (
-              <div className="frei-reihe">
-                {frei.map((f) => (
-                  <Link key={f.courtId} href={`/plan?buchen=jetzt&platz=${f.courtId}`} className="frei-karte">
-                    <span className="kopf">
-                      <b className="dpl">{plaetze.find((p) => p.id === f.courtId)?.name}</b>
-                      <i aria-hidden="true" />
-                    </span>
-                    <span className="bis">frei bis {minutesToTime(f.untilMinute)}</span>
-                    <MiniZeitleiste
-                      segmente={timelineSegments(belegung.filter((b) => b.court_id === f.courtId), auf, zu)}
-                      markierung={jetztMarke}
-                    />
-                  </Link>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* --- Offene Spiele --------------------------------------------- */}
-          <section aria-labelledby="h-offen">
-            <div className="sectionlabel">
-              <h2 id="h-offen">Offene Spiele</h2>
-              <Link href="/plan/spiele">Alle</Link>
-            </div>
-            {offenRes.error ? (
-              <div className="hinweis fehler">Die offenen Spiele konnten nicht geladen werden.</div>
-            ) : offen.length === 0 ? (
-              <Leerzustand text="Gerade sucht niemand Mitspieler." />
-            ) : (
-              <ul className="offen-liste">
-                {offen.map((o) => {
-                  const text = offenesSpielText(o, eigene.has(o.booking_id));
-                  const zusatz = partnerFilterText(partnerFilterAusZeile(o));
-                  return (
-                    <li key={o.booking_id} className="offen-karte">
-                      <span className="datum">
-                        <small>{dayTag(o.starts_at, jetzt)}</small>
-                        <b className="tnum">{uhr(o.starts_at)}</b>
-                      </span>
-                      <span className="text">
-                        <b>{text.kopf}</b>
-                        <small>{o.court_name} · {o.type_name}</small>
-                        {zusatz && <small className="offen-filter">{zusatz}</small>}
-                        {text.dabei && <small>{text.dabei}</small>}
-                      </span>
-                      {o.bin_dabei ? (
-                        <span className="dabei">Dabei</span>
-                      ) : (
-                        <Link href="/plan/spiele" className="mitspielen">Mitspielen</Link>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
-
-          {/* --- Demnaechst im Verein -------------------------------------- */}
-          <section className="home-verein" aria-labelledby="h-verein">
-            <div className="sectionlabel">
-              <h2 id="h-verein">Demnächst im Verein</h2>
-              <Link href="/verein/veranstaltungen">Alle</Link>
-            </div>
-            {eventsRes.error ? (
-              <div className="hinweis fehler">Die Veranstaltungen konnten nicht geladen werden.</div>
-            ) : demnaechst.length === 0 ? (
-              <Leerzustand text="Gerade ist nichts geplant." />
-            ) : (
-              <ul className="event-liste">
-                {demnaechst.map((e) => (
-                  <li key={e.id}><EventKarte e={e} jetzt={jetzt} aufforderung /></li>
-                ))}
-              </ul>
-            )}
-          </section>
+      {/* --- Jetzt frei ----------------------------------------------------- */}
+      <section aria-labelledby="h-frei">
+        <div className="sectionlabel">
+          <h2 id="h-frei">Jetzt frei</h2>
+          {frei.length > 0 && <span className="kicker">{frei.length} {frei.length === 1 ? "Platz" : "Plätze"}</span>}
         </div>
+        {freiFehler ? (
+          <div className="hinweis fehler">Die freien Plätze konnten nicht geladen werden.</div>
+        ) : frei.length === 0 ? (
+          <Leerzustand text="Gerade ist kein Platz frei." aktion={{ href: "/plan", label: "Belegung für später" }} />
+        ) : (
+          <div className="karte frei-reihe">
+            {frei.map((f) => (
+              <Link key={f.courtId} href={`/plan?buchen=jetzt&platz=${f.courtId}`}>
+                <i aria-hidden="true" />
+                <b>{plaetze.find((p) => p.id === f.courtId)?.name}</b>
+                <span className="bis tnum">frei bis {minutesToTime(f.untilMinute)}</span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
 
-        <aside className="home-seite" aria-label="Dein Monat und Neuigkeiten">
-          {/* --- Dein Monat ------------------------------------------------ */}
-          <section className="karte monat" aria-labelledby="h-monat">
-            <h2 id="h-monat">Dein {MONAT.format(jetzt)}</h2>
-            <Link href="/verein/getraenke" className="zeile">
-              <span>Getränke</span>
-              {getraenkeRes.error ? (
-                <small className="fehlertext">nicht geladen</small>
-              ) : (
-                <b className="dpl tnum">{formatCents(sumOpenDrinks(getraenkeRes.data ?? []))}</b>
-              )}
-            </Link>
-            {/* Die Stunden gelten fürs Jahr, nicht für den Monat darüber -
-                das Jahr steht deshalb dabei, wie in der App (U72). */}
-            <Link href="/konto" className="zeile arbeitsdienst">
-              <span>Arbeitsdienst {dienst?.year ?? JAHR.format(jetzt)}</span>
-              {dienstRes.error ? (
-                <small className="fehlertext">nicht geladen</small>
-              ) : dienst && soll > 0 ? (
-                <b className="dpl tnum">{ist} / {soll} h</b>
-              ) : (
-                <small>kein Soll</small>
-              )}
-            </Link>
-            {dienst && soll > 0 && (
-              <div className="balken" aria-hidden="true">
-                <i style={{ width: `${Math.min(100, (ist / soll) * 100)}%` }} />
-              </div>
-            )}
-          </section>
+      {/* --- Offene Spiele -------------------------------------------------- */}
+      <section aria-labelledby="h-offen">
+        <div className="sectionlabel">
+          <h2 id="h-offen">Offene Spiele</h2>
+          <span className="kicker">Mitspieler gesucht</span>
+        </div>
+        {offenRes.error ? (
+          <div className="hinweis fehler">Die offenen Spiele konnten nicht geladen werden.</div>
+        ) : offen.length === 0 ? (
+          <Leerzustand text="Gerade sucht niemand Mitspieler." />
+        ) : (
+          <ul className="offen-liste">
+            {offen.map((o) => {
+              const zusatz = partnerFilterText(partnerFilterAusZeile(o));
+              const wer = eigene.has(o.booking_id) ? "dein Spiel" : (o.owner_name?.trim() || "Jemand");
+              return (
+                <li key={o.booking_id} className="karte offen-karte">
+                  <span className="text">
+                    <span className="wann">
+                      <b className="tnum">{tagLesbar(dayTag(o.starts_at, jetzt))}, {uhr(o.starts_at)}</b>
+                      <span className="marke-klein">{o.type_name}</span>
+                    </span>
+                    <small>{o.court_name} · {wer}</small>
+                    {zusatz && <small className="offen-filter">{zusatz}</small>}
+                  </span>
+                  {o.bin_dabei ? (
+                    <span className="dein-marker">Du bist dabei</span>
+                  ) : (
+                    <Link href="/plan/spiele" className="knopf klein">Mitspielen</Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
 
-          {/* --- Neuigkeiten ----------------------------------------------- */}
-          <section className="karte neuigkeiten" aria-labelledby="h-neues">
-            <h2 id="h-neues">Neuigkeiten</h2>
-            {neuesRes.error ? (
-              <div className="hinweis fehler">Die Neuigkeiten konnten nicht geladen werden.</div>
-            ) : neues.length === 0 ? (
-              <Leerzustand text="Keine Neuigkeiten." />
-            ) : (
-              <ul>
-                {neues.map((n) => (
-                  <li key={n.id} className={n.read_at ? undefined : "neu"}>
-                    <span className="symbol" aria-hidden="true">
-                      <Pfad d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" />
-                    </span>
-                    <span className="text">
-                      <span className="titelzeile">
-                        <b>{n.title}</b>
-                        <small>{relativeTimeLabel(n.created_at, jetzt)}</small>
-                      </span>
-                      <span className="body">{n.body}</span>
-                      {(() => {
-                        const ziel = notificationWebZiel(n);
-                        return ziel ? (
-                          <Link href={ziel.href} className="nachricht-link">
-                            {ziel.text}
-                          </Link>
-                        ) : null;
-                      })()}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </aside>
-      </div>
+      {/* --- Demnaechst im Verein: ein Streifen, der Rest steht unter Verein -- */}
+      {eventsRes.error ? (
+        <div className="hinweis fehler">Die Veranstaltungen konnten nicht geladen werden.</div>
+      ) : naechstesEvent ? (
+        <section aria-labelledby="h-verein">
+          <h2 id="h-verein" className="sr-only">Demnächst im Verein</h2>
+          <Link href={`/verein/veranstaltungen/${naechstesEvent.id}`} className="event-streifen">
+            <Pfad d="M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+            <span>
+              {HEUTE_LANG.format(new Date(naechstesEvent.starts_at))} · <b>{naechstesEvent.title}</b>
+            </span>
+          </Link>
+        </section>
+      ) : null}
     </div>
   );
+}
+
+/** "HEUTE" -> "Heute", "MI" -> "Mi" */
+function tagLesbar(tag: string): string {
+  return tag.charAt(0) + tag.slice(1).toLowerCase();
 }
 
 function mitText(t: { players: string[]; owner_name: string; bin_bucher: boolean }): string {

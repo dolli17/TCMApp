@@ -143,7 +143,7 @@ export function LastschriftLauf({
           <p>{stand.naechster.text}</p>
           <div className="knopfreihe">
             {offen && lauf.item_count > 0 && frage !== "datei" && (
-              <button type="button" className="knopf gold" disabled={laeuft} onClick={() => setFrage("datei")}>
+              <button type="button" className="knopf haupt" disabled={laeuft} onClick={() => setFrage("datei")}>
                 Bankdatei erzeugen
               </button>
             )}
@@ -164,7 +164,7 @@ export function LastschriftLauf({
               </button>
             )}
             {lauf.status === "generated" && frage !== "eingereicht" && (
-              <button type="button" className="knopf gold" disabled={laeuft} onClick={() => setFrage("eingereicht")}>
+              <button type="button" className="knopf haupt" disabled={laeuft} onClick={() => setFrage("eingereicht")}>
                 Im Onlinebanking eingereicht
               </button>
             )}
@@ -174,7 +174,7 @@ export function LastschriftLauf({
               // prüft dieselbe Frist.
               <button
                 type="button"
-                className={`knopf ${nachFrist ? "gold" : "auf-blau"}`}
+                className={`knopf ${nachFrist ? "haupt" : "auf-blau"}`}
                 disabled={laeuft || !nachFrist}
                 onClick={() => starte(async () => melde(await laufAbschliessen(lauf.id)))}
               >
@@ -195,7 +195,7 @@ export function LastschriftLauf({
                   : `${eckdaten} – wirklich als eingereicht vermerken? Erst bestätigen, wenn die Bankdatei im Onlinebanking hochgeladen ist.`}
               </span>
               <span className="knopfreihe">
-                <button type="button" className="knopf gold klein" disabled={laeuft} onClick={() => bestaetigt(frage)}>
+                <button type="button" className="knopf haupt klein" disabled={laeuft} onClick={() => bestaetigt(frage)}>
                   {laeuft
                     ? frage === "datei" ? "Wird erzeugt…" : "Wird vermerkt…"
                     : frage === "datei" ? "Ja, Bankdatei erzeugen" : "Ja, eingereicht"}

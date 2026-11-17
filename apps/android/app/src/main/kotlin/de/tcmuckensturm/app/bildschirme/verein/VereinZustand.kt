@@ -23,8 +23,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
@@ -160,11 +160,11 @@ fun Erinnerung(text: String, spaeter: () -> Unit, zuGetraenken: () -> Unit) {
     val f = TcmTheme.farben
     AlertDialog(
         onDismissRequest = spaeter,
-        title = { Text("Noch nicht eingetragen", style = TcmSchrift.text(Schrift.gewichtFett, Schrift.titel)) },
+        title = { Text("Noch nicht eingetragen", style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.titel)) },
         text = { Text(text, style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal), color = f.ink2) },
         confirmButton = {
             TextButton(onClick = zuGetraenken) {
-                Text("Zu den Getränken", style = TcmSchrift.text(Schrift.gewichtFett, Schrift.normal), color = f.blueInk)
+                Text("Zu den Getränken", style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.normal), color = f.blueInk)
             }
         },
         dismissButton = {

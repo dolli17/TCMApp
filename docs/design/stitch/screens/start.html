@@ -1,0 +1,282 @@
+<!DOCTYPE html><html class="light" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>TC Muckensturm</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline-variant": "#c1c7d2",
+            "on-tertiary-fixed": "#2f1500",
+            "surface-container-lowest": "#ffffff",
+            "inverse-primary": "#9fcaff",
+            "surface-container-highest": "#e3e1ec",
+            "on-surface-variant": "#414750",
+            "on-primary-fixed": "#001d36",
+            "on-secondary-container": "#20627f",
+            "on-surface": "#1a1b22",
+            "on-secondary": "#ffffff",
+            "primary-fixed-dim": "#9fcaff",
+            "on-secondary-fixed": "#001e2c",
+            "inverse-surface": "#2f3038",
+            "error-container": "#ffdad6",
+            "on-tertiary": "#ffffff",
+            "primary": "#004e85",
+            "error": "#ba1a1a",
+            "outline": "#717781",
+            "background": "#fbf8ff",
+            "tertiary": "#743d00",
+            "secondary-container": "#a1dcfe",
+            "surface-variant": "#e3e1ec",
+            "tertiary-fixed": "#ffdcc3",
+            "primary-container": "#1466a8",
+            "surface": "#fbf8ff",
+            "secondary-fixed-dim": "#93ceef",
+            "on-secondary-fixed-variant": "#004d67",
+            "surface-bright": "#fbf8ff",
+            "surface-container-high": "#e8e7f1",
+            "surface-container": "#eeedf7",
+            "on-primary-container": "#cde2ff",
+            "surface-container-low": "#f4f2fd",
+            "on-error": "#ffffff",
+            "on-primary": "#ffffff",
+            "on-background": "#1a1b22",
+            "surface-dim": "#dad9e3",
+            "secondary-fixed": "#c2e8ff",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "on-tertiary-container": "#ffd9bd",
+            "surface-tint": "#0761a3",
+            "tertiary-container": "#975100",
+            "secondary": "#246582",
+            "tertiary-fixed-dim": "#ffb77c",
+            "primary-fixed": "#d1e4ff",
+            "inverse-on-surface": "#f1effa",
+            "on-primary-fixed-variant": "#00497d",
+            "on-error-container": "#93000a"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "gutter": "1rem",
+            "margin": "1rem",
+            "space-md": "1rem",
+            "space-sm": "0.5rem",
+            "space-xl": "2.5rem",
+            "space-lg": "1.5rem",
+            "margin-desktop": "2rem",
+            "gutter-desktop": "1.5rem"
+          },
+          "fontFamily": {
+            "headline-lg": ["Space Grotesk"],
+            "display-score-mobile": ["Space Grotesk"],
+            "body-sm": ["DM Sans"],
+            "numeric-data": ["Space Grotesk"],
+            "headline-lg-mobile": ["Space Grotesk"],
+            "headline-sm": ["Space Grotesk"],
+            "display-score": ["Space Grotesk"],
+            "label-caps": ["Space Grotesk"],
+            "body-lg": ["DM Sans"]
+          },
+          "fontSize": {
+            "headline-lg": ["2rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "display-score-mobile": ["2.75rem", { "lineHeight": "3rem", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "body-sm": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "numeric-data": ["1.125rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "headline-lg-mobile": ["1.5rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-sm": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "600" }],
+            "display-score": ["4rem", { "lineHeight": "4rem", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+            "label-caps": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "body-lg": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+</head>
+<body class="bg-surface-container-high text-on-surface antialiased flex justify-center items-center min-h-screen py-0 sm:py-6 selection:bg-primary-container selection:text-surface-container-lowest">
+<!-- iPhone Canvas Shell (393px width, bounded & crisp) -->
+<main class="w-full max-w-[393px] h-[852px] bg-surface-container-lowest relative overflow-hidden flex flex-col justify-between shadow-2xl rounded-[48px] border border-outline-variant/30 select-none">
+<!-- Top Content Area (Scrollable with hidden scrollbar) -->
+<div class="flex-1 overflow-y-auto overflow-x-hidden pb-28 [&amp;::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+<!-- 1. iOS Status Bar -->
+<section class="w-full h-11 px-7 flex items-center justify-between text-on-surface select-none pt-1">
+<span class="font-headline-sm text-body-sm font-semibold tracking-tight text-on-surface">9:41</span>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[17px] leading-none" data-icon="signal_cellular_4_bar">signal_cellular_4_bar</span>
+<span class="material-symbols-outlined text-[17px] leading-none" data-icon="wifi">wifi</span>
+<span class="material-symbols-outlined text-[20px] leading-none" data-icon="battery_full">battery_full</span>
+</div>
+</section>
+<!-- 2. Header: Greeting & Notification Bell -->
+<header class="w-full px-5 pt-3 pb-4 flex items-center justify-between">
+<div>
+<p class="font-label-caps text-label-caps text-outline uppercase tracking-wider">TC Muckensturm</p>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-semibold text-on-surface tracking-tight">Hallo, Anna</h1>
+</div>
+<button aria-label="Benachrichtigungen" class="relative w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-low border border-surface-container-highest active:scale-95 transition-transform duration-150" type="button">
+<span class="material-symbols-outlined text-on-surface-variant text-[22px]" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full font-headline-sm text-[10px] font-bold flex items-center justify-center ring-2 ring-surface-container-lowest bg-[#FFD21F] text-[#0A1624]">
+            2
+          </span>
+</button>
+</header>
+<!-- Main Column Content (8pt grid rhythmic grouping) -->
+<div class="px-5 space-y-6">
+<!-- 3. Next Match Hero Section (Scoreboard Architecture) -->
+<section class="w-full p-5 rounded-lg bg-surface-container-lowest border border-outline-variant/40 shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-outline font-semibold">Heute</span>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-label-caps text-label-caps font-semibold bg-[#FFD21F] text-[#0A1624]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#0A1624] animate-pulse"></span>
+              in 2 Stunden
+            </span>
+</div>
+<!-- Display Time -->
+<div class="flex items-baseline gap-1 my-1">
+<span class="font-display-score-mobile text-display-score-mobile text-on-surface font-bold tracking-tight">18:00</span>
+<span class="font-numeric-data text-numeric-data text-outline font-medium">Uhr</span>
+</div>
+<!-- Subtitle / Match Details -->
+<p class="font-body-sm text-body-sm text-on-surface-variant font-medium flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary-container" data-icon="sports_tennis">sports_tennis</span>
+            Platz 3 · mit Jonas Weber
+          </p>
+</section>
+<!-- 4. Action Buttons (Pill Grouping) -->
+<div class="grid grid-cols-2 gap-3">
+<button class="h-12 w-full rounded-full bg-primary-container text-surface-container-lowest font-headline-sm text-body-sm font-semibold flex items-center justify-center gap-2 active:scale-98 transition-all duration-150" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="add_circle">add_circle</span>
+            Platz buchen
+          </button>
+<button class="h-12 w-full rounded-full bg-primary-container/10 border border-primary-container/20 text-primary-container font-headline-sm text-body-sm font-semibold flex items-center justify-center gap-1.5 active:scale-98 transition-all duration-150" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="local_bar">local_bar</span>
+            Getränk buchen
+          </button>
+</div>
+<!-- 5. Section "Jetzt frei" -->
+<section class="space-y-2.5">
+<div class="flex items-center justify-between px-0.5">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Jetzt frei</h2>
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-outline">3 Plätze</span>
+</div>
+<div class="rounded-lg bg-surface-container-lowest border border-outline-variant/40 divide-y divide-outline-variant/20 overflow-hidden">
+<!-- Row 1 -->
+<div class="px-4 py-3 flex items-center justify-between active:bg-surface-container-low transition-colors duration-150">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-numeric-data text-body-lg font-medium text-on-surface">Platz 2</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline">frei bis 19:00</span>
+</div>
+<!-- Row 2 -->
+<div class="px-4 py-3 flex items-center justify-between active:bg-surface-container-low transition-colors duration-150">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-numeric-data text-body-lg font-medium text-on-surface">Platz 6</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline">frei bis 20:30</span>
+</div>
+<!-- Row 3 -->
+<div class="px-4 py-3 flex items-center justify-between active:bg-surface-container-low transition-colors duration-150">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-numeric-data text-body-lg font-medium text-on-surface">Platz 7</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline">frei bis 18:00</span>
+</div>
+</div>
+</section>
+<!-- 6. Section "Offene Spiele" -->
+<section class="space-y-2.5">
+<div class="flex items-center justify-between px-0.5">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Offene Spiele</h2>
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-outline">Mitspieler gesucht</span>
+</div>
+<div class="space-y-2.5">
+<!-- Row 1 Card -->
+<div class="p-3.5 rounded-lg bg-surface-container-lowest border border-outline-variant/40 flex items-center justify-between gap-3">
+<div class="min-w-0 flex-1">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="font-headline-sm text-body-sm font-semibold text-on-surface">Morgen, 10:00</span>
+<span class="text-outline-variant">·</span>
+<span class="font-label-caps text-label-caps text-primary-container bg-primary-container/10 px-2 py-0.5 rounded-full font-bold">Doppel</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">
+                  Platz 4 · Martin Keller
+                </p>
+</div>
+<button class="shrink-0 px-3.5 py-1.5 rounded-full bg-primary-container/10 border border-primary-container/30 text-primary-container font-headline-sm text-body-sm font-semibold active:scale-95 transition-all duration-150" type="button">
+                Mitspielen
+              </button>
+</div>
+<!-- Row 2 Card -->
+<div class="p-3.5 rounded-lg bg-surface-container-lowest border border-outline-variant/40 flex items-center justify-between gap-3">
+<div class="min-w-0 flex-1">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="font-headline-sm text-body-sm font-semibold text-on-surface">Mittwoch, 18:30</span>
+<span class="text-outline-variant">·</span>
+<span class="font-label-caps text-label-caps text-primary-container bg-primary-container/10 px-2 py-0.5 rounded-full font-bold">Einzel</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">
+                  Platz 1 · Sabine Roth
+                </p>
+</div>
+<button class="shrink-0 px-3.5 py-1.5 rounded-full bg-primary-container/10 border border-primary-container/30 text-primary-container font-headline-sm text-body-sm font-semibold active:scale-95 transition-all duration-150" type="button">
+                Mitspielen
+              </button>
+</div>
+</div>
+</section>
+<!-- 7. Club Announcement (Footer Note) -->
+<aside class="px-4 py-3 rounded-lg border border-[#c6dfef] flex items-center gap-2.5 text-on-surface-variant" style="background-color: rgb(226, 239, 250);">
+<span class="material-symbols-outlined text-[18px] text-primary-container shrink-0" data-icon="event">event</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant font-medium">
+            Samstag, 21. November · <span class="font-semibold text-on-surface">Herbstfest</span>
+</p>
+</aside>
+</div>
+</div>
+<!-- 8. Floating Pill Navigation Bar (Anchored from JSON blueprint) -->
+<nav aria-label="Hauptnavigation" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between gap-1 p-1.5 max-w-sm w-[calc(100%-2rem)] mx-auto bg-surface-container-lowest/85 dark:bg-inverse-surface/85 backdrop-blur-xl rounded-full border border-surface-container-highest dark:border-outline/30 shadow-lg shadow-on-surface/5 dark:shadow-none">
+<!-- Start (Active state applied verbatim from style_active_navigation) -->
+<button class="flex flex-col items-center justify-center bg-surface-container dark:bg-surface-variant text-primary-container dark:text-inverse-primary rounded-full px-4 py-1.5 transition-all duration-200 active:scale-98" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider mt-0.5">Start</span>
+</button>
+<!-- Plätze (Inactive) -->
+<button class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-3 py-1.5 transition-all duration-200 hover:text-primary dark:hover:text-inverse-primary active:scale-98" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="sports_tennis">sports_tennis</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider mt-0.5">Plätze</span>
+</button>
+<!-- Verein (Inactive) -->
+<button class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-3 py-1.5 transition-all duration-200 hover:text-primary dark:hover:text-inverse-primary active:scale-98" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="groups">groups</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider mt-0.5">Verein</span>
+</button>
+<!-- Konto (Inactive) -->
+<button class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-3 py-1.5 transition-all duration-200 hover:text-primary dark:hover:text-inverse-primary active:scale-98" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="person">person</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider mt-0.5">Konto</span>
+</button>
+</nav>
+<!-- iOS Home Bar Indicator (Restrained bottom touchpoint) -->
+<div class="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 bg-on-surface/20 rounded-full pointer-events-none z-50"></div>
+</main>
+
+
+</body></html>

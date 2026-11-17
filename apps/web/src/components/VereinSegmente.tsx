@@ -20,6 +20,7 @@ export function VereinSegmente({ aktiv }: { aktiv: VereinReiter }) {
     <>
       <header className="plan-kopf">
         <div>
+          <div className="kicker">TC Muckensturm</div>
           <h1 className="pagetitle">Verein</h1>
         </div>
       </header>

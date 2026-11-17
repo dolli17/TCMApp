@@ -34,13 +34,24 @@ final class ThemeTests: XCTestCase {
 
     func testAbstandUndRadiusAusTokens() {
         XCTAssertEqual(Tokens.Abstand.rand, 20)
-        XCTAssertEqual(Tokens.Radius.feld, 16)
-        XCTAssertEqual(Tokens.Schrift.seitentitel, 34)
+        XCTAssertEqual(Tokens.Radius.feld, 26)
+        XCTAssertEqual(Tokens.Schrift.seitentitel, 26)
+        XCTAssertEqual(Tokens.Radius.knopf, 99)
+    }
+
+    /// Stitch: weisser Grund, Vereinsblau als Hauptaktion, Hellblau fuer alles Zweite.
+    func testRollenDerFarben() {
+        assertGleich(rgba(Farbe.bg, .light), anteile(0xFFFFFFFF), "bg hell")
+        assertGleich(rgba(Farbe.blue, .light), anteile(0x1466A8FF), "blue hell")
+        assertGleich(rgba(Farbe.blueSoft, .light), anteile(0xE8F1F8FF), "blueSoft hell")
+        XCTAssertEqual(KnopfGroesse.klein.hoehe, 40)
+        XCTAssertEqual(KnopfGroesse.normal.hoehe, 52)
+        XCTAssertEqual(KnopfGroesse.gross.hoehe, 56)
     }
 
     /// Die Schriften sind im Bundle registriert (UIAppFonts).
-    func testBarlowIstGeladen() {
-        for name in [Tokens.Schrift.textNormal, Tokens.Schrift.textExtrafett, Tokens.Schrift.displayFett] {
+    func testSchriftenSindGeladen() {
+        for name in [Tokens.Schrift.textNormal, Tokens.Schrift.textExtrafett, Tokens.Schrift.displayHalbfett, Tokens.Schrift.displayFett] {
             XCTAssertNotNil(UIFont(name: name, size: 16), name)
         }
     }

@@ -1,12 +1,12 @@
 /**
- * Home - der Startbildschirm (apps/mobile/app/(tabs)/home.tsx)
+ * Home - die Startseite (docs/design/stitch, Entwurf "Home"; im Web apps/web/src/app/page.tsx)
  *
- * Was heute zaehlt, auf einen Blick: die eigenen naechsten Termine, drei
- * Schnellaktionen, welche Plaetze gerade frei sind, wer Mitspieler sucht,
- * was demnaechst im Verein ansteht, der laufende Monat und die letzten
- * Neuigkeiten. Nur Lesen - gebucht und eingetragen wird auf den
- * Bildschirmen, auf die die Knoepfe fuehren: Belegung und Spiele ueber
- * zuPlaetze, Getraenke und Veranstaltungen ueber zuVerein.
+ * Bewusst ausgeduennt und einspaltig: der naechste eigene Termin, zwei
+ * Aktionen, freie Plaetze, offene Spiele und ein Streifen zur naechsten
+ * Veranstaltung. Der laufende Monat steht im Konto, Neuigkeiten hinter der
+ * Glocke. Nur Lesen - gebucht und eingetragen wird auf den Bildschirmen, auf
+ * die die Knoepfe fuehren: Belegung und Spiele ueber zuPlaetze, Getraenke
+ * und Veranstaltungen ueber zuVerein.
  *
  * Alle Abschnitte laden parallel und jeder fuer sich: schlaegt einer fehl,
  * steht dort der Fehler, und der Rest bleibt gefuellt.
@@ -20,17 +20,12 @@ struct HomeBildschirm: View {
     @State private var inhalt: HomeInhalt?
     @State private var laedt = true
     @State private var aktualisiert = false
-    @State private var nachrichtenOffen = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                    GrosserKopf(
-                        titel: HomeLogik.titel(vorname: inhalt?.name?.vorname),
-                        kicker: HomeLogik.kicker(Date()),
-                        name: inhalt?.name
-                    )
+                    GrosserKopf(titel: HomeLogik.titel(vorname: inhalt?.name?.vorname))
                     if laedt && inhalt == nil {
                         ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)
                     } else if let d = inhalt {
@@ -38,10 +33,10 @@ struct HomeBildschirm: View {
                         AlsNaechstes(termine: d.termine, erneut: erneut)
                         Schnellaktionen()
                         JetztFrei(frei: d.frei, erneut: erneut)
-                        OffeneSpiele(offen: d.offen, erneut: erneut)
+                        OffeneSpiele(
+                            offen: d.offen, eigene: HomeLogik.eigeneBuchungen(d.termine.wert ?? []), erneut: erneut
+                        )
                         DemnaechstImVerein(events: d.events, erneut: erneut)
-                        DeinStandKacheln(stand: HomeLogik.deinStand(getraenke: d.getraenke, dienst: d.dienst, jetzt: Date()))
-                        Neuigkeiten(neues: d.neues, erneut: erneut) { nachrichtenOffen = true }
                     } else {
                         Text("Die Startseite konnte nicht geladen werden.").leise()
                     }
@@ -52,7 +47,6 @@ struct HomeBildschirm: View {
             .background(Farbe.bg)
             .refreshable { await laden(.nachladen) }
             .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(isPresented: $nachrichtenOffen) { NachrichtenBildschirm() }
         }
         .task { await laden(.erstes) }
         // Zurueck auf Home: still nachladen, ohne Ladekreis.
@@ -80,10 +74,6 @@ struct HomeBildschirm: View {
         async let einstellungen = Abschnitt.von { try await d.buchungseinstellungen() }
         async let arten = Abschnitt.von { try await d.buchungsarten() }
         async let offen = Abschnitt.von { try await d.offeneSpiele() }
-        async let getraenke = Abschnitt.von { try await d.eigeneGetraenke() }
-        async let dienst = Abschnitt.von { try await d.arbeitsdienst() }
-        // Drei Benachrichtigungen reichen: ungelesen zuerst, dann die neuesten.
-        async let neues = Abschnitt.von { try await d.benachrichtigungen(limit: 3) }
         async let events = Abschnitt.von { try await d.veranstaltungen() }
 
         let (p, t, e, a) = await (plaetze, plan, einstellungen, arten)
@@ -100,9 +90,6 @@ struct HomeBildschirm: View {
             termine: meine,
             frei: frei,
             offen: offen,
-            getraenke: getraenke,
-            dienst: dienst,
-            neues: neues,
             events: events
         )
     }
@@ -114,23 +101,9 @@ struct Erneut {
     let aktion: () -> Void
 }
 
-/// Waagerecht wischbar, bis an den Bildschirmrand - der Inhalt hat 20 Rand.
-private struct Wischreihe<Inhalt: View>: View {
-    var abstand: CGFloat = 12
-    @ViewBuilder let inhalt: Inhalt
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: abstand) { inhalt }
-                .padding(.horizontal, Tokens.Abstand.rand)
-                .padding(.vertical, 4)
-        }
-        .padding(.horizontal, -Tokens.Abstand.rand)
-    }
-}
-
 // MARK: - Als Naechstes
 
+/// Die eine Karte mit dem naechsten eigenen Termin. Gelb heisst "deins": der Marker mit "in 2 Stunden".
 private struct AlsNaechstes: View {
     @Environment(\.zuPlaetze) private var zuPlaetze
     let termine: Abschnitt<[MeineBuchung]>
@@ -139,168 +112,91 @@ private struct AlsNaechstes: View {
     var body: some View {
         let jetzt = Date()
         let kommende = Startseite.upcomingBookings(termine.wert ?? [], now: jetzt)
-        Kopfzeile(
-            titel: "Als Nächstes",
-            link: kommende.isEmpty ? nil : ("Alle", "Alle Termine", { zuPlaetze(.spiele(offeneZuerst: false)) })
-        )
         if let f = termine.fehler {
             Fehlerzeile(text: f, laeuft: erneut.laeuft, onErneut: erneut.aktion)
-        }
-        if termine.wert != nil && kommende.isEmpty {
-            // Sekundaer: die gelbe Kachel "Platz buchen" steht direkt darunter (U43).
-            Leerzustand(
-                titel: "Noch nichts geplant",
-                text: "Such dir einen Platz – heute ist noch einiges frei.",
-                handlung: ("Platz buchen", { zuPlaetze(.belegung) })
-            )
-        }
-        if !kommende.isEmpty {
-            Wischreihe {
-                ForEach(Array(kommende.enumerated()), id: \.element.id) { i, t in
-                    TerminKarte(t: t, erste: i == 0, jetzt: jetzt) { zuPlaetze(.belegung) }
-                }
-            }
-        }
-    }
-}
-
-private struct TerminKarte: View {
-    let t: MeineBuchung
-    let erste: Bool
-    let jetzt: Date
-    let aktion: () -> Void
-
-    var body: some View {
-        let tinte = erste ? Farbe.onBrand : Farbe.ink
-        Button(action: aktion) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(Startseite.bookingKicker(startsAt: t.startsAt, endsAt: t.endsAt, now: jetzt))
-                    .kicker(farbe: erste ? Farbe.onBrand.opacity(0.85) : Farbe.muted)
-                    .padding(.trailing, erste ? 40 : 0)
-                Text(HomeLogik.zeitSpanne(t))
-                    .font(Schrift.display(.fett, Tokens.Schrift.hero, relativeTo: .largeTitle))
-                    .monospacedDigit()
-                    .foregroundStyle(tinte)
+        } else if let t = kommende.first {
+            let kicker = HomeLogik.terminKicker(t, jetzt: jetzt)
+            Button { zuPlaetze(.spiele(offeneZuerst: false)) } label: {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .center, spacing: 10) {
+                        Text(kicker.tag).kicker()
+                        Spacer(minLength: 0)
+                        if let wann = kicker.wann { DeinMarker(wann) }
+                    }
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(Zeit.minutesToTime(Zeit.minutesOf(t.startsAt)))
+                            .font(Schrift.display(.fett, Tokens.Schrift.hero, relativeTo: .largeTitle))
+                            .tracking(-1.5)
+                            .monospacedDigit()
+                            .foregroundStyle(Farbe.ink)
+                        Text("Uhr").font(Schrift.display(.mittel, 18)).foregroundStyle(Farbe.muted)
+                    }
                     .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-                    .padding(.top, 8)
-                Text("\(t.courtName ?? "") · \(t.typeName ?? "")")
-                    .font(Schrift.text(.halbfett, 16))
-                    .foregroundStyle(tinte.opacity(erste ? 0.92 : 1))
-                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .padding(.top, 6)
-                Spacer(minLength: 16)
-                HStack(spacing: 10) {
-                    Text(HomeLogik.mitText(t))
-                        .font(Schrift.text(.normal, 13))
-                        .foregroundStyle(erste ? Farbe.onBrand.opacity(0.9) : Farbe.ink2)
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text("Details")
-                        .font(Schrift.text(.fett, 14))
-                        .foregroundStyle(tinte)
-                        .padding(.horizontal, 16)
-                        .frame(minHeight: 40)
-                        .background(erste ? Farbe.onBrand.opacity(0.18) : Farbe.surf2, in: Capsule())
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Image(systemName: "tennis.racket")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Farbe.blueInk)
+                            .accessibilityHidden(true)
+                        Text(HomeLogik.terminOrt(t))
+                            .font(Schrift.text(.normal, 15.5))
+                            .foregroundStyle(Farbe.ink2)
+                            .lineLimit(2)
+                    }
+                    if let weitere = HomeLogik.weitereTermine(kommende.count - 1) {
+                        Text(weitere)
+                            .font(Schrift.text(.halbfett, 13))
+                            .foregroundStyle(Farbe.blueInk)
+                            .padding(.top, 6)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 22)
+                .padding(.vertical, 20)
+                .karte(radius: Tokens.Radius.karteGross, padding: nil)
             }
-            .padding(20)
-            .frame(minHeight: 216, alignment: .topLeading)
-            .containerRelativeFrame(.horizontal) { breite, _ in min(318, breite - 2 * Tokens.Abstand.rand - 32) }
-            .background { hintergrund }
-            .clipShape(RoundedRectangle(cornerRadius: Tokens.Radius.karteGross))
-            .overlay {
-                if !erste {
-                    RoundedRectangle(cornerRadius: Tokens.Radius.karteGross).strokeBorder(Farbe.line, lineWidth: 1)
-                }
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(HomeLogik.terminLabel(t, jetzt: jetzt))
-        .accessibilityAddTraits(.isButton)
-    }
-
-    @ViewBuilder private var hintergrund: some View {
-        if erste {
-            ZStack {
-                Farbe.brand
-                // Platzlinien in Perspektive, dezent, und der Ball
-                Canvas { ctx, groesse in
-                    let b = groesse.width
-                    let h = groesse.height
-                    var p = Path()
-                    p.move(to: CGPoint(x: b * 0.47, y: h)); p.addLine(to: CGPoint(x: b * 0.66, y: 0))
-                    p.move(to: CGPoint(x: b, y: 60)); p.addLine(to: CGPoint(x: b * 0.6, y: h))
-                    p.move(to: CGPoint(x: b * 0.57, y: 100)); p.addLine(to: CGPoint(x: b, y: 100))
-                    p.move(to: CGPoint(x: b * 0.63, y: 40)); p.addLine(to: CGPoint(x: b, y: 40))
-                    ctx.stroke(p, with: .color(Farbe.onBrand.opacity(0.13)), lineWidth: 2)
-                    ctx.fill(Path(ellipseIn: CGRect(x: b - 46, y: 20, width: 26, height: 26)), with: .color(Farbe.gold))
-                }
-            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(HomeLogik.terminLabel(t, jetzt: jetzt))
+            .accessibilityAddTraits(.isButton)
         } else {
-            Farbe.surf
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Heute").kicker()
+                Text("Noch nichts geplant")
+                    .font(Schrift.display(.fett, 22, relativeTo: .title2))
+                    .foregroundStyle(Farbe.ink)
+                    .padding(.top, 6)
+                Text("Such dir einen Platz – heute ist noch einiges frei.")
+                    .font(Schrift.text(.normal, 15))
+                    .foregroundStyle(Farbe.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 22)
+            .padding(.vertical, 20)
+            .karte(radius: Tokens.Radius.karteGross, padding: nil)
+            .accessibilityElement(children: .combine)
         }
     }
 }
 
-// MARK: - Schnellaktionen
+// MARK: - Die zwei Aktionen
 
+/// "Platz buchen" ist die eine Hauptaktion der Startseite (blau), "Getränk eintragen" die zweite (hellblau).
 private struct Schnellaktionen: View {
     @Environment(\.zuPlaetze) private var zuPlaetze
     @Environment(\.zuVerein) private var zuVerein
     @Environment(\.dynamicTypeSize) private var textgroesse
 
-    private struct Kachel: Identifiable {
-        let text: String
-        let symbol: String
-        /// nil: die Getraenke im Verein
-        let ziel: PlaetzeZiel?
-        var gelb = false
-        var id: String { text }
-    }
-
     var body: some View {
-        // Bei grosser Schrift untereinander, Symbol neben dem Text (U5).
-        let gestapelt = textgroesse >= .xxLarge
-        let kacheln = [
-            Kachel(text: "Platz buchen", symbol: "calendar.badge.plus", ziel: .belegung, gelb: true),
-            Kachel(text: "Getränk eintragen", symbol: "wineglass", ziel: nil),
-            Kachel(text: "Mitspielen", symbol: "person.badge.plus", ziel: .spiele(offeneZuerst: true)),
-        ]
-        let layout = gestapelt ? AnyLayout(VStackLayout(spacing: 10)) : AnyLayout(HStackLayout(alignment: .top, spacing: 10))
+        // Bei grosser Schrift untereinander (U5).
+        let layout = textgroesse >= .xxLarge ? AnyLayout(VStackLayout(spacing: 12)) : AnyLayout(HStackLayout(spacing: 12))
         layout {
-            ForEach(kacheln) { k in
-                let tinte = k.gelb ? Farbe.onGold : Farbe.ink
-                Button { if let ziel = k.ziel { zuPlaetze(ziel) } else { zuVerein(.getraenke) } } label: {
-                    let symbol = Image(systemName: k.symbol)
-                        .font(.system(size: 20, weight: k.gelb ? .semibold : .regular))
-                        .foregroundStyle(tinte)
-                    let text = Text(k.text)
-                        .font(Schrift.text(.fett, 15))
-                        .foregroundStyle(tinte)
-                        .multilineTextAlignment(.leading)
-                    Group {
-                        if gestapelt {
-                            HStack(spacing: 12) { symbol; text; Spacer(minLength: 0) }
-                                .frame(minHeight: 56 - 28)
-                        } else {
-                            VStack(alignment: .leading) { symbol; Spacer(minLength: 8); text }
-                                .frame(maxWidth: .infinity, minHeight: 96 - 28, alignment: .leading)
-                        }
-                    }
-                    .padding(14)
-                    .background(k.gelb ? Farbe.gold : Farbe.surf, in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
-                    .overlay {
-                        if !k.gelb {
-                            RoundedRectangle(cornerRadius: Tokens.Radius.karte).strokeBorder(Farbe.line, lineWidth: 1)
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-            }
+            Knopf("Platz buchen", symbol: "plus.circle", stufe: .haupt, groesse: .gross, breit: true, eng: true) { zuPlaetze(.belegung) }
+            Knopf("Getränk eintragen", symbol: "wineglass", groesse: .gross, breit: true, eng: true) { zuVerein(.getraenke) }
         }
-        .padding(.top, Tokens.Abstand.s)
+        .padding(.top, 4)
     }
 }
 
@@ -313,7 +209,7 @@ private struct JetztFrei: View {
 
     var body: some View {
         let karten = frei.wert.map { HomeLogik.jetztFreiKarten($0, jetzt: Date()) } ?? []
-        Kopfzeile(titel: "Jetzt frei", link: ("Alle Plätze", nil, { zuPlaetze(.belegung) }))
+        Kopfzeile(titel: "Jetzt frei", zaehler: karten.isEmpty ? nil : HomeLogik.freiZaehler(karten.count))
         if let f = frei.fehler {
             Fehlerzeile(text: f, laeuft: erneut.laeuft, onErneut: erneut.aktion)
         }
@@ -321,32 +217,32 @@ private struct JetztFrei: View {
             Leerzustand(text: "Gerade ist kein Platz frei.", handlung: ("Belegung ansehen", { zuPlaetze(.belegung) }))
         }
         if !karten.isEmpty {
-            Wischreihe(abstand: 10) {
-                ForEach(karten) { k in
+            VStack(spacing: 0) {
+                ForEach(Array(karten.enumerated()), id: \.element.id) { i, k in
+                    if i > 0 { Rectangle().fill(Farbe.line).frame(height: 1) }
                     Button { zuPlaetze(.belegung) } label: {
-                        VStack(alignment: .leading, spacing: 10) {
-                            HStack {
-                                Text(k.name)
-                                    .font(Schrift.display(.fett, 20))
-                                    .foregroundStyle(Farbe.ink)
-                                    .lineLimit(1)
-                                Spacer(minLength: 4)
-                                Circle().fill(Farbe.green).frame(width: 8, height: 8)
-                            }
+                        HStack(spacing: 14) {
+                            Circle().fill(Farbe.blue).frame(width: 8, height: 8)
+                            Text(k.name)
+                                .font(Schrift.display(.halbfett, 17))
+                                .foregroundStyle(Farbe.ink)
+                                .lineLimit(1)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             Text("frei bis \(k.bis)")
-                                .font(Schrift.text(.halbfett, 13))
-                                .foregroundStyle(Farbe.greenInk)
-                            MiniZeitleiste(segmente: k.segmente, markierung: k.jetzt)
+                                .font(Schrift.text(.normal, 14.5))
+                                .monospacedDigit()
+                                .foregroundStyle(Farbe.muted)
                         }
-                        .frame(width: 150 - 28, alignment: .leading)
-                        .karte(radius: Tokens.Radius.karte, padding: 14)
+                        .padding(.horizontal, 20)
+                        .frame(minHeight: 56)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(ZeilenDruck())
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("\(k.name), frei bis \(k.bis), buchen")
                     .accessibilityAddTraits(.isButton)
                 }
             }
+            .karte(radius: Tokens.Radius.karte, padding: 0)
         }
     }
 }
@@ -356,12 +252,14 @@ private struct JetztFrei: View {
 private struct OffeneSpiele: View {
     @Environment(\.zuPlaetze) private var zuPlaetze
     let offen: Abschnitt<[OffenesSpiel]>
+    /// Buchungen, die man selbst angelegt hat
+    let eigene: Set<String>
     let erneut: Erneut
 
     var body: some View {
         let liste = HomeLogik.offeneSpiele(offen.wert ?? [])
         let jetzt = Date()
-        Kopfzeile(titel: "Offene Spiele", link: ("Alle", "Alle offenen Spiele", { zuPlaetze(.spiele(offeneZuerst: true)) }))
+        Kopfzeile(titel: "Offene Spiele", zaehler: "Mitspieler gesucht")
         if let f = offen.fehler {
             Fehlerzeile(text: f, laeuft: erneut.laeuft, onErneut: erneut.aktion)
         }
@@ -369,240 +267,84 @@ private struct OffeneSpiele: View {
             Leerzustand(text: "Gerade sucht niemand Mitspieler.")
         }
         ForEach(liste) { o in
-            let uhr = Zeit.minutesToTime(Zeit.minutesOf(o.startsAt))
-            HStack(spacing: 14) {
-                VStack(spacing: 0) {
-                    Text(Startseite.dayTag(startsAt: o.startsAt, now: jetzt))
-                        .font(Schrift.display(.fett, Tokens.Schrift.kicker))
-                        .tracking(0.8)
+            let wann = HomeLogik.offenesSpielWann(o, jetzt: jetzt)
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 8) { wannText(wann); BlaueMarke(o.typeName ?? "") }
+                        VStack(alignment: .leading, spacing: 4) { wannText(wann); BlaueMarke(o.typeName ?? "") }
+                    }
+                    Text(HomeLogik.offenesSpielZeile(o, eigenes: eigene.contains(o.bookingId)))
+                        .font(Schrift.text(.normal, 14))
                         .foregroundStyle(Farbe.ink2)
-                        .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                    Text(uhr)
-                        .font(Schrift.display(.fett, 19))
-                        .foregroundStyle(Farbe.ink)
-                        .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                }
-                .frame(width: 56, height: 60)
-                .background(Farbe.goldSoft, in: RoundedRectangle(cornerRadius: 16))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .strokeBorder(Farbe.goldLine, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
-                )
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(HomeLogik.offenesSpielTitel(o))
-                        .font(Schrift.text(.fett, Tokens.Schrift.normal))
-                        .foregroundStyle(Farbe.ink)
                         .lineLimit(1)
-                    Text(HomeLogik.offenesSpielZeile(o)).leise().lineLimit(1)
                     if let zusatz = SpieleLogik.filterZusatz(o) {
                         Text(zusatz)
-                            .font(Schrift.text(.fett, Tokens.Schrift.klein))
-                            .foregroundStyle(Farbe.goldInk)
+                            .font(Schrift.text(.halbfett, Tokens.Schrift.klein))
+                            .foregroundStyle(Farbe.blueInk)
                             .lineLimit(1)
                             .accessibilityLabel("Nur für \(o.suchfilter.vorleseText)")
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if o.binDabei == true {
-                    Text("Dabei").font(Schrift.text(.fett, Tokens.Schrift.klein)).foregroundStyle(Farbe.muted)
+                    // Gelb heisst "deins".
+                    DeinMarker("Du bist dabei")
                 } else {
-                    Button { zuPlaetze(.spiele(offeneZuerst: true)) } label: {
-                        Text("Mitspielen")
-                            .font(Schrift.text(.fett, 14))
-                            .foregroundStyle(Farbe.onGold)
-                            .padding(.horizontal, 14)
-                            .frame(minHeight: 44)
-                            .background(Farbe.gold, in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Mitspielen: \(o.typeName ?? "") um \(uhr)")
+                    Knopf("Mitspielen", groesse: .klein) { zuPlaetze(.spiele(offeneZuerst: true)) }
+                        .accessibilityLabel("Mitspielen: \(o.typeName ?? ""), \(wann)")
                 }
             }
-            .karte(radius: Tokens.Radius.karte, padding: 14)
+            .padding(.leading, 20)
+            .padding(.trailing, 16)
+            .padding(.vertical, 14)
+            .karte(radius: Tokens.Radius.karte, padding: nil)
         }
+    }
+
+    private func wannText(_ wann: String) -> some View {
+        Text(wann)
+            .font(Schrift.display(.halbfett, 16))
+            .monospacedDigit()
+            .foregroundStyle(Farbe.ink)
+            .lineLimit(1)
     }
 }
 
 // MARK: - Demnaechst im Verein
 
+/// Ein Streifen zur naechsten Veranstaltung; der Rest steht unter Verein.
 private struct DemnaechstImVerein: View {
     @Environment(\.zuVerein) private var zuVerein
     let events: Abschnitt<[MitgliedEvent]>
     let erneut: Erneut
 
     var body: some View {
-        let jetzt = Date()
-        let liste = Veranstaltungen.eventDemnaechst(events.wert ?? [], now: jetzt)
-        Kopfzeile(titel: "Demnächst im Verein", link: ("Alle", "Alle Veranstaltungen", { zuVerein(.veranstaltungen) }))
         if let f = events.fehler {
             Fehlerzeile(text: f, laeuft: erneut.laeuft, onErneut: erneut.aktion)
-        }
-        if events.wert != nil && liste.isEmpty {
-            Leerzustand(text: "Gerade ist nichts geplant.")
-        }
-        ForEach(liste) { e in
-            EventKarte(e: e, jetzt: jetzt, aufforderung: true) { zuVerein(.veranstaltung(e.id)) }
-        }
-    }
-}
-
-/// Eine Veranstaltung als Karte (EventKarte.tsx)
-struct EventKarte: View {
-    let e: MitgliedEvent
-    let jetzt: Date
-    var aufforderung = false
-    let aktion: () -> Void
-
-    var body: some View {
-        let k = Veranstaltungen.eventDatumKachel(e.startsAt)
-        let vorbei = Veranstaltungen.eventVorbei(e, now: jetzt) || e.status == "cancelled"
-        let marke = Veranstaltungen.eventMeineMarke(e, now: jetzt, aufforderung: aufforderung)
-        let art = e.kind ?? ""
-        Button(action: aktion) {
-            HStack(alignment: .top, spacing: 14) {
-                VStack(spacing: 0) {
-                    Text(k.tag).font(Schrift.display(.fett, 21))
-                    Text(k.monat).font(Schrift.display(.fett, Tokens.Schrift.kicker)).tracking(0.6).textCase(.uppercase)
-                }
-                .foregroundStyle(vorbei ? Farbe.ink2 : Farbe.onBrand)
-                .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                .frame(width: 52, height: 56)
-                .background(vorbei ? Farbe.surf2 : Farbe.brand, in: RoundedRectangle(cornerRadius: 14))
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        MarkeKlein(text: Veranstaltungen.kindLabel[art] ?? art, ton: Veranstaltungen.kindTon[art] ?? .grau)
-                        if let marke { MarkeKlein(text: marke.text, ton: marke.ton) }
-                    }
-                    Text(e.title ?? "")
-                        .font(Schrift.text(.fett, 17))
-                        .foregroundStyle(vorbei ? Farbe.ink2 : Farbe.ink)
-                    Text(Veranstaltungen.eventKartenZeit(e)).font(Schrift.text(.normal, 13.5)).foregroundStyle(Farbe.muted)
-                    Text(Veranstaltungen.eventKartenZeile(e, now: jetzt))
-                        .font(Schrift.text(.fett, 13.5))
+        } else if let e = Veranstaltungen.eventDemnaechst(events.wert ?? [], now: Date()).first {
+            let streifen = HomeLogik.eventStreifen(e)
+            Button { zuVerein(.veranstaltung(e.id)) } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(Farbe.blueInk)
+                        .accessibilityHidden(true)
+                    (Text("\(streifen.datum) · ").font(Schrift.text(.normal, 14.5))
+                        + Text(streifen.titel).font(Schrift.text(.fett, 14.5)))
                         .foregroundStyle(Farbe.ink)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .frame(minHeight: 52)
+                .background(Farbe.blueSoft, in: RoundedRectangle(cornerRadius: 26))
+                .overlay(RoundedRectangle(cornerRadius: 26).strokeBorder(Farbe.blue.opacity(0.22), lineWidth: 1))
             }
-            .karte(radius: Tokens.Radius.karte, padding: 14)
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(e.title ?? ""), \(Veranstaltungen.eventKartenZeit(e))\(marke.map { ", \($0.text)" } ?? "")")
-        .accessibilityAddTraits(.isButton)
-    }
-}
-
-/// .marke-klein in den Toenen von EVENT_KIND_TON
-struct MarkeKlein: View {
-    let text: String
-    let ton: EventTon
-
-    var body: some View {
-        let (grund, tinte): (Color, Color) = switch ton {
-        case .blau: (Farbe.blueSoft, Farbe.blueInk)
-        case .gelb: (Farbe.goldSoft, Farbe.goldInk)
-        case .gruen: (Farbe.green.opacity(0.16), Farbe.greenInk)
-        case .grau: (Farbe.chip, Farbe.ink2)
-        case .rot: (Farbe.red.opacity(0.14), Farbe.redInk)
-        }
-        Text(text)
-            .font(Schrift.text(.halbfett, Tokens.Schrift.klein))
-            .foregroundStyle(tinte)
-            .padding(.vertical, 3)
-            .padding(.horizontal, 8)
-            .background(grund, in: Capsule())
-    }
-}
-
-// MARK: - Dein Stand
-
-private struct DeinStandKacheln: View {
-    @Environment(\.zuTab) private var zuTab
-    @Environment(\.zuVerein) private var zuVerein
-    let stand: DeinStand
-
-    var body: some View {
-        Kopfzeile(titel: "Dein Stand")
-        HStack(alignment: .top, spacing: 10) {
-            kachel(titel: stand.getraenkeTitel, label: stand.getraenkeLabel, ziel: .verein) {
-                if let f = stand.getraenkeFehler {
-                    Text(f).leise().foregroundStyle(Farbe.redInk)
-                } else {
-                    Text(stand.getraenkeWert ?? "").font(Schrift.display(.fett, 28)).foregroundStyle(Farbe.ink)
-                    Text("läuft noch").leise()
-                }
-            }
-            kachel(titel: stand.dienstTitel, label: stand.dienstLabel, ziel: .konto) {
-                if let f = stand.dienstFehler {
-                    Text(f).leise().foregroundStyle(Farbe.redInk)
-                } else if let wert = stand.dienstWert {
-                    Text(wert).font(Schrift.display(.fett, 28)).foregroundStyle(Farbe.ink)
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Farbe.surf2)
-                            Capsule().fill(Farbe.green).frame(width: geo.size.width * stand.dienstAnteil)
-                        }
-                    }
-                    .frame(height: 6)
-                    .padding(.top, 6)
-                } else {
-                    Text("Kein Soll für dieses Jahr.").leise().padding(.top, 4)
-                }
-            }
-        }
-    }
-
-    private func kachel<Inhalt: View>(
-        titel: String, label: String, ziel: HauptTab, @ViewBuilder inhalt: () -> Inhalt
-    ) -> some View {
-        Button { ziel == .verein ? zuVerein(.getraenke) : zuTab(ziel) } label: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(titel).font(Schrift.text(.halbfett, 13)).foregroundStyle(Farbe.muted)
-                inhalt()
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .karte(radius: Tokens.Radius.karte, padding: 16)
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(label)
-        .accessibilityAddTraits(.isButton)
-    }
-}
-
-// MARK: - Neuigkeiten
-
-private struct Neuigkeiten: View {
-    @Environment(\.zuVerein) private var zuVerein
-    let neues: Abschnitt<[Benachrichtigung]>
-    let erneut: Erneut
-    let alle: () -> Void
-
-    var body: some View {
-        let jetzt = Date()
-        // Ungelesenes und die letzte Woche; "Alle" fuehrt auch dann zur ganzen
-        // Liste, wenn nur noch Aelteres da ist.
-        let liste = Startseite.startseitenNeuigkeiten(neues.wert ?? [], now: jetzt)
-        Kopfzeile(
-            titel: "Neuigkeiten",
-            link: HomeLogik.zeigeAlleNeuigkeiten(neues) ? ("Alle", "Alle Neuigkeiten", alle) : nil
-        )
-        if let f = neues.fehler {
-            Fehlerzeile(text: f, laeuft: erneut.laeuft, onErneut: erneut.aktion)
-        }
-        if neues.wert != nil && liste.isEmpty {
-            Leerzustand(text: "Keine Neuigkeiten.")
-        }
-        if !liste.isEmpty {
-            VStack(spacing: 0) {
-                ForEach(Array(liste.enumerated()), id: \.element.id) { i, n in
-                    if i > 0 { Rectangle().fill(Farbe.line).frame(height: 1) }
-                    NachrichtZeile(n: n, neu: n.readAt == nil, jetzt: jetzt, hervorheben: false, zeilen: 3) {
-                        zuVerein(.veranstaltung($0))
-                    }
-                }
-            }
-            .karte(padding: 0)
+            .buttonStyle(.plain)
+            .padding(.top, Tokens.Abstand.abschnitt - Tokens.Abstand.m)
+            .accessibilityLabel("Demnächst im Verein: \(streifen.datum), \(streifen.titel)")
         }
     }
 }

@@ -144,10 +144,11 @@ test.describe("Anmeldung", () => {
     await anmelden(page, NUTZER.mitglied);
     await expect(page).toHaveURL((u) => u.pathname === "/");
     await expect(page.getByRole("heading", { level: 1, name: /^Hallo, / })).toBeVisible();
-    for (const abschnitt of ["Als Nächstes", "Jetzt frei", "Offene Spiele", "Neuigkeiten"]) {
-      await expect(page.getByRole("heading", { level: 2, name: abschnitt })).toBeVisible();
+    // Ausgedünnte Startseite: der laufende Monat steht im Konto, Neuigkeiten hinter der Glocke.
+    for (const abschnitt of ["Als Nächstes", "Jetzt frei", "Offene Spiele"]) {
+      await expect(page.getByRole("heading", { level: 2, name: abschnitt })).toBeAttached();
     }
-    await expect(page.getByRole("heading", { level: 2, name: /^Dein / })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Platz buchen" }).first()).toBeVisible();
     // Start steht als erster Eintrag im Menue und ist hier aktiv.
     const nav = page.getByRole("navigation", { name: "Hauptmenü" }).first();
     await expect(nav.getByRole("link").first()).toHaveAttribute("aria-current", "page");
@@ -156,15 +157,11 @@ test.describe("Anmeldung", () => {
 
   test("Mitglied kann sich anmelden und sieht die Plätze", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
-    // Morgen: am Abend ist heute nichts mehr buchbar, und "Freie Zeiten"
-    // zeigt dann statt der Kästchen nur einen Satz.
     await page.goto(`/plan?tag=${tagIn(1)}`);
     await expect(page.getByRole("heading", { level: 1, name: "Plätze", exact: true })).toBeVisible();
     await expect(page.locator(".plan-raster .raster")).toBeVisible();
     // Acht Plaetze, jeder mit eigenem Spaltenkopf
     await expect(page.locator(".raster .spalten-kopf")).toHaveCount(8);
-    // Am Telefon zeigt dieselbe Seite zuerst die freien Zeiten, je Platz ein Kästchen
-    await expect(page.locator(".plan-listen .fz-nummern span")).toHaveCount(8);
   });
 });
 
@@ -1162,7 +1159,7 @@ test.describe("Verwaltung", () => {
     // Gelb ist genau ein Knopf im Kopf: „Einzug vorbereiten“, wenn es etwas
     // einzuziehen gibt, sonst die erste Aufgabe aus „Zu tun“ (U50). Deren
     // Zeile nennt die Aktion dann nicht noch einmal (U63).
-    const kopf = page.locator(".verwaltung-kopf .aktionen .knopf.gold");
+    const kopf = page.locator(".verwaltung-kopf .aktionen .knopf.haupt");
     const zeilen = page.locator('.liste-gruppe[aria-label="Zu tun"] li');
     const aktionen = await zeilen.locator(".hinweis-rechts").allTextContents();
     if (aktionen.includes("Einzug vorbereiten")) {
@@ -1627,7 +1624,7 @@ test.describe("Buchung umsetzen", () => {
     // Umsetzen auf einen anderen Tag: dessen Belegung lädt das Blatt nach.
     const fenster = await oeffne(page, alt.platz, alt.zeit);
     await fenster.getByRole("button", { name: "Umsetzen", exact: true }).click();
-    await fenster.getByLabel("Tag", { exact: true }).fill(zielTag);
+    await fenster.locator(`fieldset.umsetz-tage input[value="${zielTag}"]`).check();
     await expect(fenster.locator("fieldset.umsetz-zeiten input:checked")).toHaveCount(1, { timeout: 15_000 });
     const ziel = await gewaehltesZiel(fenster);
 

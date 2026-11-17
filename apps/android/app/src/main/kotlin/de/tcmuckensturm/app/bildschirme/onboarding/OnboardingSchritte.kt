@@ -11,6 +11,7 @@ package de.tcmuckensturm.app.bildschirme.onboarding
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +21,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -41,22 +46,27 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.tcmuckensturm.app.bildschirme.Hinweis
 import de.tcmuckensturm.app.bildschirme.Kicker
+import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.bildschirme.anmeldung.AnmeldeFeld
+import de.tcmuckensturm.app.bildschirme.karte
 import de.tcmuckensturm.app.bildschirme.konto.KontoFeld
 import de.tcmuckensturm.app.bildschirme.konto.KontoGruppe
-import de.tcmuckensturm.app.bildschirme.Hinweis
 import de.tcmuckensturm.app.bildschirme.konto.KontoLinie
-import de.tcmuckensturm.app.bildschirme.konto.KontoSegmente
-import de.tcmuckensturm.app.bildschirme.Leise
+import de.tcmuckensturm.app.bildschirme.plaetze.Pillengitter
+import de.tcmuckensturm.app.bildschirme.plaetze.Segment
 import de.tcmuckensturm.app.daten.Ergebnis
 import de.tcmuckensturm.app.start.PasswortRegeln
 import de.tcmuckensturm.app.start.PasswortTexte
@@ -150,7 +160,13 @@ fun SchrittStammdaten(k: OnboardingKontext) {
     }
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Beschriftung("Geschlecht", fehler = fehler?.feld == "gender")
-        KontoSegmente(OnboardingLogik.geschlechter, werte["gender"], beschriftung = "Geschlecht") { setzen("gender", it) }
+        // Drei Pillen nebeneinander; die gewaehlte hellblau.
+        Pillengitter(
+            beschriftung = "Geschlecht",
+            optionen = OnboardingLogik.geschlechter.map { (wert, label) -> Segment(wert, label) },
+            spalten = 3,
+            gewaehlt = { it == werte["gender"] },
+        ) { setzen("gender", it) }
         fehlerText("gender")?.let { Hinweis(it) }
     }
     Gruppe("Adresse") {
@@ -189,9 +205,10 @@ private fun Gruppe(titel: String, inhalt: @Composable ColumnScope.() -> Unit) {
 @Composable
 private fun Beschriftung(text: String, fehler: Boolean = false) {
     Text(
-        text,
-        style = TcmSchrift.text(Schrift.gewichtHalbfett, Schrift.klein),
-        color = if (fehler) TcmTheme.farben.red else TcmTheme.farben.ink2,
+        text.uppercase(),
+        style = TcmSchrift.kicker,
+        color = if (fehler) TcmTheme.farben.red else TcmTheme.farben.muted,
+        modifier = Modifier.padding(start = 4.dp),
     )
 }
 
@@ -217,7 +234,7 @@ private fun Geburtstag(text: String, fehler: String?, setzen: (String) -> Unit) 
             ) {
                 Text(
                     text.ifEmpty { "Datum wählen" },
-                    style = TcmSchrift.text(Schrift.gewichtFett, 15.sp).copy(fontFeatureSettings = "tnum"),
+                    style = TcmSchrift.display(Schrift.gewichtHalbfett, 15.sp).copy(fontFeatureSettings = "tnum"),
                     color = if (text.isEmpty()) f.blueInk else f.ink,
                 )
             }
@@ -288,7 +305,7 @@ fun SchrittRechtliches(k: OnboardingKontext) {
                             .padding(horizontal = 8.dp),
                         contentAlignment = Alignment.CenterStart,
                     ) {
-                        Text("${d.title} lesen ›", style = TcmSchrift.text(Schrift.gewichtFett, 14.sp), color = TcmTheme.farben.blueInk)
+                        Text("${d.title} lesen ›", style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp), color = TcmTheme.farben.blueInk)
                     }
                 }
             }
@@ -405,8 +422,7 @@ private fun SepaFormular(k: OnboardingKontext) {
             color = f.ink,
             modifier = Modifier
                 .fillMaxWidth()
-                .background(f.surf2, RoundedCornerShape(Radius.karte))
-                .padding(16.dp),
+                .karte(padding = 18.dp),
         )
     }
     KontoFeld("Kontoinhaber", kontoinhaber, { kontoinhaber = it },
@@ -499,9 +515,42 @@ fun SchrittEinstellungen(k: OnboardingKontext) {
     val gespeichert = k.zustand.einstellungen.bookingMail
     var mails by remember { mutableStateOf(OnboardingLogik.buchungsmail(gespeichert)) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+    // Je Wahl eine Karte mit Auswahlpunkt; die gewaehlte hellblau mit blauem Rand.
+    Column(
+        Modifier.semantics { contentDescription = "E-Mails zu deinen Buchungen" }.selectableGroup(),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
         Beschriftung("E-Mails zu deinen Buchungen")
-        KontoSegmente(OnboardingLogik.buchungsmails, mails, beschriftung = "E-Mails zu deinen Buchungen") { mails = it }
+        val f = TcmTheme.farben
+        val form = RoundedCornerShape(Radius.karte)
+        for ((wert, label) in OnboardingLogik.buchungsmails) {
+            val aktiv = wert == mails
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 60.dp)
+                    .clip(form)
+                    .background(if (aktiv) f.blueSoft else f.surf, form)
+                    .border(if (aktiv) 1.5.dp else 1.dp, if (aktiv) f.blue else f.line, form)
+                    .selectable(selected = aktiv, role = Role.RadioButton) { mails = wert }
+                    .padding(horizontal = 18.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Box(
+                    Modifier.size(22.dp).border(2.dp, if (aktiv) f.blue else f.line2, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (aktiv) Box(Modifier.size(10.dp).background(f.blue, CircleShape))
+                }
+                Text(
+                    label,
+                    style = TcmSchrift.display(Schrift.gewichtHalbfett, 16.sp),
+                    color = if (aktiv) f.blueInk else f.ink,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
     }
     Leise("In der App siehst du Änderungen an deinen Buchungen in jedem Fall.")
     KontoGruppe { k.pushSchalter("Das Gerät fragt einmal nach deiner Erlaubnis.") }

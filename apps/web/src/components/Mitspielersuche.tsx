@@ -4,8 +4,8 @@ import { useId, useImperativeHandle, useMemo, useRef, useState, type Ref } from 
 import type { Mitglied } from "@/components/Belegungsplan";
 
 interface Props {
-  /** Der Bucher, fest vorn - "Du" oder der Name des Buchers. */
-  kopf: { initialen: string; name: string; gelb?: boolean };
+  /** Der Bucher, fest vorn - nur wo er nicht "Du" ist (fremde Buchung verwalten). */
+  kopf?: { initialen: string; name: string; gelb?: boolean };
   verzeichnis: Mitglied[];
   mitglieder: string[];
   gaeste: string[];
@@ -17,6 +17,8 @@ interface Props {
   gefragt?: boolean;
   /** Betrag je Gast in Cent. */
   gastgebuehrCents: number;
+  /** Blatt "Eigenes Spiel": jede Person als eigene Zeile mit Avatar statt als Chip. */
+  zeilen?: boolean;
   onMitglieder: (ids: string[]) => void;
   onGaeste: (namen: string[]) => void;
   ref?: Ref<MitspielerHandle>;
@@ -46,14 +48,14 @@ export const initialen = (vor?: string | null, nach?: string | null) =>
 /**
  * "Wer spielt mit?" - wie im Buchungsblatt der App.
  *
- * Vorn der Bucher, dahinter die Gewaehlten als Chips. Mitglieder kommen ueber
- * "+ Mitglied" und ein Suchfeld: der Verein hat rund 300 Mitglieder, eine
+ * Aufbau nach dem Stitch-Entwurf "Platz buchen": die Gewaehlten als Chips,
+ * darunter das Suchfeld (immer sichtbar, mit Lupe), darunter "+ Gast
+ * hinzufuegen" als Textlink. Der Verein hat rund 300 Mitglieder, eine
  * Auswahlliste waere unbenutzbar. Gaeste kommen ueber einen eigenen Knopf -
  * sie kosten Geld, und das soll eine bewusste Handlung sein und kein
  * Nebeneffekt davon, dass die Suche nichts gefunden hat.
  */
 export function Mitspielersuche(props: Props) {
-  const [suchen, setSuchen] = useState(false);
   const [suche, setSuche] = useState("");
   const feldId = useId();
   const titelId = useId();
@@ -72,9 +74,6 @@ export function Mitspielersuche(props: Props) {
   useImperativeHandle(props.ref, () => ({
     suchen() {
       if (voll) return;
-      // Ist das Feld schon offen, holt focus() es zurueck; sonst fokussiert
-      // es sich beim Erscheinen selbst (autoFocus).
-      setSuchen(true);
       feld.current?.focus();
     },
   }), [voll]);
@@ -93,7 +92,6 @@ export function Mitspielersuche(props: Props) {
     if (voll) return;
     props.onMitglieder([...props.mitglieder, id]);
     setSuche("");
-    setSuchen(false);
   }
 
   function gastHinzu() {
@@ -104,119 +102,113 @@ export function Mitspielersuche(props: Props) {
   const gebuehr = props.gastgebuehrCents > 0 ? euro(props.gastgebuehrCents) : null;
 
   return (
-    <div className="mitspieler" role="group" aria-labelledby={titelId}>
+    <div className={`mitspieler${props.zeilen ? " zeilen" : ""}`} role="group" aria-labelledby={titelId}>
       <p className="feldname" id={titelId}>
         Wer spielt mit?{props.umfang && <span className="umfang"> · {props.umfang}</span>}
       </p>
 
-      <div className="chips">
-        <span className={`chip${props.kopf.gelb ? " ich" : ""}`}>
-          <span className="avatar" aria-hidden="true">{props.kopf.initialen}</span>
-          <span className="name">{props.kopf.name}</span>
-        </span>
-        {(gewaehlteMitglieder.length > 0 || props.gaeste.length > 0) && (
-          <ul className="marken" aria-label="Gewählte Mitspieler">
-            {gewaehlteMitglieder.map((m) => (
-              <li key={m.id} className="chip">
-                <span className="avatar" aria-hidden="true">{initialen(m.first_name, m.last_name)}</span>
-                <span className="name">{m.first_name} {m.last_name}</span>
-                <button
-                  type="button"
-                  aria-label={`${m.first_name} ${m.last_name} entfernen`}
-                  onClick={() => props.onMitglieder(props.mitglieder.filter((x) => x !== m.id))}
-                >
-                  ×
-                </button>
-              </li>
-            ))}
-            {props.gaeste.map((g, i) => (
-              <li key={`g${i}`} className="chip gast">
-                <span className="avatar" aria-hidden="true">G</span>
-                <span className="name">{g}</span>
-                <button
-                  type="button"
-                  aria-label={`Gast ${i + 1} entfernen`}
-                  onClick={() => props.onGaeste(props.gaeste.filter((_, k) => k !== i))}
-                >
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      {(props.kopf || gewaehlteMitglieder.length > 0 || props.gaeste.length > 0) && (
+        <div className="chips">
+          {props.kopf && (
+            <span className={`chip${props.kopf.gelb ? " ich" : ""}`}>
+              <span className="avatar" aria-hidden="true">{props.kopf.initialen}</span>
+              <span className="name">{props.kopf.name}</span>
+            </span>
+          )}
+          {(gewaehlteMitglieder.length > 0 || props.gaeste.length > 0) && (
+            <ul className="marken" aria-label="Gewählte Mitspieler">
+              {gewaehlteMitglieder.map((m) => (
+                <li key={m.id} className="chip">
+                  {props.zeilen && <span className="avatar" aria-hidden="true">{initialen(m.first_name, m.last_name)}</span>}
+                  <span className="name">{m.first_name} {m.last_name}</span>
+                  <button
+                    type="button"
+                    aria-label={`${m.first_name} ${m.last_name} entfernen`}
+                    onClick={() => props.onMitglieder(props.mitglieder.filter((x) => x !== m.id))}
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+              {props.gaeste.map((g, i) => (
+                <li key={`g${i}`} className="chip gast">
+                  {props.zeilen && <span className="avatar" aria-hidden="true">G</span>}
+                  <span className="name">{g}</span>
+                  <button
+                    type="button"
+                    aria-label={`Gast ${i + 1} entfernen`}
+                    onClick={() => props.onGaeste(props.gaeste.filter((_, k) => k !== i))}
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {voll ? (
         <p className="mit" style={{ color: "var(--muted)", margin: 0 }}>
           Für diese Spielform sind alle Plätze besetzt.
         </p>
       ) : (
-        <div className="hinzu">
+        <>
+          <div className={`suche${props.gefragt ? " gefragt" : ""}`}>
+            <svg className="lupe" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-3.8-3.8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <input
+              id={feldId}
+              ref={feld}
+              type="text"
+              value={suche}
+              autoComplete="off"
+              placeholder="Namen tippen…"
+              aria-label="Mitspieler suchen"
+              aria-expanded={treffer.length > 0}
+              onChange={(e) => setSuche(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter im Suchfeld darf nicht das ganze Formular abschicken -
+                // sonst bucht ein Tippfehler den Platz.
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const erster = treffer[0];
+                  if (erster) mitgliedHinzu(erster.id);
+                }
+                if (e.key === "Escape" && suche !== "") {
+                  // Escape leert erst das Feld, bevor es das Blatt schliesst.
+                  e.preventDefault();
+                  setSuche("");
+                }
+              }}
+            />
+
+            {suche.trim().length > 0 && (
+              <ul className="trefferliste" role="listbox" aria-label="Gefundene Mitglieder">
+                {treffer.length === 0 ? (
+                  <li className="leer">Niemand gefunden.</li>
+                ) : (
+                  treffer.map((m) => (
+                    <li key={m.id}>
+                      <button type="button" onClick={() => mitgliedHinzu(m.id)}>
+                        {m.last_name}, {m.first_name}
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
+            )}
+          </div>
           <button
             type="button"
-            className={props.gefragt ? "gestrichelt gefragt" : "gestrichelt"}
-            aria-expanded={suchen}
-            aria-controls={feldId}
-            onClick={() => setSuchen(!suchen)}
-          >
-            <Plus /> Mitglied
-          </button>
-          <button
-            type="button"
-            className="gestrichelt"
+            className="gast-link"
             aria-label={gebuehr ? `Gast hinzufügen, ${gebuehr}` : "Gast hinzufügen"}
             onClick={gastHinzu}
           >
-            <Plus /> Gast{gebuehr ? ` · ${gebuehr}` : ""}
+            <Plus /> Gast hinzufügen{gebuehr ? ` · ${gebuehr}` : ""}
           </button>
-        </div>
-      )}
-
-      {suchen && !voll && (
-        <div className="suche">
-          <input
-            id={feldId}
-            ref={feld}
-            type="text"
-            value={suche}
-            autoComplete="off"
-            autoFocus
-            placeholder="Namen tippen…"
-            aria-label="Mitspieler suchen"
-            aria-expanded={treffer.length > 0}
-            onChange={(e) => setSuche(e.target.value)}
-            onKeyDown={(e) => {
-              // Enter im Suchfeld darf nicht das ganze Formular abschicken -
-              // sonst bucht ein Tippfehler den Platz.
-              if (e.key === "Enter") {
-                e.preventDefault();
-                const erster = treffer[0];
-                if (erster) mitgliedHinzu(erster.id);
-              }
-              if (e.key === "Escape" && suche !== "") {
-                // Escape leert erst das Feld, bevor es das Blatt schliesst.
-                e.preventDefault();
-                setSuche("");
-              }
-            }}
-          />
-
-          {suche.trim().length > 0 && (
-            <ul className="trefferliste" role="listbox" aria-label="Gefundene Mitglieder">
-              {treffer.length === 0 ? (
-                <li className="leer">Niemand gefunden.</li>
-              ) : (
-                treffer.map((m) => (
-                  <li key={m.id}>
-                    <button type="button" onClick={() => mitgliedHinzu(m.id)}>
-                      {m.last_name}, {m.first_name}
-                    </button>
-                  </li>
-                ))
-              )}
-            </ul>
-          )}
-        </div>
+        </>
       )}
 
       {props.gaeste.length > 0 && gebuehr && (

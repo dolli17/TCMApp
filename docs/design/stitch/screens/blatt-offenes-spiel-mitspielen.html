@@ -1,0 +1,249 @@
+<!DOCTYPE html><html lang="de" class="h-full"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TC Muckensturm - Offenes Spiel beitreten</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..600;1,9..40,400..600&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Space Grotesk"', 'sans-serif'],
+          },
+          colors: {
+            club: {
+              DEFAULT: '#1466A8',
+              hover: '#0f5288',
+              light: '#E8F1F8',
+            },
+            textMain: '#0A1624',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+</head>
+<body class="bg-slate-200/50 text-[#0A1624] antialiased h-screen w-screen flex justify-center items-end sm:items-center overflow-hidden m-0 p-0 select-none">
+
+  <!-- iPhone Container: 393 x 852 px -->
+  <div class="relative w-full max-w-[393px] h-[852px] bg-white overflow-hidden shadow-2xl flex flex-col justify-between">
+
+    <!-- BACKGROUND: Abgedunkelter, aber nicht weichgezeichneter Belegungsplan "Plätze" -->
+    <div class="absolute inset-0 z-0 bg-white flex flex-col pointer-events-none select-none">
+      
+      <!-- Status Bar Mock im Hintergrund (wird vom Sheet/Overlay abgedunkelt) -->
+      <div class="w-full h-11 flex justify-between items-center px-6 pt-1 text-[#0A1624] font-medium text-sm">
+        <span>9:41</span>
+        <div class="flex items-center gap-1.5 text-xs">
+          <span class="material-symbols-outlined text-[17px] leading-none">signal_cellular_4_bar</span>
+          <span class="material-symbols-outlined text-[17px] leading-none">wifi</span>
+          <span class="material-symbols-outlined text-[19px] leading-none">battery_full</span>
+        </div>
+      </div>
+
+      <!-- Kicker & Titel Plätze -->
+      <div class="px-5 pt-1 pb-2">
+        <div class="text-[11px] font-bold tracking-wider text-slate-500 uppercase">TC MUCKENSTURM</div>
+        <div class="flex items-baseline justify-between">
+          <h1 class="text-2xl font-bold tracking-tight text-[#0A1624]">Plätze</h1>
+          <span class="text-xs text-slate-500 font-medium">8 Plätze · 08 bis 21 Uhr</span>
+        </div>
+      </div>
+
+      <!-- Tageswähler Pillen -->
+      <div class="px-5 py-1.5 flex gap-2">
+        <div class="flex flex-col items-center justify-center w-11 h-14 rounded-full bg-[#1466A8] text-white">
+          <span class="text-[10px] font-bold uppercase">Mo</span>
+          <span class="text-sm font-bold">16</span>
+        </div>
+        <div class="flex flex-col items-center justify-center w-11 h-14 rounded-full bg-slate-100 text-slate-700">
+          <span class="text-[10px] font-bold uppercase">Di</span>
+          <span class="text-sm font-bold">17</span>
+        </div>
+        <div class="flex flex-col items-center justify-center w-11 h-14 rounded-full bg-slate-100 text-slate-700">
+          <span class="text-[10px] font-bold uppercase">Mi</span>
+          <span class="text-sm font-bold">18</span>
+        </div>
+        <div class="flex flex-col items-center justify-center w-11 h-14 rounded-full bg-slate-100 text-slate-700">
+          <span class="text-[10px] font-bold uppercase">Do</span>
+          <span class="text-sm font-bold">19</span>
+        </div>
+        <div class="flex flex-col items-center justify-center w-11 h-14 rounded-full bg-slate-100 text-slate-700">
+          <span class="text-[10px] font-bold uppercase">Fr</span>
+          <span class="text-sm font-bold">20</span>
+        </div>
+        <div class="flex flex-col items-center justify-center w-11 h-14 rounded-full bg-slate-100 text-slate-700">
+          <span class="text-[10px] font-bold uppercase">Sa</span>
+          <span class="text-sm font-bold">21</span>
+        </div>
+      </div>
+
+      <!-- Segmentierter Umschalter -->
+      <div class="px-5 py-2">
+        <div class="flex rounded-full bg-slate-100 p-1 text-xs font-semibold">
+          <div class="flex-1 py-1.5 text-center text-slate-500">Belegung</div>
+          <div class="flex-1 py-1.5 text-center bg-white rounded-full text-[#0A1624] shadow-sm">Meine &amp; offene Spiele</div>
+        </div>
+      </div>
+
+      <!-- Raster / Liste im Hintergrund (schemenhaft sichtbar) -->
+      <div class="px-5 space-y-2 mt-1 opacity-70">
+        <div class="border border-slate-200 rounded-2xl p-3 bg-white">
+          <div class="flex justify-between items-center mb-1">
+            <span class="font-bold text-sm">18:00 – 19:00</span>
+            <span class="bg-[#FFD21F] text-[#0A1624] text-[10px] font-bold px-2 py-0.5 rounded-full">Dein Spiel</span>
+          </div>
+          <p class="text-xs text-slate-500">Platz 3 · mit Jonas Weber</p>
+        </div>
+        <div class="border border-slate-200 rounded-2xl p-3 bg-white">
+          <div class="flex justify-between items-center mb-1">
+            <span class="font-bold text-sm text-[#1466A8]">19:00 – 20:00</span>
+            <span class="bg-[#E8F1F8] text-[#1466A8] text-[10px] font-bold px-2 py-0.5 rounded-full">Offenes Spiel</span>
+          </div>
+          <p class="text-xs text-slate-500">Platz 1 · Martin Keller</p>
+        </div>
+      </div>
+
+      <!-- Nicht-weichgezeichnetes dunkles Overlay -->
+      <div class="absolute inset-0 bg-slate-900/60 z-10" style="background-color: rgba(15, 23, 42, 0.4);"></div>
+    </div>
+
+    <!-- STATUS BAR (Oberhalb des Sheets schwebend, auf abgedunkeltem Hintergrund gut lesbar) -->
+    <div class="relative z-30 w-full h-11 flex justify-between items-center px-6 pt-1 text-white font-medium text-sm">
+      <span>9:41</span>
+      <div class="flex items-center gap-1.5 text-xs text-white">
+        <span class="material-symbols-outlined text-[17px] leading-none">signal_cellular_4_bar</span>
+        <span class="material-symbols-outlined text-[17px] leading-none">wifi</span>
+        <span class="material-symbols-outlined text-[19px] leading-none">battery_full</span>
+      </div>
+    </div>
+
+    <!-- BOTTOM SHEET: Weiß, oben 32px gerundet, flexibel nach unten -->
+    <div class="relative z-20 w-full bg-white rounded-t-[32px] shadow-2xl flex flex-col max-h-[790px] overflow-hidden">
+      
+      <!-- Sheet Header: Greifer & Schließen-Knopf -->
+      <div class="pt-3 pb-2 px-6 relative flex items-center justify-center">
+        <!-- Zentrierter Greifer / Drag Handle -->
+        <div class="w-10 h-1.5 bg-slate-300 rounded-full"></div>
+        
+        <!-- Runder grauer Schließen-Knopf rechts -->
+        <button class="absolute right-5 top-3 w-10 h-10 rounded-full bg-[#F1F5F9] hover:bg-slate-200 flex items-center justify-center text-[#334155] transition-colors"><span class="material-symbols-outlined text-[20px]">close</span></button>
+      </div>
+
+      <!-- Scrollbarer Sheet-Inhalt -->
+      <div class="px-6 pt-1 pb-4 overflow-y-auto" style="font-family: &quot;DM Sans&quot;, sans-serif;">
+        
+        <!-- Titelzeile: 19:00 – 20:00 & Chip "Mitspieler gesucht" -->
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <h2 class="text-[32px] font-bold tracking-tight text-[#0A1624] leading-tight">19:00 – 20:00</h2>
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-[#E8F1F8] text-[#1466A8]" style="border: 1px solid rgb(201, 223, 239);">
+            Mitspieler gesucht
+          </span>
+        </div>
+
+        <!-- Datum & Platzangabe -->
+        <p class="text-sm font-medium text-slate-500 mt-1">
+          Platz 1 · Montag, 16. November
+        </p>
+
+        <!-- Zeile "Doppel · gebucht von Martin Keller" als Slate-50-Karte mit 16px Radius -->
+        <div class="mt-4 bg-slate-50 border border-slate-200/80 rounded-[16px] px-4 py-3 flex items-center gap-2.5">
+          <span class="material-symbols-outlined text-[#1466A8] text-[20px]" style="border: 1px solid rgb(201, 223, 239);">sports_tennis</span>
+          <span class="text-sm font-semibold text-[#0A1624]" style="border: 1px solid rgb(201, 223, 239);">Doppel · gebucht von Martin Keller</span>
+        </div>
+
+        <!-- Abschnitt "WER SPIELT MIT?" -->
+        <div class="mt-6">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2.5">
+            WER SPIELT MIT?
+          </div>
+
+          <!-- Spielerliste (4 Plätze im Doppel) -->
+          <div class="space-y-2">
+            
+            <!-- Spieler 1: Martin Keller -->
+            <div class="bg-slate-50 border border-slate-200/80 rounded-[16px] px-4 py-2.5 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-[#E8F1F8] text-[#1466A8] font-bold text-xs flex items-center justify-center">
+                MK
+              </div>
+              <div class="flex-1">
+                <span class="text-sm font-semibold text-[#0A1624]">Martin Keller</span>
+              </div>
+            </div>
+
+            <!-- Spieler 2: Sabine Roth -->
+            <div class="bg-slate-50 border border-slate-200/80 rounded-[16px] px-4 py-2.5 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-[#E8F1F8] text-[#1466A8] font-bold text-xs flex items-center justify-center">
+                SR
+              </div>
+              <div class="flex-1">
+                <span class="text-sm font-semibold text-[#0A1624]">Sabine Roth</span>
+              </div>
+            </div>
+
+            <!-- Leerzeile 1: frei -->
+            <div class="bg-slate-50/60 border border-dashed border-slate-300 rounded-[16px] px-4 py-2.5 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full border border-dashed border-slate-300 text-slate-400 font-medium text-xs flex items-center justify-center">
+                <span class="material-symbols-outlined text-base">person_add</span>
+              </div>
+              <span class="text-sm font-medium text-slate-400 italic">frei</span>
+            </div>
+
+            <!-- Leerzeile 2: frei -->
+            <div class="bg-slate-50/60 border border-dashed border-slate-300 rounded-[16px] px-4 py-2.5 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full border border-dashed border-slate-300 text-slate-400 font-medium text-xs flex items-center justify-center">
+                <span class="material-symbols-outlined text-base">person_add</span>
+              </div>
+              <span class="text-sm font-medium text-slate-400 italic">frei</span>
+            </div>
+
+          </div>
+
+          <!-- Kleiner grauer Hinweis -->
+          <div class="mt-3 flex items-center gap-1.5 px-1">
+            <span class="material-symbols-outlined text-slate-400 text-sm">info</span>
+            <p class="text-xs text-slate-500 font-medium">
+              Nur für Herren und Damen · LK 10 bis 18
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Fester Fußbereich mit Haarlinie oben -->
+      <div class="mt-auto border-t border-slate-200 bg-white px-6 pt-3.5 pb-2">
+        <!-- Blauer Hauptbutton "Mitspielen" in voller Breite als Pille -->
+        <button class="w-full h-14 bg-[#1466A8] hover:bg-[#0f5288] active:scale-[0.99] text-white font-semibold rounded-full text-base transition-all shadow-sm flex items-center justify-center gap-2" style="font-family: &quot;Space Grotesk&quot;, sans-serif; font-weight: 600;"><span>Mitspielen</span></button>
+
+        <!-- Fußnote darunter -->
+        <p class="text-center text-xs text-slate-500 mt-2 font-medium">
+          Austragen geht bis Spielbeginn
+        </p>
+
+        <!-- iOS Home-Indikator -->
+        <div class="w-full flex justify-center pt-2 pb-1">
+          <div class="w-32 h-1 bg-[#0A1624] rounded-full"></div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+
+</body></html>

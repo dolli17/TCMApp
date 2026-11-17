@@ -10,10 +10,32 @@ Git-Historie (`git show 9097399:apps/mobile/…`).
 | Anmeldung | Home, hell | Home, dunkel |
 |---|---|---|
 | ![Anmeldung](docs/anmelden.png) | ![Home hell](docs/home-leer-hell.png) | ![Home dunkel](docs/home-leer-dunkel.png) |
-| | ![Home mit Buchungen hell](docs/home-buchungen-hell.png) | ![Home mit Buchungen dunkel](docs/home-buchungen-dunkel.png) |
 
-Home zeigt das Seed-Konto `mitglied@tcm.local`, oben ohne eigene Buchungen (Leerzustand „Noch nichts
-geplant“), unten mit zwei Testbuchungen, die nur im lokalen Stack per `create_booking` angelegt wurden.
+Home zeigt das Seed-Konto `mitglied@tcm.local` ohne eigene Buchungen (Leerzustand „Noch nichts
+geplant“).
+
+## Design „Stitch“
+
+Die App folgt den Entwürfen in `docs/design/stitch` (Repo-Wurzel); die Farben und Größen kommen aus
+`packages/ui` (`Tokens.swift`). Die Regeln, die über jedem einzelnen Entwurf stehen:
+
+- **Weißer Grund**, auch auf den Anmeldeseiten; hell oder dunkel folgt dem Erscheinungsbild.
+- **Kräftiges Blau genau einmal pro Screen:** die eine Hauptaktion, der gewählte Tag, ein Fortschrittsbalken.
+- **Hellblau** (`blueSoft` mit `blueInk`) für Zweitknöpfe, Ausgewähltes, Zähler, „Mitspieler gesucht“.
+- **Gelb heißt „deins“** und steht nur im `DeinMarker`, am eigenen Chip, im eigenen Block des
+  Belegungsplans und am Zähler der Glocke – nie als Knopf, Auswahl oder Status.
+- **Rot nur fürs Zerstörende;** rot gefüllt nur als Bestätigung neben einem neutralen „Doch nicht“.
+- **Knöpfe** sind überall dieselben Pillen aus `Bildschirme/Knoepfe.swift`: `Knopf` bzw.
+  `.buttonStyle(.knopf(…))` in den Stufen `haupt`, `zweit`, `leise`, `gefahr`, `gefahrLeise` und den
+  Höhen 40, 52, 56. Dort liegen auch `DeinMarker`, `BlaueMarke`, `auswahlPille` und `SegmentLeiste`.
+- **Schrift:** Space Grotesk (`Schrift.display`) für Titel, Uhrzeiten, Zahlen, Kicker und Knöpfe,
+  DM Sans (`Schrift.text`) für Fließtext.
+
+Die Startseite zeigt nur noch: nächster eigener Termin, „Platz buchen“ und „Getränk eintragen“,
+„Jetzt frei“, „Offene Spiele“ und einen Streifen zur nächsten Veranstaltung.
+
+> Die Bildschirmfotos weiter unten stammen bis auf Anmeldung, Home und Belegungsplan noch aus der
+> Zeit vor dem Design „Stitch“; die Abläufe stimmen, das Aussehen nicht mehr.
 
 ## Voraussetzungen
 
@@ -226,10 +248,10 @@ und Neuigkeiten hin, ohne mit einem offenen Blatt (Glocke) zu kollidieren, und d
 
 ## Plätze
 
-| Freie Zeiten | Raster | Buchen | Eigene Buchung |
-|---|---|---|---|
-| ![Freie Zeiten hell](docs/plaetze-freie-zeiten-offen-hell.png) | ![Raster hell](docs/plaetze-raster-hell.png) | ![Buchen hell](docs/plaetze-buchen-hell.png) | ![Eigene Buchung hell](docs/plaetze-eigene-buchung-hell.png) |
-| ![Freie Zeiten dunkel](docs/plaetze-freie-zeiten-offen-dunkel.png) | ![Raster dunkel](docs/plaetze-raster-dunkel.png) | ![Buchen dunkel](docs/plaetze-buchen-dunkel.png) | ![Eigene Buchung dunkel](docs/plaetze-eigene-buchung-dunkel.png) |
+| Belegungsplan | Buchen | Eigene Buchung |
+|---|---|---|
+| ![Raster hell](docs/plaetze-raster-hell.png) | ![Buchen hell](docs/plaetze-buchen-hell.png) | ![Eigene Buchung hell](docs/plaetze-eigene-buchung-hell.png) |
+| ![Raster dunkel](docs/plaetze-raster-dunkel.png) | ![Buchen dunkel](docs/plaetze-buchen-dunkel.png) | ![Eigene Buchung dunkel](docs/plaetze-eigene-buchung-dunkel.png) |
 
 | Spiele | Offene zuerst | Leer |
 |---|---|---|
@@ -238,8 +260,9 @@ und Neuigkeiten hin, ohne mit einem offenen Blatt (Glocke) zu kollidieren, und d
 
 Wie `apps/mobile/app/(tabs)/plaetze/`, Texte wortgleich (`Bildschirme/Plaetze/`).
 
-- **Belegungsplan:** Tag wählen bis `lead_days`, zwei Ansichten (Raster Plätze × Zeit, Freie Zeiten
-  als Tabelle; gemerkt unter `tcm-plaetze-ansicht`), Pull-to-refresh, stilles Neuladen beim
+- **Belegungsplan:** die einzige Übersicht – Tagesleiste bis `lead_days`, darunter das Raster
+  (Plätze als Spalten, Uhrzeiten als Zeilen); ein Tipp auf eine freie Fläche wählt Platz und Beginn,
+  gebucht wird über die Leiste unten. Pull-to-refresh, stilles Neuladen beim
   Zurückkehren in den Vordergrund. Realtime über den Kanal `plan-<datum>`, höchstens einmal pro
   Sekunde neu geladen.
 - **Buchen** (`Buchungsblatt.swift`): Art, Mitspieler aus `member_directory`, Gäste, „Mitspieler
@@ -307,14 +330,13 @@ dem großen Kopf, gemerkt unter `tcm-verein-reiter` (beim ersten Mal Getränke).
   Tab-Wechsel und ist mit dem Abmelden weg. Wer die Getränke mit vollem Korb verlässt, bekommt
   „Noch nicht eingetragen“ mit „Zu den Getränken“.
 - **Veranstaltungen:** nach Monat, Schalter für Vergangenes (`events_fuer_mitglied`).
-- **Detail:** Ist der große Titel hinausgescrollt, steht er klein und weiß in der blauen Leiste
-  (`useKompakterTitel`). Der Zurück-Knopf ist hell dunkelblau (`blueInk`) auf dem hellblauen Glas,
-  dunkel weiß auf blauem Glas, beides über 4:1. Eckdaten, Belegung nur als Zahl, Beschreibung; anmelden mit Begleitpersonen und
+- **Detail:** Ist der große Titel hinausgescrollt, steht er klein in der Leiste
+  (`useKompakterTitel`). Eckdaten, Belegung nur als Zahl, Beschreibung; anmelden mit Begleitpersonen und
   Bemerkung (`event_anmelden`), ändern (`event_anmeldung_aendern`), abmelden mit Rückfrage
   (`event_abmelden`), Warteliste mit eigenem Platz (`event_mein_wartelistenplatz`). Der Betrag kommt
   aus `meine_forderung_cents`/`meine_forderung_status`, nicht aus `charges`.
 - **Sprünge:** `zuVerein` (`Bildschirme/Navigation.swift`) öffnet einen Reiter oder gleich eine
-  Veranstaltung – von Home („Getränk eintragen“, „Demnächst im Verein“, „Dein Stand“), aus den
+  Veranstaltung – von Home („Getränk eintragen“, „Demnächst im Verein“), aus den
   Neuigkeiten und der Glocke („Zur Veranstaltung ›“).
 - **Logik:** `Kern/Veranstaltungen.swift` (Liste und Detail) und `Kern/Getraenke.swift` (Korb, Storno),
   geprüft gegen die Golden Files `eventMonatsGruppen`, `event*`, `changeBasket`, `basket*`,
@@ -535,7 +557,7 @@ TCMuckensturm/
                   Onboardingdaten, Pushdaten
   Theme/          Farben und Schrift für SwiftUI auf Basis der erzeugten Tokens
   Bildschirme/    Anmeldung (mit Passwort vergessen/setzen), Kein Zugang, Home, Konto, Nachrichten (Glocke, Neuigkeiten), Onboarding, Plätze, Verein, Verwaltung, Bausteine; die Tabs in Platzhalter.swift
-  Ressourcen/     Assets (App-Icon, Logo, Markenblau), Schriften (Barlow, OFL)
+  Ressourcen/     Assets (App-Icon, Startgrund), Schriften (DM Sans, Space Grotesk, OFL)
 TCMWidgets/
   Gemeinsam/      Schnappschuss, Zeitplan und Aufbereitung, Laden, Ansichten (in App und Erweiterung)
   Erweiterung/    Widget-Bundle, Zeitplan-Anbieter, Info.plist, Entitlements
@@ -562,14 +584,14 @@ TCMuckensturmTests/
   „Erneut versuchen“), Pull-to-refresh, stilles Nachladen beim Zurückkehren. Was auf Bildschirme
   zeigt, die es nativ noch nicht gibt (Buchen), wechselt vorerst auf den passenden Tab
   (`Bildschirme/Navigation.swift`, `zuTab`); Getränke und Veranstaltungen öffnet `zuVerein` gezielt.
-- **Schrift:** Barlow und Barlow Semi Condensed als TTF aus `@expo-google-fonts` (Version 0.4.1),
-  Lizenz SIL OFL 1.1 in `Ressourcen/Schriften/OFL.txt`.
+- **Schrift:** DM Sans und Space Grotesk als TTF, Lizenz SIL OFL 1.1 in `Ressourcen/Schriften/OFL.txt`.
 
 ## Was noch fehlt
 
 - Prod-Werte (`Konfiguration/Prod.xcconfig`) und ein App-Store-Eintrag für die native App
 - Plätze: Sprünge aus Home direkt ins
-  Buchungsblatt (`?buchen=jetzt`, `?buchung=…`), mitlaufender Tabellenkopf in Freie Zeiten
+  Buchungsblatt (`?buchen=jetzt`, `?buchung=…`)
+- Bildschirmfotos in `docs/` nach dem Design „Stitch“ neu aufnehmen (bisher nur Anmeldung, Home, Belegungsplan)
 - Schwebende Tab-Leiste und kompakte Kopfzeile wie in der Expo-App (heute die System-TabView)
 - Fragment-Zweig der Passwort-Links entfernen, sobald die Cloud-Vorlagen token_hash schicken (S20, gemeinsam mit Android und Web)
 - Widgets: auf einem echten Gerät ungetestet (braucht die Registrierung unten); interaktive Widgets

@@ -14,8 +14,6 @@ package de.tcmuckensturm.app.bildschirme.konto
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,7 +39,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
@@ -51,14 +48,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -83,7 +78,7 @@ import de.tcmuckensturm.app.ui.tokens.Schrift
 fun KontoAbschnitt(titel: String) {
     Text(
         titel,
-        style = TcmSchrift.text(Schrift.gewichtFett, Schrift.titel, (-0.2).sp),
+        style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.titel, (-0.2).sp),
         color = TcmTheme.farben.ink,
         modifier = Modifier
             .fillMaxWidth()
@@ -108,7 +103,7 @@ fun KontoLinie() {
 @Composable
 fun Symbolkachel(symbol: ImageVector) {
     val f = TcmTheme.farben
-    Box(Modifier.size(32.dp).background(f.surf2, RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(32.dp).background(f.surf2, CircleShape), contentAlignment = Alignment.Center) {
         Icon(symbol, contentDescription = null, tint = f.ink2, modifier = Modifier.size(18.dp))
     }
 }
@@ -188,7 +183,8 @@ fun KontoMarke(text: String) {
 fun StatusmarkeAnsicht(marke: Statusmarke) {
     val f = TcmTheme.farben
     val (grund, schrift) = when (marke.ton) {
-        Statusmarke.Ton.GOLD -> f.goldSoft to f.goldInk
+        // Ein Stand, kein "deins": hellblau statt gelb.
+        Statusmarke.Ton.GOLD -> f.blueSoft to f.blueInk
         Statusmarke.Ton.ROT -> f.red.copy(alpha = 0.14f) to f.redInk
         Statusmarke.Ton.GRAU -> f.surf2 to f.ink2
     }
@@ -200,7 +196,7 @@ fun StatusmarkeAnsicht(marke: Statusmarke) {
             .padding(horizontal = 8.dp, vertical = 2.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(marke.text, style = TcmSchrift.text(Schrift.gewichtFett, Schrift.klein), color = schrift)
+        Text(marke.text, style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.klein), color = schrift)
     }
 }
 
@@ -233,16 +229,19 @@ fun KontoFeld(
     gross: KeyboardCapitalization = KeyboardCapitalization.Sentences,
     mehrzeilig: Boolean = false,
     gesperrt: Boolean = false,
+    /** Etwa die Lupe vor einem Suchfeld. */
+    symbol: ImageVector? = null,
 ) {
     val f = TcmTheme.farben
     val form = RoundedCornerShape(Radius.feld)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(7.dp)) {
         // Das Feld traegt die Beschriftung selbst; TalkBack soll sie nicht zweimal lesen.
+        // Feldname als Kicker in Versalien.
         Text(
-            label,
-            style = TcmSchrift.text(Schrift.gewichtHalbfett, Schrift.klein),
-            color = if (fehler != null) f.red else f.ink2,
-            modifier = Modifier.clearAndSetSemantics {},
+            label.uppercase(),
+            style = TcmSchrift.kicker,
+            color = if (fehler != null) f.red else f.muted,
+            modifier = Modifier.padding(start = 4.dp).clearAndSetSemantics {},
         )
         BasicTextField(
             value = wert,
@@ -251,19 +250,25 @@ fun KontoFeld(
             singleLine = !mehrzeilig,
             minLines = if (mehrzeilig) 4 else 1,
             textStyle = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal).copy(color = f.ink),
-            cursorBrush = SolidColor(f.ink),
+            cursorBrush = SolidColor(f.blue),
             keyboardOptions = KeyboardOptions(capitalization = gross, keyboardType = tastatur),
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = if (mehrzeilig) 96.dp else 50.dp)
-                .background(f.surf, form)
-                .border(1.5.dp, if (fehler != null) f.red else f.rahmen, form)
-                .padding(13.dp)
+                .heightIn(min = if (mehrzeilig) 96.dp else 52.dp)
+                .background(f.surf2, form)
+                .border(if (fehler != null) 1.5.dp else 1.dp, if (fehler != null) f.red else f.line2, form)
+                .padding(horizontal = 20.dp, vertical = 14.dp)
                 .semantics {
                     contentDescription = label
                     if (inhaltsTyp != null) contentType = inhaltsTyp
                     if (fehler != null) error(fehler)
                 },
+            decorationBox = { feld ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (symbol != null) Icon(symbol, contentDescription = null, tint = f.muted, modifier = Modifier.size(20.dp))
+                    Box(Modifier.weight(1f)) { feld() }
+                }
+            },
         )
         if (fehler != null) Hinweis(fehler)
     }
@@ -294,7 +299,7 @@ fun <W> KontoSegmente(
                     .heightIn(min = 38.dp)
                     .then(
                         if (aktiv) {
-                            Modifier.background(f.segAktiv, knopfForm).border(1.5.dp, f.segAktivRand, knopfForm)
+                            Modifier.background(f.segAktiv, knopfForm).border(1.dp, f.line2, knopfForm)
                         } else {
                             Modifier
                         },
@@ -337,7 +342,7 @@ fun BlattKopf(titel: String, zu: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             titel,
-            style = TcmSchrift.text(Schrift.gewichtExtrafett, Schrift.titel),
+            style = TcmSchrift.display(Schrift.gewichtFett, 30.sp, (-0.6).sp).copy(lineHeight = 34.sp),
             color = f.ink,
             modifier = Modifier.weight(1f).semantics { heading() },
         )

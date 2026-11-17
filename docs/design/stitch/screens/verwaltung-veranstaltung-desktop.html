@@ -1,0 +1,457 @@
+<!DOCTYPE html><html lang="de" class="h-full bg-white"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280, initial-scale=1.0">
+  <title>TC Muckensturm - Herbstfest (Veranstaltung verwalten)</title>
+  <!-- Google Fonts: Space Grotesk & DM Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet">
+  <!-- Material Symbols -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            club: {
+              blue: '#1466A8',
+              'blue-light': '#E8F1F8',
+              yellow: '#FFD21F',
+              text: '#0A1624',
+              red: '#C4433A'
+            }
+          },
+          fontFamily: {
+            title: ['"Space Grotesk"', 'sans-serif'],
+            body: ['"DM Sans"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'DM Sans', sans-serif;
+      color: #0A1624;
+      background-color: #ffffff;
+      -webkit-font-smoothing: antialiased;
+    }
+    .font-space {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 450, 'GRAD' 0, 'opsz' 20;
+      vertical-align: middle;
+    }
+    .fill-icon {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+    }
+  </style>
+</head>
+<body class="min-h-full flex bg-white text-club-text">
+
+  <!-- ==================== FESTE SEITENLEISTE LINKS (240px) ==================== -->
+  <aside class="w-[240px] shrink-0 border-r border-slate-200 bg-white flex flex-col justify-between min-h-screen sticky top-0 h-screen select-none z-20">
+    <div class="p-5 flex flex-col">
+      <!-- Wortmarke -->
+      <div class="mb-6">
+        <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 font-space">Tennisclub</span>
+        <span class="font-space font-bold text-base tracking-tight text-club-text">TC MUCKENSTURM</span>
+      </div>
+
+      <!-- Gelber Hauptbutton "Platz buchen" -->
+      <a href="#" class="flex items-center justify-center gap-1.5 w-full bg-[#E8F1F8] border border-[#C9DFEF] text-[#1466A8] hover:brightness-95 font-space font-semibold text-[15px] h-[44px] px-4 rounded-full transition-all mb-7 whitespace-nowrap shadow-sm">
+        <span class="material-symbols-outlined text-[18px] text-[#1466A8]">add</span>
+        <span>Platz buchen</span>
+      </a>
+
+      <!-- Hauptmenü -->
+      <nav class="space-y-1 mb-7 text-sm font-space">
+        <a href="#" class="flex items-center gap-3 px-3 py-2 text-slate-700 hover:text-club-text hover:bg-slate-50 rounded-full transition-colors">
+          <span class="material-symbols-outlined text-[19px] text-slate-500">home</span>
+          <span>Start</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2 text-slate-700 hover:text-club-text hover:bg-slate-50 rounded-full transition-colors">
+          <span class="material-symbols-outlined text-[19px] text-slate-500">sports_tennis</span>
+          <span>Plätze</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2 text-slate-700 hover:text-club-text hover:bg-slate-50 rounded-full transition-colors">
+          <span class="material-symbols-outlined text-[19px] text-slate-500">groups</span>
+          <span>Verein</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2 text-slate-700 hover:text-club-text hover:bg-slate-50 rounded-full transition-colors">
+          <span class="material-symbols-outlined text-[19px] text-slate-500">person</span>
+          <span>Konto</span>
+        </a>
+      </nav>
+
+      <!-- Bereichs-Label "VERWALTUNG" -->
+      <div class="pt-2 border-t border-slate-100">
+        <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 font-space px-3 mb-2">Verwaltung</span>
+        <nav class="space-y-0.5 text-sm font-space">
+          <a href="#" class="flex items-center gap-3 px-3 py-1.5 text-slate-700 hover:text-club-text hover:bg-slate-50 rounded-full transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">dashboard</span>
+            <span>Übersicht</span>
+          </a>
+          <a href="#" class="flex items-center justify-between px-3 py-1.5 text-slate-700 hover:text-club-text hover:bg-slate-50 rounded-full transition-colors">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-[18px] text-slate-400">group</span>
+              <span>Mitglieder</span>
+            </div>
+          </a>
+          <!-- Aktiver Punkt: Veranstaltungen -->
+          <a href="#" class="flex items-center gap-3 px-3 py-1.5 bg-club-blue-light text-club-blue font-semibold rounded-full transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-club-blue fill-icon">event</span>
+            <span>Veranstaltungen</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-1.5 text-slate-700 hover:text-club-text hover:bg-slate-50 rounded-full transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">handyman</span>
+            <span>Arbeitsdienst</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-1.5 text-slate-700 hover:text-club-text hover:bg-slate-50 rounded-full transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">payments</span>
+            <span>Kasse</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-1.5 text-slate-700 hover:text-club-text hover:bg-slate-50 rounded-full transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">calendar_month</span>
+            <span>Plätze &amp; Serien</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-1.5 text-slate-700 hover:text-club-text hover:bg-slate-50 rounded-full transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">local_bar</span>
+            <span>Getränke</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-1.5 text-slate-700 hover:text-club-text hover:bg-slate-50 rounded-full transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">settings</span>
+            <span>System</span>
+          </a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Nutzerkarte ganz unten -->
+    <div class="p-4 border-t border-slate-200 bg-white">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-[#E8F1F8] border border-[#C9DFEF] text-[#1466A8] flex items-center justify-center font-space font-bold text-xs shrink-0">
+            AB
+          </div>
+          <div class="flex flex-col min-w-0">
+            <span class="font-space font-semibold text-xs leading-tight text-club-text truncate">Anna Berger</span>
+            <span class="text-[11px] text-slate-500 leading-tight">Vorstand</span>
+          </div>
+        </div>
+        <button class="text-slate-400 hover:text-slate-700 p-1 rounded-md transition-colors" title="Abmelden">
+          <span class="material-symbols-outlined text-[18px]">logout</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== HAUPTINHALT (DESKTOP) ==================== -->
+  <main class="flex-1 bg-white min-w-0 pb-20">
+    <div class="max-w-[1040px] mx-auto px-10 pt-8">
+
+      <!-- OBERER BEREICH: ZURÜCK & KOPFZEILE MIT AKTIONEN -->
+      <div class="mb-6">
+        <!-- Zurück-Link -->
+        <a href="#" class="inline-flex items-center gap-1 text-sm font-space text-slate-500 hover:text-club-blue transition-colors mb-4">
+          <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+          <span>Veranstaltungen</span>
+        </a>
+
+        <!-- Titel & Aktionen Header -->
+        <div class="flex items-start justify-between gap-6">
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-space font-medium bg-slate-100 text-slate-700">Fest</span>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-space font-medium bg-club-blue-light text-club-blue">Anmeldung offen</span>
+            </div>
+            <h1 class="text-[32px] font-space font-bold leading-tight text-club-text tracking-tight mb-1">Herbstfest</h1>
+            <p class="text-sm text-slate-500 font-normal">Samstag, 21. November · 18:00 Uhr · Clubhaus</p>
+          </div>
+
+          <!-- Rechts Aktionen: Zweitbuttons & ruhiger roter Textbutton -->
+          <div class="flex items-center gap-3 pt-2"><button class="h-[44px] px-5 rounded-full border border-slate-200 bg-white text-[15px] font-space font-semibold text-[#0F172A] hover:bg-slate-50 transition-colors whitespace-nowrap flex items-center justify-center">
+              Bearbeiten
+            </button>
+            <button class="h-[44px] px-5 rounded-full border border-slate-200 bg-white text-[15px] font-space font-semibold text-[#0F172A] hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap">
+              <span class="material-symbols-outlined text-[18px] text-slate-500">file_download</span>
+              <span>Liste exportieren</span>
+            </button>
+            <button class="h-[44px] px-3 text-[15px] font-space font-semibold text-club-red hover:underline transition-colors ml-1 whitespace-nowrap flex items-center">
+              Absagen
+            </button></div>
+        </div>
+      </div>
+
+      <!-- ==================== SCHRITTLEISTE (5 STATIONEN) ==================== -->
+      <div class="bg-white border border-slate-200 rounded-[20px] p-5 mb-8">
+        <div class="flex items-center justify-between relative">
+          <!-- Durchgehende Hintergrundlinie -->
+          <div class="absolute left-8 right-8 top-3.5 h-[2px] bg-slate-200 -z-0"></div>
+          <!-- Aktive Teilstrecke bis Station 3 -->
+          <div class="absolute left-8 w-1/2 top-3.5 h-[2px] bg-club-blue -z-0"></div>
+
+          <!-- Station 1: Angelegt (blau / erledigt) -->
+          <div class="relative z-10 flex flex-col items-center text-center w-36">
+            <div class="w-7 h-7 rounded-full bg-[#E8F1F8] border border-[#1466A8] text-[#1466A8] flex items-center justify-center text-xs shadow-sm mb-2">
+              <span class="material-symbols-outlined text-[16px]">check</span>
+            </div>
+            <span class="font-space text-xs font-semibold text-club-blue">Angelegt</span>
+          </div>
+
+          <!-- Station 2: Veröffentlicht (blau / erledigt) -->
+          <div class="relative z-10 flex flex-col items-center text-center w-36">
+            <div class="w-7 h-7 rounded-full bg-[#E8F1F8] border border-[#1466A8] text-[#1466A8] flex items-center justify-center text-xs shadow-sm mb-2">
+              <span class="material-symbols-outlined text-[16px]">check</span>
+            </div>
+            <span class="font-space text-xs font-semibold text-club-blue">Veröffentlicht</span>
+          </div>
+
+          <!-- Station 3: Anmeldeschluss (aktuell) -->
+          <div class="relative z-10 flex flex-col items-center text-center w-36">
+            <div class="w-7 h-7 rounded-full bg-white border-2 border-club-blue text-club-blue flex items-center justify-center text-xs font-space font-bold shadow-sm mb-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-club-blue"></span>
+            </div>
+            <span class="font-space text-xs font-bold text-club-text">Anmeldeschluss</span>
+            <span class="text-[11px] text-slate-500 font-normal">Mi, 18. Nov</span>
+          </div>
+
+          <!-- Station 4: Termin (grau) -->
+          <div class="relative z-10 flex flex-col items-center text-center w-36">
+            <div class="w-7 h-7 rounded-full bg-white border-2 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-space mb-2">
+              <span class="w-2 h-2 rounded-full bg-slate-300"></span>
+            </div>
+            <span class="font-space text-xs font-medium text-slate-500">Termin</span>
+            <span class="text-[11px] text-slate-400 font-normal">Sa, 21. Nov</span>
+          </div>
+
+          <!-- Station 5: Stunden gutschreiben (grau) -->
+          <div class="relative z-10 flex flex-col items-center text-center w-40">
+            <div class="w-7 h-7 rounded-full bg-white border-2 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-space mb-2">
+              <span class="w-2 h-2 rounded-full bg-slate-300"></span>
+            </div>
+            <span class="font-space text-xs font-medium text-slate-500">Stunden gutschreiben</span>
+            <span class="text-[11px] text-slate-400 font-normal">Nach Event</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== KARTE "STAND" MIT 5 KENNZAHLEN ==================== -->
+      <div class="bg-white border border-slate-200 rounded-[20px] p-6 mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 font-space">Stand &amp; Kapazität</span>
+          <span class="text-xs text-slate-500 font-normal">Max. 60 Personen (50 belegt)</span>
+        </div>
+        <div class="grid grid-cols-5 divide-x divide-slate-100">
+          <!-- Kennzahl 1: Anmeldungen -->
+          <div class="pr-5">
+            <span class="block text-xs font-space text-slate-500 mb-1">Anmeldungen</span>
+            <span class="font-space font-bold text-[44px] leading-none text-club-text">31</span>
+            <span class="block text-[11px] text-slate-500 mt-2 font-normal">Buchungen gesamt</span>
+          </div>
+
+          <!-- Kennzahl 2: Personen -->
+          <div class="px-5">
+            <span class="block text-xs font-space text-slate-500 mb-1">Personen</span>
+            <span class="font-space font-bold text-[44px] leading-none text-club-text">50</span>
+            <span class="block text-[11px] text-slate-500 mt-2 font-normal">von max. 60 Plätzen</span>
+          </div>
+
+          <!-- Kennzahl 3: Anwesend -->
+          <div class="px-5">
+            <span class="block text-xs font-space text-slate-500 mb-1">Anwesend</span>
+            <span class="font-space font-bold text-[44px] leading-none text-slate-300">–</span>
+            <span class="block text-[11px] text-slate-500 mt-2 font-normal">Wird am Fest erfasst</span>
+          </div>
+
+          <!-- Kennzahl 4: Gebühr -->
+          <div class="px-5">
+            <span class="block text-xs font-space text-slate-500 mb-1">Gebühr</span>
+            <span class="font-space font-bold text-[44px] leading-none text-club-text whitespace-nowrap">900<span class="text-2xl font-bold">,00 €</span></span>
+            <span class="block text-[11px] text-slate-500 mt-2 font-normal">18,00 € pro Person</span>
+          </div>
+
+          <!-- Kennzahl 5: Warteliste -->
+          <div class="pl-5">
+            <span class="block text-xs font-space text-slate-500 mb-1">Warteliste</span>
+            <span class="font-space font-bold text-[44px] leading-none text-club-text">0</span>
+            <span class="block text-[11px] text-slate-500 mt-2 font-normal">Keine offenen Plätze</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== ABSCHNITT "TEILNEHMER" ==================== -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between mb-3.5">
+          <div class="flex items-baseline gap-3">
+            <h2 class="text-[18px] font-space font-bold text-club-text">Teilnehmer</h2>
+            <span class="text-xs text-slate-500">Mitglieder sehen nur die Anzahl, nicht die Namen.</span>
+          </div>
+          <button class="h-[44px] px-5 rounded-full border border-[#C9DFEF] bg-[#E8F1F8] text-[15px] font-space font-semibold text-[#1466A8] hover:brightness-95 transition-all flex items-center justify-center gap-2 shadow-2xs whitespace-nowrap">
+            <span class="material-symbols-outlined text-[18px] text-[#1466A8]">person_add</span>
+            <span>Mitglied nachtragen</span>
+          </button>
+        </div>
+
+        <!-- TABELLE ALS KARTE MIT HAARLINIEN -->
+        <div class="border border-slate-200 rounded-[20px] bg-white overflow-hidden">
+          <table class="w-full text-left text-sm border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50/75">
+                <th class="py-3 px-5 text-[11px] font-bold uppercase tracking-wider text-slate-500 font-space">Mitglied</th>
+                <th class="py-3 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500 font-space text-center w-24">Personen</th>
+                <th class="py-3 px-5 text-[11px] font-bold uppercase tracking-wider text-slate-500 font-space">Bemerkung</th>
+                <th class="py-3 px-5 text-[11px] font-bold uppercase tracking-wider text-slate-500 font-space w-28">Angemeldet</th>
+                <th class="py-3 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500 font-space text-center w-20">Da</th>
+                <th class="py-3 px-5 text-[11px] font-bold uppercase tracking-wider text-slate-500 font-space text-right w-28">Betrag</th>
+                <th class="py-3 px-5 text-[11px] font-bold uppercase tracking-wider text-slate-500 font-space text-right w-36">Aktionen</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 text-sm">
+              <!-- Zeile 1: Berger, Anna -->
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="py-3.5 px-5 font-space font-medium text-club-text">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-7 h-7 rounded-full bg-club-blue-light text-club-blue font-space font-bold text-xs flex items-center justify-center shrink-0">AB</span>
+                    <div>
+                      <span class="font-semibold text-club-text">Berger, Anna</span>
+                      <span class="text-[11px] text-slate-400 font-normal ml-1">(Vorstand)</span>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3.5 px-4 font-space font-semibold text-club-text text-center">2</td>
+                <td class="py-3.5 px-5 text-slate-600">vegetarisch</td>
+                <td class="py-3.5 px-5 text-slate-500 font-space text-xs">12.11.</td>
+                <td class="py-3.5 px-4 text-center">
+                  <div class="inline-flex items-center justify-center w-5 h-5 rounded bg-club-blue text-white">
+                    <span class="material-symbols-outlined text-[16px]">check</span>
+                  </div>
+                </td>
+                <td class="py-3.5 px-5 font-space font-semibold text-club-text text-right">36,00 €</td>
+                <td class="py-3.5 px-5 text-right whitespace-nowrap space-x-2">
+                  <button class="text-xs font-space font-medium text-club-blue hover:underline">Ändern</button>
+                  <span class="text-slate-300">·</span>
+                  <button class="text-xs font-space font-medium text-slate-500 hover:text-club-red">Abmelden</button>
+                </td>
+              </tr>
+
+              <!-- Zeile 2: Keller, Martin -->
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="py-3.5 px-5 font-space font-medium text-club-text">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-space font-bold text-xs flex items-center justify-center shrink-0">MK</span>
+                    <div>
+                      <span class="font-semibold text-club-text">Keller, Martin</span>
+                      <span class="text-[11px] text-slate-400 font-normal ml-1">(Herren 40)</span>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3.5 px-4 font-space font-semibold text-club-text text-center">1</td>
+                <td class="py-3.5 px-5 text-slate-400">–</td>
+                <td class="py-3.5 px-5 text-slate-500 font-space text-xs">11.11.</td>
+                <td class="py-3.5 px-4 text-center">
+                  <div class="inline-flex items-center justify-center w-5 h-5 rounded border border-slate-300 bg-white"></div>
+                </td>
+                <td class="py-3.5 px-5 font-space font-semibold text-club-text text-right">18,00 €</td>
+                <td class="py-3.5 px-5 text-right whitespace-nowrap space-x-2">
+                  <button class="text-xs font-space font-medium text-club-blue hover:underline">Ändern</button>
+                  <span class="text-slate-300">·</span>
+                  <button class="text-xs font-space font-medium text-slate-500 hover:text-club-red">Abmelden</button>
+                </td>
+              </tr>
+
+              <!-- Zeile 3: Roth, Sabine -->
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="py-3.5 px-5 font-space font-medium text-club-text">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-space font-bold text-xs flex items-center justify-center shrink-0">SR</span>
+                    <div>
+                      <span class="font-semibold text-club-text">Roth, Sabine</span>
+                      <span class="text-[11px] text-slate-400 font-normal ml-1">(Damen 40)</span>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3.5 px-4 font-space font-semibold text-club-text text-center">3</td>
+                <td class="py-3.5 px-5 text-slate-600">ein Kind</td>
+                <td class="py-3.5 px-5 text-slate-500 font-space text-xs">10.11.</td>
+                <td class="py-3.5 px-4 text-center">
+                  <div class="inline-flex items-center justify-center w-5 h-5 rounded border border-slate-300 bg-white"></div>
+                </td>
+                <td class="py-3.5 px-5 font-space font-semibold text-club-text text-right">54,00 €</td>
+                <td class="py-3.5 px-5 text-right whitespace-nowrap space-x-2">
+                  <button class="text-xs font-space font-medium text-club-blue hover:underline">Ändern</button>
+                  <span class="text-slate-300">·</span>
+                  <button class="text-xs font-space font-medium text-slate-500 hover:text-club-red">Abmelden</button>
+                </td>
+              </tr>
+
+              <!-- Zeile 4: Weber, Jonas -->
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="py-3.5 px-5 font-space font-medium text-club-text">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-space font-bold text-xs flex items-center justify-center shrink-0">JW</span>
+                    <div>
+                      <span class="font-semibold text-club-text">Weber, Jonas</span>
+                      <span class="text-[11px] text-slate-400 font-normal ml-1">(Herren)</span>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3.5 px-4 font-space font-semibold text-club-text text-center">1</td>
+                <td class="py-3.5 px-5 text-slate-400">–</td>
+                <td class="py-3.5 px-5 text-slate-500 font-space text-xs">09.11.</td>
+                <td class="py-3.5 px-4 text-center">
+                  <div class="inline-flex items-center justify-center w-5 h-5 rounded border border-slate-300 bg-white"></div>
+                </td>
+                <td class="py-3.5 px-5 font-space font-semibold text-club-text text-right">18,00 €</td>
+                <td class="py-3.5 px-5 text-right whitespace-nowrap space-x-2">
+                  <button class="text-xs font-space font-medium text-club-blue hover:underline">Ändern</button>
+                  <span class="text-slate-300">·</span>
+                  <button class="text-xs font-space font-medium text-slate-500 hover:text-club-red">Abmelden</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- Fußbereich der Tabelle mit Seitenzahl / Übersicht -->
+          <div class="px-5 py-3 bg-slate-50/50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 font-space">
+            <span>4 von 31 Anmeldungen angezeigt</span>
+            <div class="flex items-center gap-1.5"><button class="h-[44px] px-4 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-[#0F172A] font-space font-semibold text-[15px] disabled:opacity-40 transition-colors whitespace-nowrap flex items-center justify-center" disabled="">Zurück</button>
+              <span class="px-3 font-space text-xs text-slate-500">Seite 1 von 8</span>
+              <button class="h-[44px] px-4 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-[#0F172A] font-space font-semibold text-[15px] transition-colors whitespace-nowrap flex items-center justify-center">Weiter</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== KARTE "FORDERUNGEN" ==================== -->
+      <div class="bg-white border border-slate-200 rounded-[20px] p-6 flex items-center justify-between shadow-2xs">
+        <div class="flex items-center gap-5">
+          <div class="w-12 h-12 rounded-full bg-club-blue-light text-club-blue flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[24px]">account_balance</span>
+          </div>
+          <div>
+            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 font-space mb-0.5">Forderungen</span>
+            <div class="flex items-baseline gap-2">
+              <span class="font-space font-bold text-2xl text-club-text">900,00 €</span>
+              <span class="text-sm text-slate-500 font-space">· 31 Mitglieder</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Wird mit dem nächsten SEPA-Lastschrifteinzug über die Kasse abgerechnet.</p>
+          </div>
+        </div>
+        <div>
+          <button class="h-[44px] px-6 rounded-full bg-club-blue hover:brightness-95 text-white font-space font-semibold text-[15px] shadow-sm flex items-center justify-center gap-2 transition-all whitespace-nowrap">
+            <span class="material-symbols-outlined text-[18px] text-white">payments</span>
+            <span>Einzug vorbereiten</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+
+
+
+
+</body></html>

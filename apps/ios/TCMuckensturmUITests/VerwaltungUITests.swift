@@ -18,7 +18,8 @@ final class VerwaltungUITests: XCTestCase {
         app.launchArguments += ["-TCMTab", "verein", "-TCMVerein", id]
         app.launch()
 
-        let wann = app.staticTexts["Wann"]
+        // Die Eckdaten sind je Zeile ein Element ("Wann, Samstag …").
+        let wann = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Wann'")).firstMatch
         XCTAssertTrue(wann.waitForExistence(timeout: 20), "Detail erscheint nicht")
         bild(app, "verein-veranstaltung-oben-\(endung)")
 

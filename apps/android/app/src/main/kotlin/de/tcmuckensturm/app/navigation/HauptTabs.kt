@@ -15,27 +15,43 @@
 package de.tcmuckensturm.app.navigation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -44,6 +60,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import de.tcmuckensturm.app.TcmApp
+import de.tcmuckensturm.app.bildschirme.GedeckelteSchrift
 import de.tcmuckensturm.app.bildschirme.home.HomeGraph
 import de.tcmuckensturm.app.bildschirme.home.homeGraph
 import de.tcmuckensturm.app.bildschirme.konto.KontoMannschaft
@@ -96,22 +113,52 @@ fun HauptTabsInhalt(
         containerColor = f.bg,
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
-            NavigationBar(containerColor = f.surf) {
-                for (tab in tabs) {
-                    val aktiv = ziel?.hierarchy?.any { it.hasRoute(tab.graph::class) } == true
-                    NavigationBarItem(
-                        selected = aktiv,
-                        onClick = { zuTab(tab) },
-                        icon = { Icon(tab.symbol, contentDescription = null) },
-                        label = { Text(tab.titel, style = TcmSchrift.text(Schrift.gewichtHalbfett, Schrift.klein)) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = f.navAktivInk,
-                            selectedTextColor = f.ink,
-                            indicatorColor = f.navAktiv,
-                            unselectedIconColor = f.muted,
-                            unselectedTextColor = f.muted,
-                        ),
-                    )
+            // Eine schwebende Pille; der aktive Tab hellblau mit blauer Schrift (docs/design/stitch).
+            val schatten = TcmTheme.schatten.schwebend
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .background(f.bg)
+                    .navigationBarsPadding()
+                    .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 10.dp),
+            ) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .shadow(schatten.elevation, CircleShape, ambientColor = schatten.farbe, spotColor = schatten.farbe)
+                        .background(f.surf, CircleShape)
+                        .border(1.dp, f.line, CircleShape)
+                        .padding(6.dp)
+                        .selectableGroup(),
+                ) {
+                    for (tab in tabs) {
+                        val aktiv = ziel?.hierarchy?.any { it.hasRoute(tab.graph::class) } == true
+                        val farbe = if (aktiv) f.navAktivInk else f.muted
+                        Column(
+                            Modifier
+                                .weight(1f)
+                                .heightIn(min = 56.dp)
+                                .clip(CircleShape)
+                                .background(if (aktiv) f.navAktiv else Color.Transparent)
+                                .selectable(selected = aktiv, role = Role.Tab) { zuTab(tab) }
+                                .padding(vertical = 6.dp, horizontal = 2.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+                        ) {
+                            Icon(tab.symbol, contentDescription = null, tint = farbe, modifier = Modifier.size(22.dp))
+                            // Feste Flaeche: die Beschriftung waechst nur bis 120 % mit.
+                            GedeckelteSchrift {
+                                Text(
+                                    tab.titel.uppercase(),
+                                    // Mit fuenf Tabs (Verwaltung) enger, damit nichts abgeschnitten wird.
+                                    style = TcmSchrift.display(Schrift.gewichtFett, if (tabs.size > 4) 9.5.sp else 10.5.sp, if (tabs.size > 4) 0.em else 0.04.em),
+                                    color = farbe,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                    }
                 }
             }
         },

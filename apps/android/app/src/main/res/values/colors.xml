@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- brand aus packages/ui/src/tokens.ts (wie Markenblau in der iOS-App) -->
+    <!-- brand aus packages/ui/src/tokens.ts (Launcher-Icon) -->
     <color name="markenblau">#1466A8</color>
+    <!-- bg aus den Tokens: der Grund, bis Compose zeichnet (docs/design/stitch: weiss) -->
+    <color name="startgrund">#FFFFFF</color>
 </resources>

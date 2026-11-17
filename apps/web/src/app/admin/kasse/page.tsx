@@ -188,9 +188,9 @@ export default async function KasseSeite({
   const naechste = todos[0];
   const einziehbar = gruppen.some((g) => g.anzahl > 0);
   const hauptaktion = einziehbar ? (
-    <Link className="knopf gold" href="/admin/kasse/einzug">Einzug vorbereiten</Link>
+    <Link className="knopf haupt" href="/admin/kasse/einzug">Einzug vorbereiten</Link>
   ) : naechste ? (
-    <Link className="knopf gold" href={naechste.href}>{naechste.action}</Link>
+    <Link className="knopf haupt" href={naechste.href}>{naechste.action}</Link>
   ) : null;
 
   return (
@@ -549,7 +549,7 @@ function Jahresbeitraege({
             <p>Als Nächstes: Einzug vorbereiten. Dort legst du den Abbuchungstag fest, und die Mitglieder bekommen ihre Ankündigung.</p>
           </div>
           <Link
-            className="knopf gold"
+            className="knopf haupt"
             href={`/admin/kasse/einzug?gruppe=${encodeURIComponent(
               einzugGruppeSchluessel({ kind: "fee", period_label: String(jahr), ruecklaeufer: false }),
             )}`}

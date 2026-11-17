@@ -272,7 +272,7 @@ export function GetraenkFormular({
       )}
       <button
         type="button"
-        className="knopf gold block gross"
+        className="knopf haupt block gross"
         disabled={laeuft || form.name.trim() === "" || (neu && form.preis.trim() === "")}
         onClick={speichern}
       >

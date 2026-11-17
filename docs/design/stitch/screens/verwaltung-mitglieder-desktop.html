@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280, initial-scale=1.0">
+  <title>TC Muckensturm - Mitgliederverwaltung</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              blue: '#1466A8',
+              'blue-light': '#E8F1F8',
+              yellow: '#FFD21F',
+              red: '#C4433A',
+              dark: '#0A1624',
+            }
+          },
+          fontFamily: {
+            heading: ['"Space Grotesk"', 'sans-serif'],
+            sans: ['"DM Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 20px;
+    }
+    body {
+      color: #0A1624;
+      font-family: 'DM Sans', sans-serif;
+      background-color: #ffffff;
+      -webkit-font-smoothing: antialiased;
+    }
+    .font-space {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    /* Hide scrollbars for chips list */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="h-full bg-white text-brand-dark flex flex-row overflow-hidden w-[1280px] mx-auto min-h-screen">
+
+  <!-- ==================== FESTE SEITENLEISTE (240px) ==================== -->
+  <aside class="w-[240px] flex-shrink-0 h-screen bg-white border-r border-slate-200 flex flex-col justify-between p-4 z-20 select-none">
+    <div class="flex flex-col gap-5 overflow-y-auto no-scrollbar">
+      
+      <!-- Wortmarke -->
+      <div class="pt-2 px-2 flex items-center justify-between">
+        <div>
+          <span class="text-[11px] font-bold tracking-widest text-slate-400 block font-space uppercase">Tennisclub</span>
+          <h1 class="text-[17px] font-bold tracking-tight text-brand-dark font-space">TC MUCKENSTURM</h1>
+        </div>
+      </div>
+
+      <!-- Gelber Buchen-Knopf -->
+      <div class="px-1">
+        <button class="w-full bg-[#FFD21F] hover:bg-[#f5c713] text-[#0A1624] font-space font-semibold text-[14px] py-2.5 px-4 rounded-full flex items-center justify-center gap-2 shadow-sm transition-all duration-150">
+          <span class="material-symbols-outlined text-[18px]">add_circle</span>
+          Platz buchen
+        </button>
+      </div>
+
+      <!-- Hauptmenü -->
+      <nav class="flex flex-col gap-0.5 text-[14px]">
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-full text-slate-600 hover:text-brand-dark hover:bg-slate-50 transition-colors font-medium">
+          <span class="material-symbols-outlined text-slate-400">home</span>
+          <span>Start</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-full text-slate-600 hover:text-brand-dark hover:bg-slate-50 transition-colors font-medium">
+          <span class="material-symbols-outlined text-slate-400">sports_tennis</span>
+          <span>Plätze</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-full text-slate-600 hover:text-brand-dark hover:bg-slate-50 transition-colors font-medium">
+          <span class="material-symbols-outlined text-slate-400">groups</span>
+          <span>Verein</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-full text-slate-600 hover:text-brand-dark hover:bg-slate-50 transition-colors font-medium">
+          <span class="material-symbols-outlined text-slate-400">person</span>
+          <span>Konto</span>
+        </a>
+      </nav>
+
+      <!-- Bereich Verwaltung -->
+      <div class="pt-2 flex flex-col gap-1 border-t border-slate-100">
+        <div class="px-3 pb-1 pt-2">
+          <span class="text-[11px] font-bold tracking-widest text-slate-400 uppercase font-space">VERWALTUNG</span>
+        </div>
+        <nav class="flex flex-col gap-0.5 text-[13.5px]">
+          <a href="#" class="flex items-center gap-3 px-3 py-1.5 rounded-full text-slate-600 hover:text-brand-dark hover:bg-slate-50 transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">dashboard</span>
+            <span>Übersicht</span>
+          </a>
+          <!-- Aktiver Punkt: Mitglieder -->
+          <a href="#" class="flex items-center justify-between px-3 py-1.5 rounded-full bg-[#E8F1F8] text-[#1466A8] font-semibold transition-colors">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-[18px] text-[#1466A8]">badge</span>
+              <span>Mitglieder</span>
+            </div>
+            <span class="bg-[#1466A8] text-white text-[11px] font-space font-semibold px-2 py-0.5 rounded-full">3</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-1.5 rounded-full text-slate-600 hover:text-brand-dark hover:bg-slate-50 transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">event</span>
+            <span>Veranstaltungen</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-1.5 rounded-full text-slate-600 hover:text-brand-dark hover:bg-slate-50 transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">handyman</span>
+            <span>Arbeitsdienst</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-1.5 rounded-full text-slate-600 hover:text-brand-dark hover:bg-slate-50 transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">payments</span>
+            <span>Kasse</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-1.5 rounded-full text-slate-600 hover:text-brand-dark hover:bg-slate-50 transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">calendar_month</span>
+            <span>Plätze &amp; Serien</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-1.5 rounded-full text-slate-600 hover:text-brand-dark hover:bg-slate-50 transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">local_bar</span>
+            <span>Getränke</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-1.5 rounded-full text-slate-600 hover:text-brand-dark hover:bg-slate-50 transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">settings</span>
+            <span>System</span>
+          </a>
+        </nav>
+      </div>
+
+    </div>
+
+    <!-- Nutzerkarte unten -->
+    <div class="pt-3 border-t border-slate-200">
+      <div class="p-2.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-8 h-8 rounded-full bg-[#1466A8] text-white flex items-center justify-center font-space text-[12px] font-bold flex-shrink-0">
+            AB
+          </div>
+          <div class="truncate">
+            <div class="text-[13px] font-semibold text-brand-dark truncate leading-tight">Anna Berger</div>
+            <div class="text-[11px] text-slate-500 truncate leading-tight">Vorstand</div>
+          </div>
+        </div>
+        <button title="Abmelden" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg transition-colors flex-shrink-0">
+          <span class="material-symbols-outlined text-[18px]">logout</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== HAUPTINHALTSBEREICH (1040px) ==================== -->
+  <main class="flex-1 flex flex-col h-screen overflow-hidden bg-white">
+    
+    <!-- Top Header Bar -->
+    <header class="h-[76px] px-8 border-b border-slate-200 flex items-center justify-between flex-shrink-0 bg-white">
+      <div>
+        <div class="text-[11px] font-bold tracking-widest text-slate-400 uppercase font-space">VERWALTUNG</div>
+        <h2 class="text-[28px] font-bold tracking-tight text-brand-dark font-space leading-tight">Mitglieder</h2>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Segmentschalter -->
+        <div class="bg-slate-100 p-1 rounded-full flex items-center gap-1 border border-slate-200/70 text-[13px] font-space font-medium">
+          <button class="px-4 py-1 rounded-full bg-white text-brand-dark shadow-xs font-semibold">Alle</button>
+          <button class="px-4 py-1 rounded-full text-slate-600 hover:text-brand-dark transition-colors flex items-center gap-1.5">
+            Anträge
+            <span class="bg-[#1466A8] text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">3</span>
+          </button>
+          <button class="px-4 py-1 rounded-full text-slate-600 hover:text-brand-dark transition-colors">Mannschaften</button>
+        </div>
+
+        <!-- Hauptaktion -->
+        <button class="bg-[#1466A8] hover:bg-[#105287] text-white font-space font-semibold text-[13.5px] px-4 py-2 rounded-full flex items-center gap-2 shadow-sm transition-all duration-150">
+          <span class="material-symbols-outlined text-[18px]">person_add</span>
+          Mitglied anlegen
+        </button>
+      </div>
+    </header>
+
+    <!-- Zweispaltiges Layout -->
+    <div class="flex-1 flex flex-row overflow-hidden">
+      
+      <!-- ==================== LINKE SPALTE: LISTE (ca. 400px) ==================== -->
+      <section class="w-[410px] flex-shrink-0 border-r border-slate-200 flex flex-col h-full bg-white">
+        
+        <!-- Filter & Suchbereich oben -->
+        <div class="p-4 border-b border-slate-200 flex flex-col gap-3 flex-shrink-0 bg-white">
+          <!-- Suchfeld -->
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+            <input type="text" placeholder="Name suchen..." value="" class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-[16px] text-[13.5px] text-brand-dark placeholder-slate-400 focus:outline-none focus:border-[#1466A8] focus:bg-white transition-all">
+          </div>
+
+          <!-- Waagerechte Filterchips -->
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            <button class="px-3 py-1 rounded-full bg-[#1466A8] text-white font-space text-[12px] font-semibold flex-shrink-0">Alle</button>
+            <button class="px-3 py-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200/80 font-space text-[12px] font-medium flex-shrink-0 transition-colors">Aktiv</button>
+            <button class="px-3 py-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200/80 font-space text-[12px] font-medium flex-shrink-0 transition-colors">Jugend</button>
+            <button class="px-3 py-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200/80 font-space text-[12px] font-medium flex-shrink-0 transition-colors">Passiv</button>
+            <button class="px-3 py-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200/80 font-space text-[12px] font-medium flex-shrink-0 transition-colors">Ohne Mandat</button>
+            <button class="px-3 py-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200/80 font-space text-[12px] font-medium flex-shrink-0 transition-colors">Onboarding offen</button>
+          </div>
+        </div>
+
+        <!-- Meta Label & Zähler -->
+        <div class="px-4 py-2 bg-slate-50/70 border-b border-slate-100 flex items-center justify-between text-[11px] font-bold text-slate-400 font-space uppercase flex-shrink-0">
+          <span>312 MITGLIEDER · A–Z</span>
+          <span>SEITE 1 VON 32</span>
+        </div>
+
+        <!-- Mitgliederliste (Listenkarte mit Haarlinien) -->
+        <div class="flex-1 overflow-y-auto no-scrollbar">
+          <div class="divide-y divide-slate-100">
+            
+            <!-- Zeile 1: Bauer, Thomas -->
+            <div class="p-3.5 px-4 hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between group">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center font-space text-[12px] font-bold flex-shrink-0">
+                  TB
+                </div>
+                <div class="truncate">
+                  <div class="text-[13.5px] font-semibold text-brand-dark truncate leading-snug">Bauer, Thomas</div>
+                  <div class="text-[12px] text-slate-500 truncate">Erwachsener · Herren 30</div>
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-slate-300 group-hover:text-slate-500 text-[18px]">chevron_right</span>
+            </div>
+
+            <!-- Zeile 2: Berger, Anna (AUSGEWÄHLT, HELLBLAU) -->
+            <div class="p-3.5 px-4 bg-[#E8F1F8] border-l-4 border-[#1466A8] transition-colors cursor-pointer flex items-center justify-between">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-full bg-[#1466A8] text-white flex items-center justify-center font-space text-[12px] font-bold flex-shrink-0 shadow-xs">
+                  AB
+                </div>
+                <div class="truncate">
+                  <div class="text-[13.5px] font-bold text-[#1466A8] truncate leading-snug flex items-center gap-1.5">
+                    Berger, Anna
+                    <span class="bg-white/80 text-[#1466A8] text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase font-space">Du</span>
+                  </div>
+                  <div class="text-[12px] text-[#1466A8]/80 truncate font-medium">Erwachsener · Damen 40 · Vorstand</div>
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-[#1466A8] text-[20px]">check_circle</span>
+            </div>
+
+            <!-- Zeile 3: Brandt, Julia (Chip kein Mandat) -->
+            <div class="p-3.5 px-4 hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between group">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center font-space text-[12px] font-bold flex-shrink-0">
+                  JB
+                </div>
+                <div class="truncate">
+                  <div class="text-[13.5px] font-semibold text-brand-dark truncate leading-snug">Brandt, Julia</div>
+                  <div class="text-[12px] text-slate-500 truncate">Student</div>
+                </div>
+              </div>
+              <span class="bg-amber-50 text-amber-700 border border-amber-200 text-[10.5px] font-space font-medium px-2 py-0.5 rounded-full flex-shrink-0">
+                kein Mandat
+              </span>
+            </div>
+
+            <!-- Zeile 4: Hauser, Monika (Chip Einladung ausstehend) -->
+            <div class="p-3.5 px-4 hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between group">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center font-space text-[12px] font-bold flex-shrink-0">
+                  MH
+                </div>
+                <div class="truncate">
+                  <div class="text-[13.5px] font-semibold text-brand-dark truncate leading-snug">Hauser, Monika</div>
+                  <div class="text-[12px] text-slate-500 truncate">Erwachsener Passiv</div>
+                </div>
+              </div>
+              <span class="bg-slate-100 text-slate-600 border border-slate-200 text-[10.5px] font-space font-medium px-2 py-0.5 rounded-full flex-shrink-0">
+                Einladung ausstehend
+              </span>
+            </div>
+
+            <!-- Zeile 5: Keller, Martin (Chip 48,00 € offen) -->
+            <div class="p-3.5 px-4 hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between group">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center font-space text-[12px] font-bold flex-shrink-0">
+                  MK
+                </div>
+                <div class="truncate">
+                  <div class="text-[13.5px] font-semibold text-brand-dark truncate leading-snug">Keller, Martin</div>
+                  <div class="text-[12px] text-slate-500 truncate">Erwachsener · Herren 40</div>
+                </div>
+              </div>
+              <span class="bg-rose-50 text-[#C4433A] border border-rose-200 text-[10.5px] font-space font-semibold px-2 py-0.5 rounded-full flex-shrink-0">
+                48,00 € offen
+              </span>
+            </div>
+
+            <!-- Zeile 6: Lang, Petra -->
+            <div class="p-3.5 px-4 hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between group">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center font-space text-[12px] font-bold flex-shrink-0">
+                  PL
+                </div>
+                <div class="truncate">
+                  <div class="text-[13.5px] font-semibold text-brand-dark truncate leading-snug">Lang, Petra</div>
+                  <div class="text-[12px] text-slate-500 truncate">Erwachsener · Damen 40</div>
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-slate-300 group-hover:text-slate-500 text-[18px]">chevron_right</span>
+            </div>
+
+            <!-- Zeile 7: Lorenz, Eva -->
+            <div class="p-3.5 px-4 hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between group">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center font-space text-[12px] font-bold flex-shrink-0">
+                  EL
+                </div>
+                <div class="truncate">
+                  <div class="text-[13.5px] font-semibold text-brand-dark truncate leading-snug">Lorenz, Eva</div>
+                  <div class="text-[12px] text-slate-500 truncate">Erwachsener · Damen 30</div>
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-slate-300 group-hover:text-slate-500 text-[18px]">chevron_right</span>
+            </div>
+
+            <!-- Zeile 8: Roth, Sabine -->
+            <div class="p-3.5 px-4 hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between group">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center font-space text-[12px] font-bold flex-shrink-0">
+                  SR
+                </div>
+                <div class="truncate">
+                  <div class="text-[13.5px] font-semibold text-brand-dark truncate leading-snug">Roth, Sabine</div>
+                  <div class="text-[12px] text-slate-500 truncate">Erwachsener · Damen 40</div>
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-slate-300 group-hover:text-slate-500 text-[18px]">chevron_right</span>
+            </div>
+
+            <!-- Zeile 9: Weber, Jonas -->
+            <div class="p-3.5 px-4 hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between group">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center font-space text-[12px] font-bold flex-shrink-0">
+                  JW
+                </div>
+                <div class="truncate">
+                  <div class="text-[13.5px] font-semibold text-brand-dark truncate leading-snug">Weber, Jonas</div>
+                  <div class="text-[12px] text-slate-500 truncate">Erwachsener · Herren</div>
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-slate-300 group-hover:text-slate-500 text-[18px]">chevron_right</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Paginierung unten -->
+        <div class="p-3 px-4 border-t border-slate-200 flex items-center justify-between flex-shrink-0 bg-white">
+          <button class="px-3.5 py-1.5 rounded-full border border-slate-200 text-slate-400 font-space text-[12px] font-medium cursor-not-allowed">
+            Zurück
+          </button>
+          <span class="text-[12px] text-slate-400 font-space">1 – 9 von 312</span>
+          <button class="px-3.5 py-1.5 rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50 font-space text-[12px] font-medium transition-colors">
+            Weiter
+          </button>
+        </div>
+      </section>
+
+      <!-- ==================== RECHTE SPALTE: DETAILANSICHT (ca. 630px) ==================== -->
+      <section class="flex-1 flex flex-col h-full overflow-y-auto no-scrollbar p-8 bg-white">
+        
+        <!-- Kopfbereich des gewählten Mitglieds -->
+        <div class="flex items-start justify-between pb-6 border-b border-slate-200">
+          <div class="flex items-center gap-4">
+            <!-- Großer Avatar AB -->
+            <div class="w-16 h-16 rounded-full bg-[#1466A8] text-white flex items-center justify-center font-space text-[22px] font-bold shadow-xs">
+              AB
+            </div>
+            <div>
+              <div class="flex items-center gap-3">
+                <h3 class="text-[26px] font-bold text-brand-dark font-space leading-tight">Anna Berger</h3>
+                <span class="bg-[#E8F1F8] text-[#1466A8] font-space text-[12px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#1466A8]"></span>
+                  App-Zugang aktiv
+                </span>
+              </div>
+              <div class="text-[13px] text-slate-500 mt-0.5 font-space">
+                Nr. 1042 · Mitglied seit 03.04.2019 · LK 14,2
+              </div>
+            </div>
+          </div>
+
+          <!-- Aktionsbuttons oben rechts -->
+          <div class="flex items-center gap-2">
+            <button class="px-3.5 py-1.5 rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50 font-space text-[13px] font-medium flex items-center gap-1.5 transition-colors">
+              <span class="material-symbols-outlined text-[17px] text-slate-400">call</span>
+              Anrufen
+            </button>
+            <button class="px-3.5 py-1.5 rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50 font-space text-[13px] font-medium flex items-center gap-1.5 transition-colors">
+              <span class="material-symbols-outlined text-[17px] text-slate-400">mail</span>
+              E-Mail
+            </button>
+            <button class="px-4 py-1.5 rounded-full bg-[#1466A8] hover:bg-[#105287] text-white font-space text-[13px] font-semibold flex items-center gap-1.5 shadow-xs transition-colors">
+              <span class="material-symbols-outlined text-[17px]">edit</span>
+              Bearbeiten
+            </button>
+          </div>
+        </div>
+
+        <!-- 2x2 Kacheln / Karten (16-24px Radius mit 1px Slate-200 Rand) -->
+        <div class="grid grid-cols-2 gap-5 pt-6">
+
+          <!-- Kachel 1: Mitgliedschaft -->
+          <div class="p-5 rounded-[20px] border border-slate-200 bg-white shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <span class="text-[11px] font-bold tracking-widest text-slate-400 font-space uppercase">MITGLIEDSCHAFT</span>
+                <span class="material-symbols-outlined text-slate-400 text-[18px]">verified</span>
+              </div>
+              <div class="divide-y divide-slate-100 text-[13.5px]">
+                <div class="py-2.5 flex items-center justify-between">
+                  <span class="text-slate-500">Beitragsart</span>
+                  <span class="font-semibold text-brand-dark font-space">Erwachsener (180,00 €/J.)</span>
+                </div>
+                <div class="py-2.5 flex items-center justify-between">
+                  <span class="text-slate-500">Funktion / Rollen</span>
+                  <span class="font-semibold text-brand-dark bg-slate-100 px-2 py-0.5 rounded-md text-[12px] font-space">Vorstand</span>
+                </div>
+                <div class="py-2.5 flex items-center justify-between">
+                  <span class="text-slate-500">Mannschaft</span>
+                  <span class="font-semibold text-brand-dark font-space">Damen 40 (MF)</span>
+                </div>
+              </div>
+            </div>
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-[12.5px] text-[#1466A8] font-space font-medium cursor-pointer hover:underline">
+              <span>Mannschaft &amp; Spielberechtigung ansehen</span>
+              <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+            </div>
+          </div>
+
+          <!-- Kachel 2: Geld & Finanzen -->
+          <div class="p-5 rounded-[20px] border border-slate-200 bg-white shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <span class="text-[11px] font-bold tracking-widest text-slate-400 font-space uppercase">GELD &amp; ABRECHNUNG</span>
+                <span class="text-[13px] font-bold text-[#1466A8] bg-[#E8F1F8] px-2 py-0.5 rounded-full font-space">192,50 € offen</span>
+              </div>
+              <div class="divide-y divide-slate-100 text-[13.5px]">
+                <div class="py-2.5 flex items-center justify-between">
+                  <span class="text-slate-500">Status Lastschrift</span>
+                  <span class="font-semibold text-emerald-700 flex items-center gap-1 font-space text-[12.5px]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                    SEPA-Mandat aktiv
+                  </span>
+                </div>
+                <div class="py-2.5 flex items-center justify-between">
+                  <span class="text-slate-500">Bankverbindung</span>
+                  <span class="font-semibold text-brand-dark font-space">Sparkasse •••• 1234</span>
+                </div>
+                <div class="py-2.5 flex items-center justify-between">
+                  <span class="text-slate-500">Nächster Einzug</span>
+                  <span class="font-medium text-slate-700 font-space">01.12.2026 (Beitrag + Getränke)</span>
+                </div>
+              </div>
+            </div>
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-[12.5px] text-[#1466A8] font-space font-medium cursor-pointer hover:underline">
+              <span>Buchungs- &amp; Verzehrprotokoll</span>
+              <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+            </div>
+          </div>
+
+          <!-- Kachel 3: Kontakt & Daten -->
+          <div class="p-5 rounded-[20px] border border-slate-200 bg-white shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <span class="text-[11px] font-bold tracking-widest text-slate-400 font-space uppercase">KONTAKT &amp; DATEN</span>
+                <span class="material-symbols-outlined text-slate-400 text-[18px]">contact_mail</span>
+              </div>
+              <div class="divide-y divide-slate-100 text-[13.5px]">
+                <div class="py-2.5 flex items-center justify-between">
+                  <span class="text-slate-500">E-Mail &amp; Telefon</span>
+                  <span class="font-medium text-brand-dark font-space">anna.berger@beispiel.de · 0171...</span>
+                </div>
+                <div class="py-2.5 flex items-center justify-between">
+                  <span class="text-slate-500">Adresse</span>
+                  <span class="font-medium text-brand-dark">Lindenweg 12, 68519 Viernheim</span>
+                </div>
+                <div class="py-2.5 flex items-center justify-between">
+                  <span class="text-slate-500">Einwilligungen</span>
+                  <span class="font-semibold text-slate-700 font-space text-[12.5px]">2 von 4 erteilt</span>
+                </div>
+              </div>
+            </div>
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-[12.5px] text-[#1466A8] font-space font-medium cursor-pointer hover:underline">
+              <span>Stammdaten &amp; Einwilligungen öffnen</span>
+              <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+            </div>
+          </div>
+
+          <!-- Kachel 4: Arbeitsdienst 2026 -->
+          <div class="p-5 rounded-[20px] border border-slate-200 bg-white shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <span class="text-[11px] font-bold tracking-widest text-slate-400 font-space uppercase">ARBEITSDIENST 2026</span>
+                <span class="text-[12px] font-semibold text-slate-500 font-space">Saison aktiv</span>
+              </div>
+              <div class="py-2.5">
+                <div class="flex items-baseline justify-between mb-1.5">
+                  <div class="text-[26px] font-bold font-space text-brand-dark">3 <span class="text-[18px] font-medium text-slate-400">/ 6 h</span></div>
+                  <span class="text-[12px] text-slate-500 font-medium">50 % erfüllt</span>
+                </div>
+                <!-- Fortschrittsbalken -->
+                <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="bg-[#1466A8] h-full rounded-full w-1/2"></div>
+                </div>
+                <p class="text-[11.5px] text-slate-500 mt-2 leading-relaxed">
+                  Offene Stunden werden zum Jahresende mit 20 €/h als Ausgleichsbetrag abgerechnet.
+                </p>
+              </div>
+            </div>
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <button class="px-3.5 py-1.5 rounded-full border border-slate-200 hover:bg-slate-50 text-brand-dark font-space text-[12px] font-semibold transition-colors flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-slate-500">add</span>
+                Stunden eintragen
+              </button>
+              <div class="flex items-center text-[12.5px] text-[#1466A8] font-space font-medium cursor-pointer hover:underline">
+                <span>Einsätze (2)</span>
+                <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Fußzeile mit Aktionen / Textlinks -->
+        <div class="mt-8 pt-6 border-t border-slate-200 flex items-center justify-between text-[13px] font-space">
+          <div class="flex items-center gap-6">
+            <button class="text-slate-500 hover:text-brand-dark flex items-center gap-1.5 transition-colors">
+              <span class="material-symbols-outlined text-[18px]">history</span>
+              Änderungsprotokoll
+            </button>
+            <button class="text-slate-500 hover:text-brand-dark flex items-center gap-1.5 transition-colors">
+              <span class="material-symbols-outlined text-[18px]">block</span>
+              Zugang sperren
+            </button>
+          </div>
+
+          <!-- Roter Textlink Austritt eintragen -->
+          <button class="text-[#C4433A] hover:text-[#a3322a] font-semibold flex items-center gap-1.5 transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-[#C4433A]">person_remove</span>
+            Austritt eintragen
+          </button>
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+</body>
+</html>
+

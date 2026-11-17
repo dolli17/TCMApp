@@ -30,21 +30,20 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -61,13 +60,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
@@ -75,11 +72,13 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
+import de.tcmuckensturm.app.bildschirme.Fehlerzustand
 import de.tcmuckensturm.app.bildschirme.Kicker
+import de.tcmuckensturm.app.bildschirme.Knopf
+import de.tcmuckensturm.app.bildschirme.Knopfstufe
 import de.tcmuckensturm.app.bildschirme.Kopfzeile
 import de.tcmuckensturm.app.bildschirme.Leerzustand
 import de.tcmuckensturm.app.bildschirme.Leise
-import de.tcmuckensturm.app.bildschirme.grosseSchrift
 import de.tcmuckensturm.app.bildschirme.karte
 import de.tcmuckensturm.app.daten.EigenesGetraenk
 import de.tcmuckensturm.app.daten.Getraenk
@@ -320,7 +319,9 @@ fun GetraenkeSeite(
                 verticalArrangement = Arrangement.spacedBy(Abstand.m),
             ) {
                 kopf()
-                stand.fehler?.let { Fehlerzeile(it, stand.aktualisiert, aktionen.nachladen) }
+                stand.fehler?.let {
+                    if (inhalt == null) Fehlerzustand(it, stand.aktualisiert, erneut = aktionen.nachladen) else Fehlerzeile(it, stand.aktualisiert, aktionen.nachladen)
+                }
                 if (stand.laedt && inhalt == null) {
                     Box(Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = f.muted)
@@ -371,81 +372,71 @@ private fun Monatskarte(buchungen: List<EigenesGetraenk>, jetzt: Instant) {
     val f = TcmTheme.farben
     val summe = Geld.formatCents(Startseite.sumOpenDrinks(buchungen))
     val aktive = buchungen.count { it.voidedAt == null }
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(Radius.karteGross))
-            .background(f.brand),
-    ) {
-        Platzlinien(Modifier.matchParentSize())
-        Column(Modifier.padding(20.dp)) {
-            Kicker(VereinLogik.monatKicker(jetzt), farbe = f.onBrand.copy(alpha = 0.85f))
-            Text(
-                summe,
-                style = TcmSchrift.display(Schrift.gewichtFett, 44.sp),
-                color = f.onBrand,
-                modifier = Modifier.padding(top = 8.dp).semantics { contentDescription = "Summe diesen Monat: $summe" },
-            )
-            Text(
-                VereinLogik.entnahmenText(aktive),
-                style = TcmSchrift.text(Schrift.gewichtNormal, 14.sp),
-                color = f.onBrand.copy(alpha = 0.9f),
-                modifier = Modifier.padding(top = 8.dp),
-            )
+    Column(Modifier.fillMaxWidth().karte(padding = 22.dp, radius = Radius.karteGross)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.size(8.dp).background(f.blue, CircleShape))
+            Kicker(VereinLogik.monatKicker(jetzt))
         }
+        Text(
+            summe,
+            style = TcmSchrift.display(Schrift.gewichtFett, Schrift.hero, (-1).sp).copy(fontFeatureSettings = "tnum"),
+            color = f.ink,
+            modifier = Modifier.padding(top = 6.dp).semantics { contentDescription = "Summe diesen Monat: $summe" },
+        )
+        Text(
+            VereinLogik.entnahmenText(aktive),
+            style = TcmSchrift.text(Schrift.gewichtNormal, 14.sp),
+            color = f.muted,
+            modifier = Modifier.padding(top = 6.dp),
+        )
     }
 }
 
 // ---- Die Karte -------------------------------------------------------------------
 
+/** Die Getraenkekarte als Liste: eine Zeile je Artikel, Gewaehltes hellblau hinterlegt. */
 @Composable
 private fun Karte(karte: List<Getraenk>, korb: Getraenkekorb, laeuft: Boolean, aendern: (String, Int) -> Unit) {
-    // Bei grosser Schrift eine Kachel je Zeile.
-    val spalten = if (grosseSchrift(1.5f)) 1 else 2
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        for (zeile in karte.chunked(spalten)) {
-            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                for (a in zeile) Kachel(a, korb[a.id] ?: 0, laeuft, aendern, Modifier.weight(1f))
-                if (zeile.size < spalten) Spacer(Modifier.weight(1f))
-            }
+    val f = TcmTheme.farben
+    Column(Modifier.fillMaxWidth().karte(padding = 0.dp).clip(RoundedCornerShape(Radius.karte))) {
+        karte.forEachIndexed { i, a ->
+            if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(f.line))
+            Kachel(a, korb[a.id] ?: 0, laeuft, aendern)
         }
     }
 }
 
 @Composable
-private fun Kachel(a: Getraenk, menge: Int, laeuft: Boolean, aendern: (String, Int) -> Unit, modifier: Modifier) {
+private fun Kachel(a: Getraenk, menge: Int, laeuft: Boolean, aendern: (String, Int) -> Unit) {
     val f = TcmTheme.farben
     val name = a.name ?: ""
-    val form = RoundedCornerShape(Radius.karte)
-    Column(
-        modifier
-            .fillMaxSize()
-            .heightIn(min = 124.dp)
-            .clip(form)
-            .background(f.surf)
-            .border(if (menge > 0) 2.dp else 1.dp, if (menge > 0) f.goldLine else f.line, form)
-            .padding(14.dp),
+    val gewaehlt = menge > 0
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(if (gewaehlt) f.blueSoft else Color.Transparent)
+            .padding(start = 18.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(name, style = TcmSchrift.text(Schrift.gewichtFett, 17.sp), color = f.ink)
-        Text(VereinLogik.artikelZeile(a), style = TcmSchrift.text(Schrift.gewichtNormal, 13.5.sp), color = f.muted)
-        Spacer(Modifier.weight(1f).heightIn(min = 10.dp))
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (menge > 0) {
-                Zaehlknopf(plus = false, beschriftung = "$name: eins weniger", aus = laeuft) { aendern(a.id, -1) }
-                Zaehlerstand(menge, "$menge gewählt, noch nicht eingetragen")
-            }
-            // Gelb erst, wenn schon etwas gesammelt ist (U43).
-            Zaehlknopf(
-                plus = true,
-                beschriftung = "$name: eins mehr",
-                gelb = menge > 0,
-                aus = laeuft || menge >= Getraenke.MAX_MENGE,
-            ) { aendern(a.id, 1) }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(name, style = TcmSchrift.display(Schrift.gewichtHalbfett, 16.sp), color = if (gewaehlt) f.blueInk else f.ink)
+            Text(
+                VereinLogik.artikelZeile(a),
+                style = TcmSchrift.text(Schrift.gewichtNormal, 14.sp).copy(fontFeatureSettings = "tnum"),
+                color = if (gewaehlt) f.blueInk else f.muted,
+            )
         }
+        if (gewaehlt) {
+            Zaehlknopf(plus = false, beschriftung = "$name: eins weniger", aus = laeuft) { aendern(a.id, -1) }
+            Zaehlerstand(menge, "$menge gewählt, noch nicht eingetragen")
+        }
+        Zaehlknopf(
+            plus = true,
+            beschriftung = "$name: eins mehr",
+            betont = true,
+            aus = laeuft || menge >= Getraenke.MAX_MENGE,
+        ) { aendern(a.id, 1) }
     }
 }
 
@@ -481,7 +472,7 @@ private fun Entnahme(
     val f = TcmTheme.farben
     val zurueck = b.voidedAt != null
     val stornierbar = Getraenke.canVoidSelf(b.createdAt, b.voidedAt, fenster, jetzt)
-    val grund by animateColorAsState(if (markiert) f.goldSoft else Color.Transparent, label = "markiert")
+    val grund by animateColorAsState(if (markiert) f.blueSoft else Color.Transparent, label = "markiert")
     val strich = if (zurueck) TextDecoration.LineThrough else null
     Row(
         Modifier
@@ -495,7 +486,7 @@ private fun Entnahme(
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 VereinLogik.entnahmeTitel(b),
-                style = TcmSchrift.text(Schrift.gewichtHalbfett, 15.sp).copy(textDecoration = strich),
+                style = TcmSchrift.display(Schrift.gewichtHalbfett, 15.sp).copy(textDecoration = strich),
                 color = f.ink,
             )
             Text(VereinLogik.entnahmeZeile(b), style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.klein), color = f.muted)
@@ -506,7 +497,7 @@ private fun Entnahme(
                 enabled = !laeuft,
                 modifier = Modifier.heightIn(min = 44.dp).semantics { contentDescription = "${b.itemName ?: ""} zurücknehmen" },
             ) {
-                Text("Zurücknehmen", style = TcmSchrift.text(Schrift.gewichtFett, 14.sp), color = f.redInk.copy(alpha = if (laeuft) 0.5f else 1f))
+                Text("Zurücknehmen", style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp), color = f.blueInk.copy(alpha = if (laeuft) 0.5f else 1f))
             }
         }
         Text(
@@ -519,40 +510,37 @@ private fun Entnahme(
 
 // ---- Eintragen-Leiste ------------------------------------------------------------
 
-/** Unten ueber dem Inhalt: was im Korb liegt und "Eintragen". */
+/** Unten ueber dem Inhalt: was im Korb liegt und "Eintragen" - die eine Hauptaktion des Screens. */
 @Composable
 private fun Korbleiste(stueck: Int, betrag: Int, laeuft: Boolean, eintragen: () -> Unit) {
     val f = TcmTheme.farben
-    val form = RoundedCornerShape(24.dp)
+    val form = RoundedCornerShape(Radius.karteGross)
+    val schatten = TcmTheme.schatten.schwebend
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 68.dp)
-            .shadow(10.dp, form)
-            .clip(form)
-            .background(f.ink)
-            .padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+            .shadow(schatten.elevation, form, ambientColor = schatten.farbe, spotColor = schatten.farbe)
+            .background(f.surf, form)
+            .border(1.dp, f.line, form)
+            .padding(start = 22.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
-            Text(VereinLogik.korbZeile(stueck, betrag), style = TcmSchrift.text(Schrift.gewichtFett, 15.sp), color = f.bg)
-            Text("Noch nicht eingetragen", style = TcmSchrift.text(Schrift.gewichtFett, 13.sp), color = f.bg)
+        Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                VereinLogik.korbZeile(stueck, betrag),
+                style = TcmSchrift.display(Schrift.gewichtFett, 16.sp).copy(fontFeatureSettings = "tnum"),
+                color = f.ink,
+            )
+            Kicker("Noch nicht eingetragen")
         }
-        Surface(
-            onClick = eintragen,
-            enabled = !laeuft,
-            shape = RoundedCornerShape(18.dp),
-            color = f.gold,
-            modifier = Modifier.heightIn(min = 52.dp).alpha(if (laeuft) 0.6f else 1f),
-        ) {
-            Box(Modifier.padding(horizontal = 24.dp, vertical = 15.dp), contentAlignment = Alignment.Center) {
-                Text(
-                    if (laeuft) "Wird eingetragen …" else "Eintragen",
-                    style = TcmSchrift.text(Schrift.gewichtExtrafett, 16.sp, 0.em),
-                    color = f.onGold,
-                )
-            }
-        }
+        Knopf(
+            if (laeuft) "Wird eingetragen …" else "Eintragen",
+            stufe = Knopfstufe.HAUPT,
+            breit = false,
+            gesperrt = laeuft,
+            aktion = eintragen,
+        )
     }
 }

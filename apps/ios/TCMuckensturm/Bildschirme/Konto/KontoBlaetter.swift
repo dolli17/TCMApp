@@ -33,7 +33,7 @@ struct KontoBlattInhalt: View {
             case .einwilligungen: rollend { einwilligungen }
             case .bank: rollend { bank }
             case .passwort: PasswortAendern(zu: zu, gespeichert: gespeichert)
-            case .loeschen: rollend { KuendigungFormular(daten: daten) }
+            case .loeschen: KuendigungFormular(daten: daten, zu: zu)
             }
         }
         .background(Farbe.bg)
@@ -54,13 +54,7 @@ struct KontoBlattInhalt: View {
     }
 
     private func rollend<Inhalt: View>(@ViewBuilder _ inhalt: () -> Inhalt) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                BlattKopf(titel: titel, zu: zu)
-                inhalt()
-            }
-            .padding(Tokens.Abstand.rand)
-        }
+        KontoBlattGeruest(titel: titel, zu: zu) { inhalt() }
     }
 
     // MARK: - Meine Daten und Notfallkontakt
@@ -71,15 +65,16 @@ struct KontoBlattInhalt: View {
                 Stammdatenformular(
                     titel: titel,
                     erklaerung: "Änderungen sind sofort für den Verein sichtbar. E-Mail und Geburtsdatum ändert der Vorstand.",
-                    felder: [
-                        .init(name: "first_name", label: "Vorname", inhalt: .givenName, gross: .words),
-                        .init(name: "last_name", label: "Nachname", inhalt: .familyName, gross: .words),
-                        .init(name: "title", label: "Titel", inhalt: .namePrefix),
-                        .init(name: "phone", label: "Telefon", inhalt: .telephoneNumber, tastatur: .phonePad),
-                        .init(name: "mobile", label: "Mobil", inhalt: .telephoneNumber, tastatur: .phonePad),
-                        .init(name: "street", label: "Straße", inhalt: .streetAddressLine1, gross: .words),
-                        .init(name: "postcode", label: "PLZ", inhalt: .postalCode, tastatur: .numberPad),
-                        .init(name: "city", label: "Ort", inhalt: .addressCity, gross: .words),
+                    // Vor- und Nachname sowie PLZ und Ort stehen nebeneinander (Entwurf "Meine Daten").
+                    zeilen: [
+                        [.init(name: "first_name", label: "Vorname", inhalt: .givenName, gross: .words),
+                         .init(name: "last_name", label: "Nachname", inhalt: .familyName, gross: .words)],
+                        [.init(name: "title", label: "Titel", inhalt: .namePrefix)],
+                        [.init(name: "phone", label: "Telefon", inhalt: .telephoneNumber, tastatur: .phonePad)],
+                        [.init(name: "mobile", label: "Mobil", inhalt: .telephoneNumber, tastatur: .phonePad)],
+                        [.init(name: "street", label: "Straße", inhalt: .streetAddressLine1, gross: .words)],
+                        [.init(name: "postcode", label: "PLZ", inhalt: .postalCode, tastatur: .numberPad, anteil: 0.36),
+                         .init(name: "city", label: "Ort", inhalt: .addressCity, gross: .words)],
                     ],
                     werte: p.werte,
                     zu: zu,
@@ -90,10 +85,10 @@ struct KontoBlattInhalt: View {
                 Stammdatenformular(
                     titel: titel,
                     erklaerung: "Wen sollen wir anrufen, wenn auf der Anlage etwas passiert?",
-                    felder: [
-                        .init(name: "emergency_contact_name", label: "Name", inhalt: .name, gross: .words),
-                        .init(name: "emergency_contact_phone", label: "Telefon", inhalt: .telephoneNumber, tastatur: .phonePad),
-                        .init(name: "emergency_contact_relation", label: "Verhältnis"),
+                    zeilen: [
+                        [.init(name: "emergency_contact_name", label: "Name", inhalt: .name, gross: .words)],
+                        [.init(name: "emergency_contact_phone", label: "Telefon", inhalt: .telephoneNumber, tastatur: .phonePad)],
+                        [.init(name: "emergency_contact_relation", label: "Verhältnis")],
                     ],
                     werte: p.werte,
                     zu: zu,
@@ -123,6 +118,7 @@ struct KontoBlattInhalt: View {
             TennisFormular(
                 stand: inhalt?.tennis.wert ?? nil,
                 telefonSichtbar: telefonVorher,
+                mannschaft: (inhalt?.profil.wert ?? nil)?.teamName,
                 zu: zu,
                 speichern: { lk, nuliga, interesse, telefon in
                     let r = await Onboardingdaten(client: sitzung.client)
@@ -152,23 +148,25 @@ struct KontoBlattInhalt: View {
         if let f = inhalt?.mandat.fehler {
             Fehlerzeile(text: f, onErneut: erneut)
         } else if let m = inhalt?.mandat.wert ?? nil {
+            // Eine Karte mit Zeilen: links das Etikett, rechts der Wert (Entwurf "Bank und Mandat").
             VStack(spacing: 0) {
                 ForEach(Array(KontoLogik.mandatZeilen(m).enumerated()), id: \.offset) { i, zeile in
                     if i > 0 { KontoLinie() }
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
-                        Text(zeile.0).leise()
-                        Spacer(minLength: 12)
+                    HStack(alignment: .firstTextBaseline, spacing: 16) {
+                        Text(zeile.0).kicker()
+                        Spacer(minLength: 8)
                         Text(zeile.1)
-                            .font(Schrift.text(.halbfett, Tokens.Schrift.normal))
+                            .font(Schrift.text(.normal, 17))
+                            .monospacedDigit()
                             .foregroundStyle(Farbe.ink)
                             .multilineTextAlignment(.trailing)
                     }
-                    .padding(.vertical, 12)
-                    .padding(.horizontal, 16)
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, 20)
                     .accessibilityElement(children: .combine)
                 }
             }
-            .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
+            .karte(radius: Tokens.Radius.karte, padding: 0)
             Text("Die Bankverbindung ändert der Vorstand – schreib ihm, wenn sich etwas geändert hat.").leise()
         } else {
             Text("Es liegt noch kein SEPA-Mandat vor. Bitte wende dich an den Vorstand.")
@@ -191,11 +189,13 @@ private struct Stammdatenformular: View {
         var inhalt: UITextContentType?
         var tastatur: UIKeyboardType = .default
         var gross: TextInputAutocapitalization = .sentences
+        /// Anteil an der Zeilenbreite, wenn zwei Felder nebeneinander stehen (PLZ ist schmal).
+        var anteil: CGFloat?
     }
 
     let titel: String
     let erklaerung: String
-    let felder: [Feld]
+    let zeilen: [[Feld]]
     let werte: [String: String]
     let zu: () -> Void
     let speichern: ([String: String]) async -> Ergebnis
@@ -206,42 +206,54 @@ private struct Stammdatenformular: View {
     @State private var meldung: Ergebnis?
     @State private var laeuft = false
 
+    @Environment(\.dynamicTypeSize) private var textgroesse
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                BlattKopf(titel: titel, zu: zu)
-                Text(erklaerung).leise().fixedSize(horizontal: false, vertical: true)
-                if let meldung, fehlerFeld == nil {
-                    KontoHinweis(text: meldung.meldung, ok: meldung.ok)
-                }
-                ForEach(felder, id: \.name) { f in
-                    KontoFeld(
-                        label: f.label,
-                        text: Binding(
-                            get: { entwurf[f.name] ?? "" },
-                            set: {
-                                if fehlerFeld == f.name { fehlerFeld = nil }
-                                entwurf[f.name] = $0
+        KontoBlattGeruest(titel: titel, zu: zu) {
+            if let meldung, fehlerFeld == nil {
+                KontoHinweis(text: meldung.meldung, ok: meldung.ok)
+            }
+            VStack(alignment: .leading, spacing: 18) {
+                ForEach(Array(zeilen.enumerated()), id: \.offset) { _, zeile in
+                    // Bei grosser Schrift stehen auch die Paare untereinander.
+                    if zeile.count > 1 && textgroesse < .xxLarge {
+                        HStack(alignment: .top, spacing: 12) {
+                            ForEach(zeile, id: \.name) { f in
+                                if let anteil = f.anteil {
+                                    feld(f).containerRelativeFrame(.horizontal) { breite, _ in breite * anteil - 20 }
+                                } else {
+                                    feld(f)
+                                }
                             }
-                        ),
-                        fehler: fehlerFeld == f.name ? meldung?.meldung : nil,
-                        inhaltsTyp: f.inhalt,
-                        tastatur: f.tastatur,
-                        grossschreibung: f.gross
-                    )
+                        }
+                    } else {
+                        ForEach(zeile, id: \.name) { feld($0) }
+                    }
                 }
             }
-            .padding(Tokens.Abstand.rand)
-        }
-        .scrollDismissesKeyboard(.interactively)
-        .safeAreaInset(edge: .bottom) {
-            GelberKnopf(text: laeuft ? "Speichert…" : "Speichern", gesperrt: laeuft, aktion: absenden)
-                .padding(.horizontal, Tokens.Abstand.rand)
-                .padding(.vertical, Tokens.Abstand.s)
-                .background(Farbe.bg)
+            Text(erklaerung).leise().fixedSize(horizontal: false, vertical: true)
+        } fuss: {
+            Hauptknopf(text: laeuft ? "Speichert…" : "Speichern", gesperrt: laeuft, aktion: absenden)
         }
         // Der Entwurf startet beim gespeicherten Stand.
         .onAppear { entwurf = werte }
+    }
+
+    private func feld(_ f: Feld) -> some View {
+        KontoFeld(
+            label: f.label,
+            text: Binding(
+                get: { entwurf[f.name] ?? "" },
+                set: {
+                    if fehlerFeld == f.name { fehlerFeld = nil }
+                    entwurf[f.name] = $0
+                }
+            ),
+            fehler: fehlerFeld == f.name ? meldung?.meldung : nil,
+            inhaltsTyp: f.inhalt,
+            tastatur: f.tastatur,
+            grossschreibung: f.gross
+        )
     }
 
     private func absenden() {
@@ -270,6 +282,7 @@ private struct TennisFormular: View {
     let stand: OnboardingZustand.Tennis?
     /// nil ohne Mannschaft: dann fehlt der Schalter fuer die Telefonnummer.
     let telefonSichtbar: Bool?
+    var mannschaft: String?
     let zu: () -> Void
     let speichern: (String, String, Bool, Bool?) async -> Ergebnis
     let gespeichert: (String) -> Void
@@ -282,19 +295,36 @@ private struct TennisFormular: View {
     @State private var meldung: Ergebnis?
     @State private var laeuft = false
 
+    @Environment(\.zuMannschaft) private var zuMannschaft
+    @Environment(\.dynamicTypeSize) private var textgroesse
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                BlattKopf(titel: TennisLogik.titel, zu: zu)
-                Text(TennisLogik.lkWarum).leise().fixedSize(horizontal: false, vertical: true)
-                if let meldung, meldung.feld == nil {
-                    KontoHinweis(text: meldung.meldung, ok: meldung.ok)
+        let gespeicherteLk = TennisLogik.entwurf(stand).0
+        KontoBlattGeruest(titel: TennisLogik.titel, unterzeile: TennisLogik.lkWarum, zu: zu) {
+            if let meldung, meldung.feld == nil {
+                KontoHinweis(text: meldung.meldung, ok: meldung.ok)
+            }
+            // Der gespeicherte Stand gross (Entwurf "Tennis").
+            if !gespeicherteLk.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Aktuell").kicker()
+                    Text("LK \(gespeicherteLk)")
+                        .font(Schrift.display(.fett, 40, relativeTo: .largeTitle))
+                        .tracking(-1)
+                        .monospacedDigit()
+                        .foregroundStyle(Farbe.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .karte(radius: Tokens.Radius.karte, padding: 20)
+                .accessibilityElement(children: .combine)
+            }
+            let felder = Group {
                 KontoFeld(
                     label: LkEingabe.beschriftung,
                     text: Binding(get: { lk }, set: { lk = $0; feldGeaendert(TennisLogik.feldLk) }),
                     fehler: fehler(TennisLogik.feldLk),
-                    hinweis: LkEingabe.hinweis,
                     tastatur: .numbersAndPunctuation,
                     grossschreibung: .characters
                 )
@@ -304,27 +334,52 @@ private struct TennisFormular: View {
                     fehler: fehler(TennisLogik.feldNuliga),
                     grossschreibung: .never
                 )
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                if textgroesse >= .xxLarge {
+                    VStack(alignment: .leading, spacing: 18) { felder }
+                } else {
+                    HStack(alignment: .top, spacing: 12) { felder }
+                }
+                Text(LkEingabe.hinweis)
+                    .font(Schrift.text(.normal, Tokens.Schrift.klein, relativeTo: .footnote))
+                    .foregroundStyle(Farbe.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            OnboardingSchalter(label: TennisLogik.interesseLabel, an: $interesse, gesperrt: laeuft)
+                .padding(.horizontal, -16)
+            if telefonSichtbar != nil {
+                // Wer in einer Mannschaft ist: Name, Weg dorthin und der Telefon-Schalter in einer Karte.
                 KontoGruppe {
-                    OnboardingSchalter(label: TennisLogik.interesseLabel, an: $interesse, gesperrt: laeuft)
-                    if telefonSichtbar != nil {
-                        KontoLinie()
-                        OnboardingSchalter(
-                            label: MannschaftLogik.telefonLabel,
-                            beschreibung: MannschaftLogik.telefonBeschreibung,
-                            an: $telefon,
-                            gesperrt: laeuft
-                        )
+                    HStack(spacing: 12) {
+                        Text([MannschaftLogik.titel, mannschaft].compactMap { $0 }.joined(separator: ": "))
+                            .font(Schrift.display(.halbfett, 17))
+                            .foregroundStyle(Farbe.ink)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Button {
+                            zu()
+                            zuMannschaft()
+                        } label: {
+                            Text("Zur Mannschaft")
+                                .font(Schrift.display(.halbfett, 15))
+                                .foregroundStyle(Farbe.blueInk)
+                                .frame(minHeight: 44)
+                        }
+                        .buttonStyle(.plain)
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 6)
+                    KontoLinie()
+                    OnboardingSchalter(
+                        label: MannschaftLogik.telefonLabel,
+                        beschreibung: MannschaftLogik.telefonBeschreibung,
+                        an: $telefon,
+                        gesperrt: laeuft
+                    )
                 }
             }
-            .padding(Tokens.Abstand.rand)
-        }
-        .scrollDismissesKeyboard(.interactively)
-        .safeAreaInset(edge: .bottom) {
-            GelberKnopf(text: laeuft ? "Speichert…" : "Speichern", gesperrt: laeuft, aktion: absenden)
-                .padding(.horizontal, Tokens.Abstand.rand)
-                .padding(.vertical, Tokens.Abstand.s)
-                .background(Farbe.bg)
+        } fuss: {
+            Hauptknopf(text: laeuft ? "Speichert…" : "Speichern", gesperrt: laeuft, aktion: absenden)
         }
         // Der Entwurf startet beim gespeicherten Stand.
         .onAppear {
@@ -372,23 +427,70 @@ private struct Einwilligungen: View {
     @State private var laeuft = false
     @State private var meldung: Ergebnis?
     @State private var texte: [String: String] = [:]
+    @Environment(\.dynamicTypeSize) private var textgroesse
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Tokens.Abstand.s) {
-            Text("Was du hier setzt, kannst du jederzeit wieder zurücknehmen.").leise()
+        VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
+            Text("Was du hier setzt, kannst du jederzeit wieder zurücknehmen.")
+                .font(Schrift.text(.normal, Tokens.Schrift.normal))
+                .foregroundStyle(Farbe.ink2)
+                .fixedSize(horizontal: false, vertical: true)
             if let meldung {
                 KontoHinweis(text: meldung.meldung, ok: meldung.ok)
             }
+            // Je Einwilligung eine Karte (Entwurf "Einwilligungen").
             ForEach(merkmale) { m in
-                VStack(alignment: .leading, spacing: Tokens.Abstand.xs) {
-                    Text(m.name).font(Schrift.text(.halbfett, Tokens.Schrift.normal)).foregroundStyle(Farbe.ink)
-                    if !m.beschreibung.isEmpty {
-                        Text(m.beschreibung).leise().fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 10) {
+                    if m.darstellung == .jaNein {
+                        // Ja/Nein steht rechts neben dem Namen; bei wenig Platz darunter.
+                        if textgroesse >= .xxLarge {
+                            VStack(alignment: .leading, spacing: 10) { kopf(m); jaNein(m) }
+                        } else {
+                            HStack(alignment: .center, spacing: 12) {
+                                kopf(m, nurName: true).frame(maxWidth: .infinity, alignment: .leading)
+                                jaNein(m).frame(width: 128)
+                            }
+                            beschreibung(m)
+                        }
+                        if m.gesetzt, let seit = m.werte.first?.seit {
+                            Farbe.line.frame(height: 1)
+                            Text("erteilt am \(KontoLogik.tagDatum(seit))").leise()
+                        }
+                    } else {
+                        kopf(m)
+                        bedienung(m)
                     }
-                    bedienung(m).padding(.top, 4)
                 }
-                .padding(.top, Tokens.Abstand.m)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .karte(radius: Tokens.Radius.karte, padding: 20)
             }
+        }
+    }
+
+    private func kopf(_ m: Merkmal, nurName: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(m.name)
+                .font(Schrift.display(.halbfett, 17))
+                .foregroundStyle(Farbe.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            if !nurName { beschreibung(m) }
+        }
+    }
+
+    @ViewBuilder private func beschreibung(_ m: Merkmal) -> some View {
+        if !m.beschreibung.isEmpty {
+            Text(m.beschreibung)
+                .font(Schrift.text(.normal, 15))
+                .foregroundStyle(Farbe.muted)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func jaNein(_ m: Merkmal) -> some View {
+        SegmentLeiste(beschriftung: m.name, optionen: [(true, "Ja"), (false, "Nein")], gewaehlt: m.gesetzt, gesperrt: laeuft) { ja in
+            guard ja != m.gesetzt else { return }
+            ausfuehren { ja ? await daten.setzeMerkmal(code: m.code, option: "true") : await daten.entferneMerkmal(code: m.code) }
         }
     }
 
@@ -397,15 +499,9 @@ private struct Einwilligungen: View {
         case .nurLesen:
             Text(KontoLogik.nurLesenText(m)).leise()
         case .jaNein:
-            KontoSegmente(beschriftung: m.name, optionen: [(true, "Ja"), (false, "Nein")], gewaehlt: m.gesetzt, gesperrt: laeuft) { ja in
-                guard ja != m.gesetzt else { return }
-                ausfuehren { ja ? await daten.setzeMerkmal(code: m.code, option: "true") : await daten.entferneMerkmal(code: m.code) }
-            }
-            if m.gesetzt, let seit = m.werte.first?.seit {
-                Text("erteilt am \(KontoLogik.tagDatum(seit))").leise()
-            }
+            jaNein(m)
         case .einzelwahl:
-            KontoSegmente(
+            SegmentLeiste(
                 beschriftung: m.name,
                 optionen: m.optionen.map { ($0.value, $0.label ?? $0.value) },
                 gewaehlt: m.werte.first?.option,
@@ -424,20 +520,11 @@ private struct Einwilligungen: View {
                     text: Binding(get: { texte[m.code] ?? m.werte.first?.text ?? "" }, set: { texte[m.code] = $0 }),
                     tastatur: m.art == "number" ? .decimalPad : .default
                 )
-                Button {
+                // Zweitknopf: die Hauptaktion des Blatts bleibt die eine blaue.
+                Knopf("Speichern", gesperrt: laeuft) {
                     let text = texte[m.code] ?? m.werte.first?.text ?? ""
                     ausfuehren { await daten.setzeMerkmal(code: m.code, text: text) }
-                } label: {
-                    Text("Speichern")
-                        .font(Schrift.text(.fett, 15))
-                        .foregroundStyle(Farbe.onBrand)
-                        .padding(.horizontal, 16)
-                        .frame(minHeight: 50)
-                        .background(Farbe.blue, in: RoundedRectangle(cornerRadius: Tokens.Radius.knopf))
                 }
-                .buttonStyle(.plain)
-                .disabled(laeuft)
-                .opacity(laeuft ? 0.5 : 1)
             }
         }
     }
@@ -556,36 +643,27 @@ private struct PasswortAendern: View {
     @State private var laeuft = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                BlattKopf(titel: "Passwort ändern", zu: zu)
-                if let email = sitzung.client.auth.currentUser?.email {
-                    Text("Für das Konto \(Text(email).font(Schrift.text(.fett, 15)))")
-                        .font(Schrift.text(.normal, 15))
-                        .foregroundStyle(Farbe.ink2)
-                }
-                Text(PasswortTexte.setzenUnterzeile).leise()
-                AnmeldeFeld(beschriftung: "Neues Passwort", text: $passwort, passwort: true, inhaltsTyp: .newPassword)
-                AnmeldeFeld(
-                    beschriftung: "Noch einmal",
-                    bedienName: "Passwort wiederholen",
-                    text: $wiederholung,
-                    passwort: true,
-                    inhaltsTyp: .newPassword,
-                    absenden: .go,
-                    beimAbsenden: speichern
-                )
-                if let fehler {
-                    KontoHinweis(text: fehler)
-                }
+        KontoBlattGeruest(titel: "Passwort ändern", unterzeile: PasswortTexte.setzenUnterzeile, zu: zu) {
+            if let email = sitzung.client.auth.currentUser?.email {
+                Text("Für das Konto \(Text(email).font(Schrift.text(.fett, 15)))")
+                    .font(Schrift.text(.normal, 15))
+                    .foregroundStyle(Farbe.ink2)
             }
-            .padding(Tokens.Abstand.rand)
-        }
-        .safeAreaInset(edge: .bottom) {
-            GelberKnopf(text: laeuft ? "Wird gespeichert…" : "Speichern", gesperrt: laeuft, aktion: speichern)
-                .padding(.horizontal, Tokens.Abstand.rand)
-                .padding(.vertical, Tokens.Abstand.s)
-                .background(Farbe.bg)
+            AnmeldeFeld(beschriftung: "Neues Passwort", text: $passwort, passwort: true, inhaltsTyp: .newPassword)
+            AnmeldeFeld(
+                beschriftung: "Noch einmal",
+                bedienName: "Passwort wiederholen",
+                text: $wiederholung,
+                passwort: true,
+                inhaltsTyp: .newPassword,
+                absenden: .go,
+                beimAbsenden: speichern
+            )
+            if let fehler {
+                KontoHinweis(text: fehler)
+            }
+        } fuss: {
+            Hauptknopf(text: laeuft ? "Wird gespeichert…" : "Speichern", gesperrt: laeuft, aktion: speichern)
         }
     }
 
@@ -614,6 +692,7 @@ private struct PasswortAendern: View {
  */
 private struct KuendigungFormular: View {
     let daten: Kontodaten
+    let zu: () -> Void
 
     @State private var nachricht = ""
     @State private var rueckfrage = false
@@ -621,13 +700,34 @@ private struct KuendigungFormular: View {
     @State private var meldung: Ergebnis?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Tokens.Abstand.s) {
-            ForEach(Kontoloeschung.erklaerung, id: \.self) { satz in
-                Text(satz)
+        // Erklaerung, Hinweise als Karte, Nachricht; die Aktionen stehen unten fest (Entwurf "Kuendigen").
+        KontoBlattGeruest(titel: Kontoloeschung.titel, zu: zu) {
+            if let erster = Kontoloeschung.erklaerung.first {
+                Text(erster)
                     .font(Schrift.text(.normal, Tokens.Schrift.normal))
-                    .foregroundStyle(Farbe.ink)
+                    .foregroundStyle(Farbe.ink2)
                     .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+            if Kontoloeschung.erklaerung.count > 1 {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(Kontoloeschung.erklaerung.dropFirst(), id: \.self) { satz in
+                        HStack(alignment: .firstTextBaseline, spacing: 12) {
+                            Circle().fill(Farbe.muted).frame(width: 6, height: 6)
+                                .alignmentGuide(.firstTextBaseline) { $0[.bottom] + 4 }
+                                .accessibilityHidden(true)
+                            Text(satz)
+                                .font(Schrift.text(.normal, Tokens.Schrift.normal))
+                                .foregroundStyle(Farbe.ink)
+                                .lineSpacing(3)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .padding(20)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
+                .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.karte).strokeBorder(Farbe.line, lineWidth: 1))
             }
             if let meldung {
                 KontoHinweis(text: meldung.meldung, ok: meldung.ok)
@@ -642,23 +742,28 @@ private struct KuendigungFormular: View {
                     mehrzeilig: true
                 )
                 .disabled(laeuft)
-                .padding(.top, Tokens.Abstand.s)
-
-                if rueckfrage {
-                    Text(Kontoloeschung.bestaetigungFrage)
-                        .font(Schrift.text(.fett, Tokens.Schrift.normal))
-                        .foregroundStyle(Farbe.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, Tokens.Abstand.s)
-                    LeiserKnopf(text: laeuft ? "Wird gesendet…" : Kontoloeschung.bestaetigen, rot: true, gesperrt: laeuft, aktion: senden)
-                    LeiserKnopf(text: Kontoloeschung.abbrechen, gesperrt: laeuft) { rueckfrage = false }
-                } else {
-                    LeiserKnopf(text: Kontoloeschung.absenden, rot: true) {
-                        meldung = nil
-                        rueckfrage = true
-                    }
-                    .padding(.top, Tokens.Abstand.s)
+            }
+        } fuss: {
+            if meldung?.ok == true {
+                LeiserKnopf(text: "Schließen", aktion: zu)
+            } else if rueckfrage {
+                Text(Kontoloeschung.bestaetigungFrage)
+                    .font(Schrift.text(.fett, Tokens.Schrift.normal))
+                    .foregroundStyle(Farbe.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                // Rot gefuellt nur als Bestaetigung, darunter der neutrale Weg zurueck.
+                Knopf(
+                    laeuft ? "Wird gesendet…" : Kontoloeschung.bestaetigen, stufe: .gefahr, breit: true,
+                    gesperrt: laeuft, aktion: senden
+                )
+                LeiserKnopf(text: Kontoloeschung.abbrechen, gesperrt: laeuft) { rueckfrage = false }
+            } else {
+                LeiserKnopf(text: Kontoloeschung.absenden, rot: true) {
+                    meldung = nil
+                    rueckfrage = true
                 }
+                LeiserKnopf(text: Kontoloeschung.abbrechen, aktion: zu)
             }
         }
     }
@@ -672,5 +777,69 @@ private struct KuendigungFormular: View {
             rueckfrage = false
             meldung = r
         }
+    }
+}
+
+// MARK: - Geruest
+
+/**
+ * Aufbau aller Konto-Blaetter wie bei den Buchungsblaettern: Titel und X fest
+ * oben, der Inhalt rollt, die Aktion steht abgesetzt unten.
+ */
+struct KontoBlattGeruest<Inhalt: View, Fuss: View>: View {
+    let titel: String
+    var unterzeile: String?
+    let zu: () -> Void
+    @ViewBuilder var inhalt: Inhalt
+    @ViewBuilder var fuss: Fuss
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(titel)
+                        .font(Schrift.display(.fett, 26, relativeTo: .title))
+                        .tracking(Tokens.Schrift.laufweiteTitel)
+                        .foregroundStyle(Farbe.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
+                    if let unterzeile {
+                        Text(unterzeile)
+                            .font(Schrift.text(.normal, 15))
+                            .foregroundStyle(Farbe.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 6)
+                SchliessenKnopf(aktion: zu)
+            }
+            .padding(.horizontal, Tokens.Abstand.rand)
+            .padding(.top, 24)
+            .padding(.bottom, 16)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) { inhalt }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, Tokens.Abstand.rand)
+                    .padding(.top, 4)
+                    .padding(.bottom, 24)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .scrollBounceBehavior(.basedOnSize)
+            if Fuss.self != EmptyView.self {
+                Farbe.line.frame(height: 1)
+                VStack(spacing: 10) { fuss }
+                    .padding(.horizontal, Tokens.Abstand.rand)
+                    .padding(.top, 14)
+                    .padding(.bottom, 10)
+            }
+        }
+        .background(Farbe.bg)
+    }
+}
+
+extension KontoBlattGeruest where Fuss == EmptyView {
+    init(titel: String, unterzeile: String? = nil, zu: @escaping () -> Void, @ViewBuilder inhalt: () -> Inhalt) {
+        self.init(titel: titel, unterzeile: unterzeile, zu: zu, inhalt: inhalt) { EmptyView() }
     }
 }

@@ -27,6 +27,9 @@ final class PlaetzeLogikTests: XCTestCase {
     }
 
     func testTageszeile() {
+        XCTAssertEqual(PlaetzeLogik.kopfzeile(plaetze: 8, oeffnung: 480, schluss: 1260), "8 Plätze · 08 bis 21 Uhr")
+        XCTAssertEqual(PlaetzeLogik.kopfzeile(plaetze: 1, oeffnung: 450, schluss: 1260), "1 Platz · 07:30 bis 21 Uhr")
+        XCTAssertNil(PlaetzeLogik.kopfzeile(plaetze: 0, oeffnung: 480, schluss: 1260))
         XCTAssertEqual(PlaetzeLogik.tageszeile("2026-10-29", heute: "2026-10-29"), "Heute, 29.10.")
         XCTAssertEqual(PlaetzeLogik.tageszeile("2026-10-30", heute: "2026-10-29"), "Morgen, 30.10.")
         XCTAssertEqual(PlaetzeLogik.tageszeile("2026-10-31", heute: "2026-10-29"), "Sa., 31.10.")

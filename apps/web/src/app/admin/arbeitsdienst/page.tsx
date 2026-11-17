@@ -94,9 +94,9 @@ export default async function ArbeitsdienstSeite({
         kicker="Verwaltung"
         titel="Arbeitsdienst"
         unterzeile="Wer wie viele Stunden schuldet, was geleistet wurde und was am Jahresende offen bleibt."
-      />
-
-      <nav className="filterchips" aria-label="Jahr">
+      >
+        {/* Entwurf "Arbeitsdienst": die Jahreswahl sitzt rechts im Kopf */}
+      <nav className="filterchips jahrwahl" aria-label="Jahr">
         <Link href={`/admin/arbeitsdienst?jahr=${jahr - 1}`}>‹ {jahr - 1}</Link>
         <Link href={`/admin/arbeitsdienst?jahr=${jahr}`} aria-current="true">
           {jahr}
@@ -104,6 +104,7 @@ export default async function ArbeitsdienstSeite({
         <Link href={`/admin/arbeitsdienst?jahr=${jahr + 1}`}>{jahr + 1} ›</Link>
         {jahr !== aktuell && <Link href="/admin/arbeitsdienst">Dieses Jahr</Link>}
       </nav>
+      </VerwaltungsKopf>
 
       <ArbeitsdienstListe
         jahr={jahr}

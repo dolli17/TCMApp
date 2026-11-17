@@ -45,18 +45,18 @@ struct PasswortSetzenBildschirm: View {
         switch zustand {
         case .rueckfrage, .laden:
             ProgressView()
-                .tint(Farbe.gold)
+                .tint(Farbe.muted)
                 .frame(maxWidth: .infinity, minHeight: 120)
         case let .fehler(text):
             AnmeldeHinweis(text: text)
             VStack(spacing: 6) {
-                GelberKnopf(text: "Neuen Link anfordern") { vergessenOffen = true }
+                Hauptknopf(text: "Neuen Link anfordern") { vergessenOffen = true }
                 LeiserVerweis(text: "Zurück zur Anmeldung", aktion: sitzung.passwortSchliessen)
             }
             .padding(.top, Tokens.Abstand.abschnitt)
         case let .bereit(konto):
             if let konto {
-                Text("Für das Konto \(Text(konto).font(Schrift.text(.fett, 15)))")
+                Text("Für das Konto \(Text(konto).font(Schrift.text(.fett, 15)).foregroundStyle(Farbe.ink))")
                     .font(Schrift.text(.normal, 15))
                     .foregroundStyle(Farbe.ink2)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -81,7 +81,7 @@ struct PasswortSetzenBildschirm: View {
                 AnmeldeHinweis(text: fehler)
             }
 
-            GelberKnopf(text: laeuft ? "Wird gespeichert…" : "Speichern", gesperrt: laeuft, aktion: speichern)
+            Hauptknopf(text: laeuft ? "Wird gespeichert…" : "Speichern", gesperrt: laeuft, aktion: speichern)
                 .padding(.top, Tokens.Abstand.abschnitt)
         }
     }

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-slate-100" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>TC Muckensturm - Deine Daten</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Fonts: Space Grotesk & DM Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container": "#eeedf7",
+            "surface-container-low": "#f4f2fd",
+            "secondary-container": "#a1dcfe",
+            "surface-bright": "#fbf8ff",
+            "secondary-fixed-dim": "#93ceef",
+            "on-primary": "#ffffff",
+            "primary-container": "#1466a8",
+            "on-background": "#1a1b22",
+            "on-secondary-fixed": "#001e2c",
+            "error": "#ba1a1a",
+            "on-surface-variant": "#414750",
+            "surface": "#fbf8ff",
+            "on-error": "#ffffff",
+            "on-primary-fixed": "#001d36",
+            "surface-dim": "#dad9e3",
+            "tertiary-fixed": "#ffdcc3",
+            "surface-container-high": "#e8e7f1",
+            "on-surface": "#1a1b22",
+            "surface-container-highest": "#e3e1ec",
+            "on-tertiary": "#ffffff",
+            "primary-fixed-dim": "#9fcaff",
+            "secondary-fixed": "#c2e8ff",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "surface-tint": "#0761a3",
+            "inverse-primary": "#9fcaff",
+            "on-error-container": "#93000a",
+            "primary": "#004e85",
+            "primary-fixed": "#d1e4ff",
+            "on-secondary": "#ffffff",
+            "background": "#fbf8ff",
+            "error-container": "#ffdad6",
+            "on-secondary-fixed-variant": "#004d67",
+            "tertiary-fixed-dim": "#ffb77c",
+            "surface-container-lowest": "#ffffff",
+            "inverse-surface": "#2f3038",
+            "on-tertiary-fixed": "#2f1500",
+            "on-tertiary-container": "#ffd9bd",
+            "secondary": "#246582",
+            "outline": "#717781",
+            "on-primary-fixed-variant": "#00497d",
+            "tertiary-container": "#975100",
+            "surface-variant": "#e3e1ec",
+            "on-primary-container": "#cde2ff",
+            "tertiary": "#743d00",
+            "outline-variant": "#c1c7d2",
+            "inverse-on-surface": "#f1effa",
+            "on-secondary-container": "#20627f"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "margin": "1rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "margin-desktop": "2rem",
+            "gutter-desktop": "1.5rem",
+            "gutter": "1rem",
+            "space-sm": "0.5rem",
+            "space-xl": "2.5rem"
+          },
+          "fontFamily": {
+            "label-caps": ["Space Grotesk", "sans-serif"],
+            "headline-sm": ["Space Grotesk", "sans-serif"],
+            "body-lg": ["DM Sans", "sans-serif"],
+            "body-sm": ["DM Sans", "sans-serif"],
+            "numeric-data": ["Space Grotesk", "sans-serif"],
+            "headline-lg-mobile": ["Space Grotesk", "sans-serif"],
+            "display-score-mobile": ["Space Grotesk", "sans-serif"],
+            "display-score": ["Space Grotesk", "sans-serif"],
+            "headline-lg": ["Space Grotesk", "sans-serif"]
+          },
+          "fontSize": {
+            "label-caps": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "headline-sm": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "600" }],
+            "body-lg": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "400" }],
+            "body-sm": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "numeric-data": ["1.125rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "headline-lg-mobile": ["1.5rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "display-score-mobile": ["2.75rem", { "lineHeight": "3rem", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "display-score": ["4rem", { "lineHeight": "4rem", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+            "headline-lg": ["2rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      display: inline-block;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Hide scrollbar for a clean mobile canvas view */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="h-full flex items-center justify-center p-0 md:p-6 bg-slate-200/60 font-['DM_Sans'] antialiased text-[#0A1624]">
+<!-- Mobile Viewport Container: 393 x 852 px exact baseline -->
+<div class="relative w-full max-w-[393px] h-[852px] bg-white flex flex-col overflow-hidden shadow-2xl md:rounded-[48px] border border-slate-300/50">
+<!-- 1. iOS Status Bar -->
+<header class="w-full h-11 px-7 flex items-center justify-between select-none shrink-0 z-30 pt-1">
+<span class="font-['Space_Grotesk'] font-semibold text-[15px] tracking-tight text-[#0A1624]">9:41</span>
+<div class="flex items-center gap-1.5 text-[#0A1624]">
+<span class="material-symbols-outlined text-[17px] leading-none">signal_cellular_alt</span>
+<span class="material-symbols-outlined text-[17px] leading-none">wifi</span>
+<span class="material-symbols-outlined text-[20px] leading-none">battery_full</span>
+</div>
+</header>
+<!-- 2. Step Header & Progress -->
+<section class="shrink-0 pt-2 pb-0 bg-white z-20">
+<div class="px-5 flex items-center justify-between mb-2.5">
+<span class="font-['Space_Grotesk'] font-bold text-[11px] tracking-wider text-slate-500 uppercase">
+          KONTO EINRICHTEN · SCHRITT 2 VON 9
+        </span>
+<button class="font-['DM_Sans'] text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors" type="button">
+          Abmelden
+        </button>
+</div>
+<!-- Segmented Progress Bar (2/9 completed) -->
+<div class="w-full h-[3px] bg-slate-100">
+<div class="h-full bg-[#1466A8] rounded-r-full" style="width: calc(100% * 2 / 9);"></div>
+</div>
+</section>
+<!-- 3. Formular Header & Scrollable Body -->
+<main class="flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-24">
+<!-- Title -->
+<div class="mb-6">
+<h1 class="font-['Space_Grotesk'] font-bold text-2xl tracking-tight text-[#0A1624]">
+          Deine Daten
+        </h1>
+</div>
+<!-- Form Inputs Group -->
+<form class="space-y-4" onsubmit="event.preventDefault();">
+<!-- Vorname -->
+<div>
+<label class="block font-['Space_Grotesk'] text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1.5" for="first-name">
+            Vorname
+          </label>
+<input class="w-full rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3 text-[#0A1624] text-[15px] font-['DM_Sans'] focus:outline-none focus:border-[#1466A8] focus:bg-white transition-colors" id="first-name" type="text" value="Anna"/>
+</div>
+<!-- Nachname -->
+<div>
+<label class="block font-['Space_Grotesk'] text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1.5" for="last-name">
+            Nachname
+          </label>
+<input class="w-full rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3 text-[#0A1624] text-[15px] font-['DM_Sans'] focus:outline-none focus:border-[#1466A8] focus:bg-white transition-colors" id="last-name" type="text" value="Berger"/>
+</div>
+<!-- Geburtstag -->
+<div>
+<label class="block font-['Space_Grotesk'] text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1.5" for="birth-date">
+            Geburtstag
+          </label>
+<div class="relative">
+<input class="w-full rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3 text-[#0A1624] text-[15px] font-['Space_Grotesk'] tracking-tight focus:outline-none focus:border-[#1466A8] focus:bg-white transition-colors" id="birth-date" placeholder="TT.MM.JJJJ" type="text" value="14.05.1988"/>
+<span class="material-symbols-outlined text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-xl">
+              calendar_today
+            </span>
+</div>
+</div>
+<!-- Geschlecht Segmented Pills -->
+<fieldset class="pt-1">
+<legend class="block font-['Space_Grotesk'] text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-2">
+            Geschlecht
+          </legend>
+<div class="grid grid-cols-3 gap-2" role="radiogroup">
+<!-- Weiblich (Selected) -->
+<button aria-checked="true" class="rounded-full bg-[#E8F1F8] border border-[#1466A8] py-2 px-3 text-center text-[13px] font-['DM_Sans'] font-medium text-[#1466A8] transition-colors focus:outline-none" role="radio" type="button">
+              weiblich
+            </button>
+<!-- Männlich (Unselected) -->
+<button aria-checked="false" class="rounded-full bg-slate-50 border border-slate-200 py-2 px-3 text-center text-[13px] font-['DM_Sans'] font-medium text-slate-600 hover:bg-slate-100 transition-colors focus:outline-none" role="radio" type="button">
+              männlich
+            </button>
+<!-- Divers (Unselected) -->
+<button aria-checked="false" class="rounded-full bg-slate-50 border border-slate-200 py-2 px-3 text-center text-[13px] font-['DM_Sans'] font-medium text-slate-600 hover:bg-slate-100 transition-colors focus:outline-none" role="radio" type="button">
+              divers
+            </button>
+</div>
+</fieldset>
+<!-- Mobil -->
+<div>
+<label class="block font-['Space_Grotesk'] text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1.5" for="mobile-phone">
+            Mobil
+          </label>
+<input class="w-full rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3 text-[#0A1624] text-[15px] font-['Space_Grotesk'] tracking-tight focus:outline-none focus:border-[#1466A8] focus:bg-white transition-colors" id="mobile-phone" type="tel" value="+49 171 2345678"/>
+</div>
+<!-- Festnetz -->
+<div>
+<label class="block font-['Space_Grotesk'] text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1.5" for="landline-phone">
+            Festnetz
+          </label>
+<input class="w-full rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3 text-[#0A1624] text-[15px] font-['Space_Grotesk'] tracking-tight focus:outline-none focus:border-[#1466A8] focus:bg-white transition-colors" id="landline-phone" type="tel" value="0711 987654"/>
+<p class="text-xs text-slate-500 mt-1 font-['DM_Sans']">
+            Eine der beiden Nummern genügt.
+          </p>
+</div>
+<!-- Straße und Hausnummer -->
+<div>
+<label class="block font-['Space_Grotesk'] text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1.5" for="street">
+            Straße und Hausnummer
+          </label>
+<input class="w-full rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3 text-[#0A1624] text-[15px] font-['DM_Sans'] focus:outline-none focus:border-[#1466A8] focus:bg-white transition-colors" id="street" type="text" value="Muckensturmstr. 12"/>
+</div>
+<!-- PLZ und Ort (2-Column Grid) -->
+<div class="grid grid-cols-12 gap-3">
+<div class="col-span-4">
+<label class="block font-['Space_Grotesk'] text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1.5" for="zip-code">
+              PLZ
+            </label>
+<input class="w-full rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3 text-[#0A1624] text-[15px] font-['Space_Grotesk'] tracking-tight focus:outline-none focus:border-[#1466A8] focus:bg-white transition-colors" id="zip-code" maxlength="5" type="text" value="70374"/>
+</div>
+<div class="col-span-8">
+<label class="block font-['Space_Grotesk'] text-slate-500 text-[11px] font-bold tracking-wider uppercase mb-1.5" for="city">
+              Ort
+            </label>
+<input class="w-full rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3 text-[#0A1624] text-[15px] font-['DM_Sans'] focus:outline-none focus:border-[#1466A8] focus:bg-white transition-colors" id="city" type="text" value="Stuttgart"/>
+</div>
+</div>
+<!-- E-Mail (Read-only) -->
+<div class="pt-1">
+<div class="flex items-center justify-between mb-1.5">
+<label class="block font-['Space_Grotesk'] text-slate-500 text-[11px] font-bold tracking-wider uppercase" for="email">
+              E-Mail
+            </label>
+<span class="material-symbols-outlined text-slate-400 text-sm">lock</span>
+</div>
+<input class="w-full rounded-2xl bg-slate-100/70 border border-slate-200 text-slate-500 px-4 py-3 text-[15px] font-['DM_Sans'] cursor-not-allowed select-none focus:outline-none" id="email" readonly="" type="email" value="anna.berger@beispiel.de"/>
+<p class="text-xs text-slate-500 mt-1 font-['DM_Sans']">
+            Ändern kann sie der Vorstand.
+          </p>
+</div>
+</form>
+</main>
+<!-- 4. Fixed Bottom Area (Sticky Footer) -->
+<footer class="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-200/60 px-5 pt-3.5 pb-2 z-30">
+<button class="h-12 w-full rounded-full bg-[#1466A8] text-white font-['Space_Grotesk'] font-medium text-base tracking-normal flex items-center justify-center active:scale-[0.99] transition-transform shadow-sm hover:bg-[#004e85]" type="button">
+        Daten bestätigen
+      </button>
+<!-- iOS Home Indicator -->
+<div class="w-full flex justify-center items-center pt-3 pb-1">
+<div class="w-32 h-1 bg-slate-900/30 rounded-full"></div>
+</div>
+</footer>
+</div>
+<script>
+    // Lightweight interactivity for gender pill selectors
+    document.querySelectorAll('[role="radio"]').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('[role="radio"]').forEach(btn => {
+          btn.setAttribute('aria-checked', 'false');
+          btn.className = 'rounded-full bg-slate-50 border border-slate-200 py-2 px-3 text-center text-[13px] font-[\'DM_Sans\'] font-medium text-slate-600 hover:bg-slate-100 transition-colors focus:outline-none';
+        });
+        button.setAttribute('aria-checked', 'true');
+        button.className = 'rounded-full bg-[#E8F1F8] border border-[#1466A8] py-2 px-3 text-center text-[13px] font-[\'DM_Sans\'] font-medium text-[#1466A8] transition-colors focus:outline-none';
+      });
+    });
+  </script>
+</body></html>

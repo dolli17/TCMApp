@@ -15,6 +15,7 @@
 package de.tcmuckensturm.app.bildschirme.konto
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,19 +36,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -70,13 +72,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import de.tcmuckensturm.app.bildschirme.DeinMarker
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
 import de.tcmuckensturm.app.bildschirme.Hauptknopf
 import de.tcmuckensturm.app.bildschirme.Hinweis
 import de.tcmuckensturm.app.bildschirme.Leerzustand
 import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.bildschirme.LeiserKnopf
+import de.tcmuckensturm.app.bildschirme.MarkeKlein
 import de.tcmuckensturm.app.bildschirme.NebeneinanderOderUntereinander
+import de.tcmuckensturm.app.bildschirme.Zweitknopf
 import de.tcmuckensturm.app.bildschirme.home.Abschnitt
 import de.tcmuckensturm.app.bildschirme.karte
 import de.tcmuckensturm.app.bildschirme.leise
@@ -97,8 +102,8 @@ import de.tcmuckensturm.app.ui.tokens.Radius
 import de.tcmuckensturm.app.ui.tokens.Schrift
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -262,7 +267,7 @@ fun MannschaftAnsicht(
             }
             Text(
                 MannschaftLogik.TITEL,
-                style = TcmSchrift.text(Schrift.gewichtExtrafett, Schrift.seitentitel, Schrift.laufweiteTitel),
+                style = TcmSchrift.display(Schrift.gewichtFett, Schrift.seitentitel, Schrift.laufweiteTitel),
                 color = f.ink,
                 modifier = Modifier.semantics { heading() },
             )
@@ -318,9 +323,14 @@ private fun EinladungKarte(e: MeineEinladung, laeuft: Boolean, anfangsOffen: Boo
     var offen by rememberSaveable(e.id) { mutableStateOf(anfangsOffen) }
     var telefon by rememberSaveable(e.id) { mutableStateOf(false) }
     val hinweis = MannschaftLogik.einladungHinweis(e)
-    Column(Modifier.fillMaxWidth().karte(padding = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    val form = RoundedCornerShape(Radius.karte)
+    // Hellblau: eine Einladung wartet auf Antwort.
+    Column(
+        Modifier.fillMaxWidth().background(f.blueSoft, form).border(1.dp, f.blue.copy(alpha = 0.22f), form).padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(e.teamName, style = TcmSchrift.text(Schrift.gewichtExtrafett, 19.sp), color = f.ink)
+            Text(e.teamName, style = TcmSchrift.display(Schrift.gewichtFett, 20.sp), color = f.ink)
             val zeile = MannschaftLogik.einladungZeile(e)
             if (zeile.isNotEmpty()) Leise(zeile)
         }
@@ -328,7 +338,7 @@ private fun EinladungKarte(e: MeineEinladung, laeuft: Boolean, anfangsOffen: Boo
             if (e.annehmenMoeglich) Merkzettel(hinweis) else Hinweis(hinweis)
         }
         if (offen && e.annehmenMoeglich) {
-            Column(Modifier.fillMaxWidth().background(f.surf2, RoundedCornerShape(Radius.feld))) {
+            Column(Modifier.fillMaxWidth().background(f.surf, RoundedCornerShape(Radius.feld))) {
                 OnboardingSchalter(
                     label = MannschaftLogik.TELEFON_SCHALTER,
                     beschreibung = "Das kannst du später unter Konto → Tennis ändern.",
@@ -363,11 +373,11 @@ private fun Merkzettel(text: String) {
     Text(
         text,
         style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal),
-        color = f.goldInk,
+        color = f.ink2,
         modifier = Modifier
             .fillMaxWidth()
-            .background(f.goldSoft, RoundedCornerShape(Radius.feld))
-            .padding(12.dp),
+            .background(f.surf2, RoundedCornerShape(Radius.karte))
+            .padding(horizontal = 16.dp, vertical = 12.dp),
     )
 }
 
@@ -391,6 +401,8 @@ private fun Kader(m: MeineMannschaft, laeuft: Boolean, h: MannschaftHandlungen, 
             if (i > 0) KontoLinie()
             SpielerZeile(
                 s = s,
+                // Der Mannschaftsfuehrer ist man selbst, wenn man es ist; andere erkennt die Liste nicht.
+                du = m.ichBinMf && s.isTeamCaptain,
                 telefon = s.telefon.takeIf { m.ichBinMf },
                 anrufen = h.anrufen,
                 austragen = if (MannschaftLogik.darfAustragen(m, s)) {
@@ -422,16 +434,22 @@ private fun Kader(m: MeineMannschaft, laeuft: Boolean, h: MannschaftHandlungen, 
                         Leise(MannschaftLogik.offeneEinladungZeile(e))
                     }
                     TextButton(onClick = { h.zurueckziehen(e) }, enabled = !laeuft) {
-                        Text("Zurückziehen", style = TcmSchrift.text(Schrift.gewichtFett, 14.sp), color = TcmTheme.farben.redInk)
+                        Text("Zurückziehen", style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp), color = TcmTheme.farben.redInk)
                     }
                 }
             }
         }
     }
     if (MannschaftLogik.darfAustreten(m)) {
-        KontoGruppe(Modifier.padding(top = Abstand.s)) {
-            KontoVerweis(MannschaftLogik.AUSTRETEN, rot = true) {
-                fragen(Rueckfrage(MannschaftLogik.austretenFrage(m), MannschaftLogik.AUSTRETEN_ERKLAERUNG, "Austreten") { h.austreten(m) })
+        Box(Modifier.fillMaxWidth().padding(top = Abstand.s), contentAlignment = Alignment.Center) {
+            TextButton(
+                onClick = {
+                    fragen(Rueckfrage(MannschaftLogik.austretenFrage(m), MannschaftLogik.AUSTRETEN_ERKLAERUNG, "Austreten") { h.austreten(m) })
+                },
+                enabled = !laeuft,
+                modifier = Modifier.heightIn(min = 48.dp),
+            ) {
+                Text(MannschaftLogik.AUSTRETEN, style = TcmSchrift.display(Schrift.gewichtHalbfett, 16.sp), color = TcmTheme.farben.redInk)
             }
         }
     }
@@ -443,6 +461,7 @@ private fun zeilenSchrift() = TcmSchrift.text(Schrift.gewichtHalbfett, 15.5.sp)
 @Composable
 private fun SpielerZeile(
     s: MeineMannschaft.Spieler,
+    du: Boolean,
     telefon: String?,
     anrufen: (String) -> Unit,
     austragen: (() -> Unit)?,
@@ -456,19 +475,28 @@ private fun SpielerZeile(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
-            Modifier.size(38.dp).background(if (s.isTeamCaptain) f.goldSoft else f.surf2, CircleShape).clearAndSetSemantics {},
+            Modifier.size(40.dp).background(if (s.isTeamCaptain) f.blueSoft else f.surf2, CircleShape).clearAndSetSemantics {},
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 Initialen.von(s.firstName, s.lastName),
-                style = TcmSchrift.text(Schrift.gewichtFett, 14.sp),
-                color = if (s.isTeamCaptain) f.goldInk else f.ink2,
+                style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp),
+                color = if (s.isTeamCaptain) f.blueInk else f.ink2,
             )
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Column(Modifier.semantics(mergeDescendants = true) {}) {
-                Text(name, style = zeilenSchrift(), color = f.ink)
-                MannschaftLogik.spielerZeile(s)?.let { Leise(it) }
+            Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(name, style = zeilenSchrift(), color = f.ink)
+                    // Gelb heisst "deins".
+                    if (du) DeinMarker("du")
+                }
+                MannschaftLogik.lk(s.tennisLk)?.let { Leise(it) }
+                if (s.isTeamCaptain) MarkeKlein("Mannschaftsführer")
             }
             val link = MannschaftLogik.telefonLink(telefon)
             if (telefon != null && link != null) {
@@ -484,7 +512,7 @@ private fun SpielerZeile(
         }
         if (austragen != null) {
             TextButton(onClick = austragen, enabled = !gesperrt) {
-                Text("Austragen", style = TcmSchrift.text(Schrift.gewichtFett, 14.sp), color = f.redInk)
+                Text("Austragen", style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp), color = f.redInk)
             }
         }
     }
@@ -565,7 +593,7 @@ fun SpielerSucheInhalt(
     ) {
         BlattKopf(MannschaftLogik.HINZUFUEGEN, zu)
         Leise("Die Person bekommt eine Einladung und ist erst nach dem Annehmen im Kader. Einladungen verfallen nach 30 Tagen.")
-        KontoFeld(label = MannschaftLogik.SUCHE_LABEL, wert = suche, aendern = sucheAendern)
+        KontoFeld(label = MannschaftLogik.SUCHE_LABEL, wert = suche, aendern = sucheAendern, symbol = Icons.Filled.Search)
         fehler?.let { Fehlerzeile(it) }
         when {
             liste == null && fehler == null -> Box(Modifier.fillMaxWidth().padding(top = 24.dp), contentAlignment = Alignment.Center) {
@@ -608,12 +636,15 @@ private fun KandidatZeile(k: Kandidat, gesperrt: Boolean, einladen: (Kandidat) -
                 }
             }
         }
-        TextButton(onClick = { einladen(k) }, enabled = !aus && !gesperrt) {
+        if (aus) {
             Text(
-                if (aus) "Eingeladen" else "Einladen",
-                style = TcmSchrift.text(Schrift.gewichtFett, 14.sp),
-                color = if (aus) f.muted else f.blueInk,
+                "Eingeladen",
+                style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp),
+                color = f.muted,
+                modifier = Modifier.padding(end = 12.dp),
             )
+        } else {
+            Zweitknopf("Einladen", modifier = Modifier.padding(end = 8.dp), klein = true, gesperrt = gesperrt) { einladen(k) }
         }
     }
 }
@@ -624,10 +655,10 @@ private fun KandidatMarke(text: String, hervor: Boolean) {
     Box(
         Modifier
             .heightIn(min = 22.dp)
-            .background(if (hervor) f.goldSoft else f.surf2, CircleShape)
+            .background(if (hervor) f.blueSoft else f.surf2, CircleShape)
             .padding(horizontal = 8.dp, vertical = 2.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = TcmSchrift.text(Schrift.gewichtFett, Schrift.klein), color = if (hervor) f.goldInk else f.ink2)
+        Text(text, style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.klein), color = if (hervor) f.blueInk else f.ink2)
     }
 }

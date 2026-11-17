@@ -184,49 +184,98 @@ struct OnboardingKontext {
 
 // MARK: - Rahmen
 
-/// Kopf mit Kicker, Titel und Fortschritt, darunter der Inhalt und die Fusszeile.
+/**
+ * Aufbau nach docs/design/stitch ("Onboarding"): oben fest der Kicker mit dem
+ * Schritt und rechts "Abmelden", darunter die Fortschrittslinie; der Inhalt
+ * rollt; die Aktionen des Schritts stehen unten fest.
+ */
 struct OnboardingRahmen<Inhalt: View>: View {
+    @Environment(Sitzung.self) private var sitzung
     let kicker: String
     let titel: String
     var fortschritt: [OnboardingLogik.Fortschritt]?
     @ViewBuilder let inhalt: Inhalt
+    @State private var fussHoehe: CGFloat = 0
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(kicker).kicker()
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                Text(kicker).kicker().frame(maxWidth: .infinity, alignment: .leading)
+                // Sitzung.abmelden meldet vorher das Geraet fuer Push ab - wie im Konto.
+                Button { Task { await sitzung.abmelden() } } label: {
+                    Text("Abmelden")
+                        .font(Schrift.text(.normal, 15))
+                        .foregroundStyle(Farbe.ink2)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, Tokens.Abstand.rand)
+            .padding(.top, 4)
+            if let fortschritt {
+                HStack(spacing: 3) {
+                    ForEach(Array(fortschritt.enumerated()), id: \.offset) { _, f in
+                        Rectangle()
+                            .fill(f == .offen ? Farbe.line : Farbe.blue)
+                            .opacity(f == .erledigt ? 0.45 : 1)
+                            .frame(height: 3)
+                    }
+                }
+                .accessibilityHidden(true)
+            } else {
+                Farbe.line.frame(height: 1)
+            }
+            ScrollView {
+                VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
                     Text(titel)
-                        .font(Schrift.text(.extrafett, 30, relativeTo: .largeTitle))
+                        .font(Schrift.display(.fett, 30, relativeTo: .largeTitle))
                         .tracking(Tokens.Schrift.laufweiteTitel)
                         .foregroundStyle(Farbe.ink)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
-                    if let fortschritt {
-                        HStack(spacing: 4) {
-                            ForEach(Array(fortschritt.enumerated()), id: \.offset) { _, f in
-                                Capsule()
-                                    .fill(f == .jetzt ? Farbe.blue : f == .erledigt ? Farbe.green : Farbe.surf3)
-                                    .frame(height: 5)
-                            }
-                        }
-                        .padding(.top, 6)
-                        .accessibilityHidden(true)
-                    }
+                        .padding(.top, 24)
+                        .padding(.bottom, 4)
+                    inhalt
+                    OnboardingFusszeile()
                 }
-                .padding(.top, 16)
-                inhalt
-                OnboardingFusszeile()
+                .padding(.horizontal, Tokens.Abstand.rand)
+                .padding(.bottom, Tokens.Abstand.abschnitt)
             }
-            .padding(.horizontal, Tokens.Abstand.rand)
-            .padding(.bottom, Tokens.Abstand.abschnitt)
+            .scrollDismissesKeyboard(.interactively)
+            .safeAreaPadding(.bottom, fussHoehe)
         }
-        .scrollDismissesKeyboard(.interactively)
         .background(Farbe.bg)
+        // Die Aktionen meldet der Schritt selbst (OnboardingAktionen); hier stehen sie unten fest.
+        .overlayPreferenceValue(OnboardingFussKey.self, alignment: .bottom) { fuss in
+            if let fuss {
+                VStack(spacing: 0) {
+                    Farbe.line.frame(height: 1)
+                    fuss.ansicht
+                        .padding(.horizontal, Tokens.Abstand.rand)
+                        .padding(.top, 12)
+                        .padding(.bottom, 8)
+                }
+                .background(Farbe.bg)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { fussHoehe = $0 }
+            }
+        }
     }
 }
 
-/// Datenschutz und Impressum, und vor allem: Abmelden.
+/// Die Aktionen eines Schritts auf dem Weg nach unten in den festen Fuss.
+struct OnboardingFuss {
+    let ansicht: AnyView
+}
+
+struct OnboardingFussKey: PreferenceKey {
+    static var defaultValue: OnboardingFuss? { nil }
+    static func reduce(value: inout OnboardingFuss?, nextValue: () -> OnboardingFuss?) {
+        value = nextValue() ?? value
+    }
+}
+
+/// Datenschutz und Impressum, leise unter dem Inhalt.
 private struct OnboardingFusszeile: View {
     @Environment(Sitzung.self) private var sitzung
 
@@ -238,18 +287,15 @@ private struct OnboardingFusszeile: View {
             if let impressum = sitzung.umgebung.webLink("/impressum") {
                 Link(destination: impressum) { verweis("Impressum") }
             }
-            // Sitzung.abmelden meldet vorher das Geraet fuer Push ab - wie im Konto.
-            Button { Task { await sitzung.abmelden() } } label: { verweis("Abmelden", rot: true) }
-                .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, Tokens.Abstand.l)
     }
 
-    private func verweis(_ text: String, rot: Bool = false) -> some View {
+    private func verweis(_ text: String) -> some View {
         Text(text)
-            .font(Schrift.text(.halbfett, 14))
-            .foregroundStyle(rot ? Farbe.redInk : Farbe.ink2)
+            .font(Schrift.text(.normal, 14))
+            .foregroundStyle(Farbe.muted)
             .frame(minHeight: 44)
     }
 }
@@ -270,11 +316,17 @@ struct OnboardingAktionen: View {
     @State private var meldung: String?
 
     var body: some View {
+        // Im Inhalt bleibt nichts stehen: die Knoepfe wandern in den festen Fuss des Rahmens.
+        Color.clear.frame(height: 0)
+            .preference(key: OnboardingFussKey.self, value: OnboardingFuss(ansicht: AnyView(knoepfe)))
+    }
+
+    private var knoepfe: some View {
         VStack(spacing: Tokens.Abstand.s) {
             if let meldung {
                 KontoHinweis(text: meldung)
             }
-            GelberKnopf(text: laeuft ? "Wird gespeichert…" : weiterText, gesperrt: laeuft || gesperrt) {
+            Hauptknopf(text: laeuft ? "Wird gespeichert…" : weiterText, gesperrt: laeuft || gesperrt) {
                 los(speichern)
             }
             if k.zurueck != nil || k.ueberspringen != nil {
@@ -288,7 +340,6 @@ struct OnboardingAktionen: View {
                 }
             }
         }
-        .padding(.top, Tokens.Abstand.s)
     }
 
     private func los(_ tun: @escaping () async -> Ergebnis) {
@@ -322,7 +373,7 @@ struct OnboardingSchalter: View {
                 }
             }
         }
-        .tint(Farbe.green)
+        .tint(Farbe.blue)
         .disabled(gesperrt)
         .padding(.horizontal, 16)
         .padding(.vertical, 12)

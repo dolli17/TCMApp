@@ -1,0 +1,214 @@
+<!DOCTYPE html><html lang="de" class="h-full"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TC Muckensturm - Umsetzen</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Space Grotesk', 'sans-serif'],
+          },
+          colors: {
+            brand: '#1466A8',
+            'brand-light': '#E8F1F8',
+            'text-main': '#0A1624',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      color: #0A1624;
+      background-color: #0A1624;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Hide scrollbars but keep scrollability */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="h-full flex items-center justify-center p-0 m-0">
+
+  <!-- iPhone Frame 393 x 852 -->
+  <div class="relative w-[393px] h-[852px] bg-white overflow-hidden shadow-2xl flex flex-col justify-end">
+
+    <!-- Background: Dimmed, non-blurred court schedule (Plätze Belegungsplan) -->
+    <div class="absolute inset-0 bg-[#F8FAFC] pointer-events-none opacity-40 select-none">
+      <!-- Status bar placeholder in background -->
+      <div class="h-11 pt-3 px-7 flex justify-between items-center text-xs font-semibold text-slate-800">
+        <span>9:41</span>
+        <div class="flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[15px]">signal_cellular_alt</span>
+          <span class="material-symbols-outlined text-[15px]">wifi</span>
+          <span class="material-symbols-outlined text-[17px]">battery_full</span>
+        </div>
+      </div>
+      <!-- Background Header -->
+      <div class="px-6 pt-2 pb-3">
+        <p class="text-[10px] uppercase font-bold tracking-wider text-slate-500">TC Muckensturm</p>
+        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Plätze</h1>
+        <p class="text-xs text-slate-500">8 Plätze · 08 bis 21 Uhr</p>
+      </div>
+      <!-- Date Picker Row Preview -->
+      <div class="flex gap-2 px-6 pb-4">
+        <div class="w-12 h-14 rounded-full bg-slate-200 flex flex-col items-center justify-center">
+          <span class="text-[10px] font-bold text-slate-500">MO</span>
+          <span class="text-xs font-bold text-slate-700">16</span>
+        </div>
+        <div class="w-12 h-14 rounded-full bg-slate-200 flex flex-col items-center justify-center">
+          <span class="text-[10px] font-bold text-slate-500">DI</span>
+          <span class="text-xs font-bold text-slate-700">17</span>
+        </div>
+        <div class="w-12 h-14 rounded-full bg-slate-200 flex flex-col items-center justify-center">
+          <span class="text-[10px] font-bold text-slate-500">MI</span>
+          <span class="text-xs font-bold text-slate-700">18</span>
+        </div>
+      </div>
+      <!-- Mock Grid Lines -->
+      <div class="px-6 space-y-3">
+        <div class="h-10 bg-slate-100 rounded-xl border border-slate-200 flex items-center px-3">
+          <span class="text-xs font-bold text-slate-500">17:00</span>
+        </div>
+        <div class="h-14 bg-amber-100 border border-amber-300 rounded-xl flex items-center px-3">
+          <span class="text-xs font-bold text-amber-900">Platz 3: Dein Spiel (18:00 - 19:00)</span>
+        </div>
+        <div class="h-10 bg-slate-100 rounded-xl border border-slate-200"></div>
+        <div class="h-10 bg-slate-100 rounded-xl border border-slate-200"></div>
+        <div class="h-10 bg-slate-100 rounded-xl border border-slate-200"></div>
+      </div>
+    </div>
+
+    <!-- Backdrop Dimmer Overlay (darkened, not blurred) -->
+    <div class="absolute inset-0 bg-[#0A1624]/60 z-10" style="background-color: rgba(15, 23, 42, 0.4);"></div>
+
+    <!-- iOS Status Bar (crisp on top of dark overlay) -->
+    <div class="absolute top-0 left-0 right-0 h-11 pt-3 px-7 flex justify-between items-center text-xs font-semibold text-white z-20 pointer-events-none">
+      <span>9:41</span>
+      <div class="flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[15px]">signal_cellular_alt</span>
+        <span class="material-symbols-outlined text-[15px]">wifi</span>
+        <span class="material-symbols-outlined text-[18px]">battery_full</span>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet Modal: White, 32px rounded top, full width -->
+    <div class="relative z-30 w-full bg-white rounded-t-[32px] flex flex-col max-h-[805px] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom duration-200">
+
+      <!-- Sheet Header / Gripper -->
+      <div class="pt-3 pb-2 px-6 flex flex-col items-center relative flex-shrink-0">
+        <!-- Grabber / Greifer -->
+        <div class="w-10 h-1.5 bg-slate-300 rounded-full mb-3"></div>
+
+        <!-- Close Button (right circular grey) -->
+        <button class="absolute top-4 right-6 w-10 h-10 rounded-full flex items-center justify-center transition-colors" style="background-color: rgb(241, 245, 249); color: rgb(51, 65, 85);" aria-label="Schließen"><span class="material-symbols-outlined text-[20px]">close</span></button>
+
+        <!-- Title & Subtitle -->
+        <div class="w-full text-left pr-10">
+          <h2 class="text-[32px] leading-tight font-bold text-[#0A1624] tracking-tight">Umsetzen</h2>
+          <p class="text-sm font-medium text-slate-500 mt-1">Bisher: Platz 3 · Montag, 18:00 – 19:00</p>
+        </div>
+      </div>
+
+      <!-- Scrollable Sheet Content -->
+      <div class="overflow-y-auto no-scrollbar px-6 pt-2 pb-6 space-y-6">
+
+        <!-- ABSCHNITT: TAG -->
+        <div>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2.5">Tag</div>
+          <!-- Horizontal Row of High Day Pills (like day picker) -->
+          <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+            <!-- MO 16 -->
+            <div class="flex-1 min-w-[58px] h-[72px] rounded-full border border-slate-200 bg-white flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors">
+              <span class="text-[11px] font-bold text-slate-400">MO</span>
+              <span class="text-[17px] font-bold text-[#0A1624] mt-0.5">16</span>
+            </div>
+
+            <!-- DI 17 (Ausgewählt in Blau #1466A8) -->
+            <div class="flex-1 min-w-[58px] h-[72px] rounded-full bg-[#1466A8] text-white flex flex-col items-center justify-center shadow-md shadow-[#1466A8]/20 cursor-pointer">
+              <span class="text-[11px] font-bold tracking-wide text-blue-100">DI</span>
+              <span class="text-[17px] font-bold text-white mt-0.5">17</span>
+            </div>
+
+            <!-- MI 18 -->
+            <div class="flex-1 min-w-[58px] h-[72px] rounded-full border border-slate-200 bg-white flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors">
+              <span class="text-[11px] font-bold text-slate-400">MI</span>
+              <span class="text-[17px] font-bold text-[#0A1624] mt-0.5">18</span>
+            </div>
+
+            <!-- DO 19 -->
+            <div class="flex-1 min-w-[58px] h-[72px] rounded-full border border-slate-200 bg-white flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors">
+              <span class="text-[11px] font-bold text-slate-400">DO</span>
+              <span class="text-[17px] font-bold text-[#0A1624] mt-0.5">19</span>
+            </div>
+
+            <!-- FR 20 -->
+            <div class="flex-1 min-w-[58px] h-[72px] rounded-full border border-slate-200 bg-white flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors">
+              <span class="text-[11px] font-bold text-slate-400">FR</span>
+              <span class="text-[17px] font-bold text-[#0A1624] mt-0.5">20</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABSCHNITT: PLATZ -->
+        <div>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2.5">Platz</div>
+          <!-- 8 Courts Grid (4x2 or 4 across) -->
+          <div class="grid grid-cols-4 gap-2"><button type="button" class="h-12 rounded-full border text-sm font-semibold transition-colors flex items-center justify-center" style="background-color: rgb(255, 255, 255); border-color: rgb(226, 232, 240); color: rgb(15, 23, 42);">Platz 1</button><button type="button" class="h-12 rounded-full border text-sm font-semibold transition-colors flex items-center justify-center" style="background-color: rgb(255, 255, 255); border-color: rgb(226, 232, 240); color: rgb(15, 23, 42);">Platz 2</button><button type="button" disabled="" class="h-12 rounded-full border text-sm font-medium cursor-not-allowed flex items-center justify-center" style="background-color: rgb(241, 245, 249); border-color: rgb(226, 232, 240); color: rgb(148, 163, 184);">Platz 3</button><button type="button" class="h-12 rounded-full border text-sm font-semibold transition-colors flex items-center justify-center" style="background-color: rgb(255, 255, 255); border-color: rgb(226, 232, 240); color: rgb(15, 23, 42);">Platz 4</button><button type="button" disabled="" class="h-12 rounded-full border text-sm font-medium cursor-not-allowed flex items-center justify-center" style="background-color: rgb(241, 245, 249); border-color: rgb(226, 232, 240); color: rgb(148, 163, 184);">Platz 5</button><button type="button" class="h-12 rounded-full border text-sm font-bold flex items-center justify-center" style="background-color: rgb(232, 241, 248); border-color: rgb(20, 102, 168); color: rgb(20, 102, 168);">Platz 6</button><button type="button" class="h-12 rounded-full border text-sm font-semibold transition-colors flex items-center justify-center" style="background-color: rgb(255, 255, 255); border-color: rgb(226, 232, 240); color: rgb(15, 23, 42);">Platz 7</button><button type="button" class="h-12 rounded-full border text-sm font-semibold transition-colors flex items-center justify-center" style="background-color: rgb(255, 255, 255); border-color: rgb(226, 232, 240); color: rgb(15, 23, 42);">Platz 8</button></div>
+        </div>
+
+        <!-- ABSCHNITT: BEGINN -->
+        <div>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2.5">Beginn</div>
+          <!-- Grid of Pills 16:30, 17:00, 17:30 (ausgewählt), 18:00, 18:30, 19:00 -->
+          <div class="grid grid-cols-3 gap-2"><button type="button" class="h-12 rounded-full border text-sm font-semibold transition-colors flex items-center justify-center" style="background-color: rgb(255, 255, 255); border-color: rgb(226, 232, 240); color: rgb(15, 23, 42);">16:30</button><button type="button" class="h-12 rounded-full border text-sm font-semibold transition-colors flex items-center justify-center" style="background-color: rgb(255, 255, 255); border-color: rgb(226, 232, 240); color: rgb(15, 23, 42);">17:00</button><button type="button" class="h-12 rounded-full border text-sm font-bold flex items-center justify-center" style="background-color: rgb(232, 241, 248); border-color: rgb(20, 102, 168); color: rgb(20, 102, 168);">17:30</button><button type="button" class="h-12 rounded-full border text-sm font-semibold transition-colors flex items-center justify-center" style="background-color: rgb(255, 255, 255); border-color: rgb(226, 232, 240); color: rgb(15, 23, 42);">18:00</button><button type="button" class="h-12 rounded-full border text-sm font-semibold transition-colors flex items-center justify-center" style="background-color: rgb(255, 255, 255); border-color: rgb(226, 232, 240); color: rgb(15, 23, 42);">18:30</button><button type="button" class="h-12 rounded-full border text-sm font-semibold transition-colors flex items-center justify-center" style="background-color: rgb(255, 255, 255); border-color: rgb(226, 232, 240); color: rgb(15, 23, 42);">19:00</button></div>
+        </div>
+
+        <!-- ABSCHNITT: GRUND (FREIWILLIG) -->
+        <div>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Grund (freiwillig)</div>
+          <div class="relative">
+            <input type="text" placeholder="z. B. Regen am Montag oder Terminverschiebung..." class="w-full px-4 text-sm focus:outline-none transition-colors" style="height: 52px; border-radius: 26px; background-color: rgb(248, 250, 252); border: 1px solid rgb(226, 232, 240); color: rgb(15, 23, 42);">
+          </div>
+        </div>
+
+        <!-- Zusammenfassung in einer Slate-50-Karte -->
+        <div class="p-4 rounded-2xl border flex items-center gap-3" style="background-color: rgb(248, 250, 252); border-color: rgb(226, 232, 240);"><div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: #E8F1F8; color: #1466A8;"><span class="material-symbols-outlined text-[22px]">update</span></div><div><div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Geänderte Buchung</div><div class="text-[15px] font-bold text-[#0F172A] leading-snug">Neu: Platz 6 · Dienstag, 17:30 – 18:30</div></div></div>
+
+      </div>
+
+      <!-- Fester Fußbereich mit Haarlinie -->
+      <div class="border-t border-slate-200 bg-white px-6 pt-3.5 pb-2 flex-shrink-0">
+        <div class="flex items-center gap-2.5"><button type="button" class="flex-1 rounded-full text-white font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all" style="height: 52px; background-color: rgb(20, 102, 168); font-family: &quot;Space Grotesk&quot;, sans-serif; font-weight: 600;">Hierhin umsetzen</button><button type="button" class="flex-1 rounded-full border font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all" style="height: 52px; background-color: rgb(255, 255, 255); border-color: rgb(226, 232, 240); color: rgb(15, 23, 42); font-family: &quot;Space Grotesk&quot;, sans-serif; font-weight: 600;">Doch nicht</button></div>
+
+        <!-- iOS Home Indicator -->
+        <div class="pt-3 pb-1 flex justify-center">
+          <div class="w-32 h-1 bg-slate-900 rounded-full"></div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+</body></html>

@@ -1,10 +1,9 @@
 /**
  * Bausteine der Bildschirme nach der Anmeldung
  *
- * Nachbauten der Expo-Komponenten (apps/mobile/src/components): grosser
- * Kopf, Abschnittskopf, Leerzustand, Fehlerzeile mit "Erneut versuchen",
- * Karte, Kicker und Zeitleiste. Masse und Texte wie dort, Farben und
- * Groessen aus den Tokens.
+ * Grosser Kopf, Abschnittskopf, Leerzustand, Fehlerzeile mit "Erneut
+ * versuchen", Karte und Kicker nach dem Design "Stitch" (docs/design/stitch).
+ * Farben und Groessen aus den Tokens; die Knoepfe stehen in Knoepfe.swift.
  */
 
 import SwiftUI
@@ -12,12 +11,12 @@ import SwiftUI
 // MARK: - Karte und Schrift
 
 extension View {
-    /// stil.listenkarte bzw. stil.karte: surf, Linie, kleiner Schatten (im Dunkeln keiner)
+    /// Karte: surf mit feiner Linie, Radius 24 bis 32, ohne Schatten (docs/design/stitch)
     func karte(radius: CGFloat = Tokens.Radius.karte, padding: CGFloat? = 12, gross: Bool = false) -> some View {
         modifier(KartenStil(radius: radius, padding: padding, gross: gross))
     }
 
-    /// stil.kicker: Barlow Semi Condensed 700, gross geschrieben, gesperrt
+    /// Kicker: Space Grotesk 700, gross geschrieben, gesperrt
     func kicker(farbe: Color = Farbe.muted) -> some View {
         font(Schrift.display(.fett, Tokens.Schrift.kicker, relativeTo: .caption))
             .textCase(.uppercase)
@@ -32,95 +31,79 @@ extension View {
 }
 
 private struct KartenStil: ViewModifier {
-    @Environment(\.colorScheme) private var schema
     let radius: CGFloat
     let padding: CGFloat?
     let gross: Bool
 
     func body(content: Content) -> some View {
-        let stufen = schema == .dark ? Tokens.Schattenstufen.dunkel : Tokens.Schattenstufen.hell
-        let schatten = gross ? stufen.normal : stufen.klein
         content
             .padding(padding ?? 0)
             .background(Farbe.surf, in: RoundedRectangle(cornerRadius: radius))
             .overlay(RoundedRectangle(cornerRadius: radius).strokeBorder(Farbe.line, lineWidth: 1))
             .clipShape(RoundedRectangle(cornerRadius: radius))
-            .shadow(color: schatten.farbe, radius: schatten.radius / 2, x: schatten.x, y: schatten.y)
     }
 }
 
 // MARK: - Kopf
 
 /**
- * Der grosse Titel-Kopf (GrosserKopf.tsx): optional ein Kicker, Titel in
- * 34/800, rechts Glocke und Avatar. Der Titel darf zweizeilig werden (U52).
+ * Der grosse Titel-Kopf (docs/design/stitch): Kicker, Titel, optional eine
+ * leise Zeile, rechts die Glocke. Der Titel darf zweizeilig werden (U52).
+ * Ins Konto fuehrt der Tab; einen Avatar gibt es im Kopf nicht mehr.
  */
 struct GrosserKopf: View {
     let titel: String
-    var kicker: String?
-    var name: MeinName?
+    var kicker: String? = "TC Muckensturm"
+    /// Leise Zeile unter dem Titel ("8 Plaetze · 08 bis 21 Uhr")
+    var unterzeile: String?
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: Tokens.Abstand.m) {
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .center, spacing: Tokens.Abstand.m) {
+            VStack(alignment: .leading, spacing: 2) {
                 if let kicker {
                     Text(kicker).kicker()
                 }
                 Text(titel)
-                    .font(Schrift.text(.extrafett, Tokens.Schrift.seitentitel, relativeTo: .largeTitle))
+                    .font(Schrift.display(.fett, Tokens.Schrift.seitentitel, relativeTo: .largeTitle))
                     .tracking(Tokens.Schrift.laufweiteTitel)
                     .foregroundStyle(Farbe.ink)
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)
                     .accessibilityAddTraits(.isHeader)
+                if let unterzeile {
+                    Text(unterzeile).leise().padding(.top, 2)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            HStack(spacing: 10) {
-                Glocke()
-                Avatar(name: name)
-            }
+            Glocke()
         }
         .padding(.top, 16)
         .padding(.bottom, Tokens.Abstand.m)
     }
 }
 
-/// Initialen auf brand; fuehrt ins Konto.
-struct Avatar: View {
-    @Environment(\.zuTab) private var zuTab
-    let name: MeinName?
-
-    var body: some View {
-        Button { zuTab(.konto) } label: {
-            Text(HomeLogik.initialen(name))
-                .font(Schrift.text(.fett, 15))
-                .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                .foregroundStyle(Farbe.onBrand)
-                .frame(width: 44, height: 44)
-                .background(Farbe.brand, in: Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Konto")
-    }
-}
-
-/// Abschnittskopf mit optionalem Link rechts ("Alle"); label sagt dem Screenreader, was gemeint ist (U6).
+/// Abschnittskopf mit optionalem Zaehler ("3 Plaetze") oder Link rechts ("Alle"); label sagt dem
+/// Screenreader, was gemeint ist (U6).
 struct Kopfzeile: View {
     let titel: String
+    var zaehler: String?
     var link: (text: String, label: String?, aktion: () -> Void)?
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(titel)
-                .font(Schrift.text(.fett, Tokens.Schrift.titel, relativeTo: .title2))
+                .font(Schrift.display(.halbfett, Tokens.Schrift.titel, relativeTo: .title2))
                 .tracking(-0.2)
                 .foregroundStyle(Farbe.ink)
                 .accessibilityAddTraits(.isHeader)
             Spacer(minLength: Tokens.Abstand.s)
+            if let zaehler {
+                Text(zaehler).kicker()
+            }
             if let link {
                 Button(action: link.aktion) {
                     Text(link.text)
-                        .font(Schrift.text(.halbfett, 14))
+                        .font(Schrift.display(.halbfett, 14))
                         .foregroundStyle(Farbe.blueInk)
                         .frame(minHeight: 44)
                 }
@@ -144,24 +127,48 @@ struct Leerzustand: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             if let titel {
-                Text(titel).font(Schrift.text(.fett, 18)).foregroundStyle(Farbe.ink)
+                Text(titel).font(Schrift.display(.halbfett, 22)).foregroundStyle(Farbe.ink)
             }
             Text(text).leise().lineSpacing(3).fixedSize(horizontal: false, vertical: true)
             if let handlung {
-                Button(action: handlung.aktion) {
-                    Text(handlung.text)
-                        .font(Schrift.display(.fett, Tokens.Schrift.normal))
-                        .foregroundStyle(Farbe.ink)
-                        .padding(.horizontal, 16)
-                        .frame(minHeight: 44)
-                        .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.knopf).strokeBorder(Farbe.line2, lineWidth: 1.5))
-                }
-                .buttonStyle(.plain)
-                .padding(.top, 10)
+                Knopf(handlung.text, stufe: .leise, groesse: .klein, aktion: handlung.aktion)
+                    .padding(.top, 10)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .karte(radius: titel != nil ? Tokens.Radius.karteGross : Tokens.Radius.karte, padding: titel != nil ? 20 : 16, gross: true)
+        .karte(radius: titel != nil ? Tokens.Radius.karteGross : Tokens.Radius.karte, padding: titel != nil ? 22 : 18)
+    }
+}
+
+/**
+ * Fehler, wenn noch gar nichts geladen ist (docs/design/stitch, "Verein
+ * Fehlerzustand"): mittig ein Symbol, der Satz und neutral "Erneut versuchen".
+ * Steht schon Inhalt da, bleibt es bei der Fehlerzeile darueber.
+ */
+struct Fehlerzustand: View {
+    let text: String
+    var laeuft = false
+    let onErneut: () -> Void
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "icloud.slash")
+                .font(.system(size: 22, weight: .medium))
+                .foregroundStyle(Farbe.ink2)
+                .frame(width: 56, height: 56)
+                .background(Farbe.chip, in: Circle())
+                .accessibilityHidden(true)
+            Text(text)
+                .font(Schrift.display(.halbfett, 18, relativeTo: .title3))
+                .foregroundStyle(Farbe.ink)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Knopf(laeuft ? "Wird geladen…" : "Erneut versuchen", stufe: .leise, gesperrt: laeuft, aktion: onErneut)
+                .padding(.top, 6)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, Tokens.Abstand.m)
+        .padding(.top, 96)
     }
 }
 
@@ -177,89 +184,11 @@ struct Fehlerzeile: View {
             Text(text).font(Schrift.text(.normal, Tokens.Schrift.normal)).foregroundStyle(Farbe.redInk)
                 .fixedSize(horizontal: false, vertical: true)
             if let onErneut {
-                Button(action: onErneut) {
-                    Text(laeuft ? "Wird geladen…" : "Erneut versuchen")
-                        .font(Schrift.text(.fett, 15))
-                        .foregroundStyle(Farbe.redInk)
-                        .padding(.horizontal, 16)
-                        .frame(minHeight: 44)
-                        .overlay(Capsule().strokeBorder(Farbe.red.opacity(0.4), lineWidth: 1.5))
-                }
-                .buttonStyle(.plain)
-                .disabled(laeuft)
-                .opacity(laeuft ? 0.6 : 1)
+                Knopf(laeuft ? "Wird geladen…" : "Erneut versuchen", stufe: .gefahrLeise, groesse: .klein, gesperrt: laeuft, aktion: onErneut)
             }
         }
-        .padding(12)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Farbe.red.opacity(schema == .dark ? 0.16 : 0.12), in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
-    }
-}
-
-// MARK: - Zeitleiste
-
-/**
- * Die Zeitleiste eines Platzes (MiniZeitleiste.tsx): belegt blau, eigene
- * Buchung gelb, Mitspieler gesucht gelblich mit gestrichelter Kante, Serie
- * schraffiert, Sperrung flach in surf3. Dazu die senkrechte Marke fuer jetzt.
- */
-struct MiniZeitleiste: View {
-    let segmente: [TimelineSegment]
-    var markierung: Double?
-    var hoehe: CGFloat = 8
-
-    var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            ZStack(alignment: .leading) {
-                Capsule().fill(Farbe.surf2)
-                ForEach(Array(segmente.enumerated()), id: \.offset) { _, s in
-                    segment(s)
-                        .frame(width: max(0, w * s.width / 100), height: hoehe)
-                        .offset(x: w * s.left / 100)
-                }
-            }
-            .clipShape(Capsule())
-            .overlay(alignment: .leading) {
-                if let markierung {
-                    RoundedRectangle(cornerRadius: 1)
-                        .fill(Farbe.ink)
-                        .frame(width: 2, height: hoehe)
-                        .offset(x: min(w - 2, w * markierung / 100))
-                }
-            }
-        }
-        .frame(height: hoehe)
-        // Schmuck; was die Leiste zeigt, steht daneben als Text.
-        .accessibilityHidden(true)
-    }
-
-    @ViewBuilder private func segment(_ s: TimelineSegment) -> some View {
-        switch s.art {
-        case .belegt: Capsule().fill(Farbe.blue)
-        case .eigen: Capsule().fill(Farbe.gold)
-        case .sucht:
-            Capsule().fill(Farbe.goldSoft)
-                .overlay(Capsule().strokeBorder(Farbe.goldLine, style: StrokeStyle(lineWidth: 1.5, dash: [3, 2])))
-        case .gesperrt: Capsule().fill(Farbe.surf3)
-        case .serie:
-            Capsule().fill(Farbe.surf3)
-                .overlay(Schraffur().stroke(Farbe.rahmen.opacity(0.6), lineWidth: 1.5))
-                .clipShape(Capsule())
-        }
-    }
-}
-
-/// Schraege Linien fuer Serien (Training)
-private struct Schraffur: Shape {
-    func path(in rect: CGRect) -> Path {
-        var p = Path()
-        var x = -rect.height
-        while x < rect.width {
-            p.move(to: CGPoint(x: x, y: rect.height))
-            p.addLine(to: CGPoint(x: x + rect.height, y: 0))
-            x += 5
-        }
-        return p
+        .background(Farbe.red.opacity(schema == .dark ? 0.16 : 0.08), in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
     }
 }

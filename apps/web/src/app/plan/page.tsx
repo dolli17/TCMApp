@@ -117,13 +117,14 @@ export default async function PlanSeite({
     <>
       <header className="plan-kopf">
         <div>
-          <div className="kicker">
-            {anzahlPlaetze} Plätze · {oeffnet} bis {schliesst} Uhr
-          </div>
+          <div className="kicker">TC Muckensturm</div>
           <h1 className="pagetitle">Plätze</h1>
-          {/* Nur über dem Raster ab Tablet; das Telefon führt mit eigenen Listen. */}
+          <p className="unterzeile plan-eckdaten">
+            {anzahlPlaetze} Plätze · {oeffnet} bis {schliesst} Uhr
+          </p>
+          {/* Nur ab Tablet; am Telefon erklärt sich das Raster durch Antippen. */}
           <p className="plan-hinweis">
-            Zum Buchen in eine grüne, freie Zeit klicken · {dauer} Minuten, Start zur vollen oder
+            Zum Buchen in eine freie, weiße Zeit klicken · {dauer} Minuten, Start zur vollen oder
             halben Stunde
           </p>
         </div>

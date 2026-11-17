@@ -72,17 +72,6 @@ sealed interface Markierung {
     }
 }
 
-enum class Ansicht(val wert: String) {
-    UEBERSICHT("uebersicht"),
-    FREIE_ZEITEN("freie-zeiten"),
-    ;
-
-    companion object {
-        /** Ohne gemerkte Wahl beginnt es mit Freie Zeiten: dort sind alle Ziele gross (U18). */
-        fun aus(wert: String?): Ansicht = entries.firstOrNull { it.wert == wert } ?: FREIE_ZEITEN
-    }
-}
-
 /** Rueckmeldung nach einer Aktion; `nr` macht zwei gleiche Meldungen hintereinander unterscheidbar. */
 data class Hinweis(val ok: Boolean, val text: String, val nr: Long = System.nanoTime())
 
@@ -95,18 +84,13 @@ class PlaetzeModell(
     val quelle: PlatzQuelle,
     val uhr: () -> Instant = Instant::now,
     val live: Boolean = true,
-    ansichtAnfang: Ansicht = Ansicht.FREIE_ZEITEN,
-    private val ansichtMerken: (Ansicht) -> Unit = {},
     private val bereich: CoroutineScope? = null,
 ) : ViewModel() {
     private val scope: CoroutineScope get() = bereich ?: viewModelScope
 
     var datum by mutableStateOf(Zeit.berlinDay(uhr()))
         private set
-    var ansicht by mutableStateOf(ansichtAnfang)
-        private set
     var auswahl by mutableStateOf<Auswahl?>(null)
-    var tagwahlOffen by mutableStateOf(false)
 
     var plaetze by mutableStateOf<List<AktiverPlatz>>(emptyList())
         private set
@@ -254,19 +238,13 @@ class PlaetzeModell(
         }
     }
 
-    // ---- Tag und Ansicht --------------------------------------------------------
+    // ---- Tag ---------------------------------------------------------------------
 
     fun waehleTag(t: String) {
         if (t == datum) return
         datum = t
         auswahl = null
         laedt = true
-    }
-
-    fun waehleAnsicht(a: Ansicht) {
-        ansicht = a
-        auswahl = null
-        ansichtMerken(a)
     }
 
     // ---- Blatt oeffnen ----------------------------------------------------------

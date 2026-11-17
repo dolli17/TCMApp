@@ -10,14 +10,14 @@
      >= 768px Seitenleiste links, Inhalte bis 1100px breit
    =========================================================================== */
 
-@import "@fontsource/barlow/latin-400.css";
-@import "@fontsource/barlow/latin-500.css";
-@import "@fontsource/barlow/latin-600.css";
-@import "@fontsource/barlow/latin-700.css";
-@import "@fontsource/barlow/latin-800.css";
-@import "@fontsource/barlow-semi-condensed/latin-600.css";
-@import "@fontsource/barlow-semi-condensed/latin-700.css";
-@import "@fontsource/barlow-semi-condensed/latin-800.css";
+@import "@fontsource/dm-sans/latin-400.css";
+@import "@fontsource/dm-sans/latin-500.css";
+@import "@fontsource/dm-sans/latin-600.css";
+@import "@fontsource/dm-sans/latin-700.css";
+@import "@fontsource/dm-sans/latin-800.css";
+@import "@fontsource/space-grotesk/latin-500.css";
+@import "@fontsource/space-grotesk/latin-600.css";
+@import "@fontsource/space-grotesk/latin-700.css";
 @import "@tcm/ui/tokens.css";
 
 * { box-sizing: border-box; }
@@ -94,7 +94,7 @@ main#inhalt:focus { outline: none; }
 :root[data-theme="dunkel"] .logo-dunkel { display: block !important; }
 
 .pagetitle {
-  font-weight: 800; font-size: var(--font-size-seitentitel);
+  font-family: var(--font-display); font-weight: 700; font-size: var(--font-size-seitentitel);
   letter-spacing: var(--tracking-title); line-height: 1.05;
   margin: 0 0 2px;
 }
@@ -112,7 +112,7 @@ main#inhalt:focus { outline: none; }
   margin: var(--space-abschnitt) 0 var(--space-m);
 }
 .sectionlabel h2 {
-  font-weight: 700; font-size: var(--font-size-titel);
+  font-family: var(--font-display); font-weight: 700; font-size: var(--font-size-titel);
   letter-spacing: -.2px; color: var(--ink); margin: 0;
 }
 
@@ -156,7 +156,7 @@ main#inhalt:focus { outline: none; }
 .avatar {
   width: 44px; height: 44px; border-radius: 22px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--brand); color: var(--on-brand); font-weight: 700; font-size: 15px;
+  background: var(--blue-soft); color: var(--blue-ink); font-family: var(--font-display); font-weight: 700; font-size: 15px;
   text-decoration: none;
 }
 a.avatar:hover { text-decoration: none; }
@@ -180,37 +180,44 @@ a.avatar:hover { text-decoration: none; }
 /* ---------------------------------------------------------------------------
    Knöpfe
    --------------------------------------------------------------------------- */
+/* Drei Stufen, überall dieselben Pillen (docs/design/stitch/README.md):
+     .knopf.haupt  kräftiges Blau - die eine Hauptaktion eines Screens
+     .knopf        hellblau - alles Zweite ("Getränk buchen", "Mitspielen")
+     .knopf.leise  weiss mit Linie - neutral ("Doch nicht", "Abbrechen")
+   Gelb ist kein Knopf. */
 .knopf {
-  appearance: none; border: 0; cursor: pointer;
-  font-family: var(--font-display); font-weight: 700; font-size: 16px;
-  border-radius: var(--radius-knopf); padding: 13px 16px;
+  appearance: none; cursor: pointer;
+  font-family: var(--font-display); font-weight: 600; font-size: 16px; line-height: 1.2;
+  border-radius: var(--radius-knopf); padding: 0 20px; min-height: 52px;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  background: var(--blue); color: var(--on-brand);
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--blue) 34%, transparent);
+  background: var(--blue-soft); color: var(--blue-ink);
+  border: 1px solid color-mix(in srgb, var(--blue) 22%, transparent);
+  text-decoration: none;
 }
+.knopf:hover { background: color-mix(in srgb, var(--blue) 16%, var(--surf)); text-decoration: none; }
+.knopf:disabled { opacity: .5; cursor: not-allowed; }
+.knopf.haupt { background: var(--blue); color: var(--on-brand); border-color: transparent; }
 /* Abdunkeln statt blue-ink: das ist im Dunkeln ein helles Blau, auf dem die
    weisse Schrift verschwand. */
-.knopf:hover { background: color-mix(in srgb, var(--blue) 82%, #000); }
-.knopf:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+.knopf.haupt:hover { background: color-mix(in srgb, var(--blue) 86%, #000); }
 .knopf.leise {
-  background: transparent; color: var(--ink);
-  border: 1.5px solid var(--line-2); box-shadow: none;
+  background: var(--surf); color: var(--ink);
+  border: 1px solid var(--line-2);
 }
-.knopf.leise:hover { border-color: var(--blue); color: var(--blue-ink); background: transparent; }
-.knopf.gold { background: var(--gold); color: var(--on-gold); box-shadow: none; }
-/* Gesperrt ist neutral statt blassgold: ein ausgewaschenes Gelb sieht aus wie
+.knopf.leise:hover { border-color: var(--blue); color: var(--blue-ink); background: var(--surf); }
+/* Gesperrt ist neutral statt blassblau: ein ausgewaschener Hauptknopf sieht aus wie
    "gleich geht's" und nicht wie "es fehlt noch etwas" (U26). Der Grund steht
    daneben (SperrGrund). */
-.knopf.gold:disabled,
-.knopf.gold[aria-disabled="true"],
-.auth.immer-dunkel .sheet .knopf.block:not(.leise):disabled {
-  background: var(--surf-3); color: var(--muted); opacity: 1; box-shadow: none;
+.knopf.haupt:disabled,
+.knopf.haupt[aria-disabled="true"],
+.auth .sheet .knopf.block:not(.leise):disabled {
+  background: var(--surf-3); color: var(--muted); opacity: 1; border-color: transparent;
 }
 .sperrgrund { margin: 8px 0 0; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
 .fenster-fuss > .sperrgrund { flex: 1 1 180px; align-self: center; margin: 0; }
 .blatt-fuss > .sperrgrund { margin: 0; text-align: center; }
 .knopf.klein {
-  font-size: var(--font-size-klein); padding: 7px 11px; border-radius: var(--radius-klein);
+  font-size: 14px; padding: 0 14px; min-height: 40px;
 }
 .knopf.block { width: 100%; }
 
@@ -225,15 +232,31 @@ label > span {
   display: block; font-size: 15px; font-weight: 600;
   color: var(--ink-2); margin-bottom: 7px;
 }
+/* Feldnamen sind Kicker über dem Feld (docs/design/stitch, alle Formulare):
+   Space Grotesk, Versalien, 12 px. Nicht bei Häkchen und Schaltern - dort ist
+   der Text die Aussage selbst. :where hält die Regel so schwach wie die oben. */
+label:where(:not(:has(> input[type="checkbox"], > input[type="radio"]))) > span:first-child {
+  font-family: var(--font-display); font-size: var(--font-size-kicker); font-weight: 700;
+  letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
 label > span.beschreibung { font-size: 14px; font-weight: 400; margin: 6px 0 0; }
 input, select, textarea {
   font: inherit; width: 100%;
-  background: var(--surf); color: var(--ink);
+  background: var(--surf-2); color: var(--ink);
   border: 1.5px solid var(--rahmen); border-radius: var(--radius-feld);
-  padding: 13px 14px;
+  padding: 13px 18px;
 }
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select) { min-height: 52px; }
+select { appearance: none; -webkit-appearance: none; padding-right: 44px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23596A7D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 16px center; background-size: 20px; }
+select[multiple] { background-image: none; padding-right: 18px; }
+/* Zwei oder drei Felder nebeneinander (Entwurf: Vorname | Nachname, Von | Bis) */
+.feldreihe { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 12px; }
+.feldreihe > :is(label, .feld) { margin-bottom: 0; }
 /* Fokus: der Rand wird kräftig blau, der Hof darum hebt ihn ab. Nur der
    Hof in blue-soft war auf hellem Grund kaum zu sehen (U47). */
+textarea, select[multiple] { border-radius: 20px; }
 input:focus, select:focus, textarea:focus {
   outline: 0; border-color: var(--blue);
   box-shadow: 0 0 0 1.5px var(--blue), 0 0 0 5px var(--blue-soft);
@@ -262,11 +285,12 @@ input:focus, select:focus, textarea:focus {
 body :is(
   .segtoggle button[aria-pressed="true"],
   .segtoggle a[aria-current="page"],
-  .telefon-ansicht button[aria-checked="true"],
   .segtoggle.bereich-segmente a[aria-current="page"],
   .segment:has(input:checked)
 ) {
-  box-shadow: inset 0 0 0 1.5px var(--seg-aktiv-rand);
+  /* Ausgewählt ist hellblau mit blauer Schrift (docs/design/stitch). */
+  background: var(--blue-soft); color: var(--blue-ink);
+  box-shadow: inset 0 0 0 1.5px var(--blue);
 }
 
 .marke-klein {
@@ -274,7 +298,7 @@ body :is(
   padding: 3px 8px; border-radius: 99px;
   background: var(--blue-soft); color: var(--blue-ink);
 }
-.marke-klein.gold { background: var(--gold-soft); color: var(--gold-ink); }
+.marke-klein.gold { background: var(--blue-soft); color: var(--blue-ink); }
 .marke-klein.grau { background: var(--chip); color: var(--ink-2); }
 .marke-klein.blau { background: var(--blue-soft); color: var(--blue-ink); }
 /* Forderungsarten (ArtMarke): mehrere nebeneinander, etwa je Lastschrift */
@@ -315,7 +339,7 @@ body :is(
   bottom: calc(26px + 64px + 14px + env(safe-area-inset-bottom));
   display: flex; justify-content: center; pointer-events: none;
 }
-body:has(.eintragen-leiste, .auswahl-leiste) .toast-ort {
+body:has(.eintragen-leiste) .toast-ort {
   bottom: calc(26px + 64px + 14px + 68px + 10px + env(safe-area-inset-bottom));
 }
 .hinweis.toast {
@@ -337,18 +361,24 @@ body:has(.eintragen-leiste, .auswahl-leiste) .toast-ort {
 @keyframes toast-rein { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
 
 /* Was die letzte Aktion betroffen hat, ist ein paar Sekunden hervorgehoben (U16) */
-.markiert { outline: 3px solid var(--gold-line); outline-offset: 1px; }
-.fz-zeile.markiert, .zuletzt li.markiert { outline: 0; background: var(--gold-soft); }
+.markiert { outline: 3px solid var(--blue); outline-offset: 1px; }
+.zuletzt li.markiert { outline: 0; background: var(--blue-soft); }
 
 /* Ein Ladefehler (components/Fehlerzustand.tsx): nicht wie "nichts da",
    sondern mit Grund und "Erneut versuchen". */
 .fehlerzustand {
-  margin: var(--space-l) auto; max-width: 520px; padding: 20px;
-  border-radius: var(--radius-karte); background: var(--surf);
-  border: 1.5px solid color-mix(in srgb, var(--red) 35%, var(--line));
-  text-align: center; color: var(--ink-2);
+  margin: 12vh auto var(--space-l); max-width: 520px; padding: 20px;
+  display: grid; justify-items: center; text-align: center; color: var(--ink-2);
 }
+.fehlerzustand .symbolkreis { width: 60px; height: 60px; border-radius: 30px; margin-bottom: 18px; background: var(--chip); color: var(--ink-2); }
+.fehlerzustand .symbolkreis svg { width: 28px; height: 28px; }
 .fehlerzustand p { margin: 0 0 12px; }
+.fehlerzustand .knopf { margin-top: 12px; min-width: 220px; }
+.fehlerzustand.kompakt {
+  display: block; border-radius: var(--radius-karte); background: var(--surf);
+  border: 1.5px solid color-mix(in srgb, var(--red) 35%, var(--line));
+}
+.fehlerzustand.kompakt .knopf { margin-top: 0; min-width: 0; }
 .fehlerzustand .titel { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--ink); }
 .fehlerzustand.kompakt { margin: 12px 0; max-width: none; padding: 14px 16px; text-align: left; }
 .fehlerzustand.kompakt .titel { font-size: 16px; margin-bottom: 4px; }
@@ -449,9 +479,9 @@ table.liste .zahl {
 }
 .nachrichtenliste li { display: flex; gap: 12px; padding: 14px 16px; }
 .nachrichtenliste li + li { border-top: 1px solid var(--line); }
-.nachrichtenliste li.neu { background: var(--gold-soft); }
+.nachrichtenliste li.neu { background: var(--blue-soft); }
 .nachrichtenliste .symbol {
-  width: 40px; height: 40px; border-radius: 12px; flex: 0 0 auto;
+  width: 40px; height: 40px; border-radius: 20px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--surf-2); color: var(--ink-2);
 }
@@ -459,7 +489,18 @@ table.liste .zahl {
 .nachrichtenliste .symbol svg { width: 20px; height: 20px; }
 .nachrichtenliste .text { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .nachrichtenliste .titelzeile { display: flex; justify-content: space-between; gap: 8px; }
-.nachrichtenliste strong { font-size: 15px; }
+.nachrichtenliste strong { font-family: var(--font-display); font-size: 15.5px; font-weight: 600; }
+/* Ungelesen: ein Punkt vor dem Titel, zusätzlich zur hellblauen Zeile */
+.nachrichtenliste li.neu strong::before {
+  content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 4px; margin-right: 8px;
+  background: var(--blue); vertical-align: 2px;
+}
+.nachrichtengruppe > .kicker { font-size: 11px; }
+.blatt.nachrichten .fenster-kopf > .textknopf { margin-left: auto; align-self: center; white-space: nowrap; }
+.blatt.nachrichten .fenster-kopf > .textknopf + .fenster-zu { margin-left: 0; }
+.blatt.nachrichten .fenster-kopf h2 { font-size: 26px; overflow-wrap: anywhere; }
+.blatt.nachrichten .fenster-inhalt { display: block; }
+@media (max-width: 767px) { dialog.fenster.blatt.nachrichten { min-height: 72dvh; } }
 .nachrichtenliste small { flex: 0 0 auto; font-size: 12px; color: var(--muted); }
 .nachrichtenliste .body { font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
 .fenster-kopf > .knopf { align-self: center; margin-left: auto; white-space: nowrap; }
@@ -546,9 +587,6 @@ table.liste .zahl {
 
   .pagetitle { font-size: 42px; }
 
-  /* Der Belegungsplan hat hier Platz für das volle Raster. */
-  .plan-listen { display: none; }
-  .plan-raster { display: block; }
 }
 
 /* ---------------------------------------------------------------------------
@@ -601,7 +639,7 @@ dialog.fenster::backdrop { background: rgba(3,8,14,.62); backdrop-filter: blur(2
   border: 1px solid color-mix(in srgb, var(--blue) 35%, transparent);
   border-radius: 99px; padding: 4px 5px 4px 11px; font-size: 13px; font-weight: 600;
 }
-.marken li.gast:not(.chip) { background: var(--gold-soft); color: var(--ink); border-color: var(--gold-line); }
+.marken li.gast:not(.chip) { background: var(--chip); color: var(--ink); border-color: var(--line-2); }
 .marken li:not(.chip) button {
   border: 0; background: transparent; color: inherit; cursor: pointer;
   font-size: 16px; line-height: 1; padding: 0 4px; border-radius: 99px;
@@ -627,6 +665,7 @@ ul.marken:not(:has(.chip)) { margin-bottom: 9px; gap: 6px; }
 .gasthinweis { margin: 8px 0 0; color: var(--ink-2); }
 
 .knopf.gefahr { background: var(--red); border-color: var(--red); color: var(--on-brand); }
+.knopf.gefahr:hover { background: color-mix(in srgb, var(--red) 86%, #000); }
 
 /* --- Admin-Dashboard: Einstellungen --------------------------------------- */
 .karte.einstellungen { margin-bottom: 20px; }
@@ -828,112 +867,77 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 .rechtstext strong { color: var(--ink); font-weight: 600; }
 
 /* ---------------------------------------------------------------------------
-   Home (docs/design/clubhaus, Abschnitt 5)
+   Home (docs/design/stitch, Entwurf "TC Muckensturm - Home")
 
-   Am Telefon einspaltig wie die App, Termine und freie Plaetze waagerecht
-   wischbar. Ab 768 px ein 12er-Raster: links 8 Spalten, rechts 4.
+   Einspaltig, auch am Rechner: der nächste eigene Termin, zwei Aktionen,
+   freie Plätze, offene Spiele, ein Streifen zur nächsten Veranstaltung.
    --------------------------------------------------------------------------- */
-.home-kopf { margin-bottom: 8px; }
-.home-kopf .pagetitle { margin-top: 4px; }
-.home section + section, .home .schnellaktionen + section { margin-top: 0; }
+.home { max-width: 560px; }
+.home-kopf { margin-bottom: 16px; }
+.home-kopf .pagetitle { margin-top: 2px; }
 .home .sectionlabel { align-items: baseline; }
-.home .sectionlabel a { font-size: 14px; font-weight: 600; color: var(--blue-ink); }
+.home .sectionlabel .kicker { font-size: 11px; }
 .leer-klein { color: var(--muted); font-size: var(--font-size-klein); margin: 0; }
-/* Einheitlicher Leerzustand: Satz links, Handlung daneben oder darunter. */
-.leerzustand {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
-  padding: 16px 18px; border-radius: var(--radius-karte);
-  border: 1.5px dashed var(--line-2); color: var(--ink-2);
-}
-.leerzustand p { flex: 1 1 220px; margin: 0; font-size: 15px; line-height: 1.45; }
-.leerzustand .knopf { flex: 0 0 auto; }
-.karte.neuigkeiten .leerzustand { margin: 0 20px 20px; }
-.fehlertext { color: var(--red-ink); }
 
-/* Waagerecht wischbar bis an den Rand */
-.naechstes, .frei-reihe {
-  display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory;
-  margin: 0 calc(-1 * var(--space-rand)); padding: 2px var(--space-rand) 6px;
-  /* Ohne scroll-padding rastet die erste Karte am Bildschirmrand ein statt am Inhaltsrand. */
-  scroll-padding-inline: var(--space-rand);
-  scrollbar-width: none; overscroll-behavior-x: contain;
+/* Gelb heisst "deins": eigener Termin, eigenes Spiel, "du" */
+.dein-marker {
+  display: inline-flex; align-items: center; min-height: 24px; padding: 0 10px; border-radius: 99px;
+  background: var(--gold); color: var(--on-gold);
+  font-family: var(--font-display); font-size: 12.5px; font-weight: 600; white-space: nowrap;
 }
-.naechstes::-webkit-scrollbar, .frei-reihe::-webkit-scrollbar { display: none; }
 
-.termin-karte {
-  position: relative; overflow: hidden; flex: 0 0 min(318px, calc(100% - 32px));
-  scroll-snap-align: start; height: 216px; padding: 20px;
-  border-radius: var(--radius-kartegross); display: flex; flex-direction: column;
-  background: var(--surf); border: 1px solid var(--line); color: var(--ink);
-  text-decoration: none;
+.heute-karte {
+  display: grid; gap: 4px; padding: 20px 22px; border-radius: var(--radius-kartegross);
+  box-shadow: none; color: var(--ink); text-decoration: none;
 }
-.termin-karte:hover { text-decoration: none; }
-.termin-karte.gross {
-  background: var(--brand); border-color: transparent; color: var(--on-brand);
-  box-shadow: 0 18px 40px color-mix(in srgb, var(--brand) 35%, transparent);
-}
-.termin-karte .termin-inhalt { position: relative; display: flex; flex-direction: column; flex: 1; min-width: 0; }
-.termin-karte .kicker { color: var(--muted); }
-.termin-karte.gross .kicker { color: var(--on-brand); opacity: .85; padding-right: 40px; }
-.termin-karte .zeit {
+a.heute-karte:hover { text-decoration: none; border-color: var(--line-2); }
+.heute-karte .kopf { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.heute-karte .zeit {
   font-family: var(--font-display); font-weight: 700; font-size: var(--font-size-hero);
-  line-height: 1; margin-top: 8px; white-space: nowrap;
+  line-height: 1.1; letter-spacing: -1.5px; margin-top: 6px;
 }
-.termin-karte .ort { font-size: 16px; font-weight: 600; margin-top: 6px; opacity: .92; }
-.termin-karte .fuss {
-  margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px;
-}
-.termin-karte .mit {
-  font-size: 13px; opacity: .9; min-width: 0;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.termin-karte .details {
-  flex: 0 0 auto; height: 40px; padding: 0 16px; border-radius: 20px;
-  display: inline-flex; align-items: center; font-size: 14px; font-weight: 700;
-  background: color-mix(in srgb, var(--on-brand) 18%, transparent);
-}
-.termin-karte .platzlinien {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  fill: none; stroke: color-mix(in srgb, var(--on-brand) 13%, transparent); stroke-width: 2;
-}
-.termin-karte .ball {
-  position: absolute; right: 20px; top: 20px; width: 26px; height: 26px;
-  border-radius: 13px; background: var(--gold);
-}
-.termin-karte .weitere { display: none; }
-.termin-leer { display: grid; gap: 4px; justify-items: start; }
-.termin-leer b { font-size: 18px; }
-.termin-leer .unterzeile { margin: 0 0 8px; }
+.heute-karte .zeit small { font-size: 18px; font-weight: 500; letter-spacing: 0; color: var(--muted); }
+.heute-karte .ort { font-size: 15px; color: var(--ink-2); }
+.heute-karte .weitere { margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--blue-ink); }
+.heute-karte.ohne b { font-family: var(--font-display); font-size: 22px; margin-top: 6px; }
 
-/* Schnellaktionen: drei Kacheln */
-.schnellaktionen {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
-  margin-top: 20px;
-}
-.schnellaktionen a {
-  height: 96px; padding: 14px; border-radius: var(--radius-karte);
-  display: flex; flex-direction: column; justify-content: space-between;
-  background: var(--surf); border: 1px solid var(--line); box-shadow: var(--shadow);
-  color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.15;
-  text-decoration: none;
-}
-.schnellaktionen a:hover { text-decoration: none; border-color: var(--line-2); }
-.schnellaktionen a.gelb { background: var(--gold); color: var(--on-gold); border-color: transparent; box-shadow: none; }
-.schnellaktionen svg { width: 24px; height: 24px; }
+.home-aktionen { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.home-aktionen .knopf { min-height: 56px; padding: 0 12px; font-size: 15.5px; white-space: nowrap; }
+.home-aktionen svg { width: 20px; height: 20px; flex: 0 0 auto; }
+@media (max-width: 359px) { .home-aktionen { grid-template-columns: 1fr; } }
 
-/* Jetzt frei */
-.frei-karte {
-  flex: 0 0 150px; scroll-snap-align: start;
-  display: flex; flex-direction: column; gap: 10px; padding: 14px;
-  border-radius: var(--radius-karte); background: var(--surf);
-  border: 1px solid var(--line); box-shadow: var(--shadow);
+.frei-reihe { padding: 0; overflow: hidden; box-shadow: none; }
+.frei-reihe a {
+  display: flex; align-items: center; gap: 14px; min-height: 56px; padding: 0 20px;
   color: var(--ink); text-decoration: none;
 }
-.frei-karte:hover { text-decoration: none; border-color: var(--line-2); }
-.frei-karte .kopf { display: flex; justify-content: space-between; align-items: center; }
-.frei-karte .kopf b { font-size: 20px; }
-.frei-karte .kopf i { width: 8px; height: 8px; border-radius: 4px; background: var(--green); }
-.frei-karte .bis { font-size: 13px; font-weight: 600; color: var(--green-ink); }
+.frei-reihe a + a { border-top: 1px solid var(--line); }
+.frei-reihe a:hover { text-decoration: none; background: var(--surf-2); }
+.frei-reihe a:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.frei-reihe i { width: 8px; height: 8px; border-radius: 4px; flex: 0 0 auto; background: var(--blue); }
+.frei-reihe b { flex: 1; font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+.frei-reihe .bis { font-size: 14.5px; color: var(--muted); }
+
+.offen-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.offen-karte {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px 14px 20px;
+  border-radius: var(--radius-karte); box-shadow: none;
+}
+.offen-karte .text { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.offen-karte .wann { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.offen-karte .wann b { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+.offen-karte small { font-size: 14px; color: var(--ink-2); }
+.offen-karte .knopf { flex: 0 0 auto; }
+
+.event-streifen {
+  display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 10px 20px;
+  margin-top: var(--space-abschnitt); border-radius: 26px;
+  background: var(--blue-soft); border: 1px solid color-mix(in srgb, var(--blue) 22%, transparent);
+  color: var(--ink); font-size: 14.5px; text-decoration: none;
+}
+.event-streifen:hover { text-decoration: none; background: color-mix(in srgb, var(--blue) 16%, var(--surf)); }
+.event-streifen svg { width: 20px; height: 20px; flex: 0 0 auto; color: var(--blue-ink); }
+
 
 .mini-zeitleiste {
   position: relative; height: 8px; border-radius: 4px;
@@ -942,7 +946,7 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 .mini-zeitleiste i { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
 .mini-zeitleiste i.belegt { background: var(--blue); }
 .mini-zeitleiste i.eigen { background: var(--gold); }
-.mini-zeitleiste i.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); }
+.mini-zeitleiste i.sucht { background: var(--blue-soft); border: 1.5px dashed var(--blue); }
 /* Serie (Training) schraffiert, Sperrung flach - im Handoff zwei Zustaende */
 .mini-zeitleiste i.serie {
   background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 16%, transparent) 0 3px, transparent 3px 6px), var(--surf-3);
@@ -950,107 +954,14 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 .mini-zeitleiste i.gesperrt { background: var(--surf-3); }
 .mini-zeitleiste b { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ink); }
 
-/* Offene Spiele */
-.offen-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.offen-karte {
-  display: flex; align-items: center; gap: 14px; padding: 14px;
-  border-radius: var(--radius-karte); background: var(--surf);
-  border: 1px solid var(--line); box-shadow: var(--shadow);
-}
-.offen-karte .datum {
-  width: 56px; height: 60px; flex: 0 0 auto; border-radius: 16px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: var(--gold-soft); border: 1.5px dashed var(--gold-line);
-}
-.offen-karte .datum small { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; color: var(--ink-2); }
-.offen-karte .datum b { font-family: var(--font-display); font-size: 19px; line-height: 1.05; }
-.offen-karte .text { flex: 1; min-width: 0; display: grid; gap: 2px; }
-.offen-karte .text b { font-size: 16px; }
-.offen-karte .text small { font-size: 13px; color: var(--muted); }
-.offen-karte .text b, .offen-karte .text small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.offen-karte .mitspielen {
-  flex: 0 0 auto; height: 44px; padding: 0 14px; border-radius: 22px;
-  display: inline-flex; align-items: center; font-size: 14px; font-weight: 700;
-  background: var(--gold); color: var(--on-gold); text-decoration: none;
-}
-.offen-karte .dabei { font-size: 13px; font-weight: 700; color: var(--muted); }
-
-/* Rechte Spalte: Dein Monat, Neuigkeiten */
-.home-seite { display: grid; gap: 16px; margin-top: var(--space-abschnitt); align-content: start; }
-.home-seite h2 { margin: 0; font-size: 20px; font-weight: 700; }
-.karte.monat { display: grid; gap: 14px; }
-.karte.monat .zeile {
-  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
-  color: var(--ink); text-decoration: none;
-}
-.karte.monat .zeile > span { font-size: 14px; font-weight: 600; color: var(--ink-2); }
-.karte.monat .zeile b { font-size: 26px; }
-.karte.monat .balken { height: 8px; border-radius: 4px; background: var(--surf-2); overflow: hidden; margin-top: -4px; }
-.karte.monat .balken i { display: block; height: 100%; border-radius: 4px; background: var(--green); }
-
-.karte.neuigkeiten { padding: 0; overflow: hidden; }
-.karte.neuigkeiten h2 { padding: 20px 20px 8px; }
-.karte.neuigkeiten .leer-klein, .karte.neuigkeiten .hinweis { margin: 0 20px 20px; }
-.karte.neuigkeiten ul { list-style: none; margin: 0; padding: 0; }
-.karte.neuigkeiten li { display: flex; gap: 12px; padding: 14px 20px; border-top: 1px solid var(--line); }
-.karte.neuigkeiten .symbol {
-  width: 38px; height: 38px; flex: 0 0 auto; border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--surf-2); color: var(--ink-2);
-}
-.karte.neuigkeiten li.neu .symbol { background: var(--gold-soft); color: var(--ink); }
-.karte.neuigkeiten .symbol svg { width: 18px; height: 18px; }
-.karte.neuigkeiten .text { min-width: 0; flex: 1; display: grid; gap: 2px; }
-.karte.neuigkeiten .titelzeile { display: flex; justify-content: space-between; gap: 8px; }
-.karte.neuigkeiten .titelzeile b { font-size: 14.5px; }
-.karte.neuigkeiten .titelzeile small { font-size: 12px; color: var(--muted); flex: 0 0 auto; }
-.karte.neuigkeiten .body { font-size: 13.5px; color: var(--ink-2); line-height: 1.4; }
-
-@media (min-width: 768px) {
-  .home-raster {
-    display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 24px;
-    align-items: start;
-  }
-  .home-haupt { grid-column: span 8; min-width: 0; }
-  .home-seite { grid-column: span 4; margin-top: 0; }
-  .home-seite .karte.monat { margin-top: 0; }
-
-  /* Die erste Karte wird breit und traegt die folgenden Termine rechts mit;
-     die kleinen Wischkarten entfallen. */
-  .naechstes { display: block; overflow: visible; margin: 0; padding: 0; }
-  .termin-karte.gross { flex-direction: row; gap: 28px; height: 220px; padding: 28px; }
-  .termin-karte.gross .zeit { font-size: 56px; margin-top: 10px; }
-  .termin-karte.gross .ort { font-size: 18px; margin-top: 8px; }
-  .termin-karte.gross .details { background: var(--on-brand); color: var(--on-gold); }
-  .termin-karte.gross .weitere {
-    position: relative; display: flex; flex-direction: column; justify-content: flex-end;
-    gap: 10px; width: 230px; flex: 0 0 auto; padding-top: 34px;
-  }
-  .termin-karte .weiterer {
-    display: grid; gap: 2px; padding: 12px 14px; border-radius: 16px;
-    background: rgba(7,17,29,.28);
-  }
-  .termin-karte .weiterer small { font-size: 12px; opacity: .8; }
-  .termin-karte .weiterer b { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .termin-karte.klein { display: none; }
-
-  /* Jetzt frei als vier Kacheln, Offene Spiele zweispaltig */
-  .frei-reihe {
-    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;
-    overflow: visible; margin: 0; padding: 0;
-  }
-  .frei-reihe .frei-karte:nth-child(n+5) { display: none; }
-  .frei-karte { padding: 16px; }
-  .frei-karte .kopf b { font-size: 22px; }
-  .offen-liste { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-}
 
 /* ---------------------------------------------------------------------------
    Plätze: Belegungsplan und Spiele (docs/design/clubhaus, WebPlan)
 
-   Zwei Darstellungen derselben Daten, umgeschaltet über die Breite:
-     < 768px  Übersicht (Raster zum Wischen) und Freie Zeiten, wie in der App
-     >= 768px Raster mit Blöcken über die ganze Dauer einer Belegung
+   Eine Darstellung für alle Breiten (docs/design/stitch, Entwurf "Plätze
+   (Belegungsplan Final)"): das Raster, Plätze als Spalten, Zeit nach unten.
+     < 768px  schmale Spalten, 88 px je Stunde, Blöcke nur mit "Du" oder "+"
+     >= 768px 44 px je Stunde, Blöcke mit Zeit und Namen
    --------------------------------------------------------------------------- */
 .plan-kopf {
   display: flex; justify-content: space-between; align-items: flex-end;
@@ -1064,16 +975,16 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 }
 .datums-kacheln::-webkit-scrollbar { display: none; }
 .datums-kacheln a {
-  flex: 0 0 auto; width: 58px; height: 70px; border-radius: 18px; scroll-snap-align: start;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  background: var(--surf-2); color: var(--ink-2); text-decoration: none;
+  flex: 0 0 auto; width: 56px; height: 66px; border-radius: 99px; scroll-snap-align: start;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  background: var(--surf); border: 1px solid var(--line-2); color: var(--ink-2); text-decoration: none;
 }
 /* Haelt den sr-only-Text in der Kachel; sonst ragt er aus der Scrollleiste und die Seite wird breiter. */
 .datums-kacheln a { position: relative; }
-.datums-kacheln a:hover { text-decoration: none; background: var(--surf-3); }
-.datums-kacheln a[aria-current="date"] { background: var(--gold); color: var(--on-gold); }
+.datums-kacheln a:hover { text-decoration: none; background: var(--blue-soft); border-color: transparent; }
+.datums-kacheln a[aria-current="date"] { background: var(--blue); border-color: transparent; color: var(--on-brand); }
 .datums-kacheln small { font-size: 11px; font-weight: 700; letter-spacing: .08em; }
-.datums-kacheln b { font-size: 26px; line-height: 1; }
+.datums-kacheln b { font-family: var(--font-display); font-size: 19px; font-weight: 600; line-height: 1; }
 
 /* Segment-Schalter aus Links: Belegung | Meine & offene Spiele */
 .segtoggle a {
@@ -1082,188 +993,22 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
   font-size: 15px; font-weight: 600; color: var(--muted); text-decoration: none;
 }
 .segtoggle a:hover { text-decoration: none; color: var(--ink); }
+@media (min-width: 360px) and (max-width: 767px) {
+  .segtoggle.plan-segmente a { font-size: 14px; padding: 0 6px; white-space: nowrap; }
+}
 .segtoggle a[aria-current="page"] {
   background: var(--seg-aktiv); color: var(--ink); font-weight: 700; box-shadow: var(--shadow-sm);
 }
 
 /* Vergangene Zeit trägt den Seitengrund: in beiden Themes dunkler als die
    Rasterfläche, also zurückgenommen statt frei. */
-.plan-raster { display: none; --vorbei: var(--bg); }
-/* Freie Zeit, überall dieselbe Fläche: grün über der Rasterfläche getönt,
-   der grüne Rand hält 3:1 zum Grund (HANDOFF §2). */
-.plan-raster, .plan-listen { --frei-flaeche: color-mix(in srgb, var(--green) 13%, var(--surf)); }
-.plan-listen { display: flex; flex-direction: column; gap: 12px; }
+.plan-raster { --vorbei: var(--surf-2); --std: 88px; --zeitspalte: 44px; }
 
-/* --- Übersicht und Freie Zeiten (Telefon, docs/design/clubhaus/plaetze) ---- */
-/* Klein und rechtsbündig mit Symbol wie in der App (U34) - keine zweite volle
-   Segmentleiste unter "Belegung | Meine & offene Spiele". */
-.telefon-ansicht {
-  align-self: flex-end; display: flex; gap: 2px; padding: 3px;
-  background: var(--surf-2); border-radius: calc(var(--radius-knopf) - 2px);
-}
-.telefon-ansicht button {
-  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px;
-  border: 0; border-radius: calc(var(--radius-knopf) - 5px); background: transparent; cursor: pointer;
-  font-family: var(--font-text); font-size: 14px; font-weight: 600; color: var(--ink-2);
-}
-.telefon-ansicht svg {
-  width: 16px; height: 16px; flex: 0 0 auto;
-  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
-}
-.telefon-ansicht button[aria-checked="true"] {
-  background: var(--seg-aktiv); color: var(--ink); font-weight: 700; box-shadow: var(--shadow-sm);
-}
-.telefon-ansicht button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
-
-/* Raster: feste Platzspalte, Stunden waagerecht wischbar, 88 px je Stunde -
-   eine halbe Stunde ist so 44 px breit, gross genug fuer einen Finger (U18) */
-.tr {
-  display: flex; background: var(--surf); border: 1px solid var(--line);
-  border-radius: 22px; overflow: hidden;
-}
-.tr-spalte { width: 46px; flex: 0 0 auto; border-right: 1px solid var(--line); }
-.tr-ecke { height: 34px; border-bottom: 1px solid var(--line); }
-.tr-platz {
-  height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
-}
-.tr-platz small { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; color: var(--muted); }
-.tr-platz b { font-size: 20px; font-weight: 700; line-height: 1; }
-.tr-wisch { flex: 1 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.tr-wisch::-webkit-scrollbar { display: none; }
-.tr-wisch:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
-.tr-kopf { position: relative; height: 34px; border-bottom: 1px solid var(--line); }
-.tr-kopf span { position: absolute; top: 10px; font-size: 12px; font-weight: 700; color: var(--ink-2); }
-.tr-koerper {
-  position: relative;
-  background: repeating-linear-gradient(to right, color-mix(in srgb, var(--ink) 7%, transparent) 0 1px, transparent 1px 88px);
-}
-.tr-zeile {
-  position: absolute; left: 0; right: 0; height: 52px;
-  border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
-}
-/* Frei ist eine grüne Fläche mit Rand, wie im Raster ab Tablet (U66) */
-.tr-frei {
-  position: absolute; top: 4px; bottom: 3px; padding: 0; cursor: pointer;
-  border: 1px solid var(--green); border-radius: 10px; background: var(--frei-flaeche);
-}
-.tr-frei:focus-visible { outline: 2px solid var(--blue); outline-offset: -3px; border-radius: 10px; }
-.tr-block {
-  /* Unten 3 statt 4: die Linie der Zeile nimmt 1 px, so bleiben 44 px (U18) */
-  position: absolute; top: 4px; bottom: 3px; z-index: 1; overflow: hidden;
-  display: flex; flex-direction: column; justify-content: center;
-  padding: 4px 8px; border: 0; border-radius: 10px; text-align: left;
-  font: inherit; font-size: 12px; line-height: 1.25; white-space: nowrap;
-}
-.tr-block b, .tr-block span { overflow: hidden; text-overflow: ellipsis; }
-.tr-block span { opacity: .85; }
-button.tr-block { cursor: pointer; }
-button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; z-index: 3; }
-.tr-block.eigen { background: var(--gold); color: var(--on-gold); }
-.tr-block.belegt { background: var(--blue-soft); color: var(--blue-ink); border: 1px solid var(--blue); }
-.tr-block.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); color: var(--gold-ink); }
-.tr-block.serie {
-  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 10%, transparent) 0 5px, transparent 5px 10px), var(--surf-3);
-  color: var(--ink-2); border: 1px solid var(--rahmen);
-}
-.tr-block.gesperrt { background: var(--surf-3); color: var(--muted); border: 1px solid var(--rahmen); }
-.tr-block.wahl {
-  z-index: 2; pointer-events: none; background: var(--gold-soft); color: var(--gold-ink);
-  border: 2px solid var(--gold);
-}
-.tr-jetzt { position: absolute; top: 0; bottom: 0; width: 2px; z-index: 4; background: var(--red); pointer-events: none; }
-
-.telefon-legende { gap: 6px 14px; }
-.telefon-legende i { width: 16px; height: 10px; border-radius: 3px; }
-.telefon-legende.kaestchen { gap: 6px 16px; }
-.telefon-legende.kaestchen i { width: 10px; height: 14px; }
-.telefon-legende.kaestchen i.frei { background: var(--green); border-color: var(--green); }
-
-/* Die Leiste über der schwebenden Navigation, sobald eine Stelle gewählt ist */
-.auswahl-leiste {
-  position: fixed; z-index: 21; left: 16px; right: 16px;
-  bottom: calc(26px + 64px + 14px + env(safe-area-inset-bottom));
-  height: 64px; padding: 0 8px 0 18px; border-radius: 22px;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  background: var(--ink); color: var(--bg); box-shadow: var(--shadow-float);
-}
-.auswahl-leiste > div { display: grid; min-width: 0; }
-.auswahl-leiste b { font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.auswahl-leiste small { font-size: 12.5px; opacity: .7; }
-.auswahl-leiste button {
-  flex: 0 0 auto; height: 48px; padding: 0 22px; border: 0; border-radius: 16px; cursor: pointer;
-  background: var(--gold); color: var(--on-gold); font: inherit; font-size: 15.5px; font-weight: 800;
-}
-.auswahl-leiste button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-/* Luft unter der Legende, damit die Leiste sie nicht verdeckt */
-.plan-listen:has(.auswahl-leiste) { padding-bottom: 76px; }
-
-/* Freie Zeiten: eine Zeile je Startzeit, ein Kästchen je Platz */
-.fz { background: var(--surf); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; }
-.fz-kopf {
-  display: flex; align-items: center; height: 40px; padding: 0 12px 0 16px;
-  border-bottom: 1px solid var(--line);
-  font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--muted);
-}
-.fz-beginn { width: 64px; flex: 0 0 auto; }
-.fz-nummern { display: flex; gap: 4px; letter-spacing: 0; }
-.fz-nummern span { width: 18px; text-align: center; }
-.fz-platz { margin-left: auto; margin-right: 22px; }
-.fz-zeile { border-bottom: 1px solid var(--line); }
-.fz-zeile:last-child { border-bottom: 0; }
-.fz-zeile.offen { background: var(--surf-2); }
-.fz-knopf {
-  display: flex; align-items: center; width: 100%; height: 60px; padding: 0 12px 0 16px;
-  border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer;
-}
-.fz-knopf:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
-.fz-zeit { width: 64px; flex: 0 0 auto; font-size: 22px; font-weight: 700; }
-.fz-kaestchen { display: flex; gap: 4px; }
-/* Nach der Statustabelle (HANDOFF §2): frei die volle grüne Fläche, belegt
-   blau, nicht buchbar grau - jedes mit Rand, wo die Fläche allein unter 3:1
-   zum Grund läge. */
-.fz-kaestchen i {
-  width: 18px; height: 24px; border-radius: 5px; box-sizing: border-box;
-  background: var(--surf-3); border: 1px solid var(--rahmen);
-}
-.fz-kaestchen i.frei { background: var(--green); border-color: var(--green); }
-.fz-kaestchen i.belegt { background: var(--blue-soft); border-color: var(--blue); }
-.fz-kaestchen i.eigen { background: var(--gold); border-color: var(--gold-line); }
-.fz-kaestchen i.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); }
-.fz-zahl { margin-left: auto; font-size: 14px; font-weight: 700; white-space: nowrap; }
-.fz-zahl.viele { color: var(--green-ink); }
-.fz-zahl.wenige { color: var(--ink); }
-.fz-zahl.keine { color: var(--muted); }
-.fz-pfeil { width: 16px; height: 16px; margin-left: 6px; flex: 0 0 auto; color: var(--muted); transition: transform .15s ease; }
-.fz-zeile.offen .fz-pfeil { transform: rotate(90deg); }
-.fz-auf { padding: 0 16px 16px; }
-.fz-auf > p { margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
-.fz-plaetze { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.fz-plaetze button {
-  height: 48px; border: 0; border-radius: 14px; cursor: pointer;
-  /* green-ink statt green: bg auf green hielt hell nur 3,1:1 (U15) */
-  background: var(--green-ink); color: var(--bg); font: inherit; font-size: 15px; font-weight: 800;
-}
-.fz-plaetze button:focus-visible, .fz-sucht:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-.fz-sucht {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
-  margin-top: 8px; height: 48px; padding: 0 14px; border-radius: 14px; cursor: pointer;
-  border: 1.5px dashed var(--gold-line); background: var(--gold-soft); color: var(--gold-ink);
-  font: inherit; font-size: 14.5px; font-weight: 700; text-align: left;
-}
-.fz-gesperrt {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
-  margin-top: 8px; min-height: 48px; padding: 8px 14px; border: 0; border-radius: 14px; cursor: pointer;
-  background: var(--surf-3); color: var(--ink-2); font: inherit; font-size: 14.5px; font-weight: 700; text-align: left;
-}
-.fz-gesperrt span:last-child { color: var(--ink); }
-.fz-gesperrt:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .sperre-bearbeiten { display: grid; gap: 16px; }
-.fz-eigen { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font-size: 13px; color: var(--ink-2); }
-.fz-eigen i { width: 10px; height: 10px; border-radius: 3px; background: var(--gold); }
 
 .status-frei { color: var(--green-ink); }
-.status-eigen, .status-sucht { color: var(--gold-ink); }
+.status-eigen { color: var(--gold-ink); }
+.status-sucht { color: var(--blue-ink); }
 .status-belegt, .status-serie, .status-gesperrt, .status-knapp, .status-vorbei, .status-schluss { color: var(--muted); }
 .mini-zeitleiste.gross { height: 10px; border-radius: 5px; overflow: visible; }
 .mini-zeitleiste.gross i { border-radius: 5px; }
@@ -1277,16 +1022,16 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 /* Jedes Kaestchen mit Rand: blue-soft, surf-3 und gold-soft allein liegen
    unter 3:1 zum Grund (U29). */
 .legende i { width: 18px; height: 10px; border-radius: 4px; box-sizing: border-box; border: 1.5px solid var(--rahmen); }
-.legende i.frei { background: var(--frei-flaeche); border: 1px solid var(--green); }
+.legende i.frei { background: var(--surf); }
 .legende i.eigen { background: var(--gold); }
-.legende i.belegt { background: var(--blue-soft); border: 1px solid var(--blue); }
-.legende i.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-ink); }
+.legende i.belegt { background: var(--belegt); }
+.legende i.sucht { background: var(--blue-soft); border: 1.5px solid var(--blue); }
 .legende i.serie, .beleg.serie {
   background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 12%, transparent) 0 3px, transparent 3px 6px), var(--surf-3);
 }
 .legende i.gesperrt { background: var(--surf-3); }
 
-/* --- Raster (ab 768 px) ---------------------------------------------------- */
+/* --- Raster ---------------------------------------------------------------- */
 .raster-oben {
   display: flex; justify-content: space-between; align-items: center;
   gap: 12px 24px; flex-wrap: wrap; margin-bottom: 14px;
@@ -1302,42 +1047,49 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
   box-shadow: var(--shadow); overflow: hidden;
 }
 .raster-kopf { display: grid; border-bottom: 1px solid var(--line); background: var(--surf-2); }
-.spalten-kopf { padding: 12px 10px; border-left: 1px solid var(--line); min-width: 0; }
-.spalten-kopf b { display: block; font-size: 17px; }
+.spalten-kopf { padding: 10px 2px; border-left: 1px solid var(--line); min-width: 0; text-align: center; }
+.spalten-kopf b { display: block; font-size: 16px; }
+.spalten-kopf b.lang { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .spalten-kopf small {
-  display: block; font-size: 12px; font-weight: 600; margin-top: 1px;
+  display: none; font-size: 12px; font-weight: 600; margin-top: 1px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .raster-koerper { display: grid; position: relative; }
 .raster-zeiten { position: relative; }
 .raster-zeiten .stunde {
-  position: absolute; right: 10px; margin-top: 4px;
-  font-size: 12px; font-weight: 600; color: var(--muted);
+  position: absolute; right: 6px; margin-top: 4px;
+  font-size: 11px; font-weight: 600; color: var(--muted);
 }
 /* Unter der roten Jetzt-Marke: nur die Marke zeigt die Zeit (U67) */
 .raster-zeiten .stunde.verdeckt { visibility: hidden; }
 .spalte {
   position: relative; border-left: 1px solid var(--line); min-width: 0;
-  background: repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px 44px);
+  background: repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px calc(var(--std) / 2));
 }
 
 /* Belegungen als Blöcke über ihre ganze Dauer, Farben nach der Statustabelle.
    Klasse .beleg, nicht .block - .block ist die Breite-Hilfsklasse der Knöpfe. */
+.plan-raster { --belegt: color-mix(in srgb, var(--ink-2) 22%, var(--surf)); }
 .beleg {
-  position: absolute; left: 5px; right: 5px; z-index: 2;
-  display: flex; flex-direction: column; overflow: hidden;
-  border: 0; border-radius: 11px; padding: 5px 9px; text-align: left;
+  position: absolute; left: 2px; right: 2px; z-index: 2;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden;
+  border: 0; border-radius: 6px; padding: 0; text-align: left;
   font: inherit; font-size: 12.5px; line-height: 1.25;
 }
+/* Am Telefon ist eine Spalte rund 40 px breit: der Text bleibt für
+   Vorlesegeräte da, zu sehen sind nur "Du" und "+". */
+.beleg > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.beleg.eigen::after { content: "Du"; font-family: var(--font-display); font-weight: 700; font-size: 13px; }
+.beleg.sucht::after { content: "+"; font-family: var(--font-display); font-weight: 700; font-size: 18px; }
 /* Zeilen nicht zusammenquetschen - was nicht passt, schneidet der Block ab. */
 .beleg > * { flex-shrink: 0; }
 .beleg .zeit { font-weight: 700; font-variant-numeric: tabular-nums; }
 .beleg .wer { font-weight: 600; opacity: .9; }
 .beleg .mit { font-size: 11.5px; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .beleg .wer, .beleg .zeit { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.beleg.belegt { background: var(--blue-soft); color: var(--blue-ink); border: 1px solid var(--blue); }
+.beleg.belegt { background: var(--belegt); color: var(--ink); }
 .beleg.eigen { background: var(--gold); color: var(--on-gold); }
-.beleg.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); color: var(--gold-ink); }
+.beleg.sucht { background: var(--blue-soft); border: 1.5px solid var(--blue); color: var(--blue-ink); }
 .beleg.serie { color: var(--ink-2); border: 1px solid var(--rahmen); }
 .beleg.gesperrt { background: var(--surf-3); color: var(--muted); border: 1px solid var(--rahmen); }
 button.beleg { cursor: pointer; }
@@ -1346,29 +1098,21 @@ button.beleg:hover, button.beleg:focus-visible {
 }
 .sucht-marke {
   display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 99px;
-  background: var(--gold); color: var(--on-gold); font-size: 10.5px; font-weight: 700;
+  background: var(--blue-soft); color: var(--blue-ink); font-size: 10.5px; font-weight: 700;
 }
 
 /* Vergangene Zeit heute: eine ruhige, flache Tönung über die ganze Breite,
    unter Spalten und Blöcken. Kantig und ohne Schraffur, damit sie weder wie Training
    noch wie eine Sperrung aussieht. */
 .vorbei-flaeche {
-  position: absolute; left: 64px; right: 0; top: 0; z-index: 0; pointer-events: none;
+  position: absolute; left: var(--zeitspalte); right: 0; top: 0; z-index: 0; pointer-events: none;
   background: var(--vorbei); border-bottom: 1px solid var(--line-2);
 }
 
-/* Freie Zeit: eine grüne Fläche über die ganze Lücke, wie am Telefon (U66).
-   Statt über hundert gleich gewichteter Plus-Zeichen (U41) zeigt sie, wo und
-   bis wann frei ist. Kein Plus im Ruhezustand; der Block "+ HH:MM buchen"
-   erscheint beim Überfahren, beim Tastatur-Fokus und beim Antippen. */
-.frei-flaeche {
-  position: absolute; left: 5px; right: 5px; z-index: 1; pointer-events: none; overflow: hidden;
-  border: 1px solid var(--green); border-radius: 11px; background: var(--frei-flaeche);
-}
-.frei-flaeche span {
-  display: block; padding: 5px 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  font-size: 12px; font-weight: 600; color: var(--green-ink);
-}
+/* Freie Zeit ist weiß - die Rasterfläche selbst (Entwurf). Der Block
+   "+ HH:MM buchen" erscheint beim Überfahren, beim Tastatur-Fokus und beim
+   Antippen. */
+.frei-flaeche { display: none; }
 /* Die Knöpfe je Startzeit liegen unsichtbar über der Fläche. */
 .frei-slot {
   position: absolute; left: 0; right: 0; z-index: 1;
@@ -1377,10 +1121,10 @@ button.beleg:hover, button.beleg:focus-visible {
 }
 .frei-slot:focus-visible { outline: none; }
 .frei-slot .vorschau {
-  position: absolute; left: 5px; right: 5px; top: 2px;
-  display: none; align-items: flex-start; padding: 6px 9px; border-radius: 11px;
-  /* Wie die Platzknöpfe unter "Freie Zeiten": green-ink mit Seitengrund */
-  background: var(--green-ink); color: var(--bg); font-size: 12.5px; font-weight: 700;
+  position: absolute; left: 2px; right: 2px; top: 2px;
+  display: none; align-items: flex-start; justify-content: center; padding: 6px 2px; border-radius: 6px;
+  overflow: hidden; white-space: nowrap;
+  background: var(--blue); color: var(--on-brand); font-size: 0; font-weight: 700;
   box-shadow: var(--shadow-sm); pointer-events: none;
 }
 .frei-slot:hover, .frei-slot:focus-visible { z-index: 4; }
@@ -1392,17 +1136,41 @@ button.beleg:hover, button.beleg:focus-visible {
   .frei-slot:active .vorschau { display: flex; }
 }
 
+.frei-slot .vorschau::before { content: "+"; font-family: var(--font-display); font-size: 18px; line-height: 1; }
 .jetzt-linie {
-  position: absolute; left: 58px; right: 0; height: 2px; z-index: 5;
+  position: absolute; left: calc(var(--zeitspalte) - 6px); right: 0; height: 2px; z-index: 5;
   background: var(--red); pointer-events: none;
 }
 .jetzt-linie span {
-  position: absolute; left: -50px; top: -9px; height: 20px; padding: 0 6px;
+  position: absolute; left: -36px; top: -9px; height: 20px; padding: 0 6px;
   border-radius: 10px; background: var(--red); color: var(--on-brand);
   font-size: 11px; font-weight: 700; display: inline-flex; align-items: center;
 }
 
 /* --- Spiele --------------------------------------------------------------- */
+/* Entwurf "Meine & offene Spiele": je Termin eine Karte - Zeit groß, Marke
+   rechts, eine Zeile wo und mit wem, im Fuß hinter einer Linie die Handlung. */
+.sectionlabel { align-items: baseline; gap: 12px; }
+.sectionlabel .neben { font-size: 13.5px; color: var(--muted); }
+.sectionlabel .kicker { font-size: 11px; }
+.terminliste { gap: 12px; }
+.spiel-karte { display: grid; gap: 6px; padding: 20px 22px 8px; box-shadow: none; }
+.spiel-karte .kopf { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.spiel-karte .zeit { font-size: 28px; font-weight: 700; letter-spacing: -.6px; line-height: 1.1; }
+.spiel-karte .wo { margin: 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.spiel-karte .wo strong { color: var(--ink); font-weight: 600; }
+.spiel-karte .hinweis { margin: 6px 0 0; }
+.spiel-karte .fuss {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  min-height: 52px; margin-top: 10px; padding: 4px 0; border-top: 1px solid var(--line);
+}
+.spiel-karte .fuss .mit { font-size: 13px; color: var(--muted); }
+.spiel-karte .fuss .leise-rot { font-family: var(--font-display); font-size: 15px; font-weight: 600; padding: 0; }
+.spiel-karte .fuss .knopf-paar { flex: 1; padding: 6px 0 8px; }
+.spiel-karte .fuss .knopf-paar .knopf { min-height: 44px; }
+.terminliste .offen-karte { align-items: flex-start; }
+.offen-karte .text strong { font-size: 15px; font-weight: 600; }
+
 .spiele-abschnitt .sectionlabel { margin-top: var(--space-l); }
 .spiele-abschnitt + .spiele-abschnitt .sectionlabel { margin-top: var(--space-abschnitt); }
 
@@ -1414,11 +1182,11 @@ dialog.fenster.blatt {
 .blatt .griff { display: none; }
 dialog.fenster.blatt.breit { width: min(680px, calc(100vw - 24px)); }
 .blatt .fenster-kopf { background: transparent; border: 0; padding: 8px 0 14px; align-items: flex-start; }
-.blatt .fenster-kopf .kicker { margin: 0; }
 .blatt .fenster-kopf h2 {
-  font-family: var(--font-display); font-size: var(--font-size-seitentitel);
+  font-family: var(--font-display); font-size: 32px; letter-spacing: -.6px;
   font-weight: 700; line-height: 1; margin: 4px 0 0;
 }
+.blatt .fenster-kopf .blatt-wo { margin: 10px 0 0; font-size: 16px; color: var(--ink-2); }
 .blatt .fenster-zu {
   width: 44px; height: 44px; border-radius: 22px; border: 0;
   background: var(--surf-2); color: var(--ink-2);
@@ -1429,42 +1197,111 @@ dialog.fenster.blatt.breit { width: min(680px, calc(100vw - 24px)); }
 .blatt .fenster-inhalt > label { margin-bottom: 0; }
 .blatt .sperrbereich { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 18px; gap: 10px; }
 .blatt .sperrbereich .fenster-fuss { border-top: 0; padding-top: 0; margin-top: 0; }
-.blatt-unterzeile { margin: -6px 0 0; font-weight: 600; }
-.gesucht-text { margin: 0; font-size: 13px; font-weight: 700; color: var(--gold-ink); }
+.blatt-titel { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.sucht-pille {
+  display: inline-flex; align-items: center; min-height: 26px; padding: 0 12px; border-radius: 99px;
+  background: var(--blue-soft); color: var(--blue-ink); border: 1px solid color-mix(in srgb, var(--blue) 22%, transparent);
+  font-family: var(--font-display); font-size: 12.5px; font-weight: 600; white-space: nowrap;
+}
+/* Eine Zeile mit Symbol: Spielform und Bucher, das neue Ziel beim Umsetzen */
+.blatt-info {
+  display: flex; align-items: center; gap: 12px; margin: 0; padding: 12px 16px;
+  border-radius: var(--radius-karte); background: var(--surf-2); border: 1px solid var(--line);
+  font-family: var(--font-display); font-size: 15.5px; font-weight: 600; color: var(--ink);
+}
+.blatt-info p { margin: 0; font-family: var(--font-text); font-size: 14.5px; font-weight: 400; line-height: 1.45; color: var(--ink-2); }
+.blatt-info p b { color: var(--ink); font-weight: 600; }
+.symbolkreis {
+  width: 40px; height: 40px; border-radius: 20px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--blue-soft); color: var(--blue-ink);
+}
+.symbolkreis svg { width: 20px; height: 20px; }
+/* Eine Zeile, die weiterführt: "Umsetzen" */
+.blatt-zeile {
+  display: flex; align-items: center; gap: 14px; width: 100%; min-height: 76px; padding: 12px 16px;
+  border-radius: var(--radius-karte); background: var(--surf-2); border: 1px solid var(--line);
+  font: inherit; text-align: left; color: var(--ink); cursor: pointer;
+}
+.blatt-zeile:hover { border-color: var(--line-2); }
+.blatt-zeile:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.blatt-zeile .text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.blatt-zeile b { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+.blatt-zeile small { font-size: 14px; color: var(--ink-2); }
+.blatt-zeile .pfeil { width: 20px; height: 20px; flex: 0 0 auto; color: var(--muted); }
+.gesucht-text { display: flex; align-items: flex-start; gap: 8px; margin: -6px 2px 0; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
+.gesucht-text svg { width: 18px; height: 18px; flex: 0 0 auto; margin-top: 1px; }
+/* Zwei Knöpfe nebeneinander im Fuß: die Entscheidung und "Doch nicht" */
+.knopf-paar { display: flex; gap: 10px; }
+.knopf-paar .knopf { flex: 1 1 auto; min-width: 0; min-height: 56px; padding: 0 14px; text-align: center; }
+/* Zerstörendes vor der Rückfrage: roter Text mit Symbol, keine Fläche */
+.gefahr-link {
+  justify-self: center; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px;
+  border: 0; border-radius: 99px; background: transparent; cursor: pointer;
+  font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--red-ink);
+}
+.gefahr-link svg { width: 20px; height: 20px; }
+.gefahr-link:hover { background: color-mix(in srgb, var(--red) 8%, transparent); }
+.gefahr-link:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.gefahr-link:disabled { opacity: .5; cursor: not-allowed; }
+.textknopf {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; border: 0; border-radius: 10px;
+  background: transparent; cursor: pointer; text-decoration: none;
+  font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--blue-ink);
+}
+.textknopf:hover { text-decoration: underline; }
+.textknopf:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.blatt .sperrbereich { justify-items: center; }
+.blatt .fenster-inhalt > .hinweis { margin: 0; }
 
-.segment-paar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.segment-stapel { display: grid; gap: 12px; }
+/* Abschnitte im Blatt (Entwurf "Platz buchen"): Kicker als Überschrift,
+   darunter gleich breite Pillen - gewählt hellblau mit blauem Rand. */
+.segment-stapel { display: grid; gap: 22px; }
 fieldset.segmente { border: 0; padding: 0; margin: 0; min-width: 0; }
-fieldset.segmente legend { padding: 0; margin-bottom: 8px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
-.segment-leiste { display: flex; gap: 4px; padding: 4px; border-radius: var(--radius-knopf); background: var(--surf-2); }
+fieldset.segmente legend, .mitspieler .feldname, fieldset.suchfilter legend {
+  padding: 0; margin: 0 0 10px; font-family: var(--font-display); font-size: var(--font-size-kicker);
+  font-weight: 700; letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted);
+}
+.segment-leiste { display: flex; gap: 10px; }
 .segment {
-  position: relative; flex: 1 1 0; min-width: 0; height: 40px; border-radius: calc(var(--radius-knopf) - 4px);
+  position: relative; flex: 1 1 0; min-width: 0; height: 52px; border-radius: var(--radius-knopf);
   display: flex; align-items: center; justify-content: center;
-  font-size: 15px; font-weight: 600; color: var(--muted); cursor: pointer; margin: 0;
+  background: var(--surf); border: 1px solid var(--line-2);
+  font-family: var(--font-display); font-size: 16px; font-weight: 500; color: var(--ink); cursor: pointer; margin: 0;
 }
 .segment input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
-.segment span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
-.segment:has(input:checked) { background: var(--seg-aktiv); color: var(--ink); font-weight: 700; box-shadow: var(--shadow-sm); }
+.segment span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; margin: 0; font: inherit; color: inherit; }
+.segment:has(input:checked) { font-weight: 600; }
 .segment:has(input:disabled) { opacity: .4; cursor: not-allowed; }
 .segment:has(input:disabled) input { cursor: not-allowed; }
-.segment:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 1px; }
+.segment:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 2px; }
 /* Beim Umsetzen koennen es zwanzig Startzeiten sein: sie brechen um, statt
    in eine Leiste gequetscht zu werden. */
-.umsetz-zeiten .segment-leiste { flex-wrap: wrap; }
-.umsetz-zeiten .segment { flex: 0 0 auto; min-width: 64px; }
+.umsetz-zeiten .segment-leiste { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.umsetz-plaetze .segment-leiste { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+:is(.umsetz-zeiten, .umsetz-plaetze) .segment { height: 48px; font-size: 15px; font-weight: 600; }
+/* Tage als hohe Pillen wie die Tagesleiste des Plans; der gewählte Tag kräftig blau */
+.tage-leiste { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 3px; margin: -3px; }
+.tage-leiste::-webkit-scrollbar { display: none; }
+.segment.tag { flex: 0 0 58px; height: 72px; }
+.segment.tag span { display: grid; justify-items: center; gap: 3px; padding: 0; }
+.segment.tag small { font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.segment.tag b { font-size: 18px; font-weight: 600; line-height: 1; }
+body .segment.tag:has(input:checked) { background: var(--blue); color: var(--on-brand); border-color: transparent; box-shadow: none; }
+.segment.tag:has(input:checked) small { color: inherit; }
 
-.mitspieler .feldname { margin: 0 0 8px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
-.mitspieler .feldname .umfang { font-weight: 500; color: var(--muted); }
+.mitspieler .feldname .umfang { font-weight: 500; }
 .chips, .marken { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .marken { list-style: none; margin: 0; padding: 0; }
 .chip {
   display: inline-flex; align-items: center; gap: 8px; height: 40px;
-  padding: 0 14px 0 4px; border-radius: 20px; background: var(--surf-2);
-  font-size: 14.5px; font-weight: 600; color: var(--ink);
+  padding: 0 14px 0 4px; border-radius: 20px; background: var(--surf-2); border: 1px solid var(--line);
+  font-family: var(--font-display); font-size: 15px; font-weight: 500; color: var(--ink);
 }
+.chip:not(:has(.avatar)) { padding-left: 16px; }
 .chip .avatar { width: 32px; height: 32px; border-radius: 16px; font-size: 12px; }
 .chip.ich .avatar { background: var(--gold); color: var(--on-gold); }
-.chip.gast .avatar { background: var(--gold-soft); color: var(--gold-ink); }
+.chip.gast .avatar { background: var(--surf-3); color: var(--ink-2); }
 .chip.leer { background: transparent; border: 1.5px dashed var(--line-2); color: var(--muted); }
 .chip.leer .avatar { background: transparent; }
 li.chip { padding-right: 4px; }
@@ -1473,32 +1310,47 @@ li.chip { padding-right: 4px; }
   color: var(--ink-2); font-size: 18px; line-height: 1; cursor: pointer;
 }
 .chip button:hover { background: var(--surf-3); }
-.hinzu { display: flex; gap: 8px; margin-top: 10px; }
-.gestrichelt {
-  flex: 1 1 0; min-height: 46px; border-radius: 14px; border: 1.5px dashed var(--line-2);
-  background: transparent; color: var(--ink); font: inherit; font-size: 15px; font-weight: 600;
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+.chips { margin-bottom: 10px; }
+/* Blatt "Eigenes Spiel": jede Person eine Zeile mit Avatar, freie Plätze gestrichelt */
+.mitspieler.zeilen .chips, .mitspieler.zeilen .marken { display: grid; gap: 10px; }
+.mitspieler.zeilen .chip {
+  height: auto; min-height: 64px; padding: 0 10px 0 16px; gap: 12px; border-radius: var(--radius-karte);
+  font-size: 16px; font-weight: 600;
 }
-.gestrichelt:hover { border-color: var(--blue); }
-/* Es fehlt noch jemand: "+ Mitglied" ist der naechste Schritt, nicht der Gast. */
-.gestrichelt.gefragt {
-  border-style: solid; border-color: var(--blue); color: var(--blue-ink);
-  background: color-mix(in srgb, var(--blue) 7%, transparent);
+.mitspieler.zeilen .chip .avatar { width: 40px; height: 40px; border-radius: 20px; font-size: 13px; }
+.mitspieler.zeilen .chip .name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.mitspieler.zeilen .chip button { width: 44px; height: 44px; border-radius: 22px; flex: 0 0 auto; color: var(--muted); }
+.mitspieler.zeilen .chip.leer .avatar { border: 1.5px dashed var(--line-2); color: var(--muted); }
+.mitspieler.zeilen .chip.leer .avatar svg { width: 20px; height: 20px; }
+.mitspieler.zeilen .chip.leer .name { font-style: italic; font-weight: 500; text-align: left; }
+.mitspieler.zeilen .suche input { background: var(--surf); }
+.mitspieler.zeilen > .chips:last-child { margin-bottom: 0; }
+.mitspieler .suche { position: relative; }
+.mitspieler .suche .lupe { position: absolute; left: 18px; top: 17px; width: 20px; height: 20px; color: var(--muted); pointer-events: none; }
+.mitspieler .suche input {
+  width: 100%; min-height: 54px; padding-left: 48px; border-radius: var(--radius-feld);
+  background: var(--surf-2); border: 1px solid var(--line-2); font-size: 16px;
 }
-.gestrichelt svg { width: 16px; height: 16px; }
-.mitspieler .suche { margin-top: 10px; }
+/* Es fehlt noch jemand: das Suchfeld ist der nächste Schritt, nicht der Gast. */
+.mitspieler .suche.gefragt input { border-color: var(--blue); }
+.gast-link {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 6px; padding: 0;
+  border: 0; background: transparent; cursor: pointer;
+  font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--blue-ink);
+}
+.gast-link svg { width: 18px; height: 18px; }
+.gast-link:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 8px; }
 .mitspieler .gasthinweis { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
 
 /* label.gesucht-karte: die aeltere Regel .fenster-inhalt > label waere sonst staerker */
 .fenster-inhalt > label.gesucht-karte, .gesucht-karte {
-  display: flex; align-items: center; gap: 14px; margin: 0;
-  padding: 14px 16px; border-radius: 18px; background: var(--surf-2); cursor: pointer;
+  display: flex; align-items: flex-start; gap: 14px; margin: 0;
+  padding: 0; background: transparent; cursor: pointer;
 }
-.gesucht-karte > span { display: grid; gap: 2px; flex: 1; }
-.gesucht-karte b { font-size: 16px; }
+.gesucht-karte > span { display: grid; gap: 6px; flex: 1; }
+.gesucht-karte b { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
 /* "Nur für …" unter dem Schalter: Damen/Herren und LK-Bereich */
 fieldset.suchfilter { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 10px; }
-fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
 .lk-bereich { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; gap: 10px; }
 .lk-bereich label { display: grid; gap: 4px; margin: 0; }
 .lk-bereich input { width: 100%; font-variant-numeric: tabular-nums; }
@@ -1506,8 +1358,8 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
 .suchfilter-hinweis { font-size: 13px; line-height: 1.4; color: var(--muted); }
 .suchfilter-block { display: grid; gap: 10px; justify-items: start; }
 .suchfilter-block > fieldset { justify-self: stretch; }
-.offen-filter { font-weight: 700; color: var(--gold-ink); }
-.gesucht-karte small { font-size: 13px; line-height: 1.4; color: var(--muted); }
+.offen-filter { font-weight: 700; color: var(--blue-ink); }
+.gesucht-karte small { font-size: 14px; font-weight: 400; line-height: 1.5; color: var(--ink-2); }
 .schalter-feld {
   appearance: none; -webkit-appearance: none; position: relative; flex: 0 0 auto;
   width: 52px; height: 32px; margin: 0; border-radius: 16px; cursor: pointer;
@@ -1518,17 +1370,23 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
   border-radius: 13px; background: var(--on-brand); box-shadow: 0 2px 6px rgba(0,0,0,.3);
   transition: left .15s ease;
 }
-.schalter-feld:checked { background: var(--green); box-shadow: none; }
+.schalter-feld:checked { background: var(--blue); box-shadow: none; }
 .schalter-feld:checked::after { left: 23px; }
 .schalter-feld:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .schalter-feld:disabled { opacity: .5; cursor: not-allowed; }
 
-.blatt-fuss { display: grid; gap: 10px; }
+.blatt-fuss { display: grid; gap: 10px; border-top: 1px solid var(--line); margin: 4px -20px 0; padding: 16px 20px 0; }
+/* Der Fuß bleibt stehen, der Inhalt läuft darunter durch (Entwürfe der Blätter).
+   Der negative Rand zieht ihn über das Polster des Blatts, wie .haftend. */
+.blatt .blatt-fuss {
+  position: sticky; bottom: -22px; z-index: 2; background: var(--surf);
+  margin-bottom: -22px; padding-bottom: 22px;
+}
 .blatt-fuss .hinweis { margin: 0; }
 /* Der nächste Schritt über dem gesperrten Knopf: in Schrift, nicht im
    Grau des Knopfs, damit klar ist, was fehlt (U65). */
 .blatt-fuss .hinweis.besetzung { font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--ink); }
-.knopf.gross { min-height: 58px; border-radius: 18px; font-family: var(--font-text); font-size: 17px; font-weight: 800; }
+.knopf.gross { min-height: 56px; font-size: 16px; }
 .knopf.gefahr-leise {
   min-height: 52px; background: transparent; color: var(--red-ink); box-shadow: none;
   border: 1.5px solid color-mix(in srgb, var(--red) 40%, transparent);
@@ -1547,7 +1405,7 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
     animation: blatt-rein .26s cubic-bezier(.2, .8, .3, 1);
   }
   .blatt .griff { display: block; width: 38px; height: 5px; border-radius: 3px; background: var(--line-2); margin: 0 auto 6px; }
-  .blatt .fenster-fuss.haftend {
+  .blatt .fenster-fuss.haftend, .blatt .blatt-fuss {
     bottom: calc(-22px - env(safe-area-inset-bottom));
     margin-bottom: calc(-22px - env(safe-area-inset-bottom));
     padding-bottom: calc(22px + env(safe-area-inset-bottom));
@@ -1558,96 +1416,85 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
 @keyframes blatt-rein { from { transform: translateY(100%); } to { transform: none; } }
 
 @media (min-width: 768px) {
-  /* Ab Tablet das Raster statt der Liste */
-  .plan-listen { display: none; }
-  .plan-raster { display: block; }
+  /* Ab Tablet: flachere Stunden, dafür Zeit und Namen in den Blöcken */
+  .plan-raster { --std: 44px; --zeitspalte: 64px; }
   .plan-hinweis { display: block; }
+  .spalten-kopf { padding: 12px 10px; text-align: left; }
+  .spalten-kopf b { font-size: 17px; }
+  .spalten-kopf b.lang { position: static; width: auto; height: auto; clip-path: none; }
+  .spalten-kopf b.kurz { display: none; }
+  .spalten-kopf small { display: block; }
+  .raster-zeiten .stunde { right: 10px; font-size: 12px; }
+  .beleg { left: 5px; right: 5px; border-radius: 11px; padding: 5px 9px; align-items: stretch; justify-content: flex-start; }
+  .beleg > span:not(.sr-only) { position: static; width: auto; height: auto; clip-path: none; }
+  .beleg.eigen::after, .beleg.sucht::after { content: none; }
+  .frei-slot .vorschau { left: 5px; right: 5px; padding: 6px 9px; border-radius: 11px; font-size: 12.5px; justify-content: flex-start; }
+  .frei-slot .vorschau::before { content: none; }
+  .jetzt-linie span { left: -50px; }
 
-  .datums-kacheln a { width: 54px; height: 62px; border-radius: 16px; background: var(--surf); border: 1px solid var(--line); }
-  .datums-kacheln a[aria-current="date"] { border-color: transparent; }
-  .datums-kacheln b { font-size: 23px; }
   .plan-segmente { max-width: 420px; }
 }
 
 /* ---------------------------------------------------------------------------
-   Anmeldeseiten (docs/design/clubhaus, AppLogin) - immer dunkel
+   Anmeldeseiten (docs/design/stitch, Entwurf "Anmelden"): weißer Grund,
+   Kicker, Titel, Formular - im gewählten Theme
    --------------------------------------------------------------------------- */
-.auth.immer-dunkel { background: var(--bg); color: var(--ink); }
+.auth { background: var(--bg); color: var(--ink); }
 .auth .buehne {
-  position: relative; height: 360px; flex: 0 0 auto; overflow: hidden;
-  background: var(--brand); color: var(--on-brand);
+  flex: 0 0 auto; width: 100%; max-width: 480px; margin: 0 auto; box-sizing: border-box;
+  padding: max(56px, 9vh) 24px 20px;
 }
-.auth .buehne .platz {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  fill: none; stroke: color-mix(in srgb, var(--on-brand) 22%, transparent); stroke-width: 2.5;
-}
-.auth .buehne .platz .netz { stroke: color-mix(in srgb, var(--on-brand) 40%, transparent); stroke-dasharray: 3 5; }
-.auth .buehne .ball {
-  position: absolute; right: max(54px, calc(50% - 141px)); top: 96px; width: 38px; height: 38px;
-  border-radius: 19px; background: var(--gold); box-shadow: 0 10px 24px rgba(0,0,0,.25);
-}
-/* Unten laeuft die Buehne in den Grund aus */
-.auth .buehne::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 160px;
-  background: linear-gradient(180deg, transparent, var(--bg));
-}
-.auth .buehne-inhalt {
-  position: relative; z-index: 1; height: 100%; max-width: 480px; margin: 0 auto;
-  padding: 60px 24px 22px; display: flex; flex-direction: column; justify-content: space-between;
-}
-.auth .buehne-inhalt img { height: 36px; width: auto; display: block; align-self: flex-start; }
+.auth.antragsseite .buehne { max-width: 680px; }
 .auth .buehne h1 {
-  margin: 0; font-size: 36px; font-weight: 800; letter-spacing: -.7px; line-height: 1.02; text-wrap: balance;
+  margin: 8px 0 0; font-family: var(--font-display); font-size: 30px; font-weight: 700;
+  letter-spacing: -.5px; line-height: 1.12; text-wrap: balance;
 }
-.auth .buehne p { margin: 8px 0 0; font-size: 15px; color: var(--ink-2); }
-.auth.immer-dunkel .sheet {
+.auth .buehne p { margin: 10px 0 0; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
+.auth .sheet {
   margin-top: 0; border-radius: 0; background: var(--bg); padding: 8px 24px 36px;
   width: 100%; max-width: 480px; margin-inline: auto;
 }
 /* Antrag, Danke, Datenschutz, Impressum: Inhalt auf surf, max. 680 breit, Fliesstext 16 */
-.auth.immer-dunkel.antragsseite .sheet {
+.auth.antragsseite .sheet {
   max-width: 680px; box-sizing: border-box; width: calc(100% - 32px);
   margin: 0 auto 40px; padding: 26px 24px 28px;
   background: var(--surf); border: 1px solid var(--line); border-radius: var(--radius-kartegross);
   flex: 0 0 auto;
 }
-.auth.antragsseite .buehne-inhalt { max-width: 680px; }
-.auth.immer-dunkel.antragsseite .sheet :is(p, li, .beschreibung, .unterzeile) { font-size: 16px; line-height: 1.55; }
-.auth.immer-dunkel.antragsseite .sheet input:not([type="checkbox"]):not([type="radio"]),
-.auth.immer-dunkel.antragsseite .sheet select,
-.auth.immer-dunkel.antragsseite .sheet textarea { background: var(--surf-2); }
-.auth.immer-dunkel .sheet.rechtstext { max-width: 680px; }
-.auth.immer-dunkel .sheet.rechtstext h2 { font-size: 19px; margin: 26px 0 8px; }
-.auth.immer-dunkel .sheet.rechtstext h2:first-of-type { margin-top: 14px; }
-.auth.immer-dunkel .sheet form { max-width: none; display: flex; flex-direction: column; gap: 14px; }
-.auth.immer-dunkel .sheet label { margin-bottom: 0; }
-.auth.immer-dunkel .sheet label > span { font-size: 15px; color: var(--ink-2); margin-bottom: 8px; }
-.auth.immer-dunkel .sheet input:not([type="checkbox"]):not([type="radio"]),
-.auth.immer-dunkel .sheet select {
-  min-height: 54px; border-radius: 16px; font-size: 16px;
-  border-color: var(--rahmen); background: var(--surf);
+.auth.antragsseite .sheet :is(p, li, .beschreibung, .unterzeile) { font-size: 16px; line-height: 1.55; }
+.auth.antragsseite .sheet input:not([type="checkbox"]):not([type="radio"]),
+.auth.antragsseite .sheet select,
+.auth.antragsseite .sheet textarea { background: var(--surf-2); }
+.auth .sheet.rechtstext { max-width: 680px; }
+.auth .sheet.rechtstext h2 { font-size: 19px; margin: 26px 0 8px; }
+.auth .sheet.rechtstext h2:first-of-type { margin-top: 14px; }
+.auth .sheet form { max-width: none; display: flex; flex-direction: column; gap: 14px; }
+.auth .sheet label { margin-bottom: 0; }
+.auth .sheet label:not(.schalter) > span { font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.auth .sheet input:not([type="checkbox"]):not([type="radio"]),
+.auth .sheet select {
+  min-height: 54px; border-radius: var(--radius-feld); font-size: 16px; padding-inline: 18px;
+  border-color: var(--rahmen); background: var(--surf-2);
 }
 /* Der Rand oben setzt rahmen und überdeckte den roten Fehlerrand (U70). */
-.auth.immer-dunkel .sheet :is(input, select, textarea)[aria-invalid="true"] { border-color: var(--red); }
-.auth.immer-dunkel .sheet a { color: var(--ink-2); font-weight: 600; }
+.auth .sheet :is(input, select, textarea)[aria-invalid="true"] { border-color: var(--red); }
+.auth .sheet a { color: var(--blue-ink); font-weight: 600; }
 /* Ohne Schatten: im Dunkeln traegt die Flaeche, ein Goldschein waere Deko. */
-.auth.immer-dunkel .sheet .knopf.block:not(.leise) {
-  background: var(--gold); color: var(--on-gold); box-shadow: none;
-  min-height: 58px; border-radius: 18px; font-family: var(--font-text); font-size: 17px; font-weight: 800;
+.auth .sheet .knopf.block:not(.leise) {
+  background: var(--blue); color: var(--on-brand); border-color: transparent;
+  min-height: 56px;
 }
-.auth.immer-dunkel .sheet .knopf.block.leise { min-height: 52px; border-radius: 16px; }
-.auth.immer-dunkel .sheet .schalter > span { margin: 0; font-size: 14px; font-weight: 500; color: var(--ink-2); }
+.auth .sheet .knopf.block.leise { min-height: 52px; }
+.auth .sheet .schalter > span { margin: 0; font-size: 14px; font-weight: 500; color: var(--ink-2); }
 .auth .vergessen { margin: -4px 0 0; text-align: right; font-size: 14px; }
 .auth .antrag-hinweis { margin: 4px 0 0; text-align: center; font-size: 14px; color: var(--muted); }
-.auth.immer-dunkel .antrag-hinweis a { color: var(--gold); font-weight: 700; }
+.auth .antrag-hinweis a { color: var(--blue-ink); font-weight: 700; }
 /* Kein Zugang mehr (B22): ein Satz, dann die beiden Wege */
 .auth .kein-zugang { display: flex; flex-direction: column; gap: 14px; }
 .auth .kein-zugang p { margin: 0 0 10px; font-size: 16px; line-height: 1.5; color: var(--ink-2); max-width: 60ch; }
 .auth .rechtliches { margin: 16px 0 0; text-align: center; font-size: 13px; color: var(--muted); }
-.auth.immer-dunkel .rechtliches a { color: var(--muted); font-weight: 500; }
+.auth .rechtliches a { color: var(--muted); font-weight: 500; }
 @media (min-width: 768px) {
-  .auth .buehne { height: 400px; }
-  .auth .buehne .platz { left: 50%; width: 780px; transform: translateX(-50%); }
 }
 
 /* ---------------------------------------------------------------------------
@@ -1684,41 +1531,46 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
 .symbolkachel svg { width: 18px; height: 18px; }
 
 /* ---------------------------------------------------------------------------
-   Getränke (docs/design/clubhaus, AppGetraenke)
+   Getränke (docs/design/stitch, Entwurf "Getränke")
    --------------------------------------------------------------------------- */
+/* Weiße Karte statt blauer Fläche: kräftiges Blau gehört der einen Hauptaktion. */
 .monatskarte {
-  position: relative; overflow: hidden; margin: 8px 0 4px; padding: 20px;
-  border-radius: var(--radius-kartegross); background: var(--brand); color: var(--on-brand);
+  margin: 8px 0 4px; padding: 20px 22px;
+  border-radius: var(--radius-kartegross); background: var(--surf); color: var(--ink);
+  border: 1px solid var(--line); box-shadow: var(--shadow);
 }
-.monatskarte .platzlinien {
-  position: absolute; right: 0; top: 0; width: 350px; height: 150px;
-  fill: none; stroke: color-mix(in srgb, var(--on-brand) 12%, transparent); stroke-width: 2;
-}
-.monatskarte .kicker { position: relative; color: var(--on-brand); opacity: .85; }
-.monatskarte .summe { position: relative; font-size: 44px; font-weight: 700; line-height: 1; margin-top: 8px; }
-.monatskarte p { position: relative; margin: 8px 0 0; font-size: 14px; opacity: .9; }
+.monatskarte .platzlinien { display: none; }
+.monatskarte .kicker { display: flex; align-items: center; gap: 8px; }
+.monatskarte .kicker::before { content: ""; width: 8px; height: 8px; border-radius: 4px; background: var(--blue); }
+.monatskarte .summe { font-family: var(--font-display); font-size: var(--font-size-hero); font-weight: 700; line-height: 1; margin-top: 10px; letter-spacing: -1px; }
+.monatskarte p { margin: 10px 0 0; font-size: 14px; color: var(--ink-2); }
 
+/* Eine Liste in einer Karte; die gewählte Zeile ist hellblau. */
 .getraenke-kacheln {
-  list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
+  list-style: none; margin: 0; padding: 0; overflow: hidden;
+  background: var(--surf); border: 1px solid var(--line); border-radius: var(--radius-karte); box-shadow: var(--shadow);
 }
 .getraenke-kacheln li {
-  min-height: 124px; padding: 14px; border-radius: var(--radius-karte);
-  display: flex; flex-direction: column; justify-content: space-between; gap: 10px;
-  background: var(--surf); border: 1px solid var(--line); box-shadow: var(--shadow);
+  min-height: 72px; padding: 12px 14px 12px 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  /* scroll-margin hält die angetippte Zeile über Korb- und Tab-Leiste. */
+  scroll-margin-bottom: calc(26px + 64px + 14px + 68px + 16px + env(safe-area-inset-bottom));
 }
-/* Gewählt: kräftiger neutraler Rand statt Gelb - gelb ist allein „Eintragen“ (U72).
-   scroll-margin hält die angetippte Kachel über Korb- und Tab-Leiste. */
-.getraenke-kacheln li { scroll-margin-bottom: calc(26px + 64px + 14px + 68px + 16px + env(safe-area-inset-bottom)); }
-.getraenke-kacheln li.gewaehlt { border: 2px solid var(--ink-2); padding: 13px; }
-.getraenke-kacheln b { display: block; font-size: 17px; }
-.getraenke-kacheln small { display: block; font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+.getraenke-kacheln li + li { border-top: 1px solid var(--line); }
+.getraenke-kacheln li.gewaehlt { background: var(--blue-soft); }
+.getraenke-kacheln li.gewaehlt :is(b, small) { color: var(--blue-ink); }
+.getraenke-kacheln b { display: block; font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+.getraenke-kacheln small { display: block; font-size: 14px; color: var(--ink-2); margin-top: 2px; }
 .zaehler { display: flex; justify-content: flex-end; align-items: center; gap: 4px; }
 .zaehler button {
   width: 44px; height: 44px; border: 0; border-radius: 22px; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--surf-2); color: var(--ink);
+  background: var(--blue-soft); color: var(--blue-ink);
 }
+.zaehler output { color: var(--blue-ink); }
+.getraenke-kacheln li.gewaehlt .zaehler { background: var(--surf); border-radius: 99px; padding: 3px; box-shadow: var(--shadow-sm); }
+.getraenke-kacheln li.gewaehlt .zaehler button { width: 38px; height: 38px; background: var(--surf-2); color: var(--ink-2); }
+.getraenke-kacheln li.gewaehlt .zaehler button:last-child { background: var(--blue); color: var(--on-brand); }
 .zaehler button:disabled { opacity: .4; cursor: not-allowed; }
 .zaehler button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .zaehler svg { width: 16px; height: 16px; }
@@ -1739,6 +1591,7 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
   font: inherit; font-size: 14px; font-weight: 700; min-height: 44px; padding: 0 4px;
 }
 .leise-rot:disabled { opacity: .5; }
+.zuletzt .leise-rot { color: var(--blue-ink); }
 
 /* Die Leiste zum Eintragen: am Telefon über der schwebenden Leiste,
    ab 768 px am unteren Rand des Inhalts */
@@ -1747,24 +1600,22 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
   bottom: calc(26px + 64px + 14px + env(safe-area-inset-bottom));
   min-height: 68px; padding: 8px 8px 8px 20px; border-radius: 24px;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  background: var(--ink); color: var(--bg); box-shadow: var(--shadow-float);
+  border-radius: 99px; padding-left: 24px;
+  background: var(--surf); color: var(--ink); border: 1px solid var(--line); box-shadow: var(--shadow-float);
 }
-.eintragen-leiste b { display: block; font-size: 15px; }
-.eintragen-leiste small { display: block; font-size: 13px; opacity: .7; }
-.eintragen-leiste .knopf { min-height: 52px; border-radius: 18px; padding: 0 24px; font-family: var(--font-text); font-size: 16px; font-weight: 800; }
+.eintragen-leiste b { display: block; font-family: var(--font-display); font-size: 16px; }
+.eintragen-leiste small { display: block; font-family: var(--font-display); font-size: 11px; letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted); }
+.eintragen-leiste .knopf { min-height: 52px; padding: 0 24px; }
 /* Am Telefon liegt die Leiste über dem Inhalt: unten so viel Platz mehr, dass
-   die letzten Kacheln darüber zu stehen kommen (U72). Solange sie da ist,
-   tritt die gelbe Markierung des Tabs zurück - die eine gelbe Fläche ist
-   dann „Eintragen“. */
+   die letzten Zeilen darüber zu stehen kommen (U72). */
 @media (max-width: 767px) {
   .inhalt:has(.eintragen-leiste) { padding-bottom: calc(110px + 68px + 14px + env(safe-area-inset-bottom)); }
-  body:has(.eintragen-leiste) .schwebeleiste a[aria-current="page"] { background: var(--surf-3); color: var(--ink); }
 }
 /* U17: Der Korb ist noch nicht gebucht - das soll man sehen, nicht nur lesen. */
-.eintragen-leiste small.offen { opacity: 1; font-weight: 700; }
+.eintragen-leiste small.offen { font-weight: 700; }
 .eintragen-leiste .knopf:not(:disabled) { animation: eintragen-ruf 1.6s ease-out 2; }
 @keyframes eintragen-ruf {
-  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 70%, transparent); }
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--blue) 70%, transparent); }
   100% { box-shadow: 0 0 0 12px transparent; }
 }
 
@@ -1795,7 +1646,7 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
   display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 11px;
   font-size: 11.5px; font-weight: 700; background: var(--surf-2); color: var(--ink-2);
 }
-.statusmarke.gelb { background: var(--gold-soft); color: var(--gold-ink); }
+.statusmarke.gelb { background: var(--blue-soft); color: var(--blue-ink); }
 .statusmarke.rot { background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red-ink); }
 details.frueher { margin: 0 0 12px; }
 details.frueher summary, .arbeitsdienst-karte summary {
@@ -1808,7 +1659,7 @@ details.frueher .gruppe { margin-top: 8px; }
 .arbeitsdienst-karte .kopfzeile b { font-size: 15.5px; }
 .arbeitsdienst-karte .kopfzeile span { font-size: 19px; font-weight: 700; }
 .arbeitsdienst-karte .balken { height: 8px; border-radius: 4px; background: var(--surf-2); margin-top: 12px; overflow: hidden; }
-.arbeitsdienst-karte .balken i { display: block; height: 100%; border-radius: 4px; background: var(--green); }
+.arbeitsdienst-karte .balken i { display: block; height: 100%; border-radius: 4px; background: var(--blue); }
 .arbeitsdienst-karte p { margin: 10px 0 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
 .arbeitsdienst-karte details { margin-top: 10px; }
 .einsaetze { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; font-size: 13.5px; }
@@ -1818,6 +1669,101 @@ details.frueher .gruppe { margin-top: 8px; }
 .erscheinungsbild { padding: 14px 16px 16px; }
 .erscheinungsbild p { margin: 0 0 10px; font-size: 15.5px; font-weight: 600; }
 .erscheinungsbild .segtoggle { margin: 0; }
+
+/* Entwurf "Konto" */
+.konto-kopf { margin-bottom: 4px; }
+.konto-kopf .pagetitle { margin-top: 4px; }
+.profilkopf .avatar.gross { width: 76px; height: 76px; border-radius: 38px; font-size: 24px; font-weight: 700; border: 1px solid color-mix(in srgb, var(--blue) 22%, transparent); }
+.profilkopf h1 { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -.3px; margin-top: 12px; }
+.profil-marken span { background: var(--chip); border: 1px solid var(--line); }
+.gruppe.forderungen, .gruppe.einstellungen-liste { box-shadow: none; }
+.forderung .was { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.forderung .was b { font-family: var(--font-display); }
+.forderung .was small { flex-basis: 100%; order: 3; }
+.forderung .betrag, .forderungen .summe .betrag { font-size: 17px; }
+.forderungen .summe { background: transparent; }
+.forderungen .summe span:first-child { font-family: var(--font-display); font-size: 15.5px; color: var(--ink); }
+.arbeitsdienst-karte { box-shadow: none; padding: 20px 22px; }
+.arbeitsdienst-karte .kopfzeile { flex-direction: column; align-items: flex-start; gap: 6px; }
+.arbeitsdienst-karte .kopfzeile b.kicker { font-size: 12px; }
+.arbeitsdienst-karte .kopfzeile span { font-size: 36px; line-height: 1; letter-spacing: -1px; }
+.einstellungen-liste .gruppen-zeile { font-family: var(--font-display); font-weight: 500; font-size: 16px; }
+.gruppen-zeile .wert { flex: 0 1 auto; min-width: 0; text-align: right; font-family: var(--font-text); font-size: 14px; font-weight: 400; color: var(--muted); }
+.gruppen-zeile svg.pfeil { width: 18px; height: 18px; flex: 0 0 auto; }
+.erscheinungsbild { padding: 8px 0 0; }
+.erscheinungsbild p.kicker { margin: 0 2px 8px; font-size: 11px; font-weight: 700; }
+.konto-fuss {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0 4px;
+  margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--line);
+}
+.konto-fuss > a, .konto-fuss > .gruppen-zeile {
+  display: inline-flex; align-items: center; width: auto; min-height: 44px; padding: 0 12px; border-radius: 10px;
+  font-size: 14.5px; font-weight: 500; color: var(--ink-2); text-decoration: none;
+}
+.konto-fuss > .gruppen-zeile.rot { color: var(--ink); font-weight: 700; }
+.konto-fuss > a:hover { text-decoration: underline; }
+.konto-kuendigen { margin: 4px 0 0; text-align: center; }
+.konto-kuendigen .gefahr-link { font-size: 14.5px; text-decoration: none; }
+
+/* Schalter mit Text: Aussage links, Schalter rechts, Erklärung klein darunter */
+.schalter-zeile {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0; padding: 6px 0; cursor: pointer;
+}
+.schalter-zeile .text { display: grid; gap: 3px; margin: 0; min-width: 0; }
+.schalter-zeile .text b { font-family: var(--font-text); font-size: 16px; font-weight: 500; color: var(--ink); line-height: 1.35; }
+.schalter-zeile .text small { font-size: 14px; font-weight: 400; color: var(--ink-2); line-height: 1.4; }
+.formraster > .schalter-zeile { grid-column: 1 / -1; }
+
+/* Unterseiten des Kontos (Entwürfe "Meine Daten", "Tennis"): Felder frei auf
+   der Seite, je zwei nebeneinander wo es passt, unten die eine Hauptaktion. */
+.konto-unterseite .karte.einstellungen { border: 0; box-shadow: none; padding: 0; background: transparent; border-radius: 0; margin-bottom: 20px; }
+.konto-unterseite .formraster { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+.konto-unterseite .formraster > label { grid-column: 1 / -1; }
+.konto-unterseite .formraster > label.halb { grid-column: auto; }
+.konto-unterseite form > .knopf.block { margin-top: 22px; }
+.konto-unterseite form > .hinweis { margin: 16px 0 0; }
+.stand-karte { display: grid; gap: 6px; margin: 0 0 20px; padding: 20px 22px; box-shadow: none; }
+.stand-karte b { font-size: 30px; font-weight: 700; letter-spacing: -.6px; line-height: 1.15; overflow-wrap: anywhere; }
+.mannschaft-box { box-shadow: none; padding: 16px 20px; margin-bottom: 20px; }
+.mannschaft-box .kopf { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; margin: 0 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.mannschaft-box .kopf b { font-size: 16px; font-weight: 600; }
+.mannschaft-box .karte.einstellungen { margin: 0; }
+.mannschaft-box .formraster { gap: 0; }
+/* Rückweg als runder Knopf mit Text wie im Entwurf */
+.unterseite-kopf .zurueck { gap: 6px; font-family: var(--font-display); }
+
+/* Einwilligungen (Entwurf): je Einwilligung eine Karte, Ja/Nein klein rechts oben */
+.karte.einstellungen.einwilligungs-karten { border: 0; box-shadow: none; padding: 0; background: transparent; border-radius: 0; display: grid; gap: 14px; }
+.karte.einstellungen.einwilligungs-karten > .einstellung {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: start;
+  margin: 0; padding: 20px 22px; border: 1px solid var(--line); border-radius: var(--radius-karte); background: var(--surf);
+}
+.einwilligungs-karten > .einstellung > * { grid-column: 1 / -1; }
+.einwilligungs-karten > .einstellung > .titel { grid-column: 1; grid-row: 1; font-family: var(--font-display); font-size: 17px; font-weight: 600; line-height: 1.3; }
+.einwilligungs-karten > .einstellung > .titel { align-self: center; }
+.einwilligungs-karten > .einstellung > .titel + .beschreibung { margin: 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.einwilligungs-karten > .einstellung > .segtoggle:not(.mehrere) { grid-column: 2; grid-row: 1; width: auto; margin: 0; padding: 3px; }
+.einwilligungs-karten > .einstellung > .segtoggle:not(.mehrere) button { min-width: 52px; min-height: 44px; padding: 0 14px; font-size: 14px; }
+.einwilligungs-karten > .einstellung > .segtoggle.mehrere { margin: 8px 0 0; }
+.einwilligungs-karten > .einstellung > .beschreibung.erteilt { margin: 8px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--muted); }
+.einwilligungs-karten > .einstellung > .zeilen-meldung:empty { display: none; }
+
+/* Bank und Mandat (Entwurf): Tabelle mit Kicker links, Wert rechts */
+dl.angaben.mandat { box-shadow: none; }
+dl.angaben.mandat > div { align-items: center; padding: 16px 20px; }
+dl.angaben.mandat dt {
+  font-family: var(--font-display); font-size: var(--font-size-kicker); font-weight: 700;
+  letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted);
+}
+dl.angaben.mandat dd { font-family: var(--font-display); font-weight: 500; font-size: 16px; overflow-wrap: anywhere; }
+dl.angaben.mandat > .kopf { background: var(--surf-2); }
+
+.kuendigen .erklaerung { padding: 18px 20px; margin-bottom: 20px; border: 1px solid var(--line); border-radius: var(--radius-karte); background: var(--surf-2); color: var(--ink-2); }
+.kuendigen .erklaerung p { margin: 0; font-size: 15.5px; line-height: 1.5; }
+.kuendigen .erklaerung p + p { margin-top: 10px; }
+.kuendigen textarea { border-radius: 20px; min-height: 140px; }
+.knopf-stapel { display: grid; gap: 10px; margin-top: 22px; }
+.knopf-stapel p { margin: 0 0 4px; }
 
 dl.angaben { margin: 0 0 12px; }
 dl.angaben > div { display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px; }
@@ -1833,8 +1779,12 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
   gap: 10px 12px; padding: 14px 16px;
 }
-.mannschaft-zeile .wer { flex: 1 1 220px; min-width: 0; display: grid; gap: 4px; }
-.mannschaft-zeile .wer b { font-size: 15.5px; font-weight: 600; overflow-wrap: anywhere; }
+.mannschaft-zeile .wer { flex: 1 1 0; min-width: 0; display: grid; gap: 3px; }
+.mannschaft-zeile .wer b { font-family: var(--font-display); font-size: 16.5px; font-weight: 500; overflow-wrap: anywhere; }
+.mannschaft-zeile .wer b .dein-marker { margin-left: 8px; vertical-align: 2px; }
+.mannschaft-zeile > .avatar { flex: 0 0 auto; }
+.mannschaft-zeile > .leise-rot { flex: 0 0 auto; }
+.mannschaft-abschnitt > .gruppe { box-shadow: none; }
 .mannschaft-zeile .wer small { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
 .mannschaft-zeile.ausgegraut .wer b { color: var(--ink-2); font-weight: 500; }
 .mannschaft-zeile.einladung { align-items: flex-start; }
@@ -1845,8 +1795,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .mannschaft-frage, .mannschaft-antwort { flex: 1 1 100%; display: grid; gap: 10px; }
 .mannschaft-frage p { margin: 0; font-size: 14.5px; color: var(--ink); }
 .mannschaft-antwort .hinweis, .mannschaft-antwort .sperrgrund { margin: 0; }
-.mannschaft-haken { display: flex; gap: 10px; align-items: flex-start; margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); cursor: pointer; }
-.mannschaft-haken input { width: auto; flex: none; margin: 3px 0 0; accent-color: var(--blue); }
+.mannschaft-haken { display: flex; flex-direction: row-reverse; justify-content: space-between; gap: 14px; align-items: center; margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); cursor: pointer; }
+.mannschaft-haken input { flex: none; margin: 0; }
 .mannschaft-haken small { display: block; margin-top: 2px; font-size: 13px; font-weight: 400; color: var(--ink-2); }
 .mannschaft-austreten { margin-top: 4px; }
 .mannschaft-suche { margin: 0 0 10px; }
@@ -1911,7 +1861,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .geldweg li { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .geldweg li > i { height: 6px; border-radius: 3px; background: var(--surf-2); }
 .geldweg li.erledigt > i { background: var(--green); }
-.geldweg li.aktuell > i { background: linear-gradient(90deg, var(--gold) 60%, var(--surf-2) 60%); }
+.geldweg li.aktuell > i { background: linear-gradient(90deg, var(--blue) 60%, var(--surf-2) 60%); }
 .geldweg .kopf { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .geldweg .nr {
   width: 26px; height: 26px; border-radius: 13px; flex: 0 0 auto;
@@ -1919,7 +1869,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   font-size: 12px; font-weight: 800; background: var(--surf-2); color: var(--muted);
 }
 .geldweg li.erledigt .nr { background: var(--green-satt); color: var(--on-brand); }
-.geldweg li.aktuell .nr { background: var(--gold); color: var(--on-gold); }
+.geldweg li.aktuell .nr { background: var(--blue-soft); color: var(--blue-ink); }
 .geldweg li.offen .nr { background: transparent; box-shadow: inset 0 0 0 1.5px var(--surf-3); }
 .geldweg li.offen b { color: var(--muted); }
 .geldweg b { font-size: 14.5px; font-weight: 700; min-width: 0; hyphens: auto; overflow-wrap: anywhere; line-height: 1.2; }
@@ -1953,7 +1903,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .reiter .zaehler {
   height: 20px; min-width: 20px; padding: 0 7px; border-radius: 10px;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--gold); color: var(--on-gold); font-size: 12px;
+  background: var(--blue-soft); color: var(--blue-ink); font-size: 12px;
 }
 
 /* Suche und Filter-Chips */
@@ -1981,7 +1931,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 .filterchips :is(a, button) { cursor: pointer; font-family: var(--font-text); }
 .filterchips :is(a, button):hover { border-color: var(--ink-2); text-decoration: none; }
-.filterchips :is(a[aria-current="true"], button[aria-pressed="true"]) { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+.filterchips :is(a[aria-current="true"], button[aria-pressed="true"]) { border-color: var(--blue); background: var(--blue-soft); color: var(--blue-ink); }
 .filterchips.leise { margin-top: -12px; gap: 4px; }
 .filterchips.leise a { height: 30px; padding: 0 10px; font-size: 13px; border-color: transparent; background: transparent; color: var(--muted); }
 .filterchips.leise a[aria-current="true"] { background: var(--surf-2); color: var(--ink); border-color: transparent; }
@@ -1990,9 +1940,6 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .statusmarke { height: 24px; padding: 0 9px; border-radius: 12px; font-size: 12px; }
 .statusmarke.gruen { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green-ink); }
 /* Die Toene kommen aus @tcm/ui (avatarToene), die App nimmt dieselben. */
-.avatar.ton-1 { background: var(--avatar-1); }
-.avatar.ton-2 { background: var(--avatar-2); }
-.avatar.ton-3 { background: var(--avatar-3); }
 .zugang { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
 .zugang::before { content: ""; width: 8px; height: 8px; border-radius: 4px; background: var(--muted); }
 .zugang.aktiv::before { background: var(--green); }
@@ -2072,7 +2019,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .listenzeile .mini-geldweg { margin-top: 6px; }
 .mini-geldweg li { width: 22px; height: 6px; border-radius: 3px; background: var(--surf-2); }
 .mini-geldweg li.erledigt { background: var(--green); }
-.mini-geldweg li.aktuell { background: var(--gold); }
+.mini-geldweg li.aktuell { background: var(--blue); }
 
 /* Segment-Schalter eines Verwaltungsbereichs (Verwaltung v2, Regel 1) */
 .segtoggle.bereich-segmente { margin: 0; }
@@ -2085,7 +2032,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .segment-zahl, .menue-zahl {
   min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: 10px;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--gold); color: var(--on-gold); font-size: 12px; font-weight: 800;
+  background: var(--blue-soft); color: var(--blue-ink); font-size: 12px; font-weight: 800;
 }
 .menue-zahl { margin-left: auto; }
 @media (min-width: 768px) {
@@ -2117,27 +2064,27 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .je-zahler .leer-klein { padding: 0 20px 20px; }
 .naechster-schritt {
   display: flex; flex-direction: column; gap: 12px; padding: 22px;
-  border-radius: var(--radius-karte); background: var(--brand); color: var(--on-brand);
+  border-radius: var(--radius-karte); background: var(--blue-soft); color: var(--ink);
 }
 .naechster-schritt { position: relative; overflow: hidden; border-radius: 26px; }
 .naechster-schritt > :not(.linien) { position: relative; }
 .naechster-schritt .linien {
   position: absolute; right: 0; top: 0; width: 350px; height: 196px;
-  fill: none; stroke: color-mix(in srgb, var(--on-brand) 13%, transparent); stroke-width: 2;
+  fill: none; stroke: color-mix(in srgb, var(--blue) 14%, transparent); stroke-width: 2;
 }
-.naechster-schritt .kicker { color: var(--on-brand); opacity: .7; }
+.naechster-schritt .kicker { color: var(--blue-ink); }
 .naechster-schritt .titel { font-size: 24px; font-weight: 800; letter-spacing: -.3px; line-height: 1.15; }
-.naechster-schritt p { margin: 0; font-size: 14px; line-height: 1.5; opacity: .85; }
+.naechster-schritt p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
 .naechster-schritt .knopf { height: 50px; padding: 0 16px; border-radius: 14px; font-size: 15px; text-decoration: none; }
-.naechster-schritt .knopf.gold { box-shadow: none; }
+.naechster-schritt .knopf.haupt { box-shadow: none; }
 /* Auf Blau in Weiss wie der übrige Text der Karte, als eigene Zeile. */
 .naechster-schritt .sperrgrund { color: inherit; flex-basis: 100%; }
 .naechster-schritt.quer { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; }
 .naechster-schritt.quer > div { display: grid; gap: 8px; flex: 1 1 360px; }
-.knopf.auf-blau { background: color-mix(in srgb, var(--on-brand) 16%, transparent); color: var(--on-brand); box-shadow: none; }
-.knopf.auf-blau:hover { background: color-mix(in srgb, var(--on-brand) 24%, transparent); }
+.knopf.auf-blau { background: var(--surf); color: var(--blue-ink); border-color: transparent; }
+.knopf.auf-blau:hover { background: var(--surf-2); }
 .knopf.gesperrt, .knopf.gesperrt:disabled {
-  background: color-mix(in srgb, var(--on-brand) 14%, transparent); color: color-mix(in srgb, var(--on-brand) 80%, transparent); opacity: 1; box-shadow: none;
+  background: var(--surf-3); color: var(--muted); opacity: 1; box-shadow: none;
 }
 .sperrgrund { margin: -2px 0 0; padding: 0 0 0 18px; font-size: 13px; line-height: 1.45; }
 .sperrgrund li + li { margin-top: 4px; }
@@ -2162,7 +2109,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 
 /* ---------------------------------------------------------------------------
-   Kiosk (Entwurf Kiosk): immer dunkel, drei Spalten, alles ab 48 px hoch
+   Kiosk (docs/design/stitch, Entwurf "Getränke an der Theke"): drei Spalten, alles ab 48 px hoch
    --------------------------------------------------------------------------- */
 .kiosk {
   height: 100dvh; box-sizing: border-box; overflow: hidden;
@@ -2187,7 +2134,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .kiosk .schritt {
   width: 30px; height: 30px; border-radius: 15px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--gold); color: var(--on-gold); font-size: 15px; font-weight: 800;
+  background: var(--blue-soft); color: var(--blue-ink); font-size: 15px; font-weight: 800;
 }
 
 /* 1 Wer nimmt etwas? */
@@ -2214,11 +2161,11 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   border-radius: 18px; border: 1px solid var(--line); background: var(--surf-2); color: var(--ink);
   font: inherit; text-align: left;
 }
-.kiosk-treffer button.an { border: 2px solid var(--gold); background: var(--gold-soft); }
+.kiosk-treffer button.an { border: 2px solid var(--blue); background: var(--blue-soft); }
 .kiosk-treffer .avatar { width: 46px; height: 46px; border-radius: 23px; font-size: 16px; font-weight: 800; }
-.kiosk-treffer button.an .avatar { background: var(--gold); color: var(--on-gold); }
+.kiosk-treffer button.an .avatar { background: var(--surf); color: var(--blue-ink); }
 .kiosk-treffer .name { flex: 1; font-size: 19px; font-weight: 700; }
-.kiosk-treffer svg { width: 24px; height: 24px; color: var(--gold); }
+.kiosk-treffer svg { width: 24px; height: 24px; color: var(--blue); }
 .kiosk-hinweis { margin: 4px 2px; font-size: 16px; color: var(--muted); }
 .kiosk-zuletzt { display: grid; gap: 10px; }
 .kiosk-zuletzt .chips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -2227,7 +2174,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   border: 1px solid var(--line-2); background: var(--surf-2); color: var(--ink-2);
   font: inherit; font-size: 16px; font-weight: 600;
 }
-.kiosk-zuletzt button[aria-pressed="true"] { border-color: var(--gold); color: var(--ink); }
+.kiosk-zuletzt button[aria-pressed="true"] { border-color: var(--blue); color: var(--ink); }
 
 /* 2 Was? */
 .kiosk-was { min-height: 0; display: flex; flex-direction: column; gap: 14px; padding-top: 22px; }
@@ -2249,7 +2196,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   border: 1px solid var(--line); background: var(--surf);
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
 }
-.kiosk-kacheln li.an .kachel-knopf { border: 2px solid var(--gold); background: var(--surf-2); }
+.kiosk-kacheln li.an .kachel-knopf { border: 2px solid var(--blue); background: var(--surf-2); }
 .kiosk-kacheln .name { font-size: 20px; font-weight: 700; line-height: 1.15; }
 .kiosk-kacheln .preis { font-size: 18px; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 /* Gewählt: Anzahl und "eins weniger" unten rechts nebeneinander, der Name behält die volle Breite. */
@@ -2257,7 +2204,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   position: absolute; right: 66px; bottom: 10px; pointer-events: none;
   width: 48px; height: 48px; border-radius: 24px;
   display: flex; align-items: center; justify-content: center;
-  background: var(--gold); color: var(--on-gold); font-size: 26px; font-weight: 700;
+  background: var(--blue); color: var(--on-brand); font-size: 26px; font-weight: 700;
 }
 .kiosk-kacheln .weniger {
   position: absolute; right: 10px; bottom: 10px; width: 48px; height: 48px; border-radius: 24px; cursor: pointer;
@@ -2284,7 +2231,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   border-radius: 28px; background: var(--bg); color: var(--ink);
 }
 .kiosk-eintragen h2 { margin-bottom: 8px; }
-.kiosk-eintragen .schritt { background: var(--ink); color: var(--gold); }
+.kiosk-eintragen .schritt { background: var(--blue-soft); color: var(--blue-ink); }
 .kiosk-eintragen .fuer { font-size: 15px; color: var(--ink-2); }
 .kiosk-eintragen .wer { font-size: 26px; font-weight: 800; letter-spacing: -.3px; margin-bottom: 10px; line-height: 1.15; }
 .kiosk-eintragen .posten { list-style: none; margin: 0; padding: 0; overflow-y: auto; min-height: 0; }
@@ -2331,7 +2278,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 :is(a, button).listenzeile { cursor: pointer; }
 :is(a, button).listenzeile:hover { text-decoration: none; background: color-mix(in srgb, var(--ink) 4%, transparent); }
 .listenzeile:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
-.listenzeile[aria-current="true"] { background: var(--gold-soft); }
+.listenzeile[aria-current="true"] { background: var(--blue-soft); }
 .listenzeile .avatar { width: 40px; height: 40px; border-radius: 20px; font-size: 13px; }
 .listenzeile .symbolkachel {
   width: 40px; height: 40px; border-radius: 12px;
@@ -2342,7 +2289,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .listenzeile .titel { font-size: 16px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .listenzeile .kontext { font-size: 13px; color: var(--muted); line-height: 1.35; }
 .hinweis-rechts { flex: 0 0 auto; font-size: 13px; font-weight: 700; text-align: right; }
-.hinweis-rechts.gold { color: var(--gold-ink); }
+.hinweis-rechts.gold { color: var(--blue-ink); }
 .hinweis-rechts.rot { color: var(--red-ink); }
 .hinweis-rechts.gruen { color: var(--green-ink); }
 .hinweis-rechts.leise { color: var(--muted); font-weight: 600; }
@@ -2419,9 +2366,15 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 /* Folgen vor dem Absenden (Regel 5) */
 .folgen {
-  display: flex; gap: 12px; padding: 12px 14px; border-radius: 16px;
-  background: var(--gold-soft); border: 1.5px dashed var(--gold-line); font-size: 14px; line-height: 1.4;
+  display: flex; gap: 12px; padding: 14px 16px; border-radius: 20px;
+  background: var(--surf-2); border: 1px solid var(--line); font-size: 14px; line-height: 1.4;
 }
+/* Etwas geht dabei verloren (Buchungen werden verdrängt): rot abgesetzt */
+.folgen.warnung {
+  background: color-mix(in srgb, var(--red) 7%, var(--surf)); color: var(--red-ink);
+  border-color: color-mix(in srgb, var(--red) 35%, transparent);
+}
+.folgen.warnung svg { width: 20px; height: 20px; flex: 0 0 auto; margin-top: 1px; }
 /* Grosse Tippfelder fuer Uhrzeit und Datum */
 .tippfelder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .tippfeld {
@@ -2438,16 +2391,22 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .serienformular, .blatt .sperrformular { display: grid; gap: 16px; }
 .blatt .sperrformular > .fenster-fuss { margin-top: 0; padding-top: 0; border-top: 0; }
 .folgen-liste { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; }
-.knopf.gross { min-height: 58px; border-radius: 18px; font-family: var(--font-text); font-size: 17px; font-weight: 800; }
+.knopf.gross { min-height: 56px; font-size: 16px; }
 /* Chips statt Auswahlliste bei bis zu acht Optionen */
 .chipwahl { border: 0; margin: 0; padding: 0; }
-.chipwahl legend { padding: 0; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
-.chipwahl > div { display: grid; grid-template-columns: repeat(var(--spalten, 7), minmax(0, 1fr)); gap: 6px; }
-.chipwahl button {
-  height: 44px; border: 0; border-radius: 14px; cursor: pointer;
-  background: var(--surf-2); color: var(--ink-2); font: inherit; font-size: 13.5px; font-weight: 700;
+.chipwahl legend, .chipwahl .legende-text {
+  padding: 0; margin-bottom: 10px; font-family: var(--font-display); font-size: var(--font-size-kicker); font-weight: 700;
+  letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted);
 }
-.chipwahl button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.chipwahl-kopf { display: flex; justify-content: space-between; align-items: center; margin: -10px 0 0; }
+.chipwahl-kopf .legende-text { margin: 0; }
+.chipwahl > div:not(.chipwahl-kopf) { display: grid; grid-template-columns: repeat(var(--spalten, 7), minmax(0, 1fr)); gap: 8px; }
+.chipwahl > div:not(.chipwahl-kopf) button {
+  height: 48px; padding: 0; border: 1px solid var(--line-2); border-radius: 99px; cursor: pointer;
+  background: var(--surf); color: var(--ink); font-family: var(--font-display); font-size: 15px; font-weight: 600;
+}
+.chipwahl > div:not(.chipwahl-kopf) button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.chipwahl > div:not(.chipwahl-kopf) button[aria-pressed="true"] { background: var(--blue-soft); color: var(--blue-ink); box-shadow: inset 0 0 0 1.5px var(--blue); }
 
 /* Uebersicht als Home (Verwaltung v2, Regel 7) */
 .uebersicht-raster { display: grid; gap: 28px; align-items: start; }
@@ -2461,23 +2420,23 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .aufgabe-gross {
   position: relative; overflow: hidden; min-height: 196px; box-sizing: border-box;
   display: flex; flex-direction: column; gap: 6px; padding: 20px;
-  border-radius: 26px; background: var(--brand); color: var(--on-brand);
+  border-radius: 26px; background: var(--blue-soft); color: var(--ink);
 }
 .aufgabe-gross > :not(.linien) { position: relative; }
 .aufgabe-gross .linien {
   position: absolute; right: 0; top: 0; width: 350px; height: 196px;
-  fill: none; stroke: color-mix(in srgb, var(--on-brand) 13%, transparent); stroke-width: 2;
+  fill: none; stroke: color-mix(in srgb, var(--blue) 14%, transparent); stroke-width: 2;
 }
-.aufgabe-gross .kicker { color: var(--on-brand); opacity: .85; }
+.aufgabe-gross .kicker { color: var(--blue-ink); }
 .aufgabe-gross .titel { font-size: 28px; font-weight: 800; letter-spacing: -.4px; line-height: 1.08; margin-top: 2px; }
-.aufgabe-gross p { margin: 0; font-size: 14.5px; opacity: .9; }
+.aufgabe-gross p { margin: 0; font-size: 14.5px; color: var(--ink-2); }
 .aufgabe-gross .knopf { margin-top: auto; align-self: flex-start; min-height: 44px; padding: 0 18px; border-radius: 22px; font-family: var(--font-text); font-size: 15px; font-weight: 800; text-decoration: none; }
 @media (min-width: 1100px) {
   .aufgabe-gross { min-height: 200px; padding: 26px 28px; border-radius: 28px; }
   .aufgabe-gross .titel { font-size: 34px; }
 }
 .listenzeile .punkt { width: 10px; height: 10px; border-radius: 5px; flex: 0 0 auto; }
-.listenzeile .punkt.dringend { background: var(--gold); }
+.listenzeile .punkt.dringend { background: var(--blue); }
 .listenzeile .punkt.info { background: var(--surf-3); box-shadow: inset 0 0 0 1.5px var(--muted); }
 .hinweis-rechts.blau { color: var(--blue-ink); }
 @media (max-width: 767px) {
@@ -2488,7 +2447,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .geldweg-balken { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; }
 .geldweg-balken li { flex: 1; height: 6px; border-radius: 3px; background: var(--surf-3); }
 .geldweg-balken li.erledigt { background: var(--green); }
-.geldweg-balken li.aktuell { background: var(--gold); }
+.geldweg-balken li.aktuell { background: var(--blue); }
 .geldweg-karte .zeile { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .geldweg-karte .zeile b { font-size: 15.5px; }
 .geldweg-karte small { font-size: 13px; color: var(--muted); }
@@ -2512,11 +2471,11 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   .verwaltung-kopf .zurueck { color: var(--blue-ink); font-size: 15px; font-weight: 600; margin-bottom: 2px; }
   .verwaltung-kopf.unterseite .zurueck { margin: 0; }
   .verwaltung-kopf .pagetitle { font-size: 34px; }
-  .verwaltung-kopf .aktionen .knopf.gold {
-    min-height: 40px; padding: 0 14px 0 10px; border-radius: 20px; font-family: var(--font-text);
-    font-size: 14.5px; font-weight: 800; white-space: nowrap;
+  .verwaltung-kopf .aktionen .knopf.haupt {
+    min-height: 40px; padding: 0 14px 0 10px;
+    font-size: 14.5px; white-space: nowrap;
   }
-  .verwaltung-kopf .aktionen .knopf.gold svg { width: 16px; height: 16px; }
+  .verwaltung-kopf .aktionen .knopf.haupt svg { width: 16px; height: 16px; }
   .verwaltung-kopf .unterzeile { display: none; }
 }
 
@@ -2548,7 +2507,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
    Wert einen Bildschirm weit auseinander */
 .mitglied-detail:has(> .mitglied-uebersicht) { max-width: 760px; }
 .mitglied-profil { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
-.mitglied-profil .avatar.gross { width: 88px; height: 88px; border-radius: 44px; font-size: 30px; font-weight: 800; background: var(--brand); }
+.mitglied-profil .avatar.gross { width: 88px; height: 88px; border-radius: 44px; font-size: 30px; font-weight: 700; }
 .mitglied-profil h1, .mitglied-profil h2 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -.4px; line-height: 1.1; }
 .mitglied-profil .meta { font-size: 14px; color: var(--muted); margin-top: 4px; }
 .mitglied-profil .marken-reihe { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 10px; }
@@ -2574,8 +2533,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .dienst-karte .zeile.klein { font-size: 13.5px; font-weight: 400; color: var(--muted); }
 .dienst-karte .link { font-size: 14px; font-weight: 700; color: var(--blue-ink); }
 .dienst-karte .balken { height: 8px; border-radius: 4px; background: var(--surf-2); overflow: hidden; }
-.dienst-karte .balken i { display: block; height: 100%; border-radius: 4px; background: var(--green); }
-.gold-ink { color: var(--gold-ink); font-weight: 700; }
+.dienst-karte .balken i { display: block; height: 100%; border-radius: 4px; background: var(--blue); }
+.gold-ink { color: var(--blue-ink); font-weight: 700; }
 .mitglied-ende .listenzeile { min-height: 52px; }
 /* Der Zurück-Link ist ein volles Tippziel (44 px), auch am Telefon (U56). */
 .unterseite-kopf .zurueck {
@@ -2628,24 +2587,17 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   margin-bottom: 14px;
 }
-.onboarding-schritte {
-  list-style: none; margin: 0 0 20px; padding: 0;
-  display: flex; flex-wrap: wrap; gap: 6px;
-}
-.onboarding-schritte li > :is(a, span) {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 10px; border-radius: 999px; font-size: 13px; text-decoration: none;
-  background: var(--chip); color: var(--ink-2);
-}
-.onboarding-schritte li small { font-size: 11px; color: var(--muted); }
-.onboarding-schritte .punkt {
-  width: 16px; height: 16px; border-radius: 8px; border: 1.5px solid currentColor;
-  display: inline-flex; align-items: center; justify-content: center; font-size: 10px; line-height: 1;
-}
-.onboarding-schritte li.erledigt > :is(a, span) { color: var(--ink); }
-.onboarding-schritte li.erledigt .punkt { background: var(--green-satt); border-color: transparent; color: var(--on-brand); }
-.onboarding-schritte li.aktuell > :is(a, span) { background: var(--blue); color: var(--on-brand); font-weight: 700; }
-.onboarding-schritte li.aktuell small { color: inherit; }
+.onboarding-vorspann { margin-bottom: 22px; }
+.onboarding-kopf .knopf { border: 0; background: transparent; box-shadow: none; padding: 0 6px; font-weight: 500; color: var(--ink-2); }
+/* Fortschritt als schmale Leiste: ein Stück je Schritt, das Ziel bleibt 44 px hoch */
+.onboarding-schritte { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; }
+.onboarding-schritte li { flex: 1 1 0; min-width: 0; }
+.onboarding-schritte li > :is(a, span) { display: flex; align-items: center; height: 20px; }
+.onboarding-schritte li > a { height: 44px; margin: -12px 0; }
+.onboarding-schritte li > :is(a, span)::before { content: ""; flex: 1; height: 4px; border-radius: 2px; background: var(--surf-3); }
+.onboarding-schritte li:is(.erledigt, .aktuell) > :is(a, span)::before { background: var(--blue); }
+.onboarding-schritte li.erledigt > :is(a, span)::before { opacity: .45; }
+.onboarding-schritte li > a:focus-visible { outline: 2px solid var(--blue); outline-offset: -8px; border-radius: 6px; }
 .onboarding-knoepfe { display: grid; gap: 10px; margin-top: 6px; }
 .mandatstext {
   white-space: pre-wrap; font-family: inherit; font-size: 14px; line-height: 1.5;
@@ -2664,8 +2616,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 
 /* Kasse: der Hinweis auf fehlende Bankangaben ist kein Fehler (U50) */
-.hinweis.gold { background: var(--gold-soft); color: var(--ink); }
-.hinweis.gold a { color: var(--gold-ink); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.hinweis.gold { background: var(--blue-soft); color: var(--ink); }
+.hinweis.gold a { color: var(--blue-ink); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 
 /* Forderungen: eine Chipreihe für die Art, der Stand als Auswahlfeld (U51) */
 .forderungs-filter { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
@@ -2690,7 +2642,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .einzug-kopf .nr {
   flex: none; width: 32px; height: 32px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--brand); color: var(--on-brand); font-weight: 700;
+  background: var(--blue-soft); color: var(--blue-ink); font-weight: 700;
 }
 .einzug-gruppen { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; }
 .einzug-gruppe {
@@ -2711,8 +2663,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .einzug-wer .kachel small { color: var(--muted); font-size: 13px; }
 .einzug-wer .kachel.gruen { background: color-mix(in srgb, var(--green) 14%, transparent); }
 .einzug-wer .kachel.gruen b { color: var(--green-ink); }
-.einzug-wer .kachel.gelb { background: var(--gold-soft); }
-.einzug-wer .kachel.gelb b { color: var(--gold-ink); }
+.einzug-wer .kachel.gelb { background: var(--blue-soft); }
+.einzug-wer .kachel.gelb b { color: var(--blue-ink); }
 .einzug-beispiel { border: 1px solid var(--line); border-radius: var(--radius-knopf); padding: 12px 16px; }
 .einzug-beispiel summary { font-weight: 600; cursor: pointer; }
 .einzug-beispiel .nachricht { margin-top: 12px; padding: 14px 16px; border-radius: 10px; background: var(--surf-2); font-size: 14.5px; }
@@ -2736,7 +2688,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 .geld-erklaerung li { display: grid; gap: 4px; padding: 14px; border-radius: var(--radius-knopf); background: var(--surf-2); }
 .geld-erklaerung li span { color: var(--ink-2); font-size: 14px; line-height: 1.45; }
-.marke-klein.gelb { background: var(--gold-soft); color: var(--gold-ink); }
+.marke-klein.gelb { background: var(--blue-soft); color: var(--blue-ink); }
 /* „Zu tun“: der Titel ist die Aufgabe und darf umbrechen; am Telefon fuehrt
    die ganze Zeile weiter, der Text rechts entfaellt. */
 .liste-gruppe.zu-tun .listenzeile .titel { white-space: normal; }
@@ -2834,59 +2786,86 @@ dialog.fenster:not(.blatt) > .fenster-rueckfrage { margin: 8px 22px 0; }
    --------------------------------------------------------------------------- */
 .event-monat { margin-bottom: 20px; }
 .event-monat-titel {
-  margin: 0 0 8px; font-size: 13px; font-weight: 700; letter-spacing: .06em;
-  text-transform: uppercase; color: var(--muted);
+  margin: 0 0 8px; font-family: var(--font-display); font-size: var(--font-size-kicker); font-weight: 700;
+  letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted);
 }
-.event-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.event-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 .event-karte {
-  display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px;
+  display: flex; gap: 16px; align-items: center; padding: 18px 20px;
   border-radius: var(--radius-karte, 18px); background: var(--surf); border: 1px solid var(--line);
   color: var(--ink); text-decoration: none; min-width: 0;
 }
 .event-karte:hover { text-decoration: none; border-color: color-mix(in srgb, var(--blue) 35%, var(--line)); }
+/* Datum als weiße Kachel mit Linie (Entwurf "Veranstaltungen"), nicht als Farbfläche */
 .event-karte > .datum-kachel {
-  flex: 0 0 auto; width: 52px; height: 56px; align-content: center; border-radius: 14px;
-  background: var(--brand); color: var(--on-brand);
+  flex: 0 0 auto; width: 56px; height: 64px; align-content: center; border-radius: 16px;
+  background: var(--surf-2); border: 1px solid var(--line); color: var(--ink);
 }
+.event-karte > .datum-kachel small { color: var(--muted); }
+.event-karte .event-marken { justify-content: space-between; }
+.event-karte .event-marken .marke-klein { font-size: 12px; padding: 3px 10px; }
+.event-karte .event-marken .marke-klein:first-child { background: var(--chip); color: var(--ink-2); }
+/* Die eigene Anmeldung ist gelb - "deins" */
+.event-karte .event-marken .marke-klein.gruen { background: var(--gold); color: var(--on-gold); }
 .event-karte > .datum-kachel.vorbei { background: var(--surf-2); color: var(--ink-2); }
-.event-karte-text { display: grid; gap: 3px; min-width: 0; }
-.event-karte-text .titel { font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
-.event-karte-text small { color: var(--muted); font-size: 13.5px; }
-.event-karte-text .zeile { font-size: 13.5px; font-weight: 700; }
+.event-karte-text { flex: 1; display: grid; gap: 3px; min-width: 0; }
+.event-karte-text .titel { font-family: var(--font-display); font-size: 18px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; margin-top: 2px; }
+.event-karte-text small { color: var(--ink-2); font-size: 15px; }
+.event-karte-text .zeile { font-size: 13.5px; color: var(--muted); }
 .event-karte.vorbei .titel { color: var(--ink-2); }
 .event-marken { display: flex; flex-wrap: wrap; gap: 6px; }
 .event-vergangen-link { margin: 4px 0 0; text-align: center; font-weight: 600; }
 
-.event-kopf {
-  position: relative; overflow: hidden; margin: 0 0 16px; padding: 18px 20px 22px;
-  border-radius: var(--radius-kartegross); background: var(--brand); color: var(--on-brand);
+.event-kopf { margin: 0 0 18px; }
+.rueck-kreis {
+  width: 44px; height: 44px; border-radius: 22px; margin-bottom: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surf-2); border: 1px solid var(--line); color: var(--ink);
 }
-.event-kopf > :not(.platzlinien) { position: relative; }
-.event-kopf .platzlinien {
-  position: absolute; right: 0; top: 0; width: 350px; height: 150px;
-  fill: none; stroke: color-mix(in srgb, var(--on-brand) 12%, transparent); stroke-width: 2;
-}
-.event-kopf .zurueck { color: var(--on-brand); opacity: .85; display: inline-block; margin-bottom: 10px; }
-.event-kopf .pagetitle { color: var(--on-brand); margin: 8px 0 4px; overflow-wrap: anywhere; }
-.event-kopf p { margin: 0; opacity: .9; }
+.rueck-kreis:hover { background: var(--chip); text-decoration: none; }
+.rueck-kreis svg { width: 20px; height: 20px; }
+.event-kopf .event-marken .marke-klein:first-child { background: var(--chip); color: var(--ink-2); font-size: 12px; padding: 3px 10px; }
+.event-kopf .pagetitle { margin: 10px 0 4px; overflow-wrap: anywhere; }
+.event-kopf p { margin: 0; color: var(--ink-2); font-size: 15px; }
 
 .event-raster { display: grid; gap: 16px; }
 .event-haupt, .event-seite { display: grid; gap: 16px; align-content: start; min-width: 0; }
-.eckdaten dl { margin: 0; display: grid; gap: 14px; }
-.eckdaten dl > div { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; }
-.eckdaten dt { color: var(--muted); font-size: 13.5px; }
-.eckdaten dd { margin: 0; display: grid; gap: 4px; min-width: 0; }
-.eckdaten dd small { color: var(--muted); font-size: 13px; line-height: 1.45; }
-.eckdaten .balken { display: block; height: 8px; border-radius: 4px; background: var(--surf-2); overflow: hidden; }
-.eckdaten .balken i { display: block; height: 100%; border-radius: 4px; background: var(--green); }
+/* Eckdaten als Tabelle: Kicker links, Wert rechts, Linie dazwischen */
+.karte.eckdaten { padding: 0; box-shadow: none; overflow: hidden; }
+.eckdaten dl { margin: 0; }
+.eckdaten dl > div {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 4px 16px;
+  padding: 16px 20px;
+}
+.eckdaten dl > div + div { border-top: 1px solid var(--line); }
+.eckdaten dt {
+  font-family: var(--font-display); font-size: var(--font-size-kicker); font-weight: 700;
+  letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted);
+}
+.eckdaten dd { margin: 0; display: grid; gap: 4px; min-width: 0; text-align: right; font-weight: 600; }
+.eckdaten dd small { color: var(--muted); font-size: 13px; font-weight: 400; line-height: 1.45; }
+.eckdaten dd.balken { grid-column: 1 / -1; display: block; height: 6px; margin-top: 6px; border-radius: 3px; background: var(--surf-3); overflow: hidden; }
+.eckdaten .balken i { display: block; height: 100%; border-radius: 3px; background: var(--blue); }
+.event-text { padding: 2px 4px; }
+.event-text p { margin: 0; white-space: pre-line; line-height: 1.55; color: var(--ink-2); }
 .karte.beschreibung p { margin: 0; white-space: pre-line; line-height: 1.55; }
 
 .event-mein h2, .event-anmelden h2 { margin: 0 0 12px; font-size: 20px; }
-.event-mein.angemeldet {
-  background: color-mix(in srgb, var(--green) 10%, var(--surf));
-  border-color: color-mix(in srgb, var(--green) 35%, transparent);
+.event-mein, .event-anmelden { box-shadow: none; padding: 22px; }
+.event-mein .kopf { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+.event-mein .kopf h2 { margin: 0; }
+/* Die eigene Anmeldung: hellblaue Karte, der Haken gelb ("deins") */
+.event-mein .haken {
+  width: 44px; height: 44px; border-radius: 22px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center; background: var(--gold); color: var(--on-gold);
 }
-.event-mein.wartet { background: var(--gold-soft); border-color: var(--gold-line); }
+.event-mein .haken svg { width: 22px; height: 22px; }
+.event-mein.angemeldet {
+  background: var(--blue-soft); border-color: color-mix(in srgb, var(--blue) 22%, transparent);
+}
+.event-mein.angemeldet .knopf:not(.haupt):not(.gefahr) { background: var(--surf); }
+.event-mein.wartet { background: var(--surf-2); }
+.event-knoepfe { align-items: center; }
 .event-mein p { margin: 0 0 8px; }
 .event-mein .betrag b { font-size: 20px; }
 .event-knoepfe, .event-abmelden-frage { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
@@ -2907,3 +2886,112 @@ dialog.fenster:not(.blatt) > .fenster-rueckfrage { margin: 8px 22px 0; }
 }
 .veranstaltung-aktionen .knopfreihe .schalter { align-items: center; margin: 0 8px 0 0; }
 .nachricht-link { display: inline-block; margin-top: 4px; font-size: 13.5px; font-weight: 600; }
+
+/* Suchfeld auf der Mannschaftsseite als Pille wie die übrigen Felder */
+.mannschaft-suche .suchfeld { border-radius: var(--radius-feld); background: var(--surf-2); min-height: 52px; }
+
+/* --- Zugang (Entwürfe "Anmelden", "Antrag") ------------------------------- */
+.passwort-feld { position: relative; }
+.passwort-feld input { padding-right: 112px; }
+.passwort-feld > button {
+  position: absolute; right: 6px; bottom: 4px; min-height: 44px; min-width: 44px; padding: 0 14px;
+  border: 0; border-radius: 22px; background: transparent; cursor: pointer;
+  font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--blue-ink);
+}
+.passwort-feld > button:hover { background: var(--chip); }
+.auth .vergessen a, .auth .antrag-hinweis a { text-decoration: none; }
+.auth .sheet form .rechtliches { margin-top: 28px; }
+fieldset.geschlecht .segment { height: 48px; font-size: 15px; border-radius: 24px; }
+fieldset.geschlecht .segment:has(input:checked) { background: var(--blue-soft); border-color: var(--blue); color: var(--blue-ink); }
+fieldset.geschlecht[aria-invalid="true"] .segment { border-color: var(--red); }
+.auth.antragsseite .formraster { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+.auth.antragsseite .formraster > * { grid-column: 1 / -1; }
+.auth.antragsseite .formraster > .feld.halb { grid-column: auto; }
+.auth.antragsseite .plz-ort { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 12px; }
+.auth.antragsseite .sheet h2.dpl { margin: 14px 0 0; padding-top: 22px; border-top: 1px solid var(--line); font-size: 20px; }
+@media (max-width: 767px) {
+  /* Am Telefon steht der Antrag frei auf weißem Grund, ohne Karte */
+  .auth.antragsseite .sheet { width: 100%; border: 0; border-radius: 0; background: transparent; padding: 8px 24px 36px; }
+}
+.auth .sheet label.segment > span { font: inherit; letter-spacing: 0; text-transform: none; color: inherit; margin: 0; }
+/* Ja/Nein-Kästchen in den Zugangsseiten als Schalter */
+.auth .sheet label.schalter { display: flex; align-items: center; justify-content: space-between; flex-direction: row-reverse; gap: 14px; }
+
+.auth .sheet label > span.beschreibung, .auth .sheet label > span.feldhinweis {
+  font-family: var(--font-text); font-size: 13.5px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--ink-2); margin: 6px 0 0;
+}
+.auth .sheet label.schalter > span small { display: block; margin-top: 2px; font-size: 13.5px; font-weight: 400; color: var(--muted); }
+.auth .sheet label.schalter > span { font-size: 16px; color: var(--ink); }
+.auth .sheet label.schalter:has(.schalter-feld) { padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius-karte); }
+.wahlkarten { display: grid; gap: 10px; }
+.wahlkarten legend { float: left; width: 100%; }
+.wahlkarte {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 0; min-height: 64px; padding: 14px 20px;
+  border: 1px solid var(--line-2); border-radius: var(--radius-karte); background: var(--surf); cursor: pointer;
+}
+.auth .sheet label.wahlkarte > span, .wahlkarte > span { font-family: var(--font-display); font-size: 17px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink); margin: 0; }
+.wahlkarte input { width: 22px; height: 22px; flex: none; margin: 0; accent-color: var(--blue); }
+.wahlkarte:has(input:checked) { background: var(--blue-soft); border-color: var(--blue); }
+.wahlkarte:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 2px; }
+.wahlkarten .beschreibung { margin: 0; }
+label.schalter > .schalter-feld, .auth .sheet label.schalter > .schalter-feld { flex: 0 0 auto; width: 52px; height: 32px; min-height: 0; margin: 0; padding: 0; }
+
+/* --- Verwaltung · Übersicht (Entwurf "Übersicht Desktop") ------------------
+   Eine Spalte in der Reihenfolge des Entwurfs: Heute zu tun, Einzug, vier
+   Kennzahlen nebeneinander, darunter die Anlage über die volle Breite. */
+@media (min-width: 1024px) {
+  .uebersicht-raster { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .uebersicht-raster > .uebersicht-spalte { display: contents; }
+  .uebersicht .kennzahlen.zwei { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .uebersicht .kennzahlen.zwei .wert { font-size: 34px; }
+  .uebersicht .anlage-heute .mini-zeitleiste.gross { height: 22px; border-radius: 8px; }
+  .uebersicht .anlage-heute .mini-zeitleiste.gross i { border-radius: 8px; }
+}
+/* Die erste Aufgabe ist eine weiße Karte; kräftig blau ist allein ihr Knopf */
+.uebersicht .aufgabe-gross { background: var(--surf); border: 1px solid var(--line); min-height: 0; gap: 8px; }
+.uebersicht .aufgabe-gross .linien { display: none; }
+.uebersicht .aufgabe-gross .kicker { align-self: flex-start; padding: 3px 9px; border-radius: 8px; background: var(--chip); color: var(--ink-2); font-size: 11px; }
+.uebersicht .aufgabe-gross .titel { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -.2px; line-height: 1.2; margin-top: 6px; }
+.uebersicht .aufgabe-gross .knopf { margin-top: 14px; }
+.uebersicht .kennzahl, .uebersicht .karte, .uebersicht .liste-gruppe { box-shadow: none; }
+.uebersicht .kennzahl .label { font-family: var(--font-display); font-size: 11.5px; font-weight: 700; letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted); }
+/* "Jetzt" ist eine Auskunft, kein Alarm: blau statt rot */
+.anlage-heute .mini-zeitleiste b { background: var(--blue); }
+.geldweg-balken li.erledigt { background: var(--blue); opacity: .45; }
+
+/* --- Verwaltung · Arbeitsdienst und Kasse (Entwürfe Desktop) --------------- */
+.verwaltung .kennzahl, .verwaltung .liste-gruppe, .verwaltung > .karte, .verwaltung section.karte { box-shadow: none; }
+.jahrwahl { margin: 0; flex-wrap: nowrap; }
+.dienst-balken { display: none; }
+@media (min-width: 1024px) {
+  .dienst-balken { display: block; width: clamp(120px, 22vw, 260px); height: 6px; border-radius: 3px; background: var(--surf-3); overflow: hidden; margin-right: 18px; align-self: center; }
+  .dienst-balken i { display: block; height: 100%; border-radius: 3px; background: var(--blue); }
+}
+@media (min-width: 1024px) {
+  .neben:has(> .dienst-balken) { display: grid; grid-template-columns: auto auto; align-items: center; justify-items: end; }
+  .neben:has(> .dienst-balken) > .dienst-balken { grid-row: 1 / span 2; }
+  .neben:has(> .dienst-balken) > :not(.dienst-balken) { grid-column: 2; }
+}
+/* Erledigte Schritte sind blau wie im Entwurf - Grün gibt es in der Palette nicht als Fortschrittsfarbe */
+.geldweg li.erledigt > i, .mini-geldweg li.erledigt { background: var(--blue); }
+.geldweg li.erledigt .nr { background: var(--blue); color: var(--on-brand); }
+.geldweg li.aktuell > i { background: color-mix(in srgb, var(--blue) 45%, var(--surf-3)); }
+
+/* --- Kiosk (Entwurf "Kiosk") ----------------------------------------------
+   Lange Getränkenamen brechen in der Kachel um statt herauszulaufen; die
+   Spalte "Eintragen" ist eine Karte wie im Entwurf, "Wer" steht frei. */
+.kiosk-kacheln .name { overflow-wrap: anywhere; hyphens: auto; font-family: var(--font-display); font-size: 18px; }
+.kiosk-kacheln .kachel-knopf { min-width: 0; }
+.kiosk-kacheln .preis { font-size: 15px; font-weight: 500; color: var(--muted); }
+.kiosk-kacheln li.an .kachel-knopf { background: var(--blue-soft); }
+.kiosk-eintragen { border: 1px solid var(--line); border-radius: var(--radius-karte); background: var(--surf); padding: 22px; }
+.kiosk-wer { border: 0; background: transparent; box-shadow: none; padding-inline: 0; }
+.kiosk-eintragen .zusammen { flex-direction: column; align-items: flex-start; gap: 2px; border-top: 1px solid var(--line); }
+.kiosk-eintragen .zusammen span { font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted); }
+.kiosk-eintragen .zusammen b { font-size: 36px; }
+/* Ja/Nein im Veranstaltungsformular: Schalter rechts, Aussage links */
+.veranstaltungs-formular label.schalter { display: flex; flex-direction: row-reverse; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; }
+.veranstaltungs-formular label.schalter > span { margin: 0; font-family: var(--font-text); font-size: 16px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink); }
+/* Die Spielkarten tragen weiter die Klasse .termin (Anker der Tests), aber nicht deren Zeilenaufbau */
+.spiel-karte.termin { align-items: stretch; }
+.offen-karte.termin { flex-wrap: nowrap; }

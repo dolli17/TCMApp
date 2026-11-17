@@ -7,7 +7,9 @@
  * hell oder dunkel. Material 3 bekommt daraus sein Farbschema, damit
  * Bausteine wie Schalter und Dialoge zu den Vereinsfarben passen.
  *
- * Die Anmeldeseiten sind immer dunkel wie in der Expo-App (ImmerDunkel).
+ * Rollen der Farben: docs/design/stitch/README.md (Blau die eine Hauptaktion,
+ * Hellblau alles Zweite und Ausgewaehlte, Gelb nur "deins"). Auch die
+ * Anmeldeseiten folgen dem gewaehlten Erscheinungsbild.
  */
 
 package de.tcmuckensturm.app.theme
@@ -60,26 +62,27 @@ object TcmTheme {
 }
 
 /**
- * Barlow fuer Fliesstext und - in 800 - fuer grosse Titel, Barlow Semi
- * Condensed fuer Uhrzeiten, Zahlen und Kicker. Die Dateien liegen unter
- * res/font (OFL, assets/lizenzen/OFL-Barlow.txt); die Namen stehen in
+ * DM Sans fuer Fliesstext, Space Grotesk fuer Titel, Uhrzeiten, Zahlen, Kicker
+ * und Knoepfe (docs/design/stitch); Space Grotesk gibt es nur bis 700, extrafett
+ * faellt auf fett zurueck. Die Dateien liegen unter
+ * res/font (OFL, assets/lizenzen/OFL-Schriften.txt); die Namen stehen in
  * Tokens.Schrift.DATEI_*. Groessen in sp wachsen mit der Schriftgroesse des Systems.
  */
 object TcmSchrift {
     val text = FontFamily(
-        Font(R.font.barlow_regular, Schrift.gewichtNormal),
-        Font(R.font.barlow_medium, Schrift.gewichtMittel),
-        Font(R.font.barlow_semibold, Schrift.gewichtHalbfett),
-        Font(R.font.barlow_bold, Schrift.gewichtFett),
-        Font(R.font.barlow_extrabold, Schrift.gewichtExtrafett),
+        Font(R.font.dmsans_regular, Schrift.gewichtNormal),
+        Font(R.font.dmsans_medium, Schrift.gewichtMittel),
+        Font(R.font.dmsans_semibold, Schrift.gewichtHalbfett),
+        Font(R.font.dmsans_bold, Schrift.gewichtFett),
+        Font(R.font.dmsans_extrabold, Schrift.gewichtExtrafett),
     )
 
     val display = FontFamily(
-        Font(R.font.barlowsemicondensed_regular, Schrift.gewichtNormal),
-        Font(R.font.barlowsemicondensed_medium, Schrift.gewichtMittel),
-        Font(R.font.barlowsemicondensed_semibold, Schrift.gewichtHalbfett),
-        Font(R.font.barlowsemicondensed_bold, Schrift.gewichtFett),
-        Font(R.font.barlowsemicondensed_extrabold, Schrift.gewichtExtrafett),
+        Font(R.font.spacegrotesk_regular, Schrift.gewichtNormal),
+        Font(R.font.spacegrotesk_medium, Schrift.gewichtMittel),
+        Font(R.font.spacegrotesk_semibold, Schrift.gewichtHalbfett),
+        Font(R.font.spacegrotesk_bold, Schrift.gewichtFett),
+        Font(R.font.spacegrotesk_bold, Schrift.gewichtExtrafett),
     )
 
     fun text(gewicht: FontWeight, groesse: TextUnit, laufweite: TextUnit = TextUnit.Unspecified) =
@@ -96,14 +99,15 @@ object TcmSchrift {
 fun farbschema(p: Palette, dunkel: Boolean): ColorScheme {
     val basis = if (dunkel) darkColorScheme() else lightColorScheme()
     return basis.copy(
-        primary = p.brand,
+        primary = p.blue,
         onPrimary = p.onBrand,
         primaryContainer = p.blueSoft,
         onPrimaryContainer = p.blueInk,
-        secondary = p.gold,
-        onSecondary = p.onGold,
-        secondaryContainer = p.goldSoft,
-        onSecondaryContainer = p.goldInk,
+        // Gelb ist kein Bedienelement (nur "deins"): auch die zweite Rolle von Material ist blau.
+        secondary = p.blue,
+        onSecondary = p.onBrand,
+        secondaryContainer = p.blueSoft,
+        onSecondaryContainer = p.blueInk,
         tertiary = p.green,
         background = p.bg,
         onBackground = p.ink,
@@ -125,23 +129,23 @@ fun farbschema(p: Palette, dunkel: Boolean): ColorScheme {
 
 private fun typografie(): Typography {
     val t = Typography()
-    fun TextStyle.barlow() = copy(fontFamily = TcmSchrift.text)
+    fun TextStyle.fliesstext() = copy(fontFamily = TcmSchrift.text)
     return Typography(
-        displayLarge = t.displayLarge.barlow(),
-        displayMedium = t.displayMedium.barlow(),
-        displaySmall = t.displaySmall.barlow(),
-        headlineLarge = TcmSchrift.text(Schrift.gewichtExtrafett, Schrift.seitentitel, Schrift.laufweiteTitel),
-        headlineMedium = t.headlineMedium.barlow().copy(fontWeight = Schrift.gewichtExtrafett),
-        headlineSmall = t.headlineSmall.barlow().copy(fontWeight = Schrift.gewichtFett),
-        titleLarge = TcmSchrift.text(Schrift.gewichtFett, Schrift.titel),
-        titleMedium = t.titleMedium.barlow().copy(fontWeight = Schrift.gewichtHalbfett),
-        titleSmall = t.titleSmall.barlow().copy(fontWeight = Schrift.gewichtHalbfett),
+        displayLarge = t.displayLarge.fliesstext(),
+        displayMedium = t.displayMedium.fliesstext(),
+        displaySmall = t.displaySmall.fliesstext(),
+        headlineLarge = TcmSchrift.display(Schrift.gewichtFett, Schrift.seitentitel, Schrift.laufweiteTitel),
+        headlineMedium = t.headlineMedium.copy(fontFamily = TcmSchrift.display, fontWeight = Schrift.gewichtFett),
+        headlineSmall = t.headlineSmall.copy(fontFamily = TcmSchrift.display, fontWeight = Schrift.gewichtFett),
+        titleLarge = TcmSchrift.display(Schrift.gewichtFett, Schrift.titel),
+        titleMedium = t.titleMedium.fliesstext().copy(fontWeight = Schrift.gewichtHalbfett),
+        titleSmall = t.titleSmall.fliesstext().copy(fontWeight = Schrift.gewichtHalbfett),
         bodyLarge = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal),
-        bodyMedium = t.bodyMedium.barlow(),
+        bodyMedium = t.bodyMedium.fliesstext(),
         bodySmall = TcmSchrift.text(Schrift.gewichtNormal, Schrift.klein),
-        labelLarge = t.labelLarge.barlow().copy(fontWeight = Schrift.gewichtFett),
-        labelMedium = t.labelMedium.barlow().copy(fontWeight = Schrift.gewichtHalbfett),
-        labelSmall = t.labelSmall.barlow().copy(fontWeight = Schrift.gewichtHalbfett, fontSize = 12.sp),
+        labelLarge = t.labelLarge.copy(fontFamily = TcmSchrift.display, fontWeight = Schrift.gewichtHalbfett),
+        labelMedium = t.labelMedium.fliesstext().copy(fontWeight = Schrift.gewichtHalbfett),
+        labelSmall = t.labelSmall.fliesstext().copy(fontWeight = Schrift.gewichtHalbfett, fontSize = 12.sp),
     )
 }
 
@@ -161,15 +165,9 @@ fun TcmTheme(dunkel: Boolean = isSystemInDarkTheme(), inhalt: @Composable () -> 
     }
 }
 
-/** Die Anmeldeseiten: immer dunkel, egal welches Erscheinungsbild gewaehlt ist. */
-@Composable
-fun ImmerDunkel(inhalt: @Composable () -> Unit) = TcmTheme(dunkel = true, inhalt = inhalt)
-
 /**
  * Helle Symbole in der Statusleiste auf dunklem Grund und umgekehrt (Edge-to-Edge).
- * Themes stecken ineinander (ImmerDunkel in einem hellen TcmTheme): Wer geht,
- * stellt den Stand davor wieder her, sonst blieben nach der Anmeldung helle
- * Symbole auf hellem Grund.
+ * Stecken Themes ineinander, stellt das innere beim Gehen den Stand davor wieder her.
  */
 @Composable
 private fun Systemleisten(dunkel: Boolean) {

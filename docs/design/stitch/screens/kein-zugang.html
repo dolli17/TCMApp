@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TC Muckensturm - Kein Zugang mehr</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            club: '#1466A8',
+            primaryText: '#0A1624',
+          },
+          fontFamily: {
+            title: ['"Space Grotesk"', 'sans-serif'],
+            body: ['"DM Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-white text-primaryText font-body antialiased selection:bg-club/10 selection:text-club flex justify-center items-start min-h-screen">
+  <!-- iPhone 16 / 15 Frame: 393 x 852 px -->
+  <main class="w-[393px] h-[852px] bg-white relative flex flex-col justify-between px-[20px] pb-3 box-border overflow-hidden select-none">
+    
+    <!-- Top section: Status Bar + Main Content -->
+    <div class="w-full flex flex-col">
+      <!-- iOS Status Bar (9:41) -->
+      <header class="w-full pt-3 pb-2 flex justify-between items-center text-primaryText font-semibold text-[15px] tracking-tight">
+        <span class="pl-2">9:41</span>
+        <div class="flex items-center gap-1.5 pr-2">
+          <!-- Signal Icon -->
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+            <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 18.23C2.89 16.49 2 14.35 2 12 2 6.48 6.48 2 12 2s10 4.48 10 10c0 2.35-.89 4.49-2.35 6.23l-.62-.62C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z" opacity="0.3"/>
+            <path d="M2 18h20v2H2z" opacity="0"/>
+            <path d="M3 18h2v2H3zm4-4h2v6H7zm4-4h2v10h-2zm4-5h2v15h-2zm4-4h2v19h-2z" />
+          </svg>
+          <!-- Wifi Icon -->
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+            <path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98C20.93 5.9 16.69 4 12 4zm0 3.5c3.55 0 6.78 1.34 9.25 3.55L12 19.33 2.75 11.05C5.22 8.84 8.45 7.5 12 7.5z"/>
+          </svg>
+          <!-- Battery Icon -->
+          <div class="w-6 h-3 border-[1.5px] border-primaryText rounded-[3px] p-[1px] flex items-center relative">
+            <div class="h-full bg-primaryText rounded-[1.5px] w-full"></div>
+            <div class="absolute -right-[3px] top-[2.5px] w-[2px] h-[4px] bg-primaryText rounded-r-[1px]"></div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content beginning in upper third, calm layout -->
+      <section class="mt-12 flex flex-col">
+        <!-- Kicker -->
+        <span class="font-title text-[11px] font-bold tracking-wider text-slate-500 uppercase leading-none mb-2">
+          TC MUCKENSTURM
+        </span>
+
+        <!-- Title -->
+        <h1 class="font-title text-[24px] font-bold text-primaryText leading-snug tracking-tight mb-4">
+          Kein Zugang mehr
+        </h1>
+
+        <!-- Paragraph -->
+        <p class="font-body text-[15px] text-slate-600 leading-relaxed font-normal mb-8">
+          Deine Mitgliedschaft ist beendet. Deshalb kannst du die App nicht mehr nutzen.
+        </p>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col gap-3 w-full">
+          <!-- Primary Action Button: 48px height, Blue Pill -->
+          <button class="w-full h-[48px] bg-[#1466A8] hover:bg-[#11558c] active:scale-[0.99] transition-all text-white font-title text-[15px] font-semibold rounded-full flex items-center justify-center cursor-pointer shadow-sm">
+            Vorstand kontaktieren
+          </button>
+
+          <!-- Secondary Action Button: 48px height, Pill with Slate-200 border -->
+          <button class="w-full h-[48px] bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.99] transition-all text-primaryText font-title text-[15px] font-medium rounded-full flex items-center justify-center cursor-pointer">
+            Mit einem anderen Konto anmelden
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Bottom Footer section: Legal Links & iOS Home Indicator -->
+    <footer class="w-full flex flex-col items-center">
+      <nav aria-label="Rechtliches" class="mb-4">
+        <p class="font-body text-[12px] text-slate-500 tracking-wide text-center">
+          <a href="#" class="hover:text-primaryText transition-colors">Datenschutz</a>
+          <span class="mx-1 text-slate-400">·</span>
+          <a href="#" class="hover:text-primaryText transition-colors">Impressum</a>
+        </p>
+      </nav>
+
+      <!-- iOS Home Indicator -->
+      <div class="w-[134px] h-[5px] bg-black/85 rounded-full mb-1"></div>
+    </footer>
+
+  </main>
+</body>
+</html>

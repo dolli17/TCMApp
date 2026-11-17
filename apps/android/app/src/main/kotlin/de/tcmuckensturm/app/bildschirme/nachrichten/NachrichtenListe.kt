@@ -3,7 +3,7 @@
  *
  * Wie NachrichtenListe.swift der iOS-App: nach Tagen gruppiert
  * (groupNotifications), je Art ein Symbol (notificationSymbol), relative
- * Zeit, ungelesene auf goldSoft. Dieselbe Liste steht im Blatt hinter der
+ * Zeit, ungelesene auf blueSoft. Dieselbe Liste steht im Blatt hinter der
  * Glocke und auf dem Bildschirm Neuigkeiten.
  *
  * Gelesen markiert wird beim Oeffnen. Die Hervorhebung bleibt aber stehen,
@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DateRange
@@ -77,7 +77,7 @@ fun symbolBild(symbol: NotificationSymbol): ImageVector = when (symbol) {
 @Composable
 fun AlleGelesenKnopf(aktion: () -> Unit) {
     TextButton(onClick = aktion) {
-        Text("Alle als gelesen", style = TcmSchrift.text(Schrift.gewichtFett, 14.sp), color = TcmTheme.farben.blueInk)
+        Text("Alle als gelesen", style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp), color = TcmTheme.farben.blueInk)
     }
 }
 
@@ -135,7 +135,7 @@ fun NachrichtenListe(
 /**
  * Eine Nachricht: Symbol, Titel, Zeit, Text, ggf. "Zur Veranstaltung ›".
  *
- * @param hervorheben Auf der Liste liegt Neues auf goldSoft; auf Home nur das Symbol.
+ * @param hervorheben Auf der Liste liegt Neues auf blueSoft; auf Home nur das Symbol.
  */
 @Composable
 fun NachrichtZeile(
@@ -159,12 +159,12 @@ fun NachrichtZeile(
     val label = HomeLogik.nachrichtLabel(n, neu, jetzt)
     val symbolGrund = when {
         hervorheben -> if (neu) f.surf else f.surf2
-        else -> if (neu) f.goldSoft else f.surf2
+        else -> if (neu) f.blueSoft else f.surf2
     }
     Row(
         Modifier
             .fillMaxWidth()
-            .background(if (hervorheben && neu) f.goldSoft else Color.Transparent)
+            .background(if (hervorheben && neu) f.blueSoft else Color.Transparent)
             .then(if (tippen != null) Modifier.clickable(role = Role.Button, onClick = tippen) else Modifier)
             .clearAndSetSemantics {
                 contentDescription = if (tippen != null) "$label. $wohin" else label
@@ -180,7 +180,7 @@ fun NachrichtZeile(
         Box(
             Modifier
                 .size(40.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .clip(CircleShape)
                 .background(symbolGrund),
             contentAlignment = Alignment.Center,
         ) {
@@ -195,7 +195,7 @@ fun NachrichtZeile(
             val titel = @Composable { breite: Modifier ->
                 Text(
                     n.title ?: "",
-                    style = TcmSchrift.text(Schrift.gewichtFett, 15.sp).mitTrennung(),
+                    style = TcmSchrift.display(Schrift.gewichtHalbfett, 15.sp).mitTrennung(),
                     color = f.ink,
                     maxLines = if (zeilen != null) 2 else Int.MAX_VALUE,
                     overflow = TextOverflow.Ellipsis,
@@ -214,7 +214,9 @@ fun NachrichtZeile(
                 titel(Modifier)
                 zeit()
             } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    // Ungelesen: ein blauer Punkt vor dem Titel.
+                    if (neu && hervorheben) Box(Modifier.size(8.dp).background(f.blue, CircleShape))
                     titel(Modifier.weight(1f))
                     zeit()
                 }

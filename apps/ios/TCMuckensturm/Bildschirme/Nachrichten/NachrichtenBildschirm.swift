@@ -24,7 +24,7 @@ struct NachrichtenBildschirm: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
                 Text("Neuigkeiten")
-                    .font(Schrift.text(.extrafett, Tokens.Schrift.seitentitel, relativeTo: .largeTitle))
+                    .font(Schrift.display(.fett, Tokens.Schrift.seitentitel, relativeTo: .largeTitle))
                     .tracking(Tokens.Schrift.laufweiteTitel)
                     .foregroundStyle(Farbe.ink)
                     .accessibilityAddTraits(.isHeader)
@@ -35,13 +35,6 @@ struct NachrichtenBildschirm: View {
                 } else {
                     if let fehler {
                         Fehlerzeile(text: fehler, laeuft: aktualisiert) { Task { await laden(nachladen: true) } }
-                    }
-                    if HomeLogik.zeigeAlleGelesen(nachrichten, alleGesehen: alleGesehen) {
-                        HStack {
-                            Spacer()
-                            AlleGelesenKnopf { alleGesehen = true }
-                        }
-                        .padding(.bottom, -8)
                     }
                     if let nachrichten {
                         NachrichtenListe(liste: nachrichten, alleGesehen: alleGesehen) { zuVerein(.veranstaltung($0)) }
@@ -54,6 +47,16 @@ struct NachrichtenBildschirm: View {
         .background(Farbe.bg)
         .refreshable { await laden(nachladen: true) }
         .navigationBarTitleDisplayMode(.inline)
+        // Oben rechts neben dem Zurueck-Knopf, wie im Entwurf "Neuigkeiten".
+        .toolbar {
+            if !laedt && HomeLogik.zeigeAlleGelesen(nachrichten, alleGesehen: alleGesehen) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Alle als gelesen") { alleGesehen = true }
+                        .font(Schrift.display(.halbfett, 15))
+                        .tint(Farbe.blueInk)
+                }
+            }
+        }
         .task { await laden(nachladen: false) }
     }
 

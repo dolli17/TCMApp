@@ -69,17 +69,6 @@ class PlaetzeModellTest {
     }
 
     @Test
-    fun ansichtWirdGemerkt() = runTest {
-        var gemerkt: Ansicht? = null
-        val m = PlaetzeModell(PlatzAttrappe(), uhr = { PlatzAttrappe.JETZT }, live = false, ansichtMerken = { gemerkt = it }, bereich = backgroundScope)
-        assertEquals(Ansicht.FREIE_ZEITEN, m.ansicht)
-        m.waehleAnsicht(Ansicht.UEBERSICHT)
-        assertEquals(Ansicht.UEBERSICHT, gemerkt)
-        assertEquals(Ansicht.UEBERSICHT, Ansicht.aus("uebersicht"))
-        assertEquals(Ansicht.FREIE_ZEITEN, Ansicht.aus(null))
-    }
-
-    @Test
     fun buchenOeffnetDasBlattMitStartzeiten() = runTest {
         val m = geladen()
         m.buchenAuf(m.platz("p1")!!, 17 * 60 + 30)
