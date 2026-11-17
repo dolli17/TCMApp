@@ -25,6 +25,9 @@ fun istVerbindungsfehler(fehler: Throwable): Boolean =
 
 /** Was supabase-kt wirft, in die Form von auth-js gebracht. */
 fun authFehlerForm(fehler: Throwable): AuthFehlerForm = when {
+    // bad_jwt: das Token gehoert zu keiner Sitzung (mehr) - fuer die Anzeige wie session_not_found
+    fehler is AuthRestException && fehler.error == "bad_jwt" ->
+        AuthFehlerForm(code = "session_not_found", status = fehler.statusCode, nachricht = fehler.errorDescription)
     fehler is AuthRestException ->
         AuthFehlerForm(code = fehler.error, status = fehler.statusCode, nachricht = fehler.errorDescription)
     // Ohne Sitzung gar nicht erst gefragt (etwa updateUser): wie session_not_found von Auth

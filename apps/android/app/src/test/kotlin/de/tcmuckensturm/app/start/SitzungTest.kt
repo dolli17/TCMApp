@@ -29,7 +29,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -434,29 +433,29 @@ class SitzungTest {
         assertEquals("Das neue Passwort muss sich vom bisherigen unterscheiden.", s.passwortSpeichern("geheim123"))
         server.auth("user") { Antwort.authFehler(422, "weak_password", "Password should be at least 8 characters.") }
         assertEquals("Das Passwort ist zu schwach. Bitte wähle ein längeres.", s.passwortSpeichern("kurz"))
-        // Die Sitzung gibt es beim Server nicht mehr (woanders abgemeldet).
-        server.auth("user") { Antwort.authFehler(403, "session_not_found", "Session from session_id claim in JWT does not exist") }
-        assertEquals("Der Link ist abgelaufen. Bitte fordere einen neuen an.", s.passwortSpeichern("neues-passwort"))
-        assertEquals(Anmeldefehler.NEU_ANMELDEN, s.passwortSpeichern("neues-passwort", imKonto = true))
         server.auth("user") { Antwort(500, "Internal Server Error") }
         assertEquals(Anmeldefehler.SERVER, s.passwortSpeichern("neues-passwort"))
         server.ohneNetz = true
         assertEquals(Anmeldefehler.VERBINDUNG, s.passwortSpeichern("neues-passwort", imKonto = true))
+        server.ohneNetz = false
+        // Die Sitzung gibt es beim Server nicht mehr (woanders abgemeldet). supabase-kt
+        // verwirft sie danach auch auf dem Geraet; der zweite Versuch fragt gar nicht mehr.
+        server.auth("user") { Antwort.authFehler(403, "session_not_found", "Session from session_id claim in JWT does not exist") }
+        assertEquals("Der Link ist abgelaufen. Bitte fordere einen neuen an.", s.passwortSpeichern("neues-passwort"))
+        assertEquals(Anmeldefehler.NEU_ANMELDEN, s.passwortSpeichern("neues-passwort", imKonto = true))
+        // Das Token gehoert zu keiner Sitzung: Auth sagt bad_jwt - gleiche Folge.
+        s.anmelden("max@tcm.local", "geheim123")
+        s.wartetAuf(StartZiel.Tabs)
+        server.auth("user") { Antwort.authFehler(403, "bad_jwt", "invalid claim: missing sub claim") }
+        assertEquals(Anmeldefehler.NEU_ANMELDEN, s.passwortSpeichern("neues-passwort", imKonto = true))
     }
 
     /**
-     * BEFUND (Fehler im App-Code, hier nur belegt): Ohne Sitzung auf dem Geraet
-     * soll "Passwort speichern" sagen, dass der Link abgelaufen ist bzw. dass
-     * man sich neu anmelden muss. authFehlerForm (daten/Fehlerform.kt) rechnet
-     * dafuer mit einer SessionRequiredException von supabase-kt. supabase-kt
-     * 3.8.0 wirft sie bei updateUser aber nicht, sondern fragt mit dem
-     * oeffentlichen Schluessel; Supabase Auth antwortet darauf mit 403 bad_jwt
-     * ("invalid claim: missing sub claim", so am lokalen Stack nachgemessen).
-     * Den Code kennt passwortFehlerText nicht - es erscheint der allgemeine
-     * Satz "Das Passwort ließ sich nicht speichern. Bitte versuche es erneut.",
-     * und erneut versuchen hilft dann nicht.
+     * Ohne Sitzung auf dem Geraet sagt "Passwort speichern", dass der Link
+     * abgelaufen ist bzw. dass man sich neu anmelden muss. Frueher kam hier der
+     * allgemeine Satz: supabase-kt fragt ohne Sitzung mit dem oeffentlichen
+     * Schluessel, und Auth antwortet 403 bad_jwt.
      */
-    @Ignore("Befund: ohne Sitzung kommt der allgemeine Satz statt 'Link abgelaufen' / 'neu anmelden' (403 bad_jwt wird nicht zugeordnet)")
     @Test
     fun passwortSpeichernOhneSitzung() = runBlocking<Unit> {
         server.auth("user") { Antwort.authFehler(403, "bad_jwt", "invalid claim: missing sub claim") }

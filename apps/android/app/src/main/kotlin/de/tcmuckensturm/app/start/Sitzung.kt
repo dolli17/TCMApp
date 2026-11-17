@@ -19,6 +19,7 @@ import de.tcmuckensturm.app.daten.Zugangsdaten
 import de.tcmuckensturm.app.daten.authFehlerForm
 import de.tcmuckensturm.app.push.PushZentrale
 import de.tcmuckensturm.kern.Anmeldefehler
+import de.tcmuckensturm.kern.AuthFehlerForm
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.SignOutScope
@@ -199,8 +200,15 @@ class Sitzung(
      * `imKonto`: aus dem Konto statt aus einem Mail-Link (andere Meldung ohne Sitzung).
      */
     suspend fun passwortSpeichern(neu: String, imKonto: Boolean = false): String? = try {
-        client.auth.updateUser { password = neu }
-        null
+        // Ohne Sitzung fragt supabase-kt mit dem oeffentlichen Schluessel und Auth
+        // antwortet 403 bad_jwt - also gar nicht erst fragen, sondern sagen, was
+        // fehlt: ein neuer Link bzw. neu anmelden (wie session_not_found).
+        if (client.auth.currentSessionOrNull() == null) {
+            Anmeldefehler.passwortFehlerText(AuthFehlerForm(code = "session_not_found"), imKonto)
+        } else {
+            client.auth.updateUser { password = neu }
+            null
+        }
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
