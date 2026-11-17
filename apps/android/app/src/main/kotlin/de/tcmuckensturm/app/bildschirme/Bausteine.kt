@@ -9,7 +9,6 @@
 
 package de.tcmuckensturm.app.bildschirme
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,7 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -39,7 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
@@ -48,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.layout.layout
@@ -86,22 +85,19 @@ import de.tcmuckensturm.kern.TimelineSegment
 
 // ---- Karte und Schrift --------------------------------------------------------
 
-/** stil.listenkarte bzw. stil.karte: surf, Linie, kleiner Schatten (im Dunkeln keiner) */
+/** Karte nach docs/design/stitch: surf mit feiner Linie, ohne Schatten. `gross` bleibt aus alten Aufrufen. */
 @Composable
-fun Modifier.karte(radius: Dp = Radius.karte, padding: Dp = 12.dp, gross: Boolean = false): Modifier {
+fun Modifier.karte(radius: Dp = Radius.karte, padding: Dp = 12.dp, @Suppress("UNUSED_PARAMETER") gross: Boolean = false): Modifier {
     val f = TcmTheme.farben
-    val stufen = TcmTheme.schatten
-    val schatten = if (gross) stufen.normal else stufen.klein
     val form = RoundedCornerShape(radius)
     return this
-        .shadow(schatten.elevation, form, ambientColor = schatten.farbe, spotColor = schatten.farbe)
         .clip(form)
         .background(f.surf)
         .border(1.dp, f.line, form)
         .padding(padding)
 }
 
-/** stil.kicker: Barlow Semi Condensed 700, gross geschrieben, gesperrt */
+/** Kicker: Space Grotesk 700, gross geschrieben, gesperrt */
 @Composable
 fun Kicker(text: String, modifier: Modifier = Modifier, farbe: Color = TcmTheme.farben.muted) {
     Text(text.uppercase(), style = TcmSchrift.kicker, color = farbe, modifier = modifier)
@@ -135,41 +131,43 @@ fun Modifier.tippbar(beschreibung: String? = null, rolle: Role = Role.Button, ak
 // ---- Kopf ---------------------------------------------------------------------
 
 /**
- * Der grosse Titel-Kopf (GrosserKopf.tsx): optional ein Kicker, Titel in
- * 34/800, rechts Glocke und Avatar - auf jedem Tab gleich (Home, Plaetze,
- * Verein, Verwaltung; Konto hat nur die Glocke, wie iOS). Der Titel darf
+ * Der grosse Titel-Kopf: Kicker "TC Muckensturm", darunter der Titel, rechts
+ * die Glocke - auf jedem Tab gleich (docs/design/stitch). Der Titel darf
  * zweizeilig werden (U52). `glocke` ist in der App `Glocke()` aus
- * `nachrichten`, in den Bildschirmfotos nur ihr Knopf (ohne Netz).
+ * `nachrichten`, in den Bildschirmfotos nur ihr Knopf (ohne Netz). Die
+ * Initialen neben der Glocke sind entfallen: ins Konto fuehrt der Tab.
  */
 @Composable
-fun GrosserKopf(titel: String, kicker: String? = null, name: MeinName?, glocke: @Composable () -> Unit) {
+fun GrosserKopf(
+    titel: String,
+    kicker: String? = "TC Muckensturm",
+    @Suppress("UNUSED_PARAMETER") name: MeinName? = null,
+    glocke: @Composable () -> Unit,
+) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(top = 16.dp, bottom = Abstand.m),
+            .padding(top = 16.dp, bottom = Abstand.l),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(Abstand.m),
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             if (kicker != null) Kicker(kicker)
             Text(
                 titel,
-                style = TcmSchrift.text(Schrift.gewichtExtrafett, Schrift.seitentitel, Schrift.laufweiteTitel)
-                    .copy(lineHeight = 38.sp),
+                style = TcmSchrift.display(Schrift.gewichtFett, Schrift.seitentitel, Schrift.laufweiteTitel)
+                    .copy(lineHeight = 32.sp),
                 color = TcmTheme.farben.ink,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.semantics { heading() },
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            glocke()
-            Avatar(name)
-        }
+        glocke()
     }
 }
 
-/** Initialen auf brand (ohne Namen leer, solange er laedt); fuehrt ins Konto. */
+/** Initialen auf hellblau (ohne Namen leer, solange er laedt); fuehrt ins Konto. */
 @Composable
 fun Avatar(name: MeinName?) {
     val f = TcmTheme.farben
@@ -178,12 +176,12 @@ fun Avatar(name: MeinName?) {
         Modifier
             .size(44.dp)
             .clip(CircleShape)
-            .background(f.brand)
+            .background(f.blueSoft)
             .tippbar("Konto") { zuTab(HauptTab.KONTO) },
         contentAlignment = Alignment.Center,
     ) {
         GedeckelteSchrift {
-            Text(Initialen.von(name), style = TcmSchrift.text(Schrift.gewichtFett, 15.sp), color = f.onBrand)
+            Text(Initialen.von(name), style = TcmSchrift.display(Schrift.gewichtFett, 15.sp), color = f.blueInk)
         }
     }
 }
@@ -203,7 +201,7 @@ fun Kopfzeile(titel: String, link: KopfLink? = null) {
     ) {
         Text(
             titel,
-            style = TcmSchrift.text(Schrift.gewichtFett, Schrift.titel, (-0.2).sp),
+            style = TcmSchrift.display(Schrift.gewichtFett, Schrift.titel, (-0.2).sp),
             color = f.ink,
             modifier = Modifier
                 .weight(1f)
@@ -247,18 +245,11 @@ fun Leerzustand(text: String, titel: String? = null, handlung: Handlung? = null)
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         if (titel != null) {
-            Text(titel, style = TcmSchrift.text(Schrift.gewichtFett, 18.sp), color = f.ink)
+            Text(titel, style = TcmSchrift.display(Schrift.gewichtFett, 20.sp), color = f.ink)
         }
         Text(text, style = leise.copy(lineHeight = 19.sp), color = f.muted)
         if (handlung != null) {
-            OutlinedButton(
-                onClick = handlung.aktion,
-                shape = RoundedCornerShape(Radius.knopf),
-                border = BorderStroke(1.5.dp, f.line2),
-                modifier = Modifier.padding(top = 10.dp),
-            ) {
-                Text(handlung.text, style = TcmSchrift.display(Schrift.gewichtFett, Schrift.normal), color = f.ink)
-            }
+            LeiserKnopf(handlung.text, Modifier.padding(top = 10.dp), klein = true, aktion = handlung.aktion)
         }
     }
 }
@@ -277,17 +268,7 @@ fun Fehlerzeile(text: String, laeuft: Boolean = false, erneut: (() -> Unit)? = n
     ) {
         Text(text, style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal), color = f.redInk)
         if (erneut != null) {
-            OutlinedButton(
-                onClick = erneut,
-                enabled = !laeuft,
-                border = BorderStroke(1.5.dp, f.red.copy(alpha = if (laeuft) 0.24f else 0.4f)),
-            ) {
-                Text(
-                    if (laeuft) "Wird geladen…" else "Erneut versuchen",
-                    style = TcmSchrift.text(Schrift.gewichtFett, 15.sp),
-                    color = f.redInk.copy(alpha = if (laeuft) 0.6f else 1f),
-                )
-            }
+            LeiserKnopf(if (laeuft) "Wird geladen…" else "Erneut versuchen", rot = true, klein = true, gesperrt = laeuft, aktion = erneut)
         }
     }
 }
@@ -320,80 +301,183 @@ fun Hinweis(text: String, ok: Boolean = false) {
 // ---- Knoepfe ----------------------------------------------------------------------
 
 /**
- * Der gelbe Hauptknopf (stil.knopfGold), rot fuer Abmelden, Verdraengen und
- * Absagen. Gross (58 dp, Radius 18) in Anmeldung, Formularen und Blaettern,
- * `kompakt` (52 dp, Radius knopf) in Karten wie in iOS (Veranstaltung,
- * Rueckfragen der Verwaltung).
+ * Die Stufen der Knoepfe (docs/design/stitch, im Web .knopf):
+ * HAUPT kraeftiges Blau mit weisser Schrift - die eine Hauptaktion je Screen;
+ * ZWEIT hellblau mit blauer Schrift; LEISE weiss mit Linie; GEFAHR rot
+ * gefuellt, nur als Bestaetigung neben einem leisen "Doch nicht";
+ * GEFAHR_LEISE roter Text mit roter Linie.
+ */
+enum class Knopfstufe { HAUPT, ZWEIT, LEISE, GEFAHR, GEFAHR_LEISE }
+
+/** Gleiche Hoehen auf allen Screens: 52, klein 40, gross 56. */
+enum class Knopfgroesse(val hoehe: Dp, val schrift: Int, val rand: Dp) {
+    KLEIN(40.dp, 14, 14.dp),
+    NORMAL(52.dp, 16, 20.dp),
+    GROSS(56.dp, 16, 20.dp),
+}
+
+/**
+ * Der eine Knopf der App: Pille, Space Grotesk 600. Alle anderen Knoepfe
+ * (Hauptknopf, Zweitknopf, LeiserKnopf) sind Kurzformen davon.
  *
- * Gesperrt ist neutral statt blassgold (U26). Mit `beiGesperrt` nimmt der
+ * Gesperrt ist neutral statt blass (U26). Mit `beiGesperrt` nimmt der
  * gesperrte Knopf das Tippen noch an und fuehrt zum naechsten Schritt; `grund`
  * sagt TalkBack, warum er gesperrt ist.
+ */
+@Composable
+fun Knopf(
+    text: String,
+    modifier: Modifier = Modifier,
+    stufe: Knopfstufe = Knopfstufe.ZWEIT,
+    groesse: Knopfgroesse = Knopfgroesse.NORMAL,
+    /** Volle Breite (im Blatt, in Formularen); sonst so breit wie der Text. */
+    breit: Boolean = true,
+    symbol: ImageVector? = null,
+    /** Schmaler Rand und 15 sp, wenn zwei Knoepfe mit Symbol nebeneinander stehen (Startseite). */
+    eng: Boolean = false,
+    gesperrt: Boolean = false,
+    grund: String? = null,
+    beschreibung: String? = null,
+    beiGesperrt: (() -> Unit)? = null,
+    aktion: () -> Unit,
+) {
+    val f = TcmTheme.farben
+    val gefuellt = stufe == Knopfstufe.HAUPT || stufe == Knopfstufe.GEFAHR
+    val neutral = gesperrt && gefuellt
+    val flaeche = when {
+        neutral -> f.surf3
+        stufe == Knopfstufe.HAUPT -> f.blue
+        stufe == Knopfstufe.ZWEIT -> f.blueSoft
+        stufe == Knopfstufe.LEISE -> f.surf
+        stufe == Knopfstufe.GEFAHR -> f.red
+        else -> Color.Transparent
+    }
+    val tinte = when {
+        neutral -> f.muted
+        gefuellt -> f.onBrand
+        stufe == Knopfstufe.ZWEIT -> f.blueInk
+        stufe == Knopfstufe.LEISE -> f.ink
+        else -> f.redInk
+    }
+    val linie = when {
+        gefuellt -> null
+        stufe == Knopfstufe.ZWEIT -> f.blue.copy(alpha = 0.22f)
+        stufe == Knopfstufe.LEISE -> f.line2
+        else -> f.red.copy(alpha = 0.4f)
+    }
+    Row(
+        modifier
+            .then(if (breit) Modifier.fillMaxWidth() else Modifier)
+            .heightIn(min = groesse.hoehe)
+            .alpha(if (gesperrt && !gefuellt) 0.5f else 1f)
+            .clip(Kapsel)
+            .background(flaeche)
+            .then(if (linie != null) Modifier.border(1.dp, linie, Kapsel) else Modifier)
+            .clickable(enabled = !gesperrt || beiGesperrt != null, role = Role.Button) {
+                if (gesperrt) beiGesperrt?.invoke() else aktion()
+            }
+            .semantics {
+                if (gesperrt && grund != null) {
+                    contentDescription = "${beschreibung ?: text}. $grund"
+                } else if (beschreibung != null) {
+                    contentDescription = beschreibung
+                }
+            }
+            .padding(horizontal = if (eng) 10.dp else groesse.rand, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (eng) 6.dp else 8.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (symbol != null) Icon(symbol, contentDescription = null, tint = tinte, modifier = Modifier.size(20.dp))
+        Text(
+            text,
+            style = TcmSchrift.display(Schrift.gewichtHalbfett, if (eng) 15.sp else groesse.schrift.sp),
+            color = tinte,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/**
+ * Die Hauptaktion: kraeftiges Blau, genau einmal je Screen. `rot` ist die
+ * gefuellte rote Bestaetigung (Abmelden, Verdraengen, "Wirklich stornieren").
+ * `kompakt` bleibt aus alten Aufrufen und aendert nichts mehr: alle sind 52 hoch.
  */
 @Composable
 fun Hauptknopf(
     text: String,
     modifier: Modifier = Modifier,
     rot: Boolean = false,
-    kompakt: Boolean = false,
+    @Suppress("UNUSED_PARAMETER") kompakt: Boolean = false,
     gesperrt: Boolean = false,
     grund: String? = null,
     beiGesperrt: (() -> Unit)? = null,
     aktion: () -> Unit,
-) {
-    val f = TcmTheme.farben
-    val form = RoundedCornerShape(if (kompakt) Radius.knopf else 18.dp)
-    val neutral = gesperrt && !rot
-    Box(
-        modifier
-            .fillMaxWidth()
-            .heightIn(min = if (kompakt) 52.dp else 58.dp)
-            .alpha(if (gesperrt && rot) 0.6f else 1f)
-            .clip(form)
-            .background(if (neutral) f.surf3 else if (rot) f.red else f.gold)
-            .clickable(enabled = !gesperrt || beiGesperrt != null, role = Role.Button) {
-                if (gesperrt) beiGesperrt?.invoke() else aktion()
-            }
-            .semantics { if (gesperrt && grund != null) contentDescription = "$text. $grund" }
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text,
-            style = TcmSchrift.text(Schrift.gewichtExtrafett, if (kompakt) 16.sp else 17.sp),
-            color = if (neutral) f.muted else if (rot) f.onBrand else f.onGold,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
+) = Knopf(
+    text, modifier, if (rot) Knopfstufe.GEFAHR else Knopfstufe.HAUPT,
+    gesperrt = gesperrt, grund = grund, beiGesperrt = beiGesperrt, aktion = aktion,
+)
 
-/** Umrandeter Knopf (LeiserKnopf in iOS), 52 dp; rot fuer Abmelden und Kuendigen. */
+/** Zweitaktion: hellblau mit blauer Schrift ("Getränk eintragen", "Mitspielen"). */
+@Composable
+fun Zweitknopf(
+    text: String,
+    modifier: Modifier = Modifier,
+    klein: Boolean = false,
+    breit: Boolean = !klein,
+    gesperrt: Boolean = false,
+    beschreibung: String? = null,
+    aktion: () -> Unit,
+) = Knopf(
+    text, modifier, Knopfstufe.ZWEIT, if (klein) Knopfgroesse.KLEIN else Knopfgroesse.NORMAL,
+    breit = breit, gesperrt = gesperrt, beschreibung = beschreibung, aktion = aktion,
+)
+
+/** Neutral: weiss mit Linie ("Doch nicht"); `rot` fuer Abmelden, Stornieren, Kuendigen als roter Text. */
 @Composable
 fun LeiserKnopf(
     text: String,
     modifier: Modifier = Modifier,
     rot: Boolean = false,
+    klein: Boolean = false,
+    breit: Boolean = !klein,
     gesperrt: Boolean = false,
     aktion: () -> Unit,
-) {
+) = Knopf(
+    text, modifier, if (rot) Knopfstufe.GEFAHR_LEISE else Knopfstufe.LEISE,
+    if (klein) Knopfgroesse.KLEIN else Knopfgroesse.NORMAL,
+    breit = breit, gesperrt = gesperrt, aktion = aktion,
+)
+
+/**
+ * Gelb heisst "deins": der eigene Termin, "Du bist dabei", "Dein Spiel"
+ * (.dein-marker im Web). Nie ein Knopf, nie eine Auswahl.
+ */
+@Composable
+fun DeinMarker(text: String, modifier: Modifier = Modifier) {
     val f = TcmTheme.farben
-    val form = RoundedCornerShape(Radius.knopf)
     Box(
         modifier
-            .fillMaxWidth()
-            .heightIn(min = 52.dp)
-            .alpha(if (gesperrt) 0.5f else 1f)
-            .clip(form)
-            .border(1.5.dp, if (rot) f.red.copy(alpha = 0.5f) else f.line2, form)
-            .clickable(enabled = !gesperrt, role = Role.Button, onClick = aktion)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .heightIn(min = 24.dp)
+            .clip(Kapsel)
+            .background(f.gold)
+            .padding(horizontal = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text,
-            style = TcmSchrift.text(Schrift.gewichtFett, 16.sp),
-            color = if (rot) f.redInk else f.ink,
-            textAlign = TextAlign.Center,
-        )
+        Text(text, style = TcmSchrift.display(Schrift.gewichtHalbfett, 12.5.sp), color = f.onGold, maxLines = 1)
+    }
+}
+
+/** Kleine Marke (.marke-klein): hellblau fuer Zaehler, Spielform und Status, sonst neutral. */
+@Composable
+fun MarkeKlein(text: String, modifier: Modifier = Modifier, blau: Boolean = true) {
+    val f = TcmTheme.farben
+    Box(
+        modifier
+            .clip(Kapsel)
+            .background(if (blau) f.blueSoft else f.chip)
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    ) {
+        Text(text, style = TcmSchrift.display(Schrift.gewichtHalbfett, 12.sp), color = if (blau) f.blueInk else f.ink2, maxLines = 1)
     }
 }
 
@@ -472,7 +556,7 @@ fun Modifier.randlos(rand: Dp = Abstand.rand): Modifier = layout { messbar, gren
 
 /**
  * Die Zeitleiste eines Platzes (MiniZeitleiste.tsx): belegt blau, eigene
- * Buchung gelb, Mitspieler gesucht gelblich mit gestrichelter Kante, Serie
+ * Buchung gelb, Mitspieler gesucht hellblau mit gestrichelter Kante, Serie
  * schraffiert, Sperrung flach in surf3. Dazu die senkrechte Marke fuer jetzt.
  * Schmuck; was die Leiste zeigt, steht daneben als Text.
  */
@@ -502,9 +586,9 @@ fun MiniZeitleiste(segmente: List<TimelineSegment>, markierung: Double? = null, 
                     TimelineKind.BELEGT -> drawRoundRect(f.blue, ort, groesse, rund)
                     TimelineKind.EIGEN -> drawRoundRect(f.gold, ort, groesse, rund)
                     TimelineKind.SUCHT -> {
-                        drawRoundRect(f.goldSoft, ort, groesse, rund)
+                        drawRoundRect(f.blueSoft, ort, groesse, rund)
                         drawRoundRect(
-                            f.goldLine, ort, groesse, rund,
+                            f.blue, ort, groesse, rund,
                             style = Stroke(1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 2.dp.toPx()))),
                         )
                     }

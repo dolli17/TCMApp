@@ -63,10 +63,10 @@ fun StartAnsicht(sitzung: Sitzung) {
                     when (aktuell) {
                         // Derselbe Grund wie beim Start (Theme.TCM), damit nichts aufblitzt.
                         StartZiel.Laden -> Box(
-                            Modifier.fillMaxSize().background(TcmTheme.farben.brand),
+                            Modifier.fillMaxSize().background(TcmTheme.farben.bg),
                             contentAlignment = Alignment.Center,
                         ) {
-                            CircularProgressIndicator(color = TcmTheme.farben.gold)
+                            CircularProgressIndicator(color = TcmTheme.farben.blue)
                         }
                         StartZiel.Anmelden -> AnmeldenBildschirm()
                         is StartZiel.KeinZugang -> KeinZugangBildschirm(aktuell.grund)
@@ -95,7 +95,7 @@ fun KonfigurationFehlt(fehler: Throwable?) {
             .padding(Abstand.rand),
         verticalArrangement = Arrangement.spacedBy(Abstand.m, Alignment.CenterVertically),
     ) {
-        Text("Konfiguration fehlt", style = TcmSchrift.text(Schrift.gewichtExtrafett, 28.sp), color = TcmTheme.farben.ink)
+        Text("Konfiguration fehlt", style = TcmSchrift.display(Schrift.gewichtFett, 26.sp), color = TcmTheme.farben.ink)
         Text(beschreibung, style = TcmSchrift.text(Schrift.gewichtNormal, 16.sp), color = TcmTheme.farben.ink)
         Text(
             "Für „lokal“: apps/android/lokal.properties aus lokal.properties.example anlegen und neu bauen (siehe apps/android/README.md).",

@@ -7,7 +7,9 @@
  * hell oder dunkel. Material 3 bekommt daraus sein Farbschema, damit
  * Bausteine wie Schalter und Dialoge zu den Vereinsfarben passen.
  *
- * Die Anmeldeseiten sind immer dunkel wie in der Expo-App (ImmerDunkel).
+ * Rollen der Farben: docs/design/stitch/README.md (Blau die eine Hauptaktion,
+ * Hellblau alles Zweite und Ausgewaehlte, Gelb nur "deins"). Auch die
+ * Anmeldeseiten folgen dem gewaehlten Erscheinungsbild.
  */
 
 package de.tcmuckensturm.app.theme
@@ -97,14 +99,15 @@ object TcmSchrift {
 fun farbschema(p: Palette, dunkel: Boolean): ColorScheme {
     val basis = if (dunkel) darkColorScheme() else lightColorScheme()
     return basis.copy(
-        primary = p.brand,
+        primary = p.blue,
         onPrimary = p.onBrand,
         primaryContainer = p.blueSoft,
         onPrimaryContainer = p.blueInk,
-        secondary = p.gold,
-        onSecondary = p.onGold,
-        secondaryContainer = p.goldSoft,
-        onSecondaryContainer = p.goldInk,
+        // Gelb ist kein Bedienelement (nur "deins"): auch die zweite Rolle von Material ist blau.
+        secondary = p.blue,
+        onSecondary = p.onBrand,
+        secondaryContainer = p.blueSoft,
+        onSecondaryContainer = p.blueInk,
         tertiary = p.green,
         background = p.bg,
         onBackground = p.ink,
@@ -131,16 +134,16 @@ private fun typografie(): Typography {
         displayLarge = t.displayLarge.fliesstext(),
         displayMedium = t.displayMedium.fliesstext(),
         displaySmall = t.displaySmall.fliesstext(),
-        headlineLarge = TcmSchrift.text(Schrift.gewichtExtrafett, Schrift.seitentitel, Schrift.laufweiteTitel),
-        headlineMedium = t.headlineMedium.fliesstext().copy(fontWeight = Schrift.gewichtExtrafett),
-        headlineSmall = t.headlineSmall.fliesstext().copy(fontWeight = Schrift.gewichtFett),
-        titleLarge = TcmSchrift.text(Schrift.gewichtFett, Schrift.titel),
+        headlineLarge = TcmSchrift.display(Schrift.gewichtFett, Schrift.seitentitel, Schrift.laufweiteTitel),
+        headlineMedium = t.headlineMedium.copy(fontFamily = TcmSchrift.display, fontWeight = Schrift.gewichtFett),
+        headlineSmall = t.headlineSmall.copy(fontFamily = TcmSchrift.display, fontWeight = Schrift.gewichtFett),
+        titleLarge = TcmSchrift.display(Schrift.gewichtFett, Schrift.titel),
         titleMedium = t.titleMedium.fliesstext().copy(fontWeight = Schrift.gewichtHalbfett),
         titleSmall = t.titleSmall.fliesstext().copy(fontWeight = Schrift.gewichtHalbfett),
         bodyLarge = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal),
         bodyMedium = t.bodyMedium.fliesstext(),
         bodySmall = TcmSchrift.text(Schrift.gewichtNormal, Schrift.klein),
-        labelLarge = t.labelLarge.fliesstext().copy(fontWeight = Schrift.gewichtFett),
+        labelLarge = t.labelLarge.copy(fontFamily = TcmSchrift.display, fontWeight = Schrift.gewichtHalbfett),
         labelMedium = t.labelMedium.fliesstext().copy(fontWeight = Schrift.gewichtHalbfett),
         labelSmall = t.labelSmall.fliesstext().copy(fontWeight = Schrift.gewichtHalbfett, fontSize = 12.sp),
     )
@@ -162,15 +165,9 @@ fun TcmTheme(dunkel: Boolean = isSystemInDarkTheme(), inhalt: @Composable () -> 
     }
 }
 
-/** Die Anmeldeseiten: immer dunkel, egal welches Erscheinungsbild gewaehlt ist. */
-@Composable
-fun ImmerDunkel(inhalt: @Composable () -> Unit) = TcmTheme(dunkel = true, inhalt = inhalt)
-
 /**
  * Helle Symbole in der Statusleiste auf dunklem Grund und umgekehrt (Edge-to-Edge).
- * Themes stecken ineinander (ImmerDunkel in einem hellen TcmTheme): Wer geht,
- * stellt den Stand davor wieder her, sonst blieben nach der Anmeldung helle
- * Symbole auf hellem Grund.
+ * Stecken Themes ineinander, stellt das innere beim Gehen den Stand davor wieder her.
  */
 @Composable
 private fun Systemleisten(dunkel: Boolean) {

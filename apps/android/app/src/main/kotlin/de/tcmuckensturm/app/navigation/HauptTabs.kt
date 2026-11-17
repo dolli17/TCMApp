@@ -16,6 +16,7 @@ package de.tcmuckensturm.app.navigation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -36,6 +38,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -96,22 +101,32 @@ fun HauptTabsInhalt(
         containerColor = f.bg,
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
-            NavigationBar(containerColor = f.surf) {
+            // Weiss mit feiner Linie; der aktive Tab hellblau mit blauer Schrift (docs/design/stitch).
+            Column {
+                HorizontalDivider(thickness = 1.dp, color = f.line)
+                NavigationBar(containerColor = f.surf, tonalElevation = 0.dp) {
                 for (tab in tabs) {
                     val aktiv = ziel?.hierarchy?.any { it.hasRoute(tab.graph::class) } == true
                     NavigationBarItem(
                         selected = aktiv,
                         onClick = { zuTab(tab) },
                         icon = { Icon(tab.symbol, contentDescription = null) },
-                        label = { Text(tab.titel, style = TcmSchrift.text(Schrift.gewichtHalbfett, Schrift.klein)) },
+                        label = {
+                            Text(
+                                tab.titel.uppercase(),
+                                style = TcmSchrift.display(Schrift.gewichtFett, 11.sp, 0.04.em),
+                                maxLines = 1,
+                            )
+                        },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = f.navAktivInk,
-                            selectedTextColor = f.ink,
+                            selectedTextColor = f.navAktivInk,
                             indicatorColor = f.navAktiv,
                             unselectedIconColor = f.muted,
                             unselectedTextColor = f.muted,
                         ),
                     )
+                }
                 }
             }
         },

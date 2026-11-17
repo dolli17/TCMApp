@@ -160,7 +160,7 @@ fun Glocke() {
     }
 }
 
-/** Der runde Knopf mit der roten Zahl. */
+/** Der runde Knopf mit der gelben Zahl. */
 @Composable
 fun GlockeKnopf(ungelesen: Int, aktion: () -> Unit) {
     val f = TcmTheme.farben
@@ -191,15 +191,16 @@ fun GlockeKnopf(ungelesen: Int, aktion: () -> Unit) {
                     .offset(x = 3.dp, y = (-3).dp)
                     .defaultMinSize(minWidth = 18.dp, minHeight = 18.dp)
                     .clip(Kapsel)
-                    .background(f.red)
+                    // Gelb: es sind deine Nachrichten (docs/design/stitch).
+                    .background(f.gold)
                     .padding(horizontal = 4.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 GedeckelteSchrift {
                     Text(
                         HomeLogik.glockenZahl(ungelesen),
-                        style = TcmSchrift.text(Schrift.gewichtFett, 11.sp),
-                        color = f.onBrand,
+                        style = TcmSchrift.display(Schrift.gewichtFett, 11.sp),
+                        color = f.onGold,
                     )
                 }
             }
@@ -228,7 +229,7 @@ fun GlockenBlattInhalt(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 "Benachrichtigungen",
-                style = TcmSchrift.text(Schrift.gewichtExtrafett, Schrift.titel),
+                style = TcmSchrift.display(Schrift.gewichtFett, Schrift.titel),
                 color = f.ink,
                 modifier = Modifier
                     .weight(1f)
