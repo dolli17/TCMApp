@@ -25,7 +25,7 @@ struct HomeBildschirm: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                    GrosserKopf(titel: HomeLogik.titel(vorname: inhalt?.name?.vorname), name: inhalt?.name)
+                    GrosserKopf(titel: HomeLogik.titel(vorname: inhalt?.name?.vorname))
                     if laedt && inhalt == nil {
                         ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)
                     } else if let d = inhalt {
@@ -134,10 +134,16 @@ private struct AlsNaechstes: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                     .padding(.top, 6)
-                    Text(HomeLogik.terminOrt(t))
-                        .font(Schrift.text(.normal, 15))
-                        .foregroundStyle(Farbe.ink2)
-                        .lineLimit(2)
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Image(systemName: "tennis.racket")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Farbe.blueInk)
+                            .accessibilityHidden(true)
+                        Text(HomeLogik.terminOrt(t))
+                            .font(Schrift.text(.normal, 15.5))
+                            .foregroundStyle(Farbe.ink2)
+                            .lineLimit(2)
+                    }
                     if let weitere = HomeLogik.weitereTermine(kommende.count - 1) {
                         Text(weitere)
                             .font(Schrift.text(.halbfett, 13))

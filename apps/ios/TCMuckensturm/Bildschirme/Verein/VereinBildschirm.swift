@@ -30,8 +30,6 @@ final class VereinZustand {
     var karte: [Getraenk] = []
     /// Text der Rueckfrage "Noch nicht eingetragen", solange sie offen ist.
     var erinnerung: String?
-    /// Fuer den Avatar im Kopf; laedt der Reiter, der gerade offen ist.
-    var name: MeinName?
 
     var korbSumme: (stueck: Int, betrag: Int) {
         let s = Getraenke.basketSummary(karte, korb)
@@ -144,7 +142,7 @@ struct VereinKopf: View {
     @Environment(VereinZustand.self) private var zustand
 
     var body: some View {
-        GrosserKopf(titel: "Verein", name: zustand.name)
+        GrosserKopf(titel: "Verein")
         SegmentLeiste(
             beschriftung: "Bereich",
             optionen: VereinReiter.allCases.map { ($0, $0.label) },

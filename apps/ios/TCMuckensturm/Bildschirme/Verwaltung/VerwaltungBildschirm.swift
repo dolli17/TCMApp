@@ -119,7 +119,7 @@ private struct VerwaltungInhalt: View {
         let m = modell
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Tokens.Abstand.m, pinnedViews: [.sectionHeaders]) {
-                GrosserKopf(titel: "Verwaltung", name: m.meinName)
+                GrosserKopf(titel: "Verwaltung")
                 if let f = m.fehler {
                     Fehlerzeile(text: f, laeuft: m.aktualisiert) { Task { await m.laden(nachladen: true) } }
                 }

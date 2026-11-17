@@ -77,14 +77,12 @@ struct VeranstaltungenAnsicht: View {
     private func laden(_ art: Art) async {
         if art == .nachladen { aktualisiert = true }
         let d = Vereinsdaten(client: sitzung.client)
-        async let name = try? Startdaten(client: d.client).meinName()
         do {
             events = try await d.veranstaltungen()
             fehler = nil
         } catch {
             fehler = Meldung.aus(error).text
         }
-        if let n = await name { zustand.name = n }
         laedt = false
         aktualisiert = false
     }

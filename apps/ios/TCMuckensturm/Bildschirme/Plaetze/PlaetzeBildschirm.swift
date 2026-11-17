@@ -2,7 +2,7 @@
  * Plaetze - der Belegungsplan (apps/mobile/app/(tabs)/plaetze/index.tsx)
  *
  * Eine einzige Uebersicht (docs/design/stitch, "Plaetze (Belegungsplan
- * Final)"): oben die Tagesleiste, darunter das Raster - Plaetze als Spalten,
+ * Final)"): oben die Tagesleiste, dann der Umschalter, darunter das Raster - Plaetze als Spalten,
  * Uhrzeiten als Zeilen -, in dem eine freie Flaeche Platz und Beginn
  * auswaehlt; gebucht wird ueber die Leiste unten.
  *
@@ -63,15 +63,16 @@ struct PlaetzeBildschirm: View {
     }
 }
 
-/// Grosser Kopf und Umschalter, oben in beiden Sichten.
-struct PlaetzeKopf: View {
+/// Grosser Kopf, darunter (in der Belegung) die Tagesleiste, dann der Umschalter - oben in beiden Sichten.
+struct PlaetzeKopf<Tage: View>: View {
     @Environment(PlaetzeZustand.self) private var zustand
-    let name: MeinName?
     /// "8 Plätze · 08 bis 21 Uhr"
     var unterzeile: String?
+    @ViewBuilder var tage: Tage
 
     var body: some View {
-        GrosserKopf(titel: "Plätze", unterzeile: unterzeile, name: name)
+        GrosserKopf(titel: "Plätze", unterzeile: unterzeile)
+        tage
         SegmentLeiste(
             beschriftung: "Ansicht",
             optionen: PlaetzeSicht.allCases.map { ($0, $0.label) },
@@ -91,10 +92,8 @@ private struct PlaetzeInhalt: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
                     PlaetzeKopf(
-                        name: m.meinName,
                         unterzeile: PlaetzeLogik.kopfzeile(plaetze: m.plaetze.count, oeffnung: m.oeffnung, schluss: m.schluss)
-                    )
-                    Tagesleiste(modell: m)
+                    ) { Tagesleiste(modell: m) }
                     if let f = m.ladeFehler {
                         Fehlerzeile(text: f, laeuft: m.aktualisiert) { Task { await m.vonHand() } }
                     }
@@ -202,9 +201,9 @@ struct TagKachel: View {
                     .foregroundStyle(aktiv ? Farbe.onBrand : Farbe.ink)
             }
             .dynamicTypeSize(...DynamicTypeSize.xLarge)
-            .frame(width: 54, height: 68)
-            .background(aktiv ? Farbe.blue : Farbe.surf, in: RoundedRectangle(cornerRadius: 27))
-            .overlay(RoundedRectangle(cornerRadius: 27).strokeBorder(aktiv ? Color.clear : Farbe.line2, lineWidth: 1))
+            .frame(width: 54, height: 64)
+            .background(aktiv ? Farbe.blue : Farbe.surf, in: Capsule())
+            .overlay(Capsule().strokeBorder(aktiv ? Color.clear : Farbe.line2, lineWidth: 1))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(PlaetzeLogik.lesbar(tag))
@@ -275,5 +274,11 @@ struct Toast: View {
         .accessibilityHint("Schließt die Meldung")
         .transition(.move(edge: .bottom).combined(with: .opacity))
         .onAppear { UIAccessibility.post(notification: .announcement, argument: meldung.text) }
+    }
+}
+
+extension PlaetzeKopf where Tage == EmptyView {
+    init(unterzeile: String? = nil) {
+        self.init(unterzeile: unterzeile) { EmptyView() }
     }
 }

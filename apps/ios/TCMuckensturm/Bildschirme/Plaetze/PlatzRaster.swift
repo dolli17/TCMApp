@@ -19,7 +19,8 @@ private enum Mass {
     static let zeit: CGFloat = 48
     /// Schmaler wird eine Platzspalte nicht; passen nicht alle, wischt man waagerecht.
     static let spalteMin: CGFloat = 38
-    static let rand: CGFloat = 2
+    static let rand: CGFloat = 1.5
+    static let ecke: CGFloat = 5
 
     static func px(_ minuten: Int) -> CGFloat { CGFloat(minuten) / 60 * stunde }
 }
@@ -157,8 +158,8 @@ struct PlatzRaster: View {
                     .minimumScaleFactor(0.7)
                     .dynamicTypeSize(.large)
                     .frame(width: innen, height: Mass.px(m.dauer) - 2 * Mass.rand)
-                    .background(Farbe.blueSoft, in: RoundedRectangle(cornerRadius: 7))
-                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Farbe.blue, lineWidth: 2))
+                    .background(Farbe.blueSoft, in: RoundedRectangle(cornerRadius: Mass.ecke))
+                    .overlay(RoundedRectangle(cornerRadius: Mass.ecke).strokeBorder(Farbe.blue, lineWidth: 2))
                     .offset(x: Mass.rand, y: Mass.px(a.minute - oeffnung) + Mass.rand)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
@@ -170,7 +171,7 @@ struct PlatzRaster: View {
 }
 
 /**
- * Eine freie Zeit: je Rasterschritt ein weisses Kaestchen mit Linie, zusammen
+ * Eine freie Zeit: je Stunde eine weisse Zelle mit Linie, zusammen
  * eine antippbare Flaeche. Die Stelle des Fingers bestimmt den Beginn;
  * VoiceOver tippt ohne Stelle und bekommt den fruehesten.
  */
@@ -182,16 +183,16 @@ private struct FreieFlaeche: View {
     let wahl: (Int) -> Void
 
     var body: some View {
-        let schritt = max(15, raster)
-        let schritte = Array(stride(from: luecke.from, to: luecke.until, by: schritt))
+        // Eine Zelle je Stunde wie im Entwurf; beginnt oder endet die Luecke zur halben, ist die Zelle kuerzer.
+        let grenzen = [luecke.from] + stride(from: (luecke.from / 60 + 1) * 60, to: luecke.until, by: 60) + [luecke.until]
+        let zellen = Array(zip(grenzen, grenzen.dropFirst()))
         ZStack(alignment: .topLeading) {
-            ForEach(schritte, id: \.self) { s in
-                let h = Mass.px(min(schritt, luecke.until - s)) - 2 * Mass.rand
-                RoundedRectangle(cornerRadius: 7)
+            ForEach(zellen, id: \.0) { von, bis in
+                RoundedRectangle(cornerRadius: Mass.ecke)
                     .fill(Farbe.surf)
-                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Farbe.line2, lineWidth: 1))
-                    .frame(width: breite, height: max(h, 4))
-                    .offset(y: Mass.px(s - luecke.from) + Mass.rand)
+                    .overlay(RoundedRectangle(cornerRadius: Mass.ecke).strokeBorder(Farbe.line2, lineWidth: 1))
+                    .frame(width: breite, height: max(Mass.px(bis - von) - 2 * Mass.rand, 4))
+                    .offset(y: Mass.px(von - luecke.from) + Mass.rand)
             }
         }
         .frame(width: breite, height: Mass.px(luecke.until - luecke.from), alignment: .topLeading)
@@ -232,11 +233,11 @@ private struct Block: View {
             .lineLimit(1)
             .dynamicTypeSize(.large)
             .frame(width: breite, height: hoehe)
-            .background { stil.flaeche(RoundedRectangle(cornerRadius: 7)) }
+            .background { stil.flaeche(RoundedRectangle(cornerRadius: Mass.ecke)) }
             .overlay {
-                if markiert { RoundedRectangle(cornerRadius: 7).strokeBorder(Farbe.blue, lineWidth: 2.5) }
+                if markiert { RoundedRectangle(cornerRadius: Mass.ecke).strokeBorder(Farbe.blue, lineWidth: 2.5) }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 7))
+            .clipShape(RoundedRectangle(cornerRadius: Mass.ecke))
         }
         .buttonStyle(.plain)
         .disabled(!kannAuf)
@@ -312,24 +313,29 @@ struct RasterLegende: View {
             ("sucht Mitspieler", AnyView(BelegungsStil(.sucht).flaeche(form))),
             ("Training", AnyView(BelegungsStil(.serie).flaeche(form))),
             ("gesperrt", AnyView(BelegungsStil(.gesperrt).flaeche(form))),
-        ], groesse: CGSize(width: 14, height: 14))
+        ], groesse: CGSize(width: 16, height: 16))
     }
 }
 
-/// Eine Legende als umbrechende Zeile; fuer VoiceOver verborgen, die Bloecke sagen es selbst.
+/// Eine Legende als eine Zeile; fuer VoiceOver verborgen, die Bloecke sagen es selbst.
 struct Legende: View {
     let eintraege: [(String, AnyView)]
     let groesse: CGSize
 
     var body: some View {
-        UmbruchStapel(abstand: 14, zeilenabstand: 6) {
-            ForEach(eintraege, id: \.0) { name, kaestchen in
-                HStack(spacing: 6) {
-                    kaestchen.frame(width: groesse.width, height: groesse.height)
-                    Text(name).font(Schrift.text(.normal, 12.5)).foregroundStyle(Farbe.ink2)
+        // Eine Zeile wie im Entwurf; was nicht passt, wischt man zur Seite.
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 14) {
+                ForEach(eintraege, id: \.0) { name, kaestchen in
+                    HStack(spacing: 6) {
+                        kaestchen.frame(width: groesse.width, height: groesse.height)
+                        Text(name).font(Schrift.text(.normal, 13)).foregroundStyle(Farbe.ink2)
+                    }
                 }
             }
+            .padding(.horizontal, Tokens.Abstand.rand)
         }
+        .padding(.horizontal, -Tokens.Abstand.rand)
         .accessibilityHidden(true)
     }
 }

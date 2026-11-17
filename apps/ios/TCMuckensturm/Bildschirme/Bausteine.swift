@@ -47,15 +47,15 @@ private struct KartenStil: ViewModifier {
 // MARK: - Kopf
 
 /**
- * Der grosse Titel-Kopf (GrosserKopf.tsx): optional ein Kicker, Titel in
- * 34/800, rechts Glocke und Avatar. Der Titel darf zweizeilig werden (U52).
+ * Der grosse Titel-Kopf (docs/design/stitch): Kicker, Titel, optional eine
+ * leise Zeile, rechts die Glocke. Der Titel darf zweizeilig werden (U52).
+ * Ins Konto fuehrt der Tab; einen Avatar gibt es im Kopf nicht mehr.
  */
 struct GrosserKopf: View {
     let titel: String
     var kicker: String? = "TC Muckensturm"
     /// Leise Zeile unter dem Titel ("8 Plaetze · 08 bis 21 Uhr")
     var unterzeile: String?
-    var name: MeinName?
 
     var body: some View {
         HStack(alignment: .center, spacing: Tokens.Abstand.m) {
@@ -75,33 +75,10 @@ struct GrosserKopf: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            HStack(spacing: 10) {
-                Glocke()
-                Avatar(name: name)
-            }
+            Glocke()
         }
         .padding(.top, 16)
         .padding(.bottom, Tokens.Abstand.m)
-    }
-}
-
-/// Initialen auf Hellblau; fuehrt ins Konto. Kraeftiges Blau bleibt der Hauptaktion.
-struct Avatar: View {
-    @Environment(\.zuTab) private var zuTab
-    let name: MeinName?
-
-    var body: some View {
-        Button { zuTab(.konto) } label: {
-            Text(HomeLogik.initialen(name))
-                .font(Schrift.display(.fett, 15))
-                .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                .foregroundStyle(Farbe.blueInk)
-                .frame(width: 44, height: 44)
-                .background(Farbe.blueSoft, in: Circle())
-                .overlay(Circle().strokeBorder(Farbe.blue.opacity(0.22), lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Konto")
     }
 }
 
