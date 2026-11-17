@@ -10,8 +10,11 @@ export function AnmeldeBuehne({
   unterzeile,
   breit = false,
   klasse,
+  vorspann,
   children,
 }: {
+  /** Steht anstelle des Vereinsnamens über dem Titel, etwa die Schrittanzeige des Onboardings. */
+  vorspann?: React.ReactNode;
   titel: string;
   unterzeile?: string;
   /** Breiteres Formular, etwa für den Mitgliedsantrag */
@@ -23,7 +26,7 @@ export function AnmeldeBuehne({
   return (
     <div className={`auth${breit ? " antragsseite" : ""}`}>
       <header className="buehne">
-        <div className="kicker">TC Muckensturm</div>
+        {vorspann ?? <div className="kicker">TC Muckensturm</div>}
         <h1>{titel}</h1>
         {unterzeile && <p>{unterzeile}</p>}
       </header>

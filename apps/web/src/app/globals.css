@@ -2587,24 +2587,17 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   margin-bottom: 14px;
 }
-.onboarding-schritte {
-  list-style: none; margin: 0 0 20px; padding: 0;
-  display: flex; flex-wrap: wrap; gap: 6px;
-}
-.onboarding-schritte li > :is(a, span) {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 10px; border-radius: 999px; font-size: 13px; text-decoration: none;
-  background: var(--chip); color: var(--ink-2);
-}
-.onboarding-schritte li small { font-size: 11px; color: var(--muted); }
-.onboarding-schritte .punkt {
-  width: 16px; height: 16px; border-radius: 8px; border: 1.5px solid currentColor;
-  display: inline-flex; align-items: center; justify-content: center; font-size: 10px; line-height: 1;
-}
-.onboarding-schritte li.erledigt > :is(a, span) { color: var(--ink); }
-.onboarding-schritte li.erledigt .punkt { background: var(--green-satt); border-color: transparent; color: var(--on-brand); }
-.onboarding-schritte li.aktuell > :is(a, span) { background: var(--blue-soft); color: var(--blue-ink); font-weight: 700; }
-.onboarding-schritte li.aktuell small { color: inherit; }
+.onboarding-vorspann { margin-bottom: 22px; }
+.onboarding-kopf .knopf { border: 0; background: transparent; box-shadow: none; padding: 0 6px; font-weight: 500; color: var(--ink-2); }
+/* Fortschritt als schmale Leiste: ein Stück je Schritt, das Ziel bleibt 44 px hoch */
+.onboarding-schritte { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; }
+.onboarding-schritte li { flex: 1 1 0; min-width: 0; }
+.onboarding-schritte li > :is(a, span) { display: flex; align-items: center; height: 20px; }
+.onboarding-schritte li > a { height: 44px; margin: -12px 0; }
+.onboarding-schritte li > :is(a, span)::before { content: ""; flex: 1; height: 4px; border-radius: 2px; background: var(--surf-3); }
+.onboarding-schritte li:is(.erledigt, .aktuell) > :is(a, span)::before { background: var(--blue); }
+.onboarding-schritte li.erledigt > :is(a, span)::before { opacity: .45; }
+.onboarding-schritte li > a:focus-visible { outline: 2px solid var(--blue); outline-offset: -8px; border-radius: 6px; }
 .onboarding-knoepfe { display: grid; gap: 10px; margin-top: 6px; }
 .mandatstext {
   white-space: pre-wrap; font-family: inherit; font-size: 14px; line-height: 1.5;
@@ -2896,3 +2889,49 @@ dialog.fenster:not(.blatt) > .fenster-rueckfrage { margin: 8px 22px 0; }
 
 /* Suchfeld auf der Mannschaftsseite als Pille wie die übrigen Felder */
 .mannschaft-suche .suchfeld { border-radius: var(--radius-feld); background: var(--surf-2); min-height: 52px; }
+
+/* --- Zugang (Entwürfe "Anmelden", "Antrag") ------------------------------- */
+.passwort-feld { position: relative; }
+.passwort-feld input { padding-right: 112px; }
+.passwort-feld > button {
+  position: absolute; right: 6px; bottom: 4px; min-height: 44px; min-width: 44px; padding: 0 14px;
+  border: 0; border-radius: 22px; background: transparent; cursor: pointer;
+  font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--blue-ink);
+}
+.passwort-feld > button:hover { background: var(--chip); }
+.auth .vergessen a, .auth .antrag-hinweis a { text-decoration: none; }
+.auth .sheet form .rechtliches { margin-top: 28px; }
+fieldset.geschlecht .segment { height: 48px; font-size: 15px; border-radius: 24px; }
+fieldset.geschlecht .segment:has(input:checked) { background: var(--blue-soft); border-color: var(--blue); color: var(--blue-ink); }
+fieldset.geschlecht[aria-invalid="true"] .segment { border-color: var(--red); }
+.auth.antragsseite .formraster { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+.auth.antragsseite .formraster > * { grid-column: 1 / -1; }
+.auth.antragsseite .formraster > .feld.halb { grid-column: auto; }
+.auth.antragsseite .plz-ort { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 12px; }
+.auth.antragsseite .sheet h2.dpl { margin: 14px 0 0; padding-top: 22px; border-top: 1px solid var(--line); font-size: 20px; }
+@media (max-width: 767px) {
+  /* Am Telefon steht der Antrag frei auf weißem Grund, ohne Karte */
+  .auth.antragsseite .sheet { width: 100%; border: 0; border-radius: 0; background: transparent; padding: 8px 24px 36px; }
+}
+.auth .sheet label.segment > span { font: inherit; letter-spacing: 0; text-transform: none; color: inherit; margin: 0; }
+/* Ja/Nein-Kästchen in den Zugangsseiten als Schalter */
+.auth .sheet label.schalter { display: flex; align-items: center; justify-content: space-between; flex-direction: row-reverse; gap: 14px; }
+
+.auth .sheet label > span.beschreibung, .auth .sheet label > span.feldhinweis {
+  font-family: var(--font-text); font-size: 13.5px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--ink-2); margin: 6px 0 0;
+}
+.auth .sheet label.schalter > span small { display: block; margin-top: 2px; font-size: 13.5px; font-weight: 400; color: var(--muted); }
+.auth .sheet label.schalter > span { font-size: 16px; color: var(--ink); }
+.auth .sheet label.schalter:has(.schalter-feld) { padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius-karte); }
+.wahlkarten { display: grid; gap: 10px; }
+.wahlkarten legend { float: left; width: 100%; }
+.wahlkarte {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 0; min-height: 64px; padding: 14px 20px;
+  border: 1px solid var(--line-2); border-radius: var(--radius-karte); background: var(--surf); cursor: pointer;
+}
+.auth .sheet label.wahlkarte > span, .wahlkarte > span { font-family: var(--font-display); font-size: 17px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink); margin: 0; }
+.wahlkarte input { width: 22px; height: 22px; flex: none; margin: 0; accent-color: var(--blue); }
+.wahlkarte:has(input:checked) { background: var(--blue-soft); border-color: var(--blue); }
+.wahlkarte:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 2px; }
+.wahlkarten .beschreibung { margin: 0; }
+label.schalter > .schalter-feld, .auth .sheet label.schalter > .schalter-feld { flex: 0 0 auto; width: 52px; height: 32px; min-height: 0; margin: 0; padding: 0; }

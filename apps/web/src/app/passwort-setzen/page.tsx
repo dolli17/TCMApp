@@ -243,7 +243,7 @@ export default function PasswortSetzenSeite() {
             </label>
             {/* Ein Schalter für beide Felder: wer nachsehen will, will beide sehen. */}
             <label className="schalter">
-              <input type="checkbox" checked={zeigen} onChange={(e) => setZeigen(e.target.checked)} />
+              <input type="checkbox" role="switch" className="schalter-feld" checked={zeigen} onChange={(e) => setZeigen(e.target.checked)} />
               <span>Passwort anzeigen</span>
             </label>
 

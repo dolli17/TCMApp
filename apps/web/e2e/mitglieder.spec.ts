@@ -28,7 +28,10 @@ function testEmail(nachname: string, vorname = "Test"): string {
  */
 async function pflichtfelderFuellen(bereich: Page | Locator, geburtstag = "1990-05-17") {
   await bereich.getByLabel("Geburtstag").fill(geburtstag);
-  await bereich.getByLabel("Geschlecht").selectOption("diverse");
+  // Im Antrag sind es Pillen (Radioknöpfe), beim Anlegen durch den Vorstand ein Auswahlfeld.
+  const geschlecht = bereich.getByRole("group", { name: "Geschlecht" });
+  if (await geschlecht.count()) await geschlecht.getByLabel("divers").check({ force: true });
+  else await bereich.getByLabel("Geschlecht").selectOption("diverse");
   await bereich.getByLabel("Telefon").fill("07223 12345");
   await bereich.getByLabel("Straße und Hausnummer").fill("Hauptstraße 1");
   await bereich.getByLabel("PLZ").fill("77815");

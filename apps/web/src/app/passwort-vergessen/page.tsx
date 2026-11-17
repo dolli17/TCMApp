@@ -76,6 +76,11 @@ export default function PasswortVergessenSeite() {
               {laeuft ? "Wird verschickt…" : "Link anfordern"}
             </button>
 
+            {/* Entwurf "Passwort vergessen": der Rückweg als Textlink unter dem Knopf */}
+            <p className="antrag-hinweis">
+              <Link href="/login">Zurück zur Anmeldung</Link>
+            </p>
+
             <p className="beschreibung" style={{ marginTop: 12 }}>
               Jedes Mitglied hat einen Zugang mit seiner E-Mail-Adresse, auch Kinder. Kam keine Einladung an oder kennst du die hinterlegte Adresse nicht? Dann frag den Vorstand.
             </p>
