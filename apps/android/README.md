@@ -35,9 +35,9 @@ Die ersten vier aus Robolectric mit `fontScale = 2f`, die `geraet-*.png` aus dem
 
 ### Plätze
 
-| Freie Zeiten | Freie Zeiten, dunkel | Übersicht | Übersicht, dunkel | Buchen |
-|---|---|---|---|---|
-| ![Freie Zeiten hell](docs/plaetze-freie-zeiten-hell.png) | ![Freie Zeiten dunkel](docs/plaetze-freie-zeiten-dunkel.png) | ![Raster hell](docs/plaetze-raster-hell.png) | ![Raster dunkel](docs/plaetze-raster-dunkel.png) | ![Buchen hell](docs/plaetze-buchen-hell.png) |
+| Belegungsplan | Belegungsplan, dunkel | Wie auf dem Telefon | Buchen |
+|---|---|---|---|
+| ![Raster hell](docs/plaetze-raster-hell.png) | ![Raster dunkel](docs/plaetze-raster-dunkel.png) | ![Raster Telefon](docs/plaetze-raster-telefon.png) | ![Buchen hell](docs/plaetze-buchen-hell.png) |
 
 | Buchen, dunkel | Eigene Buchung | Eigene Buchung, dunkel | Mitspielen | Sperrung |
 |---|---|---|---|---|
@@ -55,7 +55,7 @@ erscheint in den Bildern ohne das Fenster des `ModalBottomSheet`.
 „Nur für …“ unter „Mitspieler gesucht“: LK-Bereich von–bis (Schieber, fein mit Minus/Plus in
 0,1-Schritten) und Alle/Damen/Herren. Standard LK 1–25 und Alle heißt keine Einschränkung; dann
 gehen die neuen Parameter gar nicht erst an `create_booking`/`set_partner_wanted`. Offene Spiele
-(Home, Freie Zeiten) und das Mitspielen-Blatt zeigen den Zusatz („LK 10–16 · Herren“). Logik in
+(Home) und das Mitspielen-Blatt zeigen den Zusatz („LK 10–16 · Herren“). Logik in
 `kern/Suchfilter.kt`, Vertrag in der Datenbank-Spur (open_matches, join_booking filtern).
 
 ### Verein
@@ -71,8 +71,7 @@ Getränke mit Korb, Veranstaltungen, Detail mit Anmeldung, Warteliste, Arbeitsdi
 | ![Liste hell](docs/verein-veranstaltungen-hell.png) | ![Liste dunkel](docs/verein-veranstaltungen-dunkel.png) | ![Detail hell](docs/verein-veranstaltung-hell.png) | ![Detail dunkel](docs/verein-veranstaltung-dunkel.png) | ![Anmelden](docs/verein-veranstaltung-anmelden.png) | ![Warteliste](docs/verein-veranstaltung-warteliste.png) | ![Arbeitsdienst](docs/verein-arbeitsdienst.png) |
 
 Die Bilder bis auf das letzte entstehen ohne Gerät (Robolectric + Roborazzi, `BildschirmfotoTest`).
-Die Anmeldeseiten sind wie in iOS und Expo immer dunkel; „hell“ zeigt, dass ein helles System daran
-nichts ändert. Das letzte Bild ist der Rauchtest im Emulator: Variante `lokal`, angemeldet als
+Die Anmeldeseiten sind seit dem Design „Stitch“ hell und folgen wie der Rest dem System (dunkel). Das letzte Bild ist der Rauchtest im Emulator: Variante `lokal`, angemeldet als
 `mitglied@tcm.local` gegen den lokalen Stack (vorher: `docs/rauchtest-anmelden.png`). Gebaut mit
 targetSdk 36, gelaufen auf dem API-35-Emulator.
 
@@ -312,17 +311,23 @@ Für parallele Spuren gilt:
 - **Abmelden** zentral in `Sitzung.abmelden()` (global, ohne Netz nur lokal).
 - **Theme:** Farben, Abstände, Radien und Schrift aus `packages/ui/generated/Tokens.kt` (als
   Quellverzeichnis eingebunden, nicht kopiert), Hell/Dunkel/System in einem DataStore
-  (`erscheinungsbild`), Barlow und Barlow Semi Condensed unter `res/font` (Lizenz:
+  (`erscheinungsbild`), Space Grotesk (Titel, Zahlen, Knöpfe) und DM Sans (Fließtext) unter `res/font` (Lizenz:
   `assets/lizenzen/OFL-Schriften.txt`).
-- **Home** (`bildschirme/home`, `bildschirme/nachrichten`, `daten/Startdaten.kt`) wie iOS: Kopf mit
-  Name, Glocke (Zähler, Blatt, gelesen markieren) und Avatar, „Als Nächstes“, Schnellaktionen,
-  „Jetzt frei“ mit Zeitleiste, offene Spiele, „Dein Stand“ (Getränke, Arbeitsdienst), „Demnächst im
-  Verein“ (`events_fuer_mitglied`, „Alle“ springt zu den Veranstaltungen), Neuigkeiten
-  der letzten 7 Tage, Bildschirm „Neuigkeiten“, Herunterziehen zum Aktualisieren. Jeder Abschnitt
-  lädt für sich (`Abschnitt`), Texte als reine Funktionen in `HomeLogik`. Getränke, Veranstaltungen und Einträge der Glocke führen über `LocalZuVerein` direkt
-  zum Ziel im Tab Verein.
+- **Design „Stitch“** (`docs/design/stitch`): weißer Grund, kräftiges Blau einmal je Screen (die
+  Hauptaktion, der gewählte Tag, ein Fortschrittsbalken), Hellblau für Zweitknöpfe und Ausgewähltes,
+  Gelb nur für „deins“ (`DeinMarker`, eigener Block im Plan, Zähler an der Glocke), Rot nur
+  destruktiv. Alle Knöpfe kommen aus `bildschirme/Bausteine.kt`: `Knopf` mit `Knopfstufe`
+  (HAUPT, ZWEIT, LEISE, GEFAHR, GEFAHR_LEISE) und `Knopfgroesse` (40/52/56), Kurzformen
+  `Hauptknopf`, `Zweitknopf`, `LeiserKnopf`.
+- **Home** (`bildschirme/home`, `bildschirme/nachrichten`, `daten/Startdaten.kt`): Kicker und
+  „Hallo, Vorname“ mit Glocke (Zähler, Blatt, gelesen markieren), Karte mit dem nächsten eigenen
+  Termin, „Platz buchen“ und „Getränk eintragen“, „Jetzt frei“ als Liste, offene Spiele
+  („Mitspielen“ bzw. „Du bist dabei“) und ein Streifen zur nächsten Veranstaltung
+  (`events_fuer_mitglied`). Der laufende Monat steht im Konto, Neuigkeiten hinter der Glocke.
+  Herunterziehen zum Aktualisieren. Jeder Abschnitt lädt für sich (`Abschnitt`), Texte als reine
+  Funktionen in `HomeLogik`.
 - **Plätze** (`bildschirme/plaetze`, `daten/Platzdaten.kt`, wie iOS): Tagwahl über `lead_days`,
-  Ansichten „Freie Zeiten“ und „Übersicht“ (Raster Plätze × Zeit, gemerkt), belegt/frei/eigene/
+  eine Ansicht: der Belegungsplan (Plätze als Spalten, Zeit senkrecht), belegt/frei/eigene/
   Sperre, Pull-to-refresh, Realtime-Kanal `plan-<datum>` auf `bookings` (höchstens ein Nachladen je
   Sekunde) und Nachladen beim Zurückkommen in den Vordergrund. Buchungsblatt mit Art, Mitspielern
   (Mitgliedersuche), Gästen, „Mitspieler gesucht“ und Kontingent; eigene Buchung (Mitspieler ändern,
