@@ -34,6 +34,17 @@ export default async function aufraeumen() {
     } catch {
       // Still, wie unten.
     }
+    // Testplätze (plaetze-serien.spec.ts) lassen sich nicht löschen, nur
+    // stilllegen. Bricht der Test vor dem Stilllegen ab, stünde der Platz
+    // sonst als echte Spalte im Belegungsplan.
+    try {
+      sqlLokal(
+        "update public.courts set active = false where name like 'ZZPlatz%' and active;",
+        "Testplätze ließen sich nicht stilllegen",
+      );
+    } catch {
+      // Still, wie unten.
+    }
   }
 
   if (!url || !key || !email || !passwort) return;
