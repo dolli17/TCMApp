@@ -252,7 +252,7 @@ function Knoepfe({
 }) {
   return (
     <div className="onboarding-knoepfe">
-      <button className="knopf gold block" disabled={laeuft || deaktiviert}>
+      <button className="knopf haupt block" disabled={laeuft || deaktiviert}>
         {laeuft ? "Wird gespeichert…" : text}
       </button>
       {ueberspringen && (

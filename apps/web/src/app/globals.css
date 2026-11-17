@@ -10,14 +10,14 @@
      >= 768px Seitenleiste links, Inhalte bis 1100px breit
    =========================================================================== */
 
-@import "@fontsource/barlow/latin-400.css";
-@import "@fontsource/barlow/latin-500.css";
-@import "@fontsource/barlow/latin-600.css";
-@import "@fontsource/barlow/latin-700.css";
-@import "@fontsource/barlow/latin-800.css";
-@import "@fontsource/barlow-semi-condensed/latin-600.css";
-@import "@fontsource/barlow-semi-condensed/latin-700.css";
-@import "@fontsource/barlow-semi-condensed/latin-800.css";
+@import "@fontsource/dm-sans/latin-400.css";
+@import "@fontsource/dm-sans/latin-500.css";
+@import "@fontsource/dm-sans/latin-600.css";
+@import "@fontsource/dm-sans/latin-700.css";
+@import "@fontsource/dm-sans/latin-800.css";
+@import "@fontsource/space-grotesk/latin-500.css";
+@import "@fontsource/space-grotesk/latin-600.css";
+@import "@fontsource/space-grotesk/latin-700.css";
 @import "@tcm/ui/tokens.css";
 
 * { box-sizing: border-box; }
@@ -94,7 +94,7 @@ main#inhalt:focus { outline: none; }
 :root[data-theme="dunkel"] .logo-dunkel { display: block !important; }
 
 .pagetitle {
-  font-weight: 800; font-size: var(--font-size-seitentitel);
+  font-family: var(--font-display); font-weight: 700; font-size: var(--font-size-seitentitel);
   letter-spacing: var(--tracking-title); line-height: 1.05;
   margin: 0 0 2px;
 }
@@ -112,7 +112,7 @@ main#inhalt:focus { outline: none; }
   margin: var(--space-abschnitt) 0 var(--space-m);
 }
 .sectionlabel h2 {
-  font-weight: 700; font-size: var(--font-size-titel);
+  font-family: var(--font-display); font-weight: 700; font-size: var(--font-size-titel);
   letter-spacing: -.2px; color: var(--ink); margin: 0;
 }
 
@@ -180,37 +180,44 @@ a.avatar:hover { text-decoration: none; }
 /* ---------------------------------------------------------------------------
    Knöpfe
    --------------------------------------------------------------------------- */
+/* Drei Stufen, überall dieselben Pillen (docs/design/stitch/README.md):
+     .knopf.haupt  kräftiges Blau - die eine Hauptaktion eines Screens
+     .knopf        hellblau - alles Zweite ("Getränk buchen", "Mitspielen")
+     .knopf.leise  weiss mit Linie - neutral ("Doch nicht", "Abbrechen")
+   Gelb ist kein Knopf. */
 .knopf {
-  appearance: none; border: 0; cursor: pointer;
-  font-family: var(--font-display); font-weight: 700; font-size: 16px;
-  border-radius: var(--radius-knopf); padding: 13px 16px;
+  appearance: none; cursor: pointer;
+  font-family: var(--font-display); font-weight: 600; font-size: 16px; line-height: 1.2;
+  border-radius: var(--radius-knopf); padding: 0 20px; min-height: 52px;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  background: var(--blue); color: var(--on-brand);
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--blue) 34%, transparent);
+  background: var(--blue-soft); color: var(--blue-ink);
+  border: 1px solid color-mix(in srgb, var(--blue) 22%, transparent);
+  text-decoration: none;
 }
+.knopf:hover { background: color-mix(in srgb, var(--blue) 16%, var(--surf)); text-decoration: none; }
+.knopf:disabled { opacity: .5; cursor: not-allowed; }
+.knopf.haupt { background: var(--blue); color: var(--on-brand); border-color: transparent; }
 /* Abdunkeln statt blue-ink: das ist im Dunkeln ein helles Blau, auf dem die
    weisse Schrift verschwand. */
-.knopf:hover { background: color-mix(in srgb, var(--blue) 82%, #000); }
-.knopf:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+.knopf.haupt:hover { background: color-mix(in srgb, var(--blue) 86%, #000); }
 .knopf.leise {
-  background: transparent; color: var(--ink);
-  border: 1.5px solid var(--line-2); box-shadow: none;
+  background: var(--surf); color: var(--ink);
+  border: 1px solid var(--line-2);
 }
-.knopf.leise:hover { border-color: var(--blue); color: var(--blue-ink); background: transparent; }
-.knopf.gold { background: var(--gold); color: var(--on-gold); box-shadow: none; }
-/* Gesperrt ist neutral statt blassgold: ein ausgewaschenes Gelb sieht aus wie
+.knopf.leise:hover { border-color: var(--blue); color: var(--blue-ink); background: var(--surf); }
+/* Gesperrt ist neutral statt blassblau: ein ausgewaschener Hauptknopf sieht aus wie
    "gleich geht's" und nicht wie "es fehlt noch etwas" (U26). Der Grund steht
    daneben (SperrGrund). */
-.knopf.gold:disabled,
-.knopf.gold[aria-disabled="true"],
+.knopf.haupt:disabled,
+.knopf.haupt[aria-disabled="true"],
 .auth.immer-dunkel .sheet .knopf.block:not(.leise):disabled {
-  background: var(--surf-3); color: var(--muted); opacity: 1; box-shadow: none;
+  background: var(--surf-3); color: var(--muted); opacity: 1; border-color: transparent;
 }
 .sperrgrund { margin: 8px 0 0; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
 .fenster-fuss > .sperrgrund { flex: 1 1 180px; align-self: center; margin: 0; }
 .blatt-fuss > .sperrgrund { margin: 0; text-align: center; }
 .knopf.klein {
-  font-size: var(--font-size-klein); padding: 7px 11px; border-radius: var(--radius-klein);
+  font-size: 14px; padding: 0 14px; min-height: 40px;
 }
 .knopf.block { width: 100%; }
 
@@ -234,6 +241,7 @@ input, select, textarea {
 }
 /* Fokus: der Rand wird kräftig blau, der Hof darum hebt ihn ab. Nur der
    Hof in blue-soft war auf hellem Grund kaum zu sehen (U47). */
+textarea, select[multiple] { border-radius: 20px; }
 input:focus, select:focus, textarea:focus {
   outline: 0; border-color: var(--blue);
   box-shadow: 0 0 0 1.5px var(--blue), 0 0 0 5px var(--blue-soft);
@@ -337,8 +345,8 @@ body:has(.eintragen-leiste, .auswahl-leiste) .toast-ort {
 @keyframes toast-rein { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
 
 /* Was die letzte Aktion betroffen hat, ist ein paar Sekunden hervorgehoben (U16) */
-.markiert { outline: 3px solid var(--gold-line); outline-offset: 1px; }
-.fz-zeile.markiert, .zuletzt li.markiert { outline: 0; background: var(--gold-soft); }
+.markiert { outline: 3px solid var(--blue); outline-offset: 1px; }
+.fz-zeile.markiert, .zuletzt li.markiert { outline: 0; background: var(--blue-soft); }
 
 /* Ein Ladefehler (components/Fehlerzustand.tsx): nicht wie "nichts da",
    sondern mit Grund und "Erneut versuchen". */
@@ -449,7 +457,7 @@ table.liste .zahl {
 }
 .nachrichtenliste li { display: flex; gap: 12px; padding: 14px 16px; }
 .nachrichtenliste li + li { border-top: 1px solid var(--line); }
-.nachrichtenliste li.neu { background: var(--gold-soft); }
+.nachrichtenliste li.neu { background: var(--blue-soft); }
 .nachrichtenliste .symbol {
   width: 40px; height: 40px; border-radius: 12px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
@@ -627,6 +635,7 @@ ul.marken:not(:has(.chip)) { margin-bottom: 9px; gap: 6px; }
 .gasthinweis { margin: 8px 0 0; color: var(--ink-2); }
 
 .knopf.gefahr { background: var(--red); border-color: var(--red); color: var(--on-brand); }
+.knopf.gefahr:hover { background: color-mix(in srgb, var(--red) 86%, #000); }
 
 /* --- Admin-Dashboard: Einstellungen --------------------------------------- */
 .karte.einstellungen { margin-bottom: 20px; }
@@ -918,7 +927,7 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
   text-decoration: none;
 }
 .schnellaktionen a:hover { text-decoration: none; border-color: var(--line-2); }
-.schnellaktionen a.gelb { background: var(--gold); color: var(--on-gold); border-color: transparent; box-shadow: none; }
+.schnellaktionen a.gelb { background: var(--blue); color: var(--on-brand); border-color: transparent; box-shadow: none; }
 .schnellaktionen svg { width: 24px; height: 24px; }
 
 /* Jetzt frei */
@@ -942,7 +951,7 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 .mini-zeitleiste i { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
 .mini-zeitleiste i.belegt { background: var(--blue); }
 .mini-zeitleiste i.eigen { background: var(--gold); }
-.mini-zeitleiste i.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); }
+.mini-zeitleiste i.sucht { background: var(--blue-soft); border: 1.5px dashed var(--blue); }
 /* Serie (Training) schraffiert, Sperrung flach - im Handoff zwei Zustaende */
 .mini-zeitleiste i.serie {
   background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 16%, transparent) 0 3px, transparent 3px 6px), var(--surf-3);
@@ -960,7 +969,7 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 .offen-karte .datum {
   width: 56px; height: 60px; flex: 0 0 auto; border-radius: 16px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: var(--gold-soft); border: 1.5px dashed var(--gold-line);
+  background: var(--blue-soft); border: 1.5px dashed var(--blue);
 }
 .offen-karte .datum small { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; color: var(--ink-2); }
 .offen-karte .datum b { font-family: var(--font-display); font-size: 19px; line-height: 1.05; }
@@ -970,8 +979,8 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 .offen-karte .text b, .offen-karte .text small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .offen-karte .mitspielen {
   flex: 0 0 auto; height: 44px; padding: 0 14px; border-radius: 22px;
-  display: inline-flex; align-items: center; font-size: 14px; font-weight: 700;
-  background: var(--gold); color: var(--on-gold); text-decoration: none;
+  display: inline-flex; align-items: center; font-family: var(--font-display); font-size: 14px; font-weight: 600; border: 1px solid color-mix(in srgb, var(--blue) 22%, transparent);
+  background: var(--blue-soft); color: var(--blue-ink); text-decoration: none;
 }
 .offen-karte .dabei { font-size: 13px; font-weight: 700; color: var(--muted); }
 
@@ -998,7 +1007,7 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
   display: flex; align-items: center; justify-content: center;
   background: var(--surf-2); color: var(--ink-2);
 }
-.karte.neuigkeiten li.neu .symbol { background: var(--gold-soft); color: var(--ink); }
+.karte.neuigkeiten li.neu .symbol { background: var(--blue-soft); color: var(--ink); }
 .karte.neuigkeiten .symbol svg { width: 18px; height: 18px; }
 .karte.neuigkeiten .text { min-width: 0; flex: 1; display: grid; gap: 2px; }
 .karte.neuigkeiten .titelzeile { display: flex; justify-content: space-between; gap: 8px; }
@@ -1021,7 +1030,7 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
   .termin-karte.gross { flex-direction: row; gap: 28px; height: 220px; padding: 28px; }
   .termin-karte.gross .zeit { font-size: 56px; margin-top: 10px; }
   .termin-karte.gross .ort { font-size: 18px; margin-top: 8px; }
-  .termin-karte.gross .details { background: var(--on-brand); color: var(--on-gold); }
+  .termin-karte.gross .details { background: var(--on-brand); color: var(--ink); }
   .termin-karte.gross .weitere {
     position: relative; display: flex; flex-direction: column; justify-content: flex-end;
     gap: 10px; width: 230px; flex: 0 0 auto; padding-top: 34px;
@@ -1071,7 +1080,7 @@ dialog.fenster.breit { width: min(760px, 100vw - 24px); }
 /* Haelt den sr-only-Text in der Kachel; sonst ragt er aus der Scrollleiste und die Seite wird breiter. */
 .datums-kacheln a { position: relative; }
 .datums-kacheln a:hover { text-decoration: none; background: var(--surf-3); }
-.datums-kacheln a[aria-current="date"] { background: var(--gold); color: var(--on-gold); }
+.datums-kacheln a[aria-current="date"] { background: var(--blue); color: var(--on-brand); }
 .datums-kacheln small { font-size: 11px; font-weight: 700; letter-spacing: .08em; }
 .datums-kacheln b { font-size: 26px; line-height: 1; }
 
@@ -1161,15 +1170,15 @@ button.tr-block { cursor: pointer; }
 button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; z-index: 3; }
 .tr-block.eigen { background: var(--gold); color: var(--on-gold); }
 .tr-block.belegt { background: var(--blue-soft); color: var(--blue-ink); border: 1px solid var(--blue); }
-.tr-block.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); color: var(--gold-ink); }
+.tr-block.sucht { background: var(--blue-soft); border: 1.5px dashed var(--blue); color: var(--blue-ink); }
 .tr-block.serie {
   background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 10%, transparent) 0 5px, transparent 5px 10px), var(--surf-3);
   color: var(--ink-2); border: 1px solid var(--rahmen);
 }
 .tr-block.gesperrt { background: var(--surf-3); color: var(--muted); border: 1px solid var(--rahmen); }
 .tr-block.wahl {
-  z-index: 2; pointer-events: none; background: var(--gold-soft); color: var(--gold-ink);
-  border: 2px solid var(--gold);
+  z-index: 2; pointer-events: none; background: var(--blue-soft); color: var(--blue-ink);
+  border: 2px solid var(--blue);
 }
 .tr-jetzt { position: absolute; top: 0; bottom: 0; width: 2px; z-index: 4; background: var(--red); pointer-events: none; }
 
@@ -1192,9 +1201,9 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 .auswahl-leiste small { font-size: 12.5px; opacity: .7; }
 .auswahl-leiste button {
   flex: 0 0 auto; height: 48px; padding: 0 22px; border: 0; border-radius: 16px; cursor: pointer;
-  background: var(--gold); color: var(--on-gold); font: inherit; font-size: 15.5px; font-weight: 800;
+  background: var(--blue); color: var(--on-brand); font: inherit; font-size: 15.5px; font-weight: 800;
 }
-.auswahl-leiste button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.auswahl-leiste button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 /* Luft unter der Legende, damit die Leiste sie nicht verdeckt */
 .plan-listen:has(.auswahl-leiste) { padding-bottom: 76px; }
 
@@ -1229,7 +1238,7 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 .fz-kaestchen i.frei { background: var(--green); border-color: var(--green); }
 .fz-kaestchen i.belegt { background: var(--blue-soft); border-color: var(--blue); }
 .fz-kaestchen i.eigen { background: var(--gold); border-color: var(--gold-line); }
-.fz-kaestchen i.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); }
+.fz-kaestchen i.sucht { background: var(--blue-soft); border: 1.5px dashed var(--blue); }
 .fz-zahl { margin-left: auto; font-size: 14px; font-weight: 700; white-space: nowrap; }
 .fz-zahl.viele { color: var(--green-ink); }
 .fz-zahl.wenige { color: var(--ink); }
@@ -1248,7 +1257,7 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 .fz-sucht {
   display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
   margin-top: 8px; height: 48px; padding: 0 14px; border-radius: 14px; cursor: pointer;
-  border: 1.5px dashed var(--gold-line); background: var(--gold-soft); color: var(--gold-ink);
+  border: 1.5px dashed var(--blue); background: var(--blue-soft); color: var(--blue-ink);
   font: inherit; font-size: 14.5px; font-weight: 700; text-align: left;
 }
 .fz-gesperrt {
@@ -1263,7 +1272,8 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 .fz-eigen i { width: 10px; height: 10px; border-radius: 3px; background: var(--gold); }
 
 .status-frei { color: var(--green-ink); }
-.status-eigen, .status-sucht { color: var(--gold-ink); }
+.status-eigen { color: var(--gold-ink); }
+.status-sucht { color: var(--blue-ink); }
 .status-belegt, .status-serie, .status-gesperrt, .status-knapp, .status-vorbei, .status-schluss { color: var(--muted); }
 .mini-zeitleiste.gross { height: 10px; border-radius: 5px; overflow: visible; }
 .mini-zeitleiste.gross i { border-radius: 5px; }
@@ -1280,7 +1290,7 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 .legende i.frei { background: var(--frei-flaeche); border: 1px solid var(--green); }
 .legende i.eigen { background: var(--gold); }
 .legende i.belegt { background: var(--blue-soft); border: 1px solid var(--blue); }
-.legende i.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-ink); }
+.legende i.sucht { background: var(--blue-soft); border: 1.5px dashed var(--blue-ink); }
 .legende i.serie, .beleg.serie {
   background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 12%, transparent) 0 3px, transparent 3px 6px), var(--surf-3);
 }
@@ -1337,7 +1347,7 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 .beleg .wer, .beleg .zeit { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .beleg.belegt { background: var(--blue-soft); color: var(--blue-ink); border: 1px solid var(--blue); }
 .beleg.eigen { background: var(--gold); color: var(--on-gold); }
-.beleg.sucht { background: var(--gold-soft); border: 1.5px dashed var(--gold-line); color: var(--gold-ink); }
+.beleg.sucht { background: var(--blue-soft); border: 1.5px dashed var(--blue); color: var(--blue-ink); }
 .beleg.serie { color: var(--ink-2); border: 1px solid var(--rahmen); }
 .beleg.gesperrt { background: var(--surf-3); color: var(--muted); border: 1px solid var(--rahmen); }
 button.beleg { cursor: pointer; }
@@ -1346,7 +1356,7 @@ button.beleg:hover, button.beleg:focus-visible {
 }
 .sucht-marke {
   display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 99px;
-  background: var(--gold); color: var(--on-gold); font-size: 10.5px; font-weight: 700;
+  background: var(--blue-soft); color: var(--blue-ink); font-size: 10.5px; font-weight: 700;
 }
 
 /* Vergangene Zeit heute: eine ruhige, flache Tönung über die ganze Breite,
@@ -1430,7 +1440,7 @@ dialog.fenster.blatt.breit { width: min(680px, calc(100vw - 24px)); }
 .blatt .sperrbereich { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 18px; gap: 10px; }
 .blatt .sperrbereich .fenster-fuss { border-top: 0; padding-top: 0; margin-top: 0; }
 .blatt-unterzeile { margin: -6px 0 0; font-weight: 600; }
-.gesucht-text { margin: 0; font-size: 13px; font-weight: 700; color: var(--gold-ink); }
+.gesucht-text { margin: 0; font-size: 13px; font-weight: 700; color: var(--blue-ink); }
 
 .segment-paar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .segment-stapel { display: grid; gap: 12px; }
@@ -1506,7 +1516,7 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
 .suchfilter-hinweis { font-size: 13px; line-height: 1.4; color: var(--muted); }
 .suchfilter-block { display: grid; gap: 10px; justify-items: start; }
 .suchfilter-block > fieldset { justify-self: stretch; }
-.offen-filter { font-weight: 700; color: var(--gold-ink); }
+.offen-filter { font-weight: 700; color: var(--blue-ink); }
 .gesucht-karte small { font-size: 13px; line-height: 1.4; color: var(--muted); }
 .schalter-feld {
   appearance: none; -webkit-appearance: none; position: relative; flex: 0 0 auto;
@@ -1518,7 +1528,7 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
   border-radius: 13px; background: var(--on-brand); box-shadow: 0 2px 6px rgba(0,0,0,.3);
   transition: left .15s ease;
 }
-.schalter-feld:checked { background: var(--green); box-shadow: none; }
+.schalter-feld:checked { background: var(--blue); box-shadow: none; }
 .schalter-feld:checked::after { left: 23px; }
 .schalter-feld:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .schalter-feld:disabled { opacity: .5; cursor: not-allowed; }
@@ -1528,7 +1538,7 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
 /* Der nächste Schritt über dem gesperrten Knopf: in Schrift, nicht im
    Grau des Knopfs, damit klar ist, was fehlt (U65). */
 .blatt-fuss .hinweis.besetzung { font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--ink); }
-.knopf.gross { min-height: 58px; border-radius: 18px; font-family: var(--font-text); font-size: 17px; font-weight: 800; }
+.knopf.gross { min-height: 56px; font-size: 16px; }
 .knopf.gefahr-leise {
   min-height: 52px; background: transparent; color: var(--red-ink); box-shadow: none;
   border: 1.5px solid color-mix(in srgb, var(--red) 40%, transparent);
@@ -1632,14 +1642,14 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
 .auth.immer-dunkel .sheet a { color: var(--ink-2); font-weight: 600; }
 /* Ohne Schatten: im Dunkeln traegt die Flaeche, ein Goldschein waere Deko. */
 .auth.immer-dunkel .sheet .knopf.block:not(.leise) {
-  background: var(--gold); color: var(--on-gold); box-shadow: none;
-  min-height: 58px; border-radius: 18px; font-family: var(--font-text); font-size: 17px; font-weight: 800;
+  background: var(--blue); color: var(--on-brand); border-color: transparent;
+  min-height: 56px;
 }
-.auth.immer-dunkel .sheet .knopf.block.leise { min-height: 52px; border-radius: 16px; }
+.auth.immer-dunkel .sheet .knopf.block.leise { min-height: 52px; }
 .auth.immer-dunkel .sheet .schalter > span { margin: 0; font-size: 14px; font-weight: 500; color: var(--ink-2); }
 .auth .vergessen { margin: -4px 0 0; text-align: right; font-size: 14px; }
 .auth .antrag-hinweis { margin: 4px 0 0; text-align: center; font-size: 14px; color: var(--muted); }
-.auth.immer-dunkel .antrag-hinweis a { color: var(--gold); font-weight: 700; }
+.auth.immer-dunkel .antrag-hinweis a { color: var(--blue-ink); font-weight: 700; }
 /* Kein Zugang mehr (B22): ein Satz, dann die beiden Wege */
 .auth .kein-zugang { display: flex; flex-direction: column; gap: 14px; }
 .auth .kein-zugang p { margin: 0 0 10px; font-size: 16px; line-height: 1.5; color: var(--ink-2); max-width: 60ch; }
@@ -1764,7 +1774,7 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
 .eintragen-leiste small.offen { opacity: 1; font-weight: 700; }
 .eintragen-leiste .knopf:not(:disabled) { animation: eintragen-ruf 1.6s ease-out 2; }
 @keyframes eintragen-ruf {
-  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 70%, transparent); }
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--blue) 70%, transparent); }
   100% { box-shadow: 0 0 0 12px transparent; }
 }
 
@@ -1911,7 +1921,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .geldweg li { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .geldweg li > i { height: 6px; border-radius: 3px; background: var(--surf-2); }
 .geldweg li.erledigt > i { background: var(--green); }
-.geldweg li.aktuell > i { background: linear-gradient(90deg, var(--gold) 60%, var(--surf-2) 60%); }
+.geldweg li.aktuell > i { background: linear-gradient(90deg, var(--blue) 60%, var(--surf-2) 60%); }
 .geldweg .kopf { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .geldweg .nr {
   width: 26px; height: 26px; border-radius: 13px; flex: 0 0 auto;
@@ -1919,7 +1929,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   font-size: 12px; font-weight: 800; background: var(--surf-2); color: var(--muted);
 }
 .geldweg li.erledigt .nr { background: var(--green-satt); color: var(--on-brand); }
-.geldweg li.aktuell .nr { background: var(--gold); color: var(--on-gold); }
+.geldweg li.aktuell .nr { background: var(--blue-soft); color: var(--blue-ink); }
 .geldweg li.offen .nr { background: transparent; box-shadow: inset 0 0 0 1.5px var(--surf-3); }
 .geldweg li.offen b { color: var(--muted); }
 .geldweg b { font-size: 14.5px; font-weight: 700; min-width: 0; hyphens: auto; overflow-wrap: anywhere; line-height: 1.2; }
@@ -1953,7 +1963,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .reiter .zaehler {
   height: 20px; min-width: 20px; padding: 0 7px; border-radius: 10px;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--gold); color: var(--on-gold); font-size: 12px;
+  background: var(--blue-soft); color: var(--blue-ink); font-size: 12px;
 }
 
 /* Suche und Filter-Chips */
@@ -1981,7 +1991,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 .filterchips :is(a, button) { cursor: pointer; font-family: var(--font-text); }
 .filterchips :is(a, button):hover { border-color: var(--ink-2); text-decoration: none; }
-.filterchips :is(a[aria-current="true"], button[aria-pressed="true"]) { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+.filterchips :is(a[aria-current="true"], button[aria-pressed="true"]) { border-color: var(--blue); background: var(--blue-soft); color: var(--blue-ink); }
 .filterchips.leise { margin-top: -12px; gap: 4px; }
 .filterchips.leise a { height: 30px; padding: 0 10px; font-size: 13px; border-color: transparent; background: transparent; color: var(--muted); }
 .filterchips.leise a[aria-current="true"] { background: var(--surf-2); color: var(--ink); border-color: transparent; }
@@ -2072,7 +2082,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .listenzeile .mini-geldweg { margin-top: 6px; }
 .mini-geldweg li { width: 22px; height: 6px; border-radius: 3px; background: var(--surf-2); }
 .mini-geldweg li.erledigt { background: var(--green); }
-.mini-geldweg li.aktuell { background: var(--gold); }
+.mini-geldweg li.aktuell { background: var(--blue); }
 
 /* Segment-Schalter eines Verwaltungsbereichs (Verwaltung v2, Regel 1) */
 .segtoggle.bereich-segmente { margin: 0; }
@@ -2085,7 +2095,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .segment-zahl, .menue-zahl {
   min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: 10px;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--gold); color: var(--on-gold); font-size: 12px; font-weight: 800;
+  background: var(--blue-soft); color: var(--blue-ink); font-size: 12px; font-weight: 800;
 }
 .menue-zahl { margin-left: auto; }
 @media (min-width: 768px) {
@@ -2129,12 +2139,12 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .naechster-schritt .titel { font-size: 24px; font-weight: 800; letter-spacing: -.3px; line-height: 1.15; }
 .naechster-schritt p { margin: 0; font-size: 14px; line-height: 1.5; opacity: .85; }
 .naechster-schritt .knopf { height: 50px; padding: 0 16px; border-radius: 14px; font-size: 15px; text-decoration: none; }
-.naechster-schritt .knopf.gold { box-shadow: none; }
+.naechster-schritt .knopf.haupt { box-shadow: none; }
 /* Auf Blau in Weiss wie der übrige Text der Karte, als eigene Zeile. */
 .naechster-schritt .sperrgrund { color: inherit; flex-basis: 100%; }
 .naechster-schritt.quer { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; }
 .naechster-schritt.quer > div { display: grid; gap: 8px; flex: 1 1 360px; }
-.knopf.auf-blau { background: color-mix(in srgb, var(--on-brand) 16%, transparent); color: var(--on-brand); box-shadow: none; }
+.knopf.auf-blau { background: color-mix(in srgb, var(--on-brand) 16%, transparent); color: var(--on-brand); border-color: transparent; }
 .knopf.auf-blau:hover { background: color-mix(in srgb, var(--on-brand) 24%, transparent); }
 .knopf.gesperrt, .knopf.gesperrt:disabled {
   background: color-mix(in srgb, var(--on-brand) 14%, transparent); color: color-mix(in srgb, var(--on-brand) 80%, transparent); opacity: 1; box-shadow: none;
@@ -2187,7 +2197,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .kiosk .schritt {
   width: 30px; height: 30px; border-radius: 15px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--gold); color: var(--on-gold); font-size: 15px; font-weight: 800;
+  background: var(--blue-soft); color: var(--blue-ink); font-size: 15px; font-weight: 800;
 }
 
 /* 1 Wer nimmt etwas? */
@@ -2214,11 +2224,11 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   border-radius: 18px; border: 1px solid var(--line); background: var(--surf-2); color: var(--ink);
   font: inherit; text-align: left;
 }
-.kiosk-treffer button.an { border: 2px solid var(--gold); background: var(--gold-soft); }
+.kiosk-treffer button.an { border: 2px solid var(--blue); background: var(--blue-soft); }
 .kiosk-treffer .avatar { width: 46px; height: 46px; border-radius: 23px; font-size: 16px; font-weight: 800; }
-.kiosk-treffer button.an .avatar { background: var(--gold); color: var(--on-gold); }
+.kiosk-treffer button.an .avatar { background: var(--blue); color: var(--on-brand); }
 .kiosk-treffer .name { flex: 1; font-size: 19px; font-weight: 700; }
-.kiosk-treffer svg { width: 24px; height: 24px; color: var(--gold); }
+.kiosk-treffer svg { width: 24px; height: 24px; color: var(--blue); }
 .kiosk-hinweis { margin: 4px 2px; font-size: 16px; color: var(--muted); }
 .kiosk-zuletzt { display: grid; gap: 10px; }
 .kiosk-zuletzt .chips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -2227,7 +2237,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   border: 1px solid var(--line-2); background: var(--surf-2); color: var(--ink-2);
   font: inherit; font-size: 16px; font-weight: 600;
 }
-.kiosk-zuletzt button[aria-pressed="true"] { border-color: var(--gold); color: var(--ink); }
+.kiosk-zuletzt button[aria-pressed="true"] { border-color: var(--blue); color: var(--ink); }
 
 /* 2 Was? */
 .kiosk-was { min-height: 0; display: flex; flex-direction: column; gap: 14px; padding-top: 22px; }
@@ -2249,7 +2259,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   border: 1px solid var(--line); background: var(--surf);
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
 }
-.kiosk-kacheln li.an .kachel-knopf { border: 2px solid var(--gold); background: var(--surf-2); }
+.kiosk-kacheln li.an .kachel-knopf { border: 2px solid var(--blue); background: var(--surf-2); }
 .kiosk-kacheln .name { font-size: 20px; font-weight: 700; line-height: 1.15; }
 .kiosk-kacheln .preis { font-size: 18px; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 /* Gewählt: Anzahl und "eins weniger" unten rechts nebeneinander, der Name behält die volle Breite. */
@@ -2257,7 +2267,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   position: absolute; right: 66px; bottom: 10px; pointer-events: none;
   width: 48px; height: 48px; border-radius: 24px;
   display: flex; align-items: center; justify-content: center;
-  background: var(--gold); color: var(--on-gold); font-size: 26px; font-weight: 700;
+  background: var(--blue); color: var(--on-brand); font-size: 26px; font-weight: 700;
 }
 .kiosk-kacheln .weniger {
   position: absolute; right: 10px; bottom: 10px; width: 48px; height: 48px; border-radius: 24px; cursor: pointer;
@@ -2284,7 +2294,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   border-radius: 28px; background: var(--bg); color: var(--ink);
 }
 .kiosk-eintragen h2 { margin-bottom: 8px; }
-.kiosk-eintragen .schritt { background: var(--ink); color: var(--gold); }
+.kiosk-eintragen .schritt { background: var(--blue-soft); color: var(--blue-ink); }
 .kiosk-eintragen .fuer { font-size: 15px; color: var(--ink-2); }
 .kiosk-eintragen .wer { font-size: 26px; font-weight: 800; letter-spacing: -.3px; margin-bottom: 10px; line-height: 1.15; }
 .kiosk-eintragen .posten { list-style: none; margin: 0; padding: 0; overflow-y: auto; min-height: 0; }
@@ -2331,7 +2341,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 :is(a, button).listenzeile { cursor: pointer; }
 :is(a, button).listenzeile:hover { text-decoration: none; background: color-mix(in srgb, var(--ink) 4%, transparent); }
 .listenzeile:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
-.listenzeile[aria-current="true"] { background: var(--gold-soft); }
+.listenzeile[aria-current="true"] { background: var(--blue-soft); }
 .listenzeile .avatar { width: 40px; height: 40px; border-radius: 20px; font-size: 13px; }
 .listenzeile .symbolkachel {
   width: 40px; height: 40px; border-radius: 12px;
@@ -2420,7 +2430,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 /* Folgen vor dem Absenden (Regel 5) */
 .folgen {
   display: flex; gap: 12px; padding: 12px 14px; border-radius: 16px;
-  background: var(--gold-soft); border: 1.5px dashed var(--gold-line); font-size: 14px; line-height: 1.4;
+  background: var(--surf-2); border: 1px solid var(--line); font-size: 14px; line-height: 1.4;
 }
 /* Grosse Tippfelder fuer Uhrzeit und Datum */
 .tippfelder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -2438,7 +2448,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .serienformular, .blatt .sperrformular { display: grid; gap: 16px; }
 .blatt .sperrformular > .fenster-fuss { margin-top: 0; padding-top: 0; border-top: 0; }
 .folgen-liste { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; }
-.knopf.gross { min-height: 58px; border-radius: 18px; font-family: var(--font-text); font-size: 17px; font-weight: 800; }
+.knopf.gross { min-height: 56px; font-size: 16px; }
 /* Chips statt Auswahlliste bei bis zu acht Optionen */
 .chipwahl { border: 0; margin: 0; padding: 0; }
 .chipwahl legend { padding: 0; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
@@ -2447,7 +2457,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   height: 44px; border: 0; border-radius: 14px; cursor: pointer;
   background: var(--surf-2); color: var(--ink-2); font: inherit; font-size: 13.5px; font-weight: 700;
 }
-.chipwahl button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.chipwahl button[aria-pressed="true"] { background: var(--blue-soft); color: var(--blue-ink); box-shadow: inset 0 0 0 1.5px var(--blue); }
 
 /* Uebersicht als Home (Verwaltung v2, Regel 7) */
 .uebersicht-raster { display: grid; gap: 28px; align-items: start; }
@@ -2477,7 +2487,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   .aufgabe-gross .titel { font-size: 34px; }
 }
 .listenzeile .punkt { width: 10px; height: 10px; border-radius: 5px; flex: 0 0 auto; }
-.listenzeile .punkt.dringend { background: var(--gold); }
+.listenzeile .punkt.dringend { background: var(--blue); }
 .listenzeile .punkt.info { background: var(--surf-3); box-shadow: inset 0 0 0 1.5px var(--muted); }
 .hinweis-rechts.blau { color: var(--blue-ink); }
 @media (max-width: 767px) {
@@ -2488,7 +2498,7 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .geldweg-balken { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; }
 .geldweg-balken li { flex: 1; height: 6px; border-radius: 3px; background: var(--surf-3); }
 .geldweg-balken li.erledigt { background: var(--green); }
-.geldweg-balken li.aktuell { background: var(--gold); }
+.geldweg-balken li.aktuell { background: var(--blue); }
 .geldweg-karte .zeile { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .geldweg-karte .zeile b { font-size: 15.5px; }
 .geldweg-karte small { font-size: 13px; color: var(--muted); }
@@ -2512,11 +2522,11 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   .verwaltung-kopf .zurueck { color: var(--blue-ink); font-size: 15px; font-weight: 600; margin-bottom: 2px; }
   .verwaltung-kopf.unterseite .zurueck { margin: 0; }
   .verwaltung-kopf .pagetitle { font-size: 34px; }
-  .verwaltung-kopf .aktionen .knopf.gold {
-    min-height: 40px; padding: 0 14px 0 10px; border-radius: 20px; font-family: var(--font-text);
-    font-size: 14.5px; font-weight: 800; white-space: nowrap;
+  .verwaltung-kopf .aktionen .knopf.haupt {
+    min-height: 40px; padding: 0 14px 0 10px;
+    font-size: 14.5px; white-space: nowrap;
   }
-  .verwaltung-kopf .aktionen .knopf.gold svg { width: 16px; height: 16px; }
+  .verwaltung-kopf .aktionen .knopf.haupt svg { width: 16px; height: 16px; }
   .verwaltung-kopf .unterzeile { display: none; }
 }
 

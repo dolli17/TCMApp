@@ -110,7 +110,7 @@ function Formular() {
 
           {fehler && <div className="hinweis fehler" role="alert">{fehler}</div>}
 
-          <button className="knopf gold gross block" disabled={laeuft}>
+          <button className="knopf haupt gross block" disabled={laeuft}>
             {laeuft ? "Anmelden…" : "Anmelden"}
           </button>
 

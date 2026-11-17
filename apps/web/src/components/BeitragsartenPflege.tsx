@@ -153,7 +153,7 @@ export function BeitragsartenPflege({
           </div>
           <button
             type="button"
-            className="knopf gold block gross"
+            className="knopf haupt block gross"
             disabled={laeuft || form.name.trim() === "" || (neu && form.code.trim() === "")}
             onClick={() =>
               starte(async () => {

@@ -248,7 +248,7 @@ export function EinzugVorbereiten({
           <p>Danach kannst du die Datei sofort erzeugen.</p>
         </div>
         {!frage && (
-          <button type="button" className="knopf gold" disabled={!bereit || sendet} onClick={() => setFrage(true)}>
+          <button type="button" className="knopf haupt" disabled={!bereit || sendet} onClick={() => setFrage(true)}>
             Ankündigen und Einzug anlegen
           </button>
         )}
@@ -277,7 +277,7 @@ export function EinzugVorbereiten({
             <span className="knopfreihe">
               <button
                 type="button"
-                className="knopf gold klein"
+                className="knopf haupt klein"
                 disabled={!bereit || sendet}
                 onClick={() =>
                   starteSenden(async () => {

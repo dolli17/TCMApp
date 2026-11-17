@@ -201,10 +201,10 @@ export function VeranstaltungsFormular({
             <button type="button" className="knopf leise" disabled={laeuft} onClick={() => absenden(false)}>
               Als Entwurf speichern
             </button>
-            <button type="submit" className="knopf gold" disabled={laeuft}>Veröffentlichen</button>
+            <button type="submit" className="knopf haupt" disabled={laeuft}>Veröffentlichen</button>
           </>
         ) : (
-          <button type="submit" className="knopf gold" disabled={laeuft}>Speichern</button>
+          <button type="submit" className="knopf haupt" disabled={laeuft}>Speichern</button>
         )}
       </div>
     </form>

@@ -306,7 +306,7 @@ export function Getraenkekarte({
             </b>
             <small className="offen">Noch nicht eingetragen</small>
           </div>
-          <button type="button" className="knopf gold" onClick={eintragen} disabled={laeuft}>
+          <button type="button" className="knopf haupt" onClick={eintragen} disabled={laeuft}>
             {laeuft ? "Wird eingetragen…" : "Eintragen"}
           </button>
         </div>

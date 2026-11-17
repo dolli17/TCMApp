@@ -9,9 +9,9 @@
    =========================================================================== */
 
 :root {
-  --blue: #1A6FB0;
-  --blue-ink: #0F4C81;
-  --blue-soft: #E2EFFA;
+  --blue: #1466A8;
+  --blue-ink: #1466A8;
+  --blue-soft: #E8F1F8;
   --gold: #FFD21F;
   --gold-soft: #FFF6D1;
   --gold-ink: #7A5C00;
@@ -24,23 +24,23 @@
   --red-ink: #A8352D;
   --brand: #1466A8;
   --on-brand: #FFFFFF;
-  --bg: #F3F5F8;
+  --bg: #FFFFFF;
   --surf: #FFFFFF;
-  --surf-2: #EEF2F6;
-  --surf-3: #E2E8EF;
+  --surf-2: #F8FAFC;
+  --surf-3: #E2E8F0;
   --ink: #0A1624;
-  --ink-2: #44566B;
+  --ink-2: #334155;
   --muted: #596A7D;
-  --line: #E3E8EE;
-  --line-2: #CBD5E0;
+  --line: #E2E8F0;
+  --line-2: #CBD5E1;
   --rahmen: #76869A;
-  --chip: #EEF2F6;
-  --glass: rgba(255,255,255,.82);
+  --chip: #F1F5F9;
+  --glass: rgba(255,255,255,.88);
   --glass-line: rgba(10,22,36,.08);
-  --tab-aktiv: #FFD21F;
-  --tab-aktiv-ink: #0A1624;
-  --nav-aktiv: #0A1624;
-  --nav-aktiv-ink: #FFFFFF;
+  --tab-aktiv: #E8F1F8;
+  --tab-aktiv-ink: #1466A8;
+  --nav-aktiv: #E8F1F8;
+  --nav-aktiv-ink: #1466A8;
   --seg-aktiv: #FFFFFF;
   --seg-aktiv-rand: #44566B;
   --shadow: 0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06);
@@ -52,19 +52,19 @@
   --avatar-2: #2370AC;
   --avatar-3: #2C618F;
 
-  --font-text: 'Barlow', system-ui, sans-serif;
-  --font-display: 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  --font-text: 'DM Sans', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'DM Sans', system-ui, sans-serif;
   --line-height: 1.45;
-  --tracking: 0.1px;
-  --tracking-kicker: 0.14em;
-  --tracking-title: -0.6px;
+  --tracking: 0px;
+  --tracking-kicker: 0.08em;
+  --tracking-title: -0.4px;
 
-  --font-size-kicker: 13px;
+  --font-size-kicker: 12px;
   --font-size-klein: 13px;
   --font-size-normal: 16px;
-  --font-size-titel: 22px;
-  --font-size-seitentitel: 34px;
-  --font-size-hero: 40px;
+  --font-size-titel: 20px;
+  --font-size-seitentitel: 26px;
+  --font-size-hero: 44px;
 
   --space-xs: 4px;
   --space-s: 8px;
@@ -73,12 +73,12 @@
   --space-rand: 20px;
   --space-abschnitt: 28px;
 
-  --radius-klein: 10px;
-  --radius-feld: 16px;
-  --radius-knopf: 16px;
-  --radius-karte: 22px;
-  --radius-kartegross: 26px;
-  --radius-blatt: 30px;
+  --radius-klein: 12px;
+  --radius-feld: 26px;
+  --radius-knopf: 99px;
+  --radius-karte: 24px;
+  --radius-kartegross: 32px;
+  --radius-blatt: 32px;
   --radius-chip: 99px;
 }
 
@@ -113,10 +113,10 @@
     --chip: #152538;
     --glass: rgba(22,36,54,.78);
     --glass-line: rgba(255,255,255,.12);
-    --tab-aktiv: rgba(255,210,31,.14);
-    --tab-aktiv-ink: #FFD21F;
-    --nav-aktiv: rgba(255,210,31,.12);
-    --nav-aktiv-ink: #FFD21F;
+    --tab-aktiv: rgba(58,155,224,.18);
+    --tab-aktiv-ink: #8CC6F0;
+    --nav-aktiv: rgba(58,155,224,.18);
+    --nav-aktiv-ink: #8CC6F0;
     --seg-aktiv: #1E3249;
     --seg-aktiv-rand: #B3C2D2;
     --shadow: none;
@@ -155,10 +155,10 @@
   --chip: #152538;
   --glass: rgba(22,36,54,.78);
   --glass-line: rgba(255,255,255,.12);
-  --tab-aktiv: rgba(255,210,31,.14);
-  --tab-aktiv-ink: #FFD21F;
-  --nav-aktiv: rgba(255,210,31,.12);
-  --nav-aktiv-ink: #FFD21F;
+  --tab-aktiv: rgba(58,155,224,.18);
+  --tab-aktiv-ink: #8CC6F0;
+  --nav-aktiv: rgba(58,155,224,.18);
+  --nav-aktiv-ink: #8CC6F0;
   --seg-aktiv: #1E3249;
   --seg-aktiv-rand: #B3C2D2;
   --shadow: none;
@@ -167,9 +167,9 @@
 }
 
 :root[data-theme="hell"] {
-  --blue: #1A6FB0;
-  --blue-ink: #0F4C81;
-  --blue-soft: #E2EFFA;
+  --blue: #1466A8;
+  --blue-ink: #1466A8;
+  --blue-soft: #E8F1F8;
   --gold: #FFD21F;
   --gold-soft: #FFF6D1;
   --gold-ink: #7A5C00;
@@ -182,23 +182,23 @@
   --red-ink: #A8352D;
   --brand: #1466A8;
   --on-brand: #FFFFFF;
-  --bg: #F3F5F8;
+  --bg: #FFFFFF;
   --surf: #FFFFFF;
-  --surf-2: #EEF2F6;
-  --surf-3: #E2E8EF;
+  --surf-2: #F8FAFC;
+  --surf-3: #E2E8F0;
   --ink: #0A1624;
-  --ink-2: #44566B;
+  --ink-2: #334155;
   --muted: #596A7D;
-  --line: #E3E8EE;
-  --line-2: #CBD5E0;
+  --line: #E2E8F0;
+  --line-2: #CBD5E1;
   --rahmen: #76869A;
-  --chip: #EEF2F6;
-  --glass: rgba(255,255,255,.82);
+  --chip: #F1F5F9;
+  --glass: rgba(255,255,255,.88);
   --glass-line: rgba(10,22,36,.08);
-  --tab-aktiv: #FFD21F;
-  --tab-aktiv-ink: #0A1624;
-  --nav-aktiv: #0A1624;
-  --nav-aktiv-ink: #FFFFFF;
+  --tab-aktiv: #E8F1F8;
+  --tab-aktiv-ink: #1466A8;
+  --nav-aktiv: #E8F1F8;
+  --nav-aktiv-ink: #1466A8;
   --seg-aktiv: #FFFFFF;
   --seg-aktiv-rand: #44566B;
   --shadow: 0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06);
@@ -237,10 +237,10 @@
   --chip: #152538;
   --glass: rgba(22,36,54,.78);
   --glass-line: rgba(255,255,255,.12);
-  --tab-aktiv: rgba(255,210,31,.14);
-  --tab-aktiv-ink: #FFD21F;
-  --nav-aktiv: rgba(255,210,31,.12);
-  --nav-aktiv-ink: #FFD21F;
+  --tab-aktiv: rgba(58,155,224,.18);
+  --tab-aktiv-ink: #8CC6F0;
+  --nav-aktiv: rgba(58,155,224,.18);
+  --nav-aktiv-ink: #8CC6F0;
   --seg-aktiv: #1E3249;
   --seg-aktiv-rand: #B3C2D2;
   --shadow: none;
@@ -251,9 +251,9 @@
 
 /* Immer hell, auch in dunkler Umgebung - die Eintragen-Spalte des Kiosks. */
 .immer-hell {
-  --blue: #1A6FB0;
-  --blue-ink: #0F4C81;
-  --blue-soft: #E2EFFA;
+  --blue: #1466A8;
+  --blue-ink: #1466A8;
+  --blue-soft: #E8F1F8;
   --gold: #FFD21F;
   --gold-soft: #FFF6D1;
   --gold-ink: #7A5C00;
@@ -266,23 +266,23 @@
   --red-ink: #A8352D;
   --brand: #1466A8;
   --on-brand: #FFFFFF;
-  --bg: #F3F5F8;
+  --bg: #FFFFFF;
   --surf: #FFFFFF;
-  --surf-2: #EEF2F6;
-  --surf-3: #E2E8EF;
+  --surf-2: #F8FAFC;
+  --surf-3: #E2E8F0;
   --ink: #0A1624;
-  --ink-2: #44566B;
+  --ink-2: #334155;
   --muted: #596A7D;
-  --line: #E3E8EE;
-  --line-2: #CBD5E0;
+  --line: #E2E8F0;
+  --line-2: #CBD5E1;
   --rahmen: #76869A;
-  --chip: #EEF2F6;
-  --glass: rgba(255,255,255,.82);
+  --chip: #F1F5F9;
+  --glass: rgba(255,255,255,.88);
   --glass-line: rgba(10,22,36,.08);
-  --tab-aktiv: #FFD21F;
-  --tab-aktiv-ink: #0A1624;
-  --nav-aktiv: #0A1624;
-  --nav-aktiv-ink: #FFFFFF;
+  --tab-aktiv: #E8F1F8;
+  --tab-aktiv-ink: #1466A8;
+  --nav-aktiv: #E8F1F8;
+  --nav-aktiv-ink: #1466A8;
   --seg-aktiv: #FFFFFF;
   --seg-aktiv-rand: #44566B;
   --shadow: 0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06);

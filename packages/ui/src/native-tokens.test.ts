@@ -43,11 +43,11 @@ describe("Inhalt", () => {
   });
 
   it("die Werte stimmen: blue hell und dunkel", () => {
-    expect(swift).toContain("blue: Color(hell: 0x1A6FB0FF, dunkel: 0x2478BEFF)");
-    expect(kotlin).toContain("blue = Color(0xFF1A6FB0)");
+    expect(swift).toContain("blue: Color(hell: 0x1466A8FF, dunkel: 0x2478BEFF)");
+    expect(kotlin).toContain("blue = Color(0xFF1466A8)");
     expect(kotlin).toContain("blue = Color(0xFF2478BE)");
-    // Deckkraft: glass hell ist Weiss mit .82 -> 0xD1
-    expect(kotlin).toContain("glass = Color(0xD1FFFFFF)");
+    // Deckkraft: glass hell ist Weiss mit .88 -> 0xE0
+    expect(kotlin).toContain("glass = Color(0xE0FFFFFF)");
   });
 
   it("nennt beide Schriftfamilien", () => {

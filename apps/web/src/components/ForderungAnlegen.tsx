@@ -102,7 +102,7 @@ export function ForderungAnlegen({ mitglieder }: { mitglieder: MitgliedWahl[] })
       <div className="fenster-fuss">
         <button
           type="button"
-          className="knopf gold"
+          className="knopf haupt"
           disabled={laeuft || name.trim() === "" || betrag.trim() === "" || beschreibung.trim() === ""}
           onClick={anlegen}
         >

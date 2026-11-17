@@ -404,7 +404,7 @@ export function KioskOberflaeche({
 
               <button
                 type="button"
-                className="knopf gold kiosk-los"
+                className="knopf haupt kiosk-los"
                 disabled={laeuft || !gewaehlt || positionen.length === 0}
                 onClick={eintragen}
               >

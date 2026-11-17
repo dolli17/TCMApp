@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F3F5F8" },
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
     { media: "(prefers-color-scheme: dark)", color: "#07111D" },
   ],
 };
@@ -128,7 +128,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <Image src={logoWeiss} alt="TC Muckensturm" height={34} priority className="logo-dunkel" />
               </Link>
 
-              <Link href="/plan?buchen=jetzt" className="knopf gold block buchen-gross">
+              <Link href="/plan?buchen=jetzt" className="knopf block buchen-gross">
                 <Symbol name="plus" />
                 Platz buchen
               </Link>

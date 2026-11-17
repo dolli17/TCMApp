@@ -53,7 +53,7 @@ export default async function VeranstaltungenSeite({
         unterzeile="Arbeitsdienste, Feste und Termine – mit Anmeldung, Gebühr und Stunden."
       >
         {/* Wie die Anlegen-Knöpfe der anderen Bereiche (FensterKnopf, U63) */}
-        <Link className="knopf gold" href="/admin/veranstaltungen/neu">
+        <Link className="knopf haupt" href="/admin/veranstaltungen/neu">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
             <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
           </svg>

@@ -1162,7 +1162,7 @@ test.describe("Verwaltung", () => {
     // Gelb ist genau ein Knopf im Kopf: „Einzug vorbereiten“, wenn es etwas
     // einzuziehen gibt, sonst die erste Aufgabe aus „Zu tun“ (U50). Deren
     // Zeile nennt die Aktion dann nicht noch einmal (U63).
-    const kopf = page.locator(".verwaltung-kopf .aktionen .knopf.gold");
+    const kopf = page.locator(".verwaltung-kopf .aktionen .knopf.haupt");
     const zeilen = page.locator('.liste-gruppe[aria-label="Zu tun"] li');
     const aktionen = await zeilen.locator(".hinweis-rechts").allTextContents();
     if (aktionen.includes("Einzug vorbereiten")) {

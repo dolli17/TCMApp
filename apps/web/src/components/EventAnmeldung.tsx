@@ -102,7 +102,7 @@ export function EventAnmeldung({
       )}
       {/* Was es kostet, steht vor dem Knopf und nicht erst danach. */}
       {!aendern && gebuehr && <p className="unterzeile gebuehr-hinweis">{gebuehr}</p>}
-      <button type="submit" className="knopf gold block" disabled={laeuft}>
+      <button type="submit" className="knopf haupt block" disabled={laeuft}>
         {aendern
           ? e.fee_cents && e.mein_status === "registered"
             ? `Änderung sichern · ${formatCents(eventGebuehrCents(e.fee_cents, begleitung))}`

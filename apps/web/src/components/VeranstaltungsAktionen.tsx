@@ -54,7 +54,7 @@ export function VeranstaltungsAktionen({
               <input type="checkbox" checked={benachrichtigen} onChange={(e) => setBenachrichtigen(e.target.checked)} />
               <span>Mitglieder benachrichtigen</span>
             </label>
-            <button type="button" className="knopf gold" disabled={laeuft} onClick={() => tue("veroeffentlichen")}>
+            <button type="button" className="knopf haupt" disabled={laeuft} onClick={() => tue("veroeffentlichen")}>
               Veröffentlichen
             </button>
           </>

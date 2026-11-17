@@ -386,7 +386,7 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
           {/* aria-disabled statt disabled: ein gesperrter Knopf nimmt dann noch
               Klicks an und fuehrt zur Mitspielersuche, statt stumm zu bleiben. */}
           <button
-            className="knopf gold gross block"
+            className="knopf haupt gross block"
             disabled={props.laeuft}
             aria-disabled={sperrHinweis !== null || undefined}
             aria-describedby={sperrHinweis && !props.laeuft ? hinweisId : undefined}
@@ -684,7 +684,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           {kannSperreAendern && !stornoOffen && (
             <button
               type="button"
-              className="knopf gold gross block"
+              className="knopf haupt gross block"
               disabled={props.laeuft}
               onClick={() => setBearbeitenOffen(true)}
             >
@@ -695,7 +695,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           {kannMitspielen && (
             <button
               type="button"
-              className="knopf gold gross block"
+              className="knopf haupt gross block"
               disabled={props.laeuft}
               onClick={() => props.onBeitreten(b.booking_id)}
             >
@@ -706,7 +706,7 @@ function VerwaltenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "ve
           {!nurStorno && darfVerwalten && (
             <button
               type="button"
-              className="knopf gold gross block"
+              className="knopf haupt gross block"
               disabled={props.laeuft || !geaendert}
               onClick={() => props.onSpeichern(b.booking_id, mitglieder, gaeste)}
             >
@@ -878,7 +878,7 @@ function SperreBearbeiten(props: Props & { sperre: Belegung; onZu: () => void })
         {kollisionen === null ? (
           <button
             type="button"
-            className="knopf gold gross block"
+            className="knopf haupt gross block"
             disabled={props.laeuft || plaetze.length === 0 || !zeitOk}
             onClick={() => void speichern(false)}
           >
@@ -1071,7 +1071,7 @@ function UmsetzBereich(props: Props & { belegung: Belegung; onZu: () => void }) 
       <div className="fenster-fuss">
         <button
           type="button"
-          className="knopf gold"
+          className="knopf haupt"
           disabled={props.laeuft || !bereit}
           onClick={() => {
             if (!platz || minute === null) return;

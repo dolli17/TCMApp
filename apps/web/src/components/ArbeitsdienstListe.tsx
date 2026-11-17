@@ -336,7 +336,7 @@ function SollKarte({
           </div>
           <button
             type="button"
-            className="knopf gold block gross"
+            className="knopf haupt block gross"
             disabled={laeuft}
             onClick={() =>
               starte(async () => {

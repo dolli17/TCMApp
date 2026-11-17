@@ -254,7 +254,7 @@ function Sperrformular({
         <>
           <button
             type="button"
-            className="knopf gold block gross"
+            className="knopf haupt block gross"
             disabled={laeuft || !vollstaendig}
             onClick={() => absenden(false)}
           >
@@ -381,7 +381,7 @@ function Platzliste({
           </div>
           <button
             type="button"
-            className="knopf gold block gross"
+            className="knopf haupt block gross"
             disabled={laeuft || form.name.trim() === "" || form.kurzname.trim() === ""}
             onClick={speichern}
           >
@@ -591,7 +591,7 @@ function Artenliste({
           </div>
           <button
             type="button"
-            className="knopf gold block gross"
+            className="knopf haupt block gross"
             disabled={laeuft || form.code.trim() === "" || form.name.trim() === ""}
             onClick={() =>
               starte(async () => {

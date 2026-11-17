@@ -215,13 +215,13 @@ export function SerienFormular({
       )}
 
       {!vorschau ? (
-        <button className="knopf gold block gross" onClick={pruefen} disabled={laeuft || !form.title.trim()}>
+        <button className="knopf haupt block gross" onClick={pruefen} disabled={laeuft || !form.title.trim()}>
           {laeuft ? "Wird geprüft…" : "Vorschau"}
         </button>
       ) : null}
       {!vorschau && !laeuft && <SperrGrund grund={form.title.trim() === "" ? "Erst einen Titel eingeben." : null} />}
       {!vorschau ? null : (
-        <button className="knopf gold block gross" onClick={() => anlegen(kollisionen.length > 0)} disabled={laeuft}>
+        <button className="knopf haupt block gross" onClick={() => anlegen(kollisionen.length > 0)} disabled={laeuft}>
           {kollisionen.length === 0
             ? `Serie anlegen · ${vorschau.length} Termine`
             : `Anlegen und ${kollisionen.length} ${kollisionen.length === 1 ? "Buchung" : "Buchungen"} verdrängen`}

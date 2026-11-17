@@ -135,7 +135,7 @@ describe("avatarTon", () => {
 
 describe("paletteFuer", () => {
   it("liefert die passende Palette", () => {
-    expect(paletteFuer("hell").bg).toBe("#F3F5F8");
+    expect(paletteFuer("hell").bg).toBe("#FFFFFF");
     expect(paletteFuer("dunkel").bg).toBe("#07111D");
   });
 });

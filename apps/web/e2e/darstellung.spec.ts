@@ -362,7 +362,7 @@ test.describe("Layout", () => {
 });
 
 test.describe("Schriften", () => {
-  test("Barlow kommt vom eigenen Server, nicht von Google", async ({ page }) => {
+  test("Die Schriften kommen vom eigenen Server, nicht von Google", async ({ page }) => {
     // Ein Aufruf an fonts.gstatic.com wuerde die IP jedes Mitglieds an Google
     // schicken - in Deutschland abgemahnt und fuer einen Verein vermeidbar.
     const fremdeAufrufe: string[] = [];

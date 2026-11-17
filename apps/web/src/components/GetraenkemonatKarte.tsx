@@ -163,12 +163,12 @@ export function GetraenkemonatKarte({
             </dl>
             {schritt && <p className="unterzeile">{schritt.text}</p>}
             {schritt?.href && (
-              <Link className="knopf gold block" href={schritt.href}>{schritt.knopf}</Link>
+              <Link className="knopf haupt block" href={schritt.href}>{schritt.knopf}</Link>
             )}
             {schritt && !schritt.href && (
               <button
                 type="button"
-                className="knopf gold block"
+                className="knopf haupt block"
                 disabled={laeuft}
                 onClick={() =>
                   starte(async () => {

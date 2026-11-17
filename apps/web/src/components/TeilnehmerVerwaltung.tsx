@@ -298,7 +298,7 @@ export function TeilnehmerVerwaltung({
             </span>
           </div>
           <button
-            type="button" className="knopf gold" disabled={laeuft || !begonnen || offeneStunden === 0}
+            type="button" className="knopf haupt" disabled={laeuft || !begonnen || offeneStunden === 0}
             onClick={() => tue(() => stundenGutschreiben(eventId))}
           >
             Stunden gutschreiben

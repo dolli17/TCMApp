@@ -65,9 +65,9 @@ data class Palette(
 }
 
 val Hell = Palette(
-    blue = Color(0xFF1A6FB0),
-    blueInk = Color(0xFF0F4C81),
-    blueSoft = Color(0xFFE2EFFA),
+    blue = Color(0xFF1466A8),
+    blueInk = Color(0xFF1466A8),
+    blueSoft = Color(0xFFE8F1F8),
     gold = Color(0xFFFFD21F),
     goldSoft = Color(0xFFFFF6D1),
     goldInk = Color(0xFF7A5C00),
@@ -80,23 +80,23 @@ val Hell = Palette(
     redInk = Color(0xFFA8352D),
     brand = Color(0xFF1466A8),
     onBrand = Color(0xFFFFFFFF),
-    bg = Color(0xFFF3F5F8),
+    bg = Color(0xFFFFFFFF),
     surf = Color(0xFFFFFFFF),
-    surf2 = Color(0xFFEEF2F6),
-    surf3 = Color(0xFFE2E8EF),
+    surf2 = Color(0xFFF8FAFC),
+    surf3 = Color(0xFFE2E8F0),
     ink = Color(0xFF0A1624),
-    ink2 = Color(0xFF44566B),
+    ink2 = Color(0xFF334155),
     muted = Color(0xFF596A7D),
-    line = Color(0xFFE3E8EE),
-    line2 = Color(0xFFCBD5E0),
+    line = Color(0xFFE2E8F0),
+    line2 = Color(0xFFCBD5E1),
     rahmen = Color(0xFF76869A),
-    chip = Color(0xFFEEF2F6),
-    glass = Color(0xD1FFFFFF),
+    chip = Color(0xFFF1F5F9),
+    glass = Color(0xE0FFFFFF),
     glassLine = Color(0x140A1624),
-    tabAktiv = Color(0xFFFFD21F),
-    tabAktivInk = Color(0xFF0A1624),
-    navAktiv = Color(0xFF0A1624),
-    navAktivInk = Color(0xFFFFFFFF),
+    tabAktiv = Color(0xFFE8F1F8),
+    tabAktivInk = Color(0xFF1466A8),
+    navAktiv = Color(0xFFE8F1F8),
+    navAktivInk = Color(0xFF1466A8),
     segAktiv = Color(0xFFFFFFFF),
     segAktivRand = Color(0xFF44566B),
 )
@@ -130,10 +130,10 @@ val Dunkel = Palette(
     chip = Color(0xFF152538),
     glass = Color(0xC7162436),
     glassLine = Color(0x1FFFFFFF),
-    tabAktiv = Color(0x24FFD21F),
-    tabAktivInk = Color(0xFFFFD21F),
-    navAktiv = Color(0x1FFFD21F),
-    navAktivInk = Color(0xFFFFD21F),
+    tabAktiv = Color(0x2E3A9BE0),
+    tabAktivInk = Color(0xFF8CC6F0),
+    navAktiv = Color(0x2E3A9BE0),
+    navAktivInk = Color(0xFF8CC6F0),
     segAktiv = Color(0xFF1E3249),
     segAktivRand = Color(0xFFB3C2D2),
 )
@@ -194,12 +194,12 @@ object Schrift {
     const val DATEI_DISPLAY_FETT = "barlowsemicondensed_bold"
     const val DATEI_DISPLAY_EXTRAFETT = "barlowsemicondensed_extrabold"
 
-    val kicker: TextUnit = 13.sp
+    val kicker: TextUnit = 12.sp
     val klein: TextUnit = 13.sp
     val normal: TextUnit = 16.sp
-    val titel: TextUnit = 22.sp
-    val seitentitel: TextUnit = 34.sp
-    val hero: TextUnit = 40.sp
+    val titel: TextUnit = 20.sp
+    val seitentitel: TextUnit = 26.sp
+    val hero: TextUnit = 44.sp
 
     val gewichtNormal = FontWeight(400)
     val gewichtMittel = FontWeight(500)
@@ -210,11 +210,11 @@ object Schrift {
     /** Faktor auf die Schriftgroesse */
     const val ZEILENHOEHE = 1.45f
     /** in sp */
-    val laufweite: TextUnit = 0.1.sp
+    val laufweite: TextUnit = 0.sp
     /** in em, also mal Schriftgroesse */
-    const val LAUFWEITE_KICKER_EM = 0.14f
+    const val LAUFWEITE_KICKER_EM = 0.08f
     /** in sp, fuer den Seitentitel */
-    val laufweiteTitel: TextUnit = (-0.6).sp
+    val laufweiteTitel: TextUnit = (-0.4).sp
 }
 
 // Abstand und Radius
@@ -229,11 +229,11 @@ object Abstand {
 }
 
 object Radius {
-    val klein: Dp = 10.dp
-    val feld: Dp = 16.dp
-    val knopf: Dp = 16.dp
-    val karte: Dp = 22.dp
-    val karteGross: Dp = 26.dp
-    val blatt: Dp = 30.dp
+    val klein: Dp = 12.dp
+    val feld: Dp = 26.dp
+    val knopf: Dp = 99.dp
+    val karte: Dp = 24.dp
+    val karteGross: Dp = 32.dp
+    val blatt: Dp = 32.dp
     val chip: Dp = 99.dp
 }
