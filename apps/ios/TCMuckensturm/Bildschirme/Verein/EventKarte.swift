@@ -17,17 +17,17 @@ struct EventKarte: View {
         let marke = Veranstaltungen.eventMeineMarke(e, now: jetzt, aufforderung: aufforderung)
         let art = e.kind ?? ""
         Button(action: aktion) {
-            HStack(alignment: .top, spacing: 14) {
+            HStack(alignment: .center, spacing: 16) {
                 VStack(spacing: 0) {
-                    Text(k.tag).font(Schrift.display(.fett, 21)).foregroundStyle(vorbei ? Farbe.muted : Farbe.ink)
+                    Text(k.tag).font(Schrift.display(.fett, 22)).foregroundStyle(vorbei ? Farbe.muted : Farbe.ink)
                     Text(k.monat).font(Schrift.display(.fett, Tokens.Schrift.kicker)).tracking(0.6).textCase(.uppercase)
                         .foregroundStyle(Farbe.muted)
                 }
                 .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                .frame(width: 54, height: 56)
+                .frame(width: 56, height: 58)
                 .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 18))
                 .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Farbe.line, lineWidth: 1))
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         MarkeKlein(text: Veranstaltungen.kindLabel[art] ?? art, ton: Veranstaltungen.kindTon[art] ?? .grau)
                         Spacer(minLength: 0)
@@ -37,16 +37,26 @@ struct EventKarte: View {
                         }
                     }
                     Text(e.title ?? "")
-                        .font(Schrift.display(.halbfett, 17))
+                        .font(Schrift.display(.fett, 19, relativeTo: .title3))
                         .foregroundStyle(vorbei ? Farbe.ink2 : Farbe.ink)
-                    Text(Veranstaltungen.eventKartenZeit(e)).font(Schrift.text(.normal, 13.5)).foregroundStyle(Farbe.muted)
-                    Text(Veranstaltungen.eventKartenZeile(e, now: jetzt))
-                        .font(Schrift.text(.fett, 13.5))
-                        .foregroundStyle(Farbe.ink)
+                        .multilineTextAlignment(.leading)
+                        .padding(.top, 2)
+                    Text(Veranstaltungen.eventKartenZeit(e)).font(Schrift.text(.normal, 15)).foregroundStyle(Farbe.ink2)
+                    HStack(alignment: .center, spacing: 8) {
+                        Text(Veranstaltungen.eventKartenZeile(e, now: jetzt))
+                            .font(Schrift.text(.normal, 13.5))
+                            .foregroundStyle(Farbe.muted)
+                            .multilineTextAlignment(.leading)
+                        Spacer(minLength: 0)
+                        // Wer noch nicht angemeldet ist, sieht den Weg dorthin; die Karte selbst oeffnet die Veranstaltung.
+                        if e.meinStatus == nil && Veranstaltungen.eventAnmeldbar(e, now: jetzt) {
+                            KnopfFlaeche(stufe: .zweit, groesse: .klein) { Text("Anmelden") }
+                        }
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .karte(radius: Tokens.Radius.karte, padding: 16)
+            .karte(radius: Tokens.Radius.karte, padding: 18)
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)

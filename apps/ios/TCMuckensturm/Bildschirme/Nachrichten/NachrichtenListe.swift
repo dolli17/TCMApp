@@ -93,15 +93,16 @@ struct NachrichtZeile: View {
                 .font(.system(size: 17, weight: .medium))
                 .foregroundStyle(neu ? Farbe.ink : Farbe.ink2)
                 .frame(width: 40, height: 40)
-                .background(
-                    hervorheben ? (neu ? Farbe.surf : Farbe.surf2) : (neu ? Farbe.blueSoft : Farbe.surf2),
-                    in: RoundedRectangle(cornerRadius: 12)
-                )
+                .background(hervorheben ? (neu ? Farbe.surf : Farbe.surf2) : (neu ? Farbe.blueSoft : Farbe.surf2), in: Circle())
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    // Ungelesen: der blaue Punkt vor dem Titel.
+                    if neu {
+                        Circle().fill(Farbe.blue).frame(width: 8, height: 8).alignmentGuide(.firstTextBaseline) { $0[.bottom] + 3 }
+                    }
                     Text(n.title ?? "")
-                        .font(Schrift.display(.halbfett, 15.5))
+                        .font(Schrift.display(.halbfett, 16))
                         .foregroundStyle(Farbe.ink)
                         .lineLimit(zeilen.map { _ in 2 })
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -110,7 +111,7 @@ struct NachrichtZeile: View {
                         .foregroundStyle(Farbe.muted)
                 }
                 Text(n.body ?? "")
-                    .font(Schrift.text(.normal, 13.5))
+                    .font(Schrift.text(.normal, 14.5))
                     .foregroundStyle(Farbe.ink2)
                     .lineSpacing(2)
                     .lineLimit(zeilen)
@@ -123,7 +124,7 @@ struct NachrichtZeile: View {
                 }
             }
         }
-        .padding(.vertical, 14)
+        .padding(.vertical, 16)
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(hervorheben && neu ? Farbe.blueSoft : Color.clear)

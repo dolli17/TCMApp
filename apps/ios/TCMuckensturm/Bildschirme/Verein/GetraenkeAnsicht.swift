@@ -181,11 +181,14 @@ struct GetraenkeAnsicht: View {
                     aus: laeuft || menge >= Getraenke.maxMenge
                 ) { aendern(a.id, 1) }
             }
+            // Gesammeltes: Minus, Zahl und Plus in einer weissen Kapsel (Entwurf "Getraenke Auswahl").
+            .padding(menge > 0 ? 3 : 0)
+            .background { if menge > 0 { Capsule().fill(Farbe.surf).overlay(Capsule().strokeBorder(Farbe.line2, lineWidth: 1)) } }
         }
         .padding(.vertical, 12)
         .padding(.leading, 20)
         .padding(.trailing, 14)
-        .frame(minHeight: 72)
+        .frame(minHeight: 76)
         .background(menge > 0 ? Farbe.blueSoft : Color.clear)
         .animation(.easeOut(duration: 0.15), value: menge > 0)
     }

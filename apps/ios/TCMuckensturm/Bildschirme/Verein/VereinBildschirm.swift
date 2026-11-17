@@ -167,7 +167,7 @@ struct Zaehlknopf: View {
         Button(action: aktion) {
             Image(systemName: zeichen == .plus ? "plus" : "minus")
                 .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(betont ? Farbe.blueInk : Farbe.ink)
+                .foregroundStyle(betont || zeichen == .plus ? Farbe.blueInk : Farbe.ink2)
                 .frame(width: 44, height: 44)
                 .background(betont ? Farbe.surf : Farbe.chip, in: Circle())
                 .overlay(Circle().strokeBorder(betont ? Farbe.blue : Color.clear, lineWidth: 1.5))
