@@ -20,6 +20,7 @@ import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.serializer.KotlinXSerializer
+import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.okhttp.OkHttp
 import kotlinx.serialization.json.Json
 
@@ -34,11 +35,20 @@ object SupabaseVerbindung {
         coerceInputValues = true
     }
 
-    /** @param autoRefresh im Widget aus - es lebt nur Sekunden. */
-    fun client(umgebung: Umgebung, sitzungen: SessionManager, autoRefresh: Boolean = true): SupabaseClient =
+    /**
+     * @param autoRefresh im Widget aus - es lebt nur Sekunden.
+     * @param engine womit der Client ins Netz geht; die Tests reichen eine Attrappe mit
+     *   nachgebauten Serverantworten herein (daten/Serverattrappe.kt), sonst OkHttp.
+     */
+    fun client(
+        umgebung: Umgebung,
+        sitzungen: SessionManager,
+        autoRefresh: Boolean = true,
+        engine: HttpClientEngine = OkHttp.create(),
+    ): SupabaseClient =
         createSupabaseClient(umgebung.supabaseUrl, umgebung.supabaseKey) {
             defaultSerializer = KotlinXSerializer(json)
-            httpEngine = OkHttp.create()
+            httpEngine = engine
             install(Auth) {
                 sessionManager = sitzungen
                 flowType = FlowType.IMPLICIT
