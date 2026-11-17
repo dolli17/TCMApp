@@ -66,9 +66,9 @@ interface Props {
 }
 
 const TAG = new Intl.DateTimeFormat("de-DE", {
-  weekday: "long", day: "2-digit", month: "2-digit", timeZone: "UTC",
+  weekday: "long", day: "numeric", month: "long", timeZone: "UTC",
 });
-/** "Montag, 28.09." - der Tag kommt als JJJJ-MM-TT und wird mittags gelesen. */
+/** "Montag, 28. September" - der Tag kommt als JJJJ-MM-TT und wird mittags gelesen. */
 const tagText = (tag: string) => TAG.format(new Date(`${tag}T12:00:00Z`));
 
 /**
@@ -117,9 +117,10 @@ function Kopf({ kicker, titel, onSchliessen }: {
 }) {
   return (
     <div className="fenster-kopf">
+      {/* Entwurf "Platz buchen": erst groß die Zeit, darunter Platz und Tag */}
       <div>
-        <p className="kicker">{kicker}</p>
         <h2 className="tnum">{titel}</h2>
+        <p className="blatt-wo">{kicker}</p>
       </div>
       <button type="button" className="fenster-zu" onClick={onSchliessen} aria-label="Schließen">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -319,7 +320,7 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
           <input type="hidden" name="partnerWanted" value="1" />
         )}
 
-        <div className={haelften.length <= 2 && props.arten.length <= 2 ? "segment-paar" : "segment-stapel"}>
+        <div className="segment-stapel">
           <fieldset className="segmente startwahl">
             <legend>Beginn</legend>
             <div className="segment-leiste">
@@ -364,7 +365,6 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
         {/* Sich selbst mitzunehmen weist die Datenbank ab - der Bucher zaehlt
             ohnehin mit. */}
         <Mitspielersuche
-          kopf={{ initialen: initialen(ich?.first_name, ich?.last_name), name: "Du", gelb: true }}
           verzeichnis={props.verzeichnis.filter((m) => m.id !== props.meineId)}
           mitglieder={mitglieder}
           gaeste={gaeste}

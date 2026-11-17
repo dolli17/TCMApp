@@ -1124,11 +1124,11 @@ dialog.fenster.blatt {
 .blatt .griff { display: none; }
 dialog.fenster.blatt.breit { width: min(680px, calc(100vw - 24px)); }
 .blatt .fenster-kopf { background: transparent; border: 0; padding: 8px 0 14px; align-items: flex-start; }
-.blatt .fenster-kopf .kicker { margin: 0; }
 .blatt .fenster-kopf h2 {
-  font-family: var(--font-display); font-size: var(--font-size-seitentitel);
+  font-family: var(--font-display); font-size: 32px; letter-spacing: -.6px;
   font-weight: 700; line-height: 1; margin: 4px 0 0;
 }
+.blatt .fenster-kopf .blatt-wo { margin: 10px 0 0; font-size: 16px; color: var(--ink-2); }
 .blatt .fenster-zu {
   width: 44px; height: 44px; border-radius: 22px; border: 0;
   background: var(--surf-2); color: var(--ink-2);
@@ -1142,36 +1142,41 @@ dialog.fenster.blatt.breit { width: min(680px, calc(100vw - 24px)); }
 .blatt-unterzeile { margin: -6px 0 0; font-weight: 600; }
 .gesucht-text { margin: 0; font-size: 13px; font-weight: 700; color: var(--blue-ink); }
 
-.segment-paar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.segment-stapel { display: grid; gap: 12px; }
+/* Abschnitte im Blatt (Entwurf "Platz buchen"): Kicker als Überschrift,
+   darunter gleich breite Pillen - gewählt hellblau mit blauem Rand. */
+.segment-stapel { display: grid; gap: 22px; }
 fieldset.segmente { border: 0; padding: 0; margin: 0; min-width: 0; }
-fieldset.segmente legend { padding: 0; margin-bottom: 8px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
-.segment-leiste { display: flex; gap: 4px; padding: 4px; border-radius: var(--radius-knopf); background: var(--surf-2); }
+fieldset.segmente legend, .mitspieler .feldname, fieldset.suchfilter legend {
+  padding: 0; margin: 0 0 10px; font-family: var(--font-display); font-size: var(--font-size-kicker);
+  font-weight: 700; letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted);
+}
+.segment-leiste { display: flex; gap: 10px; }
 .segment {
-  position: relative; flex: 1 1 0; min-width: 0; height: 40px; border-radius: calc(var(--radius-knopf) - 4px);
+  position: relative; flex: 1 1 0; min-width: 0; height: 52px; border-radius: var(--radius-knopf);
   display: flex; align-items: center; justify-content: center;
-  font-size: 15px; font-weight: 600; color: var(--muted); cursor: pointer; margin: 0;
+  background: var(--surf); border: 1px solid var(--line-2);
+  font-family: var(--font-display); font-size: 16px; font-weight: 500; color: var(--ink); cursor: pointer; margin: 0;
 }
 .segment input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
 .segment span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
-.segment:has(input:checked) { background: var(--seg-aktiv); color: var(--ink); font-weight: 700; box-shadow: var(--shadow-sm); }
+.segment:has(input:checked) { font-weight: 600; }
 .segment:has(input:disabled) { opacity: .4; cursor: not-allowed; }
 .segment:has(input:disabled) input { cursor: not-allowed; }
-.segment:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 1px; }
+.segment:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 2px; }
 /* Beim Umsetzen koennen es zwanzig Startzeiten sein: sie brechen um, statt
    in eine Leiste gequetscht zu werden. */
 .umsetz-zeiten .segment-leiste { flex-wrap: wrap; }
 .umsetz-zeiten .segment { flex: 0 0 auto; min-width: 64px; }
 
-.mitspieler .feldname { margin: 0 0 8px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
-.mitspieler .feldname .umfang { font-weight: 500; color: var(--muted); }
+.mitspieler .feldname .umfang { font-weight: 500; }
 .chips, .marken { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .marken { list-style: none; margin: 0; padding: 0; }
 .chip {
   display: inline-flex; align-items: center; gap: 8px; height: 40px;
-  padding: 0 14px 0 4px; border-radius: 20px; background: var(--surf-2);
-  font-size: 14.5px; font-weight: 600; color: var(--ink);
+  padding: 0 14px 0 4px; border-radius: 20px; background: var(--surf-2); border: 1px solid var(--line);
+  font-family: var(--font-display); font-size: 15px; font-weight: 500; color: var(--ink);
 }
+.chip:not(:has(.avatar)) { padding-left: 16px; }
 .chip .avatar { width: 32px; height: 32px; border-radius: 16px; font-size: 12px; }
 .chip.ich .avatar { background: var(--gold); color: var(--on-gold); }
 .chip.gast .avatar { background: var(--surf-3); color: var(--ink-2); }
@@ -1183,32 +1188,33 @@ li.chip { padding-right: 4px; }
   color: var(--ink-2); font-size: 18px; line-height: 1; cursor: pointer;
 }
 .chip button:hover { background: var(--surf-3); }
-.hinzu { display: flex; gap: 8px; margin-top: 10px; }
-.gestrichelt {
-  flex: 1 1 0; min-height: 46px; border-radius: 14px; border: 1.5px dashed var(--line-2);
-  background: transparent; color: var(--ink); font: inherit; font-size: 15px; font-weight: 600;
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+.chips { margin-bottom: 10px; }
+.mitspieler .suche { position: relative; }
+.mitspieler .suche .lupe { position: absolute; left: 18px; top: 17px; width: 20px; height: 20px; color: var(--muted); pointer-events: none; }
+.mitspieler .suche input {
+  width: 100%; min-height: 54px; padding-left: 48px; border-radius: var(--radius-feld);
+  background: var(--surf-2); border: 1px solid var(--line-2); font-size: 16px;
 }
-.gestrichelt:hover { border-color: var(--blue); }
-/* Es fehlt noch jemand: "+ Mitglied" ist der naechste Schritt, nicht der Gast. */
-.gestrichelt.gefragt {
-  border-style: solid; border-color: var(--blue); color: var(--blue-ink);
-  background: color-mix(in srgb, var(--blue) 7%, transparent);
+/* Es fehlt noch jemand: das Suchfeld ist der nächste Schritt, nicht der Gast. */
+.mitspieler .suche.gefragt input { border-color: var(--blue); }
+.gast-link {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 6px; padding: 0;
+  border: 0; background: transparent; cursor: pointer;
+  font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--blue-ink);
 }
-.gestrichelt svg { width: 16px; height: 16px; }
-.mitspieler .suche { margin-top: 10px; }
+.gast-link svg { width: 18px; height: 18px; }
+.gast-link:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 8px; }
 .mitspieler .gasthinweis { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
 
 /* label.gesucht-karte: die aeltere Regel .fenster-inhalt > label waere sonst staerker */
 .fenster-inhalt > label.gesucht-karte, .gesucht-karte {
-  display: flex; align-items: center; gap: 14px; margin: 0;
-  padding: 14px 16px; border-radius: 18px; background: var(--surf-2); cursor: pointer;
+  display: flex; align-items: flex-start; gap: 14px; margin: 0;
+  padding: 0; background: transparent; cursor: pointer;
 }
-.gesucht-karte > span { display: grid; gap: 2px; flex: 1; }
-.gesucht-karte b { font-size: 16px; }
+.gesucht-karte > span { display: grid; gap: 6px; flex: 1; }
+.gesucht-karte b { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
 /* "Nur für …" unter dem Schalter: Damen/Herren und LK-Bereich */
 fieldset.suchfilter { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 10px; }
-fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
 .lk-bereich { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; gap: 10px; }
 .lk-bereich label { display: grid; gap: 4px; margin: 0; }
 .lk-bereich input { width: 100%; font-variant-numeric: tabular-nums; }
@@ -1217,7 +1223,7 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
 .suchfilter-block { display: grid; gap: 10px; justify-items: start; }
 .suchfilter-block > fieldset { justify-self: stretch; }
 .offen-filter { font-weight: 700; color: var(--blue-ink); }
-.gesucht-karte small { font-size: 13px; line-height: 1.4; color: var(--muted); }
+.gesucht-karte small { font-size: 14px; line-height: 1.5; color: var(--ink-2); }
 .schalter-feld {
   appearance: none; -webkit-appearance: none; position: relative; flex: 0 0 auto;
   width: 52px; height: 32px; margin: 0; border-radius: 16px; cursor: pointer;
@@ -1233,7 +1239,7 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
 .schalter-feld:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .schalter-feld:disabled { opacity: .5; cursor: not-allowed; }
 
-.blatt-fuss { display: grid; gap: 10px; }
+.blatt-fuss { display: grid; gap: 10px; border-top: 1px solid var(--line); margin: 4px -20px 0; padding: 16px 20px 0; }
 .blatt-fuss .hinweis { margin: 0; }
 /* Der nächste Schritt über dem gesperrten Knopf: in Schrift, nicht im
    Grau des Knopfs, damit klar ist, was fehlt (U65). */
