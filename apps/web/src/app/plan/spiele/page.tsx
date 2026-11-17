@@ -36,6 +36,11 @@ export default async function SpieleSeite() {
       <section className="spiele-abschnitt meine" aria-labelledby="h-meine">
         <div className="sectionlabel">
           <h2 id="h-meine">Deine Termine</h2>
+          {!meineRes.error && (meineRes.data ?? []).length > 0 && (
+            <span className="neben">
+              {(meineRes.data ?? []).length} {(meineRes.data ?? []).length === 1 ? "Buchung" : "Buchungen"}
+            </span>
+          )}
         </div>
         {meineRes.error ? (
           <Fehlerzustand kompakt titel="Deine Buchungen konnten nicht geladen werden." text={translateDbError(meineRes.error)} />
@@ -47,6 +52,7 @@ export default async function SpieleSeite() {
       <section className="spiele-abschnitt offen" aria-labelledby="h-offen">
         <div className="sectionlabel">
           <h2 id="h-offen">Offene Spiele</h2>
+          <span className="kicker">Mitspieler gesucht</span>
         </div>
         {offenRes.error ? (
           <Fehlerzustand kompakt titel="Die offenen Spiele konnten nicht geladen werden." text={translateDbError(offenRes.error)} />

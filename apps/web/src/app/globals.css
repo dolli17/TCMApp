@@ -1131,6 +1131,29 @@ button.beleg:hover, button.beleg:focus-visible {
 }
 
 /* --- Spiele --------------------------------------------------------------- */
+/* Entwurf "Meine & offene Spiele": je Termin eine Karte - Zeit groß, Marke
+   rechts, eine Zeile wo und mit wem, im Fuß hinter einer Linie die Handlung. */
+.sectionlabel { align-items: baseline; gap: 12px; }
+.sectionlabel .neben { font-size: 13.5px; color: var(--muted); }
+.sectionlabel .kicker { font-size: 11px; }
+.terminliste { gap: 12px; }
+.spiel-karte { display: grid; gap: 6px; padding: 20px 22px 8px; box-shadow: none; }
+.spiel-karte .kopf { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.spiel-karte .zeit { font-size: 28px; font-weight: 700; letter-spacing: -.6px; line-height: 1.1; }
+.spiel-karte .wo { margin: 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.spiel-karte .wo strong { color: var(--ink); font-weight: 600; }
+.spiel-karte .hinweis { margin: 6px 0 0; }
+.spiel-karte .fuss {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  min-height: 52px; margin-top: 10px; padding: 4px 0; border-top: 1px solid var(--line);
+}
+.spiel-karte .fuss .mit { font-size: 13px; color: var(--muted); }
+.spiel-karte .fuss .leise-rot { font-family: var(--font-display); font-size: 15px; font-weight: 600; padding: 0; }
+.spiel-karte .fuss .knopf-paar { flex: 1; padding: 6px 0 8px; }
+.spiel-karte .fuss .knopf-paar .knopf { min-height: 44px; }
+.terminliste .offen-karte { align-items: flex-start; }
+.offen-karte .text strong { font-size: 15px; font-weight: 600; }
+
 .spiele-abschnitt .sectionlabel { margin-top: var(--space-l); }
 .spiele-abschnitt + .spiele-abschnitt .sectionlabel { margin-top: var(--space-abschnitt); }
 
@@ -1282,7 +1305,7 @@ li.chip { padding-right: 4px; }
 .mitspieler.zeilen .chip button { width: 44px; height: 44px; border-radius: 22px; flex: 0 0 auto; color: var(--muted); }
 .mitspieler.zeilen .chip.leer .avatar { border: 1.5px dashed var(--line-2); color: var(--muted); }
 .mitspieler.zeilen .chip.leer .avatar svg { width: 20px; height: 20px; }
-.mitspieler.zeilen .chip.leer .name { font-style: italic; font-weight: 500; }
+.mitspieler.zeilen .chip.leer .name { font-style: italic; font-weight: 500; text-align: left; }
 .mitspieler.zeilen .suche input { background: var(--surf); }
 .mitspieler.zeilen > .chips:last-child { margin-bottom: 0; }
 .mitspieler .suche { position: relative; }

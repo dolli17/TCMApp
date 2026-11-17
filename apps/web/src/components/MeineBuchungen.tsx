@@ -93,35 +93,31 @@ export function MeineBuchungen({ buchungen, jetzt }: {
           const vorbei = bis.getTime() <= new Date(jetzt).getTime();
 
           return (
-            <li key={b.booking_id} className="mcard termin">
-              <div className="termin-zeit">
-                <b className="dpl">{UHR.format(von)}</b>
-                <span>{TAG.format(von)}</span>
+            <li key={b.booking_id} className="karte spiel-karte">
+              {/* Entwurf "Meine & offene Spiele": groß die Zeit, rechts die Marke,
+                  darunter Tag, Platz und Mitspieler; im Fuß die eine Handlung. */}
+              <div className="kopf">
+                <b className="zeit dpl tnum">{UHR.format(von)} – {UHR.format(bis)}</b>
+                <span className="dein-marker">{b.bin_bucher ? "Dein Spiel" : "Du bist dabei"}</span>
               </div>
+              <p className="wo">
+                <strong>{TAG.format(von)}</strong> · {b.court_name ?? "Platz"} ·{" "}
+                {b.kind === "blocking" ? (b.title ?? b.type_name) : b.type_name}
+                {!b.bin_bucher && b.owner_name ? ` · gebucht von ${b.owner_name}` : ""}
+                {b.players.length > 0 ? ` · mit ${b.players.join(", ")}` : ""}
+              </p>
+              {offen && !b.bin_bucher && (
+                <p className="hinweis" role="alert">
+                  Trägst du dich aus, wird die ganze Buchung storniert. Alle Beteiligten werden
+                  benachrichtigt.
+                </p>
+              )}
 
-              <div className="termin-text">
-                <strong>{b.court_name ?? "Platz"}</strong>{" "}
-                <span className="tnum">
-                  {UHR.format(von)}–{UHR.format(bis)}
-                </span>
-                <div className="mit">
-                  {b.kind === "blocking" ? (b.title ?? b.type_name) : b.type_name}
-                  {!b.bin_bucher && b.owner_name ? ` · gebucht von ${b.owner_name}` : ""}
-                  {b.players.length > 0 ? ` · mit ${b.players.join(", ")}` : ""}
-                </div>
-                {offen && !b.bin_bucher && (
-                  <p className="hinweis" role="alert">
-                    Trägst du dich aus, wird die ganze Buchung storniert. Alle Beteiligten werden
-                    benachrichtigt.
-                  </p>
-                )}
-              </div>
-
-              <div className="termin-tat">
+              <div className="fuss">
                 {!moeglich ? (
                   <span className="mit">{vorbei ? "Vorbei" : "Läuft"}</span>
                 ) : offen ? (
-                  <>
+                  <div className="knopf-paar">
                     <button
                       type="button"
                       className="knopf gefahr klein"
@@ -138,16 +134,19 @@ export function MeineBuchungen({ buchungen, jetzt }: {
                     >
                       Abbrechen
                     </button>
-                  </>
+                  </div>
                 ) : (
-                  <button
-                    type="button"
-                    className="knopf leise klein"
-                    disabled={laeuft}
-                    onClick={() => setNachfrage(b.booking_id)}
-                  >
-                    {b.bin_bucher ? "Stornieren" : "Austragen"}
-                  </button>
+                  <>
+                    <span className="mit">{b.bin_bucher ? "Stornieren geht bis Spielbeginn" : ""}</span>
+                    <button
+                      type="button"
+                      className="leise-rot"
+                      disabled={laeuft}
+                      onClick={() => setNachfrage(b.booking_id)}
+                    >
+                      {b.bin_bucher ? "Stornieren" : "Austragen"}
+                    </button>
+                  </>
                 )}
               </div>
             </li>

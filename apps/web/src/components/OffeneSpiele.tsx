@@ -23,12 +23,8 @@ export interface OffenesSpiel {
   fuer?: string | null;
 }
 
-const TAG = new Intl.DateTimeFormat("de-DE", {
-  weekday: "long",
-  day: "2-digit",
-  month: "long",
-  timeZone: "Europe/Berlin",
-});
+const WOCHENTAG = new Intl.DateTimeFormat("de-DE", { weekday: "long", timeZone: "Europe/Berlin" });
+const DATUM = new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "long", timeZone: "Europe/Berlin" });
 
 const UHR = new Intl.DateTimeFormat("de-DE", {
   hour: "2-digit",
@@ -95,39 +91,36 @@ export function OffeneSpiele({
           });
 
           return (
-            <li key={s.booking_id} className="mcard termin">
-              <div className="termin-zeit">
-                <b className="dpl">{UHR.format(von)}</b>
-                <span>{TAG.format(von)}</span>
-              </div>
-
-              <div className="termin-text">
+            <li key={s.booking_id} className="karte offen-karte">
+              {/* Wie auf der Startseite: Tag und Zeit mit Spielform, darunter Platz und wer sucht */}
+              <div className="text">
+                <div className="wann">
+                  <b className="tnum">{WOCHENTAG.format(von)}, {UHR.format(von)}</b>
+                  <span className="marke-klein">{s.type_name}</span>
+                </div>
                 <strong>{text.kopf}</strong>
-                <div className="mit">
-                  {s.court_name ?? "Platz"} ·{" "}
+                <small>
+                  {DATUM.format(von)} · {s.court_name ?? "Platz"} ·{" "}
                   <span className="tnum">
                     {UHR.format(von)}–{UHR.format(bis)}
-                  </span>{" "}
-                  · {s.type_name}
-                </div>
-                {zusatz && <div className="mit offen-filter">{zusatz}</div>}
-                {text.dabei && <div className="mit">{text.dabei}</div>}
+                  </span>
+                </small>
+                {zusatz && <small className="offen-filter">{zusatz}</small>}
+                {text.dabei && <small>{text.dabei}</small>}
               </div>
 
-              <div className="termin-tat">
-                {s.bin_dabei ? (
-                  <span className="mit">Du bist dabei</span>
-                ) : !darf.join ? null : (
-                  <button
-                    type="button"
-                    className="knopf klein"
-                    disabled={laeuft}
-                    onClick={() => beitreten(s.booking_id)}
-                  >
-                    Mitspielen
-                  </button>
-                )}
-              </div>
+              {s.bin_dabei ? (
+                <span className="dein-marker">Du bist dabei</span>
+              ) : !darf.join ? null : (
+                <button
+                  type="button"
+                  className="knopf klein"
+                  disabled={laeuft}
+                  onClick={() => beitreten(s.booking_id)}
+                >
+                  Mitspielen
+                </button>
+              )}
             </li>
           );
         })}
