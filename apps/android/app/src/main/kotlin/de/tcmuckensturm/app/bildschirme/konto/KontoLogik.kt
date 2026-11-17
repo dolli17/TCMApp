@@ -15,9 +15,9 @@ import de.tcmuckensturm.app.daten.Arbeitsdienst
 import de.tcmuckensturm.app.daten.EigenesGetraenk
 import de.tcmuckensturm.app.daten.Forderung
 import de.tcmuckensturm.app.daten.MeinMandat
+import de.tcmuckensturm.app.daten.MeinProfil
 import de.tcmuckensturm.app.daten.MeineEinladung
 import de.tcmuckensturm.app.daten.MeineMannschaft
-import de.tcmuckensturm.app.daten.MeinProfil
 import de.tcmuckensturm.app.daten.MerkmalZeile
 import de.tcmuckensturm.app.daten.OnboardingZustand
 import de.tcmuckensturm.kern.Forderungen

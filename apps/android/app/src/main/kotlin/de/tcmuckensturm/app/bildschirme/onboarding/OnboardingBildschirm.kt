@@ -46,12 +46,16 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,18 +71,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
-import de.tcmuckensturm.app.bildschirme.Kapsel
-import de.tcmuckensturm.app.bildschirme.Kicker
 import de.tcmuckensturm.app.bildschirme.Hauptknopf
 import de.tcmuckensturm.app.bildschirme.Hinweis
+import de.tcmuckensturm.app.bildschirme.Kapsel
+import de.tcmuckensturm.app.bildschirme.Kicker
 import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.bildschirme.LeiserKnopf
 import de.tcmuckensturm.app.daten.Abschluss
 import de.tcmuckensturm.app.daten.Ergebnis
 import de.tcmuckensturm.app.daten.Kontodaten
 import de.tcmuckensturm.app.daten.Meldung
-import de.tcmuckensturm.app.daten.Onboardingdaten
 import de.tcmuckensturm.app.daten.OnboardingZustand
+import de.tcmuckensturm.app.daten.Onboardingdaten
 import de.tcmuckensturm.app.push.PushSchalter
 import de.tcmuckensturm.app.start.LocalSitzung
 import de.tcmuckensturm.app.start.Sitzung
@@ -290,7 +294,7 @@ fun OnboardingAnsicht(
     abmelden: () -> Unit,
     pushSchalter: @Composable (String) -> Unit,
 ) {
-    val fuss: @Composable () -> Unit = { OnboardingFusszeile(webLink, abmelden) }
+    val fuss: @Composable () -> Unit = { OnboardingFusszeile(webLink) }
     when (val laden = stand.laden) {
         OnboardingLaden.Laeuft -> Box(
             Modifier.fillMaxSize().background(TcmTheme.farben.bg),
@@ -299,7 +303,7 @@ fun OnboardingAnsicht(
             CircularProgressIndicator(color = TcmTheme.farben.blue)
         }
         is OnboardingLaden.Fehler ->
-            OnboardingRahmen(OnboardingLogik.KICKER, "Das hat nicht geklappt", fusszeile = fuss) {
+            OnboardingRahmen(OnboardingLogik.KICKER, "Das hat nicht geklappt", fusszeile = fuss, abmelden = abmelden) {
                 Fehlerzeile(laden.text, erneut = erneut)
             }
         is OnboardingLaden.Da -> {
@@ -326,6 +330,7 @@ fun OnboardingAnsicht(
                 titel = info.titel,
                 fortschritt = OnboardingLogik.fortschritt(schritte, index),
                 fusszeile = fuss,
+                abmelden = abmelden,
             ) {
                 Text(
                     OnboardingLogik.einleitung(aktuell, zustand.minderjaehrig),
@@ -354,66 +359,82 @@ fun OnboardingAnsicht(
 
 // ---- Rahmen -----------------------------------------------------------------
 
-/** Kopf mit Kicker, Titel und Fortschritt, darunter der Inhalt und die Fusszeile. */
+/** Wohin die Knoepfe eines Schritts wandern: in den festen Fuss des Rahmens. */
+class Fussplatz {
+    var inhalt by mutableStateOf<(@Composable () -> Unit)?>(null)
+}
+
+val LocalFussplatz = compositionLocalOf<Fussplatz?> { null }
+
+/**
+ * Oben eine Zeile mit Kicker und "Abmelden", darunter der durchgehende
+ * Fortschrittsbalken und der Titel; der Inhalt rollt, die Knoepfe des
+ * Schritts stehen unten fest (Entwuerfe "onboarding-*").
+ */
 @Composable
 fun OnboardingRahmen(
     kicker: String,
     titel: String,
     fortschritt: List<OnboardingLogik.Fortschritt>? = null,
     fusszeile: @Composable () -> Unit = {},
+    abmelden: (() -> Unit)? = null,
     inhalt: @Composable ColumnScope.() -> Unit,
 ) {
     val f = TcmTheme.farben
+    val platz = remember { Fussplatz() }
     Column(
         Modifier
             .fillMaxSize()
             .background(f.bg)
             // Statusleiste, Navigationsleiste und Tastatur (adjustResize, Edge-to-Edge)
-            .safeDrawingPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(start = Abstand.rand, end = Abstand.rand, bottom = Abstand.abschnitt),
-        verticalArrangement = Arrangement.spacedBy(Abstand.m),
+            .safeDrawingPadding(),
     ) {
-        Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Kicker(kicker)
-            Text(
-                titel,
-                style = TcmSchrift.display(Schrift.gewichtFett, 30.sp, Schrift.laufweiteTitel).copy(lineHeight = 34.sp),
-                color = f.ink,
-                modifier = Modifier.semantics { heading() },
-            )
+        Column(Modifier.padding(horizontal = Abstand.rand).padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+                Kicker(kicker, Modifier.weight(1f))
+                if (abmelden != null) Verweis("Abmelden", aktion = abmelden)
+            }
             if (fortschritt != null) {
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 6.dp).clearAndSetSemantics {},
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    for (s in fortschritt) {
-                        val farbe = when (s) {
-                            OnboardingLogik.Fortschritt.JETZT -> f.blue
-                            OnboardingLogik.Fortschritt.ERLEDIGT -> f.blue.copy(alpha = 0.45f)
-                            OnboardingLogik.Fortschritt.OFFEN -> f.surf3
-                        }
-                        Box(Modifier.weight(1f).height(5.dp).background(farbe, Kapsel))
-                    }
+                // Ein Balken, kein Raster: so weit ist man.
+                val anteil = fortschritt.count { it != OnboardingLogik.Fortschritt.OFFEN }.toFloat() / fortschritt.size.coerceAtLeast(1)
+                Box(Modifier.fillMaxWidth().height(4.dp).background(f.surf3, Kapsel).clearAndSetSemantics {}) {
+                    Box(Modifier.fillMaxWidth(anteil).height(4.dp).background(f.blue, Kapsel))
                 }
             }
         }
-        inhalt()
-        fusszeile()
+        Column(
+            Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(start = Abstand.rand, end = Abstand.rand, top = 22.dp, bottom = Abstand.abschnitt),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            Text(
+                titel,
+                style = TcmSchrift.display(Schrift.gewichtFett, 32.sp, Schrift.laufweiteTitel).copy(lineHeight = 36.sp),
+                color = f.ink,
+                modifier = Modifier.semantics { heading() },
+            )
+            CompositionLocalProvider(LocalFussplatz provides platz) { inhalt() }
+            fusszeile()
+        }
+        platz.inhalt?.let { knoepfe ->
+            Box(Modifier.fillMaxWidth().height(1.dp).background(f.line))
+            Box(Modifier.padding(horizontal = Abstand.rand).padding(top = 14.dp, bottom = 14.dp)) { knoepfe() }
+        }
     }
 }
 
-/** Datenschutz und Impressum, und vor allem: Abmelden. */
+/** Datenschutz und Impressum; "Abmelden" steht oben rechts. */
 @Composable
-private fun OnboardingFusszeile(webLink: (String) -> String?, abmelden: () -> Unit) {
+private fun OnboardingFusszeile(webLink: (String) -> String?) {
     val links = LocalUriHandler.current
     Row(
-        Modifier.fillMaxWidth().padding(top = Abstand.l),
+        Modifier.fillMaxWidth().padding(top = Abstand.s),
         horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally),
     ) {
         webLink("/datenschutz")?.let { Verweis("Datenschutz") { links.openUri(it) } }
         webLink("/impressum")?.let { Verweis("Impressum") { links.openUri(it) } }
-        Verweis("Abmelden", rot = true, aktion = abmelden)
     }
 }
 
@@ -456,9 +477,11 @@ fun OnboardingKnoepfe(
         }
     }
 
-    Column(Modifier.padding(top = Abstand.s), verticalArrangement = Arrangement.spacedBy(Abstand.s)) {
+    val speichernJetzt by rememberUpdatedState(speichern)
+    val knoepfe: @Composable () -> Unit = {
+    Column(verticalArrangement = Arrangement.spacedBy(Abstand.s)) {
         meldung?.let { Hinweis(it) }
-        Hauptknopf(if (laeuft) "Wird gespeichert…" else weiterText, gesperrt = laeuft || gesperrt) { los(speichern) }
+        Hauptknopf(if (laeuft) "Wird gespeichert…" else weiterText, gesperrt = laeuft || gesperrt) { los { speichernJetzt() } }
         val zurueck = k.zurueck
         val ueberspringen = k.ueberspringen
         if (zurueck != null || ueberspringen != null) {
@@ -470,6 +493,18 @@ fun OnboardingKnoepfe(
                     Box(Modifier.weight(1f)) { LeiserKnopf("Überspringen", gesperrt = laeuft) { los(ueberspringen) } }
                 }
             }
+        }
+    }
+    }
+    // Im Rahmen stehen die Knoepfe unten fest; ohne Rahmen (Tests einzelner Schritte) am Ende des Inhalts.
+    val platz = LocalFussplatz.current
+    if (platz == null) {
+        knoepfe()
+    } else {
+        val aktuell by rememberUpdatedState(knoepfe)
+        DisposableEffect(platz) {
+            platz.inhalt = { aktuell() }
+            onDispose { platz.inhalt = null }
         }
     }
 }

@@ -229,16 +229,19 @@ fun KontoFeld(
     gross: KeyboardCapitalization = KeyboardCapitalization.Sentences,
     mehrzeilig: Boolean = false,
     gesperrt: Boolean = false,
+    /** Etwa die Lupe vor einem Suchfeld. */
+    symbol: ImageVector? = null,
 ) {
     val f = TcmTheme.farben
     val form = RoundedCornerShape(Radius.feld)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(7.dp)) {
         // Das Feld traegt die Beschriftung selbst; TalkBack soll sie nicht zweimal lesen.
+        // Feldname als Kicker in Versalien.
         Text(
-            label,
-            style = TcmSchrift.text(Schrift.gewichtHalbfett, Schrift.klein),
-            color = if (fehler != null) f.red else f.ink2,
-            modifier = Modifier.clearAndSetSemantics {},
+            label.uppercase(),
+            style = TcmSchrift.kicker,
+            color = if (fehler != null) f.red else f.muted,
+            modifier = Modifier.padding(start = 4.dp).clearAndSetSemantics {},
         )
         BasicTextField(
             value = wert,
@@ -260,6 +263,12 @@ fun KontoFeld(
                     if (inhaltsTyp != null) contentType = inhaltsTyp
                     if (fehler != null) error(fehler)
                 },
+            decorationBox = { feld ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (symbol != null) Icon(symbol, contentDescription = null, tint = f.muted, modifier = Modifier.size(20.dp))
+                    Box(Modifier.weight(1f)) { feld() }
+                }
+            },
         )
         if (fehler != null) Hinweis(fehler)
     }
@@ -333,7 +342,7 @@ fun BlattKopf(titel: String, zu: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             titel,
-            style = TcmSchrift.display(Schrift.gewichtFett, Schrift.titel),
+            style = TcmSchrift.display(Schrift.gewichtFett, 30.sp, (-0.6).sp).copy(lineHeight = 34.sp),
             color = f.ink,
             modifier = Modifier.weight(1f).semantics { heading() },
         )

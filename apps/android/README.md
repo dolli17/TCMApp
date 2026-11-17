@@ -43,6 +43,14 @@ Die ersten vier aus Robolectric mit `fontScale = 2f`, die `geraet-*.png` aus dem
 |---|---|---|---|---|
 | ![Buchen dunkel](docs/plaetze-buchen-dunkel.png) | ![Eigene Buchung hell](docs/plaetze-eigene-buchung-hell.png) | ![Eigene Buchung dunkel](docs/plaetze-eigene-buchung-dunkel.png) | ![Mitspielen](docs/plaetze-mitspielen.png) | ![Sperrung](docs/plaetze-sperrung.png) |
 
+Das Buchungsblatt folgt im Aufbau den Entwürfen `blatt-*`: großer Titel, Abschnitte mit Kicker,
+Pillengitter, die Hauptaktion unten fest. Stornieren, Umsetzen und Sperren sind eigene Ansichten
+im Blatt:
+
+| Stornieren | Umsetzen | Umsetzen dunkel | Sperrung bearbeiten | Stattdessen sperren |
+| --- | --- | --- | --- | --- |
+| ![Stornieren](docs/plaetze-stornieren-bestaetigen.png) | ![Umsetzen](docs/plaetze-umsetzen-hell.png) | ![Umsetzen dunkel](docs/plaetze-umsetzen-dunkel.png) | ![Sperrung bearbeiten](docs/plaetze-sperrung-bearbeiten.png) | ![Sperren](docs/plaetze-sperren.png) |
+
 Beispieldaten aus `PlatzAttrappe` (`PlaetzeBildschirmfotoTest`), ohne Netz. Das Buchungsblatt
 erscheint in den Bildern ohne das Fenster des `ModalBottomSheet`.
 

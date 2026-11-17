@@ -27,6 +27,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,9 +48,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -269,6 +271,35 @@ fun Fehlerzeile(text: String, laeuft: Boolean = false, erneut: (() -> Unit)? = n
         Text(text, style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal), color = f.redInk)
         if (erneut != null) {
             LeiserKnopf(if (laeuft) "Wird geladen…" else "Erneut versuchen", rot = true, klein = true, gesperrt = laeuft, aktion = erneut)
+        }
+    }
+}
+
+/**
+ * Nichts geladen und nichts zu zeigen (Entwurf "verein-fehlerzustand"): mittig
+ * ein Symbol im Kreis, die Meldung und "Erneut versuchen" als leiser Knopf.
+ * Steht schon Inhalt da, genuegt die Fehlerzeile darueber.
+ */
+@Composable
+fun Fehlerzustand(text: String, laeuft: Boolean = false, modifier: Modifier = Modifier, erneut: (() -> Unit)? = null) {
+    val f = TcmTheme.farben
+    Column(
+        modifier.fillMaxWidth().padding(top = 72.dp, bottom = 40.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Box(Modifier.size(56.dp).background(f.surf2, CircleShape), contentAlignment = Alignment.Center) {
+            Icon(Icons.Outlined.Info, contentDescription = null, tint = f.ink2, modifier = Modifier.size(26.dp))
+        }
+        Text(
+            text,
+            style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.titel),
+            color = f.ink,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        )
+        if (erneut != null) {
+            LeiserKnopf(if (laeuft) "Wird geladen…" else "Erneut versuchen", breit = false, gesperrt = laeuft, aktion = erneut)
         }
     }
 }

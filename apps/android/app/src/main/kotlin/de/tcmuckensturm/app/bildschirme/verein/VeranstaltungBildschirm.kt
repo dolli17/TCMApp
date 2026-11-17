@@ -31,13 +31,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -47,11 +48,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableIntState
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -64,11 +66,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -77,8 +82,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
+import de.tcmuckensturm.app.bildschirme.Fehlerzustand
 import de.tcmuckensturm.app.bildschirme.Hauptknopf
 import de.tcmuckensturm.app.bildschirme.Hinweis
+import de.tcmuckensturm.app.bildschirme.Kicker
 import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.bildschirme.LeiserKnopf
 import de.tcmuckensturm.app.bildschirme.Zweitknopf
@@ -199,8 +206,19 @@ fun VeranstaltungSeite(stand: VeranstaltungStand, jetzt: Instant, aktionen: Vera
     val kompakt by remember { derivedStateOf { kopfHoehe > 0 && scroll.value > kopfHoehe * 2 / 3 } }
     val titelSichtbar by animateFloatAsState(if (kompakt) 1f else 0f, label = "titel")
     val titel = stand.detail?.event?.title
+    val ereignis = stand.detail?.event
+    // Neu aufgebaut, wenn sich der eigene Stand aendert: das Formular startet mit dem neuen Stand.
+    val form = key(ereignis?.meinStatus, ereignis?.meineBegleitpersonen, ereignis?.meineBemerkung, ereignis?.status) {
+        val dabei = ereignis != null && VereinLogik.dabei(ereignis)
+        Anmeldeform(
+            begleitung = rememberSaveable { mutableIntStateOf(if (dabei) ereignis?.meineBegleitpersonen ?: 0 else 0) },
+            bemerkung = rememberSaveable { mutableStateOf(if (dabei) ereignis?.meineBemerkung ?: "" else "") },
+            bearbeiten = rememberSaveable { mutableStateOf(false) },
+            frage = rememberSaveable { mutableStateOf(false) },
+        )
+    }
 
-    Column(Modifier.fillMaxSize().background(f.bg)) {
+    Column(Modifier.fillMaxSize().background(f.bg).imePadding()) {
         // Die Leiste: hell wie die Seite, Zurueck als runder Knopf; der Titel erscheint beim Rollen.
         Row(
             Modifier
@@ -228,8 +246,17 @@ fun VeranstaltungSeite(stand: VeranstaltungStand, jetzt: Instant, aktionen: Vera
             )
         }
         PullToRefreshBox(isRefreshing = stand.aktualisiert, onRefresh = aktionen.nachladen, modifier = Modifier.weight(1f)) {
-            // imePadding: das Feld "Bemerkung" rollt ueber die Tastatur.
-            Column(Modifier.fillMaxSize().imePadding().verticalScroll(scroll)) {
+            Column(Modifier.fillMaxSize().verticalScroll(scroll)) {
+                // Die Art steht als Marke ueber dem Titel.
+                ereignis?.let { e ->
+                    FlowRow(
+                        Modifier.padding(horizontal = Abstand.rand).padding(top = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        for (m in VereinLogik.marken(e, jetzt)) MarkeKlein(m.text, m.ton)
+                    }
+                }
                 Kopf(titel, Modifier.onSizeChanged { kopfHoehe = it.height })
                 Column(
                     Modifier
@@ -238,18 +265,58 @@ fun VeranstaltungSeite(stand: VeranstaltungStand, jetzt: Instant, aktionen: Vera
                     verticalArrangement = Arrangement.spacedBy(Abstand.m),
                 ) {
                     val d = stand.detail
-                    stand.fehler?.let { Fehlerzeile(it, stand.aktualisiert, aktionen.nachladen) }
+                    stand.fehler?.let {
+                        if (d == null) Fehlerzustand(it, stand.aktualisiert, erneut = aktionen.nachladen) else Fehlerzeile(it, stand.aktualisiert, aktionen.nachladen)
+                    }
                     when {
                         stand.laedt && d == null -> Box(
                             Modifier.fillMaxWidth().padding(top = 40.dp),
                             contentAlignment = Alignment.Center,
                         ) { CircularProgressIndicator(color = f.muted) }
-                        d != null -> Inhalt(d, jetzt, stand, aktionen)
+                        d != null -> Inhalt(d, jetzt, stand, aktionen, form)
                         stand.fehler == null -> Leise("Diese Veranstaltung gibt es nicht (mehr).")
                     }
                 }
             }
         }
+        // Unten fest: die eine Hauptaktion - anmelden oder die Aenderung speichern.
+        stand.detail?.let { d -> AnmeldeFuss(d.event, jetzt, stand, aktionen, form) }
+    }
+}
+
+/** Was das Formular gerade haelt; lebt ueber Karte und Fuss hinweg. */
+private class Anmeldeform(
+    val begleitung: MutableIntState,
+    val bemerkung: MutableState<String>,
+    val bearbeiten: MutableState<Boolean>,
+    val frage: MutableState<Boolean>,
+)
+
+@Composable
+private fun AnmeldeFuss(e: MitgliedEvent, jetzt: Instant, stand: VeranstaltungStand, aktionen: VeranstaltungAktionen, form: Anmeldeform) {
+    val f = TcmTheme.farben
+    val dabei = VereinLogik.dabei(e)
+    val aendern = dabei && form.bearbeiten.value
+    val anmelden = !dabei && Veranstaltungen.eventAnmeldbar(e, jetzt)
+    if (!aendern && !anmelden) return
+    val begleitung = form.begleitung.intValue
+    Box(Modifier.fillMaxWidth().height(1.dp).background(f.line))
+    Column(
+        Modifier.fillMaxWidth().background(f.bg).navigationBarsPadding().padding(horizontal = Abstand.rand).padding(top = 14.dp, bottom = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (!aendern && Veranstaltungen.eventNurWarteliste(e, begleitung)) Leise(VereinLogik.wartelisteVorab(begleitung))
+        Hauptknopf(
+            text = if (aendern) VereinLogik.aenderungKnopf(e, begleitung) else Veranstaltungen.eventAnmeldenKnopf(e, begleitung),
+            gesperrt = stand.laeuft,
+        ) {
+            if (aendern) {
+                aktionen.aendere(begleitung, form.bemerkung.value) { form.bearbeiten.value = false }
+            } else {
+                aktionen.meldeAn(begleitung, form.bemerkung.value) {}
+            }
+        }
+        if (aendern) LeiserKnopf("Abbrechen") { form.bearbeiten.value = false }
     }
 }
 
@@ -269,12 +336,15 @@ private fun Kopf(titel: String?, modifier: Modifier) {
 }
 
 @Composable
-private fun ColumnScope.Inhalt(d: VeranstaltungDetail, jetzt: Instant, stand: VeranstaltungStand, aktionen: VeranstaltungAktionen) {
+private fun ColumnScope.Inhalt(
+    d: VeranstaltungDetail,
+    jetzt: Instant,
+    stand: VeranstaltungStand,
+    aktionen: VeranstaltungAktionen,
+    form: Anmeldeform,
+) {
     val f = TcmTheme.farben
     val e = d.event
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        for (m in VereinLogik.marken(e, jetzt)) MarkeKlein(m.text, m.ton)
-    }
     Text(
         Veranstaltungen.eventLangeZeit(e.startsAt, e.endsAt),
         style = TcmSchrift.text(Schrift.gewichtNormal, 14.sp),
@@ -293,53 +363,57 @@ private fun ColumnScope.Inhalt(d: VeranstaltungDetail, jetzt: Instant, stand: Ve
         )
     }
 
-    // Neu aufgebaut, wenn sich der eigene Stand aendert: das Formular startet mit dem neuen Stand.
-    key(e.meinStatus, e.meineBegleitpersonen, e.meineBemerkung, e.status) {
-        AnmeldungKarte(d, jetzt, stand, aktionen)
-    }
+    AnmeldungKarte(d, jetzt, stand, aktionen, form)
 }
 
 // ---- Eckdaten ------------------------------------------------------------------
 
+/** Die Eckdaten als Karte: je Zeile links der Kicker, rechts der Wert; Linien dazwischen. */
 @Composable
 private fun Eckdaten(e: MitgliedEvent) {
     val f = TcmTheme.farben
-    Column(Modifier.fillMaxWidth().karte(padding = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Eckdatum("Wann", Veranstaltungen.eventZeitText(e.startsAt, e.endsAt))
+    val zeilen = buildList<@Composable () -> Unit> {
+        add { Eckdatum("Wann", Veranstaltungen.eventZeitText(e.startsAt, e.endsAt)) }
         val ort = e.location
-        if (!ort.isNullOrEmpty()) Eckdatum("Ort", ort)
+        if (!ort.isNullOrEmpty()) add { Eckdatum("Ort", ort) }
         val fee = e.feeCents
         if (fee != null && fee != 0) {
-            Eckdatum("Preis", "${Geld.formatCents(fee)} pro Person", VereinLogik.preisHinweis(e))
+            add { Eckdatum("Preis", "${Geld.formatCents(fee)} pro Person", VereinLogik.preisHinweis(e)) }
         }
         val h = e.workHours
         if (e.kind == "arbeitsdienst" && h != null) {
-            Eckdatum(
-                "Stunden",
-                "${Veranstaltungen.stundenText(h)} Std. Arbeitsdienst",
-                "Werden nach dem Termin für alle Anwesenden gutgeschrieben.",
-            )
+            add {
+                Eckdatum(
+                    "Stunden",
+                    "${Veranstaltungen.stundenText(h)} Std. Arbeitsdienst",
+                    "Werden nach dem Termin für alle Anwesenden gutgeschrieben.",
+                )
+            }
         }
         if (e.registrationEnabled == true) {
-            Eckdatum(
-                "Anmeldeschluss",
-                Veranstaltungen.eventTagKurz(Veranstaltungen.eventSchluss(e)),
-                if ((e.feeCents ?: 0) != 0) "Wer sich danach abmeldet, zahlt trotzdem." else null,
-            )
-            Eckdatum("Belegung", Veranstaltungen.eventBelegungText(e)) {
-                Veranstaltungen.eventBelegungAnteil(e)?.let { anteil ->
-                    Box(
-                        Modifier
-                            .padding(top = 6.dp)
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(CircleShape)
-                            .background(f.surf2),
-                    ) {
-                        Box(Modifier.fillMaxWidth(anteil.toFloat()).height(8.dp).clip(CircleShape).background(f.blue))
+            add {
+                Eckdatum(
+                    "Anmeldeschluss",
+                    Veranstaltungen.eventTagKurz(Veranstaltungen.eventSchluss(e)),
+                    if ((e.feeCents ?: 0) != 0) "Wer sich danach abmeldet, zahlt trotzdem." else null,
+                )
+            }
+            add {
+                Eckdatum("Belegung", Veranstaltungen.eventBelegungText(e)) {
+                    // Der Fortschrittsbalken in kraeftigem Blau, ueber die ganze Breite.
+                    Veranstaltungen.eventBelegungAnteil(e)?.let { anteil ->
+                        Box(Modifier.padding(top = 6.dp).fillMaxWidth().height(6.dp).clip(CircleShape).background(f.surf2)) {
+                            Box(Modifier.fillMaxWidth(anteil.toFloat()).height(6.dp).clip(CircleShape).background(f.blue))
+                        }
                     }
                 }
             }
+        }
+    }
+    Column(Modifier.fillMaxWidth().karte(padding = 0.dp)) {
+        zeilen.forEachIndexed { i, zeile ->
+            if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(f.line))
+            zeile()
         }
     }
 }
@@ -349,23 +423,35 @@ private fun Eckdatum(label: String, wert: String, klein: String? = null, zusatz:
     val f = TcmTheme.farben
     // Bei grosser Schrift steht das Label ueber dem Wert.
     val gross = grosseSchrift(1.5f)
-    val werte: @Composable () -> Unit = {
-        Text(wert, style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.normal), color = f.ink)
+    Column(
+        Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}.padding(horizontal = 18.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        if (gross) {
+            Kicker(label)
+            Text(wert, style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.normal), color = f.ink)
+        } else {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Kicker(label)
+                Text(
+                    wert,
+                    style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.normal),
+                    color = f.ink,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
         klein?.let {
-            Text(it, style = TcmSchrift.text(Schrift.gewichtNormal, 13.sp).copy(lineHeight = 17.sp), color = f.muted)
+            Text(
+                it,
+                style = TcmSchrift.text(Schrift.gewichtNormal, 13.sp).copy(lineHeight = 17.sp),
+                color = f.muted,
+                textAlign = if (gross) TextAlign.Start else TextAlign.End,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
         zusatz()
-    }
-    if (gross) {
-        Column(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Leise(label)
-            werte()
-        }
-    } else {
-        Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Leise(label, Modifier.width(112.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) { werte() }
-        }
     }
 }
 
@@ -375,28 +461,27 @@ private const val MAX_BEGLEITUNG = 20
 private const val MAX_BEMERKUNG = 500
 
 @Composable
-private fun AnmeldungKarte(d: VeranstaltungDetail, jetzt: Instant, stand: VeranstaltungStand, aktionen: VeranstaltungAktionen) {
+private fun AnmeldungKarte(
+    d: VeranstaltungDetail,
+    jetzt: Instant,
+    stand: VeranstaltungStand,
+    aktionen: VeranstaltungAktionen,
+    form: Anmeldeform,
+) {
     val e = d.event
     val dabei = VereinLogik.dabei(e)
-    var begleitung by rememberSaveable { mutableIntStateOf(if (dabei) e.meineBegleitpersonen ?: 0 else 0) }
-    var bemerkung by rememberSaveable { mutableStateOf(if (dabei) e.meineBemerkung ?: "" else "") }
-    var bearbeiten by rememberSaveable { mutableStateOf(false) }
-    var frage by rememberSaveable { mutableStateOf(false) }
+    var begleitung by form.begleitung
+    var bemerkung by form.bemerkung
+    var bearbeiten by form.bearbeiten
+    var frage by form.frage
 
-    val formular: @Composable (Boolean) -> Unit = { aendern ->
+    val formular: @Composable (Boolean) -> Unit = { _ ->
         Formular(
             e = e,
-            aendern = aendern,
             begleitung = begleitung,
             begleitungAendern = { begleitung = it },
             bemerkung = bemerkung,
             bemerkungAendern = { bemerkung = it.take(MAX_BEMERKUNG) },
-            laeuft = stand.laeuft,
-            absenden = {
-                if (aendern) aktionen.aendere(begleitung, bemerkung) { bearbeiten = false }
-                else aktionen.meldeAn(begleitung, bemerkung) {}
-            },
-            abbrechen = { bearbeiten = false },
         )
     }
     val hinweis: @Composable () -> Unit = { stand.meldung?.let { Hinweis(it.meldung, it.ok) } }
@@ -514,7 +599,15 @@ private fun DabeiKarte(
             } else {
                 if (Veranstaltungen.eventAenderbar(e, jetzt)) Zweitknopf("Anmeldung ändern", aktion = aendern)
                 if (Veranstaltungen.eventAbmeldbar(e, jetzt)) {
-                    LeiserKnopf(Veranstaltungen.eventAbmeldenKnopf(e, jetzt), rot = true) { fragen(true) }
+                    // Rot als Text, nicht als Flaeche: erst die Rueckfrage bestaetigt.
+                    TextButton(onClick = { fragen(true) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        Text(
+                            Veranstaltungen.eventAbmeldenKnopf(e, jetzt),
+                            style = TcmSchrift.display(Schrift.gewichtHalbfett, 16.sp),
+                            color = f.redInk,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
             }
         }
@@ -523,17 +616,14 @@ private fun DabeiKarte(
 
 // ---- Formular ------------------------------------------------------------------
 
+/** Begleitpersonen und Bemerkung; abgeschickt wird im Fuss der Seite. */
 @Composable
 private fun Formular(
     e: MitgliedEvent,
-    aendern: Boolean,
     begleitung: Int,
     begleitungAendern: (Int) -> Unit,
     bemerkung: String,
     bemerkungAendern: (String) -> Unit,
-    laeuft: Boolean,
-    absenden: () -> Unit,
-    abbrechen: () -> Unit,
 ) {
     val f = TcmTheme.farben
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -557,39 +647,29 @@ private fun Formular(
                 }
             }
         }
-        OutlinedTextField(
-            value = bemerkung,
-            onValueChange = bemerkungAendern,
-            label = { Text("Bemerkung") },
-            placeholder = { Text("z. B. vegetarisch", color = f.muted) },
-            singleLine = true,
-            textStyle = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal),
-            shape = RoundedCornerShape(Radius.feld),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = f.surf,
-                unfocusedContainerColor = f.surf,
-                focusedBorderColor = f.blue,
-                unfocusedBorderColor = f.line2,
-                focusedLabelColor = f.blueInk,
-                unfocusedLabelColor = f.ink2,
-                focusedTextColor = f.ink,
-                unfocusedTextColor = f.ink,
-                cursorColor = f.blue,
-            ),
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-        )
-        if (!aendern && Veranstaltungen.eventNurWarteliste(e, begleitung)) {
-            Leise(VereinLogik.wartelisteVorab(begleitung))
+        Column {
+            Kicker("Bemerkung", Modifier.padding(bottom = 8.dp))
+            BasicTextField(
+                value = bemerkung,
+                onValueChange = bemerkungAendern,
+                singleLine = true,
+                textStyle = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal).copy(color = f.ink),
+                cursorBrush = SolidColor(f.blue),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 52.dp)
+                    .background(f.surf2, RoundedCornerShape(Radius.feld))
+                    .border(1.dp, f.line2, RoundedCornerShape(Radius.feld))
+                    .semantics { contentDescription = "Bemerkung" },
+                decorationBox = { feld ->
+                    Box(Modifier.padding(horizontal = 20.dp, vertical = 14.dp), contentAlignment = Alignment.CenterStart) {
+                        if (bemerkung.isEmpty()) {
+                            Text("z. B. vegetarisch", style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal), color = f.muted)
+                        }
+                        feld()
+                    }
+                },
+            )
         }
-        Hauptknopf(
-            text = if (aendern) {
-                VereinLogik.aenderungKnopf(e, begleitung)
-            } else {
-                Veranstaltungen.eventAnmeldenKnopf(e, begleitung)
-            },
-            gesperrt = laeuft,
-            aktion = absenden,
-        )
-        if (aendern) LeiserKnopf("Abbrechen", aktion = abbrechen)
     }
 }

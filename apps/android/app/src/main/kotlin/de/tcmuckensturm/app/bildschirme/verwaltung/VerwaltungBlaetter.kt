@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -33,6 +35,7 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -49,16 +53,20 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.tcmuckensturm.app.bildschirme.Hauptknopf
+import de.tcmuckensturm.app.bildschirme.Hinweis
+import de.tcmuckensturm.app.bildschirme.LeiserKnopf
+import de.tcmuckensturm.app.bildschirme.NebeneinanderOderUntereinander
 import de.tcmuckensturm.app.bildschirme.konto.BlattKopf
 import de.tcmuckensturm.app.bildschirme.konto.KontoFeld
 import de.tcmuckensturm.app.bildschirme.konto.KontoGruppe
-import de.tcmuckensturm.app.bildschirme.Hinweis
 import de.tcmuckensturm.app.bildschirme.konto.KontoVerweis
-import de.tcmuckensturm.app.bildschirme.LeiserKnopf
 import de.tcmuckensturm.app.bildschirme.plaetze.Chipwahl
 import de.tcmuckensturm.app.bildschirme.plaetze.Feldname
-import de.tcmuckensturm.app.bildschirme.Hauptknopf
+import de.tcmuckensturm.app.bildschirme.plaetze.Pillengitter
 import de.tcmuckensturm.app.bildschirme.plaetze.PlaetzeLogik
+import de.tcmuckensturm.app.bildschirme.plaetze.Segment
+import de.tcmuckensturm.app.bildschirme.plaetze.Warnkasten
 import de.tcmuckensturm.app.daten.PlatzErgebnis
 import de.tcmuckensturm.app.daten.Serie
 import de.tcmuckensturm.app.daten.SerienTermin
@@ -104,24 +112,42 @@ fun VerwaltungBlattInhalt(m: VerwaltungModell, blatt: VerwaltungBlatt, zu: () ->
 
 // ---- Bausteine --------------------------------------------------------------------------
 
-/** Rahmen eines Blatts: Kopf, Unterzeile, Inhalt zum Rollen; die Tastatur schiebt mit. */
+/**
+ * Rahmen eines Blatts: Kopf, Unterzeile, Inhalt zum Rollen; die Tastatur schiebt mit.
+ * Mit `fuss` stehen die Knoepfe unten fest, mit feiner Linie abgesetzt.
+ */
 @Composable
-private fun BlattRahmen(titel: String, unterzeile: String? = null, zu: () -> Unit, inhalt: @Composable ColumnScope.() -> Unit) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(TcmTheme.farben.bg)
-            .imePadding()
-            .verticalScroll(rememberScrollState())
-            .padding(start = Abstand.rand, end = Abstand.rand, bottom = 32.dp)
-            .navigationBarsPadding(),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        BlattKopf(titel, zu)
-        if (unterzeile != null) {
-            Text(unterzeile, style = TcmSchrift.text(Schrift.gewichtNormal, 14.sp), color = TcmTheme.farben.ink2)
+private fun BlattRahmen(
+    titel: String,
+    unterzeile: String? = null,
+    zu: () -> Unit,
+    fuss: (@Composable ColumnScope.() -> Unit)? = null,
+    inhalt: @Composable ColumnScope.() -> Unit,
+) {
+    val f = TcmTheme.farben
+    Column(Modifier.fillMaxWidth().background(f.bg).imePadding().navigationBarsPadding()) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
+                .padding(start = Abstand.rand, end = Abstand.rand, bottom = if (fuss != null) Abstand.rand else 32.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            BlattKopf(titel, zu)
+            if (unterzeile != null) {
+                Text(unterzeile, style = TcmSchrift.text(Schrift.gewichtNormal, 14.sp).copy(lineHeight = 20.sp), color = f.ink2)
+            }
+            inhalt()
         }
-        inhalt()
+        if (fuss != null) {
+            Box(Modifier.fillMaxWidth().height(1.dp).background(f.line))
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = Abstand.rand).padding(top = 14.dp, bottom = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                content = fuss,
+            )
+        }
     }
 }
 
@@ -211,29 +237,51 @@ private fun SperrenBlatt(m: VerwaltungModell, stand: VerwaltungsStand, zu: () ->
         }
     }
 
+    val k = kollisionen
     BlattRahmen(
         titel = "Plätze sperren",
         unterzeile = "Regen, Turnier, Platzpflege. Bestehende Buchungen werden erst nach Rückfrage verdrängt.",
         zu = zu,
+        fuss = {
+            if (k != null) {
+                Hauptknopf(PlaetzeLogik.verdraengenText(k), rot = true, gesperrt = laeuft) { absenden(verdraengen = true) }
+                LeiserKnopf("Doch nicht") { kollisionen = null }
+            } else {
+                Hauptknopf(
+                    if (laeuft) "Wird gesperrt…" else "Sperren",
+                    // Der Grund ist freiwillig; was die Sperrung ist, sagt die Art.
+                    gesperrt = laeuft || gewaehlt.isEmpty() || tag.isBlank(),
+                ) { absenden(verdraengen = false) }
+            }
+        },
     ) {
-        Chips(
-            label = "Plätze",
-            optionen = plaetze.map { it.id to VerwaltungLogik.platzChip(it.shortName) } + (ALLE to if (alleGewaehlt) "Keinen" else "Alle"),
-            gewaehlt = { if (it == ALLE) alleGewaehlt else it in gewaehlt },
-            mehrfach = true,
-        ) { id ->
-            geaendert {
-                gewaehlt = when {
-                    id == ALLE -> if (alleGewaehlt) emptyList() else plaetze.map { it.id }
-                    id in gewaehlt -> gewaehlt - id
-                    else -> gewaehlt + id
+        // Die Plaetze als Gitter aus vier Spalten; "Alle" / "Keinen" rechts im Kopf.
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { Feldname("Plätze") }
+                TextButton(
+                    onClick = { geaendert { gewaehlt = if (alleGewaehlt) emptyList() else plaetze.map { it.id } } },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                ) {
+                    Text(
+                        if (alleGewaehlt) "Keinen" else "Alle",
+                        style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp),
+                        color = TcmTheme.farben.blueInk,
+                    )
                 }
             }
+            Pillengitter(
+                beschriftung = "Plätze",
+                optionen = plaetze.map { Segment(it.id, VerwaltungLogik.platzChip(it.shortName)) },
+                spalten = 4,
+                gewaehlt = { it in gewaehlt },
+                mehrfach = true,
+            ) { id -> geaendert { gewaehlt = if (id in gewaehlt) gewaehlt - id else gewaehlt + id } }
         }
         ZeitFeld("Tag (TT.MM.JJJJ)", tag, { geaendert { tag = it } })
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ZeitFeld("Von (HH:MM)", von, { geaendert { von = it } }, Modifier.weight(1f))
-            ZeitFeld("Bis (HH:MM)", bis, { geaendert { bis = it } }, Modifier.weight(1f))
+        NebeneinanderOderUntereinander(abstand = 12.dp) { breite ->
+            ZeitFeld("Von (HH:MM)", von, { geaendert { von = it } }, breite)
+            ZeitFeld("Bis (HH:MM)", bis, { geaendert { bis = it } }, breite)
         }
         Chips("Kategorie", stand.blockungsarten.map { it.code to (it.name ?: it.code) }, { it == art }) {
             geaendert { art = it }
@@ -241,18 +289,7 @@ private fun SperrenBlatt(m: VerwaltungModell, stand: VerwaltungsStand, zu: () ->
         KontoFeld("Grund (freiwillig)", grund, { grund = it })
 
         fehler?.let { Hinweis(it) }
-        val k = kollisionen
-        if (k != null) {
-            Folgen(PlaetzeLogik.imWegText(k))
-            Hauptknopf(PlaetzeLogik.verdraengenText(k), rot = true, kompakt = true, gesperrt = laeuft) { absenden(verdraengen = true) }
-            LeiserKnopf("Doch nicht") { kollisionen = null }
-        } else {
-            Hauptknopf(
-                if (laeuft) "Wird gesperrt…" else "Sperren",
-                // Der Grund ist freiwillig; was die Sperrung ist, sagt die Art.
-                gesperrt = laeuft || gewaehlt.isEmpty() || tag.isBlank(),
-            ) { absenden(verdraengen = false) }
-        }
+        if (k != null) Warnkasten(PlaetzeLogik.imWegText(k))
     }
 }
 
