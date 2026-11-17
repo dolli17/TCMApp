@@ -56,6 +56,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.tcmuckensturm.app.bildschirme.DeinMarker
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
+import de.tcmuckensturm.app.bildschirme.Fehlerzustand
 import de.tcmuckensturm.app.bildschirme.GedeckelteSchrift
 import de.tcmuckensturm.app.bildschirme.Kicker
 import de.tcmuckensturm.app.bildschirme.Kopfzeile
@@ -179,7 +180,9 @@ fun VeranstaltungenSeite(
             verticalArrangement = Arrangement.spacedBy(Abstand.m),
         ) {
             kopf()
-            stand.fehler?.let { Fehlerzeile(it, stand.aktualisiert, nachladen) }
+            stand.fehler?.let {
+                if (stand.events == null) Fehlerzustand(it, stand.aktualisiert, erneut = nachladen) else Fehlerzeile(it, stand.aktualisiert, nachladen)
+            }
             if (stand.laedt && stand.events == null) {
                 Box(Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = f.muted)
@@ -221,10 +224,14 @@ fun EventKarte(e: MitgliedEvent, jetzt: Instant, aufforderung: Boolean = false, 
         color = Color.Transparent,
         modifier = Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = beschreibung },
     ) {
-        Row(Modifier.fillMaxWidth().karte(padding = 14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(
+            Modifier.fillMaxWidth().karte(padding = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Column(
                 Modifier
-                    .size(width = 52.dp, height = 56.dp)
+                    .size(width = 56.dp, height = 60.dp)
                     .background(f.surf2, RoundedCornerShape(16.dp))
                     .border(1.dp, f.line, RoundedCornerShape(16.dp)),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -239,7 +246,11 @@ fun EventKarte(e: MitgliedEvent, jetzt: Instant, aufforderung: Boolean = false, 
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 // Umbrechend: bei grosser Schrift steht die zweite Marke darunter statt mitten im Wort zu brechen.
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                FlowRow(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     MarkeKlein(Veranstaltungen.kindLabel[art] ?: art, Veranstaltungen.kindTon[art] ?: EventTon.GRAU)
                     // Gelb heisst "deins": die eigene Anmeldung.
                     marke?.let { if (e.meinStatus == "registered" && !vorbei) DeinMarker(it.text) else MarkeKlein(it.text, it.ton) }

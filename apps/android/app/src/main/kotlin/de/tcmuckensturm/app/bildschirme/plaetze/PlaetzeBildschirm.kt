@@ -52,10 +52,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,10 +71,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
-import de.tcmuckensturm.app.bildschirme.Knopf
-import de.tcmuckensturm.app.bildschirme.Knopfstufe
+import de.tcmuckensturm.app.bildschirme.Fehlerzustand
 import de.tcmuckensturm.app.bildschirme.GrosserKopf
 import de.tcmuckensturm.app.bildschirme.ImVordergrund
+import de.tcmuckensturm.app.bildschirme.Knopf
+import de.tcmuckensturm.app.bildschirme.Knopfstufe
 import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.bildschirme.nachrichten.Glocke
 import de.tcmuckensturm.app.bildschirme.randlos
@@ -80,6 +89,7 @@ import de.tcmuckensturm.app.ui.tokens.Abstand
 import de.tcmuckensturm.app.ui.tokens.Radius
 import de.tcmuckensturm.app.ui.tokens.Schrift
 import de.tcmuckensturm.kern.Zeit
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
 @Composable
@@ -122,12 +132,29 @@ fun PlaetzeInhalt(m: PlaetzeModell, glocke: @Composable () -> Unit = {}) {
         if (m.meldung == h) m.meldung = null
     }
 
+    // Heute rollt der Plan einmal zur aktuellen Uhrzeit - morgens liegt sie sonst unter dem Rand.
+    val rollen = rememberScrollState()
+    var rasterOben by remember { mutableIntStateOf(-1) }
+    var gerolltFuer by rememberSaveable { mutableStateOf<String?>(null) }
+    val dichte = LocalDensity.current
+    LaunchedEffect(m.geladenFuer, rasterOben) {
+        val tag = m.geladenFuer ?: return@LaunchedEffect
+        if (rasterOben < 0 || gerolltFuer == tag) return@LaunchedEffect
+        gerolltFuer = tag
+        val jetzt = m.uhr()
+        if (tag != Zeit.berlinDay(jetzt)) return@LaunchedEffect
+        val minuten = Zeit.localMinutes(jetzt).coerceIn(m.oeffnung, m.schluss) - m.oeffnung
+        // 60 dp je Stunde (PlatzRaster); zwei Stunden davor bleiben sichtbar.
+        val ziel = with(dichte) { rasterOben + (minuten - 120).dp.roundToPx() }
+        if (ziel > 0) rollen.scrollTo(ziel)
+    }
+
     Box(Modifier.fillMaxSize().background(f.bg)) {
         PullToRefreshBox(isRefreshing = m.aktualisiert, onRefresh = m::vonHand, modifier = Modifier.fillMaxSize()) {
             Column(
                 Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(rollen)
                     .statusBarsPadding()
                     .padding(horizontal = Abstand.rand)
                     .padding(bottom = Abstand.abschnitt * 2 + if (m.auswahl != null) 72.dp else 0.dp),
@@ -135,7 +162,9 @@ fun PlaetzeInhalt(m: PlaetzeModell, glocke: @Composable () -> Unit = {}) {
             ) {
                 Kopf(m, glocke)
                 Tagwahl(m)
-                m.ladeFehler?.let { Fehlerzeile(it, laeuft = m.aktualisiert, erneut = m::vonHand) }
+                m.ladeFehler?.let {
+                    if (m.geladenFuer == null) Fehlerzustand(it, m.aktualisiert, erneut = m::vonHand) else Fehlerzeile(it, laeuft = m.aktualisiert, erneut = m::vonHand)
+                }
                 if (m.laedt && m.geladenFuer != m.datum) {
                     Box(Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = f.muted)
@@ -143,7 +172,7 @@ fun PlaetzeInhalt(m: PlaetzeModell, glocke: @Composable () -> Unit = {}) {
                 } else if (m.geladenFuer != null) {
                     PlaetzeLogik.kontingentText(m.kontingent)?.let { Leise(it) }
                     RasterLegende()
-                    PlatzRaster(m)
+                    Box(Modifier.onGloballyPositioned { rasterOben = it.positionInParent().y.roundToInt() }) { PlatzRaster(m) }
                 }
             }
         }

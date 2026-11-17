@@ -72,6 +72,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
+import de.tcmuckensturm.app.bildschirme.Fehlerzustand
 import de.tcmuckensturm.app.bildschirme.Kicker
 import de.tcmuckensturm.app.bildschirme.Knopf
 import de.tcmuckensturm.app.bildschirme.Knopfstufe
@@ -318,7 +319,9 @@ fun GetraenkeSeite(
                 verticalArrangement = Arrangement.spacedBy(Abstand.m),
             ) {
                 kopf()
-                stand.fehler?.let { Fehlerzeile(it, stand.aktualisiert, aktionen.nachladen) }
+                stand.fehler?.let {
+                    if (inhalt == null) Fehlerzustand(it, stand.aktualisiert, erneut = aktionen.nachladen) else Fehlerzeile(it, stand.aktualisiert, aktionen.nachladen)
+                }
                 if (stand.laedt && inhalt == null) {
                     Box(Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = f.muted)
@@ -494,7 +497,7 @@ private fun Entnahme(
                 enabled = !laeuft,
                 modifier = Modifier.heightIn(min = 44.dp).semantics { contentDescription = "${b.itemName ?: ""} zurücknehmen" },
             ) {
-                Text("Zurücknehmen", style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp), color = f.redInk.copy(alpha = if (laeuft) 0.5f else 1f))
+                Text("Zurücknehmen", style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp), color = f.blueInk.copy(alpha = if (laeuft) 0.5f else 1f))
             }
         }
         Text(

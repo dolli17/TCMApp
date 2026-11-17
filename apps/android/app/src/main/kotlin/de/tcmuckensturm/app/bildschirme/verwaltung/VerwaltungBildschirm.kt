@@ -27,17 +27,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material3.CircularProgressIndicator
@@ -65,9 +64,13 @@ import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
 import de.tcmuckensturm.app.bildschirme.GrosserKopf
-import de.tcmuckensturm.app.bildschirme.Hauptknopf
 import de.tcmuckensturm.app.bildschirme.Hinweis
 import de.tcmuckensturm.app.bildschirme.ImVordergrund
+import de.tcmuckensturm.app.bildschirme.Kicker
+import de.tcmuckensturm.app.bildschirme.Knopf
+import de.tcmuckensturm.app.bildschirme.Knopfgroesse
+import de.tcmuckensturm.app.bildschirme.Knopfstufe
+import de.tcmuckensturm.app.bildschirme.grosseSchrift
 import de.tcmuckensturm.app.bildschirme.karte
 import de.tcmuckensturm.app.bildschirme.konto.KontoGruppe
 import de.tcmuckensturm.app.bildschirme.konto.KontoLinie
@@ -183,15 +186,21 @@ private fun Inhalt(
 ) {
     val serien = m.ansicht == VerwaltungAnsicht.SERIEN
     Column(verticalArrangement = Arrangement.spacedBy(Abstand.m)) {
-        Hauptknopf(if (serien) "+ Serie anlegen" else "+ Plätze sperren") {
-            m.blatt = if (serien) VerwaltungBlatt.SerieAnlegen else VerwaltungBlatt.Sperren
-        }
         m.meldung?.let { Hinweis(it.meldung, ok = it.ok) }
+        // Die eine Hauptaktion steht klein rechts neben dem Abschnittskopf.
+        val knopf: @Composable () -> Unit = {
+            Knopf(
+                if (serien) "+ Serie anlegen" else "+ Plätze sperren",
+                stufe = Knopfstufe.HAUPT,
+                groesse = Knopfgroesse.KLEIN,
+                breit = false,
+            ) { m.blatt = if (serien) VerwaltungBlatt.SerieAnlegen else VerwaltungBlatt.Sperren }
+        }
         if (serien) {
-            VerwaltungGruppenkopf("Laufend", neben = "${s.serien.size} Serien")
+            VerwaltungGruppenkopf("Laufend", neben = "${s.serien.size} Serien", rechts = knopf)
             SerienListe(s.serien) { m.blatt = VerwaltungBlatt.SerieAendern(it) }
         } else {
-            VerwaltungGruppenkopf("Jetzt")
+            VerwaltungGruppenkopf("Jetzt", neben = "${s.plaetze.size} Plätze", rechts = knopf)
             PlatzListe(s.plaetze, s.zustand, zuPlaetzen)
         }
         // Erst wenn ich() geantwortet hat, steht fest, wohin der Weg ins Web fuehrt.
@@ -204,20 +213,26 @@ private fun Inhalt(
 
 // ---- Listen -----------------------------------------------------------------------------
 
-/** Gruppenkopf ueber einer Liste, rechts optional eine Zahl (Gruppenkopf in Liste.tsx). */
+/** Gruppenkopf ueber einer Liste: Kicker, daneben leise eine Zahl, rechts optional ein Knopf. */
 @Composable
-fun VerwaltungGruppenkopf(titel: String, neben: String? = null) {
+fun VerwaltungGruppenkopf(titel: String, neben: String? = null, rechts: (@Composable () -> Unit)? = null) {
     val f = TcmTheme.farben
-    Row(Modifier.fillMaxWidth().padding(top = Abstand.s), verticalAlignment = Alignment.Bottom) {
-        Text(
-            titel,
-            style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.titel, (-0.2).sp),
-            color = f.ink,
-            modifier = Modifier.weight(1f).semantics { heading() },
-        )
-        if (neben != null) {
-            Spacer(Modifier.width(Abstand.s))
-            Text(neben, style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.klein), color = f.muted)
+    val kopf: @Composable (Modifier) -> Unit = { breite ->
+        Row(breite, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Abstand.s)) {
+            Kicker(titel, Modifier.semantics { heading() })
+            if (neben != null) Text(neben, style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.klein), color = f.muted)
+        }
+    }
+    // Bei grosser Schrift steht der Knopf unter dem Kopf.
+    if (rechts != null && grosseSchrift(1.5f)) {
+        Column(Modifier.fillMaxWidth().padding(top = Abstand.s), verticalArrangement = Arrangement.spacedBy(Abstand.s)) {
+            kopf(Modifier)
+            rechts()
+        }
+    } else {
+        Row(Modifier.fillMaxWidth().padding(top = Abstand.s), verticalAlignment = Alignment.CenterVertically) {
+            kopf(Modifier.weight(1f))
+            rechts?.invoke()
         }
     }
 }
@@ -346,13 +361,23 @@ fun VerwaltungZeile(
             }
         }
         if (hinweis != null) {
+            // Der Stand als Marke rechts in der Zeile.
+            val grund = when (ton) {
+                HinweisTon.LEISE -> f.surf2
+                HinweisTon.ROT -> f.red.copy(alpha = 0.14f)
+                HinweisTon.GOLD -> f.blueSoft
+                HinweisTon.GRUEN -> f.green.copy(alpha = 0.16f)
+            }
             Text(
                 hinweis,
-                style = TcmSchrift.text(if (ton == HinweisTon.LEISE) Schrift.gewichtHalbfett else Schrift.gewichtFett, 13.sp),
-                color = farbe,
-                textAlign = TextAlign.End,
+                style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.klein),
+                color = if (ton == HinweisTon.LEISE) f.ink2 else farbe,
+                textAlign = TextAlign.Center,
                 // Begrenzt, damit der Titel Platz behaelt; bei grosser Schrift bricht er um (200 %).
-                modifier = Modifier.widthIn(max = 160.dp),
+                modifier = Modifier
+                    .widthIn(max = 160.dp)
+                    .background(grund, RoundedCornerShape(14.dp))
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
             )
         }
         if (aktion != null) {

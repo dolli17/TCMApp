@@ -214,7 +214,9 @@ fun NachrichtZeile(
                 titel(Modifier)
                 zeit()
             } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    // Ungelesen: ein blauer Punkt vor dem Titel.
+                    if (neu && hervorheben) Box(Modifier.size(8.dp).background(f.blue, CircleShape))
                     titel(Modifier.weight(1f))
                     zeit()
                 }

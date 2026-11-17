@@ -28,6 +28,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -44,6 +45,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
+import de.tcmuckensturm.app.bildschirme.Fehlerzustand
 import de.tcmuckensturm.app.bildschirme.home.HomeLogik
 import de.tcmuckensturm.app.daten.Benachrichtigung
 import de.tcmuckensturm.app.daten.Meldung
@@ -136,8 +138,18 @@ fun NachrichtenInhalt(
                 .padding(bottom = Abstand.abschnitt),
             verticalArrangement = Arrangement.spacedBy(Abstand.m),
         ) {
-            IconButton(onClick = zurueck, modifier = Modifier.padding(top = 4.dp)) {
-                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = f.ink)
+            // Oben in einer Zeile: zurueck als runder Knopf, rechts "Alle als gelesen".
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = zurueck,
+                    colors = IconButtonDefaults.iconButtonColors(containerColor = f.surf2),
+                ) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Zurück", tint = f.ink)
+                }
+                Spacer(Modifier.weight(1f))
+                if (!zustand.laedt && HomeLogik.zeigeAlleGelesen(zustand.nachrichten, zustand.alleGesehen)) {
+                    AlleGelesenKnopf(alleGelesen)
+                }
             }
             Text(
                 "Neuigkeiten",
@@ -157,12 +169,8 @@ fun NachrichtenInhalt(
                     CircularProgressIndicator(color = f.muted)
                 }
             } else {
-                zustand.fehler?.let { Fehlerzeile(it, zustand.aktualisiert, nachladen) }
-                if (HomeLogik.zeigeAlleGelesen(zustand.nachrichten, zustand.alleGesehen)) {
-                    Row(Modifier.fillMaxWidth()) {
-                        Spacer(Modifier.weight(1f))
-                        AlleGelesenKnopf(alleGelesen)
-                    }
+                zustand.fehler?.let {
+                    if (zustand.nachrichten == null) Fehlerzustand(it, zustand.aktualisiert, erneut = nachladen) else Fehlerzeile(it, zustand.aktualisiert, nachladen)
                 }
                 zustand.nachrichten?.let {
                     NachrichtenListe(it, zustand.alleGesehen, jetzt, zuVeranstaltung)

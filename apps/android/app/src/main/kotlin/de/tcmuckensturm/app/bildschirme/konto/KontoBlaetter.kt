@@ -72,10 +72,13 @@ import androidx.compose.ui.unit.sp
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
 import de.tcmuckensturm.app.bildschirme.Hauptknopf
 import de.tcmuckensturm.app.bildschirme.Hinweis
+import de.tcmuckensturm.app.bildschirme.Kicker
 import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.bildschirme.LeiserKnopf
+import de.tcmuckensturm.app.bildschirme.NebeneinanderOderUntereinander
 import de.tcmuckensturm.app.bildschirme.Zweitknopf
 import de.tcmuckensturm.app.bildschirme.anmeldung.AnmeldeFeld
+import de.tcmuckensturm.app.bildschirme.karte
 import de.tcmuckensturm.app.bildschirme.onboarding.OnboardingLogik
 import de.tcmuckensturm.app.bildschirme.onboarding.OnboardingSchalter
 import de.tcmuckensturm.app.daten.Ergebnis
@@ -237,7 +240,7 @@ fun KontoBlattInhalt(
                 if (fehler != null) Fehlerzeile(fehler, erneut = erneut) else Bank(inhalt?.mandat?.wert)
             }
             KontoBlatt.PASSWORT -> PasswortAendern(email, aktionen, zu, gespeichert)
-            KontoBlatt.LOESCHEN -> Rollend(art.titel(), zu) { KuendigungFormular(aktionen) }
+            KontoBlatt.LOESCHEN -> KuendigungFormular(art.titel(), aktionen, zu)
         }
     }
 }
@@ -264,11 +267,16 @@ private fun ColumnScope.MitKnopf(knopf: @Composable () -> Unit, inhalt: @Composa
         Modifier
             .weight(1f, fill = false)
             .verticalScroll(rememberScrollState())
-            .padding(start = Abstand.rand, end = Abstand.rand, bottom = Abstand.s),
-        verticalArrangement = Arrangement.spacedBy(Abstand.m),
+            .padding(start = Abstand.rand, end = Abstand.rand, bottom = Abstand.rand),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
         content = inhalt,
     )
-    Box(Modifier.padding(horizontal = Abstand.rand, vertical = Abstand.s).navigationBarsPadding()) { knopf() }
+    // Unten fest, mit feiner Linie abgesetzt: die eine Hauptaktion des Blatts.
+    KontoLinie()
+    Column(
+        Modifier.padding(horizontal = Abstand.rand).padding(top = 14.dp, bottom = 14.dp).navigationBarsPadding(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) { knopf() }
 }
 
 // ---- Meine Daten und Notfallkontakt -----------------------------------------
@@ -337,7 +345,7 @@ private fun ColumnScope.Stammdatenformular(
         Leise(erklaerung)
         val m = meldung
         if (m != null && fehlerFeld == null) Hinweis(m.meldung, m.ok)
-        for (feld in felder) {
+        val zeichne: @Composable (Feld, Modifier) -> Unit = { feld, breite ->
             KontoFeld(
                 label = feld.label,
                 wert = entwurf[feld.name] ?: "",
@@ -345,14 +353,33 @@ private fun ColumnScope.Stammdatenformular(
                     if (fehlerFeld == feld.name) fehlerFeld = null
                     entwurf[feld.name] = it
                 },
+                modifier = breite,
                 fehler = if (fehlerFeld == feld.name) meldung?.meldung else null,
                 inhaltsTyp = feld.inhalt,
                 tastatur = feld.tastatur,
                 gross = feld.gross,
             )
         }
+        // Vor- und Nachname sowie PLZ und Ort stehen nebeneinander, bei grosser Schrift untereinander.
+        var i = 0
+        while (i < felder.size) {
+            val feld = felder[i]
+            val naechstes = felder.getOrNull(i + 1)
+            if (naechstes != null && feld.name in paarBeginn && naechstes.name == paarBeginn[feld.name]) {
+                NebeneinanderOderUntereinander(abstand = 12.dp) { breite ->
+                    zeichne(feld, breite)
+                    zeichne(naechstes, breite)
+                }
+                i += 2
+            } else {
+                zeichne(feld, Modifier.fillMaxWidth())
+                i += 1
+            }
+        }
     }
 }
+
+private val paarBeginn = mapOf("first_name" to "last_name", "postcode" to "city")
 
 // ---- Tennis -----------------------------------------------------------------
 
@@ -415,28 +442,42 @@ private fun ColumnScope.TennisFormular(
         Leise(KontoLogik.TENNIS_ERKLAERUNG)
         val m = meldung
         if (m != null && fehlerFeld == null) Hinweis(m.meldung, m.ok)
-        KontoFeld(
-            label = OnboardingLogik.LK_LABEL,
-            wert = lk,
-            aendern = {
-                if (fehlerFeld == "tennis_lk") fehlerFeld = null
-                lk = it
-            },
-            fehler = feldFehler("tennis_lk"),
-            tastatur = KeyboardType.Decimal,
-            gross = KeyboardCapitalization.None,
-        )
+        // Der gespeicherte Stand gross in einer Karte, darunter die Felder nebeneinander.
+        MannschaftLogik.lk(tennis?.tennisLk)?.let { stand ->
+            Column(
+                Modifier.fillMaxWidth().karte(padding = 18.dp).semantics(mergeDescendants = true) {},
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Kicker("Aktuell")
+                Text(stand, style = TcmSchrift.display(Schrift.gewichtFett, 34.sp, (-0.8).sp), color = TcmTheme.farben.ink)
+            }
+        }
+        NebeneinanderOderUntereinander(abstand = 12.dp) { breite ->
+            KontoFeld(
+                label = OnboardingLogik.LK_LABEL,
+                wert = lk,
+                aendern = {
+                    if (fehlerFeld == "tennis_lk") fehlerFeld = null
+                    lk = it
+                },
+                fehler = feldFehler("tennis_lk"),
+                tastatur = KeyboardType.Decimal,
+                gross = KeyboardCapitalization.None,
+                modifier = breite,
+            )
+            KontoFeld(
+                label = KontoLogik.NULIGA_LABEL,
+                wert = nuliga,
+                aendern = {
+                    if (fehlerFeld == "nuliga_id") fehlerFeld = null
+                    nuliga = it
+                },
+                fehler = feldFehler("nuliga_id"),
+                gross = KeyboardCapitalization.None,
+                modifier = breite,
+            )
+        }
         if (feldFehler("tennis_lk") == null) Leise(OnboardingLogik.LK_HINWEIS)
-        KontoFeld(
-            label = KontoLogik.NULIGA_LABEL,
-            wert = nuliga,
-            aendern = {
-                if (fehlerFeld == "nuliga_id") fehlerFeld = null
-                nuliga = it
-            },
-            fehler = feldFehler("nuliga_id"),
-            gross = KeyboardCapitalization.None,
-        )
         KontoGruppe {
             OnboardingSchalter(label = KontoLogik.TENNIS_INTERESSE, an = interesse, umschalten = { interesse = it })
         }
@@ -484,14 +525,14 @@ private fun Einwilligungen(merkmale: List<Merkmal>, aktionen: KontoAktionen, gea
         }
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(Abstand.s)) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Leise("Was du hier setzt, kannst du jederzeit wieder zurücknehmen.")
         meldung?.let { Hinweis(it.meldung, it.ok) }
         for (m in merkmale) {
-            Column(Modifier.padding(top = Abstand.m), verticalArrangement = Arrangement.spacedBy(Abstand.xs)) {
-                Text(m.name, style = TcmSchrift.text(Schrift.gewichtHalbfett, Schrift.normal), color = TcmTheme.farben.ink)
+            Column(Modifier.fillMaxWidth().karte(padding = 18.dp), verticalArrangement = Arrangement.spacedBy(Abstand.xs)) {
+                Text(m.name, style = TcmSchrift.display(Schrift.gewichtHalbfett, 17.sp), color = TcmTheme.farben.ink)
                 if (m.beschreibung.isNotEmpty()) Leise(m.beschreibung)
-                Column(Modifier.padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(Abstand.xs)) {
+                Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(Abstand.s)) {
                     when (m.darstellung) {
                         Merkmal.Darstellung.NUR_LESEN -> Leise(KontoLogik.nurLesenText(m))
                         Merkmal.Darstellung.JA_NEIN -> {
@@ -606,20 +647,21 @@ private fun Bank(m: MeinMandat?) {
         )
         return
     }
-    Column(Modifier.fillMaxWidth().background(f.surf2, RoundedCornerShape(Radius.karte))) {
+    Column(Modifier.fillMaxWidth().karte(padding = 0.dp)) {
         KontoLogik.mandatZeilen(m).forEachIndexed { i, (titel, wert) ->
             if (i > 0) KontoLinie()
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 12.dp, horizontal = 16.dp)
+                    .padding(vertical = 16.dp, horizontal = 18.dp)
                     .semantics(mergeDescendants = true) {},
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Leise(titel)
+                Kicker(titel)
                 Text(
                     wert,
-                    style = TcmSchrift.text(Schrift.gewichtHalbfett, Schrift.normal),
+                    style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.normal),
                     color = f.ink,
                     textAlign = TextAlign.End,
                     modifier = Modifier.weight(1f),
@@ -694,7 +736,8 @@ private fun ColumnScope.PasswortAendern(email: String?, aktionen: KontoAktionen,
  * Rot als Schrift und Rahmen, nicht als Flaeche (U44).
  */
 @Composable
-private fun KuendigungFormular(aktionen: KontoAktionen) {
+private fun ColumnScope.KuendigungFormular(titel: String, aktionen: KontoAktionen, zu: () -> Unit) {
+    val f = TcmTheme.farben
     val scope = rememberCoroutineScope()
     var nachricht by rememberSaveable { mutableStateOf("") }
     var rueckfrage by rememberSaveable { mutableStateOf(false) }
@@ -711,41 +754,59 @@ private fun KuendigungFormular(aktionen: KontoAktionen) {
             meldung = r
         }
     }
+    val fertig = meldung?.ok == true
 
-    Column(verticalArrangement = Arrangement.spacedBy(Abstand.s)) {
-        for (satz in Kontoloeschung.erklaerung) {
-            Text(
-                satz,
-                style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal).copy(lineHeight = 22.sp),
-                color = TcmTheme.farben.ink,
-            )
-        }
-        meldung?.let { Hinweis(it.meldung, it.ok) }
-        if (meldung?.ok == true) return@Column
-        KontoFeld(
-            label = Kontoloeschung.NACHRICHT_LABEL,
-            wert = nachricht,
-            aendern = { nachricht = it.take(Kontoloeschung.NACHRICHT_MAX) },
-            mehrzeilig = true,
-            gesperrt = laeuft,
-            modifier = Modifier.padding(top = Abstand.s),
-        )
-        if (rueckfrage) {
-            Text(
-                Kontoloeschung.BESTAETIGUNG_FRAGE,
-                style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.normal),
-                color = TcmTheme.farben.ink,
-                modifier = Modifier.padding(top = Abstand.s),
-            )
-            LeiserKnopf(if (laeuft) "Wird gesendet…" else Kontoloeschung.BESTAETIGEN, rot = true, gesperrt = laeuft, aktion = ::senden)
-            LeiserKnopf(Kontoloeschung.ABBRECHEN, gesperrt = laeuft) { rueckfrage = false }
-        } else {
-            Box(Modifier.padding(top = Abstand.s)) {
-                LeiserKnopf(Kontoloeschung.ABSENDEN, rot = true) {
-                    meldung = null
-                    rueckfrage = true
+    Box(Modifier.padding(horizontal = Abstand.rand)) { BlattKopf(titel, zu) }
+    Spacer(Modifier.size(Abstand.m))
+    MitKnopf(
+        knopf = {
+            when {
+                fertig -> LeiserKnopf("Schließen", aktion = zu)
+                rueckfrage -> {
+                    Text(
+                        Kontoloeschung.BESTAETIGUNG_FRAGE,
+                        style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.normal),
+                        color = f.ink,
+                    )
+                    LeiserKnopf(if (laeuft) "Wird gesendet…" else Kontoloeschung.BESTAETIGEN, rot = true, gesperrt = laeuft, aktion = ::senden)
+                    LeiserKnopf(Kontoloeschung.ABBRECHEN, gesperrt = laeuft) { rueckfrage = false }
+                }
+                else -> {
+                    LeiserKnopf(Kontoloeschung.ABSENDEN, rot = true) {
+                        meldung = null
+                        rueckfrage = true
+                    }
+                    LeiserKnopf(Kontoloeschung.ABBRECHEN, aktion = zu)
                 }
             }
+        },
+    ) {
+        // Was die Kuendigung bedeutet: Punkt fuer Punkt in einer ruhigen Karte.
+        Column(
+            Modifier.fillMaxWidth().background(f.surf2, RoundedCornerShape(Radius.karte)).padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            for (satz in Kontoloeschung.erklaerung) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(Modifier.padding(top = 8.dp).size(6.dp).background(f.ink2, CircleShape))
+                    Text(
+                        satz,
+                        style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal).copy(lineHeight = 22.sp),
+                        color = f.ink,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+        meldung?.let { Hinweis(it.meldung, it.ok) }
+        if (!fertig) {
+            KontoFeld(
+                label = Kontoloeschung.NACHRICHT_LABEL,
+                wert = nachricht,
+                aendern = { nachricht = it.take(Kontoloeschung.NACHRICHT_MAX) },
+                mehrzeilig = true,
+                gesperrt = laeuft,
+            )
         }
     }
 }
