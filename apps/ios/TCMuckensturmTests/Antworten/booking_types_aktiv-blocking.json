@@ -1,0 +1,29 @@
+[
+ {
+  "code": "training",
+  "name": "Training",
+  "duration_minutes": 90,
+  "requires_partner": false,
+  "min_players": 0,
+  "max_players": 0,
+  "sort_order": 3
+ },
+ {
+  "code": "verbandsspiel",
+  "name": "Verbandsspiel",
+  "duration_minutes": 240,
+  "requires_partner": false,
+  "min_players": 0,
+  "max_players": 0,
+  "sort_order": 4
+ },
+ {
+  "code": "platzpflege",
+  "name": "Platzpflege",
+  "duration_minutes": 120,
+  "requires_partner": false,
+  "min_players": 0,
+  "max_players": 0,
+  "sort_order": 5
+ }
+]

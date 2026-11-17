@@ -1,0 +1,83 @@
+[
+ {
+  "id": "8b74ad2b-92e7-4273-b9e9-5c1ad7a4bd32",
+  "name": "Platz 1",
+  "short_name": "P1",
+  "subline": "Sandplatz",
+  "sort_position": 0,
+  "active": true,
+  "offene_buchungen": 0
+ },
+ {
+  "id": "238cef6a-3249-4ad5-b0f6-800b266cb345",
+  "name": "Platz 2",
+  "short_name": "P2",
+  "subline": "Sandplatz",
+  "sort_position": 1,
+  "active": true,
+  "offene_buchungen": 0
+ },
+ {
+  "id": "78210ffa-ea88-471b-b3a1-84b995c74daa",
+  "name": "Platz 3",
+  "short_name": "P3",
+  "subline": "Sandplatz",
+  "sort_position": 2,
+  "active": true,
+  "offene_buchungen": 0
+ },
+ {
+  "id": "979a467f-43c3-497a-8963-4ddb46cd01fa",
+  "name": "Platz 4",
+  "short_name": "P4",
+  "subline": "Sandplatz",
+  "sort_position": 3,
+  "active": true,
+  "offene_buchungen": 0
+ },
+ {
+  "id": "490cb577-0a76-47a6-b9b9-e18d320b8fbe",
+  "name": "Platz 5",
+  "short_name": "P5",
+  "subline": "Sandplatz",
+  "sort_position": 4,
+  "active": true,
+  "offene_buchungen": 0
+ },
+ {
+  "id": "2bb410d8-ebdf-4fca-98b6-8f2c51f22250",
+  "name": "Platz 6",
+  "short_name": "P6",
+  "subline": "Sandplatz",
+  "sort_position": 5,
+  "active": true,
+  "offene_buchungen": 0
+ },
+ {
+  "id": "fe49f9e8-607b-4185-9e54-da35d310a7d7",
+  "name": "Platz 7",
+  "short_name": "P7",
+  "subline": "Sandplatz",
+  "sort_position": 6,
+  "active": true,
+  "offene_buchungen": 0
+ },
+ {
+  "id": "45457578-9de6-437d-aaf1-b0f81d1bff67",
+  "name": "Platz 8",
+  "short_name": "P8",
+  "subline": "Sandplatz",
+  "sort_position": 7,
+  "active": true,
+  "offene_buchungen": 9
+ },
+ {
+  "id": "ac99a393-7b63-47d6-8799-4b390ec16b34",
+  "name": "Platz 9",
+  "short_name": "P9",
+  "subline": "Hartplatz",
+  "sort_position": 8,
+  "active": false,
+  "offene_buchungen": 0
+ }
+]

@@ -91,6 +91,32 @@ Kern-Fälle aus den Vitest-Tests (`KernTests`), das Decoding der Home-Modelle mi
 (`StartdatenTests`), die View-Logik von Home, Glocke und Neuigkeiten (`HomeLogikTests`), das Konto (`KontoTests`),
 das Onboarding (`OnboardingTests`) und Push (`PushTests`).
 
+**Screens, Datenschicht und Push ohne Netz.** Alles Weitere läuft gegen eine Attrappe statt gegen
+Supabase (`TCMuckensturmTests/Hilfen/Attrappe.swift`): ein `URLProtocol` in der `URLSession` des
+Supabase-Clients beantwortet jede RPC aus `TCMuckensturmTests/Antworten/<rpc>.json`, schreibt die
+Anfragen mit und lässt sich je Test umstellen (Fehler der Datenbank, kein Netz, hängt, abgelaufene
+Sitzung). Die Antworten sind Aufzeichnungen vom lokalen Stack (`scripts/aufzeichnen.sh`), bereinigt
+und ergänzt von `scripts/beispiele.py`; ihre Daten wandern beim Lesen mit, sodass der Aufnahmetag
+immer „heute“ ist.
+
+- `Bildschirme/*BildschirmTests`: jeder Screen und jedes Blatt gerendert, hell und dunkel, in den
+  Zuständen geladen, leer, Fehler und lädt – das Gegenstück zu den Roborazzi-Tests in
+  `apps/android`. `Hilfen/Buehne.swift` hängt die Ansicht in ein eigenes Fenster (402 × 874),
+  wartet auf die erwarteten Texte im Accessibility-Baum und prüft, dass das Bild nicht leer und
+  dunkel dunkler als hell ist. Es gibt bewusst **keinen Referenzbild-Vergleich** (keine neue
+  Abhängigkeit, kein Flattern zwischen Simulator-Versionen); die Bilder hängen als Anhang am
+  Testergebnis und landen mit `TEST_RUNNER_TCM_SCREENSHOTS=<Ordner>` zusätzlich als PNG dort.
+- `Daten/DatenschichtTests`: jede Abfrage aus `Daten/` und `Verwaltungsdaten` – RPC-Name, Parameter,
+  Dekodierung, Fehlerfälle (PostgREST-Fehler, Netz, kaputte Antwort, abgelaufenes Token).
+- `Daten/SitzungTests`: die Weiche (Tabs, Onboarding, kein Zugang), abgelaufene Sitzung mit und
+  ohne Erneuerung, An- und Abmelden, Passwortlink.
+- `Daten/PushAnmeldungTests`: Marke an- und abmelden, auffrischen, Tippen auf eine Mitteilung –
+  über die Naht `PushGeraet` ohne Systemdialog und ohne APNs; `PushNavigationTests` öffnet die
+  Ziele in den echten `HauptTabs`.
+
+Abdeckung messen: dieselbe Zeile mit `-enableCodeCoverage YES`, danach
+`xcrun xccov view --report --json <Ergebnis.xcresult>`.
+
 ### Screenshots gegen den lokalen Stack
 
 Ohne den Simulator von Hand zu bedienen: Das Scheme `TCMuckensturm Lokal anmelden` (UI-Test

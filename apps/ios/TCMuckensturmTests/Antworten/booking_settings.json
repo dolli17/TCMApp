@@ -1,0 +1,11 @@
+[
+ {
+  "max_open_bookings": 0,
+  "lead_days": 7,
+  "opening_time": "08:00:00",
+  "closing_time": "21:00:00",
+  "slot_minutes": 30,
+  "display_minutes": 60,
+  "guest_fee_cents": 1000
+ }
+]

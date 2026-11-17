@@ -1,0 +1,56 @@
+[
+ {
+  "member_id": "25c31169-2299-a28e-c06a-d4d6555fdcd6",
+  "first_name": "Christian",
+  "last_name": "Bauer",
+  "tennis_lk": "10,0",
+  "mannschaft_interesse": true,
+  "aktuelle_mannschaft": null,
+  "eingeladen": true
+ },
+ {
+  "member_id": "72690386-37be-b635-fedf-ce6ec7f32737",
+  "first_name": "Eva",
+  "last_name": "Bauer",
+  "tennis_lk": "12,0",
+  "mannschaft_interesse": true,
+  "aktuelle_mannschaft": null,
+  "eingeladen": false
+ },
+ {
+  "member_id": "fb6cee6f-cb17-689e-6d57-75fb2af7f615",
+  "first_name": "Lena",
+  "last_name": "Bauer",
+  "tennis_lk": "14,0",
+  "mannschaft_interesse": true,
+  "aktuelle_mannschaft": null,
+  "eingeladen": false
+ },
+ {
+  "member_id": "130c5b0f-c948-3a41-699e-0fd452c084c4",
+  "first_name": "Nadine",
+  "last_name": "Bauer",
+  "tennis_lk": "16,0",
+  "mannschaft_interesse": true,
+  "aktuelle_mannschaft": null,
+  "eingeladen": false
+ },
+ {
+  "member_id": "1b8c965f-bae7-5029-608f-c405e935c894",
+  "first_name": "Wolfgang",
+  "last_name": "Bauer",
+  "tennis_lk": "18,0",
+  "mannschaft_interesse": true,
+  "aktuelle_mannschaft": null,
+  "eingeladen": false
+ },
+ {
+  "member_id": "90aaa545-af5e-d5ab-9362-8280866787dd",
+  "first_name": "Rebecca",
+  "last_name": "Berger",
+  "tennis_lk": "20,0",
+  "mannschaft_interesse": true,
+  "aktuelle_mannschaft": null,
+  "eingeladen": false
+ }
+]

@@ -1,0 +1,17 @@
+[
+ {
+  "member_id": "e2e00000-0000-4000-8000-000000000001",
+  "first_name": "Uwe",
+  "last_name": "Engel",
+  "roles": [
+   "member",
+   "admin"
+  ],
+  "admin": true,
+  "platz_rechte": true,
+  "kiosk": false,
+  "zugang": true,
+  "grund": null,
+  "onboarding_offen": false
+ }
+]

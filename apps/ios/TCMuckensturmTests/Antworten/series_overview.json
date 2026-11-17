@@ -1,0 +1,26 @@
+[
+ {
+  "id": "e114751e-2ebd-42a6-b5a4-544e410805c0",
+  "court_name": "Platz 8",
+  "type_name": "Training",
+  "title": "Jugendtraining",
+  "weekday": 2,
+  "start_time": "18:30:00",
+  "end_time": "20:00:00",
+  "valid_from": "2026-11-10",
+  "valid_to": "2027-01-09",
+  "kuenftige": 8
+ },
+ {
+  "id": "e114751e-2ebd-42a6-b5a4-544e410805c1",
+  "court_name": "Platz 1",
+  "type_name": "Verbandsspiel",
+  "title": "Herren 30",
+  "weekday": 6,
+  "start_time": "09:00:00",
+  "end_time": "13:00:00",
+  "valid_from": "2026-11-10",
+  "valid_to": "2027-01-09",
+  "kuenftige": 4
+ }
+]

@@ -1,0 +1,90 @@
+[
+ {
+  "id": "30eb5556-c037-4d4a-9fb0-e55868dcd836",
+  "name": "Wasser still",
+  "description": "0,5 l",
+  "category": "drink",
+  "price_cents": 150,
+  "sort_order": 1
+ },
+ {
+  "id": "1bc950b0-f738-4641-959f-aacca79e9595",
+  "name": "Wasser spritzig",
+  "description": "0,5 l",
+  "category": "drink",
+  "price_cents": 150,
+  "sort_order": 2
+ },
+ {
+  "id": "866008e0-f04d-4836-b5f5-902060d7a02e",
+  "name": "Apfelschorle",
+  "description": "0,5 l",
+  "category": "drink",
+  "price_cents": 180,
+  "sort_order": 3
+ },
+ {
+  "id": "96d91619-d094-4ad8-afe3-d79a78d86d0a",
+  "name": "Cola",
+  "description": "0,33 l",
+  "category": "drink",
+  "price_cents": 180,
+  "sort_order": 4
+ },
+ {
+  "id": "f91afb02-933c-4d8f-8584-b39e83b0abd3",
+  "name": "Iso-Getränk",
+  "description": "0,5 l",
+  "category": "drink",
+  "price_cents": 200,
+  "sort_order": 5
+ },
+ {
+  "id": "c508390e-f3b8-4b57-92f5-a95bd904ecec",
+  "name": "Bier",
+  "description": "0,33 l",
+  "category": "drink",
+  "price_cents": 250,
+  "sort_order": 6
+ },
+ {
+  "id": "51da6e32-6052-4283-a300-32d4aff982fc",
+  "name": "Alkoholfreies Bier",
+  "description": "0,33 l",
+  "category": "drink",
+  "price_cents": 250,
+  "sort_order": 7
+ },
+ {
+  "id": "874275de-ce6e-4ef0-b9ee-84d2f130f4c7",
+  "name": "Radler",
+  "description": "0,33 l",
+  "category": "drink",
+  "price_cents": 250,
+  "sort_order": 8
+ },
+ {
+  "id": "bba6d5e5-ee62-479d-aad4-4a1b60e35d05",
+  "name": "Kaffee",
+  "description": "Tasse",
+  "category": "drink",
+  "price_cents": 120,
+  "sort_order": 9
+ },
+ {
+  "id": "4c1375d5-52e3-452e-af03-ef78eeb04ce5",
+  "name": "Schokoriegel",
+  "description": "",
+  "category": "food",
+  "price_cents": 100,
+  "sort_order": 10
+ },
+ {
+  "id": "d43546ec-4041-4510-825f-a1051201fa1a",
+  "name": "Brezel",
+  "description": "",
+  "category": "food",
+  "price_cents": 130,
+  "sort_order": 11
+ }
+]

@@ -1,0 +1,135 @@
+[
+ {
+  "booking_id": "80aa116f-c1f8-49de-a656-7242a20c0d40",
+  "court_id": "45457578-9de6-437d-aaf1-b0f81d1bff67",
+  "starts_at": "2026-11-17T17:30:00+00:00",
+  "ends_at": "2026-11-17T19:00:00+00:00",
+  "kind": "blocking",
+  "type_code": "training",
+  "type_name": "Training",
+  "title": "Jugendtraining",
+  "owner_name": null,
+  "owner_member_id": null,
+  "is_own": null,
+  "players": [],
+  "player_member_ids": [],
+  "guest_names": [],
+  "partner_wanted": false,
+  "frei": 0,
+  "bin_dabei": false,
+  "series_id": "e114751e-2ebd-42a6-b5a4-544e410805c0",
+  "partner_lk_von": null,
+  "partner_lk_bis": null,
+  "partner_fuer": null
+ },
+ {
+  "booking_id": "b0000000-0000-4000-8000-000000000001",
+  "court_id": "8b74ad2b-92e7-4273-b9e9-5c1ad7a4bd32",
+  "starts_at": "2026-11-17T09:00:00+00:00",
+  "ends_at": "2026-11-17T10:00:00+00:00",
+  "kind": "booking",
+  "type_code": "einzel",
+  "type_name": "Einzel",
+  "title": null,
+  "owner_name": "Noah Brandt",
+  "owner_member_id": "e2e00000-0000-4000-8000-000000000002",
+  "is_own": true,
+  "players": [
+   "Noah Brandt",
+   "Erika Sommer"
+  ],
+  "player_member_ids": [
+   "e2e00000-0000-4000-8000-000000000002",
+   "25c31169-2299-a28e-c06a-d4d6555fdcd6"
+  ],
+  "guest_names": [],
+  "partner_wanted": false,
+  "frei": 0,
+  "bin_dabei": false,
+  "series_id": null,
+  "partner_lk_von": null,
+  "partner_lk_bis": null,
+  "partner_fuer": null
+ },
+ {
+  "booking_id": "b0000000-0000-4000-8000-000000000002",
+  "court_id": "238cef6a-3249-4ad5-b0f6-800b266cb345",
+  "starts_at": "2026-11-17T15:00:00+00:00",
+  "ends_at": "2026-11-17T16:00:00+00:00",
+  "kind": "booking",
+  "type_code": "doppel",
+  "type_name": "Doppel",
+  "title": null,
+  "owner_name": "Julia Stein",
+  "owner_member_id": "4186ddd9-ab11-969c-b195-648f14051b8e",
+  "is_own": false,
+  "players": [
+   "Julia Stein",
+   "Jan Bauer"
+  ],
+  "player_member_ids": [
+   "4186ddd9-ab11-969c-b195-648f14051b8e",
+   "bfdfdb16-4bc5-71bd-1d32-7160ad22eb8e"
+  ],
+  "guest_names": [],
+  "partner_wanted": true,
+  "frei": 2,
+  "bin_dabei": false,
+  "series_id": null,
+  "partner_lk_von": 10.0,
+  "partner_lk_bis": 15.0,
+  "partner_fuer": "alle"
+ },
+ {
+  "booking_id": "b0000000-0000-4000-8000-000000000003",
+  "court_id": "78210ffa-ea88-471b-b3a1-84b995c74daa",
+  "starts_at": "2026-11-17T12:00:00+00:00",
+  "ends_at": "2026-11-17T14:00:00+00:00",
+  "kind": "blocking",
+  "type_code": "platzpflege",
+  "type_name": "Platzpflege",
+  "title": "Linien erneuern",
+  "owner_name": null,
+  "owner_member_id": null,
+  "is_own": null,
+  "players": [],
+  "player_member_ids": [],
+  "guest_names": [],
+  "partner_wanted": false,
+  "frei": 0,
+  "bin_dabei": false,
+  "series_id": null,
+  "partner_lk_von": null,
+  "partner_lk_bis": null,
+  "partner_fuer": null
+ },
+ {
+  "booking_id": "b0000000-0000-4000-8000-000000000004",
+  "court_id": "979a467f-43c3-497a-8963-4ddb46cd01fa",
+  "starts_at": "2026-11-17T18:00:00+00:00",
+  "ends_at": "2026-11-17T19:00:00+00:00",
+  "kind": "booking",
+  "type_code": "einzel",
+  "type_name": "Einzel",
+  "title": null,
+  "owner_name": "Uwe Engel",
+  "owner_member_id": "1b8c965f-bae7-5029-0000-000000000000",
+  "is_own": false,
+  "players": [
+   "Uwe Engel"
+  ],
+  "player_member_ids": [
+   "1b8c965f-bae7-5029-0000-000000000000"
+  ],
+  "guest_names": [
+   "Gast"
+  ],
+  "partner_wanted": false,
+  "frei": 0,
+  "bin_dabei": true,
+  "series_id": null,
+  "partner_lk_von": null,
+  "partner_lk_bis": null,
+  "partner_fuer": null
+ }
+]

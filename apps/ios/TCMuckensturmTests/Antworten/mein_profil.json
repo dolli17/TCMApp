@@ -1,0 +1,19 @@
+[
+ {
+  "first_name": "Noah",
+  "last_name": "Brandt",
+  "title": null,
+  "phone": null,
+  "mobile": "0170 1234567",
+  "street": "Hauptstr. 15",
+  "postcode": "70374",
+  "city": "Stuttgart",
+  "emergency_contact_name": "Erika Mustermann",
+  "emergency_contact_phone": null,
+  "emergency_contact_relation": "Mutter",
+  "membership_number": "0360",
+  "member_since": "1994-12-08",
+  "team_name": "Herren 30",
+  "is_team_captain": true
+ }
+]

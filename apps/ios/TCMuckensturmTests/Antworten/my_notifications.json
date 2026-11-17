@@ -1,0 +1,38 @@
+[
+ {
+  "id": "a0000000-0000-4000-8000-000000000001",
+  "read_at": null,
+  "event_id": null,
+  "kind": "player_joined",
+  "title": "Jemand spielt mit",
+  "body": "Julia Stein hat sich für 18.11.2026 um 17:00 Uhr auf Platz 3 eingetragen.",
+  "created_at": "2026-11-17T08:03:09.020013+00:00"
+ },
+ {
+  "id": "a0000000-0000-4000-8000-000000000002",
+  "read_at": null,
+  "event_id": "e0000000-0000-4000-8000-000000000001",
+  "kind": "event_published",
+  "title": "Neu im Verein: Sommerfest",
+  "body": "Fest am 07.12.2026, 19:00 Uhr, Clubhaus. Anmeldung bis 02.12.2026.",
+  "created_at": "2026-11-16T16:04:13.618845+00:00"
+ },
+ {
+  "id": "a0000000-0000-4000-8000-000000000003",
+  "read_at": "2026-11-15T12:00:00+00:00",
+  "event_id": null,
+  "kind": "team_invitation",
+  "title": "Einladung in die Mannschaft Herren",
+  "body": "Julia Stein lädt dich in die Mannschaft Herren ein.",
+  "created_at": "2026-11-15T10:00:00+00:00"
+ },
+ {
+  "id": "a0000000-0000-4000-8000-000000000004",
+  "read_at": "2026-11-11T12:00:00+00:00",
+  "event_id": null,
+  "kind": "booking_cancelled",
+  "title": "Buchung storniert",
+  "body": "Deine Buchung am 12.11.2026 um 18:00 Uhr auf Platz 1 wurde storniert: Platzpflege.",
+  "created_at": "2026-11-11T09:00:00+00:00"
+ }
+]

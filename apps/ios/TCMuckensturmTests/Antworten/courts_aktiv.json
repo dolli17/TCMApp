@@ -1,0 +1,50 @@
+[
+ {
+  "id": "8b74ad2b-92e7-4273-b9e9-5c1ad7a4bd32",
+  "name": "Platz 1",
+  "short_name": "P1",
+  "position": 0
+ },
+ {
+  "id": "238cef6a-3249-4ad5-b0f6-800b266cb345",
+  "name": "Platz 2",
+  "short_name": "P2",
+  "position": 1
+ },
+ {
+  "id": "78210ffa-ea88-471b-b3a1-84b995c74daa",
+  "name": "Platz 3",
+  "short_name": "P3",
+  "position": 2
+ },
+ {
+  "id": "979a467f-43c3-497a-8963-4ddb46cd01fa",
+  "name": "Platz 4",
+  "short_name": "P4",
+  "position": 3
+ },
+ {
+  "id": "490cb577-0a76-47a6-b9b9-e18d320b8fbe",
+  "name": "Platz 5",
+  "short_name": "P5",
+  "position": 4
+ },
+ {
+  "id": "2bb410d8-ebdf-4fca-98b6-8f2c51f22250",
+  "name": "Platz 6",
+  "short_name": "P6",
+  "position": 5
+ },
+ {
+  "id": "fe49f9e8-607b-4185-9e54-da35d310a7d7",
+  "name": "Platz 7",
+  "short_name": "P7",
+  "position": 6
+ },
+ {
+  "id": "45457578-9de6-437d-aaf1-b0f81d1bff67",
+  "name": "Platz 8",
+  "short_name": "P8",
+  "position": 7
+ }
+]

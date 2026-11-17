@@ -33,9 +33,10 @@ final class Sitzung {
     /// Laenger wartet niemand vor einem Ladekreis (wie FRIST_MS in passwort-setzen.tsx).
     static let frist = Duration.seconds(15)
 
-    init(umgebung: Umgebung) {
+    /// - Parameter client: nur fuer Tests - ein Client, der nicht ins Netz geht (TCMuckensturmTests/Hilfen).
+    init(umgebung: Umgebung, client: SupabaseClient? = nil) {
         self.umgebung = umgebung
-        self.client = SupabaseVerbindung.client(fuer: umgebung)
+        self.client = client ?? SupabaseVerbindung.client(fuer: umgebung)
     }
 
     /// Startet die Beobachtung. Das erste Ereignis meldet die gespeicherte Sitzung.

@@ -1,0 +1,116 @@
+{
+ "mandat": {
+  "text": "SEPA-Lastschriftmandat (SEPA-Basislastschrift)\n\nZahlungsempfänger: TC Muckensturm e.V.\nGläubiger-Identifikationsnummer: DE98ZZZ09999999999\nMandatsreferenz: TCM-401-2026\nZahlungsart: Wiederkehrende Zahlungen\n\nIch ermächtige TC Muckensturm e.V., Zahlungen von meinem Konto mittels Lastschrift einzuziehen. Zugleich weise ich mein Kreditinstitut an, die von TC Muckensturm e.V. auf mein Konto gezogenen ",
+  "moeglich": true,
+  "referenz": "TCM-401-2026",
+  "vorhanden": false,
+  "text_version": 1,
+  "glaeubiger_id": "DE98ZZZ09999999999",
+  "glaeubiger_name": "TC Muckensturm e.V.",
+  "online_erteilt_am": null,
+  "kontoinhaber_vorschlag": "Nora Neumitglied"
+ },
+ "status": {
+  "sepa": false,
+  "tennis": false,
+  "passwort": true,
+  "stammdaten": false,
+  "rechtliches": false,
+  "einstellungen": false,
+  "einwilligungen": false,
+  "notfallkontakt": false,
+  "erziehungsberechtigte": true
+ },
+ "tennis": {
+  "nuliga_id": null,
+  "tennis_lk": null,
+  "mannschaft_interesse": false
+ },
+ "merkmale": [
+  {
+   "code": "foto",
+   "name": "Fotos und Veröffentlichung",
+   "gesetzt": false,
+   "description": "Darf die Person auf Fotos der Website, in Aushängen und in der Presse erscheinen? Bei Minderjährigen erteilen die Erziehungsberechtigten die Einwilligung."
+  },
+  {
+   "code": "newsletter",
+   "name": "Vereinsnachrichten per E-Mail",
+   "gesetzt": false,
+   "description": "Rundmails zu Veranstaltungen und Neuigkeiten. Pflichtinformationen zu Beitrag und Lastschrift gehen unabhängig davon heraus."
+  },
+  {
+   "code": "whatsapp",
+   "name": "Messenger-Gruppen",
+   "gesetzt": false,
+   "description": "Aufnahme in die Gruppen des Vereins. Eigene Einwilligung, weil die Telefonnummer dabei an einen Dritten gelangt."
+  }
+ ],
+ "dokumente": [
+  {
+   "code": "satzung",
+   "title": "Satzung",
+   "version": 1,
+   "valid_from": "2026-11-10",
+   "zugestimmt_am": null
+  },
+  {
+   "code": "beitragsordnung",
+   "title": "Beitragsordnung",
+   "version": 1,
+   "valid_from": "2026-11-10",
+   "zugestimmt_am": null
+  },
+  {
+   "code": "datenschutz",
+   "title": "Datenschutzerklärung",
+   "version": 1,
+   "valid_from": "2026-11-10",
+   "zugestimmt_am": null
+  }
+ ],
+ "stammdaten": {
+  "city": "Stuttgart",
+  "email": "neu@tcm.local",
+  "phone": null,
+  "title": null,
+  "gender": "female",
+  "mobile": "0170 1234567",
+  "street": "Hauptstr. 1",
+  "birthday": "1992-10-01",
+  "postcode": "70372",
+  "last_name": "Neumitglied",
+  "first_name": "Nora",
+  "salutation": "female",
+  "country_code": "DE",
+  "bestaetigt_am": null,
+  "nationality_code": null
+ },
+ "beitragsarten": [
+  {
+   "code": "erwachsener",
+   "name": "Erwachsener"
+  }
+ ],
+ "einstellungen": {
+  "booking_mail": null
+ },
+ "minderjaehrig": false,
+ "pflicht_fehlt": [
+  "stammdaten",
+  "rechtliches",
+  "sepa"
+ ],
+ "notfallkontakt": {
+  "name": null,
+  "phone": null,
+  "relation": null
+ },
+ "abgeschlossen_am": null,
+ "erziehungsberechtigte": {
+  "name": null,
+  "email": null,
+  "phone": null,
+  "zustimmung_am": null
+ }
+}
