@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.theme.TcmSchrift
 import de.tcmuckensturm.app.theme.TcmTheme
+import de.tcmuckensturm.app.ui.tokens.Radius
 import de.tcmuckensturm.app.ui.tokens.Schrift
 import de.tcmuckensturm.kern.SuchFuer
 import de.tcmuckensturm.kern.Suchfilter
@@ -50,7 +51,7 @@ private fun lkGenau(zehntel: Int): String = "${zehntel / 10},${zehntel % 10}"
 @Composable
 fun SuchfilterKarte(filter: Suchfilter, deaktiviert: Boolean = false, aendern: (Suchfilter) -> Unit) {
     val f = TcmTheme.farben
-    val form = RoundedCornerShape(18.dp)
+    val form = RoundedCornerShape(Radius.karte)
     Column(
         Modifier
             .fillMaxWidth()
@@ -59,11 +60,11 @@ fun SuchfilterKarte(filter: Suchfilter, deaktiviert: Boolean = false, aendern: (
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Nur für …", style = TcmSchrift.text(Schrift.gewichtFett, 16.sp), color = f.ink, modifier = Modifier.weight(1f))
+            Text("Nur für …", style = TcmSchrift.display(Schrift.gewichtHalbfett, 16.sp), color = f.ink, modifier = Modifier.weight(1f))
             Text(
                 filter.zusatz ?: "alle",
-                style = TcmSchrift.text(Schrift.gewichtFett, 14.sp).copy(fontFeatureSettings = "tnum"),
-                color = if (filter.eingeschraenkt) f.goldInk else f.muted,
+                style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp).copy(fontFeatureSettings = "tnum"),
+                color = if (filter.eingeschraenkt) f.blueInk else f.muted,
                 textAlign = TextAlign.End,
             )
         }
@@ -80,8 +81,8 @@ fun SuchfilterKarte(filter: Suchfilter, deaktiviert: Boolean = false, aendern: (
                 valueRange = Suchfilter.MIN.toFloat()..Suchfilter.MAX.toFloat(),
                 enabled = !deaktiviert,
                 colors = SliderDefaults.colors(
-                    thumbColor = f.greenInk,
-                    activeTrackColor = f.greenInk,
+                    thumbColor = f.blue,
+                    activeTrackColor = f.blue,
                     inactiveTrackColor = f.surf3,
                 ),
                 modifier = Modifier.semantics { contentDescription = "LK-Bereich ${filter.bereichText}" },
@@ -114,15 +115,15 @@ private fun LkSchritt(name: String, zehntel: Int, aus: Boolean, kleiner: Boolean
     Row(
         Modifier
             .fillMaxWidth()
-            .background(f.surf2, RoundedCornerShape(18.dp))
-            .padding(6.dp)
-            .padding(start = 10.dp),
+            .background(f.surf2, RoundedCornerShape(Radius.feld))
+            .padding(4.dp)
+            .padding(start = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(name, style = TcmSchrift.text(Schrift.gewichtHalbfett, 15.sp), color = f.ink2, modifier = Modifier.weight(1f))
         Rundknopf("$name LK 0,1 niedriger", aus = aus || kleiner, hintergrund = f.surf3, aktion = { wert(zehntel - 1) }) {
-            Text("−", style = TcmSchrift.text(Schrift.gewichtFett, 20.sp), color = f.ink)
+            Text("−", style = TcmSchrift.display(Schrift.gewichtFett, 20.sp), color = f.ink)
         }
         Text(
             lkGenau(zehntel),

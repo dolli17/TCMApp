@@ -28,6 +28,7 @@ import de.tcmuckensturm.app.bildschirme.nachrichten.GlockeKnopf
 import de.tcmuckensturm.app.theme.TcmTheme
 import de.tcmuckensturm.app.ui.tokens.Radius
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,11 +49,10 @@ import org.robolectric.annotation.GraphicsMode
 class PlaetzeBildschirmfotoTest {
     @get:Rule val compose = createComposeRule()
 
-    private fun modell(ansicht: Ansicht, platzrechte: Boolean = false) = PlaetzeModell(
+    private fun modell(platzrechte: Boolean = false) = PlaetzeModell(
         quelle = PlatzAttrappe(platzrechte = platzrechte),
         uhr = { PlatzAttrappe.JETZT },
         live = false,
-        ansichtAnfang = ansicht,
     ).also { runBlocking { it.laden() } }
 
     private fun foto(name: String, dunkel: Boolean, inhalt: @Composable () -> Unit) {
@@ -82,69 +82,78 @@ class PlaetzeBildschirmfotoTest {
 
     // ---- Plan ---------------------------------------------------------------------------------
 
-    private fun freieZeiten(name: String, dunkel: Boolean) {
-        val m = modell(Ansicht.FREIE_ZEITEN)
-        compose.setContent { TcmTheme(dunkel = dunkel) { PlaetzeInhalt(m, glocke = { GlockeKnopf(2) {} }) } }
-        // Die Zeile um 18:00 aufklappen: freie Plaetze und das Spiel, das Mitspieler sucht.
-        compose.onNode(hasContentDescription("18:00 Uhr", substring = true)).performClick()
-        compose.waitForIdle()
-        compose.onRoot().captureRoboImage("../docs/$name.png")
-    }
-
-    @Test
-    fun freieZeitenHell() = freieZeiten("plaetze-freie-zeiten-hell", dunkel = false)
-
-    @Test
-    fun freieZeitenDunkel() = freieZeiten("plaetze-freie-zeiten-dunkel", dunkel = true)
-
-    private fun raster(dunkel: Boolean): PlaetzeModell = modell(Ansicht.UEBERSICHT).also {
+    /** Der Belegungsplan mit einer Auswahl - darunter die Leiste mit "Buchen". */
+    private fun raster(): PlaetzeModell = modell().also {
         it.auswahl = Auswahl("p2", 17 * 60 + 30, 21 * 60)
     }
 
-    /** Schrift 200 %: Kopf, Tagwahl und freie Zeiten ohne abgeschnittene Texte. */
+    @Composable
+    private fun Plan(m: PlaetzeModell) = PlaetzeInhalt(m, glocke = { GlockeKnopf(2) {} })
+
+    @Test
+    @Config(qualifiers = "w412dp-h1300dp-xxhdpi")
+    fun rasterHell() = raster().let { m -> foto("plaetze-raster-hell", dunkel = false) { Plan(m) } }
+
+    @Test
+    @Config(qualifiers = "w412dp-h1300dp-xxhdpi")
+    fun rasterDunkel() = raster().let { m -> foto("plaetze-raster-dunkel", dunkel = true) { Plan(m) } }
+
+    /** Wie auf dem Telefon: Kopf, Tagesleiste, Legende und der Anfang des Rasters. */
+    @Test
+    fun rasterTelefon() = modell().let { m -> foto("plaetze-raster-telefon", dunkel = false) { Plan(m) } }
+
+    /** Schrift 200 %: Kopf, Tagesleiste und Legende ohne abgeschnittene Texte. */
     @Test
     @Config(qualifiers = "w412dp-h1600dp-xxhdpi", fontScale = 2f)
-    fun freieZeitenSchrift200() = freieZeiten("plaetze-schrift-200", dunkel = false)
+    fun rasterSchrift200() = modell().let { m -> foto("plaetze-schrift-200", dunkel = false) { Plan(m) } }
 
+    /** Eine freie Flaeche antippen waehlt aus; das eigene Spiel oeffnet das Blatt. */
     @Test
-    fun rasterHell() = raster(false).let { m -> foto("plaetze-raster-hell", dunkel = false) { PlaetzeInhalt(m, glocke = { GlockeKnopf(2) {} }) } }
-
-    @Test
-    fun rasterDunkel() = raster(true).let { m -> foto("plaetze-raster-dunkel", dunkel = true) { PlaetzeInhalt(m, glocke = { GlockeKnopf(2) {} }) } }
+    fun rasterTippen() {
+        val m = modell()
+        compose.setContent { TcmTheme(dunkel = false) { Plan(m) } }
+        compose.waitForIdle()
+        compose.onAllNodes(hasContentDescription("frei von", substring = true))[0].performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        assertNotNull(m.auswahl)
+        compose.onNode(hasContentDescription("deine Buchung", substring = true)).performScrollTo().performClick()
+        compose.waitForIdle()
+        assertNotNull(m.fenster)
+    }
 
     // ---- Blatt --------------------------------------------------------------------------------
 
     private val buchen = Fenster.Buchen("p2", "Platz 2", PlatzAttrappe.TAG, stunde = 17 * 60, startzeiten = listOf(1020, 1050), start = 1020)
 
     @Test
-    fun buchenHell() = modell(Ansicht.FREIE_ZEITEN, platzrechte = true).let { m ->
+    fun buchenHell() = modell(platzrechte = true).let { m ->
         foto("plaetze-buchen-hell", dunkel = false) { Blatt(m, buchen) }
     }
 
     @Test
-    fun buchenDunkel() = modell(Ansicht.FREIE_ZEITEN, platzrechte = true).let { m ->
+    fun buchenDunkel() = modell(platzrechte = true).let { m ->
         foto("plaetze-buchen-dunkel", dunkel = true) { Blatt(m, buchen) }
     }
 
     private val eigene = Fenster.Bestehend(PlatzAttrappe.EIGENE, "Platz 1", PlatzAttrappe.TAG)
 
     @Test
-    fun eigeneBuchungHell() = modell(Ansicht.FREIE_ZEITEN).let { m ->
+    fun eigeneBuchungHell() = modell().let { m ->
         foto("plaetze-eigene-buchung-hell", dunkel = false) { Blatt(m, eigene) }
     }
 
     @Test
-    fun eigeneBuchungDunkel() = modell(Ansicht.FREIE_ZEITEN).let { m ->
+    fun eigeneBuchungDunkel() = modell().let { m ->
         foto("plaetze-eigene-buchung-dunkel", dunkel = true) { Blatt(m, eigene) }
     }
 
     @Test
-    fun mitspielen() = modell(Ansicht.FREIE_ZEITEN).let { m ->
+    fun mitspielen() = modell().let { m ->
         foto("plaetze-mitspielen", dunkel = true) { Blatt(m, Fenster.Bestehend(PlatzAttrappe.SUCHT, "Platz 4", PlatzAttrappe.TAG)) }
     }
 
     @Test
-    fun sperrung() = modell(Ansicht.FREIE_ZEITEN, platzrechte = true).let { m ->
+    fun sperrung() = modell(platzrechte = true).let { m ->
         foto("plaetze-sperrung", dunkel = false) { Blatt(m, Fenster.Bestehend(PlatzAttrappe.SPERRE, "Platz 3", PlatzAttrappe.TAG)) }
     }
 
@@ -166,13 +175,13 @@ class PlaetzeBildschirmfotoTest {
         griffe[1].performSemanticsAction(SemanticsActions.SetProgress) { it(bis) }
     }
 
-    private fun buchenMitFilter(name: String, dunkel: Boolean) = modell(Ansicht.FREIE_ZEITEN).let { m ->
+    private fun buchenMitFilter(name: String, dunkel: Boolean) = modell().let { m ->
         fotoNach(name, dunkel, { Blatt(m, buchen) }) {
             compose.onNodeWithText("Mitspieler gesucht").performClick()
             compose.waitForIdle()
             lkSchieber(100f, 160f)
             compose.onNodeWithText("Herren").performClick()
-            compose.onNodeWithText("Für wen").performScrollTo()
+            compose.onNodeWithText("Für wen", ignoreCase = true).performScrollTo()
         }
     }
 
@@ -193,15 +202,15 @@ class PlaetzeBildschirmfotoTest {
     )
 
     @Test
-    fun eigeneSucheHell() = modell(Ansicht.FREIE_ZEITEN).let { m ->
+    fun eigeneSucheHell() = modell().let { m ->
         fotoNach("plaetze-suchfilter-eigene-hell", dunkel = false, { Blatt(m, eigeneSucht) }) {
-            compose.onNodeWithText("Für wen").performScrollTo()
+            compose.onNodeWithText("Für wen", ignoreCase = true).performScrollTo()
         }
     }
 
     /** Geaendert: bis LK 18 - dann erscheint "Suche ändern". */
     @Test
-    fun eigeneSucheAendernDunkel() = modell(Ansicht.FREIE_ZEITEN).let { m ->
+    fun eigeneSucheAendernDunkel() = modell().let { m ->
         fotoNach("plaetze-suchfilter-aendern-dunkel", dunkel = true, { Blatt(m, eigeneSucht) }) {
             lkSchieber(125f, 180f)
             compose.onNodeWithText("Suche ändern").performScrollTo()

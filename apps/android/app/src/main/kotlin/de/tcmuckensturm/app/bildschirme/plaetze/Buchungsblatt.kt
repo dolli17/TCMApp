@@ -65,7 +65,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.tcmuckensturm.app.bildschirme.DeinMarker
 import de.tcmuckensturm.app.bildschirme.Hauptknopf
+import de.tcmuckensturm.app.bildschirme.Kapsel
+import de.tcmuckensturm.app.bildschirme.MarkeKlein
+import de.tcmuckensturm.app.bildschirme.Zweitknopf
 import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.bildschirme.NebeneinanderOderUntereinander
 import de.tcmuckensturm.app.daten.Initialen
@@ -136,22 +140,31 @@ fun BuchungsblattInhalt(m: PlaetzeModell, fenster: Fenster, schliessen: () -> Un
 
 // ---- Kopf ---------------------------------------------------------------------------------
 
-/** Kicker, Zeit als Titel, rechts das X. */
+/** Die Zeit gross als Titel (beim eigenen Spiel mit gelbem Marker), darunter Platz und Tag, rechts das X. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun PlatzBlattKopf(kicker: String, titel: String, schliessen: () -> Unit) {
+private fun PlatzBlattKopf(kicker: String, titel: String, deins: Boolean = false, schliessen: () -> Unit) {
     val f = TcmTheme.farben
     Row(verticalAlignment = Alignment.Top) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(kicker.uppercase(), style = TcmSchrift.kicker, color = f.muted)
-            Text(
-                titel,
-                style = TcmSchrift.display(Schrift.gewichtFett, 30.sp).copy(fontFeatureSettings = "tnum"),
-                color = f.ink,
-                modifier = Modifier.semantics { heading() },
-            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                itemVerticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    titel,
+                    style = TcmSchrift.display(Schrift.gewichtFett, 30.sp, (-0.6).sp).copy(fontFeatureSettings = "tnum"),
+                    color = f.ink,
+                    modifier = Modifier.semantics { heading() },
+                )
+                // Gelb heisst "deins".
+                if (deins) DeinMarker("Dein Spiel")
+            }
+            Text(kicker, style = TcmSchrift.text(Schrift.gewichtNormal, 15.sp), color = f.muted)
         }
         Rundknopf("Schließen", aktion = schliessen) {
-            Icon(Icons.Filled.Close, contentDescription = null, tint = f.ink, modifier = Modifier.size(18.dp))
+            Icon(Icons.Filled.Close, contentDescription = null, tint = f.ink2, modifier = Modifier.size(18.dp))
         }
     }
 }
@@ -247,14 +260,14 @@ private fun Mitspieler(
                                 Modifier
                                     .fillMaxWidth()
                                     .heightIn(min = 48.dp)
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .clip(RoundedCornerShape(Radius.feld))
                                     .background(f.surf2)
                                     .clickable(role = Role.Button) {
                                         aendern(mitglieder + t.id, gaeste)
                                         suche = ""
                                         suchenWechsel(false)
                                     }
-                                    .padding(horizontal = 14.dp),
+                                    .padding(horizontal = 20.dp),
                                 contentAlignment = Alignment.CenterStart,
                             ) {
                                 Text(
@@ -275,22 +288,16 @@ private fun Mitspieler(
     }
 }
 
-/** "+ Mitglied" und "+ Gast": gestrichelt, betont blau, wenn noch jemand fehlt. */
+/** "+ Mitglied" und "+ Gast": Pillen in den Stufen der App - hellblau, wenn noch jemand fehlt, sonst weiss mit Linie. */
 @Composable
 private fun GestrichelterKnopf(text: String, betont: Boolean, modifier: Modifier, aktion: () -> Unit) {
     val f = TcmTheme.farben
-    val form = RoundedCornerShape(14.dp)
     Row(
         modifier
             .heightIn(min = 48.dp)
-            .clip(form)
-            .then(
-                if (betont) {
-                    Modifier.background(f.blue.copy(alpha = 0.07f)).border(1.5.dp, f.blue, form)
-                } else {
-                    Modifier.gestrichelt(f.line2, 14.dp)
-                },
-            )
+            .clip(Kapsel)
+            .background(if (betont) f.blueSoft else f.surf)
+            .border(1.dp, if (betont) f.blue.copy(alpha = 0.22f) else f.line2, Kapsel)
             .clickable(role = Role.Button, onClick = aktion)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -299,7 +306,7 @@ private fun GestrichelterKnopf(text: String, betont: Boolean, modifier: Modifier
         val farbe = if (betont) f.blueInk else f.ink
         Icon(Icons.Filled.Add, contentDescription = null, tint = farbe, modifier = Modifier.size(18.dp))
         Spacer(Modifier.size(4.dp))
-        Text(text, style = TcmSchrift.text(Schrift.gewichtHalbfett, 15.sp), color = farbe, maxLines = 1)
+        Text(text, style = TcmSchrift.display(Schrift.gewichtHalbfett, 15.sp), color = farbe, maxLines = 1)
     }
 }
 
@@ -326,7 +333,7 @@ private fun ColumnScope.BuchenInhalt(m: PlaetzeModell, b: Fenster.Buchen, kicker
     val haelften = (b.stunde until b.stunde + m.anzeige step maxOf(m.raster, 1)).toList()
     val ich = m.ich
 
-    PlatzBlattKopf(kicker, "${Zeit.minutesToTime(start)} – ${Zeit.minutesToTime(start + dauer)}", schliessen)
+    PlatzBlattKopf(kicker, "${Zeit.minutesToTime(start)} – ${Zeit.minutesToTime(start + dauer)}", schliessen = schliessen)
 
     val beginn: @Composable (Modifier) -> Unit = { mod ->
         Column(mod) {
@@ -440,8 +447,12 @@ private fun SperrBereich(m: PlaetzeModell, courtId: String, platzName: String, t
             }
             Leise("Gesperrt wird ${Zeit.minutesToTime(stunde)}–${Zeit.minutesToTime(bis)} Uhr auf $platzName.")
             val n = kollisionen
-            Nebenknopf(n?.let(PlaetzeLogik::verdraengenText) ?: "Sperren", gefahr = n != null, gesperrt = m.laeuft) {
-                m.sperren(courtId, tag, stunde, bis, art, g, verdraengen = n != null) { kollisionen = it }
+            val sperren = { m.sperren(courtId, tag, stunde, bis, art, g, verdraengen = n != null) { kollisionen = it } }
+            // Verdraengen ist die rote Bestaetigung neben dem neutralen "Doch nicht".
+            if (n != null) {
+                Hauptknopf(PlaetzeLogik.verdraengenText(n), rot = true, gesperrt = m.laeuft, aktion = sperren)
+            } else {
+                Zweitknopf("Sperren", gesperrt = m.laeuft, aktion = sperren)
             }
             Nebenknopf("Doch nicht", klein = true) {
                 grund = null
@@ -493,16 +504,17 @@ private fun ColumnScope.VerwaltenInhalt(m: PlaetzeModell, b: TagesBelegung, tag:
     PlatzBlattKopf(
         kicker,
         "${Zeit.minutesToTime(Zeit.minutesOf(b.startsAt))} – ${Zeit.minutesToTime(Zeit.minutesOf(b.endsAt))}",
-        schliessen,
+        deins = b.isOwn == true && !v.nurStorno,
+        schliessen = schliessen,
     )
 
     Column(Modifier.padding(top = 0.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(v.untertitel, style = TcmSchrift.text(Schrift.gewichtHalbfett, 16.sp), color = f.ink)
+        Text(v.untertitel, style = TcmSchrift.display(Schrift.gewichtHalbfett, 16.sp), color = f.ink)
         if (v.nurStorno && !v.serientermin) Platzplan.blockingLabel(b.title, b.typeName).grund?.let { Leise(it) }
         if (m.darfPlaetze && b.isOwn != true && !v.nurStorno) Leise("Du bearbeitest eine fremde Buchung mit Platzrechten.")
         if (v.laeuftSchon) Leise("Die Spielzeit läuft bereits – Änderungen nur mit Platzrechten.")
         Verwalten.suchtText(b)?.let {
-            Text(it, style = TcmSchrift.text(Schrift.gewichtFett, Schrift.klein), color = f.goldInk)
+            MarkeKlein(it)
             // Wer nur mitspielen kann, sieht, an wen sich die Suche richtet.
             if (!v.darfVerwalten) PlaetzeLogik.nurFuerText(b.suchfilter)?.let { nur -> Leise(nur) }
         }
@@ -573,27 +585,30 @@ private fun ColumnScope.VerwaltenInhalt(m: PlaetzeModell, b: TagesBelegung, tag:
             // Im zweiten Schritt steht "Abbrechen" daneben: zurueck, ohne das Blatt zu schliessen (U76).
             if (v.darfVerwalten) {
                 // Bei grosser Schrift untereinander, sonst quetschen sich die Texte (ViewThatFits in iOS).
-                NebeneinanderOderUntereinander { breite ->
-                    if (stornoOffen) {
+                if (!stornoOffen) {
+                    // Erster Schritt: roter Text, noch keine rote Flaeche.
+                    Nebenknopf(v.stornoText(bestaetigen = false), gefahr = true, gesperrt = m.laeuft) {
+                        stornoOffen = true
+                        umsetzOffen = false
+                    }
+                } else {
+                    // Zweiter Schritt: rot gefuellt als Bestaetigung, daneben der neutrale Weg zurueck.
+                    NebeneinanderOderUntereinander { breite ->
+                        Hauptknopf(
+                            v.stornoText(bestaetigen = true),
+                            breite,
+                            rot = true,
+                            gesperrt = m.laeuft || (v.grundNoetig && grund.isBlank()),
+                        ) {
+                            when {
+                                v.serientermin -> m.terminAbsagen(b.bookingId, grund)
+                                v.nurStorno -> m.sperreAufheben(b.bookingId)
+                                else -> m.stornieren(b.bookingId, grund)
+                            }
+                        }
                         Nebenknopf("Abbrechen", breite, gesperrt = m.laeuft) {
                             stornoOffen = false
                             grund = ""
-                        }
-                    }
-                    Nebenknopf(
-                        v.stornoText(bestaetigen = stornoOffen),
-                        breite,
-                        gefahr = true,
-                        gesperrt = m.laeuft || (stornoOffen && v.grundNoetig && grund.isBlank()),
-                    ) {
-                        when {
-                            !stornoOffen -> {
-                                stornoOffen = true
-                                umsetzOffen = false
-                            }
-                            v.serientermin -> m.terminAbsagen(b.bookingId, grund)
-                            v.nurStorno -> m.sperreAufheben(b.bookingId)
-                            else -> m.stornieren(b.bookingId, grund)
                         }
                     }
                 }
@@ -637,11 +652,11 @@ private fun Ausschreiben(m: PlaetzeModell, b: TagesBelegung) {
     if (an) {
         SuchfilterKarte(filter, deaktiviert = m.laeuft) { filter = it }
         if (!gesucht) {
-            Hauptknopf(if (m.laeuft) "Wird ausgeschrieben …" else "Suche starten", gesperrt = m.laeuft) {
+            Zweitknopf(if (m.laeuft) "Wird ausgeschrieben …" else "Suche starten", gesperrt = m.laeuft) {
                 m.ausschreiben(b.bookingId, true, filter)
             }
         } else if (filter != gespeichert) {
-            Hauptknopf(if (m.laeuft) "Wird gespeichert …" else "Suche ändern", gesperrt = m.laeuft) {
+            Zweitknopf(if (m.laeuft) "Wird gespeichert …" else "Suche ändern", gesperrt = m.laeuft) {
                 m.ausschreiben(b.bookingId, true, filter, nurFilter = true)
             }
         }
@@ -710,7 +725,7 @@ private fun SperreBearbeiten(m: PlaetzeModell, sperre: TagesBelegung, tag: Strin
             val n = kollisionen
             if (n != null) {
                 Leise(PlaetzeLogik.imWegText(n), Modifier.fillMaxWidth())
-                Nebenknopf(PlaetzeLogik.verdraengenText(n), gefahr = true, gesperrt = m.laeuft) { speichern(true) }
+                Hauptknopf(PlaetzeLogik.verdraengenText(n), rot = true, gesperrt = m.laeuft) { speichern(true) }
             } else {
                 Hauptknopf(if (m.laeuft) "Wird gespeichert …" else "Änderungen speichern", gesperrt = m.laeuft || plaetze.isEmpty()) {
                     speichern(false)
@@ -728,15 +743,15 @@ private fun Zeitschritt(name: String, minute: Int, schritt: Int, min: Int, max: 
     Row(
         Modifier
             .fillMaxWidth()
-            .background(f.surf2, RoundedCornerShape(18.dp))
-            .padding(6.dp)
-            .padding(start = 10.dp),
+            .background(f.surf2, RoundedCornerShape(Radius.feld))
+            .padding(4.dp)
+            .padding(start = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(name, style = TcmSchrift.text(Schrift.gewichtHalbfett, 15.sp), color = f.ink2, modifier = Modifier.weight(1f))
         Rundknopf("$name $schritt Minuten früher", aus = minute - schritt < min, hintergrund = f.surf3, aktion = { wert(minute - schritt) }) {
-            Text("−", style = TcmSchrift.text(Schrift.gewichtFett, 20.sp), color = f.ink)
+            Text("−", style = TcmSchrift.display(Schrift.gewichtFett, 20.sp), color = f.ink)
         }
         Text(
             Zeit.minutesToTime(minute),
@@ -846,7 +861,8 @@ private fun UmsetzBereich(m: PlaetzeModell, b: TagesBelegung, planTag: String, j
                                 .widthIn(min = 64.dp)
                                 .heightIn(min = 48.dp)
                                 .clip(CircleShape)
-                                .background(if (aktiv) f.gold else f.surf2)
+                                .background(if (aktiv) f.blueSoft else f.surf)
+                                .border(if (aktiv) 1.5.dp else 1.dp, if (aktiv) f.blue else f.line2, CircleShape)
                                 .clickable(role = Role.RadioButton) { minuteWahl = z }
                                 .semantics { selected = aktiv }
                                 .padding(horizontal = 12.dp),
@@ -854,8 +870,8 @@ private fun UmsetzBereich(m: PlaetzeModell, b: TagesBelegung, planTag: String, j
                         ) {
                             Text(
                                 Zeit.minutesToTime(z),
-                                style = TcmSchrift.text(Schrift.gewichtFett, 15.sp).copy(fontFeatureSettings = "tnum"),
-                                color = if (aktiv) f.onGold else f.ink,
+                                style = TcmSchrift.display(Schrift.gewichtHalbfett, 15.sp).copy(fontFeatureSettings = "tnum"),
+                                color = if (aktiv) f.blueInk else f.ink,
                             )
                         }
                     }
@@ -877,7 +893,7 @@ private fun UmsetzBereich(m: PlaetzeModell, b: TagesBelegung, planTag: String, j
     }
 
     FehlerText(m.fensterFehler)
-    Nebenknopf(if (m.laeuft) "Wird umgesetzt …" else "Hierhin umsetzen", gesperrt = m.laeuft || !bereit) {
+    Zweitknopf(if (m.laeuft) "Wird umgesetzt …" else "Hierhin umsetzen", gesperrt = m.laeuft || !bereit) {
         if (platz != null && minute != null) m.umsetzen(b.bookingId, platz.id, tag, minute, grund)
     }
     Nebenknopf("Doch nicht", klein = true, aktion = zurueck)

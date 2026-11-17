@@ -53,8 +53,6 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
-import androidx.compose.ui.layout.layout
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -71,6 +69,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.tcmuckensturm.app.bildschirme.GedeckelteSchrift
+import de.tcmuckensturm.app.bildschirme.Kapsel
+import de.tcmuckensturm.app.bildschirme.LeiserKnopf
 import de.tcmuckensturm.app.theme.TcmSchrift
 import de.tcmuckensturm.app.theme.TcmTheme
 import de.tcmuckensturm.app.ui.tokens.Palette
@@ -100,14 +101,14 @@ fun rememberJetzt(m: PlaetzeModell): Instant {
 // ---- Belegungsfarben ------------------------------------------------------------------
 
 /**
- * Farben einer Belegung nach der Statustabelle (HANDOFF §2): eigen gold,
- * belegt blau mit Rand, sucht goldSoft gestrichelt, Training schraffiert,
- * gesperrt grau mit Rand.
+ * Farben einer Belegung (docs/design/stitch): das eigene Spiel gelb - die
+ * einzige gelbe Flaeche im Plan -, belegt grau, "sucht Mitspieler" hellblau
+ * mit blauer Kante, Training schraffiert, gesperrt blass mit Rand.
  */
 fun belegungsText(art: TimelineKind, f: Palette): Color = when (art) {
     TimelineKind.EIGEN -> f.onGold
-    TimelineKind.BELEGT -> f.blueInk
-    TimelineKind.SUCHT -> f.goldInk
+    TimelineKind.BELEGT -> f.ink2
+    TimelineKind.SUCHT -> f.blueInk
     TimelineKind.SERIE -> f.ink2
     TimelineKind.GESPERRT -> f.muted
 }
@@ -115,25 +116,23 @@ fun belegungsText(art: TimelineKind, f: Palette): Color = when (art) {
 /** Die Flaeche einer Belegung, gezeichnet hinter dem Inhalt. */
 fun Modifier.belegungsFlaeche(art: TimelineKind, f: Palette, radius: Dp): Modifier = drawBehind {
     val r = CornerRadius(radius.toPx())
-    fun rand(farbe: Color, breite: Float, gestrichelt: Boolean = false) = drawRoundRect(
+    fun rand(farbe: Color, breite: Float) = drawRoundRect(
         farbe,
         topLeft = Offset(breite / 2, breite / 2),
         size = size.copy(width = size.width - breite, height = size.height - breite),
         cornerRadius = r,
-        style = Stroke(
-            width = breite,
-            pathEffect = if (gestrichelt) PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx())) else null,
-        ),
+        style = Stroke(width = breite),
     )
     when (art) {
         TimelineKind.EIGEN -> drawRoundRect(f.gold, cornerRadius = r)
         TimelineKind.BELEGT -> {
-            drawRoundRect(f.blueSoft, cornerRadius = r)
-            rand(f.blue, 1.dp.toPx())
+            drawRoundRect(f.surf, cornerRadius = r)
+            drawRoundRect(f.line2, cornerRadius = r)
         }
         TimelineKind.SUCHT -> {
-            drawRoundRect(f.goldSoft, cornerRadius = r)
-            rand(f.goldLine, 1.5.dp.toPx(), gestrichelt = true)
+            drawRoundRect(f.surf, cornerRadius = r)
+            drawRoundRect(f.blueSoft, cornerRadius = r)
+            rand(f.blue, 1.dp.toPx())
         }
         TimelineKind.SERIE -> {
             drawRoundRect(f.surf3, cornerRadius = r)
@@ -180,7 +179,7 @@ fun Legende(eintraege: List<Pair<String, Modifier>>, breite: Dp, hoehe: Dp) {
         for ((name, kaestchen) in eintraege) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Box(kaestchen.size(breite, hoehe))
-                Text(name, style = TcmSchrift.text(Schrift.gewichtNormal, 12.5.sp), color = f.ink2)
+                Text(name, style = TcmSchrift.text(Schrift.gewichtNormal, 13.sp), color = f.ink2)
             }
         }
     }
@@ -193,12 +192,14 @@ fun Feldname(text: String, zusatz: String? = null) {
     val f = TcmTheme.farben
     Text(
         buildAnnotatedString {
-            withStyle(SpanStyle(fontWeight = Schrift.gewichtHalbfett, color = f.ink2)) { append(text) }
+            withStyle(SpanStyle(color = f.muted)) { append(text.uppercase()) }
             if (zusatz != null) {
-                withStyle(SpanStyle(fontWeight = Schrift.gewichtMittel, color = f.muted)) { append(" · $zusatz") }
+                withStyle(
+                    SpanStyle(fontFamily = TcmSchrift.text, fontWeight = Schrift.gewichtNormal, color = f.muted, letterSpacing = 0.sp),
+                ) { append(" · $zusatz") }
             }
         },
-        style = TcmSchrift.text(Schrift.gewichtHalbfett, 13.sp),
+        style = TcmSchrift.kicker,
         modifier = Modifier.padding(bottom = 8.dp).semantics { heading() },
     )
 }
@@ -236,13 +237,17 @@ fun Besetzungshinweis(text: String) {
         color = f.ink2,
         modifier = Modifier
             .fillMaxWidth()
-            .background(f.chip, RoundedCornerShape(14.dp))
+            .background(f.chip, RoundedCornerShape(Radius.klein + 6.dp))
             .padding(vertical = 12.dp, horizontal = 14.dp),
     )
 }
 
 // ---- Knoepfe ----------------------------------------------------------------------------
 
+/**
+ * Kurzform fuer die Blaetter der Plaetze: neutral (weiss mit Linie), mit
+ * `gefahr` roter Text mit roter Linie. Dahinter steht der zentrale Knopf.
+ */
 @Composable
 fun Nebenknopf(
     text: String,
@@ -251,29 +256,7 @@ fun Nebenknopf(
     gesperrt: Boolean = false,
     klein: Boolean = false,
     aktion: () -> Unit,
-) {
-    val f = TcmTheme.farben
-    val form = RoundedCornerShape(if (klein) 24.dp else 16.dp)
-    Box(
-        modifier
-            .then(if (klein) Modifier else Modifier.fillMaxWidth())
-            .heightIn(min = if (klein) 48.dp else 52.dp)
-            .alpha(if (gesperrt) 0.5f else 1f)
-            .clip(form)
-            .background(if (gefahr) Color.Transparent else f.surf2)
-            .border(1.5.dp, if (gefahr) f.red.copy(alpha = 0.4f) else f.line, form)
-            .clickable(enabled = !gesperrt, role = Role.Button, onClick = aktion)
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text,
-            style = TcmSchrift.text(Schrift.gewichtFett, if (klein) 14.sp else 16.sp),
-            color = if (gefahr) f.redInk else f.ink,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
+) = LeiserKnopf(text, modifier, rot = gefahr, klein = klein, gesperrt = gesperrt, aktion = aktion)
 
 /** Runder Knopf mit Symbol (Vortag, Folgetag, Schliessen), 48 dp. */
 @Composable
@@ -308,15 +291,15 @@ fun Eingabe(platzhalter: String, bedienName: String, text: String, wechsel: (Str
         onValueChange = wechsel,
         singleLine = true,
         textStyle = stil.copy(color = f.ink),
-        cursorBrush = SolidColor(f.ink),
+        cursorBrush = SolidColor(f.blue),
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 50.dp)
-            .background(f.bg, RoundedCornerShape(Radius.feld))
-            .border(1.5.dp, f.rahmen, RoundedCornerShape(Radius.feld))
+            .heightIn(min = 52.dp)
+            .background(f.surf2, RoundedCornerShape(Radius.feld))
+            .border(1.dp, f.line2, RoundedCornerShape(Radius.feld))
             .semantics { contentDescription = bedienName },
         decorationBox = { feld ->
-            Box(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), contentAlignment = Alignment.CenterStart) {
+            Box(Modifier.padding(horizontal = 20.dp, vertical = 14.dp), contentAlignment = Alignment.CenterStart) {
                 if (text.isEmpty()) Text(platzhalter, style = stil, color = f.muted)
                 feld()
             }
@@ -330,40 +313,32 @@ data class Segment<T>(val wert: T, val label: String, val aus: Boolean = false)
 @Composable
 fun <T> Segmente(beschriftung: String, optionen: List<Segment<T>>, wert: T, wahl: (T) -> Unit, modifier: Modifier = Modifier) {
     val f = TcmTheme.farben
-    val dunkel = TcmTheme.dunkel
     Row(
         modifier
             .fillMaxWidth()
-            .background(f.surf2, RoundedCornerShape(15.dp))
-            .padding(4.dp)
             .semantics { contentDescription = beschriftung },
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         for (o in optionen) {
             val aktiv = o.wert == wert
+            // Gewaehlt: hellblau mit blauer Kante und blauer Schrift; sonst weiss mit Linie.
             Box(
                 Modifier
                     .weight(1f)
-                    .heightIn(min = 44.dp)
+                    .heightIn(min = 48.dp)
                     .alpha(if (o.aus) 0.35f else 1f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .then(
-                        if (aktiv) {
-                            Modifier
-                                .background(f.segAktiv, RoundedCornerShape(12.dp))
-                                .then(if (dunkel) Modifier else Modifier.border(0.5.dp, f.line2, RoundedCornerShape(12.dp)))
-                        } else {
-                            Modifier
-                        },
-                    )
+                    .clip(Kapsel)
+                    .background(if (aktiv) f.blueSoft else f.surf)
+                    .border(if (aktiv) 1.5.dp else 1.dp, if (aktiv) f.blue else f.line2, Kapsel)
                     .clickable(enabled = !o.aus, role = Role.RadioButton) { wahl(o.wert) }
-                    .semantics { selected = aktiv },
+                    .semantics { selected = aktiv }
+                    .padding(horizontal = 6.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     o.label,
-                    style = TcmSchrift.text(Schrift.gewichtFett, 15.sp).copy(fontFeatureSettings = "tnum"),
-                    color = if (aktiv) f.ink else f.ink2,
+                    style = TcmSchrift.display(Schrift.gewichtHalbfett, 15.sp).copy(fontFeatureSettings = "tnum"),
+                    color = if (aktiv) f.blueInk else f.ink,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -393,7 +368,8 @@ fun Chipwahl(
                     .heightIn(min = 48.dp)
                     .widthIn(min = 48.dp)
                     .clip(CircleShape)
-                    .background(if (aktiv) f.gold else f.surf2)
+                    .background(if (aktiv) f.blueSoft else f.surf)
+                    .border(if (aktiv) 1.5.dp else 1.dp, if (aktiv) f.blue else f.line2, CircleShape)
                     .selectable(selected = aktiv, role = if (mehrfach) Role.Checkbox else Role.RadioButton) { wahl(wert) }
                     .semantics { if (beschriftung != null) contentDescription = "$beschriftung $label" }
                     .padding(horizontal = 14.dp),
@@ -401,8 +377,8 @@ fun Chipwahl(
             ) {
                 Text(
                     label,
-                    style = TcmSchrift.text(Schrift.gewichtHalbfett, 14.5.sp).copy(fontFeatureSettings = "tnum"),
-                    color = if (aktiv) f.onGold else f.ink,
+                    style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.5.sp).copy(fontFeatureSettings = "tnum"),
+                    color = if (aktiv) f.blueInk else f.ink,
                 )
             }
         }
@@ -416,14 +392,13 @@ fun GesuchtKarte(an: Boolean, deaktiviert: Boolean = false, wechsel: (Boolean) -
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(f.surf2)
+            .clip(RoundedCornerShape(Radius.klein))
             .toggleable(value = an, enabled = !deaktiviert, role = Role.Switch, onValueChange = wechsel)
-            .padding(16.dp),
+            .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("Mitspieler gesucht", style = TcmSchrift.text(Schrift.gewichtFett, 16.sp), color = f.ink)
+            Text("Mitspieler gesucht", style = TcmSchrift.display(Schrift.gewichtHalbfett, 16.sp), color = f.ink)
             Text(
                 "Dein Spiel erscheint unter „Offene Spiele“. Wer mag, trägt sich selbst ein.",
                 style = TcmSchrift.text(Schrift.gewichtNormal, 13.sp),
@@ -435,15 +410,22 @@ fun GesuchtKarte(an: Boolean, deaktiviert: Boolean = false, wechsel: (Boolean) -
             checked = an,
             onCheckedChange = null,
             enabled = !deaktiviert,
-            colors = SwitchDefaults.colors(
-                checkedTrackColor = f.greenInk,
-                checkedThumbColor = f.surf,
-                uncheckedTrackColor = f.surf3,
-                uncheckedThumbColor = f.rahmen,
-                uncheckedBorderColor = f.rahmen,
-            ),
+            colors = schalterFarben(),
         )
     }
+}
+
+/** Schalter auf allen Screens gleich: an in kraeftigem Blau, aus neutral. */
+@Composable
+fun schalterFarben() = TcmTheme.farben.let { f ->
+    SwitchDefaults.colors(
+        checkedTrackColor = f.blue,
+        checkedThumbColor = f.onBrand,
+        checkedBorderColor = f.blue,
+        uncheckedTrackColor = f.surf3,
+        uncheckedThumbColor = f.surf,
+        uncheckedBorderColor = f.line2,
+    )
 }
 
 /** Ein Mitspieler als Chip: Initialen im Kreis (ohne Buchstaben "?"), Name, optional ein X zum Entfernen. */
@@ -461,7 +443,13 @@ fun Chip(
     Row(
         Modifier
             .heightIn(min = 40.dp)
-            .then(if (leer) Modifier.gestrichelt(f.line2, 20.dp) else Modifier.background(f.surf2, CircleShape))
+            .then(
+                if (leer) {
+                    Modifier.gestrichelt(f.line2, 20.dp)
+                } else {
+                    Modifier.background(f.surf2, CircleShape).border(1.dp, f.line, CircleShape)
+                },
+            )
             .padding(start = 4.dp, end = if (weg == null) 14.dp else 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -472,9 +460,10 @@ fun Chip(
                 .background(
                     when {
                         leer -> Color.Transparent
+                        // Gelb heisst "du"; alle anderen hellblau, Gaeste neutral.
                         gelb -> f.gold
-                        istGast -> f.goldSoft
-                        else -> f.brand
+                        istGast -> f.surf3
+                        else -> f.blueSoft
                     },
                     CircleShape,
                 ),
@@ -482,11 +471,11 @@ fun Chip(
         ) {
             Text(
                 kuerzel.ifEmpty { "?" },
-                style = TcmSchrift.text(Schrift.gewichtFett, Schrift.kicker),
+                style = TcmSchrift.display(Schrift.gewichtFett, Schrift.kicker),
                 color = when {
                     gelb -> f.onGold
-                    istGast -> f.goldInk
-                    else -> f.onBrand
+                    istGast -> f.ink2
+                    else -> f.blueInk
                 },
             )
         }
@@ -512,29 +501,41 @@ fun Chip(
     }
 }
 
-/** Eine Datumskachel "MO / 28", gewaehlt in Gold - auch beim Umsetzen. */
+/**
+ * Ein Tag der Tagesleiste "MO / 28": rund, weiss mit Linie; der gewaehlte Tag
+ * in kraeftigem Blau (docs/design/stitch) - auch beim Umsetzen.
+ */
 @Composable
 fun TagKachel(tag: String, heute: String? = null, aktiv: Boolean, aktion: () -> Unit) {
     val f = TcmTheme.farben
     val k = PlaetzeLogik.kachel(tag, heute)
-    Column(
-        Modifier
-            .size(width = 52.dp, height = 58.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (aktiv) f.gold else f.surf2)
-            .clickable(role = Role.Tab, onClick = aktion)
-            .semantics(mergeDescendants = true) {
-                contentDescription = PlaetzeLogik.lesbar(tag)
-                selected = aktiv
-            },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        val farbe = if (aktiv) f.onGold else f.ink2
-        Text(k.wochentag, style = TcmSchrift.display(Schrift.gewichtFett, Schrift.kicker, 0.6.sp), color = farbe)
-        Text("${k.tag}", style = TcmSchrift.display(Schrift.gewichtFett, 21.sp), color = farbe)
+    val form = RoundedCornerShape(28.dp)
+    // Feste Flaeche: die Schrift ist gedeckelt wie bei den Datumskacheln der Veranstaltungen.
+    GedeckelteSchrift {
+        Column(
+            Modifier
+                .size(width = 56.dp, height = 64.dp)
+                .clip(form)
+                .background(if (aktiv) f.blue else f.surf)
+                .then(if (aktiv) Modifier else Modifier.border(1.dp, f.line2, form))
+                .clickable(role = Role.Tab, onClick = aktion)
+                .semantics(mergeDescendants = true) {
+                    contentDescription = PlaetzeLogik.lesbar(tag)
+                    selected = aktiv
+                },
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                k.wochentag,
+                style = TcmSchrift.display(Schrift.gewichtFett, 11.sp, 0.6.sp),
+                color = if (aktiv) f.onBrand.copy(alpha = 0.85f) else f.muted,
+                maxLines = 1,
+            )
+            Text("${k.tag}", style = TcmSchrift.display(Schrift.gewichtFett, 20.sp), color = if (aktiv) f.onBrand else f.ink)
+        }
     }
 }
 
 /** Schriftstil der Kopfzeilen in Tabellen ("BEGINN", "FREI"). */
-val kopfStil @Composable get() = TcmSchrift.text(Schrift.gewichtFett, 11.sp, 1.1.sp).copy(color = TcmTheme.farben.muted)
+val kopfStil @Composable get() = TcmSchrift.display(Schrift.gewichtFett, 11.sp, 1.1.sp).copy(color = TcmTheme.farben.muted)
