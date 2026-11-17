@@ -1,47 +1,36 @@
 /*
- * Der Rahmen der Anmeldeseiten (Entwurf AppLogin, docs/design/clubhaus)
+ * Der Rahmen der Anmeldeseiten (docs/design/stitch, Entwurf "anmelden")
  *
- * Wie apps/mobile/src/components/AnmeldeSeite.tsx und
- * Bildschirme/Anmeldung/AnmeldeSeite.swift der iOS-App: oben eine Flaeche in
- * brand mit einem Tennisplatz in Perspektive und dem gelben Ball, das weisse
- * Logo, der Titel unten links; darunter das Formular auf dunklem Grund. Immer
- * dunkel, egal welches Erscheinungsbild gewaehlt ist. Die Flaeche reicht bis
- * unter die Statusleiste (Edge-to-Edge).
+ * Hell wie der Rest der App (im Dunkelmodus dunkel): Kicker "TC Muckensturm",
+ * der Titel, darunter das Formular auf weissem Grund. Keine dunkelblaue
+ * Buehne mehr.
  *
- * Dazu die Bausteine aller Anmeldeseiten: Eingabefeld (54 hoch), gelber
- * Hauptknopf, leiser Verweis, Hinweis.
+ * Dazu die Bausteine aller Anmeldeseiten: Eingabefeld (54 hoch), leiser
+ * Verweis, Hinweis. Der Knopf ist der zentrale Hauptknopf.
  */
 
 package de.tcmuckensturm.app.bildschirme.anmeldung
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicSecureTextField
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -51,20 +40,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -77,8 +60,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import de.tcmuckensturm.app.R
-import de.tcmuckensturm.app.theme.ImmerDunkel
+import de.tcmuckensturm.app.bildschirme.Kicker
 import de.tcmuckensturm.app.theme.TcmSchrift
 import de.tcmuckensturm.app.theme.TcmTheme
 import de.tcmuckensturm.app.ui.tokens.Abstand
@@ -88,108 +70,38 @@ import kotlin.math.max
 
 @Composable
 fun AnmeldeSeite(titel: String, unterzeile: String? = null, inhalt: @Composable ColumnScope.() -> Unit) {
-    ImmerDunkel {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .background(TcmTheme.farben.bg)
-                .imePadding()
-                .verticalScroll(rememberScrollState()),
-        ) {
-            Buehne(titel, unterzeile)
-            Column(
-                Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .widthIn(max = 420.dp)
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(start = 24.dp, end = 24.dp, top = Abstand.s, bottom = 36.dp),
-                verticalArrangement = Arrangement.spacedBy(Abstand.l),
-                content = inhalt,
-            )
-        }
-    }
-}
-
-/** Die obere Flaeche: Platz, Ball, Logo, Titel. */
-@Composable
-private fun Buehne(titel: String, unterzeile: String?) {
     val f = TcmTheme.farben
-    Box(
+    Column(
         Modifier
-            .fillMaxWidth()
-            .height(360.dp)
-            .clipToBounds()
-            .background(f.brand),
+            .fillMaxSize()
+            .background(f.bg)
+            .imePadding()
+            .verticalScroll(rememberScrollState()),
     ) {
-        Platz()
-        Box(
-            Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 96.dp, end = 54.dp)
-                .size(38.dp)
-                .background(f.gold, CircleShape),
-        )
-        Box(
-            Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(160.dp)
-                .background(Brush.verticalGradient(listOf(f.bg.copy(alpha = 0f), f.bg))),
-        )
-        Image(
-            painter = painterResource(R.drawable.logo_weiss),
-            contentDescription = "TC Muckensturm",
-            alignment = Alignment.CenterStart,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(top = 60.dp, start = 24.dp)
-                .size(width = 126.dp, height = 36.dp),
-        )
         Column(
             Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 24.dp, end = 24.dp, bottom = 22.dp),
-            verticalArrangement = Arrangement.spacedBy(Abstand.s),
+                .align(Alignment.CenterHorizontally)
+                .widthIn(max = 420.dp)
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(start = 24.dp, end = 24.dp, top = 56.dp, bottom = 36.dp),
+            verticalArrangement = Arrangement.spacedBy(Abstand.l),
         ) {
-            Text(
-                titel,
-                style = TcmSchrift.text(Schrift.gewichtExtrafett, 36.sp, (-0.7).sp).copy(lineHeight = 40.sp),
-                color = f.onBrand,
-                modifier = Modifier.semantics { heading() },
-            )
-            if (unterzeile != null) {
-                Text(unterzeile, style = TcmSchrift.text(Schrift.gewichtNormal, 15.sp), color = f.ink2)
+            Column(Modifier.padding(bottom = Abstand.abschnitt), verticalArrangement = Arrangement.spacedBy(Abstand.s)) {
+                Kicker("TC Muckensturm")
+                Text(
+                    titel,
+                    style = TcmSchrift.display(Schrift.gewichtFett, 30.sp, (-0.6).sp).copy(lineHeight = 36.sp),
+                    color = f.ink,
+                    modifier = Modifier.semantics { heading() },
+                )
+                if (unterzeile != null) {
+                    Text(unterzeile, style = TcmSchrift.text(Schrift.gewichtNormal, 15.sp).copy(lineHeight = 22.sp), color = f.ink2)
+                }
             }
+            inhalt()
         }
-    }
-}
-
-/** Ein Tennisplatz in Perspektive, dezent - dieselben Linien wie das SVG der Expo-App (390 x 360). */
-@Composable
-private fun BoxScope.Platz() {
-    val linie = TcmTheme.farben.onBrand
-    Canvas(Modifier.matchParentSize()) {
-        // preserveAspectRatio="xMidYMax slice": fuellen, unten und mittig ausrichten.
-        val skala = max(size.width / 390f, size.height / 360f)
-        val dx = (size.width - 390f * skala) / 2f
-        val dy = size.height - 360f * skala
-        fun p(x: Float, y: Float) = Offset(dx + x * skala, dy + y * skala)
-        val breite = 2.5.dp.toPx()
-        val farbe = linie.copy(alpha = 0.22f)
-        fun strich(punkte: List<Offset>) = punkte.zipWithNext { a, b -> drawLine(farbe, a, b, breite) }
-        strich(listOf(p(40f, 360f), p(130f, 110f), p(260f, 110f), p(350f, 360f)))
-        strich(listOf(p(78f, 255f), p(312f, 255f)))
-        strich(listOf(p(100f, 195f), p(290f, 195f)))
-        strich(listOf(p(60f, 305f), p(330f, 305f)))
-        strich(listOf(p(195f, 195f), p(195f, 305f)))
-        drawLine(
-            linie.copy(alpha = 0.4f),
-            p(0f, 110f),
-            p(390f, 110f),
-            breite,
-            pathEffect = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 5.dp.toPx())),
-        )
     }
 }
 
@@ -215,7 +127,7 @@ fun AnmeldeFeld(
     var sichtbar by rememberSaveable { mutableStateOf(false) }
     val stil = TcmSchrift.text(Schrift.gewichtNormal, 16.sp).copy(color = f.ink)
     val feldModifier = Modifier
-        .padding(start = 16.dp, end = if (passwort) 0.dp else 16.dp)
+        .padding(start = 20.dp, end = if (passwort) 0.dp else 20.dp)
         .semantics {
             contentType = inhaltsTyp
             contentDescription = bedienName
@@ -230,17 +142,17 @@ fun AnmeldeFeld(
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Abstand.s)) {
         // Das Feld traegt die Beschriftung selbst; TalkBack soll sie nicht zweimal lesen.
         Text(
-            beschriftung,
-            style = TcmSchrift.text(Schrift.gewichtHalbfett, 13.sp),
-            color = f.ink2,
+            beschriftung.uppercase(),
+            style = TcmSchrift.kicker,
+            color = f.muted,
             modifier = Modifier.clearAndSetSemantics {},
         )
         Row(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = 54.dp)
-                .background(f.surf, RoundedCornerShape(Radius.feld))
-                .border(1.5.dp, f.rahmen, RoundedCornerShape(Radius.feld)),
+                .background(f.surf2, RoundedCornerShape(Radius.feld))
+                .border(1.dp, f.line2, RoundedCornerShape(Radius.feld)),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (passwort) {
@@ -248,18 +160,18 @@ fun AnmeldeFeld(
                     state = zustand,
                     modifier = Modifier.weight(1f).then(feldModifier),
                     textStyle = stil,
-                    cursorBrush = SolidColor(f.gold),
+                    cursorBrush = SolidColor(f.blue),
                     textObfuscationMode = if (sichtbar) TextObfuscationMode.Visible else TextObfuscationMode.RevealLastTyped,
                     keyboardOptions = tasten,
                     onKeyboardAction = beimAbsenden?.let { aktion -> { aktion() } },
                 )
-                PasswortSchalter(sichtbar, { sichtbar = !sichtbar }, Modifier.padding(end = 6.dp))
+                PasswortSchalter(sichtbar, { sichtbar = !sichtbar }, Modifier.padding(end = 10.dp))
             } else {
                 BasicTextField(
                     state = zustand,
                     modifier = Modifier.weight(1f).then(feldModifier),
                     textStyle = stil,
-                    cursorBrush = SolidColor(f.gold),
+                    cursorBrush = SolidColor(f.blue),
                     lineLimits = TextFieldLineLimits.SingleLine,
                     keyboardOptions = tasten,
                     onKeyboardAction = beimAbsenden?.let { aktion -> { aktion() } },
@@ -286,13 +198,13 @@ private fun PasswortSchalter(sichtbar: Boolean, umschalten: () -> Unit, modifier
     ) {
         Text(
             if (sichtbar) "Verbergen" else "Anzeigen",
-            style = TcmSchrift.text(Schrift.gewichtFett, 14.sp),
-            color = TcmTheme.farben.ink2,
+            style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp),
+            color = TcmTheme.farben.blueInk,
         )
     }
 }
 
-/** Leiser Verweis in ink2, etwa "Passwort vergessen?" */
+/** Leiser Verweis in Blau, etwa "Passwort vergessen?" */
 @Composable
 fun LeiserVerweis(text: String, rechts: Boolean = false, aktion: () -> Unit) {
     Box(Modifier.fillMaxWidth(), contentAlignment = if (rechts) Alignment.CenterEnd else Alignment.Center) {
@@ -303,12 +215,12 @@ fun LeiserVerweis(text: String, rechts: Boolean = false, aktion: () -> Unit) {
                 .padding(horizontal = 4.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text(text, style = TcmSchrift.text(Schrift.gewichtHalbfett, 14.sp), color = TcmTheme.farben.ink2)
+            Text(text, style = TcmSchrift.display(Schrift.gewichtHalbfett, 15.sp), color = TcmTheme.farben.blueInk)
         }
     }
 }
 
-/** Hinweis auf dunklem Grund: Fehler in redInk auf roter Toenung, Erfolg in greenInk. */
+/** Hinweis: Fehler in redInk auf roter Toenung, Erfolg in greenInk. */
 @Composable
 fun AnmeldeHinweis(text: String, ok: Boolean = false) {
     val f = TcmTheme.farben
@@ -318,12 +230,12 @@ fun AnmeldeHinweis(text: String, ok: Boolean = false) {
         color = if (ok) f.greenInk else f.redInk,
         modifier = Modifier
             .fillMaxWidth()
-            .background((if (ok) f.green else f.red).copy(alpha = 0.16f), RoundedCornerShape(Radius.feld))
+            .background((if (ok) f.green else f.red).copy(alpha = if (TcmTheme.dunkel) 0.16f else 0.12f), RoundedCornerShape(Radius.feld))
             .padding(12.dp),
     )
 }
 
-/** "Noch kein Mitglied? Antrag stellen" - Text in muted, der Verweis in gold, oeffnet den Browser. */
+/** "Noch kein Mitglied? Antrag stellen" - Text in muted, der Verweis in Blau, oeffnet den Browser. */
 @Composable
 fun AnmeldeFusszeile(text: String, verweis: String, ziel: String) {
     val f = TcmTheme.farben
@@ -340,7 +252,7 @@ fun AnmeldeFusszeile(text: String, verweis: String, ziel: String) {
                 .clickable(role = Role.Button) { links.openUri(ziel) },
             contentAlignment = Alignment.Center,
         ) {
-            Text(verweis, style = TcmSchrift.text(Schrift.gewichtFett, 14.sp), color = f.gold)
+            Text(verweis, style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp), color = f.blueInk)
         }
     }
 }

@@ -262,7 +262,7 @@ fun MannschaftAnsicht(
             }
             Text(
                 MannschaftLogik.TITEL,
-                style = TcmSchrift.text(Schrift.gewichtExtrafett, Schrift.seitentitel, Schrift.laufweiteTitel),
+                style = TcmSchrift.display(Schrift.gewichtFett, Schrift.seitentitel, Schrift.laufweiteTitel),
                 color = f.ink,
                 modifier = Modifier.semantics { heading() },
             )
@@ -320,7 +320,7 @@ private fun EinladungKarte(e: MeineEinladung, laeuft: Boolean, anfangsOffen: Boo
     val hinweis = MannschaftLogik.einladungHinweis(e)
     Column(Modifier.fillMaxWidth().karte(padding = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(e.teamName, style = TcmSchrift.text(Schrift.gewichtExtrafett, 19.sp), color = f.ink)
+            Text(e.teamName, style = TcmSchrift.display(Schrift.gewichtFett, 19.sp), color = f.ink)
             val zeile = MannschaftLogik.einladungZeile(e)
             if (zeile.isNotEmpty()) Leise(zeile)
         }
@@ -363,11 +363,11 @@ private fun Merkzettel(text: String) {
     Text(
         text,
         style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal),
-        color = f.goldInk,
+        color = f.ink2,
         modifier = Modifier
             .fillMaxWidth()
-            .background(f.goldSoft, RoundedCornerShape(Radius.feld))
-            .padding(12.dp),
+            .background(f.surf2, RoundedCornerShape(Radius.karte))
+            .padding(horizontal = 16.dp, vertical = 12.dp),
     )
 }
 
@@ -422,7 +422,7 @@ private fun Kader(m: MeineMannschaft, laeuft: Boolean, h: MannschaftHandlungen, 
                         Leise(MannschaftLogik.offeneEinladungZeile(e))
                     }
                     TextButton(onClick = { h.zurueckziehen(e) }, enabled = !laeuft) {
-                        Text("Zurückziehen", style = TcmSchrift.text(Schrift.gewichtFett, 14.sp), color = TcmTheme.farben.redInk)
+                        Text("Zurückziehen", style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp), color = TcmTheme.farben.redInk)
                     }
                 }
             }
@@ -456,13 +456,13 @@ private fun SpielerZeile(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
-            Modifier.size(38.dp).background(if (s.isTeamCaptain) f.goldSoft else f.surf2, CircleShape).clearAndSetSemantics {},
+            Modifier.size(38.dp).background(if (s.isTeamCaptain) f.blueSoft else f.surf2, CircleShape).clearAndSetSemantics {},
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 Initialen.von(s.firstName, s.lastName),
-                style = TcmSchrift.text(Schrift.gewichtFett, 14.sp),
-                color = if (s.isTeamCaptain) f.goldInk else f.ink2,
+                style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp),
+                color = if (s.isTeamCaptain) f.blueInk else f.ink2,
             )
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -484,7 +484,7 @@ private fun SpielerZeile(
         }
         if (austragen != null) {
             TextButton(onClick = austragen, enabled = !gesperrt) {
-                Text("Austragen", style = TcmSchrift.text(Schrift.gewichtFett, 14.sp), color = f.redInk)
+                Text("Austragen", style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp), color = f.redInk)
             }
         }
     }
@@ -611,7 +611,7 @@ private fun KandidatZeile(k: Kandidat, gesperrt: Boolean, einladen: (Kandidat) -
         TextButton(onClick = { einladen(k) }, enabled = !aus && !gesperrt) {
             Text(
                 if (aus) "Eingeladen" else "Einladen",
-                style = TcmSchrift.text(Schrift.gewichtFett, 14.sp),
+                style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp),
                 color = if (aus) f.muted else f.blueInk,
             )
         }
@@ -624,10 +624,10 @@ private fun KandidatMarke(text: String, hervor: Boolean) {
     Box(
         Modifier
             .heightIn(min = 22.dp)
-            .background(if (hervor) f.goldSoft else f.surf2, CircleShape)
+            .background(if (hervor) f.blueSoft else f.surf2, CircleShape)
             .padding(horizontal = 8.dp, vertical = 2.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = TcmSchrift.text(Schrift.gewichtFett, Schrift.klein), color = if (hervor) f.goldInk else f.ink2)
+        Text(text, style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.klein), color = if (hervor) f.blueInk else f.ink2)
     }
 }

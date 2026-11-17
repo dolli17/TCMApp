@@ -42,7 +42,7 @@ fun Platzhalter(titel: String, text: String, mehr: @Composable ColumnScope.() ->
     ) {
         Text(
             titel,
-            style = TcmSchrift.text(Schrift.gewichtExtrafett, Schrift.seitentitel, Schrift.laufweiteTitel),
+            style = TcmSchrift.display(Schrift.gewichtFett, Schrift.seitentitel, Schrift.laufweiteTitel),
             color = f.ink,
             modifier = Modifier.semantics { heading() },
         )

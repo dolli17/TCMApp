@@ -217,7 +217,7 @@ private fun Geburtstag(text: String, fehler: String?, setzen: (String) -> Unit) 
             ) {
                 Text(
                     text.ifEmpty { "Datum wählen" },
-                    style = TcmSchrift.text(Schrift.gewichtFett, 15.sp).copy(fontFeatureSettings = "tnum"),
+                    style = TcmSchrift.display(Schrift.gewichtHalbfett, 15.sp).copy(fontFeatureSettings = "tnum"),
                     color = if (text.isEmpty()) f.blueInk else f.ink,
                 )
             }
@@ -288,7 +288,7 @@ fun SchrittRechtliches(k: OnboardingKontext) {
                             .padding(horizontal = 8.dp),
                         contentAlignment = Alignment.CenterStart,
                     ) {
-                        Text("${d.title} lesen ›", style = TcmSchrift.text(Schrift.gewichtFett, 14.sp), color = TcmTheme.farben.blueInk)
+                        Text("${d.title} lesen ›", style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp), color = TcmTheme.farben.blueInk)
                     }
                 }
             }

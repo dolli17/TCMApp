@@ -56,7 +56,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -75,14 +74,15 @@ import de.tcmuckensturm.app.bildschirme.Hauptknopf
 import de.tcmuckensturm.app.bildschirme.Hinweis
 import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.bildschirme.LeiserKnopf
+import de.tcmuckensturm.app.bildschirme.Zweitknopf
 import de.tcmuckensturm.app.bildschirme.anmeldung.AnmeldeFeld
 import de.tcmuckensturm.app.bildschirme.onboarding.OnboardingLogik
 import de.tcmuckensturm.app.bildschirme.onboarding.OnboardingSchalter
 import de.tcmuckensturm.app.daten.Ergebnis
 import de.tcmuckensturm.app.daten.Kontodaten
+import de.tcmuckensturm.app.daten.Mannschaftsdaten
 import de.tcmuckensturm.app.daten.MeinMandat
 import de.tcmuckensturm.app.daten.MeinProfil
-import de.tcmuckensturm.app.daten.Mannschaftsdaten
 import de.tcmuckensturm.app.daten.MeineMannschaft
 import de.tcmuckensturm.app.daten.OnboardingZustand
 import de.tcmuckensturm.app.start.PasswortRegeln
@@ -527,7 +527,7 @@ private fun Einwilligungen(merkmale: List<Merkmal>, aktionen: KontoAktionen, gea
                                 tastatur = if (m.art == "number") KeyboardType.Decimal else KeyboardType.Text,
                                 modifier = Modifier.weight(1f),
                             )
-                            BlauerKnopf("Speichern", gesperrt = laeuft) { ausfuehren { aktionen.setzeMerkmal(m.code, text = text) } }
+                            Zweitknopf("Speichern", klein = false, breit = false, gesperrt = laeuft) { ausfuehren { aktionen.setzeMerkmal(m.code, text = text) } }
                         }
                     }
                 }
@@ -590,24 +590,6 @@ private fun Marke(
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) { inhalt() }
-}
-
-@Composable
-private fun BlauerKnopf(text: String, gesperrt: Boolean, aktion: () -> Unit) {
-    val f = TcmTheme.farben
-    val form = RoundedCornerShape(Radius.knopf)
-    Box(
-        Modifier
-            .heightIn(min = 50.dp)
-            .alpha(if (gesperrt) 0.5f else 1f)
-            .background(f.blue, form)
-            .clip(form)
-            .clickable(enabled = !gesperrt, role = Role.Button, onClick = aktion)
-            .padding(horizontal = 16.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text, style = TcmSchrift.text(Schrift.gewichtFett, 15.sp), color = f.onBrand)
-    }
 }
 
 // ---- Bankverbindung & Mandat ------------------------------------------------
@@ -751,7 +733,7 @@ private fun KuendigungFormular(aktionen: KontoAktionen) {
         if (rueckfrage) {
             Text(
                 Kontoloeschung.BESTAETIGUNG_FRAGE,
-                style = TcmSchrift.text(Schrift.gewichtFett, Schrift.normal),
+                style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.normal),
                 color = TcmTheme.farben.ink,
                 modifier = Modifier.padding(top = Abstand.s),
             )

@@ -111,7 +111,7 @@ fun PasswortSetzenInhalt(
         when (zustand) {
             is PasswortZustand.Rueckfrage, PasswortZustand.Laden ->
                 Box(Modifier.fillMaxWidth().heightIn(min = 120.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = f.gold)
+                    CircularProgressIndicator(color = f.blue)
                 }
             is PasswortZustand.Fehler -> {
                 AnmeldeHinweis(zustand.text)

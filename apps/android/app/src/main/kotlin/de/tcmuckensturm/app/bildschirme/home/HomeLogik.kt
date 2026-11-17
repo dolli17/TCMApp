@@ -9,21 +9,17 @@
 package de.tcmuckensturm.app.bildschirme.home
 
 import de.tcmuckensturm.app.daten.AktiverPlatz
-import de.tcmuckensturm.app.daten.Arbeitsdienst
 import de.tcmuckensturm.app.daten.Benachrichtigung
 import de.tcmuckensturm.app.daten.Buchungseinstellungen
-import de.tcmuckensturm.app.daten.EigenesGetraenk
 import de.tcmuckensturm.app.daten.MeinName
 import de.tcmuckensturm.app.daten.MeineBuchung
 import de.tcmuckensturm.app.daten.Meldung
 import de.tcmuckensturm.app.daten.OffenesSpiel
 import de.tcmuckensturm.app.daten.TagesBelegung
 import de.tcmuckensturm.kern.Belegung
-import de.tcmuckensturm.kern.Geld
 import de.tcmuckensturm.kern.MitgliedEvent
 import de.tcmuckensturm.kern.Startseite
 import de.tcmuckensturm.kern.TimelineSegment
-import de.tcmuckensturm.kern.Zahlen
 import de.tcmuckensturm.kern.Zeit
 import de.tcmuckensturm.kern.Zeitraum
 import java.time.Instant
@@ -70,9 +66,6 @@ data class HomeInhalt(
     val termine: Abschnitt<List<MeineBuchung>>,
     val frei: Abschnitt<FreiDaten>,
     val offen: Abschnitt<List<OffenesSpiel>>,
-    val getraenke: Abschnitt<List<EigenesGetraenk>>,
-    val dienst: Abschnitt<Arbeitsdienst?>,
-    val neues: Abschnitt<List<Benachrichtigung>>,
     val events: Abschnitt<List<MitgliedEvent>>,
 )
 
@@ -85,25 +78,8 @@ data class FreiKarte(
     val jetzt: Double,
 )
 
-/** Die zwei Kacheln unter "Dein Stand". */
-data class DeinStand(
-    val getraenkeTitel: String,
-    val getraenkeWert: String?,
-    val getraenkeFehler: String?,
-    val getraenkeLabel: String,
-    val dienstTitel: String,
-    /** "4 / 10 h", null ohne Soll */
-    val dienstWert: String?,
-    val dienstAnteil: Double,
-    val dienstFehler: String?,
-    val dienstLabel: String,
-)
-
 object HomeLogik {
     fun titel(vorname: String?): String = if (!vorname.isNullOrEmpty()) "Hallo, $vorname" else "Hallo"
-
-    /** Kicker ueber dem Titel: "Donnerstag, 29. Oktober" (die Ansicht schreibt ihn gross). */
-    fun kicker(jetzt: Instant): String = Zeit.heuteLang(jetzt)
 
     /** "17:00 – 18:00" in Berliner Zeit */
     fun zeitSpanne(t: Zeitraum): String =
@@ -145,6 +121,21 @@ object HomeLogik {
         }
     }
 
+    /** Unter dem naechsten Termin: "und 1 weiterer Termin", "und 2 weitere Termine". */
+    fun weitereTermine(n: Int): String = "und $n ${if (n == 1) "weiterer Termin" else "weitere Termine"}"
+
+    /** Zaehler rechts neben "Jetzt frei": "1 Platz", "3 Plätze"; ohne freie Plaetze oder bei Fehler null. */
+    fun freiZaehler(frei: Abschnitt<FreiDaten>, jetzt: Instant): String? {
+        val n = frei.wert?.let { jetztFreiKarten(it, jetzt).size } ?: 0
+        return if (n == 0) null else "$n ${if (n == 1) "Platz" else "Plätze"}"
+    }
+
+    /** "Heute, 17:00", "Morgen, 10:00", "Mi, 18:30" */
+    fun offenesSpielWann(o: OffenesSpiel, jetzt: Instant): String {
+        val tag = Startseite.dayTag(o.startsAt, jetzt)
+        return "${tag.take(1)}${tag.drop(1).lowercase()}, ${Zeit.minutesToTime(Zeit.minutesOf(o.startsAt))}"
+    }
+
     /** Hoechstens drei offene Spiele. */
     fun offeneSpiele(liste: List<OffenesSpiel>): List<OffenesSpiel> = liste.take(3)
 
@@ -154,44 +145,6 @@ object HomeLogik {
 
     /** An wen sich die Suche richtet: "LK 10–16 · Herren", "bis LK 16", "Damen"; ohne Einschraenkung null. */
     fun offenesSpielFilter(o: OffenesSpiel): String? = o.suchfilter.zusatz
-
-    fun deinStand(
-        getraenke: Abschnitt<List<EigenesGetraenk>>,
-        dienst: Abschnitt<Arbeitsdienst?>,
-        jetzt: Instant,
-    ): DeinStand {
-        val monat = Zeit.monatLang(jetzt)
-        val summe = Geld.formatCents(Startseite.sumOpenDrinks(getraenke.wert.orEmpty()))
-        val werte = dienst.wert
-        val ist = werte?.completedHours ?: 0.0
-        val soll = werte?.requiredHours ?: 0.0
-        // Der Arbeitsdienst zaehlt aufs Jahr, nicht auf den Monat (U55).
-        val jahr = werte?.year ?: Zeit.jahr(jetzt)
-        val mitSoll = werte != null && soll > 0
-
-        val dienstFehler = dienst.fehler
-        val dienstLabel = when {
-            dienstFehler != null -> "Arbeitsdienst: $dienstFehler"
-            soll > 0 -> "Arbeitsdienst $jahr: ${Zahlen.deutsch(ist)} von ${Zahlen.deutsch(soll)} Stunden. Zum Konto"
-            else -> "Arbeitsdienst $jahr: kein Soll. Zum Konto"
-        }
-
-        return DeinStand(
-            getraenkeTitel = "Getränke $monat",
-            getraenkeWert = if (getraenke.fehler == null) summe else null,
-            getraenkeFehler = getraenke.fehler,
-            getraenkeLabel = getraenke.fehler?.let { "Getränke: $it" }
-                ?: "Getränke im $monat: $summe, läuft noch. Zu den Getränken",
-            dienstTitel = "Arbeitsdienst $jahr",
-            dienstWert = if (mitSoll) "${Zahlen.deutsch(ist)} / ${Zahlen.deutsch(soll)} h" else null,
-            dienstAnteil = if (soll > 0) minOf(1.0, ist / soll) else 0.0,
-            dienstFehler = dienstFehler,
-            dienstLabel = dienstLabel,
-        )
-    }
-
-    /** Link "Alle" bei Neuigkeiten nur, wenn ueberhaupt etwas da ist. */
-    fun zeigeAlleNeuigkeiten(neues: Abschnitt<List<Benachrichtigung>>): Boolean = !neues.wert.isNullOrEmpty()
 
     // ---- Nachrichten und Glocke ---------------------------------------------
 
@@ -209,5 +162,4 @@ object HomeLogik {
     fun zeigeAlleGelesen(liste: List<Benachrichtigung>?, alleGesehen: Boolean): Boolean =
         !alleGesehen && liste.orEmpty().any { it.readAt == null }
 
-    /** Initialen fuer den Avatar: "MM" */
 }

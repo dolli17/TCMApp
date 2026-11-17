@@ -17,6 +17,7 @@
 package de.tcmuckensturm.app.bildschirme.konto
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -85,7 +86,6 @@ import de.tcmuckensturm.app.daten.Kontodaten
 import de.tcmuckensturm.app.daten.Mannschaftsdaten
 import de.tcmuckensturm.app.daten.MeinProfil
 import de.tcmuckensturm.app.daten.Startdaten
-import de.tcmuckensturm.app.navigation.HauptTab
 import de.tcmuckensturm.app.navigation.LocalZuTab
 import de.tcmuckensturm.app.push.PushSchalter
 import de.tcmuckensturm.app.push.PushSchalterAnsicht
@@ -319,18 +319,18 @@ private fun Profilkopf(profil: Abschnitt<MeinProfil?>, erneut: Erneut) {
     val nachname = p?.lastName ?: ""
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
-            Modifier.size(88.dp).background(f.brand, CircleShape).clearAndSetSemantics {},
+            Modifier.size(88.dp).background(f.blueSoft, CircleShape).border(1.dp, f.blue.copy(alpha = 0.22f), CircleShape).clearAndSetSemantics {},
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 Initialen.von(vorname, nachname),
-                style = TcmSchrift.text(Schrift.gewichtExtrafett, 30.sp),
-                color = f.onBrand,
+                style = TcmSchrift.display(Schrift.gewichtFett, 30.sp),
+                color = f.blueInk,
             )
         }
         Text(
             "$vorname $nachname",
-            style = TcmSchrift.text(Schrift.gewichtExtrafett, 28.sp),
+            style = TcmSchrift.display(Schrift.gewichtFett, 28.sp),
             color = f.ink,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 14.dp).semantics { heading() },
@@ -409,7 +409,7 @@ private fun Abrechnung(
                     .semantics(mergeDescendants = true) {},
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Zusammen", style = TcmSchrift.text(Schrift.gewichtFett, 14.sp), color = f.ink2, modifier = Modifier.weight(1f))
+                Text("Zusammen", style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp), color = f.ink2, modifier = Modifier.weight(1f))
                 Betrag(Geld.formatCents(summe), groesse = 21f)
             }
         }
@@ -450,7 +450,7 @@ private fun ArbeitsdienstKarte(dienst: Abschnitt<Arbeitsdienst?>, erneut: Erneut
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 "Arbeitsdienst ${d.year ?: ""}",
-                style = TcmSchrift.text(Schrift.gewichtFett, 15.5.sp),
+                style = TcmSchrift.display(Schrift.gewichtHalbfett, 15.5.sp),
                 color = f.ink,
                 modifier = Modifier.weight(1f),
             )
@@ -459,7 +459,7 @@ private fun ArbeitsdienstKarte(dienst: Abschnitt<Arbeitsdienst?>, erneut: Erneut
         if (soll > 0) {
             LinearProgressIndicator(
                 progress = { KontoLogik.dienstAnteil(d).toFloat() },
-                color = f.green,
+                color = f.blue,
                 trackColor = f.surf2,
                 gapSize = 0.dp,
                 drawStopIndicator = {},

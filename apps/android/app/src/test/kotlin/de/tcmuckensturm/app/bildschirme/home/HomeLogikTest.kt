@@ -1,11 +1,8 @@
 package de.tcmuckensturm.app.bildschirme.home
 
 import de.tcmuckensturm.app.daten.AktiverPlatz
-import de.tcmuckensturm.app.daten.Arbeitsdienst
 import de.tcmuckensturm.app.daten.Benachrichtigung
 import de.tcmuckensturm.app.daten.Buchungseinstellungen
-import de.tcmuckensturm.app.daten.EigenesGetraenk
-import de.tcmuckensturm.app.daten.MeinName
 import de.tcmuckensturm.app.daten.MeineBuchung
 import de.tcmuckensturm.app.daten.Meldung
 import de.tcmuckensturm.app.daten.TagesBelegung
@@ -36,7 +33,6 @@ class HomeLogikTest {
         assertEquals("Hallo, Max", HomeLogik.titel("Max"))
         assertEquals("Hallo", HomeLogik.titel(""))
         assertEquals("Hallo", HomeLogik.titel(null))
-        assertEquals("Montag, 28. September", HomeLogik.kicker(jetzt))
     }
 
     @Test
@@ -76,36 +72,6 @@ class HomeLogikTest {
     }
 
     @Test
-    fun deinStand() {
-        val stand = HomeLogik.deinStand(
-            getraenke = Abschnitt.Wert(listOf(EigenesGetraenk("g", totalCents = 450))),
-            dienst = Abschnitt.Wert(Arbeitsdienst(2026, 10.0, 2.5, 7.5)),
-            jetzt = jetzt,
-        )
-        assertEquals("Getränke September", stand.getraenkeTitel)
-        assertEquals("4,50 €", stand.getraenkeWert)
-        assertEquals("Getränke im September: 4,50 €, läuft noch. Zu den Getränken", stand.getraenkeLabel)
-        assertEquals("Arbeitsdienst 2026", stand.dienstTitel)
-        assertEquals("2,5 / 10 h", stand.dienstWert)
-        assertEquals(0.25, stand.dienstAnteil, 0.0)
-        assertEquals("Arbeitsdienst 2026: 2,5 von 10 Stunden. Zum Konto", stand.dienstLabel)
-
-        val ohne = HomeLogik.deinStand(Abschnitt.Fehler("Kaputt."), Abschnitt.Wert(null), jetzt)
-        assertNull(ohne.getraenkeWert)
-        assertEquals("Getränke: Kaputt.", ohne.getraenkeLabel)
-        assertNull(ohne.dienstWert)
-        assertEquals("Arbeitsdienst 2026", ohne.dienstTitel)
-        assertEquals("Arbeitsdienst 2026: kein Soll. Zum Konto", ohne.dienstLabel)
-
-        val fehler = HomeLogik.deinStand(Abschnitt.Wert(emptyList()), Abschnitt.Fehler("Weg."), jetzt)
-        assertEquals("Arbeitsdienst: Weg.", fehler.dienstLabel)
-        assertEquals("Weg.", fehler.dienstFehler)
-
-        val ueber = HomeLogik.deinStand(Abschnitt.Wert(emptyList()), Abschnitt.Wert(Arbeitsdienst(2026, 4.0, 6.0, 0.0)), jetzt)
-        assertEquals(1.0, ueber.dienstAnteil, 0.0)
-    }
-
-    @Test
     fun glockeUndNachrichten() {
         assertEquals("3", HomeLogik.glockenZahl(3))
         assertEquals("9+", HomeLogik.glockenZahl(12))
@@ -119,9 +85,6 @@ class HomeLogikTest {
         assertTrue(HomeLogik.zeigeAlleGelesen(liste, alleGesehen = false))
         assertFalse(HomeLogik.zeigeAlleGelesen(liste, alleGesehen = true))
         assertFalse(HomeLogik.zeigeAlleGelesen(null, alleGesehen = false))
-        assertTrue(HomeLogik.zeigeAlleNeuigkeiten(Abschnitt.Wert(liste)))
-        assertFalse(HomeLogik.zeigeAlleNeuigkeiten(Abschnitt.Wert(emptyList())))
-        assertFalse(HomeLogik.zeigeAlleNeuigkeiten(Abschnitt.Fehler("x")))
     }
 
     @Test
@@ -130,6 +93,19 @@ class HomeLogikTest {
         assertEquals("Doppel · sucht 2", HomeLogik.offenesSpielTitel(o[0]))
         assertEquals("Platz 2 · Erika Muster", HomeLogik.offenesSpielZeile(o[0]))
         assertEquals(3, HomeLogik.offeneSpiele(o + o).size)
+        assertEquals("Heute, 18:00", HomeLogik.offenesSpielWann(o[0].copy(startsAt = "2026-09-28T16:00:00Z"), jetzt))
+        assertEquals("Morgen, 10:00", HomeLogik.offenesSpielWann(o[0].copy(startsAt = "2026-09-29T08:00:00Z"), jetzt))
+        assertEquals("Mi, 18:30", HomeLogik.offenesSpielWann(o[0].copy(startsAt = "2026-09-30T16:30:00Z"), jetzt))
+    }
+
+    @Test
+    fun zaehlerDerStartseite() {
+        assertEquals("und 1 weiterer Termin", HomeLogik.weitereTermine(1))
+        assertEquals("und 3 weitere Termine", HomeLogik.weitereTermine(3))
+        assertNull(HomeLogik.freiZaehler(Abschnitt.Fehler("x"), jetzt))
+        val frei = Beispiele.voll.frei
+        val n = HomeLogik.jetztFreiKarten(frei.wert!!, jetzt).size
+        assertEquals(if (n == 1) "1 Platz" else "$n Plätze", HomeLogik.freiZaehler(frei, jetzt))
     }
 
     @Test
