@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { LK_FELD_FEHLER, LK_FELD_LABEL, MANNSCHAFT_INTERESSE_TEXT } from "@tcm/core";
 import { anmelden, MITGLIED_ID, NUTZER } from "./hilfen";
 
 /**
@@ -80,12 +81,43 @@ test.describe("Onboarding", () => {
     for (const box of await page.locator(".schalter input[type=checkbox]").all()) {
       await expect(box).not.toBeChecked();
     }
-    await page.getByRole("button", { name: "Überspringen" }).click();
+    // Jeder der drei Schritte ließe sich überspringen. Hier wird ausgefüllt und
+    // gespeichert, damit auch das Speichern einmal durchläuft.
+    await expect(page.getByRole("button", { name: "Überspringen" })).toBeVisible();
+    await page.getByRole("switch", { name: /^Fotos und Veröffentlichung/ }).check();
+    await page.getByRole("button", { name: "Speichern und weiter" }).click();
+
     await schritt(page, "Tennis");
-    await page.getByRole("button", { name: "Überspringen" }).click();
+    await expect(page.getByRole("button", { name: "Überspringen" })).toBeVisible();
+    // Eine unmögliche LK lehnt schon das Formular ab.
+    await page.getByLabel(LK_FELD_LABEL).fill("30");
+    await page.getByRole("button", { name: "Speichern und weiter" }).click();
+    await expect(page.getByText(LK_FELD_FEHLER)).toBeVisible();
+    await page.getByLabel(LK_FELD_LABEL).fill("18,4");
+    await page.getByLabel("nuLiga-ID").fill("e2e-onboarding");
+    await page.getByRole("switch", { name: new RegExp(`^${MANNSCHAFT_INTERESSE_TEXT}`) }).check();
+    await page.getByRole("button", { name: "Speichern und weiter" }).click();
+
     await schritt(page, "App-Einstellungen");
-    await page.getByRole("button", { name: "Überspringen" }).click();
+    await expect(page.getByRole("button", { name: "Überspringen" })).toBeVisible();
+    await expect(page.getByRole("radio", { name: "Alle Benachrichtigungen" })).toBeChecked();
+    await page.getByRole("radio", { name: "Keine E-Mails" }).check();
+    await page.getByRole("button", { name: "Speichern und loslegen" }).click();
     await page.waitForURL((u) => u.pathname === "/", { timeout: 20_000 });
+
+    // Was im Onboarding gewählt wurde, steht danach im Konto.
+    await page.goto("/konto/einwilligungen");
+    const gewaehlt = (merkmal: string) => page.getByLabel(merkmal).getByRole("button", { pressed: true });
+    await expect(gewaehlt("Fotos und Veröffentlichung")).toHaveText("Ja");
+    await expect(gewaehlt("Vereinsnachrichten per E-Mail")).toHaveText("Nein");
+    const mails = page.getByRole("group", { name: "E-Mails zu Buchungen" });
+    await expect(mails.getByRole("button", { name: "Keine E-Mails" })).toHaveAttribute("aria-pressed", "true");
+
+    await page.goto("/konto/tennis");
+    const tennis = page.locator('section[aria-label="Tennis"]');
+    await expect(tennis.getByLabel(LK_FELD_LABEL)).toHaveValue("LK18,4");
+    await expect(tennis.getByLabel("nuLiga-ID")).toHaveValue("e2e-onboarding");
+    await expect(tennis.getByLabel(MANNSCHAFT_INTERESSE_TEXT)).toBeChecked();
 
     // Jetzt ist der Plan erreichbar, und das Onboarding führt zurück nach Home.
     await page.goto("/plan");
