@@ -23,15 +23,11 @@ struct KeinZugangBildschirm: View {
                 // Der Kontakt steht im Impressum; ohne Adresse (lokal) fuehrt der Knopf zur Anmeldung.
                 if let kontakt = sitzung.umgebung.webLink("/impressum#kontakt") {
                     Link(destination: kontakt) {
-                        Text("Vorstand kontaktieren")
-                            .font(Schrift.text(.extrafett, 17, relativeTo: .headline))
-                            .foregroundStyle(Farbe.onGold)
-                            .frame(maxWidth: .infinity, minHeight: 58)
-                            .background(Farbe.gold, in: RoundedRectangle(cornerRadius: 18))
+                        KnopfFlaeche(stufe: .haupt, breit: true) { Text("Vorstand kontaktieren") }
                     }
                     LeiserVerweis(text: "Mit einem anderen Konto anmelden") { sitzung.zurAnmeldung() }
                 } else {
-                    GelberKnopf(text: "Zur Anmeldung") { sitzung.zurAnmeldung() }
+                    Hauptknopf(text: "Zur Anmeldung") { sitzung.zurAnmeldung() }
                 }
             }
             .padding(.top, Tokens.Abstand.abschnitt)

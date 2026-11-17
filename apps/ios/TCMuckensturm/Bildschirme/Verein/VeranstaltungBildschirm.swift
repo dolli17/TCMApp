@@ -1,7 +1,7 @@
 /**
  * Eine Veranstaltung (apps/mobile/app/(tabs)/verein/veranstaltung/[id].tsx)
  *
- * Blauer Kopf mit Titel, Eckdaten mit Belegung als Zahl (keine Namen),
+ * Weisser Grund (docs/design/stitch): Titel, Eckdaten mit Belegung als Zahl (keine Namen),
  * Beschreibung und darunter die eigene Anmeldung: mit Begleitpersonen und
  * Bemerkung anmelden, aendern, abmelden, Stand auf der Warteliste.
  *
@@ -10,16 +10,14 @@
  * events_fuer_mitglied) - so steht hier dasselbe wie im Konto.
  *
  * Ist der grosse Titel im Kopf hinausgescrollt, steht er klein in der
- * Navigationsleiste (useKompakterTitel in der Expo-App). Der Zurueck-Knopf
- * ist hell blueInk auf hellblauem Glas, dunkel weiss auf blauem Glas -
- * beides ueber 4:1, mehr als die 3:1 fuer Bedienelemente (WCAG AA).
+ * Navigationsleiste (useKompakterTitel in der Expo-App). Die Leiste ist
+ * neutral wie der Grund, der Zurueck-Knopf in blueInk.
  */
 
 import SwiftUI
 
 struct VeranstaltungBildschirm: View {
     @Environment(Sitzung.self) private var sitzung
-    @Environment(\.colorScheme) private var schema
     let id: String
     @State private var detail: VeranstaltungDetail?
     @State private var fehler: String?
@@ -50,21 +48,18 @@ struct VeranstaltungBildschirm: View {
                 .padding(.horizontal, Tokens.Abstand.rand)
                 .padding(.top, Tokens.Abstand.rand)
                 .padding(.bottom, Tokens.Abstand.abschnitt * 2)
-                // Der Inhalt behaelt das Blau; der Tint darunter gilt dem Zurueck-Knopf.
                 .tint(Farbe.blue)
             }
         }
         .background(Farbe.bg)
         .refreshable { await laden(nachladen: true) }
         .navigationBarTitleDisplayMode(.inline)
-        // Dunkel ist die Leiste ohnehin dunkel; hell wuerde .dark den Zurueck-Knopf weiss auf helles Glas legen.
-        .toolbarColorScheme(schema == .dark ? .dark : nil, for: .navigationBar)
         .toolbar {
-            // Klein in der Leiste erst, wenn der grosse Titel hinausgescrollt ist - weiss auf brand (5,9:1).
+            // Klein in der Leiste erst, wenn der grosse Titel hinausgescrollt ist.
             ToolbarItem(placement: .principal) {
                 Text(detail?.event.title ?? "")
                     .font(Schrift.display(.fett, 18))
-                    .foregroundStyle(Farbe.onBrand)
+                    .foregroundStyle(Farbe.ink)
                     .lineLimit(1)
                     .opacity(kompakt ? 1 : 0)
                     .accessibilityHidden(!kompakt)
@@ -72,10 +67,8 @@ struct VeranstaltungBildschirm: View {
                     .id("\(detail?.event.title ?? "")-\(kompakt)")
             }
         }
-        // Hell liegt der Zurueck-Knopf auf hellblauem Glas: dunkelblau. Dunkel ist das Glas blau: weiss.
-        .tint(schema == .dark ? Farbe.onBrand : Farbe.blueInk)
-        .toolbarBackground(Farbe.brand, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .tint(Farbe.blueInk)
+        .toolbarBackground(Farbe.bg, for: .navigationBar)
         .task { await laden(nachladen: false) }
     }
 
@@ -95,9 +88,11 @@ struct VeranstaltungBildschirm: View {
                 .font(Schrift.text(.normal, Tokens.Schrift.normal))
                 .foregroundStyle(Farbe.ink)
                 .lineSpacing(5)
+                .foregroundStyle(Farbe.ink2)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .karte(padding: 16)
+                .padding(.horizontal, 2)
+                .padding(.vertical, 6)
         }
 
         // Neu aufgebaut, wenn sich der eigene Stand aendert: das Formular startet mit dem neuen Stand.
@@ -120,7 +115,7 @@ struct VeranstaltungBildschirm: View {
 
 // MARK: - Kopf
 
-/// Der blaue Kopf unter der Navigationsleiste, die ebenfalls blau ist.
+/// Der grosse Titel unter der Navigationsleiste.
 private struct Kopf: View {
     let titel: String?
     @Binding var kompakt: Bool
@@ -130,20 +125,13 @@ private struct Kopf: View {
     var body: some View {
         Text(titel ?? " ")
             .font(Schrift.display(.fett, 28, relativeTo: .largeTitle))
-            .foregroundStyle(Farbe.onBrand)
+            .tracking(Tokens.Schrift.laufweiteTitel)
+            .foregroundStyle(Farbe.ink)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Tokens.Abstand.rand)
             .padding(.top, 6)
-            .padding(.bottom, 18)
-            .background {
-                ZStack {
-                    Farbe.brand
-                    Platzlinien()
-                }
-                // Beim Herunterziehen bleibt es oben blau.
-                .padding(.top, -400)
-            }
+            .padding(.bottom, 4)
             .accessibilityAddTraits(.isHeader)
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .scrollView) } action: { rahmen in
                 let start = basis ?? rahmen.minY
@@ -186,7 +174,7 @@ private struct Eckdaten: View {
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
                                 Capsule().fill(Farbe.surf2)
-                                Capsule().fill(Farbe.green).frame(width: geo.size.width * anteil)
+                                Capsule().fill(Farbe.blue).frame(width: geo.size.width * anteil)
                             }
                         }
                         .frame(height: 8)
@@ -197,7 +185,7 @@ private struct Eckdaten: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .karte(padding: 16)
+        .karte(padding: 20)
     }
 }
 
@@ -215,8 +203,9 @@ private struct Eckdatum<Zusatz: View>: View {
             : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
         layout {
             Text(label)
-                .leise()
-                .frame(width: textgroesse >= .xxLarge ? nil : 112, alignment: .leading)
+                .kicker()
+                .frame(width: textgroesse >= .xxLarge ? nil : 118, alignment: .leading)
+                .padding(.top, 3)
             VStack(alignment: .leading, spacing: 2) {
                 Text(wert)
                     .font(Schrift.text(.fett, Tokens.Schrift.normal))
@@ -247,7 +236,6 @@ extension Eckdatum where Zusatz == EmptyView {
 
 private struct AnmeldungKarte: View {
     @Environment(Sitzung.self) private var sitzung
-    @Environment(\.colorScheme) private var schema
     let detail: VeranstaltungDetail
     @Binding var meldung: Ergebnis?
     let nachher: () async -> Void
@@ -290,14 +278,14 @@ private struct AnmeldungKarte: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .karte(padding: 16)
+            .karte(padding: 20)
         } else {
             VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
                 hinweis
                 Text(VereinLogik.nichtsZuTun(e, now: jetzt)).leise()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .karte(padding: 16)
+            .karte(padding: 20)
         }
     }
 
@@ -305,9 +293,19 @@ private struct AnmeldungKarte: View {
 
     private func dabeiKarte(jetzt: Date) -> some View {
         let wartet = e.meinStatus == "waitlisted"
-        let gruen = Farbe.green
         return VStack(alignment: .leading, spacing: Tokens.Abstand.s) {
-            titel(wartet ? "Du stehst auf der Warteliste" : "Du bist angemeldet")
+            HStack(alignment: .center, spacing: 12) {
+                if !wartet {
+                    // Gelb heisst "deins": die eigene Anmeldung.
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Farbe.onGold)
+                        .frame(width: 36, height: 36)
+                        .background(Farbe.gold, in: Circle())
+                        .accessibilityHidden(true)
+                }
+                titel(wartet ? "Du stehst auf der Warteliste" : "Du bist angemeldet")
+            }
             hinweis
             if bearbeiten {
                 formular(aendern: true)
@@ -334,7 +332,8 @@ private struct AnmeldungKarte: View {
                             .font(Schrift.text(.halbfett, Tokens.Schrift.normal))
                             .foregroundStyle(Farbe.ink)
                             .fixedSize(horizontal: false, vertical: true)
-                        Hauptknopf(text: "Ja, abmelden", rot: true, gesperrt: laeuft) {
+                        // Rot gefuellt nur als Bestaetigung, daneben der neutrale Weg zurueck.
+                        Knopf("Ja, abmelden", stufe: .gefahr, breit: true, gesperrt: laeuft) {
                             tue({ await $0.meldeAb(e.id) }) { frage = false }
                         }
                         LeiserKnopf(text: "Nein") { frage = false }
@@ -343,7 +342,7 @@ private struct AnmeldungKarte: View {
                 } else {
                     VStack(spacing: 8) {
                         if Veranstaltungen.eventAenderbar(e, now: jetzt) {
-                            LeiserKnopf(text: "Anmeldung ändern") {
+                            Knopf("Anmeldung ändern", breit: true) {
                                 meldung = nil
                                 bearbeiten = true
                             }
@@ -356,15 +355,12 @@ private struct AnmeldungKarte: View {
                 }
             }
         }
-        .padding(16)
+        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            wartet ? Farbe.goldSoft : gruen.opacity(schema == .dark ? 0.16 : 0.1),
-            in: RoundedRectangle(cornerRadius: Tokens.Radius.karte)
-        )
+        .background(wartet ? Farbe.surf2 : Farbe.blueSoft, in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
         .overlay(
             RoundedRectangle(cornerRadius: Tokens.Radius.karte)
-                .strokeBorder(wartet ? Farbe.goldLine : gruen.opacity(0.35), lineWidth: 1)
+                .strokeBorder(wartet ? Farbe.line2 : Farbe.blue.opacity(0.22), lineWidth: 1)
         )
     }
 
@@ -376,7 +372,7 @@ private struct AnmeldungKarte: View {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Begleitpersonen")
-                            .font(Schrift.text(.fett, Tokens.Schrift.normal))
+                            .font(Schrift.display(.halbfett, Tokens.Schrift.normal))
                             .foregroundStyle(Farbe.ink)
                         Text(VereinLogik.begleitHinweis(e)).leise()
                     }
@@ -390,7 +386,7 @@ private struct AnmeldungKarte: View {
                             label: "\(begleitung) \(begleitung == 1 ? "Begleitperson" : "Begleitpersonen")"
                         )
                         Zaehlknopf(
-                            zeichen: .plus, gelb: begleitung > 0, beschriftung: "Eine Begleitperson mehr",
+                            zeichen: .plus, betont: begleitung > 0, beschriftung: "Eine Begleitperson mehr",
                             aus: begleitung >= Self.maxBegleitung
                         ) {
                             begleitung = min(Self.maxBegleitung, begleitung + 1)
@@ -426,7 +422,7 @@ private struct AnmeldungKarte: View {
 
     private func titel(_ text: String) -> some View {
         Text(text)
-            .font(Schrift.text(.fett, Tokens.Schrift.titel, relativeTo: .title2))
+            .font(Schrift.display(.fett, Tokens.Schrift.titel, relativeTo: .title2))
             .tracking(-0.2)
             .foregroundStyle(Farbe.ink)
             .fixedSize(horizontal: false, vertical: true)
@@ -468,37 +464,14 @@ private struct Bemerkungsfeld: View {
             TextField("", text: $text, prompt: Text("z. B. vegetarisch").foregroundStyle(Farbe.muted))
                 .font(Schrift.text(.normal, Tokens.Schrift.normal))
                 .foregroundStyle(Farbe.ink)
-                .padding(13)
-                .frame(minHeight: 50)
-                .background(Farbe.surf, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
-                .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.feld).strokeBorder(Farbe.rahmen, lineWidth: 1.5))
+                .padding(.horizontal, 20)
+                .frame(minHeight: 52)
+                .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
+                .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.feld).strokeBorder(Farbe.line2, lineWidth: 1))
                 .accessibilityLabel("Bemerkung")
                 .onChange(of: text) { _, neu in
                     if neu.count > 500 { text = String(neu.prefix(500)) }
                 }
         }
-    }
-}
-
-/// Gelber Hauptknopf (stil.knopfGold), rot fuer das Abmelden.
-private struct Hauptknopf: View {
-    let text: String
-    var rot = false
-    var gesperrt = false
-    let aktion: () -> Void
-
-    var body: some View {
-        Button(action: aktion) {
-            Text(text)
-                .font(Schrift.text(.extrafett, 16))
-                .foregroundStyle(rot ? Color.white : Farbe.onGold)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 16)
-                .frame(maxWidth: .infinity, minHeight: 52)
-                .background(rot ? Farbe.red : Farbe.gold, in: RoundedRectangle(cornerRadius: Tokens.Radius.knopf))
-        }
-        .buttonStyle(.plain)
-        .disabled(gesperrt)
-        .opacity(gesperrt ? 0.6 : 1)
     }
 }

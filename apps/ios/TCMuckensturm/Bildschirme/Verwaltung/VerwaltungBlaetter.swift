@@ -88,12 +88,8 @@ private struct Chips<Wert: Hashable>: View {
                     let aktiv = gewaehlt(o.wert)
                     Button { wahl(o.wert) } label: {
                         Text(o.label)
-                            .font(Schrift.text(.halbfett, 14.5))
-                            .foregroundStyle(aktiv ? Farbe.onGold : Farbe.ink)
-                            .padding(.horizontal, 14)
-                            .frame(minWidth: 44, minHeight: 40)
-                            .background(aktiv ? Farbe.gold : Farbe.surf2, in: Capsule())
-                            .contentShape(Capsule())
+                            .frame(minWidth: 16)
+                            .auswahlPille(aktiv, hoehe: 40, rand: 14)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("\(label) \(o.label)")
@@ -121,8 +117,8 @@ private struct Folgen: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Farbe.goldSoft, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Farbe.goldLine, lineWidth: 1))
+        .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 20))
+        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Farbe.line2, lineWidth: 1))
         .accessibilityElement(children: .combine)
     }
 }
@@ -134,18 +130,7 @@ private struct GefahrKnopf: View {
     let aktion: () -> Void
 
     var body: some View {
-        Button(action: aktion) {
-            Text(text)
-                .font(Schrift.text(.extrafett, 16))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(Farbe.onBrand)
-                .padding(.horizontal, 12)
-                .frame(maxWidth: .infinity, minHeight: 52)
-                .background(Farbe.red, in: RoundedRectangle(cornerRadius: 16))
-        }
-        .buttonStyle(.plain)
-        .disabled(gesperrt)
-        .opacity(gesperrt ? 0.6 : 1)
+        Knopf(text, stufe: .gefahr, breit: true, gesperrt: gesperrt, aktion: aktion)
     }
 }
 
@@ -207,7 +192,7 @@ private struct SperrenBlatt: View {
                 GefahrKnopf(text: PlaetzeLogik.verdraengenText(kollisionen), gesperrt: laeuft) { absenden(verdraengen: true) }
                 LeiserKnopf(text: "Doch nicht") { self.kollisionen = nil }
             } else {
-                GelberKnopf(
+                Hauptknopf(
                     text: laeuft ? "Wird gesperrt…" : "Sperren",
                     // Der Grund ist freiwillig; was die Sperrung ist, sagt die Art.
                     gesperrt: laeuft || gewaehlt.isEmpty || tag.trimmingCharacters(in: .whitespaces).isEmpty
@@ -294,12 +279,12 @@ private struct SerieAnlegenBlatt: View {
                         VerwaltungLogik.kollisionsZeile(startsAt: $0.startsAt, mitglied: $0.conflictMemberName, art: $0.conflictKind)
                     }
                 )
-                GelberKnopf(
+                Hauptknopf(
                     text: laeuft ? "Wird angelegt…" : VerwaltungLogik.anlegenText(termine: vorschau.count, kollisionen: kollisionen.count),
                     gesperrt: laeuft
                 ) { anlegen(verdraengen: !kollisionen.isEmpty) }
             } else {
-                GelberKnopf(
+                Hauptknopf(
                     text: laeuft ? "Wird geprüft…" : "Vorschau",
                     gesperrt: laeuft || form.title.trimmingCharacters(in: .whitespaces).isEmpty
                 ) { pruefen() }
@@ -405,7 +390,7 @@ private struct SerieBlatt: View {
                 Folgen(text: PlaetzeLogik.imWegText(kollisionen))
                 GefahrKnopf(text: PlaetzeLogik.verdraengenText(kollisionen), gesperrt: laeuft) { speichern(verdraengen: true) }
             } else {
-                GelberKnopf(
+                Hauptknopf(
                     text: laeuft ? "Wird gespeichert…" : "Änderung speichern",
                     gesperrt: laeuft || titel.trimmingCharacters(in: .whitespaces).isEmpty
                 ) { speichern(verdraengen: false) }

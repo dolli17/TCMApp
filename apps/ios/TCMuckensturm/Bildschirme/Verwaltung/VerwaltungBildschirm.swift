@@ -130,7 +130,7 @@ private struct VerwaltungInhalt: View {
                         inhalt(s)
                     } header: {
                         // Klebt beim Scrollen oben wie in Plaetze und Verein (U74).
-                        KontoSegmente(
+                        SegmentLeiste(
                             beschriftung: "Plätze und Serien",
                             optionen: VerwaltungAnsicht.allCases.map { ($0, $0.label) },
                             gewaehlt: m.ansicht
@@ -177,7 +177,7 @@ private struct VerwaltungInhalt: View {
     @ViewBuilder private func inhalt(_ s: VerwaltungsStand) -> some View {
         let m = modell
         let serien = m.ansicht == .serien
-        GelberKnopf(text: serien ? "+ Serie anlegen" : "+ Plätze sperren") {
+        Hauptknopf(text: serien ? "+ Serie anlegen" : "+ Plätze sperren") {
             m.blatt = serien ? .serieAnlegen : .sperren
         }
         if let e = m.meldung {
@@ -299,15 +299,15 @@ struct VerwaltungZeile: View {
     var body: some View {
         HStack(spacing: 12) {
             Text(symbol)
-                .font(Schrift.display(.extrafett, symbolGold ? 14 : 15))
-                .foregroundStyle(symbolGold ? Farbe.goldInk : Farbe.ink)
+                .font(Schrift.display(.fett, symbolGold ? 14 : 15))
+                .foregroundStyle(symbolGold ? Farbe.blueInk : Farbe.ink)
                 .dynamicTypeSize(...DynamicTypeSize.xLarge)
                 .frame(width: 40, height: 40)
-                .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 12))
+                .background(symbolGold ? Farbe.blueSoft : Farbe.surf2, in: RoundedRectangle(cornerRadius: 14))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 1) {
                 Text(titel)
-                    .font(Schrift.text(.fett, 16))
+                    .font(Schrift.display(.halbfett, 16))
                     .foregroundStyle(Farbe.ink)
                     .lineLimit(1)
                 if let zeit {
@@ -343,7 +343,8 @@ struct VerwaltungZeile: View {
         switch ton {
         case .leise: Farbe.muted
         case .rot: Farbe.redInk
-        case .gold: Farbe.goldInk
+        // "gold" im Kern meint einen Stand, kein "deins": blau.
+        case .gold: Farbe.blueInk
         case .gruen: Farbe.greenInk
         }
     }

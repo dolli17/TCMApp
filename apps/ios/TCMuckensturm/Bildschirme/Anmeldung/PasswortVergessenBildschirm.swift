@@ -38,7 +38,7 @@ struct PasswortVergessenBildschirm: View {
             }
 
             VStack(spacing: 6) {
-                GelberKnopf(text: laeuft ? "Wird gesendet…" : "Link anfordern", gesperrt: laeuft, aktion: absenden)
+                Hauptknopf(text: laeuft ? "Wird gesendet…" : "Link anfordern", gesperrt: laeuft, aktion: absenden)
                 LeiserVerweis(text: "Zurück zur Anmeldung", aktion: zurueck)
             }
             .padding(.top, Tokens.Abstand.abschnitt)

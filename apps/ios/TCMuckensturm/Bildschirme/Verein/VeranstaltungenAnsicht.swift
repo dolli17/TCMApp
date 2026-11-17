@@ -32,7 +32,7 @@ struct VeranstaltungenAnsicht: View {
                 } else if events != nil {
                     if vergangen {
                         Text("Vergangene Veranstaltungen")
-                            .font(Schrift.text(.fett, Tokens.Schrift.titel, relativeTo: .title2))
+                            .font(Schrift.display(.halbfett, Tokens.Schrift.titel, relativeTo: .title2))
                             .tracking(-0.2)
                             .foregroundStyle(Farbe.ink)
                             .accessibilityAddTraits(.isHeader)
@@ -43,10 +43,7 @@ struct VeranstaltungenAnsicht: View {
                     ForEach(gruppen, id: \.schluessel) { g in
                         VStack(alignment: .leading, spacing: 10) {
                             Text(g.titel)
-                                .font(Schrift.text(.fett, 13))
-                                .tracking(0.8)
-                                .textCase(.uppercase)
-                                .foregroundStyle(Farbe.muted)
+                                .kicker()
                                 .accessibilityAddTraits(.isHeader)
                             ForEach(g.events) { e in
                                 EventKarte(e: e, jetzt: jetzt) { zustand.pfad.append(e.id) }
@@ -56,7 +53,7 @@ struct VeranstaltungenAnsicht: View {
                     }
                     Button { vergangen.toggle() } label: {
                         Text(vergangen ? "Kommende Veranstaltungen" : "Vergangene Veranstaltungen")
-                            .font(Schrift.text(.halbfett, 14))
+                            .font(Schrift.display(.halbfett, 14))
                             .foregroundStyle(Farbe.blueInk)
                             .padding(.horizontal, 12)
                             .frame(minHeight: 44)

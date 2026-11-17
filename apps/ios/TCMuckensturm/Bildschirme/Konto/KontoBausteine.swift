@@ -14,7 +14,7 @@ struct KontoAbschnitt: View {
 
     var body: some View {
         Text(titel)
-            .font(Schrift.text(.fett, Tokens.Schrift.titel, relativeTo: .title2))
+            .font(Schrift.display(.halbfett, Tokens.Schrift.titel, relativeTo: .title2))
             .tracking(-0.2)
             .foregroundStyle(Farbe.ink)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -139,9 +139,10 @@ struct KontoMarke: View {
             .font(Schrift.text(.halbfett, Tokens.Schrift.klein))
             .foregroundStyle(Farbe.ink2)
             .padding(.horizontal, 10)
+            .lineLimit(1)
             .padding(.vertical, 3)
             .frame(minHeight: 26)
-            .background(Farbe.surf2, in: Capsule())
+            .background(Farbe.chip, in: Capsule())
     }
 }
 
@@ -151,7 +152,8 @@ struct StatusmarkeAnsicht: View {
 
     var body: some View {
         let (grund, schrift): (Color, Color) = switch marke.ton {
-        case .gold: (Farbe.goldSoft, Farbe.goldInk)
+        // Der Kern nennt den Ton "gold"; gemeint ist ein Stand, kein "deins": hellblau.
+        case .gold: (Farbe.blueSoft, Farbe.blueInk)
         case .rot: (Farbe.red.opacity(0.14), Farbe.redInk)
         case .grau: (Farbe.surf2, Farbe.ink2)
         }
@@ -215,8 +217,7 @@ struct KontoFeld: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             Text(label)
-                .font(Schrift.text(.halbfett, Tokens.Schrift.klein, relativeTo: .footnote))
-                .foregroundStyle(fehler != nil ? Farbe.red : Farbe.ink2)
+                .kicker(farbe: fehler != nil ? Farbe.redInk : Farbe.muted)
                 .accessibilityHidden(true)
             Group {
                 if mehrzeilig {
@@ -231,12 +232,13 @@ struct KontoFeld: View {
             .textInputAutocapitalization(grossschreibung)
             .font(Schrift.text(.normal, Tokens.Schrift.normal))
             .foregroundStyle(Farbe.ink)
-            .padding(13)
-            .frame(minHeight: mehrzeilig ? 96 : 50, alignment: .topLeading)
-            .background(Farbe.surf, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
+            .padding(.horizontal, 20)
+            .padding(.vertical, mehrzeilig ? 14 : 0)
+            .frame(minHeight: mehrzeilig ? 96 : 52, alignment: mehrzeilig ? .topLeading : .leading)
+            .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
             .overlay(
                 RoundedRectangle(cornerRadius: Tokens.Radius.feld)
-                    .strokeBorder(fehler != nil ? Farbe.red : Farbe.rahmen, lineWidth: 1.5)
+                    .strokeBorder(fehler != nil ? Farbe.red : Farbe.line2, lineWidth: fehler != nil ? 1.5 : 1)
             )
             .accessibilityLabel(label)
             .accessibilityHint(fehler ?? hinweis ?? "")
@@ -253,56 +255,6 @@ struct KontoFeld: View {
     }
 }
 
-/// Auswahl nebeneinander oder untereinander (stil.segment, Segmente.tsx).
-struct KontoSegmente<Wert: Hashable>: View {
-    let beschriftung: String
-    let optionen: [(wert: Wert, label: String)]
-    let gewaehlt: Wert?
-    var untereinander = false
-    var gesperrt = false
-    let wahl: (Wert) -> Void
-
-    var body: some View {
-        let knoepfe = ForEach(optionen, id: \.wert) { o in
-            let aktiv = o.wert == gewaehlt
-            Button { wahl(o.wert) } label: {
-                Text(o.label)
-                    .font(Schrift.display(.fett, 15))
-                    .foregroundStyle(aktiv ? Farbe.ink : Farbe.muted)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity, minHeight: 38)
-                    .padding(.horizontal, 6)
-                    .background {
-                        if aktiv {
-                            RoundedRectangle(cornerRadius: Tokens.Radius.knopf - 4)
-                                .fill(Farbe.segAktiv)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: Tokens.Radius.knopf - 4)
-                                        .strokeBorder(Farbe.segAktivRand, lineWidth: 1.5)
-                                )
-                        }
-                    }
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(gesperrt)
-            .accessibilityAddTraits(aktiv ? .isSelected : [])
-        }
-        Group {
-            if untereinander {
-                VStack(spacing: 4) { knoepfe }
-            } else {
-                HStack(spacing: 4) { knoepfe }
-            }
-        }
-        .padding(4)
-        .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.knopf))
-        .opacity(gesperrt ? 0.6 : 1)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(beschriftung)
-    }
-}
-
 /// Titel und Schliessen oben in einem Blatt (BlattKopf in Blatt.tsx).
 struct BlattKopf: View {
     let titel: String
@@ -311,44 +263,11 @@ struct BlattKopf: View {
     var body: some View {
         HStack(alignment: .center) {
             Text(titel)
-                .font(Schrift.text(.extrafett, Tokens.Schrift.titel, relativeTo: .title2))
+                .font(Schrift.display(.fett, 22, relativeTo: .title2))
                 .foregroundStyle(Farbe.ink)
                 .accessibilityAddTraits(.isHeader)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Button(action: zu) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Farbe.ink)
-                    .frame(width: 44, height: 44)
-                    .background(Farbe.surf2, in: Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Schließen")
+            SchliessenKnopf(aktion: zu)
         }
-    }
-}
-
-/// Leiser Knopf mit Rand (stil.knopfLeise); rot fuer die Kuendigung.
-struct LeiserKnopf: View {
-    let text: String
-    var rot = false
-    var gesperrt = false
-    let aktion: () -> Void
-
-    var body: some View {
-        Button(action: aktion) {
-            Text(text)
-                .font(Schrift.text(.fett, 16))
-                .foregroundStyle(rot ? Farbe.redInk : Farbe.ink)
-                .frame(maxWidth: .infinity, minHeight: 52)
-                .overlay(
-                    RoundedRectangle(cornerRadius: Tokens.Radius.knopf)
-                        .strokeBorder(rot ? Farbe.red.opacity(0.5) : Farbe.line2, lineWidth: 1.5)
-                )
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(gesperrt)
-        .opacity(gesperrt ? 0.5 : 1)
     }
 }

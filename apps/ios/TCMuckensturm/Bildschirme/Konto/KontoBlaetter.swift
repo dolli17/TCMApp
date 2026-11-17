@@ -235,7 +235,7 @@ private struct Stammdatenformular: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .safeAreaInset(edge: .bottom) {
-            GelberKnopf(text: laeuft ? "Speichert…" : "Speichern", gesperrt: laeuft, aktion: absenden)
+            Hauptknopf(text: laeuft ? "Speichert…" : "Speichern", gesperrt: laeuft, aktion: absenden)
                 .padding(.horizontal, Tokens.Abstand.rand)
                 .padding(.vertical, Tokens.Abstand.s)
                 .background(Farbe.bg)
@@ -321,7 +321,7 @@ private struct TennisFormular: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .safeAreaInset(edge: .bottom) {
-            GelberKnopf(text: laeuft ? "Speichert…" : "Speichern", gesperrt: laeuft, aktion: absenden)
+            Hauptknopf(text: laeuft ? "Speichert…" : "Speichern", gesperrt: laeuft, aktion: absenden)
                 .padding(.horizontal, Tokens.Abstand.rand)
                 .padding(.vertical, Tokens.Abstand.s)
                 .background(Farbe.bg)
@@ -397,7 +397,7 @@ private struct Einwilligungen: View {
         case .nurLesen:
             Text(KontoLogik.nurLesenText(m)).leise()
         case .jaNein:
-            KontoSegmente(beschriftung: m.name, optionen: [(true, "Ja"), (false, "Nein")], gewaehlt: m.gesetzt, gesperrt: laeuft) { ja in
+            SegmentLeiste(beschriftung: m.name, optionen: [(true, "Ja"), (false, "Nein")], gewaehlt: m.gesetzt, gesperrt: laeuft) { ja in
                 guard ja != m.gesetzt else { return }
                 ausfuehren { ja ? await daten.setzeMerkmal(code: m.code, option: "true") : await daten.entferneMerkmal(code: m.code) }
             }
@@ -405,7 +405,7 @@ private struct Einwilligungen: View {
                 Text("erteilt am \(KontoLogik.tagDatum(seit))").leise()
             }
         case .einzelwahl:
-            KontoSegmente(
+            SegmentLeiste(
                 beschriftung: m.name,
                 optionen: m.optionen.map { ($0.value, $0.label ?? $0.value) },
                 gewaehlt: m.werte.first?.option,
@@ -424,20 +424,11 @@ private struct Einwilligungen: View {
                     text: Binding(get: { texte[m.code] ?? m.werte.first?.text ?? "" }, set: { texte[m.code] = $0 }),
                     tastatur: m.art == "number" ? .decimalPad : .default
                 )
-                Button {
+                // Zweitknopf: die Hauptaktion des Blatts bleibt die eine blaue.
+                Knopf("Speichern", gesperrt: laeuft) {
                     let text = texte[m.code] ?? m.werte.first?.text ?? ""
                     ausfuehren { await daten.setzeMerkmal(code: m.code, text: text) }
-                } label: {
-                    Text("Speichern")
-                        .font(Schrift.text(.fett, 15))
-                        .foregroundStyle(Farbe.onBrand)
-                        .padding(.horizontal, 16)
-                        .frame(minHeight: 50)
-                        .background(Farbe.blue, in: RoundedRectangle(cornerRadius: Tokens.Radius.knopf))
                 }
-                .buttonStyle(.plain)
-                .disabled(laeuft)
-                .opacity(laeuft ? 0.5 : 1)
             }
         }
     }
@@ -582,7 +573,7 @@ private struct PasswortAendern: View {
             .padding(Tokens.Abstand.rand)
         }
         .safeAreaInset(edge: .bottom) {
-            GelberKnopf(text: laeuft ? "Wird gespeichert…" : "Speichern", gesperrt: laeuft, aktion: speichern)
+            Hauptknopf(text: laeuft ? "Wird gespeichert…" : "Speichern", gesperrt: laeuft, aktion: speichern)
                 .padding(.horizontal, Tokens.Abstand.rand)
                 .padding(.vertical, Tokens.Abstand.s)
                 .background(Farbe.bg)
@@ -650,7 +641,11 @@ private struct KuendigungFormular: View {
                         .foregroundStyle(Farbe.ink)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, Tokens.Abstand.s)
-                    LeiserKnopf(text: laeuft ? "Wird gesendet…" : Kontoloeschung.bestaetigen, rot: true, gesperrt: laeuft, aktion: senden)
+                    // Rot gefuellt nur als Bestaetigung, darunter der neutrale Weg zurueck.
+                    Knopf(
+                        laeuft ? "Wird gesendet…" : Kontoloeschung.bestaetigen, stufe: .gefahr, breit: true,
+                        gesperrt: laeuft, aktion: senden
+                    )
                     LeiserKnopf(text: Kontoloeschung.abbrechen, gesperrt: laeuft) { rueckfrage = false }
                 } else {
                     LeiserKnopf(text: Kontoloeschung.absenden, rot: true) {

@@ -3,7 +3,7 @@
  *
  * Rund, 44 Punkt, im grossen Kopf neben dem Avatar. Der Zaehler wird bei
  * jedem Erscheinen neu geholt, sonst bliebe die rote Marke stehen, nachdem
- * die Nachrichten gelesen wurden. Ein Fehler beim Zaehlen zaehlt als 0.
+ * die Nachrichten gelesen wurden. Der Zaehler ist gelb ("deins"). Ein Fehler beim Zaehlen zaehlt als 0.
  *
  * Ein Tippen oeffnet die Nachrichten als Blatt und markiert sie gelesen;
  * die Hervorhebung bleibt, bis "Alle als gelesen" sie wegnimmt.
@@ -34,13 +34,14 @@ struct Glocke: View {
                 .overlay(alignment: .topTrailing) {
                     if ungelesen > 0 {
                         Text(HomeLogik.glockenZahl(ungelesen))
-                            .font(Schrift.text(.fett, Tokens.Schrift.kicker))
+                            .font(Schrift.display(.fett, Tokens.Schrift.kicker))
                             .monospacedDigit()
                             .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                            .foregroundStyle(Farbe.onBrand)
+                            // Gelb heisst "deins": deine ungelesenen Nachrichten.
+                            .foregroundStyle(Farbe.onGold)
                             .padding(.horizontal, 4)
                             .frame(minWidth: 18, minHeight: 18)
-                            .background(Farbe.red, in: Capsule())
+                            .background(Farbe.gold, in: Capsule())
                             .offset(x: 3, y: -3)
                     }
                 }
@@ -63,19 +64,11 @@ struct Glocke: View {
             VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
                 HStack {
                     Text("Benachrichtigungen")
-                        .font(Schrift.text(.extrafett, Tokens.Schrift.titel, relativeTo: .title2))
+                        .font(Schrift.display(.fett, 22, relativeTo: .title2))
                         .foregroundStyle(Farbe.ink)
                         .accessibilityAddTraits(.isHeader)
                     Spacer()
-                    Button { offen = false } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Farbe.ink)
-                            .frame(width: 44, height: 44)
-                            .background(Farbe.surf2, in: Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Schließen")
+                    SchliessenKnopf { offen = false }
                 }
                 if HomeLogik.zeigeAlleGelesen(liste, alleGesehen: alleGesehen) {
                     AlleGelesenKnopf { alleGesehen = true }

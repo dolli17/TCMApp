@@ -2,8 +2,8 @@
  * Erscheinungsbild: System, Hell oder Dunkel (ThemeWahl in konto.tsx)
  *
  * Die Systemeinstellung ist die Vorgabe, die Wahl ueberlebt den Neustart
- * (UserDefaults). Gesetzt wird sie fuer das ganze Fenster in StartAnsicht;
- * die Anmeldeseiten bleiben trotzdem dunkel (ImmerDunkel).
+ * (UserDefaults). Gesetzt wird sie fuer das ganze Fenster in StartAnsicht -
+ * auch fuer die Anmeldeseiten.
  */
 
 import SwiftUI
