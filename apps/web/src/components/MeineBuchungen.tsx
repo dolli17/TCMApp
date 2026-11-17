@@ -93,7 +93,7 @@ export function MeineBuchungen({ buchungen, jetzt }: {
           const vorbei = bis.getTime() <= new Date(jetzt).getTime();
 
           return (
-            <li key={b.booking_id} className="karte spiel-karte">
+            <li key={b.booking_id} className="karte spiel-karte termin">
               {/* Entwurf "Meine & offene Spiele": groß die Zeit, rechts die Marke,
                   darunter Tag, Platz und Mitspieler; im Fuß die eine Handlung. */}
               <div className="kopf">

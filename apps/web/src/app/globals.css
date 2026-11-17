@@ -2992,3 +2992,6 @@ label.schalter > .schalter-feld, .auth .sheet label.schalter > .schalter-feld { 
 /* Ja/Nein im Veranstaltungsformular: Schalter rechts, Aussage links */
 .veranstaltungs-formular label.schalter { display: flex; flex-direction: row-reverse; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; }
 .veranstaltungs-formular label.schalter > span { margin: 0; font-family: var(--font-text); font-size: 16px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink); }
+/* Die Spielkarten tragen weiter die Klasse .termin (Anker der Tests), aber nicht deren Zeilenaufbau */
+.spiel-karte.termin { align-items: stretch; }
+.offen-karte.termin { flex-wrap: nowrap; }

@@ -24,7 +24,7 @@ export interface OffenesSpiel {
 }
 
 const WOCHENTAG = new Intl.DateTimeFormat("de-DE", { weekday: "long", timeZone: "Europe/Berlin" });
-const DATUM = new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "long", timeZone: "Europe/Berlin" });
+const DATUM = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "long", timeZone: "Europe/Berlin" });
 
 const UHR = new Intl.DateTimeFormat("de-DE", {
   hour: "2-digit",
@@ -91,16 +91,16 @@ export function OffeneSpiele({
           });
 
           return (
-            <li key={s.booking_id} className="karte offen-karte">
+            <li key={s.booking_id} className="karte offen-karte termin">
               {/* Wie auf der Startseite: Tag und Zeit mit Spielform, darunter Platz und wer sucht */}
               <div className="text">
                 <div className="wann">
-                  <b className="tnum">{WOCHENTAG.format(von)}, {UHR.format(von)}</b>
+                  <b className="tnum">{WOCHENTAG.format(von)}, {DATUM.format(von)}</b>
                   <span className="marke-klein">{s.type_name}</span>
                 </div>
                 <strong>{text.kopf}</strong>
                 <small>
-                  {DATUM.format(von)} · {s.court_name ?? "Platz"} ·{" "}
+                  {s.court_name ?? "Platz"} ·{" "}
                   <span className="tnum">
                     {UHR.format(von)}–{UHR.format(bis)}
                   </span>
