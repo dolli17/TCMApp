@@ -61,7 +61,12 @@ struct GetraenkeAnsicht: View {
             VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
                 VereinKopf()
                 if let fehler {
-                    Fehlerzeile(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
+                    // Ohne Inhalt der ganze Fehlerzustand, sonst die Zeile ueber dem alten Stand.
+                    if inhalt == nil {
+                        Fehlerzustand(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
+                    } else {
+                        Fehlerzeile(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
+                    }
                 }
                 if laedt && inhalt == nil {
                     ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)

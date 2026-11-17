@@ -140,6 +140,38 @@ struct Leerzustand: View {
     }
 }
 
+/**
+ * Fehler, wenn noch gar nichts geladen ist (docs/design/stitch, "Verein
+ * Fehlerzustand"): mittig ein Symbol, der Satz und neutral "Erneut versuchen".
+ * Steht schon Inhalt da, bleibt es bei der Fehlerzeile darueber.
+ */
+struct Fehlerzustand: View {
+    let text: String
+    var laeuft = false
+    let onErneut: () -> Void
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "icloud.slash")
+                .font(.system(size: 22, weight: .medium))
+                .foregroundStyle(Farbe.ink2)
+                .frame(width: 56, height: 56)
+                .background(Farbe.chip, in: Circle())
+                .accessibilityHidden(true)
+            Text(text)
+                .font(Schrift.display(.halbfett, 18, relativeTo: .title3))
+                .foregroundStyle(Farbe.ink)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Knopf(laeuft ? "Wird geladen…" : "Erneut versuchen", stufe: .leise, gesperrt: laeuft, aktion: onErneut)
+                .padding(.top, 6)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, Tokens.Abstand.m)
+        .padding(.top, 96)
+    }
+}
+
 /// Ein Ladefehler mit dem Weg zurueck (Fehlerzeile.tsx, U3)
 struct Fehlerzeile: View {
     @Environment(\.colorScheme) private var schema

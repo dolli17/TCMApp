@@ -75,18 +75,29 @@ struct SchrittStammdaten: View {
             Geburtstag(text: wert("birthday"), fehler: fehlerText("birthday"))
         }
         VStack(alignment: .leading, spacing: 7) {
-            Text("Geschlecht")
-                .font(Schrift.text(.halbfett, Tokens.Schrift.klein, relativeTo: .footnote))
-                .foregroundStyle(fehler?.feld == "gender" ? Farbe.red : Farbe.ink2)
-            SegmentLeiste(beschriftung: "Geschlecht", optionen: OnboardingLogik.geschlechter, gewaehlt: werte["gender"]) {
-                wert("gender").wrappedValue = $0
+            Text("Geschlecht").kicker(farbe: fehler?.feld == "gender" ? Farbe.redInk : Farbe.muted)
+            // Gleich breite Pillen; gewaehlt ist hellblau mit blauer Linie.
+            HStack(spacing: 8) {
+                ForEach(OnboardingLogik.geschlechter, id: \.wert) { g in
+                    let aktiv = werte["gender"] == g.0
+                    Button { wert("gender").wrappedValue = g.0 } label: {
+                        Text(g.1).lineLimit(1).minimumScaleFactor(0.8).frame(maxWidth: .infinity).auswahlPille(aktiv, hoehe: 48, rand: 8)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(aktiv ? .isSelected : [])
+                }
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Geschlecht")
             if let f = fehlerText("gender") { KontoHinweis(text: f) }
         }
         Gruppe(titel: "Adresse") {
             feld("street", "Straße", inhalt: .streetAddressLine1, gross: .words)
-            feld("postcode", "PLZ", inhalt: .postalCode, tastatur: .numberPad)
-            feld("city", "Ort", inhalt: .addressCity, gross: .words)
+            // PLZ schmal neben dem Ort
+            HStack(alignment: .top, spacing: 12) {
+                feld("postcode", "PLZ", inhalt: .postalCode, tastatur: .numberPad).frame(width: 120)
+                feld("city", "Ort", inhalt: .addressCity, gross: .words)
+            }
         }
         Gruppe(titel: "Kontakt") {
             feld("phone", "Telefon", inhalt: .telephoneNumber, tastatur: .phonePad)
@@ -323,15 +334,7 @@ struct SchrittSepa: View {
             KontoHinweis(text: "Die Gläubigerdaten des Vereins fehlen noch, deshalb lässt sich das Mandat gerade nicht erteilen. Bitte wende dich an den Vorstand.")
             OnboardingAktionen(k: k, gesperrt: true, speichern: k.weiter)
         } else {
-            Text(OnboardingLogik.mandatstext(m))
-                .font(Schrift.text(.normal, 14))
-                .foregroundStyle(Farbe.ink)
-                .lineSpacing(3)
-                .textSelection(.enabled)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(16)
-                .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
+            // Erst die Angaben, dann der Mandatstext, darunter die Zustimmung (Entwurf "Onboarding SEPA").
             KontoFeld(
                 label: "Kontoinhaber",
                 text: Binding(get: { kontoinhaber ?? m.kontoinhaberVorschlag ?? "" }, set: { kontoinhaber = $0 }),
@@ -342,13 +345,39 @@ struct SchrittSepa: View {
                 Text("Bei Kindern ist der Kontoinhaber ein Elternteil.").leise()
             }
             KontoFeld(label: "IBAN", text: $iban, tastatur: .asciiCapable, grossschreibung: .characters)
-            KontoGruppe {
-                OnboardingSchalter(
-                    label: "Ich erteile dieses Mandat",
-                    beschreibung: "Als Kontoinhaber oder mit dessen Einverständnis.",
-                    an: $bestaetigt
-                )
+            Text(OnboardingLogik.mandatstext(m))
+                .font(Schrift.text(.normal, 14))
+                .foregroundStyle(Farbe.ink2)
+                .lineSpacing(4)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(18)
+                .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
+                .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.karte).strokeBorder(Farbe.line, lineWidth: 1))
+            // Zustimmung als Haken vor dem Satz
+            Button { bestaetigt.toggle() } label: {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: bestaetigt ? "checkmark.square.fill" : "square")
+                        .font(.system(size: 24, weight: .regular))
+                        .foregroundStyle(bestaetigt ? Farbe.blue : Farbe.muted)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Ich erteile dieses Mandat")
+                            .font(Schrift.text(.normal, Tokens.Schrift.normal))
+                            .foregroundStyle(Farbe.ink)
+                        Text("Als Kontoinhaber oder mit dessen Einverständnis.").leise()
+                    }
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Ich erteile dieses Mandat. Als Kontoinhaber oder mit dessen Einverständnis.")
+            .accessibilityAddTraits(bestaetigt ? [.isButton, .isSelected] : .isButton)
             OnboardingAktionen(k: k, weiterText: "Mandat erteilen") {
                 let r = await k.daten.erteileMandat(
                     iban: iban, kontoinhaber: kontoinhaber ?? m.kontoinhaberVorschlag ?? "", bestaetigt: bestaetigt
@@ -443,14 +472,38 @@ struct SchrittEinstellungen: View {
     var body: some View {
         let gespeichert = k.zustand.einstellungen.bookingMail
         VStack(alignment: .leading, spacing: 7) {
-            Text("E-Mails zu deinen Buchungen")
-                .font(Schrift.text(.halbfett, Tokens.Schrift.klein, relativeTo: .footnote))
-                .foregroundStyle(Farbe.ink2)
-            SegmentLeiste(
-                beschriftung: "E-Mails zu deinen Buchungen",
-                optionen: OnboardingLogik.buchungsmails,
-                gewaehlt: mails ?? OnboardingLogik.buchungsmail(gespeichert)
-            ) { mails = $0 }
+            Text("E-Mails zu deinen Buchungen").kicker().padding(.bottom, 3)
+            // Je Wahl eine Karte mit Punkt rechts; gewaehlt ist hellblau mit blauer Linie.
+            let gewaehlt = mails ?? OnboardingLogik.buchungsmail(gespeichert)
+            VStack(spacing: 10) {
+                ForEach(OnboardingLogik.buchungsmails, id: \.wert) { o in
+                    let aktiv = o.0 == gewaehlt
+                    Button { mails = o.0 } label: {
+                        HStack(spacing: 12) {
+                            Text(o.1)
+                                .font(Schrift.display(.halbfett, 17))
+                                .foregroundStyle(Farbe.ink)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Image(systemName: aktiv ? "largecircle.fill.circle" : "circle")
+                                .font(.system(size: 22))
+                                .foregroundStyle(aktiv ? Farbe.blue : Farbe.line2)
+                                .accessibilityHidden(true)
+                        }
+                        .padding(.horizontal, 20)
+                        .frame(minHeight: 64)
+                        .background(aktiv ? Farbe.blueSoft : Farbe.surf, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Tokens.Radius.feld)
+                                .strokeBorder(aktiv ? Farbe.blue : Farbe.line, lineWidth: aktiv ? 1.5 : 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(aktiv ? .isSelected : [])
+                }
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("E-Mails zu deinen Buchungen")
         }
         Text("In der App siehst du Änderungen an deinen Buchungen in jedem Fall.").leise()
         KontoGruppe {
