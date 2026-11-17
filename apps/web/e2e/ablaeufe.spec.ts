@@ -144,10 +144,11 @@ test.describe("Anmeldung", () => {
     await anmelden(page, NUTZER.mitglied);
     await expect(page).toHaveURL((u) => u.pathname === "/");
     await expect(page.getByRole("heading", { level: 1, name: /^Hallo, / })).toBeVisible();
-    for (const abschnitt of ["Als Nächstes", "Jetzt frei", "Offene Spiele", "Neuigkeiten"]) {
-      await expect(page.getByRole("heading", { level: 2, name: abschnitt })).toBeVisible();
+    // Ausgedünnte Startseite: der laufende Monat steht im Konto, Neuigkeiten hinter der Glocke.
+    for (const abschnitt of ["Als Nächstes", "Jetzt frei", "Offene Spiele"]) {
+      await expect(page.getByRole("heading", { level: 2, name: abschnitt })).toBeAttached();
     }
-    await expect(page.getByRole("heading", { level: 2, name: /^Dein / })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Platz buchen" }).first()).toBeVisible();
     // Start steht als erster Eintrag im Menue und ist hier aktiv.
     const nav = page.getByRole("navigation", { name: "Hauptmenü" }).first();
     await expect(nav.getByRole("link").first()).toHaveAttribute("aria-current", "page");

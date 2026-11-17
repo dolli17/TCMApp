@@ -41,7 +41,8 @@ Fließtext. Beide liegen auf dem eigenen Server.
 
 - [x] Tokens (`packages/ui/src/tokens.ts`): Farben, Radien, Schriftgrößen
 - [x] Web: Schriften, Knopfstufen, Navigation, Auswahl in Blau
-- [ ] Web: Screens einzeln an die Entwürfe angleichen (Start, Plätze, Blätter,
+- [x] Web: Startseite nach dem Entwurf „Home“ (ausgedünnt)
+- [ ] Web: Screens einzeln an die Entwürfe angleichen (Plätze, Blätter,
       Verein, Konto, Anmeldung, Verwaltung, Kiosk)
 - [ ] iOS und Android: Rollen der Farben (dort ist Gelb noch Hauptaktion),
       Schriftdateien, Screens
