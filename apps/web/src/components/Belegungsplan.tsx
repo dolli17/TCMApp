@@ -586,6 +586,7 @@ export function Belegungsplan(props: Props) {
           }
           rasterMinuten={props.rasterMinuten}
           anzeigeMinuten={props.anzeigeMinuten}
+          vorlaufTage={props.vorlaufTage}
           gastgebuehrCents={props.gastgebuehrCents}
           darfPlaetze={props.darfPlaetze}
           laeuft={laeuft}

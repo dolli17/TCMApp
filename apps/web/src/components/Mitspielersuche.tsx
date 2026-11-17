@@ -17,6 +17,8 @@ interface Props {
   gefragt?: boolean;
   /** Betrag je Gast in Cent. */
   gastgebuehrCents: number;
+  /** Blatt "Eigenes Spiel": jede Person als eigene Zeile mit Avatar statt als Chip. */
+  zeilen?: boolean;
   onMitglieder: (ids: string[]) => void;
   onGaeste: (namen: string[]) => void;
   ref?: Ref<MitspielerHandle>;
@@ -100,7 +102,7 @@ export function Mitspielersuche(props: Props) {
   const gebuehr = props.gastgebuehrCents > 0 ? euro(props.gastgebuehrCents) : null;
 
   return (
-    <div className="mitspieler" role="group" aria-labelledby={titelId}>
+    <div className={`mitspieler${props.zeilen ? " zeilen" : ""}`} role="group" aria-labelledby={titelId}>
       <p className="feldname" id={titelId}>
         Wer spielt mit?{props.umfang && <span className="umfang"> · {props.umfang}</span>}
       </p>
@@ -117,6 +119,7 @@ export function Mitspielersuche(props: Props) {
             <ul className="marken" aria-label="Gewählte Mitspieler">
               {gewaehlteMitglieder.map((m) => (
                 <li key={m.id} className="chip">
+                  {props.zeilen && <span className="avatar" aria-hidden="true">{initialen(m.first_name, m.last_name)}</span>}
                   <span className="name">{m.first_name} {m.last_name}</span>
                   <button
                     type="button"
@@ -129,6 +132,7 @@ export function Mitspielersuche(props: Props) {
               ))}
               {props.gaeste.map((g, i) => (
                 <li key={`g${i}`} className="chip gast">
+                  {props.zeilen && <span className="avatar" aria-hidden="true">G</span>}
                   <span className="name">{g}</span>
                   <button
                     type="button"

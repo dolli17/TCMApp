@@ -232,13 +232,28 @@ label > span {
   display: block; font-size: 15px; font-weight: 600;
   color: var(--ink-2); margin-bottom: 7px;
 }
+/* Feldnamen sind Kicker über dem Feld (docs/design/stitch, alle Formulare):
+   Space Grotesk, Versalien, 12 px. Nicht bei Häkchen und Schaltern - dort ist
+   der Text die Aussage selbst. :where hält die Regel so schwach wie die oben. */
+label:where(:not(:has(> input[type="checkbox"], > input[type="radio"]))) > span:first-child {
+  font-family: var(--font-display); font-size: var(--font-size-kicker); font-weight: 700;
+  letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
 label > span.beschreibung { font-size: 14px; font-weight: 400; margin: 6px 0 0; }
 input, select, textarea {
   font: inherit; width: 100%;
-  background: var(--surf); color: var(--ink);
+  background: var(--surf-2); color: var(--ink);
   border: 1.5px solid var(--rahmen); border-radius: var(--radius-feld);
-  padding: 13px 14px;
+  padding: 13px 18px;
 }
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select) { min-height: 52px; }
+select { appearance: none; -webkit-appearance: none; padding-right: 44px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23596A7D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 16px center; background-size: 20px; }
+select[multiple] { background-image: none; padding-right: 18px; }
+/* Zwei oder drei Felder nebeneinander (Entwurf: Vorname | Nachname, Von | Bis) */
+.feldreihe { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 12px; }
+.feldreihe > :is(label, .feld) { margin-bottom: 0; }
 /* Fokus: der Rand wird kräftig blau, der Hof darum hebt ihn ab. Nur der
    Hof in blue-soft war auf hellem Grund kaum zu sehen (U47). */
 textarea, select[multiple] { border-radius: 20px; }
@@ -961,6 +976,9 @@ a.heute-karte:hover { text-decoration: none; border-color: var(--line-2); }
   font-size: 15px; font-weight: 600; color: var(--muted); text-decoration: none;
 }
 .segtoggle a:hover { text-decoration: none; color: var(--ink); }
+@media (min-width: 360px) and (max-width: 767px) {
+  .segtoggle.plan-segmente a { font-size: 14px; padding: 0 6px; white-space: nowrap; }
+}
 .segtoggle a[aria-current="page"] {
   background: var(--seg-aktiv); color: var(--ink); font-weight: 700; box-shadow: var(--shadow-sm);
 }
@@ -1139,8 +1157,62 @@ dialog.fenster.blatt.breit { width: min(680px, calc(100vw - 24px)); }
 .blatt .fenster-inhalt > label { margin-bottom: 0; }
 .blatt .sperrbereich { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 18px; gap: 10px; }
 .blatt .sperrbereich .fenster-fuss { border-top: 0; padding-top: 0; margin-top: 0; }
-.blatt-unterzeile { margin: -6px 0 0; font-weight: 600; }
-.gesucht-text { margin: 0; font-size: 13px; font-weight: 700; color: var(--blue-ink); }
+.blatt-titel { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.sucht-pille {
+  display: inline-flex; align-items: center; min-height: 26px; padding: 0 12px; border-radius: 99px;
+  background: var(--blue-soft); color: var(--blue-ink); border: 1px solid color-mix(in srgb, var(--blue) 22%, transparent);
+  font-family: var(--font-display); font-size: 12.5px; font-weight: 600; white-space: nowrap;
+}
+/* Eine Zeile mit Symbol: Spielform und Bucher, das neue Ziel beim Umsetzen */
+.blatt-info {
+  display: flex; align-items: center; gap: 12px; margin: 0; padding: 12px 16px;
+  border-radius: var(--radius-karte); background: var(--surf-2); border: 1px solid var(--line);
+  font-family: var(--font-display); font-size: 15.5px; font-weight: 600; color: var(--ink);
+}
+.blatt-info p { margin: 0; font-family: var(--font-text); font-size: 14.5px; font-weight: 400; line-height: 1.45; color: var(--ink-2); }
+.blatt-info p b { color: var(--ink); font-weight: 600; }
+.symbolkreis {
+  width: 40px; height: 40px; border-radius: 20px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--blue-soft); color: var(--blue-ink);
+}
+.symbolkreis svg { width: 20px; height: 20px; }
+/* Eine Zeile, die weiterführt: "Umsetzen" */
+.blatt-zeile {
+  display: flex; align-items: center; gap: 14px; width: 100%; min-height: 76px; padding: 12px 16px;
+  border-radius: var(--radius-karte); background: var(--surf-2); border: 1px solid var(--line);
+  font: inherit; text-align: left; color: var(--ink); cursor: pointer;
+}
+.blatt-zeile:hover { border-color: var(--line-2); }
+.blatt-zeile:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.blatt-zeile .text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.blatt-zeile b { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+.blatt-zeile small { font-size: 14px; color: var(--ink-2); }
+.blatt-zeile .pfeil { width: 20px; height: 20px; flex: 0 0 auto; color: var(--muted); }
+.gesucht-text { display: flex; align-items: flex-start; gap: 8px; margin: -6px 2px 0; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
+.gesucht-text svg { width: 18px; height: 18px; flex: 0 0 auto; margin-top: 1px; }
+/* Zwei Knöpfe nebeneinander im Fuß: die Entscheidung und "Doch nicht" */
+.knopf-paar { display: flex; gap: 10px; }
+.knopf-paar .knopf { flex: 1 1 auto; min-width: 0; min-height: 56px; padding: 0 14px; text-align: center; }
+/* Zerstörendes vor der Rückfrage: roter Text mit Symbol, keine Fläche */
+.gefahr-link {
+  justify-self: center; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px;
+  border: 0; border-radius: 99px; background: transparent; cursor: pointer;
+  font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--red-ink);
+}
+.gefahr-link svg { width: 20px; height: 20px; }
+.gefahr-link:hover { background: color-mix(in srgb, var(--red) 8%, transparent); }
+.gefahr-link:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.gefahr-link:disabled { opacity: .5; cursor: not-allowed; }
+.textknopf {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; border: 0; border-radius: 10px;
+  background: transparent; cursor: pointer; text-decoration: none;
+  font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--blue-ink);
+}
+.textknopf:hover { text-decoration: underline; }
+.textknopf:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.blatt .sperrbereich { justify-items: center; }
+.blatt .fenster-inhalt > .hinweis { margin: 0; }
 
 /* Abschnitte im Blatt (Entwurf "Platz buchen"): Kicker als Überschrift,
    darunter gleich breite Pillen - gewählt hellblau mit blauem Rand. */
@@ -1158,15 +1230,25 @@ fieldset.segmente legend, .mitspieler .feldname, fieldset.suchfilter legend {
   font-family: var(--font-display); font-size: 16px; font-weight: 500; color: var(--ink); cursor: pointer; margin: 0;
 }
 .segment input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
-.segment span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
+.segment span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; margin: 0; font: inherit; color: inherit; }
 .segment:has(input:checked) { font-weight: 600; }
 .segment:has(input:disabled) { opacity: .4; cursor: not-allowed; }
 .segment:has(input:disabled) input { cursor: not-allowed; }
 .segment:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 2px; }
 /* Beim Umsetzen koennen es zwanzig Startzeiten sein: sie brechen um, statt
    in eine Leiste gequetscht zu werden. */
-.umsetz-zeiten .segment-leiste { flex-wrap: wrap; }
-.umsetz-zeiten .segment { flex: 0 0 auto; min-width: 64px; }
+.umsetz-zeiten .segment-leiste { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.umsetz-plaetze .segment-leiste { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+:is(.umsetz-zeiten, .umsetz-plaetze) .segment { height: 48px; font-size: 15px; font-weight: 600; }
+/* Tage als hohe Pillen wie die Tagesleiste des Plans; der gewählte Tag kräftig blau */
+.tage-leiste { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 3px; margin: -3px; }
+.tage-leiste::-webkit-scrollbar { display: none; }
+.segment.tag { flex: 0 0 58px; height: 72px; }
+.segment.tag span { display: grid; justify-items: center; gap: 3px; padding: 0; }
+.segment.tag small { font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.segment.tag b { font-size: 18px; font-weight: 600; line-height: 1; }
+body .segment.tag:has(input:checked) { background: var(--blue); color: var(--on-brand); border-color: transparent; box-shadow: none; }
+.segment.tag:has(input:checked) small { color: inherit; }
 
 .mitspieler .feldname .umfang { font-weight: 500; }
 .chips, .marken { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -1189,6 +1271,20 @@ li.chip { padding-right: 4px; }
 }
 .chip button:hover { background: var(--surf-3); }
 .chips { margin-bottom: 10px; }
+/* Blatt "Eigenes Spiel": jede Person eine Zeile mit Avatar, freie Plätze gestrichelt */
+.mitspieler.zeilen .chips, .mitspieler.zeilen .marken { display: grid; gap: 10px; }
+.mitspieler.zeilen .chip {
+  height: auto; min-height: 64px; padding: 0 10px 0 16px; gap: 12px; border-radius: var(--radius-karte);
+  font-size: 16px; font-weight: 600;
+}
+.mitspieler.zeilen .chip .avatar { width: 40px; height: 40px; border-radius: 20px; font-size: 13px; }
+.mitspieler.zeilen .chip .name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.mitspieler.zeilen .chip button { width: 44px; height: 44px; border-radius: 22px; flex: 0 0 auto; color: var(--muted); }
+.mitspieler.zeilen .chip.leer .avatar { border: 1.5px dashed var(--line-2); color: var(--muted); }
+.mitspieler.zeilen .chip.leer .avatar svg { width: 20px; height: 20px; }
+.mitspieler.zeilen .chip.leer .name { font-style: italic; font-weight: 500; }
+.mitspieler.zeilen .suche input { background: var(--surf); }
+.mitspieler.zeilen > .chips:last-child { margin-bottom: 0; }
 .mitspieler .suche { position: relative; }
 .mitspieler .suche .lupe { position: absolute; left: 18px; top: 17px; width: 20px; height: 20px; color: var(--muted); pointer-events: none; }
 .mitspieler .suche input {
@@ -1223,7 +1319,7 @@ fieldset.suchfilter { border: 0; padding: 0; margin: 0; min-width: 0; display: g
 .suchfilter-block { display: grid; gap: 10px; justify-items: start; }
 .suchfilter-block > fieldset { justify-self: stretch; }
 .offen-filter { font-weight: 700; color: var(--blue-ink); }
-.gesucht-karte small { font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.gesucht-karte small { font-size: 14px; font-weight: 400; line-height: 1.5; color: var(--ink-2); }
 .schalter-feld {
   appearance: none; -webkit-appearance: none; position: relative; flex: 0 0 auto;
   width: 52px; height: 32px; margin: 0; border-radius: 16px; cursor: pointer;
@@ -1240,6 +1336,12 @@ fieldset.suchfilter { border: 0; padding: 0; margin: 0; min-width: 0; display: g
 .schalter-feld:disabled { opacity: .5; cursor: not-allowed; }
 
 .blatt-fuss { display: grid; gap: 10px; border-top: 1px solid var(--line); margin: 4px -20px 0; padding: 16px 20px 0; }
+/* Der Fuß bleibt stehen, der Inhalt läuft darunter durch (Entwürfe der Blätter).
+   Der negative Rand zieht ihn über das Polster des Blatts, wie .haftend. */
+.blatt .blatt-fuss {
+  position: sticky; bottom: -22px; z-index: 2; background: var(--surf);
+  margin-bottom: -22px; padding-bottom: 22px;
+}
 .blatt-fuss .hinweis { margin: 0; }
 /* Der nächste Schritt über dem gesperrten Knopf: in Schrift, nicht im
    Grau des Knopfs, damit klar ist, was fehlt (U65). */
@@ -1263,7 +1365,7 @@ fieldset.suchfilter { border: 0; padding: 0; margin: 0; min-width: 0; display: g
     animation: blatt-rein .26s cubic-bezier(.2, .8, .3, 1);
   }
   .blatt .griff { display: block; width: 38px; height: 5px; border-radius: 3px; background: var(--line-2); margin: 0 auto 6px; }
-  .blatt .fenster-fuss.haftend {
+  .blatt .fenster-fuss.haftend, .blatt .blatt-fuss {
     bottom: calc(-22px - env(safe-area-inset-bottom));
     margin-bottom: calc(-22px - env(safe-area-inset-bottom));
     padding-bottom: calc(22px + env(safe-area-inset-bottom));
@@ -2125,9 +2227,15 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 }
 /* Folgen vor dem Absenden (Regel 5) */
 .folgen {
-  display: flex; gap: 12px; padding: 12px 14px; border-radius: 16px;
+  display: flex; gap: 12px; padding: 14px 16px; border-radius: 20px;
   background: var(--surf-2); border: 1px solid var(--line); font-size: 14px; line-height: 1.4;
 }
+/* Etwas geht dabei verloren (Buchungen werden verdrängt): rot abgesetzt */
+.folgen.warnung {
+  background: color-mix(in srgb, var(--red) 7%, var(--surf)); color: var(--red-ink);
+  border-color: color-mix(in srgb, var(--red) 35%, transparent);
+}
+.folgen.warnung svg { width: 20px; height: 20px; flex: 0 0 auto; margin-top: 1px; }
 /* Grosse Tippfelder fuer Uhrzeit und Datum */
 .tippfelder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .tippfeld {
@@ -2147,13 +2255,19 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .knopf.gross { min-height: 56px; font-size: 16px; }
 /* Chips statt Auswahlliste bei bis zu acht Optionen */
 .chipwahl { border: 0; margin: 0; padding: 0; }
-.chipwahl legend { padding: 0; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
-.chipwahl > div { display: grid; grid-template-columns: repeat(var(--spalten, 7), minmax(0, 1fr)); gap: 6px; }
-.chipwahl button {
-  height: 44px; border: 0; border-radius: 14px; cursor: pointer;
-  background: var(--surf-2); color: var(--ink-2); font: inherit; font-size: 13.5px; font-weight: 700;
+.chipwahl legend, .chipwahl .legende-text {
+  padding: 0; margin-bottom: 10px; font-family: var(--font-display); font-size: var(--font-size-kicker); font-weight: 700;
+  letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted);
 }
-.chipwahl button[aria-pressed="true"] { background: var(--blue-soft); color: var(--blue-ink); box-shadow: inset 0 0 0 1.5px var(--blue); }
+.chipwahl-kopf { display: flex; justify-content: space-between; align-items: center; margin: -10px 0 0; }
+.chipwahl-kopf .legende-text { margin: 0; }
+.chipwahl > div:not(.chipwahl-kopf) { display: grid; grid-template-columns: repeat(var(--spalten, 7), minmax(0, 1fr)); gap: 8px; }
+.chipwahl > div:not(.chipwahl-kopf) button {
+  height: 48px; padding: 0; border: 1px solid var(--line-2); border-radius: 99px; cursor: pointer;
+  background: var(--surf); color: var(--ink); font-family: var(--font-display); font-size: 15px; font-weight: 600;
+}
+.chipwahl > div:not(.chipwahl-kopf) button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.chipwahl > div:not(.chipwahl-kopf) button[aria-pressed="true"] { background: var(--blue-soft); color: var(--blue-ink); box-shadow: inset 0 0 0 1.5px var(--blue); }
 
 /* Uebersicht als Home (Verwaltung v2, Regel 7) */
 .uebersicht-raster { display: grid; gap: 28px; align-items: start; }
