@@ -187,32 +187,6 @@ struct PasswortSchalter: View {
     }
 }
 
-/// Der gelbe Hauptknopf, 58 hoch.
-struct GelberKnopf: View {
-    let text: String
-    var gesperrt = false
-    let aktion: () -> Void
-
-    var body: some View {
-        Button(action: aktion) {
-            Text(text)
-                .font(Schrift.text(.extrafett, 17, relativeTo: .headline))
-                .foregroundStyle(Farbe.onGold)
-                .frame(maxWidth: .infinity, minHeight: 58)
-                .background(Farbe.gold, in: RoundedRectangle(cornerRadius: 18))
-        }
-        .buttonStyle(Gedrueckt())
-        .disabled(gesperrt)
-        .opacity(gesperrt ? 0.6 : 1)
-    }
-}
-
-private struct Gedrueckt: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label.opacity(configuration.isPressed ? 0.85 : 1)
-    }
-}
-
 /// Leiser Verweis in ink2, etwa "Passwort vergessen?"
 struct LeiserVerweis: View {
     let text: String

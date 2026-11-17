@@ -49,33 +49,14 @@ struct HomeInhalt: Sendable {
     let termine: Abschnitt<[MeineBuchung]>
     let frei: Abschnitt<FreiDaten>
     let offen: Abschnitt<[OffenesSpiel]>
-    let getraenke: Abschnitt<[EigenesGetraenk]>
-    let dienst: Abschnitt<Arbeitsdienst?>
-    let neues: Abschnitt<[Benachrichtigung]>
     let events: Abschnitt<[MitgliedEvent]>
 }
 
+/// Eine Zeile unter "Jetzt frei".
 struct FreiKarte: Equatable, Identifiable, Sendable {
     let id: String
     let name: String
     let bis: String
-    let segmente: [TimelineSegment]
-    /// Marke fuer jetzt, in Prozent
-    let jetzt: Double
-}
-
-/// Die zwei Kacheln unter "Dein Stand".
-struct DeinStand: Equatable, Sendable {
-    let getraenkeTitel: String
-    let getraenkeWert: String?
-    let getraenkeFehler: String?
-    let getraenkeLabel: String
-    let dienstTitel: String
-    /// "4 / 10 h", nil ohne Soll
-    let dienstWert: String?
-    let dienstAnteil: Double
-    let dienstFehler: String?
-    let dienstLabel: String
 }
 
 enum HomeLogik {
@@ -84,9 +65,25 @@ enum HomeLogik {
         return "Hallo"
     }
 
-    /// Kicker ueber dem Titel: "Donnerstag, 29. Oktober" (die Ansicht schreibt ihn gross).
-    static func kicker(_ jetzt: Date) -> String {
-        Zeit.heuteLang(jetzt)
+    /// Kicker und Marker der Terminkarte: aus "Heute · in 4 Stunden" wird ("Heute", "in 4 Stunden").
+    static func terminKicker(_ t: MeineBuchung, jetzt: Date) -> (tag: String, wann: String?) {
+        let teile = Startseite.bookingKicker(startsAt: t.startsAt, endsAt: t.endsAt, now: jetzt).components(separatedBy: " · ")
+        return (teile.first ?? "", teile.count > 1 ? teile.dropFirst().joined(separator: " · ") : nil)
+    }
+
+    /// "Platz 3 · mit Jonas Weber"
+    static func terminOrt(_ t: MeineBuchung) -> String {
+        "\(t.courtName ?? "") · \(mitText(t))"
+    }
+
+    /// "und 1 weiterer Termin" unter der Terminkarte; nil ohne weitere.
+    static func weitereTermine(_ anzahl: Int) -> String? {
+        anzahl > 0 ? "und \(anzahl) \(anzahl == 1 ? "weiterer Termin" : "weitere Termine")" : nil
+    }
+
+    /// Zaehler neben "Jetzt frei": "3 Plätze"
+    static func freiZaehler(_ anzahl: Int) -> String {
+        "\(anzahl) \(anzahl == 1 ? "Platz" : "Plätze")"
     }
 
     /// "17:00 – 18:00" in Berliner Zeit
@@ -103,13 +100,12 @@ enum HomeLogik {
     }
 
     static func terminLabel(_ t: MeineBuchung, jetzt: Date) -> String {
-        "\(Startseite.bookingKicker(startsAt: t.startsAt, endsAt: t.endsAt, now: jetzt)), \(zeitSpanne(t)), \(t.courtName ?? ""), Details"
+        "Dein Termin: \(Startseite.bookingKicker(startsAt: t.startsAt, endsAt: t.endsAt, now: jetzt)), \(zeitSpanne(t)), \(terminOrt(t))"
     }
 
     static func jetztFreiKarten(_ d: FreiDaten, jetzt: Date) -> [FreiKarte] {
         let auf = Zeit.timeToMinutes(d.einstellungen?.openingTime ?? "08:00")
         let zu = Zeit.timeToMinutes(d.einstellungen?.closingTime ?? "21:00")
-        let marke = Startseite.timelinePosition(Zeit.localMinutes(jetzt), openingMinutes: auf, closingMinutes: zu)
         return Belegung.freeCourtsNow(
             day: d.heute,
             courtIds: d.plaetze.map(\.id),
@@ -124,11 +120,7 @@ enum HomeLogik {
             FreiKarte(
                 id: f.courtId,
                 name: d.plaetze.first { $0.id == f.courtId }?.name ?? "",
-                bis: Zeit.minutesToTime(f.untilMinute),
-                segmente: Startseite.timelineSegments(
-                    d.belegung.filter { $0.courtId == f.courtId }, openingMinutes: auf, closingMinutes: zu
-                ),
-                jetzt: marke
+                bis: Zeit.minutesToTime(f.untilMinute)
             )
         }
     }
@@ -138,57 +130,31 @@ enum HomeLogik {
         Array(liste.prefix(3))
     }
 
-    static func offenesSpielTitel(_ o: OffenesSpiel) -> String {
-        "\(o.typeName ?? "") · sucht \(o.frei ?? 0)"
+    /// "Morgen, 10:00" - der Tag aus dayTag, lesbar geschrieben.
+    static func offenesSpielWann(_ o: OffenesSpiel, jetzt: Date) -> String {
+        let tag = Startseite.dayTag(startsAt: o.startsAt, now: jetzt)
+        return "\(tag.prefix(1))\(tag.dropFirst().lowercased()), \(Zeit.minutesToTime(Zeit.minutesOf(o.startsAt)))"
     }
 
-    static func offenesSpielZeile(_ o: OffenesSpiel) -> String {
-        "\(o.courtName ?? "") · \(o.ownerName ?? "")"
+    /// "Platz 4 · Martin Keller"; beim eigenen Spiel "Platz 4 · dein Spiel".
+    static func offenesSpielZeile(_ o: OffenesSpiel, eigenes: Bool = false) -> String {
+        let name = (o.ownerName ?? "").trimmingCharacters(in: .whitespaces)
+        return "\(o.courtName ?? "") · \(eigenes ? "dein Spiel" : name.isEmpty ? "Jemand" : name)"
+    }
+
+    /// Die Buchungen, die man selbst angelegt hat (fuer "dein Spiel").
+    static func eigeneBuchungen(_ termine: [MeineBuchung]) -> Set<String> {
+        Set(termine.filter { $0.binBucher == true }.map(\.bookingId))
+    }
+
+    /// Der Streifen zur naechsten Veranstaltung: "Samstag, 21. November" und der Titel.
+    static func eventStreifen(_ e: MitgliedEvent) -> (datum: String, titel: String) {
+        (Zeit.datum(e.startsAt).map(Zeit.heuteLang) ?? "", e.title ?? "")
     }
 
     /// Zahl wie in einem JavaScript-Template, aber mit deutschem Komma: 3 -> "3", 2.5 -> "2,5".
     static func jsZahl(_ d: Double) -> String {
         d == d.rounded() && abs(d) < 1e15 ? String(Int(d)) : "\(d)".replacingOccurrences(of: ".", with: ",")
-    }
-
-    static func deinStand(
-        getraenke: Abschnitt<[EigenesGetraenk]>, dienst: Abschnitt<Arbeitsdienst?>, jetzt: Date
-    ) -> DeinStand {
-        let monat = Zeit.monatLang(jetzt)
-        let summe = Geld.formatCents(Startseite.sumOpenDrinks(getraenke.wert ?? []))
-        let werte = dienst.wert ?? nil
-        let ist = werte?.completedHours ?? 0
-        let soll = werte?.requiredHours ?? 0
-        // Der Arbeitsdienst zaehlt aufs Jahr, nicht auf den Monat (U55).
-        let jahr = werte?.year ?? Zeit.jahr(jetzt)
-        let mitSoll = werte != nil && soll > 0
-
-        let dienstLabel: String
-        if let f = dienst.fehler {
-            dienstLabel = "Arbeitsdienst: \(f)"
-        } else if soll > 0 {
-            dienstLabel = "Arbeitsdienst \(jahr): \(jsZahl(ist)) von \(jsZahl(soll)) Stunden. Zum Konto"
-        } else {
-            dienstLabel = "Arbeitsdienst \(jahr): kein Soll. Zum Konto"
-        }
-
-        return DeinStand(
-            getraenkeTitel: "Getränke \(monat)",
-            getraenkeWert: getraenke.fehler == nil ? summe : nil,
-            getraenkeFehler: getraenke.fehler,
-            getraenkeLabel: getraenke.fehler.map { "Getränke: \($0)" }
-                ?? "Getränke im \(monat): \(summe), läuft noch. Zu den Getränken",
-            dienstTitel: "Arbeitsdienst \(jahr)",
-            dienstWert: mitSoll ? "\(jsZahl(ist)) / \(jsZahl(soll)) h" : nil,
-            dienstAnteil: soll > 0 ? min(1, ist / soll) : 0,
-            dienstFehler: dienst.fehler,
-            dienstLabel: dienstLabel
-        )
-    }
-
-    /// Link "Alle" bei Neuigkeiten nur, wenn ueberhaupt etwas da ist.
-    static func zeigeAlleNeuigkeiten(_ neues: Abschnitt<[Benachrichtigung]>) -> Bool {
-        !(neues.wert ?? []).isEmpty
     }
 
     // MARK: - Nachrichten und Glocke

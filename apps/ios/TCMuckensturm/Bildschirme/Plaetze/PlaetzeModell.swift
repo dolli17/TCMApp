@@ -58,11 +58,6 @@ enum Markierung: Equatable {
     }
 }
 
-enum Ansicht: String {
-    case uebersicht = "uebersicht"
-    case freieZeiten = "freie-zeiten"
-}
-
 struct ToastMeldung: Equatable, Identifiable {
     let id = UUID()
     let ok: Bool
@@ -71,15 +66,10 @@ struct ToastMeldung: Equatable, Identifiable {
 
 @MainActor @Observable
 final class PlaetzeModell {
-    static let ansichtSchluessel = "tcm-plaetze-ansicht"
-
     let daten: Platzdaten
 
     var datum = Zeit.berlinDay(Date())
-    /// Ohne gemerkte Wahl beginnt es mit Freie Zeiten: dort sind alle Ziele gross (U18).
-    var ansicht: Ansicht = Ansicht(rawValue: UserDefaults.standard.string(forKey: ansichtSchluessel) ?? "") ?? .freieZeiten
     var auswahl: Auswahl?
-    var tagwahlOffen = false
 
     var plaetze: [AktiverPlatz] = []
     var belegung: [TagesBelegung] = []
@@ -204,19 +194,13 @@ final class PlaetzeModell {
         }
     }
 
-    // MARK: - Tag und Ansicht
+    // MARK: - Tag
 
     func waehleTag(_ t: String) {
         guard t != datum else { return }
         datum = t
         auswahl = nil
         laedt = true
-    }
-
-    func waehleAnsicht(_ a: Ansicht) {
-        ansicht = a
-        auswahl = nil
-        UserDefaults.standard.set(a.rawValue, forKey: Self.ansichtSchluessel)
     }
 
     // MARK: - Blatt oeffnen

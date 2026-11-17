@@ -1,7 +1,7 @@
 /**
  * Getraenke (apps/mobile/app/(tabs)/verein/(reiter)/getraenke.tsx), ein Reiter von "Verein"
  *
- * Oben der laufende Monat, darunter die Karte als Kacheln mit Zaehler: man
+ * Oben der laufende Monat, darunter die Karte als Liste mit Zaehler: man
  * sammelt, was man genommen hat, und traegt es ueber die Leiste unten auf
  * einmal ein. Gebucht wird dabei je Artikel (record_drink_purchase), es gibt
  * keinen Sammelauftrag. Schlaegt einer fehl, sagt die Meldung welcher, und
@@ -140,53 +140,54 @@ struct GetraenkeAnsicht: View {
 
     // MARK: - Die Karte
 
+    /// Eine Liste in einer Karte; was im Korb liegt, ist hellblau hinterlegt.
     private func karte(_ karte: [Getraenk]) -> some View {
-        // Bei grosser Schrift eine Kachel je Zeile.
-        let spalten = textgroesse >= .xxLarge ? 1 : 2
-        let zeilen = stride(from: 0, to: karte.count, by: spalten).map { Array(karte[$0..<min($0 + spalten, karte.count)]) }
-        return Grid(horizontalSpacing: 10, verticalSpacing: 10) {
-            ForEach(zeilen, id: \.first?.id) { zeile in
-                GridRow {
-                    ForEach(zeile) { a in kachel(a) }
-                    if zeile.count < spalten { Color.clear.gridCellUnsizedAxes([.horizontal, .vertical]) }
-                }
+        VStack(spacing: 0) {
+            ForEach(Array(karte.enumerated()), id: \.element.id) { i, a in
+                if i > 0 { KontoLinie() }
+                zeile(a)
             }
         }
+        .karte(padding: 0)
     }
 
-    private func kachel(_ a: Getraenk) -> some View {
+    private func zeile(_ a: Getraenk) -> some View {
         let menge = zustand.korb[a.id] ?? 0
         let name = a.name ?? ""
-        return VStack(alignment: .leading, spacing: 2) {
-            Text(name)
-                .font(Schrift.text(.fett, 17))
-                .foregroundStyle(Farbe.ink)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(VereinLogik.artikelZeile(a))
-                .font(Schrift.text(.normal, 13.5))
-                .foregroundStyle(Farbe.muted)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 10)
+        // Bei grosser Schrift stehen die Knoepfe unter dem Namen.
+        let layout = textgroesse >= .xxLarge
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            : AnyLayout(HStackLayout(spacing: 12))
+        return layout {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name)
+                    .font(Schrift.display(.halbfett, 17))
+                    .foregroundStyle(menge > 0 ? Farbe.blueInk : Farbe.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(VereinLogik.artikelZeile(a))
+                    .font(Schrift.text(.normal, 14))
+                    .foregroundStyle(menge > 0 ? Farbe.blueInk : Farbe.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
             HStack(spacing: 4) {
-                Spacer(minLength: 0)
                 if menge > 0 {
                     Zaehlknopf(zeichen: .minus, beschriftung: "\(name): eins weniger", aus: laeuft) { aendern(a.id, -1) }
                     Zaehlerstand(wert: menge, label: "\(menge) gewählt, noch nicht eingetragen")
                 }
-                // Gelb erst, wenn schon etwas gesammelt ist (U43).
+                // Betont erst, wenn schon etwas gesammelt ist (U43).
                 Zaehlknopf(
-                    zeichen: .plus, gelb: menge > 0, beschriftung: "\(name): eins mehr",
+                    zeichen: .plus, betont: menge > 0, beschriftung: "\(name): eins mehr",
                     aus: laeuft || menge >= Getraenke.maxMenge
                 ) { aendern(a.id, 1) }
             }
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 124, maxHeight: .infinity, alignment: .topLeading)
-        .background(Farbe.surf, in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
-        .overlay(
-            RoundedRectangle(cornerRadius: Tokens.Radius.karte)
-                .strokeBorder(menge > 0 ? Farbe.goldLine : Farbe.line, lineWidth: menge > 0 ? 2 : 1)
-        )
+        .padding(.vertical, 12)
+        .padding(.leading, 20)
+        .padding(.trailing, 14)
+        .frame(minHeight: 72)
+        .background(menge > 0 ? Farbe.blueSoft : Color.clear)
+        .animation(.easeOut(duration: 0.15), value: menge > 0)
     }
 
     // MARK: - Zuletzt
@@ -207,7 +208,7 @@ struct GetraenkeAnsicht: View {
         return HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(VereinLogik.entnahmeTitel(b))
-                    .font(Schrift.text(.halbfett, 15))
+                    .font(Schrift.display(.halbfett, 15.5))
                     .foregroundStyle(Farbe.ink)
                     .strikethrough(zurueck)
                 Text(VereinLogik.entnahmeZeile(b))
@@ -218,8 +219,8 @@ struct GetraenkeAnsicht: View {
             if stornierbar {
                 Button { Task { await zuruecknehmen(b.id) } } label: {
                     Text("Zurücknehmen")
-                        .font(Schrift.text(.fett, 14))
-                        .foregroundStyle(Farbe.redInk)
+                        .font(Schrift.display(.halbfett, 14))
+                        .foregroundStyle(Farbe.blueInk)
                         .padding(.horizontal, 4)
                         .frame(minHeight: 44)
                         .contentShape(Rectangle())
@@ -236,9 +237,9 @@ struct GetraenkeAnsicht: View {
                 .strikethrough(zurueck)
         }
         .padding(.vertical, 14)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 20)
         .opacity(zurueck ? 0.55 : 1)
-        .background(markiert?.trifft(b.id) == true ? Farbe.goldSoft : Color.clear)
+        .background(markiert?.trifft(b.id) == true ? Farbe.blueSoft : Color.clear)
         .animation(.easeOut, value: markiert)
     }
 
@@ -327,28 +328,27 @@ private struct Monatskarte: View {
         let summe = Geld.formatCents(Startseite.sumOpenDrinks(buchungen))
         let aktive = buchungen.filter { $0.voidedAt == nil }.count
         VStack(alignment: .leading, spacing: 0) {
-            Text(VereinLogik.monatKicker(jetzt)).kicker(farbe: Farbe.onBrand.opacity(0.85))
+            HStack(spacing: 8) {
+                Circle().fill(Farbe.blue).frame(width: 8, height: 8).accessibilityHidden(true)
+                Text(VereinLogik.monatKicker(jetzt)).kicker()
+            }
             Text(summe)
-                .font(Schrift.display(.fett, 44, relativeTo: .largeTitle))
+                .font(Schrift.display(.fett, Tokens.Schrift.hero, relativeTo: .largeTitle))
+                .tracking(-1)
                 .monospacedDigit()
-                .foregroundStyle(Farbe.onBrand)
-                .padding(.top, 8)
+                .foregroundStyle(Farbe.ink)
+                .padding(.top, 6)
                 .accessibilityLabel("Summe diesen Monat: \(summe)")
             Text(VereinLogik.entnahmenText(aktive))
-                .font(Schrift.text(.normal, 14))
-                .foregroundStyle(Farbe.onBrand.opacity(0.9))
+                .font(Schrift.text(.normal, 15))
+                .foregroundStyle(Farbe.ink2)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 8)
+                .padding(.top, 6)
         }
-        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            ZStack {
-                Farbe.brand
-                Platzlinien()
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: Tokens.Radius.karteGross))
+        .padding(.horizontal, 22)
+        .padding(.vertical, 20)
+        .karte(radius: Tokens.Radius.karteGross, padding: nil)
     }
 }
 
@@ -365,31 +365,23 @@ private struct Korbleiste: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(VereinLogik.korbZeile(stueck: stueck, betrag: betrag))
-                    .font(Schrift.text(.fett, 15))
-                Text("Noch nicht eingetragen")
-                    .font(Schrift.text(.fett, 13))
+                    .font(Schrift.display(.fett, 15.5))
+                    .monospacedDigit()
+                    .foregroundStyle(Farbe.ink)
+                Text("Noch nicht eingetragen").kicker()
             }
-            .foregroundStyle(Farbe.bg)
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
-            Button(action: aktion) {
-                Text(laeuft ? "Wird eingetragen …" : "Eintragen")
-                    .font(Schrift.text(.extrafett, 16))
-                    .foregroundStyle(Farbe.onGold)
-                    .padding(.horizontal, 24)
-                    .frame(minHeight: 52)
-                    .background(Farbe.gold, in: RoundedRectangle(cornerRadius: 18))
-            }
-            .buttonStyle(.plain)
-            .disabled(laeuft)
-            .opacity(laeuft ? 0.6 : 1)
+            // Die eine Hauptaktion des Screens
+            Knopf(laeuft ? "Wird eingetragen …" : "Eintragen", stufe: .haupt, gesperrt: laeuft, aktion: aktion)
         }
-        .padding(.leading, 20)
+        .padding(.leading, 22)
         .padding(.trailing, 8)
         .padding(.vertical, 8)
         .frame(minHeight: 68)
-        .background(Farbe.ink, in: RoundedRectangle(cornerRadius: 24))
-        .shadow(color: .black.opacity(0.25), radius: 10, y: 8)
+        .background(Farbe.surf, in: RoundedRectangle(cornerRadius: 34))
+        .overlay(RoundedRectangle(cornerRadius: 34).strokeBorder(Farbe.line2, lineWidth: 1))
+        .shadow(color: .black.opacity(0.14), radius: 12, y: 8)
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 }

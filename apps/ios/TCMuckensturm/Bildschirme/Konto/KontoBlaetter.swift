@@ -235,7 +235,7 @@ private struct Stammdatenformular: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .safeAreaInset(edge: .bottom) {
-            GelberKnopf(text: laeuft ? "Speichert…" : "Speichern", gesperrt: laeuft, aktion: absenden)
+            Hauptknopf(text: laeuft ? "Speichert…" : "Speichern", gesperrt: laeuft, aktion: absenden)
                 .padding(.horizontal, Tokens.Abstand.rand)
                 .padding(.vertical, Tokens.Abstand.s)
                 .background(Farbe.bg)
@@ -321,7 +321,7 @@ private struct TennisFormular: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .safeAreaInset(edge: .bottom) {
-            GelberKnopf(text: laeuft ? "Speichert…" : "Speichern", gesperrt: laeuft, aktion: absenden)
+            Hauptknopf(text: laeuft ? "Speichert…" : "Speichern", gesperrt: laeuft, aktion: absenden)
                 .padding(.horizontal, Tokens.Abstand.rand)
                 .padding(.vertical, Tokens.Abstand.s)
                 .background(Farbe.bg)
@@ -397,7 +397,7 @@ private struct Einwilligungen: View {
         case .nurLesen:
             Text(KontoLogik.nurLesenText(m)).leise()
         case .jaNein:
-            KontoSegmente(beschriftung: m.name, optionen: [(true, "Ja"), (false, "Nein")], gewaehlt: m.gesetzt, gesperrt: laeuft) { ja in
+            SegmentLeiste(beschriftung: m.name, optionen: [(true, "Ja"), (false, "Nein")], gewaehlt: m.gesetzt, gesperrt: laeuft) { ja in
                 guard ja != m.gesetzt else { return }
                 ausfuehren { ja ? await daten.setzeMerkmal(code: m.code, option: "true") : await daten.entferneMerkmal(code: m.code) }
             }
@@ -405,7 +405,7 @@ private struct Einwilligungen: View {
                 Text("erteilt am \(KontoLogik.tagDatum(seit))").leise()
             }
         case .einzelwahl:
-            KontoSegmente(
+            SegmentLeiste(
                 beschriftung: m.name,
                 optionen: m.optionen.map { ($0.value, $0.label ?? $0.value) },
                 gewaehlt: m.werte.first?.option,
@@ -582,7 +582,7 @@ private struct PasswortAendern: View {
             .padding(Tokens.Abstand.rand)
         }
         .safeAreaInset(edge: .bottom) {
-            GelberKnopf(text: laeuft ? "Wird gespeichert…" : "Speichern", gesperrt: laeuft, aktion: speichern)
+            Hauptknopf(text: laeuft ? "Wird gespeichert…" : "Speichern", gesperrt: laeuft, aktion: speichern)
                 .padding(.horizontal, Tokens.Abstand.rand)
                 .padding(.vertical, Tokens.Abstand.s)
                 .background(Farbe.bg)

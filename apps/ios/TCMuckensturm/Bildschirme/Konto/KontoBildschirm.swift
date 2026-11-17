@@ -191,7 +191,7 @@ struct KontoBildschirm: View {
                     Text("Erscheinungsbild")
                         .font(Schrift.text(.halbfett, 15.5))
                         .foregroundStyle(Farbe.ink)
-                    KontoSegmente(
+                    SegmentLeiste(
                         beschriftung: "Erscheinungsbild",
                         optionen: Erscheinungsbild.allCases.map { ($0, $0.label) },
                         gewaehlt: erscheinungsbild

@@ -274,7 +274,7 @@ struct OnboardingAktionen: View {
             if let meldung {
                 KontoHinweis(text: meldung)
             }
-            GelberKnopf(text: laeuft ? "Wird gespeichert…" : weiterText, gesperrt: laeuft || gesperrt) {
+            Hauptknopf(text: laeuft ? "Wird gespeichert…" : weiterText, gesperrt: laeuft || gesperrt) {
                 los(speichern)
             }
             if k.zurueck != nil || k.ueberspringen != nil {

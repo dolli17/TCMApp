@@ -202,7 +202,6 @@ private struct TerminZeile: View {
 
     var body: some View {
         let aktion = SpieleLogik.aktion(b, jetzt: jetzt)
-        let tinte = hervorgehoben ? Farbe.onGold : Farbe.ink
         HStack(spacing: 14) {
             VStack(spacing: 1) {
                 Text(SpieleLogik.kachelTag(b, jetzt: jetzt))
@@ -212,16 +211,19 @@ private struct TerminZeile: View {
                     .font(Schrift.display(.fett, 21))
                     .monospacedDigit()
             }
-            .foregroundStyle(tinte)
+            .foregroundStyle(Farbe.ink)
             .dynamicTypeSize(...DynamicTypeSize.xLarge)
             .lineLimit(1)
             .minimumScaleFactor(0.7)
             .frame(width: 60, height: 64)
-            .background(hervorgehoben ? Farbe.gold : Farbe.surf2, in: RoundedRectangle(cornerRadius: 16))
+            .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 20))
+            .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(hervorgehoben ? Farbe.line2 : Farbe.line, lineWidth: 1))
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
+                // Gelb heisst "deins": das selbst gebuchte Spiel.
+                if b.binBucher == true { DeinMarker("Dein Spiel") }
                 Text(SpieleLogik.terminTitel(b))
-                    .font(Schrift.text(.fett, Tokens.Schrift.normal))
+                    .font(Schrift.display(.halbfett, Tokens.Schrift.normal))
                     .foregroundStyle(Farbe.ink)
                     .lineLimit(2)
                 Text(SpieleLogik.terminZeile(b)).leise().lineLimit(3)
@@ -240,7 +242,7 @@ private struct TerminZeile: View {
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(Farbe.ink2)
                         .frame(width: 44, height: 44)
-                        .background(Farbe.surf2, in: Circle())
+                        .background(Farbe.chip, in: Circle())
                 }
                 .disabled(laeuft)
                 .opacity(laeuft ? 0.5 : 1)
@@ -249,7 +251,7 @@ private struct TerminZeile: View {
                 Text("läuft").leise().accessibilityHidden(true)
             }
         }
-        .karte(radius: Tokens.Radius.karte, padding: 14)
+        .karte(radius: Tokens.Radius.karte, padding: 16)
     }
 }
 
@@ -297,7 +299,7 @@ private struct SpielKarte: View {
         let frei = max(o.frei ?? 0, 0)
         VStack(alignment: .leading, spacing: 14) {
             Text(text.kopf)
-                .font(Schrift.text(.fett, 17))
+                .font(Schrift.display(.halbfett, 17))
                 .foregroundStyle(Farbe.ink)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
@@ -315,7 +317,7 @@ private struct SpielKarte: View {
                     if let zusatz = SpieleLogik.filterZusatz(o) {
                         Text(zusatz)
                             .font(Schrift.text(.fett, Tokens.Schrift.klein))
-                            .foregroundStyle(Farbe.goldInk)
+                            .foregroundStyle(Farbe.blueInk)
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityLabel("Nur für \(o.suchfilter.vorleseText)")
                     }
@@ -328,28 +330,22 @@ private struct SpielKarte: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityElement(children: .combine)
-                Text("sucht \(frei)")
-                    .font(Schrift.text(.fett, Tokens.Schrift.klein))
-                    .foregroundStyle(Farbe.goldInk)
-                    .padding(.horizontal, 10)
-                    .frame(minHeight: 28)
-                    .background(Farbe.goldSoft, in: Capsule())
-                    .accessibilityHidden(true)
+                BlaueMarke("sucht \(frei)").accessibilityHidden(true)
             }
             HStack {
                 HStack(spacing: -6) {
                     ForEach(Array(leute.enumerated()), id: \.offset) { _, n in
                         Text(SpieleLogik.initialen(n))
-                            .font(Schrift.text(.fett, Tokens.Schrift.kicker))
-                            .foregroundStyle(Farbe.onBrand)
+                            .font(Schrift.display(.fett, Tokens.Schrift.kicker))
+                            .foregroundStyle(Farbe.ink2)
                             .frame(width: 36, height: 36)
-                            .background(Farbe.brand, in: Circle())
+                            .background(Farbe.surf3, in: Circle())
                             .overlay(Circle().strokeBorder(Farbe.surf, lineWidth: 2))
                     }
                     ForEach(0..<frei, id: \.self) { _ in
                         Circle()
                             .fill(Farbe.surf)
-                            .overlay(Circle().strokeBorder(Farbe.goldLine, style: StrokeStyle(lineWidth: 1.5, dash: [3, 2])))
+                            .overlay(Circle().strokeBorder(Farbe.blueInk.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2])))
                             .frame(width: 36, height: 36)
                     }
                 }
@@ -358,28 +354,14 @@ private struct SpielKarte: View {
                 .accessibilityLabel("Dabei: \(leute.joined(separator: ", "))")
                 Spacer(minLength: 8)
                 if o.binDabei == true {
-                    Label("Du bist dabei", systemImage: "checkmark")
-                        .font(Schrift.text(.fett, 14))
-                        .foregroundStyle(Farbe.greenInk)
-                        .padding(.horizontal, 16)
-                        .frame(minHeight: 42)
-                        .background(Farbe.surf2, in: Capsule())
+                    // Gelb heisst "deins".
+                    DeinMarker("Du bist dabei")
                 } else if SpieleLogik.darfMitspielen(o, eigene: eigene, jetzt: jetzt) {
-                    Button(action: mitspielen) {
-                        Text("Mitspielen")
-                            .font(Schrift.text(.fett, 15))
-                            .foregroundStyle(Farbe.onGold)
-                            .padding(.horizontal, 18)
-                            .frame(minHeight: 44)
-                            .background(Farbe.gold, in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(laeuft)
-                    .opacity(laeuft ? 0.5 : 1)
-                    .accessibilityLabel(SpieleLogik.mitspielenLabel(o, jetzt: jetzt))
+                    Knopf("Mitspielen", groesse: .klein, gesperrt: laeuft, aktion: mitspielen)
+                        .accessibilityLabel(SpieleLogik.mitspielenLabel(o, jetzt: jetzt))
                 }
             }
         }
-        .karte(radius: Tokens.Radius.karte + 2, padding: 16)
+        .karte(radius: Tokens.Radius.karte, padding: 18)
     }
 }

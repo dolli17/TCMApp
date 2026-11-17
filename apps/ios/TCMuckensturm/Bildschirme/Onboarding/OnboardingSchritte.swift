@@ -78,7 +78,7 @@ struct SchrittStammdaten: View {
             Text("Geschlecht")
                 .font(Schrift.text(.halbfett, Tokens.Schrift.klein, relativeTo: .footnote))
                 .foregroundStyle(fehler?.feld == "gender" ? Farbe.red : Farbe.ink2)
-            KontoSegmente(beschriftung: "Geschlecht", optionen: OnboardingLogik.geschlechter, gewaehlt: werte["gender"]) {
+            SegmentLeiste(beschriftung: "Geschlecht", optionen: OnboardingLogik.geschlechter, gewaehlt: werte["gender"]) {
                 wert("gender").wrappedValue = $0
             }
             if let f = fehlerText("gender") { KontoHinweis(text: f) }
@@ -446,7 +446,7 @@ struct SchrittEinstellungen: View {
             Text("E-Mails zu deinen Buchungen")
                 .font(Schrift.text(.halbfett, Tokens.Schrift.klein, relativeTo: .footnote))
                 .foregroundStyle(Farbe.ink2)
-            KontoSegmente(
+            SegmentLeiste(
                 beschriftung: "E-Mails zu deinen Buchungen",
                 optionen: OnboardingLogik.buchungsmails,
                 gewaehlt: mails ?? OnboardingLogik.buchungsmail(gespeichert)

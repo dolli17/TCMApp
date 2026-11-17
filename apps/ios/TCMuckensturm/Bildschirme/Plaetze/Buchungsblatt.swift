@@ -63,33 +63,41 @@ private extension EnvironmentValues {
 
 // MARK: - Bausteine
 
-/// Kicker, Zeit als Titel, rechts das X.
+/// Die Zeit gross als Titel, darunter Platz und Tag, rechts das X. Am eigenen Spiel der gelbe Marker.
 private struct PlatzBlattKopf: View {
     @Environment(\.blattSchliessen) private var schliessen
     let kicker: String
     let titel: String
+    var eigenes = false
 
     var body: some View {
         HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(kicker).kicker()
-                Text(titel)
-                    .font(Schrift.display(.fett, 30, relativeTo: .title))
-                    .monospacedDigit()
-                    .foregroundStyle(Farbe.ink)
-                    .accessibilityAddTraits(.isHeader)
+            VStack(alignment: .leading, spacing: 6) {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .center, spacing: 12) { zeit; marker }
+                    VStack(alignment: .leading, spacing: 6) { zeit; marker }
+                }
+                Text(kicker)
+                    .font(Schrift.text(.normal, 16))
+                    .foregroundStyle(Farbe.muted)
             }
-            Spacer()
-            Button(action: schliessen) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Farbe.ink)
-                    .frame(width: 44, height: 44)
-                    .background(Farbe.surf2, in: Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Schließen")
+            Spacer(minLength: 8)
+            SchliessenKnopf(aktion: schliessen)
         }
+    }
+
+    private var zeit: some View {
+        Text(titel)
+            .font(Schrift.display(.fett, 32, relativeTo: .title))
+            .tracking(-0.8)
+            .monospacedDigit()
+            .foregroundStyle(Farbe.ink)
+            .lineLimit(1)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    @ViewBuilder private var marker: some View {
+        if eigenes { DeinMarker("Dein Spiel") }
     }
 }
 
@@ -98,17 +106,21 @@ private struct Feldname: View {
     var zusatz: String?
 
     var body: some View {
-        (Text(text).font(Schrift.text(.halbfett, 13)).foregroundColor(Farbe.ink2)
-            + Text(zusatz.map { " · \($0)" } ?? "").font(Schrift.text(.mittel, 13)).foregroundColor(Farbe.muted))
-            .padding(.bottom, 8)
+        (Text(text.uppercased()).font(Schrift.display(.fett, Tokens.Schrift.kicker, relativeTo: .caption))
+            + Text(zusatz.map { " · \($0)" } ?? "").font(Schrift.text(.mittel, 13)))
+            .tracking(0.6)
+            .foregroundStyle(Farbe.muted)
+            .padding(.bottom, 10)
+            .accessibilityLabel(text + (zusatz.map { ", \($0)" } ?? ""))
     }
 }
 
 /**
- * Gesperrt ist neutral statt blassgold (U26). Mit `beiGesperrt` nimmt der
- * gesperrte Knopf das Tippen noch an und fuehrt zum naechsten Schritt.
+ * Die eine Hauptaktion des Blatts: blau, volle Breite. Gesperrt ist sie
+ * neutral statt blassblau (U26). Mit `beiGesperrt` nimmt der gesperrte Knopf
+ * das Tippen noch an und fuehrt zum naechsten Schritt.
  */
-private struct Hauptknopf: View {
+private struct BlattHauptknopf: View {
     let text: String
     var gesperrt = false
     var grund: String?
@@ -117,14 +129,8 @@ private struct Hauptknopf: View {
 
     var body: some View {
         Button { gesperrt ? beiGesperrt?() : aktion() } label: {
-            Text(text)
-                .font(Schrift.text(.extrafett, 17))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(gesperrt ? Farbe.muted : Farbe.onGold)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .frame(maxWidth: .infinity, minHeight: 58)
-                .background(gesperrt ? Farbe.surf3 : Farbe.gold, in: RoundedRectangle(cornerRadius: 18))
+            KnopfFlaeche(stufe: .haupt, groesse: .gross, breit: true) { Text(text) }
+                .environment(\.isEnabled, !gesperrt)
         }
         .buttonStyle(.plain)
         .disabled(gesperrt && beiGesperrt == nil)
@@ -132,31 +138,16 @@ private struct Hauptknopf: View {
     }
 }
 
+/// Alles neben der Hauptaktion: neutral mit Linie, hellblau als Zweitaktion, rot fuers Zerstoerende.
 private struct Nebenknopf: View {
     let text: String
-    var gefahr = false
+    var stufe: KnopfStufe = .leise
     var gesperrt = false
     var klein = false
     let aktion: () -> Void
 
     var body: some View {
-        Button(action: aktion) {
-            Text(text)
-                .font(Schrift.text(.fett, klein ? 14 : 16))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(gefahr ? Farbe.redInk : Farbe.ink)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 6)
-                .frame(maxWidth: klein ? nil : .infinity, minHeight: klein ? 40 : 52)
-                .background(gefahr ? Color.clear : Farbe.surf2, in: RoundedRectangle(cornerRadius: klein ? 20 : 16))
-                .overlay(
-                    RoundedRectangle(cornerRadius: klein ? 20 : 16)
-                        .strokeBorder(gefahr ? Farbe.red.opacity(0.4) : Farbe.line, lineWidth: 1.5)
-                )
-        }
-        .buttonStyle(.plain)
-        .disabled(gesperrt)
-        .opacity(gesperrt ? 0.5 : 1)
+        Knopf(text, stufe: stufe, groesse: klein ? .klein : .normal, breit: !klein, gesperrt: gesperrt, aktion: aktion)
     }
 }
 
@@ -199,11 +190,11 @@ private struct Besetzungshinweis: View {
             .padding(.vertical, 12)
             .padding(.horizontal, 14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Farbe.chip, in: RoundedRectangle(cornerRadius: 14))
+            .background(Farbe.chip, in: RoundedRectangle(cornerRadius: 20))
     }
 }
 
-/// Ein Eingabefeld wie stil.feld: surf2, Rahmen, Radius 16.
+/// Ein Eingabefeld: surf2 mit feiner Linie, Radius des Felds.
 private struct Eingabe: View {
     let platzhalter: String
     let bedienName: String
@@ -213,41 +204,32 @@ private struct Eingabe: View {
         TextField("", text: $text, prompt: Text(platzhalter).foregroundColor(Farbe.muted))
             .font(Schrift.text(.normal, 16))
             .foregroundStyle(Farbe.ink)
-            .padding(.horizontal, 16)
-            .frame(minHeight: 50)
-            .background(Farbe.bg, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
-            .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.feld).strokeBorder(Farbe.rahmen, lineWidth: 1.5))
+            .padding(.horizontal, 20)
+            .frame(minHeight: 52)
+            .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
+            .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.feld).strokeBorder(Farbe.line2, lineWidth: 1))
             .accessibilityLabel(bedienName)
     }
 }
 
-/// Segmente mit erkennbar aktivem Feld; einzelne Werte lassen sich abschalten (Segmente.tsx).
+/// Optionen nebeneinander als Pillen ("17:00 | 17:30"): gewaehlt hellblau mit blauer Linie.
+/// Einzelne Werte lassen sich abschalten.
 private struct Segmente<Wert: Hashable>: View {
-    @Environment(\.colorScheme) private var schema
     let beschriftung: String
     let optionen: [(wert: Wert, label: String, aus: Bool)]
     @Binding var wert: Wert
 
     var body: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 8) {
             ForEach(optionen, id: \.wert) { o in
                 let aktiv = o.wert == wert
                 Button { wert = o.wert } label: {
                     Text(o.label)
-                        .font(Schrift.text(.fett, 15))
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
-                        .foregroundStyle(aktiv ? Farbe.ink : Farbe.ink2)
-                        .frame(maxWidth: .infinity, minHeight: 40)
-                        .background {
-                            if aktiv {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Farbe.segAktiv)
-                                    .shadow(color: schema == .dark ? .clear : .black.opacity(0.08), radius: 2, y: 1)
-                            }
-                        }
-                        .contentShape(Rectangle())
+                        .frame(maxWidth: .infinity)
+                        .auswahlPille(aktiv, hoehe: 48, rand: 6)
                 }
                 .buttonStyle(.plain)
                 .disabled(o.aus)
@@ -255,8 +237,6 @@ private struct Segmente<Wert: Hashable>: View {
                 .accessibilityAddTraits(aktiv ? [.isSelected] : [])
             }
         }
-        .padding(4)
-        .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 15))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(beschriftung)
     }
@@ -273,12 +253,7 @@ private struct Chipwahl: View {
             ForEach(optionen, id: \.wert) { o in
                 let aktiv = gewaehlt(o.wert)
                 Button { wahl(o.wert) } label: {
-                    Text(o.label)
-                        .font(Schrift.text(.halbfett, 14.5))
-                        .foregroundStyle(aktiv ? Farbe.onGold : Farbe.ink)
-                        .padding(.horizontal, 14)
-                        .frame(minHeight: 40)
-                        .background(aktiv ? Farbe.gold : Farbe.surf2, in: Capsule())
+                    Text(o.label).auswahlPille(aktiv, hoehe: 40, rand: 14)
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(aktiv ? [.isSelected] : [])
@@ -304,22 +279,23 @@ private struct GesuchtKarte: View {
         VStack(alignment: .leading, spacing: 14) {
             Toggle(isOn: Binding(get: { an }, set: wechsel)) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Mitspieler gesucht").font(Schrift.text(.fett, 16)).foregroundStyle(Farbe.ink)
+                    Text("Mitspieler gesucht").font(Schrift.display(.halbfett, 16)).foregroundStyle(Farbe.ink)
                     Text("Dein Spiel erscheint unter „Offene Spiele“. Wer mag, trägt sich selbst ein.")
                         .font(Schrift.text(.normal, 13))
                         .foregroundStyle(Farbe.muted)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .tint(Farbe.greenInk)
+            .tint(Farbe.blue)
             if an, let filter {
                 Farbe.line.frame(height: 1)
                 NurFuer(filter: filter, speichern: speichern)
             }
         }
         .disabled(deaktiviert)
-        .padding(16)
-        .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 18))
+        .padding(18)
+        .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
+        .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.karte).strokeBorder(Farbe.line, lineWidth: 1))
     }
 }
 
@@ -344,11 +320,11 @@ private struct NurFuer: View {
         VStack(alignment: .leading, spacing: 12) {
             Button { withAnimation(.snappy) { offen.toggle() } } label: {
                 HStack(spacing: 8) {
-                    Text("Nur für …").font(Schrift.text(.fett, 15)).foregroundStyle(Farbe.ink)
+                    Text("Nur für …").font(Schrift.display(.halbfett, 15)).foregroundStyle(Farbe.ink)
                     Spacer(minLength: 8)
                     Text(filter.zusammenfassung)
                         .font(Schrift.text(.halbfett, 14))
-                        .foregroundStyle(filter.istEingeschraenkt ? Farbe.goldInk : Farbe.muted)
+                        .foregroundStyle(filter.istEingeschraenkt ? Farbe.blueInk : Farbe.muted)
                         .lineLimit(1)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 13, weight: .bold))
@@ -382,7 +358,8 @@ private struct NurFuer: View {
                 }
             }
             if let speichern {
-                Hauptknopf(text: "Filter speichern", aktion: speichern)
+                // Zweitaktion: die Hauptaktion des Blatts steht unten.
+                Nebenknopf(text: "Filter speichern", stufe: .zweit, aktion: speichern)
             }
         }
     }
@@ -401,7 +378,7 @@ private struct NurFuer: View {
             .pickerStyle(.wheel)
             .frame(height: 112)
             .clipped()
-            .background(Farbe.bg, in: RoundedRectangle(cornerRadius: 14))
+            .background(Farbe.surf, in: RoundedRectangle(cornerRadius: 18))
             .accessibilityLabel(name)
         }
         .frame(maxWidth: .infinity)
@@ -421,11 +398,12 @@ private struct Chip: View {
     var body: some View {
         HStack(spacing: 8) {
             Text(kuerzel)
-                .font(Schrift.text(.fett, Tokens.Schrift.kicker))
+                .font(Schrift.display(.fett, Tokens.Schrift.kicker))
                 .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                .foregroundStyle(gelb ? Farbe.onGold : istGast ? Farbe.goldInk : Farbe.onBrand)
+                // Gelb heisst "deins": nur der eigene Chip. Alle anderen sind neutral.
+                .foregroundStyle(gelb ? Farbe.onGold : istGast ? Farbe.muted : Farbe.ink2)
                 .frame(width: 32, height: 32)
-                .background(leer ? Color.clear : gelb ? Farbe.gold : istGast ? Farbe.goldSoft : Farbe.brand, in: Circle())
+                .background(leer ? Color.clear : gelb ? Farbe.gold : Farbe.surf3, in: Circle())
             Text(name)
                 .font(Schrift.text(.halbfett, 14.5))
                 .foregroundStyle(leer ? Farbe.muted : Farbe.ink)
@@ -446,7 +424,13 @@ private struct Chip: View {
         .padding(.trailing, weg == nil ? 14 : 4)
         .frame(minHeight: 40)
         .background(leer ? Color.clear : Farbe.surf2, in: Capsule())
-        .overlay { if leer { Capsule().strokeBorder(Farbe.line2, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])) } }
+        .overlay {
+            if leer {
+                Capsule().strokeBorder(Farbe.line2, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+            } else {
+                Capsule().strokeBorder(Farbe.line, lineWidth: 1)
+            }
+        }
     }
 }
 
@@ -523,10 +507,10 @@ private struct Mitspieler: View {
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
                         .focused($fokus)
-                        .padding(.horizontal, 16)
-                        .frame(minHeight: 50)
-                        .background(Farbe.bg, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
-                        .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.feld).strokeBorder(Farbe.rahmen, lineWidth: 1.5))
+                        .padding(.horizontal, 20)
+                        .frame(minHeight: 52)
+                        .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
+                        .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.feld).strokeBorder(Farbe.line2, lineWidth: 1))
                         .accessibilityLabel("Mitspieler suchen")
                     if !suche.trimmingCharacters(in: .whitespaces).isEmpty {
                         let treffer = PlaetzeLogik.treffer(suche, in: verzeichnis, ohne: mitglieder)
@@ -544,7 +528,7 @@ private struct Mitspieler: View {
                                         .foregroundStyle(Farbe.ink)
                                         .padding(.horizontal, 14)
                                         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                                        .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 12))
+                                        .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 22))
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -571,12 +555,11 @@ private struct Gestrichelt: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .font(Schrift.text(.halbfett, 15))
+            .font(Schrift.display(.halbfett, 15))
             .frame(maxWidth: .infinity, minHeight: 46)
-            .background(betont ? Farbe.blue.opacity(0.07) : .clear, in: RoundedRectangle(cornerRadius: 14))
+            .background(betont ? Farbe.blueSoft : .clear, in: Capsule())
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(betont ? Farbe.blue : Farbe.line2, style: StrokeStyle(lineWidth: 1.5, dash: betont ? [] : [4, 3]))
+                Capsule().strokeBorder(betont ? Farbe.blue : Farbe.line2, style: StrokeStyle(lineWidth: 1.5, dash: betont ? [] : [4, 3]))
             )
             .contentShape(Rectangle())
     }
@@ -672,7 +655,7 @@ private struct BuchenInhalt: View {
         VStack(spacing: 10) {
             FehlerText(text: m.fensterFehler)
             if let hinweis, !m.laeuft { Besetzungshinweis(text: hinweis) }
-            Hauptknopf(
+            BlattHauptknopf(
                 text: m.laeuft ? "Wird gebucht …" : "\(platzName) buchen",
                 gesperrt: m.laeuft || hinweis != nil,
                 grund: hinweis,
@@ -736,7 +719,7 @@ private struct SperrBereich: View {
                 Text("Gesperrt wird \(Zeit.minutesToTime(stunde))–\(Zeit.minutesToTime(bis)) Uhr auf \(platzName).").leise()
                 Nebenknopf(
                     text: kollisionen.map(PlaetzeLogik.verdraengenText) ?? "Sperren",
-                    gefahr: kollisionen != nil,
+                    stufe: kollisionen != nil ? .gefahr : .zweit,
                     gesperrt: m.laeuft
                 ) {
                     Task {
@@ -803,11 +786,12 @@ private struct VerwaltenInhalt: View {
 
         PlatzBlattKopf(
             kicker: kicker,
-            titel: "\(Zeit.minutesToTime(Zeit.minutesOf(b.startsAt))) – \(Zeit.minutesToTime(Zeit.minutesOf(b.endsAt)))"
+            titel: "\(Zeit.minutesToTime(Zeit.minutesOf(b.startsAt))) – \(Zeit.minutesToTime(Zeit.minutesOf(b.endsAt)))",
+            eigenes: b.isOwn == true && !v.nurStorno
         )
 
         VStack(alignment: .leading, spacing: 4) {
-            Text(v.untertitel).font(Schrift.text(.halbfett, 16)).foregroundStyle(Farbe.ink)
+            Text(v.untertitel).font(Schrift.display(.halbfett, 16)).foregroundStyle(Farbe.ink)
             if v.nurStorno && !v.serientermin, let g = Platzplan.blockingLabel(title: b.title, typeName: b.typeName).grund {
                 Text(g).leise()
             }
@@ -818,7 +802,7 @@ private struct VerwaltenInhalt: View {
                 Text("Die Spielzeit läuft bereits – Änderungen nur mit Platzrechten.").leise()
             }
             if let t = Verwalten.suchtText(b) {
-                Text(t).font(Schrift.text(.fett, Tokens.Schrift.klein)).foregroundStyle(Farbe.goldInk)
+                Text(t).font(Schrift.text(.fett, Tokens.Schrift.klein)).foregroundStyle(Farbe.blueInk)
             }
         }
         .fixedSize(horizontal: false, vertical: true)
@@ -868,15 +852,15 @@ private struct VerwaltenInhalt: View {
                 FehlerText(text: umsetzOffen ? nil : m.fensterFehler)
 
                 if v.kannSperreAendern && !stornoOffen {
-                    Hauptknopf(text: "Sperrung bearbeiten", gesperrt: m.laeuft) { bearbeitenOffen = true }
+                    BlattHauptknopf(text: "Sperrung bearbeiten", gesperrt: m.laeuft) { bearbeitenOffen = true }
                 }
                 if v.kannMitspielen {
-                    Hauptknopf(text: m.laeuft ? "Wird eingetragen …" : "Mitspielen", gesperrt: m.laeuft) {
+                    BlattHauptknopf(text: m.laeuft ? "Wird eingetragen …" : "Mitspielen", gesperrt: m.laeuft) {
                         Task { await m.beitreten(b.bookingId) }
                     }
                 }
                 if !v.nurStorno && v.darfVerwalten && geaendert {
-                    Hauptknopf(text: m.laeuft ? "Wird gespeichert …" : "Mitspieler speichern", gesperrt: m.laeuft) {
+                    BlattHauptknopf(text: m.laeuft ? "Wird gespeichert …" : "Mitspieler speichern", gesperrt: m.laeuft) {
                         Task { await m.speichern(b.bookingId, mitglieder: mitglieder, gaeste: gaeste) }
                     }
                 }
@@ -921,15 +905,10 @@ private struct VerwaltenInhalt: View {
 
     @ViewBuilder private func stornoKnoepfe(_ v: Verwalten) -> some View {
         let m = modell
-        if stornoOffen {
-            Nebenknopf(text: "Abbrechen", gesperrt: m.laeuft) {
-                stornoOffen = false
-                grund = ""
-            }
-        }
+        // Rot gefuellt nur als Bestaetigung, daneben der neutrale Weg zurueck.
         Nebenknopf(
             text: v.stornoText(bestaetigen: stornoOffen),
-            gefahr: true,
+            stufe: stornoOffen ? .gefahr : .gefahrLeise,
             gesperrt: m.laeuft || (stornoOffen && v.grundNoetig && grund.trimmingCharacters(in: .whitespaces).isEmpty)
         ) {
             if !stornoOffen {
@@ -941,6 +920,12 @@ private struct VerwaltenInhalt: View {
                 Task { await m.sperreAufheben(b.bookingId) }
             } else {
                 Task { await m.stornieren(b.bookingId, grund: grund) }
+            }
+        }
+        if stornoOffen {
+            Nebenknopf(text: "Abbrechen", gesperrt: m.laeuft) {
+                stornoOffen = false
+                grund = ""
             }
         }
     }
@@ -1012,9 +997,9 @@ private struct SperreBearbeiten: View {
                 FehlerText(text: m.fensterFehler)
                 if let n = kollisionen {
                     Text(PlaetzeLogik.imWegText(n)).leise().frame(maxWidth: .infinity, alignment: .leading)
-                    Nebenknopf(text: PlaetzeLogik.verdraengenText(n), gefahr: true, gesperrt: m.laeuft) { speichern(verdraengen: true) }
+                    Nebenknopf(text: PlaetzeLogik.verdraengenText(n), stufe: .gefahr, gesperrt: m.laeuft) { speichern(verdraengen: true) }
                 } else {
-                    Hauptknopf(text: m.laeuft ? "Wird gespeichert …" : "Änderungen speichern", gesperrt: m.laeuft || plaetze.isEmpty) {
+                    BlattHauptknopf(text: m.laeuft ? "Wird gespeichert …" : "Änderungen speichern", gesperrt: m.laeuft || plaetze.isEmpty) {
                         speichern(verdraengen: false)
                     }
                 }
@@ -1054,8 +1039,9 @@ private struct Zeitschritt: View {
             knopf("plus", aus: minute + schritt > max, label: "\(name) \(schritt) Minuten später") { wert(minute + schritt) }
         }
         .padding(6)
-        .padding(.leading, 10)
-        .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 18))
+        .padding(.leading, 14)
+        .background(Farbe.surf2, in: Capsule())
+        .overlay(Capsule().strokeBorder(Farbe.line, lineWidth: 1))
     }
 
     private func knopf(_ symbol: String, aus: Bool, label: String, aktion: @escaping () -> Void) -> some View {
@@ -1132,7 +1118,7 @@ private struct UmsetzBereich: View {
             VStack(alignment: .leading, spacing: 0) {
                 Feldname(text: "Tag")
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 8) {
                         ForEach(tage, id: \.self) { t in
                             TagKachel(tag: t, aktiv: t == tag) { Task { await waehle(t) } }
                         }
@@ -1163,12 +1149,9 @@ private struct UmsetzBereich: View {
                         let aktiv = z == minute
                         Button { minuteWahl = z } label: {
                             Text(Zeit.minutesToTime(z))
-                                .font(Schrift.text(.fett, 15))
                                 .monospacedDigit()
-                                .foregroundStyle(aktiv ? Farbe.onGold : Farbe.ink)
-                                .padding(.horizontal, 12)
-                                .frame(minWidth: 64, minHeight: 40)
-                                .background(aktiv ? Farbe.gold : Farbe.surf2, in: Capsule())
+                                .frame(minWidth: 40)
+                                .auswahlPille(aktiv, hoehe: 40, rand: 12)
                         }
                         .buttonStyle(.plain)
                         .accessibilityAddTraits(aktiv ? [.isSelected] : [])
@@ -1191,7 +1174,7 @@ private struct UmsetzBereich: View {
         }
 
         FehlerText(text: m.fensterFehler)
-        Nebenknopf(text: m.laeuft ? "Wird umgesetzt …" : "Hierhin umsetzen", gesperrt: m.laeuft || !bereit) {
+        Nebenknopf(text: m.laeuft ? "Wird umgesetzt …" : "Hierhin umsetzen", stufe: .zweit, gesperrt: m.laeuft || !bereit) {
             guard let platz, let minute else { return }
             Task { await m.umsetzen(b.bookingId, courtId: platz.id, tag: tag, minute: minute, grund: grund) }
         }

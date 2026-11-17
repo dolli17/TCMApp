@@ -32,7 +32,9 @@ final class StartdatenTests: XCTestCase {
         [{"booking_id":"o1","starts_at":"2026-10-29T15:00:00+00:00","ends_at":"2026-10-29T16:30:00+00:00",
           "court_name":"Platz 2","type_name":"Doppel","owner_name":"Erika","frei":2,"bin_dabei":false,"players":["Erika"]}]
         """)
-        XCTAssertEqual(HomeLogik.offenesSpielTitel(o[0]), "Doppel · sucht 2")
+        // 29.10.2026 16:00 in Berlin, einen Tag vorher gefragt
+        XCTAssertEqual(HomeLogik.offenesSpielWann(o[0], jetzt: Zeit.datum("2026-10-28T10:00:00Z")!), "Morgen, 16:00")
+        XCTAssertEqual(HomeLogik.offenesSpielZeile(o[0], eigenes: true), "Platz 2 · dein Spiel")
         XCTAssertEqual(HomeLogik.offenesSpielZeile(o[0]), "Platz 2 · Erika")
 
         let t: [TagesBelegung] = try lies("""

@@ -207,7 +207,7 @@ private struct SperrenBlatt: View {
                 GefahrKnopf(text: PlaetzeLogik.verdraengenText(kollisionen), gesperrt: laeuft) { absenden(verdraengen: true) }
                 LeiserKnopf(text: "Doch nicht") { self.kollisionen = nil }
             } else {
-                GelberKnopf(
+                Hauptknopf(
                     text: laeuft ? "Wird gesperrt…" : "Sperren",
                     // Der Grund ist freiwillig; was die Sperrung ist, sagt die Art.
                     gesperrt: laeuft || gewaehlt.isEmpty || tag.trimmingCharacters(in: .whitespaces).isEmpty
@@ -294,12 +294,12 @@ private struct SerieAnlegenBlatt: View {
                         VerwaltungLogik.kollisionsZeile(startsAt: $0.startsAt, mitglied: $0.conflictMemberName, art: $0.conflictKind)
                     }
                 )
-                GelberKnopf(
+                Hauptknopf(
                     text: laeuft ? "Wird angelegt…" : VerwaltungLogik.anlegenText(termine: vorschau.count, kollisionen: kollisionen.count),
                     gesperrt: laeuft
                 ) { anlegen(verdraengen: !kollisionen.isEmpty) }
             } else {
-                GelberKnopf(
+                Hauptknopf(
                     text: laeuft ? "Wird geprüft…" : "Vorschau",
                     gesperrt: laeuft || form.title.trimmingCharacters(in: .whitespaces).isEmpty
                 ) { pruefen() }
@@ -405,7 +405,7 @@ private struct SerieBlatt: View {
                 Folgen(text: PlaetzeLogik.imWegText(kollisionen))
                 GefahrKnopf(text: PlaetzeLogik.verdraengenText(kollisionen), gesperrt: laeuft) { speichern(verdraengen: true) }
             } else {
-                GelberKnopf(
+                Hauptknopf(
                     text: laeuft ? "Wird gespeichert…" : "Änderung speichern",
                     gesperrt: laeuft || titel.trimmingCharacters(in: .whitespaces).isEmpty
                 ) { speichern(verdraengen: false) }

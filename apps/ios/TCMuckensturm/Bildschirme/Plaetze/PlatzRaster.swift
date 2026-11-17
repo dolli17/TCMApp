@@ -1,22 +1,25 @@
 /**
- * Die Plaetze als Raster (apps/mobile/src/components/plaetze/PlatzRaster.tsx)
+ * Der Belegungsplan als Raster (docs/design/stitch, Entwurf "Plaetze (Belegungsplan Final)")
  *
- * Links eine feste Spalte mit den Plaetzen, rechts waagerecht wischbar die
- * Stunden von Oeffnung bis Schluss, 88 Punkte je Stunde. Belegungen sind
- * beschriftete Bloecke; eine freie Flaeche antippen waehlt Platz und Beginn
- * aus. Gebucht wird erst ueber die Leiste unten und das Blatt. Was frei ist,
- * rechnet der Kern (freeGaps), die Beschriftung ebenfalls (occupancyLabel).
+ * Die einzige Uebersicht der Plaetze: links die Uhrzeiten von Oeffnung bis
+ * Schluss, daneben je Platz eine Spalte. Freie Zeiten sind weisse Kaestchen
+ * mit Linie; eins antippen waehlt Platz und Beginn aus (hellblau). Gebucht
+ * wird erst ueber die Leiste unten und das Blatt. Belegungen sind Bloecke:
+ * belegt grau, das eigene Spiel gelb mit "Du", Mitspieler gesucht hellblau
+ * mit "+", Training grau mit Rand, gesperrt schraffiert. Was frei ist,
+ * rechnet der Kern (freeGaps), was VoiceOver vorliest ebenfalls (occupancyLabel).
  */
 
 import SwiftUI
 
 private enum Mass {
-    /// Eine halbe Stunde ist so 44 Punkte breit - schmaler trifft man sie mit dem Finger nicht (U18).
-    static let stunde: CGFloat = 88
-    static let zeile: CGFloat = 46
-    static let kopf: CGFloat = 34
-    static let spalte: CGFloat = 46
-    static let abstand: CGFloat = 4
+    /// Eine halbe Stunde ist 32 Punkte hoch.
+    static let stunde: CGFloat = 64
+    static let kopf: CGFloat = 38
+    static let zeit: CGFloat = 48
+    /// Schmaler wird eine Platzspalte nicht; passen nicht alle, wischt man waagerecht.
+    static let spalteMin: CGFloat = 38
+    static let rand: CGFloat = 2
 
     static func px(_ minuten: Int) -> CGFloat { CGFloat(minuten) / 60 * stunde }
 }
@@ -26,97 +29,99 @@ struct PlatzRaster: View {
 
     var body: some View {
         let m = modell
-        // Jede Minute neu: rote Linie und freie Flaechen ruecken mit der Uhr.
+        let hoehe = Mass.px(m.schluss - m.oeffnung)
+        // Jede Minute neu: die Linie fuer jetzt und die freien Flaechen ruecken mit der Uhr.
         TimelineView(.everyMinute) { kontext in
             let jetzt = kontext.date
             let jetztMin = m.datum == Zeit.berlinDay(jetzt) ? Zeit.localMinutes(jetzt) : nil
-            HStack(spacing: 0) {
-                platzSpalte(m)
-                Divider().overlay(Farbe.line)
-                stunden(m, jetzt: jetzt, jetztMin: jetztMin)
-            }
-            .background(Farbe.surf)
-            .clipShape(RoundedRectangle(cornerRadius: 22))
-            .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Farbe.line, lineWidth: 1))
-        }
-    }
-
-    private func platzSpalte(_ m: PlaetzeModell) -> some View {
-        VStack(spacing: 0) {
-            Color.clear.frame(height: Mass.kopf)
-            Divider().overlay(Farbe.line)
-            ForEach(m.plaetze) { p in
-                VStack(spacing: 0) {
-                    Text("PLATZ")
-                        .font(Schrift.text(.fett, 9.5))
-                        .tracking(0.8)
-                        .foregroundStyle(Farbe.muted)
-                    Text(PlaetzeLogik.platzNummer(name: p.name, kurz: p.shortName))
-                        .font(Schrift.display(.fett, 20))
-                        .foregroundStyle(Farbe.ink)
-                }
-                // Die Spalte ist 46 Punkte schmal: hier waechst die Schrift nicht mit.
-                .dynamicTypeSize(.large)
-                .frame(width: Mass.spalte, height: Mass.zeile)
-                .overlay(alignment: .bottom) { Farbe.ink.opacity(0.06).frame(height: 1) }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(p.name ?? "")
-                .accessibilityAddTraits(.isHeader)
-            }
-        }
-        .frame(width: Mass.spalte)
-    }
-
-    private func stunden(_ m: PlaetzeModell, jetzt: Date, jetztMin: Int?) -> some View {
-        let oeffnung = m.oeffnung
-        let breite = Mass.px(m.schluss - oeffnung)
-        let volle = Array(stride(from: Int((Double(oeffnung) / 60).rounded(.up)) * 60, to: m.schluss, by: 60))
-        // Beim Oeffnen und bei jedem Tageswechsel auf "jetzt" (eine Viertelstunde vorher), sonst auf die Oeffnung.
-        let ziel = jetztMin.map { max(oeffnung, $0 - 15) } ?? oeffnung
-        let zielStunde = volle.last { $0 <= ziel } ?? volle.first ?? oeffnung
-
-        return ScrollViewReader { leser in
-            ScrollView(.horizontal, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    ZStack(alignment: .topLeading) {
-                        ForEach(volle, id: \.self) { s in
-                            Text(Zeit.minutesToTime(s))
-                                .font(Schrift.text(.fett, 12))
-                                .monospacedDigit()
-                                .foregroundStyle(Farbe.ink2)
-                                .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                                .offset(x: Mass.px(s - oeffnung) + 6, y: 10)
-                                .id(s)
-                        }
-                    }
-                    .frame(width: breite, height: Mass.kopf, alignment: .topLeading)
-                    .accessibilityHidden(true)
-                    Divider().overlay(Farbe.line)
-
-                    ZStack(alignment: .topLeading) {
-                        ForEach(volle, id: \.self) { s in
-                            Farbe.ink.opacity(0.07).frame(width: 1).offset(x: Mass.px(s - oeffnung))
-                        }
-                        VStack(spacing: 0) {
-                            ForEach(m.plaetze) { p in
-                                zeile(m, platz: p, jetzt: jetzt)
+            GeometryReader { geo in
+                let anzahl = max(1, m.plaetze.count)
+                let spalte = max(Mass.spalteMin, ((geo.size.width - Mass.zeit - 1) / CGFloat(anzahl)).rounded(.down))
+                HStack(alignment: .top, spacing: 0) {
+                    zeitSpalte(m, hoehe: hoehe)
+                    Farbe.line.frame(width: 1)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            kopf(m, spalte: spalte)
+                            Farbe.line.frame(height: 1)
+                            HStack(alignment: .top, spacing: 0) {
+                                ForEach(m.plaetze) { p in
+                                    platzSpalte(m, platz: p, breite: spalte, hoehe: hoehe, jetzt: jetzt)
+                                }
+                            }
+                            .background(alignment: .topLeading) { stundenlinien(m) }
+                            .overlay(alignment: .topLeading) {
+                                if let jetztMin, jetztMin >= m.oeffnung, jetztMin <= m.schluss {
+                                    Farbe.ink.frame(height: 2)
+                                        .offset(y: Mass.px(jetztMin - m.oeffnung) - 1)
+                                        .allowsHitTesting(false)
+                                        .accessibilityHidden(true)
+                                }
                             }
                         }
-                        if let jetztMin, jetztMin >= oeffnung, jetztMin <= m.schluss {
-                            Farbe.red.frame(width: 2).offset(x: Mass.px(jetztMin - oeffnung) - 1).accessibilityHidden(true)
-                        }
                     }
-                    .frame(width: breite, height: CGFloat(m.plaetze.count) * Mass.zeile, alignment: .topLeading)
+                    .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+                    .accessibilityLabel("Belegung nach Plätzen und Uhrzeit")
                 }
             }
-            .accessibilityLabel("Belegung nach Plätzen, waagerecht wischen für frühere und spätere Stunden")
-            .onAppear { leser.scrollTo(zielStunde, anchor: .leading) }
-            .onChange(of: m.datum) { leser.scrollTo(zielStunde, anchor: .leading) }
+            .frame(height: Mass.kopf + 1 + hoehe)
+            .background(Farbe.surf2)
+            .clipShape(RoundedRectangle(cornerRadius: Tokens.Radius.karte))
+            .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.karte).strokeBorder(Farbe.line, lineWidth: 1))
         }
     }
 
-    private func zeile(_ m: PlaetzeModell, platz: AktiverPlatz, jetzt: Date) -> some View {
+    /// Volle und halbe Stunden links, die vollen kraeftiger.
+    private func zeitSpalte(_ m: PlaetzeModell, hoehe: CGFloat) -> some View {
+        let marken = Array(stride(from: Int((Double(m.oeffnung) / 30).rounded(.up)) * 30, to: m.schluss, by: 30))
+        return VStack(spacing: 0) {
+            Color.clear.frame(height: Mass.kopf + 1)
+            ZStack(alignment: .topLeading) {
+                ForEach(marken, id: \.self) { s in
+                    Text(Zeit.minutesToTime(s))
+                        .font(Schrift.display(s % 60 == 0 ? .halbfett : .normal, 10.5))
+                        .monospacedDigit()
+                        .foregroundStyle(s % 60 == 0 ? Farbe.ink2 : Farbe.muted)
+                        .dynamicTypeSize(...DynamicTypeSize.large)
+                        .frame(width: Mass.zeit, height: Mass.px(30), alignment: .center)
+                        .offset(y: Mass.px(s - m.oeffnung))
+                }
+            }
+            .frame(width: Mass.zeit, height: hoehe, alignment: .topLeading)
+        }
+        .frame(width: Mass.zeit)
+        .accessibilityHidden(true)
+    }
+
+    private func kopf(_ m: PlaetzeModell, spalte: CGFloat) -> some View {
+        HStack(spacing: 0) {
+            ForEach(m.plaetze) { p in
+                Text(PlaetzeLogik.platzNummer(name: p.name, kurz: p.shortName))
+                    .font(Schrift.display(.fett, 15))
+                    .foregroundStyle(Farbe.ink)
+                    // Die Spalten sind schmal: hier waechst die Schrift nicht mit.
+                    .dynamicTypeSize(.large)
+                    .frame(width: spalte, height: Mass.kopf)
+                    .accessibilityLabel(p.name ?? "")
+                    .accessibilityAddTraits(.isHeader)
+            }
+        }
+        .background(Farbe.surf)
+    }
+
+    private func stundenlinien(_ m: PlaetzeModell) -> some View {
+        let volle = Array(stride(from: Int((Double(m.oeffnung) / 60).rounded(.up)) * 60, to: m.schluss, by: 60))
+        return ZStack(alignment: .topLeading) {
+            ForEach(volle, id: \.self) { s in
+                Farbe.line.frame(height: 1).offset(y: Mass.px(s - m.oeffnung))
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func platzSpalte(_ m: PlaetzeModell, platz: AktiverPlatz, breite: CGFloat, hoehe: CGFloat, jetzt: Date) -> some View {
         let oeffnung = m.oeffnung
+        let innen = breite - 2 * Mass.rand
         let luecken = Platzplan.freeGaps(
             day: m.datum, courtId: platz.id, openingMinutes: oeffnung, closingMinutes: m.schluss,
             slotMinutes: m.raster, durationMinutes: m.dauer, occupied: m.belegung, leadDays: m.vorlauf, now: jetzt
@@ -124,83 +129,90 @@ struct PlatzRaster: View {
         let hier = m.belegung.filter { $0.courtId == platz.id }
         return ZStack(alignment: .topLeading) {
             ForEach(luecken, id: \.from) { l in
-                FreieFlaeche(platz: platz, luecke: l) { minute in
+                FreieFlaeche(platz: platz, luecke: l, raster: m.raster, breite: innen) { minute in
                     m.auswahl = Auswahl(
                         courtId: platz.id,
                         minute: Platzplan.startInGap(l, minute: minute, slotMinutes: m.raster, durationMinutes: m.dauer),
                         bis: l.until
                     )
                 }
-                .offset(x: Mass.px(l.from - oeffnung) + 3)
+                .offset(x: Mass.rand, y: Mass.px(l.from - oeffnung))
             }
             ForEach(hier) { b in
                 let von = max(oeffnung, Zeit.minutesOf(b.startsAt))
                 let bis = min(m.schluss, Zeit.minutesOf(b.endsAt))
                 if bis > von {
-                    Block(belegung: b, platz: platz, breite: max(Mass.px(bis - von) - 6, 12), kannAuf: m.oeffnebar(b),
-                          markiert: m.markiert?.trifft(b) == true) { m.oeffne(b) }
-                        .offset(x: Mass.px(von - oeffnung) + 3)
+                    Block(belegung: b, platz: platz, breite: innen, hoehe: max(Mass.px(bis - von) - 2 * Mass.rand, 10),
+                          kannAuf: m.oeffnebar(b), markiert: m.markiert?.trifft(b) == true) { m.oeffne(b) }
+                        .offset(x: Mass.rand, y: Mass.px(von - oeffnung) + Mass.rand)
                 }
             }
             if let a = m.auswahl, a.courtId == platz.id {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("+ \(Zeit.minutesToTime(a.minute))").font(Schrift.text(.fett, 12))
-                    Text("ausgewählt").font(Schrift.text(.mittel, 12)).opacity(0.85)
-                }
-                .foregroundStyle(Farbe.goldInk)
-                .lineLimit(1)
-                .padding(.horizontal, 7)
-                .frame(width: Mass.px(m.dauer) - 6, height: Mass.zeile - 8, alignment: .leading)
-                .background(Farbe.goldSoft, in: RoundedRectangle(cornerRadius: 10))
-                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Farbe.gold, lineWidth: 2))
-                .offset(x: Mass.px(a.minute - oeffnung) + 3, y: Mass.abstand)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
+                // Ausgewaehlt ist hellblau mit blauer Linie.
+                Text(Zeit.minutesToTime(a.minute))
+                    .font(Schrift.display(.fett, 10.5))
+                    .monospacedDigit()
+                    .foregroundStyle(Farbe.blueInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .dynamicTypeSize(.large)
+                    .frame(width: innen, height: Mass.px(m.dauer) - 2 * Mass.rand)
+                    .background(Farbe.blueSoft, in: RoundedRectangle(cornerRadius: 7))
+                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Farbe.blue, lineWidth: 2))
+                    .offset(x: Mass.rand, y: Mass.px(a.minute - oeffnung) + Mass.rand)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
             }
         }
-        .frame(height: Mass.zeile, alignment: .topLeading)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .overlay(alignment: .bottom) { Farbe.ink.opacity(0.06).frame(height: 1) }
+        .frame(width: breite, height: hoehe, alignment: .topLeading)
+        .overlay(alignment: .leading) { Farbe.line.opacity(0.6).frame(width: 1) }
     }
 }
 
 /**
- * Eine freie Flaeche: gruen getoent mit gruenem Rand, antippbar. Die Stelle
- * des Fingers bestimmt den Beginn; VoiceOver tippt ohne Stelle und bekommt
- * den fruehesten.
+ * Eine freie Zeit: je Rasterschritt ein weisses Kaestchen mit Linie, zusammen
+ * eine antippbare Flaeche. Die Stelle des Fingers bestimmt den Beginn;
+ * VoiceOver tippt ohne Stelle und bekommt den fruehesten.
  */
 private struct FreieFlaeche: View {
     let platz: AktiverPlatz
     let luecke: FreeGap
+    let raster: Int
+    let breite: CGFloat
     let wahl: (Int) -> Void
 
     var body: some View {
-        Text("frei")
-            .font(Schrift.text(.fett, 12))
-            .foregroundStyle(Farbe.greenInk)
-            .dynamicTypeSize(...DynamicTypeSize.xLarge)
-            .padding(.horizontal, 7)
-            .frame(width: max(Mass.px(luecke.until - luecke.from) - 6, 12), height: Mass.zeile - 2 * Mass.abstand, alignment: .leading)
-            .background(Farbe.green.opacity(0.16), in: RoundedRectangle(cornerRadius: 10))
-            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Farbe.green, lineWidth: 1.5))
-            .offset(y: Mass.abstand)
-            .contentShape(Rectangle())
-            .onTapGesture(coordinateSpace: .local) { ort in
-                wahl(luecke.from + Int((ort.x / Mass.stunde * 60).rounded(.down)))
+        let schritt = max(15, raster)
+        let schritte = Array(stride(from: luecke.from, to: luecke.until, by: schritt))
+        ZStack(alignment: .topLeading) {
+            ForEach(schritte, id: \.self) { s in
+                let h = Mass.px(min(schritt, luecke.until - s)) - 2 * Mass.rand
+                RoundedRectangle(cornerRadius: 7)
+                    .fill(Farbe.surf)
+                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Farbe.line2, lineWidth: 1))
+                    .frame(width: breite, height: max(h, 4))
+                    .offset(y: Mass.px(s - luecke.from) + Mass.rand)
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(platz.name ?? ""), frei von \(Zeit.minutesToTime(luecke.from)) bis \(Zeit.minutesToTime(luecke.until)) Uhr")
-            .accessibilityHint("Wählt \(Zeit.minutesToTime(luecke.from)) Uhr zum Buchen aus")
-            .accessibilityAddTraits(.isButton)
-            .accessibilityAction { wahl(luecke.from) }
+        }
+        .frame(width: breite, height: Mass.px(luecke.until - luecke.from), alignment: .topLeading)
+        .contentShape(Rectangle())
+        .onTapGesture(coordinateSpace: .local) { ort in
+            wahl(luecke.from + Int((ort.y / Mass.stunde * 60).rounded(.down)))
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(platz.name ?? ""), frei von \(Zeit.minutesToTime(luecke.from)) bis \(Zeit.minutesToTime(luecke.until)) Uhr")
+        .accessibilityHint("Wählt \(Zeit.minutesToTime(luecke.from)) Uhr zum Buchen aus")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { wahl(luecke.from) }
     }
 }
 
-/// Eine Belegung als Block, gefaerbt nach der Statustabelle (wie .tr-block im Web).
+/// Eine Belegung als Block. Die Spalten sind schmal: im Block steht nur "Du" oder "+", der Rest im Blatt.
 private struct Block: View {
     let belegung: TagesBelegung
     let platz: AktiverPlatz
     let breite: CGFloat
+    let hoehe: CGFloat
     let kannAuf: Bool
     let markiert: Bool
     let aktion: () -> Void
@@ -209,35 +221,34 @@ private struct Block: View {
         let l = Platzplan.occupancyLabel(belegung)
         let stil = BelegungsStil(l.art)
         Button(action: aktion) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(l.title).font(Schrift.text(.fett, 12))
-                if !l.detail.isEmpty {
-                    Text(l.detail).font(Schrift.text(.mittel, 12)).opacity(0.85)
+            Group {
+                if hoehe >= 20, let zeichen = stil.zeichen {
+                    Text(zeichen).font(Schrift.display(.fett, zeichen == "+" ? 16 : 12.5))
+                } else {
+                    Color.clear
                 }
             }
             .foregroundStyle(stil.text)
             .lineLimit(1)
-            .dynamicTypeSize(...DynamicTypeSize.xLarge)
-            .padding(.horizontal, 8)
-            .frame(width: breite, height: Mass.zeile - 2 * Mass.abstand, alignment: .leading)
-            .background { stil.flaeche(RoundedRectangle(cornerRadius: 10)) }
+            .dynamicTypeSize(.large)
+            .frame(width: breite, height: hoehe)
+            .background { stil.flaeche(RoundedRectangle(cornerRadius: 7)) }
             .overlay {
-                if markiert { RoundedRectangle(cornerRadius: 10).strokeBorder(Farbe.goldLine, lineWidth: 3) }
+                if markiert { RoundedRectangle(cornerRadius: 7).strokeBorder(Farbe.blue, lineWidth: 2.5) }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .clipShape(RoundedRectangle(cornerRadius: 7))
         }
         .buttonStyle(.plain)
         .disabled(!kannAuf)
-        .offset(y: Mass.abstand)
         .accessibilityLabel("\(platz.name ?? ""), \(l.spoken)")
         .accessibilityHint(kannAuf ? "Öffnet die Buchung" : "")
     }
 }
 
 /**
- * Farben einer Belegung nach der Statustabelle (HANDOFF §2): eigen gold,
- * belegt blau mit Rand, sucht goldSoft gestrichelt, Training schraffiert,
- * gesperrt grau mit Rand.
+ * Farben einer Belegung (docs/design/stitch): eigen gelb ("deins"), belegt
+ * grau, Mitspieler gesucht hellblau, Training grau mit Rand, gesperrt
+ * schraffiert.
  */
 struct BelegungsStil {
     let art: TimelineKind
@@ -247,29 +258,36 @@ struct BelegungsStil {
     var text: Color {
         switch art {
         case .eigen: Farbe.onGold
-        case .belegt: Farbe.blueInk
-        case .sucht: Farbe.goldInk
+        case .belegt: Farbe.ink2
+        case .sucht: Farbe.blueInk
         case .serie: Farbe.ink2
         case .gesperrt: Farbe.muted
+        }
+    }
+
+    /// Was im Block steht
+    var zeichen: String? {
+        switch art {
+        case .eigen: "Du"
+        case .sucht: "+"
+        default: nil
         }
     }
 
     @ViewBuilder func flaeche(_ form: RoundedRectangle) -> some View {
         switch art {
         case .eigen: form.fill(Farbe.gold)
-        case .belegt: form.fill(Farbe.blueSoft).overlay(form.strokeBorder(Farbe.blue, lineWidth: 1))
-        case .sucht:
-            form.fill(Farbe.goldSoft).overlay(form.strokeBorder(Farbe.goldLine, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
-        case .serie:
+        case .belegt: form.fill(Farbe.line2)
+        case .sucht: form.fill(Farbe.blueSoft).overlay(form.strokeBorder(Farbe.blueInk.opacity(0.55), lineWidth: 1))
+        case .serie: form.fill(Farbe.surf3).overlay(form.strokeBorder(Farbe.rahmen, lineWidth: 1))
+        case .gesperrt:
             form.fill(Farbe.surf3)
-                .overlay(Schraegstriche().stroke(Farbe.ink.opacity(0.1), lineWidth: 1.5).clipShape(form))
-                .overlay(form.strokeBorder(Farbe.rahmen, lineWidth: 1))
-        case .gesperrt: form.fill(Farbe.surf3).overlay(form.strokeBorder(Farbe.rahmen, lineWidth: 1))
+                .overlay(Schraegstriche().stroke(Farbe.rahmen.opacity(0.55), lineWidth: 1.5).clipShape(form))
         }
     }
 }
 
-/// Schraege Linien fuer Serien (Training)
+/// Schraege Linien fuer Sperrungen
 struct Schraegstriche: Shape {
     func path(in rect: CGRect) -> Path {
         var p = Path()
@@ -283,17 +301,18 @@ struct Schraegstriche: Shape {
     }
 }
 
-/// Kurze Legende unter dem Raster. Jedes Kaestchen mit Rand: die Toenungen allein liegen unter 3:1 (U29).
+/// Kurze Legende ueber dem Raster.
 struct RasterLegende: View {
     var body: some View {
+        let form = RoundedRectangle(cornerRadius: 4)
         Legende(eintraege: [
-            ("frei", AnyView(RoundedRectangle(cornerRadius: 3).fill(Farbe.green.opacity(0.16)).overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Farbe.green, lineWidth: 1)))),
-            ("Du", AnyView(BelegungsStil(.eigen).flaeche(RoundedRectangle(cornerRadius: 3)))),
-            ("belegt", AnyView(BelegungsStil(.belegt).flaeche(RoundedRectangle(cornerRadius: 3)))),
-            ("sucht Mitspieler", AnyView(BelegungsStil(.sucht).flaeche(RoundedRectangle(cornerRadius: 3)))),
-            ("Training", AnyView(BelegungsStil(.serie).flaeche(RoundedRectangle(cornerRadius: 3)))),
-            ("gesperrt", AnyView(BelegungsStil(.gesperrt).flaeche(RoundedRectangle(cornerRadius: 3)))),
-        ], groesse: CGSize(width: 16, height: 10))
+            ("frei", AnyView(form.fill(Farbe.surf).overlay(form.strokeBorder(Farbe.line2, lineWidth: 1)))),
+            ("belegt", AnyView(BelegungsStil(.belegt).flaeche(form))),
+            ("Du", AnyView(BelegungsStil(.eigen).flaeche(form))),
+            ("sucht Mitspieler", AnyView(BelegungsStil(.sucht).flaeche(form))),
+            ("Training", AnyView(BelegungsStil(.serie).flaeche(form))),
+            ("gesperrt", AnyView(BelegungsStil(.gesperrt).flaeche(form))),
+        ], groesse: CGSize(width: 14, height: 14))
     }
 }
 

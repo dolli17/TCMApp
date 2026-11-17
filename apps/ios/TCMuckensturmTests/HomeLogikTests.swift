@@ -18,7 +18,6 @@ final class HomeLogikTests: XCTestCase {
         XCTAssertEqual(HomeLogik.titel(vorname: "Max"), "Hallo, Max")
         XCTAssertEqual(HomeLogik.titel(vorname: ""), "Hallo")
         XCTAssertEqual(HomeLogik.titel(vorname: nil), "Hallo")
-        XCTAssertEqual(HomeLogik.kicker(jetzt), "Montag, 28. September")
     }
 
     func testTerminkarte() throws {
@@ -27,7 +26,15 @@ final class HomeLogikTests: XCTestCase {
         XCTAssertEqual(HomeLogik.mitText(try buchung(players: [], bucher: false)), "von Max")
         let t = try buchung(players: nil)
         XCTAssertEqual(HomeLogik.zeitSpanne(t), "17:00 – 18:00")
-        XCTAssertEqual(HomeLogik.terminLabel(t, jetzt: jetzt), "Heute · in 3 Stunden, 17:00 – 18:00, Platz 3, Details")
+        XCTAssertEqual(HomeLogik.terminLabel(t, jetzt: jetzt), "Dein Termin: Heute · in 3 Stunden, 17:00 – 18:00, Platz 3 · von Max")
+        // Kicker links, gelber Marker rechts
+        XCTAssertEqual(HomeLogik.terminKicker(t, jetzt: jetzt).tag, "Heute")
+        XCTAssertEqual(HomeLogik.terminKicker(t, jetzt: jetzt).wann, "in 3 Stunden")
+        XCTAssertEqual(HomeLogik.terminOrt(try buchung(players: ["Max", "Erika"])), "Platz 3 · mit Erika")
+        XCTAssertNil(HomeLogik.weitereTermine(0))
+        XCTAssertEqual(HomeLogik.weitereTermine(1), "und 1 weiterer Termin")
+        XCTAssertEqual(HomeLogik.weitereTermine(3), "und 3 weitere Termine")
+        XCTAssertEqual(HomeLogik.eigeneBuchungen([try buchung(players: nil, bucher: true), try buchung(players: nil)]), ["b1"])
     }
 
     func testJetztFrei() throws {
@@ -43,31 +50,8 @@ final class HomeLogikTests: XCTestCase {
         // 14:00 Berlin: Platz 2 frei bis Schluss, Platz 1 bis 16:00 (Belegung 16-17 Uhr)
         XCTAssertEqual(karten.map(\.name), ["Platz 2", "Platz 1"])
         XCTAssertEqual(karten.map(\.bis), ["21:00", "16:00"])
-        XCTAssertEqual(karten[1].segmente.count, 1)
-        XCTAssertEqual(karten[0].jetzt, Double(14 * 60 - 480) / Double(1260 - 480) * 100, accuracy: 0.0001)
-    }
-
-    func testDeinStand() throws {
-        let kaeufe = try JSONDecoder().decode([EigenesGetraenk].self, from: Data(#"[{"id":"g","total_cents":450}]"#.utf8))
-        let stand = HomeLogik.deinStand(
-            getraenke: .wert(kaeufe),
-            dienst: .wert(Arbeitsdienst(year: 2026, requiredHours: 10, completedHours: 2.5, missingHours: 7.5)),
-            jetzt: jetzt
-        )
-        XCTAssertEqual(stand.getraenkeTitel, "Getränke September")
-        XCTAssertEqual(stand.getraenkeWert, "4,50\u{00A0}€")
-        XCTAssertEqual(stand.getraenkeLabel, "Getränke im September: 4,50\u{00A0}€, läuft noch. Zu den Getränken")
-        XCTAssertEqual(stand.dienstTitel, "Arbeitsdienst 2026")
-        XCTAssertEqual(stand.dienstWert, "2,5 / 10 h")
-        XCTAssertEqual(stand.dienstAnteil, 0.25)
-        XCTAssertEqual(stand.dienstLabel, "Arbeitsdienst 2026: 2,5 von 10 Stunden. Zum Konto")
-
-        let ohne = HomeLogik.deinStand(getraenke: .fehler("Kaputt."), dienst: .wert(nil), jetzt: jetzt)
-        XCTAssertNil(ohne.getraenkeWert)
-        XCTAssertEqual(ohne.getraenkeLabel, "Getränke: Kaputt.")
-        XCTAssertNil(ohne.dienstWert)
-        XCTAssertEqual(ohne.dienstTitel, "Arbeitsdienst 2026")
-        XCTAssertEqual(ohne.dienstLabel, "Arbeitsdienst 2026: kein Soll. Zum Konto")
+        XCTAssertEqual(HomeLogik.freiZaehler(karten.count), "2 Plätze")
+        XCTAssertEqual(HomeLogik.freiZaehler(1), "1 Platz")
     }
 
     func testGlockeUndNachrichten() throws {
@@ -83,9 +67,6 @@ final class HomeLogikTests: XCTestCase {
         XCTAssertTrue(HomeLogik.zeigeAlleGelesen(liste, alleGesehen: false))
         XCTAssertFalse(HomeLogik.zeigeAlleGelesen(liste, alleGesehen: true))
         XCTAssertFalse(HomeLogik.zeigeAlleGelesen(nil, alleGesehen: false))
-        XCTAssertTrue(HomeLogik.zeigeAlleNeuigkeiten(.wert(liste)))
-        XCTAssertFalse(HomeLogik.zeigeAlleNeuigkeiten(.wert([])))
-        XCTAssertFalse(HomeLogik.zeigeAlleNeuigkeiten(.fehler("x")))
     }
 
     func testInitialenUndJsZahl() {

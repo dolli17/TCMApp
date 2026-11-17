@@ -31,7 +31,7 @@ struct KeinZugangBildschirm: View {
                     }
                     LeiserVerweis(text: "Mit einem anderen Konto anmelden") { sitzung.zurAnmeldung() }
                 } else {
-                    GelberKnopf(text: "Zur Anmeldung") { sitzung.zurAnmeldung() }
+                    Hauptknopf(text: "Zur Anmeldung") { sitzung.zurAnmeldung() }
                 }
             }
             .padding(.top, Tokens.Abstand.abschnitt)

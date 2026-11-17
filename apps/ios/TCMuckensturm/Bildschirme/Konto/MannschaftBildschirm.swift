@@ -146,7 +146,7 @@ struct MannschaftBildschirm: View {
                         gesperrt: laeuft
                     )
                 }
-                GelberKnopf(text: laeuft ? "Wird gespeichert…" : "Einladung annehmen", gesperrt: laeuft) {
+                Hauptknopf(text: laeuft ? "Wird gespeichert…" : "Einladung annehmen", gesperrt: laeuft) {
                     beantworten(e, annehmen: true)
                 }
                 LeiserKnopf(text: "Abbrechen", gesperrt: laeuft) { annehmenBei = nil }
@@ -181,7 +181,7 @@ struct MannschaftBildschirm: View {
             if m.ichBinMf {
                 Text(MannschaftLogik.mfErklaerung).leise().fixedSize(horizontal: false, vertical: true)
                     .padding(.top, Tokens.Abstand.xs)
-                GelberKnopf(text: "Spieler hinzufügen", gesperrt: laeuft) { sucheOffen = true }
+                Hauptknopf(text: "Spieler hinzufügen", gesperrt: laeuft) { sucheOffen = true }
                 offeneEinladungen(m)
             }
             kader(m)

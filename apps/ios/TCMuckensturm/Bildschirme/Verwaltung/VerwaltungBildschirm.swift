@@ -130,7 +130,7 @@ private struct VerwaltungInhalt: View {
                         inhalt(s)
                     } header: {
                         // Klebt beim Scrollen oben wie in Plaetze und Verein (U74).
-                        KontoSegmente(
+                        SegmentLeiste(
                             beschriftung: "Plätze und Serien",
                             optionen: VerwaltungAnsicht.allCases.map { ($0, $0.label) },
                             gewaehlt: m.ansicht
@@ -177,7 +177,7 @@ private struct VerwaltungInhalt: View {
     @ViewBuilder private func inhalt(_ s: VerwaltungsStand) -> some View {
         let m = modell
         let serien = m.ansicht == .serien
-        GelberKnopf(text: serien ? "+ Serie anlegen" : "+ Plätze sperren") {
+        Hauptknopf(text: serien ? "+ Serie anlegen" : "+ Plätze sperren") {
             m.blatt = serien ? .serieAnlegen : .sperren
         }
         if let e = m.meldung {
