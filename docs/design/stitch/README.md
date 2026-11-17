@@ -47,6 +47,20 @@ Fließtext. Beide liegen auf dem eigenen Server.
 - [x] Web: Getränke als Liste, Monatskarte weiß; Avatare, Fortschrittsbalken,
       Statusmarken und die großen Karten der Verwaltung ohne Gelb und ohne
       dunkelblaue Flächen
+- [x] Web: Aufbau je Screen nach den Entwürfen (17.11.2026) – Blätter im
+      Buchungsfenster als eigene Ansichten, Meine & offene Spiele,
+      Veranstaltungen (Liste, Detail, angemeldet), Fehlerzustand, Nachrichten
+      als Blatt, Konto samt Unterseiten, Anmelden/Antrag/Onboarding mit
+      Schrittleiste, Verwaltungsübersicht, Arbeitsdienst, Kiosk.
+      Ja/Nein-Einstellungen sind Schalter (`.schalter-feld`), Feldnamen Kicker,
+      Felder Pillen.
+- [ ] Web, bewusst abweichend: „Plätze & Serien“ bleibt am Telefon die volle
+      Pflege (der Entwurf zeigt nur den Stand mit Verweis auf den Browser);
+      Veranstaltungskarten sind als Ganzes ein Link, ohne Knopf „Anmelden“ in
+      der Karte; Mitteilungen aufs Handy gibt es im Web nicht; „Jetzt“ und
+      erledigte Schritte sind blau statt rot/grün. Der laufende Einzug
+      (`verwaltung-einzug-desktop`) ist mangels Einzug im lokalen Bestand
+      nicht gegen den Entwurf angesehen.
 - [x] iOS und Android: Schriftdateien (DM Sans, Space Grotesk)
 - [x] iOS und Android: Rollen der Farben, zentrale Knöpfe, Startseite,
       Belegungsplan als einzige Plätze-Übersicht, übrige Screens, Widgets
