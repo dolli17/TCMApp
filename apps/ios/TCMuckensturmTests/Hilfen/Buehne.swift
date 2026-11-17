@@ -243,6 +243,9 @@ class BildschirmTestfall: XCTestCase {
         schrift: DynamicTypeSize? = nil,
         erwartet: [String],
         nicht: [String] = [],
+        // Grosszuegig: auf dem CI-Rechner brauchen etwa die Wiederholversuche
+        // bei Netzfehlern laenger. Bei Erfolg kehrt das Warten sofort zurueck.
+        hoechstens: Double = 20,
         danach: ((Buehne) async -> Void)? = nil,
         file: StaticString = #filePath, line: UInt = #line,
         @ViewBuilder ansicht: () -> some View
@@ -250,7 +253,7 @@ class BildschirmTestfall: XCTestCase {
         var helligkeit: [Schema: Double] = [:]
         for schema in schemata {
             buehne.zeige(ansicht(), dunkel: schema == .dunkel, schrift: schrift)
-            let fehlt = await buehne.warteAuf(erwartet)
+            let fehlt = await buehne.warteAuf(erwartet, hoechstens: hoechstens)
             XCTAssertTrue(fehlt.isEmpty, "\(name)-\(schema.name): es fehlt \(fehlt) in \(buehne.texte())", file: file, line: line)
             await danach?(buehne)
             let alles = buehne.texte().joined(separator: "\n")
