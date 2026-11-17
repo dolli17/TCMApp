@@ -119,7 +119,10 @@ export function MerkmaleKarte(props: Props) {
   }
 
   return (
-    <section className="karte einstellungen" aria-label={props.titel ?? "Merkmale"}>
+    <section
+      className={`karte einstellungen${props.nurSelbstpflege ? " einwilligungs-karten" : ""}`}
+      aria-label={props.titel ?? "Merkmale"}
+    >
       {!props.ohneTitel && <h2 className="dpl">{props.titel ?? "Merkmale"}</h2>}
       {props.text && <p className="unterzeile">{props.text}</p>}
 
@@ -158,7 +161,7 @@ export function MerkmaleKarte(props: Props) {
                   </button>
                 </div>
                 {gesetzt && m.werte[0]?.seit && (
-                  <span className="beschreibung">Erteilt am {datum(m.werte[0].seit)}</span>
+                  <span className="beschreibung erteilt">Erteilt am {datum(m.werte[0].seit)}</span>
                 )}
               </>
             ) : einzelwahl ? (

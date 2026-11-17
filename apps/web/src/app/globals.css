@@ -1670,6 +1670,101 @@ details.frueher .gruppe { margin-top: 8px; }
 .erscheinungsbild p { margin: 0 0 10px; font-size: 15.5px; font-weight: 600; }
 .erscheinungsbild .segtoggle { margin: 0; }
 
+/* Entwurf "Konto" */
+.konto-kopf { margin-bottom: 4px; }
+.konto-kopf .pagetitle { margin-top: 4px; }
+.profilkopf .avatar.gross { width: 76px; height: 76px; border-radius: 38px; font-size: 24px; font-weight: 700; border: 1px solid color-mix(in srgb, var(--blue) 22%, transparent); }
+.profilkopf h1 { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -.3px; margin-top: 12px; }
+.profil-marken span { background: var(--chip); border: 1px solid var(--line); }
+.gruppe.forderungen, .gruppe.einstellungen-liste { box-shadow: none; }
+.forderung .was { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.forderung .was b { font-family: var(--font-display); }
+.forderung .was small { flex-basis: 100%; order: 3; }
+.forderung .betrag, .forderungen .summe .betrag { font-size: 17px; }
+.forderungen .summe { background: transparent; }
+.forderungen .summe span:first-child { font-family: var(--font-display); font-size: 15.5px; color: var(--ink); }
+.arbeitsdienst-karte { box-shadow: none; padding: 20px 22px; }
+.arbeitsdienst-karte .kopfzeile { flex-direction: column; align-items: flex-start; gap: 6px; }
+.arbeitsdienst-karte .kopfzeile b.kicker { font-size: 12px; }
+.arbeitsdienst-karte .kopfzeile span { font-size: 36px; line-height: 1; letter-spacing: -1px; }
+.einstellungen-liste .gruppen-zeile { font-family: var(--font-display); font-weight: 500; font-size: 16px; }
+.gruppen-zeile .wert { flex: 0 1 auto; min-width: 0; text-align: right; font-family: var(--font-text); font-size: 14px; font-weight: 400; color: var(--muted); }
+.gruppen-zeile svg.pfeil { width: 18px; height: 18px; flex: 0 0 auto; }
+.erscheinungsbild { padding: 8px 0 0; }
+.erscheinungsbild p.kicker { margin: 0 2px 8px; font-size: 11px; font-weight: 700; }
+.konto-fuss {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0 4px;
+  margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--line);
+}
+.konto-fuss > a, .konto-fuss > .gruppen-zeile {
+  display: inline-flex; align-items: center; width: auto; min-height: 44px; padding: 0 12px; border-radius: 10px;
+  font-size: 14.5px; font-weight: 500; color: var(--ink-2); text-decoration: none;
+}
+.konto-fuss > .gruppen-zeile.rot { color: var(--ink); font-weight: 700; }
+.konto-fuss > a:hover { text-decoration: underline; }
+.konto-kuendigen { margin: 4px 0 0; text-align: center; }
+.konto-kuendigen .gefahr-link { font-size: 14.5px; text-decoration: none; }
+
+/* Schalter mit Text: Aussage links, Schalter rechts, Erklärung klein darunter */
+.schalter-zeile {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0; padding: 6px 0; cursor: pointer;
+}
+.schalter-zeile .text { display: grid; gap: 3px; margin: 0; min-width: 0; }
+.schalter-zeile .text b { font-family: var(--font-text); font-size: 16px; font-weight: 500; color: var(--ink); line-height: 1.35; }
+.schalter-zeile .text small { font-size: 14px; font-weight: 400; color: var(--ink-2); line-height: 1.4; }
+.formraster > .schalter-zeile { grid-column: 1 / -1; }
+
+/* Unterseiten des Kontos (Entwürfe "Meine Daten", "Tennis"): Felder frei auf
+   der Seite, je zwei nebeneinander wo es passt, unten die eine Hauptaktion. */
+.konto-unterseite .karte.einstellungen { border: 0; box-shadow: none; padding: 0; background: transparent; border-radius: 0; margin-bottom: 20px; }
+.konto-unterseite .formraster { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+.konto-unterseite .formraster > label { grid-column: 1 / -1; }
+.konto-unterseite .formraster > label.halb { grid-column: auto; }
+.konto-unterseite form > .knopf.block { margin-top: 22px; }
+.konto-unterseite form > .hinweis { margin: 16px 0 0; }
+.stand-karte { display: grid; gap: 6px; margin: 0 0 20px; padding: 20px 22px; box-shadow: none; }
+.stand-karte b { font-size: 30px; font-weight: 700; letter-spacing: -.6px; line-height: 1.15; overflow-wrap: anywhere; }
+.mannschaft-box { box-shadow: none; padding: 16px 20px; margin-bottom: 20px; }
+.mannschaft-box .kopf { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; margin: 0 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.mannschaft-box .kopf b { font-size: 16px; font-weight: 600; }
+.mannschaft-box .karte.einstellungen { margin: 0; }
+.mannschaft-box .formraster { gap: 0; }
+/* Rückweg als runder Knopf mit Text wie im Entwurf */
+.unterseite-kopf .zurueck { gap: 6px; font-family: var(--font-display); }
+
+/* Einwilligungen (Entwurf): je Einwilligung eine Karte, Ja/Nein klein rechts oben */
+.karte.einstellungen.einwilligungs-karten { border: 0; box-shadow: none; padding: 0; background: transparent; border-radius: 0; display: grid; gap: 14px; }
+.karte.einstellungen.einwilligungs-karten > .einstellung {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: start;
+  margin: 0; padding: 20px 22px; border: 1px solid var(--line); border-radius: var(--radius-karte); background: var(--surf);
+}
+.einwilligungs-karten > .einstellung > * { grid-column: 1 / -1; }
+.einwilligungs-karten > .einstellung > .titel { grid-column: 1; grid-row: 1; font-family: var(--font-display); font-size: 17px; font-weight: 600; line-height: 1.3; }
+.einwilligungs-karten > .einstellung > .titel { align-self: center; }
+.einwilligungs-karten > .einstellung > .titel + .beschreibung { margin: 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.einwilligungs-karten > .einstellung > .segtoggle:not(.mehrere) { grid-column: 2; grid-row: 1; width: auto; margin: 0; padding: 3px; }
+.einwilligungs-karten > .einstellung > .segtoggle:not(.mehrere) button { min-width: 52px; min-height: 44px; padding: 0 14px; font-size: 14px; }
+.einwilligungs-karten > .einstellung > .segtoggle.mehrere { margin: 8px 0 0; }
+.einwilligungs-karten > .einstellung > .beschreibung.erteilt { margin: 8px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--muted); }
+.einwilligungs-karten > .einstellung > .zeilen-meldung:empty { display: none; }
+
+/* Bank und Mandat (Entwurf): Tabelle mit Kicker links, Wert rechts */
+dl.angaben.mandat { box-shadow: none; }
+dl.angaben.mandat > div { align-items: center; padding: 16px 20px; }
+dl.angaben.mandat dt {
+  font-family: var(--font-display); font-size: var(--font-size-kicker); font-weight: 700;
+  letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted);
+}
+dl.angaben.mandat dd { font-family: var(--font-display); font-weight: 500; font-size: 16px; overflow-wrap: anywhere; }
+dl.angaben.mandat > .kopf { background: var(--surf-2); }
+
+.kuendigen .erklaerung { padding: 18px 20px; margin-bottom: 20px; border: 1px solid var(--line); border-radius: var(--radius-karte); background: var(--surf-2); color: var(--ink-2); }
+.kuendigen .erklaerung p { margin: 0; font-size: 15.5px; line-height: 1.5; }
+.kuendigen .erklaerung p + p { margin-top: 10px; }
+.kuendigen textarea { border-radius: 20px; min-height: 140px; }
+.knopf-stapel { display: grid; gap: 10px; margin-top: 22px; }
+.knopf-stapel p { margin: 0 0 4px; }
+
 dl.angaben { margin: 0 0 12px; }
 dl.angaben > div { display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px; }
 dl.angaben dt { color: var(--muted); font-size: 14px; }
@@ -1684,8 +1779,12 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
   gap: 10px 12px; padding: 14px 16px;
 }
-.mannschaft-zeile .wer { flex: 1 1 220px; min-width: 0; display: grid; gap: 4px; }
-.mannschaft-zeile .wer b { font-size: 15.5px; font-weight: 600; overflow-wrap: anywhere; }
+.mannschaft-zeile .wer { flex: 1 1 0; min-width: 0; display: grid; gap: 3px; }
+.mannschaft-zeile .wer b { font-family: var(--font-display); font-size: 16.5px; font-weight: 500; overflow-wrap: anywhere; }
+.mannschaft-zeile .wer b .dein-marker { margin-left: 8px; vertical-align: 2px; }
+.mannschaft-zeile > .avatar { flex: 0 0 auto; }
+.mannschaft-zeile > .leise-rot { flex: 0 0 auto; }
+.mannschaft-abschnitt > .gruppe { box-shadow: none; }
 .mannschaft-zeile .wer small { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
 .mannschaft-zeile.ausgegraut .wer b { color: var(--ink-2); font-weight: 500; }
 .mannschaft-zeile.einladung { align-items: flex-start; }
@@ -1696,8 +1795,8 @@ dl.angaben dd { margin: 0; font-weight: 600; text-align: right; }
 .mannschaft-frage, .mannschaft-antwort { flex: 1 1 100%; display: grid; gap: 10px; }
 .mannschaft-frage p { margin: 0; font-size: 14.5px; color: var(--ink); }
 .mannschaft-antwort .hinweis, .mannschaft-antwort .sperrgrund { margin: 0; }
-.mannschaft-haken { display: flex; gap: 10px; align-items: flex-start; margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); cursor: pointer; }
-.mannschaft-haken input { width: auto; flex: none; margin: 3px 0 0; accent-color: var(--blue); }
+.mannschaft-haken { display: flex; flex-direction: row-reverse; justify-content: space-between; gap: 14px; align-items: center; margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); cursor: pointer; }
+.mannschaft-haken input { flex: none; margin: 0; }
 .mannschaft-haken small { display: block; margin-top: 2px; font-size: 13px; font-weight: 400; color: var(--ink-2); }
 .mannschaft-austreten { margin-top: 4px; }
 .mannschaft-suche { margin: 0 0 10px; }
@@ -2794,3 +2893,6 @@ dialog.fenster:not(.blatt) > .fenster-rueckfrage { margin: 8px 22px 0; }
 }
 .veranstaltung-aktionen .knopfreihe .schalter { align-items: center; margin: 0 8px 0 0; }
 .nachricht-link { display: inline-block; margin-top: 4px; font-size: 13.5px; font-weight: 600; }
+
+/* Suchfeld auf der Mannschaftsseite als Pille wie die übrigen Felder */
+.mannschaft-suche .suchfeld { border-radius: var(--radius-feld); background: var(--surf-2); min-height: 52px; }

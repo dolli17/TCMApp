@@ -39,6 +39,7 @@ export default async function NotfallkontaktSeite() {
         <Stammdatenkarte
           titel="Notfallkontakt"
           ohneTitel
+          hauptaktion
           felder={felder}
           aktion={notfallkontaktSpeichern}
         />
