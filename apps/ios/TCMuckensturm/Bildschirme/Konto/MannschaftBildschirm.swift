@@ -95,7 +95,7 @@ struct MannschaftBildschirm: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(MannschaftLogik.titel).kicker()
             Text(aktuell?.name ?? "Meine Mannschaft")
-                .font(Schrift.text(.extrafett, Tokens.Schrift.seitentitel, relativeTo: .largeTitle))
+                .font(Schrift.display(.fett, Tokens.Schrift.seitentitel, relativeTo: .largeTitle))
                 .tracking(Tokens.Schrift.laufweiteTitel)
                 .foregroundStyle(Farbe.ink)
                 .lineLimit(2)
@@ -153,18 +153,11 @@ struct MannschaftBildschirm: View {
             } else {
                 HStack(spacing: Tokens.Abstand.s) {
                     LeiserKnopf(text: "Ablehnen", gesperrt: laeuft) { beantworten(e, annehmen: false) }
-                    Button {
+                    // Hellblau: bei mehreren Einladungen gaebe es sonst mehrere Hauptaktionen.
+                    Knopf("Annehmen", breit: true, gesperrt: laeuft) {
                         telefonSichtbar = false
                         annehmenBei = e.id
-                    } label: {
-                        Text("Annehmen")
-                            .font(Schrift.text(.fett, 16))
-                            .foregroundStyle(Farbe.onGold)
-                            .frame(maxWidth: .infinity, minHeight: 52)
-                            .background(Farbe.gold, in: RoundedRectangle(cornerRadius: Tokens.Radius.knopf))
                     }
-                    .buttonStyle(.plain)
-                    .disabled(laeuft)
                 }
             }
         }
@@ -429,21 +422,7 @@ private struct KleinerKnopf: View {
     let aktion: () -> Void
 
     var body: some View {
-        Button(action: aktion) {
-            Text(text)
-                .font(Schrift.text(.fett, 14))
-                .foregroundStyle(rot ? Farbe.redInk : Farbe.blueInk)
-                .padding(.horizontal, 12)
-                .frame(minHeight: 44)
-                .overlay(
-                    Capsule().strokeBorder(rot ? Farbe.red.opacity(0.5) : Farbe.line2, lineWidth: 1.5)
-                        .padding(.vertical, 4)
-                )
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(gesperrt)
-        .opacity(gesperrt ? 0.5 : 1)
+        Knopf(text, stufe: rot ? .gefahrLeise : .zweit, groesse: .klein, gesperrt: gesperrt, aktion: aktion)
     }
 }
 
@@ -457,7 +436,8 @@ private struct Hinweiszeile: View {
             .foregroundStyle(Farbe.ink)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
-            .background(Farbe.goldSoft, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
+            .background(Farbe.blueSoft, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
     }
 }

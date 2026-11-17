@@ -285,21 +285,22 @@ private struct Profilkopf: View {
         let nachname = p?.lastName ?? ""
         VStack(spacing: 0) {
             Text(KontoLogik.initialen(vorname: vorname, nachname: nachname))
-                .font(Schrift.text(.extrafett, 30))
+                .font(Schrift.display(.fett, 30))
                 .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                .foregroundStyle(Farbe.onBrand)
+                .foregroundStyle(Farbe.blueInk)
                 .frame(width: 88, height: 88)
-                .background(Farbe.brand, in: Circle())
+                .background(Farbe.blueSoft, in: Circle())
+                .overlay(Circle().strokeBorder(Farbe.blue.opacity(0.22), lineWidth: 1))
                 .accessibilityHidden(true)
             Text("\(vorname) \(nachname)")
-                .font(Schrift.text(.extrafett, 28, relativeTo: .title))
+                .font(Schrift.display(.fett, 28, relativeTo: .title))
                 .foregroundStyle(Farbe.ink)
                 .multilineTextAlignment(.center)
                 .padding(.top, 14)
                 .accessibilityAddTraits(.isHeader)
             let marken = KontoLogik.marken(p)
             if !marken.isEmpty {
-                HStack(spacing: 6) {
+                UmbruchStapel(abstand: 6, zeilenabstand: 6, mittig: true) {
                     ForEach(marken, id: \.self) { KontoMarke(text: $0) }
                 }
                 .padding(.top, 10)
@@ -427,7 +428,7 @@ private struct ArbeitsdienstKarte: View {
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             Capsule().fill(Farbe.surf2)
-                            Capsule().fill(Farbe.green).frame(width: geo.size.width * KontoLogik.dienstAnteil(d))
+                            Capsule().fill(Farbe.blue).frame(width: geo.size.width * KontoLogik.dienstAnteil(d))
                         }
                     }
                     .frame(height: 8)

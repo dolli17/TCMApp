@@ -1,13 +1,12 @@
 /**
- * Der Rahmen der Anmeldeseiten (Entwurf AppLogin, docs/design/clubhaus)
+ * Der Rahmen der Anmeldeseiten (docs/design/stitch, "Anmelden")
  *
- * Wie apps/mobile/src/components/AnmeldeSeite.tsx: oben eine Flaeche in
- * brand mit einem Tennisplatz in Perspektive und dem gelben Ball, das weisse
- * Logo, der Titel unten links; darunter das Formular auf dunklem Grund. Immer
- * dunkel, egal welches Erscheinungsbild gewaehlt ist.
+ * Weisser Grund wie der Rest der App: oben der Kicker "TC Muckensturm" und
+ * der Titel, darunter das Formular. Hell oder dunkel folgt dem
+ * Erscheinungsbild; es gibt keine blaue Buehne mehr.
  *
- * Dazu die Bausteine aller Anmeldeseiten: Eingabefeld (54 hoch), gelber
- * Hauptknopf, leiser Verweis, Hinweis.
+ * Dazu die Bausteine aller Anmeldeseiten: Eingabefeld (56 hoch), leiser
+ * Verweis, Hinweis. Die Knoepfe kommen aus Knoepfe.swift.
  */
 
 import SwiftUI
@@ -19,99 +18,40 @@ struct AnmeldeSeite<Inhalt: View>: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 0) {
-                Buehne(titel: titel, unterzeile: unterzeile)
+            VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: Tokens.Abstand.s) {
+                    Text("TC Muckensturm").kicker()
+                    Text(titel)
+                        .font(Schrift.display(.fett, 32, relativeTo: .largeTitle))
+                        .tracking(Tokens.Schrift.laufweiteTitel)
+                        .foregroundStyle(Farbe.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
+                    if let unterzeile {
+                        Text(unterzeile)
+                            .font(Schrift.text(.normal, 16))
+                            .lineSpacing(4)
+                            .foregroundStyle(Farbe.ink2)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 2)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 56)
+                .padding(.bottom, Tokens.Abstand.abschnitt)
                 VStack(spacing: Tokens.Abstand.l) { inhalt }
-                    .frame(maxWidth: 420)
-                    .padding(.horizontal, 24)
-                    .padding(.top, Tokens.Abstand.s)
-                    .padding(.bottom, 36)
             }
+            .frame(maxWidth: 420)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 36)
+            .frame(maxWidth: .infinity)
         }
         .scrollDismissesKeyboard(.interactively)
         .background(Farbe.bg)
-        .ignoresSafeArea(edges: .top)
-        .environment(\.colorScheme, .dark)
-        .preferredColorScheme(.dark)
     }
 }
 
-/// Die obere Flaeche: Platz, Ball, Logo, Titel.
-private struct Buehne: View {
-    let titel: String
-    let unterzeile: String?
-
-    var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            Farbe.brand
-            Platz()
-                .stroke(Farbe.onBrand.opacity(0.22), lineWidth: 2.5)
-            Platz(nurHorizont: true)
-                .stroke(Farbe.onBrand.opacity(0.4), style: StrokeStyle(lineWidth: 2.5, dash: [3, 5]))
-            Circle()
-                .fill(Farbe.gold)
-                .frame(width: 38, height: 38)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .padding(.top, 96)
-                .padding(.trailing, 54)
-                .accessibilityHidden(true)
-            LinearGradient(colors: [Farbe.bg.opacity(0), Farbe.bg], startPoint: .top, endPoint: .bottom)
-                .frame(height: 160)
-            Image("LogoWeiss")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 126, height: 36, alignment: .leading)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.top, 60)
-                .padding(.leading, 24)
-                .accessibilityLabel("TC Muckensturm")
-            VStack(alignment: .leading, spacing: Tokens.Abstand.s) {
-                Text(titel)
-                    .font(Schrift.text(.extrafett, 36, relativeTo: .largeTitle))
-                    .tracking(-0.7)
-                    .foregroundStyle(Farbe.onBrand)
-                    .accessibilityAddTraits(.isHeader)
-                if let unterzeile {
-                    Text(unterzeile)
-                        .font(Schrift.text(.normal, 15))
-                        .foregroundStyle(Farbe.ink2)
-                }
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 22)
-        }
-        .frame(height: 360)
-        .clipped()
-    }
-}
-
-/// Ein Tennisplatz in Perspektive, dezent - dieselben Linien wie das SVG der Expo-App (390 x 360).
-private struct Platz: Shape {
-    /// Nur die gestrichelte Linie am Horizont (eigene Strichart).
-    var nurHorizont = false
-
-    func path(in rect: CGRect) -> Path {
-        // preserveAspectRatio="xMidYMax slice": fuellen, unten und mittig ausrichten.
-        let skala = max(rect.width / 390, rect.height / 360)
-        let dx = (rect.width - 390 * skala) / 2
-        let dy = rect.height - 360 * skala
-        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: dx + x * skala, y: dy + y * skala) }
-
-        var pfad = Path()
-        if nurHorizont {
-            pfad.move(to: p(0, 110)); pfad.addLine(to: p(390, 110))
-            return pfad
-        }
-        pfad.move(to: p(40, 360)); pfad.addLine(to: p(130, 110)); pfad.addLine(to: p(260, 110)); pfad.addLine(to: p(350, 360))
-        pfad.move(to: p(78, 255)); pfad.addLine(to: p(312, 255))
-        pfad.move(to: p(100, 195)); pfad.addLine(to: p(290, 195))
-        pfad.move(to: p(60, 305)); pfad.addLine(to: p(330, 305))
-        pfad.move(to: p(195, 195)); pfad.addLine(to: p(195, 305))
-        return pfad
-    }
-}
-
-/// Eingabefeld der Anmeldeseiten: Beschriftung darueber, 54 hoch, Radius 16.
+/// Eingabefeld der Anmeldeseiten: Beschriftung als Kicker darueber, 56 hoch, grauer Grund mit Linie.
 /// Mit `passwort` verdeckt es die Eingabe und traegt rechts den Schalter "Anzeigen".
 struct AnmeldeFeld: View {
     let beschriftung: String
@@ -129,8 +69,7 @@ struct AnmeldeFeld: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Tokens.Abstand.s) {
             Text(beschriftung)
-                .font(Schrift.text(.halbfett, 13, relativeTo: .footnote))
-                .foregroundStyle(Farbe.ink2)
+                .kicker()
                 .accessibilityHidden(true)
             HStack(spacing: 0) {
                 Group {
@@ -149,19 +88,19 @@ struct AnmeldeFeld: View {
                 .font(Schrift.text(.normal, 16))
                 .foregroundStyle(Farbe.ink)
                 .accessibilityLabel(bedienName ?? beschriftung)
-                .padding(.leading, 16)
-                .padding(.trailing, passwort ? 0 : 16)
-                .frame(minHeight: 54)
+                .padding(.leading, 20)
+                .padding(.trailing, passwort ? 0 : 20)
+                .frame(minHeight: 56)
 
                 if passwort {
                     PasswortSchalter(sichtbar: $sichtbar)
-                        .padding(.trailing, 6)
+                        .padding(.trailing, 10)
                 }
             }
-            .background(Farbe.surf, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
+            .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
             .overlay(
                 RoundedRectangle(cornerRadius: Tokens.Radius.feld)
-                    .strokeBorder(Farbe.rahmen, lineWidth: 1.5)
+                    .strokeBorder(Farbe.line2, lineWidth: 1)
             )
         }
     }
@@ -176,8 +115,8 @@ struct PasswortSchalter: View {
             sichtbar.toggle()
         } label: {
             Text(sichtbar ? "Verbergen" : "Anzeigen")
-                .font(Schrift.text(.fett, 14))
-                .foregroundStyle(Farbe.ink2)
+                .font(Schrift.display(.halbfett, 14))
+                .foregroundStyle(Farbe.blueInk)
                 .padding(.horizontal, 10)
                 .frame(minWidth: 44, minHeight: 44)
         }
@@ -187,7 +126,7 @@ struct PasswortSchalter: View {
     }
 }
 
-/// Leiser Verweis in ink2, etwa "Passwort vergessen?"
+/// Leiser Verweis in blueInk, etwa "Passwort vergessen?"
 struct LeiserVerweis: View {
     let text: String
     var rechts = false
@@ -196,15 +135,15 @@ struct LeiserVerweis: View {
     var body: some View {
         Button(action: aktion) {
             Text(text)
-                .font(Schrift.text(.halbfett, 14))
-                .foregroundStyle(Farbe.ink2)
+                .font(Schrift.display(.halbfett, 14.5))
+                .foregroundStyle(Farbe.blueInk)
                 .frame(minHeight: 44)
         }
         .frame(maxWidth: .infinity, alignment: rechts ? .trailing : .center)
     }
 }
 
-/// Hinweis auf dunklem Grund: Fehler in redInk auf roter Toenung, Erfolg in greenInk.
+/// Hinweis: Fehler in redInk auf roter Toenung, Erfolg in greenInk.
 struct AnmeldeHinweis: View {
     let text: String
     var ok = false
@@ -214,15 +153,16 @@ struct AnmeldeHinweis: View {
             .font(Schrift.text(.normal, 16))
             .foregroundStyle(ok ? Farbe.greenInk : Farbe.redInk)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
             .background(
-                (ok ? Farbe.green : Farbe.red).opacity(0.16),
+                (ok ? Farbe.green : Farbe.red).opacity(0.12),
                 in: RoundedRectangle(cornerRadius: Tokens.Radius.feld)
             )
     }
 }
 
-/// "Noch kein Mitglied? Antrag stellen" - Text in muted, der Verweis in gold.
+/// "Noch kein Mitglied? Antrag stellen" - Text in muted, der Verweis in blueInk.
 struct AnmeldeFusszeile: View {
     let text: String
     let verweis: String
@@ -233,8 +173,8 @@ struct AnmeldeFusszeile: View {
             Text(text).foregroundStyle(Farbe.muted)
             Link(destination: ziel) {
                 Text(verweis)
-                    .font(Schrift.text(.fett, 14))
-                    .foregroundStyle(Farbe.gold)
+                    .font(Schrift.display(.halbfett, 14.5))
+                    .foregroundStyle(Farbe.blueInk)
                     .frame(minHeight: 44)
             }
         }

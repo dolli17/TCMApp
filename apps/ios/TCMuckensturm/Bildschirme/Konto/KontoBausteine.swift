@@ -139,9 +139,10 @@ struct KontoMarke: View {
             .font(Schrift.text(.halbfett, Tokens.Schrift.klein))
             .foregroundStyle(Farbe.ink2)
             .padding(.horizontal, 10)
+            .lineLimit(1)
             .padding(.vertical, 3)
             .frame(minHeight: 26)
-            .background(Farbe.surf2, in: Capsule())
+            .background(Farbe.chip, in: Capsule())
     }
 }
 
@@ -151,7 +152,8 @@ struct StatusmarkeAnsicht: View {
 
     var body: some View {
         let (grund, schrift): (Color, Color) = switch marke.ton {
-        case .gold: (Farbe.goldSoft, Farbe.goldInk)
+        // Der Kern nennt den Ton "gold"; gemeint ist ein Stand, kein "deins": hellblau.
+        case .gold: (Farbe.blueSoft, Farbe.blueInk)
         case .rot: (Farbe.red.opacity(0.14), Farbe.redInk)
         case .grau: (Farbe.surf2, Farbe.ink2)
         }
@@ -215,8 +217,7 @@ struct KontoFeld: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             Text(label)
-                .font(Schrift.text(.halbfett, Tokens.Schrift.klein, relativeTo: .footnote))
-                .foregroundStyle(fehler != nil ? Farbe.red : Farbe.ink2)
+                .kicker(farbe: fehler != nil ? Farbe.redInk : Farbe.muted)
                 .accessibilityHidden(true)
             Group {
                 if mehrzeilig {
@@ -231,12 +232,13 @@ struct KontoFeld: View {
             .textInputAutocapitalization(grossschreibung)
             .font(Schrift.text(.normal, Tokens.Schrift.normal))
             .foregroundStyle(Farbe.ink)
-            .padding(13)
-            .frame(minHeight: mehrzeilig ? 96 : 50, alignment: .topLeading)
-            .background(Farbe.surf, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
+            .padding(.horizontal, 20)
+            .padding(.vertical, mehrzeilig ? 14 : 0)
+            .frame(minHeight: mehrzeilig ? 96 : 52, alignment: mehrzeilig ? .topLeading : .leading)
+            .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
             .overlay(
                 RoundedRectangle(cornerRadius: Tokens.Radius.feld)
-                    .strokeBorder(fehler != nil ? Farbe.red : Farbe.rahmen, lineWidth: 1.5)
+                    .strokeBorder(fehler != nil ? Farbe.red : Farbe.line2, lineWidth: fehler != nil ? 1.5 : 1)
             )
             .accessibilityLabel(label)
             .accessibilityHint(fehler ?? hinweis ?? "")

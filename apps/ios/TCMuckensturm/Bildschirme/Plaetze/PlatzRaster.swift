@@ -338,6 +338,8 @@ struct Legende: View {
 struct UmbruchStapel: Layout {
     var abstand: CGFloat = 8
     var zeilenabstand: CGFloat = 8
+    /// Jede Zeile mittig statt linksbuendig (Marken unter dem Namen im Konto)
+    var mittig = false
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let breite = proposal.width ?? .infinity
@@ -357,17 +359,27 @@ struct UmbruchStapel: Layout {
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x = bounds.minX, y = bounds.minY, zeile: CGFloat = 0
+        // Erst die Zeilen bilden, dann setzen - so laesst sich jede Zeile mittig ruecken.
+        var zeilen: [[(LayoutSubview, CGSize)]] = [[]]
+        var x: CGFloat = 0
         for s in subviews {
             let g = s.sizeThatFits(.unspecified)
-            if x > bounds.minX && x + g.width > bounds.maxX {
-                y += zeile + zeilenabstand
-                x = bounds.minX
-                zeile = 0
+            if x > 0 && x + g.width > bounds.width {
+                zeilen.append([])
+                x = 0
             }
-            s.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(g))
+            zeilen[zeilen.count - 1].append((s, g))
             x += g.width + abstand
-            zeile = max(zeile, g.height)
+        }
+        var y = bounds.minY
+        for zeile in zeilen {
+            let breite = zeile.reduce(0) { $0 + $1.1.width } + abstand * CGFloat(max(0, zeile.count - 1))
+            var links = bounds.minX + (mittig ? max(0, (bounds.width - breite) / 2) : 0)
+            for (s, g) in zeile {
+                s.place(at: CGPoint(x: links, y: y), proposal: ProposedViewSize(g))
+                links += g.width + abstand
+            }
+            y += (zeile.map(\.1.height).max() ?? 0) + zeilenabstand
         }
     }
 }

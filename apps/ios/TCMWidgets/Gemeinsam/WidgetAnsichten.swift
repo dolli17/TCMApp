@@ -156,7 +156,7 @@ struct SpieleWidgetAnsicht: View {
     private func klein(_ z: SpielZeile?, geladen: Bool) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top) {
-                Text(z?.kicker ?? "Meine Spiele").widgetKicker(Farbe.onBrand.opacity(0.85), zeilen: 2)
+                Text(z?.kicker ?? "Meine Spiele").widgetKicker(Farbe.muted, zeilen: 2)
                 Spacer(minLength: 4)
                 Circle().fill(Farbe.gold).frame(width: 14, height: 14).widgetAccentable()
             }
@@ -164,19 +164,19 @@ struct SpieleWidgetAnsicht: View {
                 Text(z.beginn)
                     .font(Schrift.display(.fett, 40, relativeTo: .largeTitle))
                     .monospacedDigit()
-                    .foregroundStyle(Farbe.onBrand)
+                    .foregroundStyle(Farbe.ink)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                     .widgetAccentable()
                     .padding(.top, 4)
                 Text([z.platz, z.art].filter { !$0.isEmpty }.joined(separator: " · "))
-                    .font(Schrift.text(.fett, 15))
-                    .foregroundStyle(Farbe.onBrand)
+                    .font(Schrift.display(.halbfett, 15))
+                    .foregroundStyle(Farbe.ink)
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 Text(z.mit)
                     .font(Schrift.text(.normal, 12))
-                    .foregroundStyle(Farbe.onBrand.opacity(0.85))
+                    .foregroundStyle(Farbe.ink2)
                     .lineLimit(2)
             } else {
                 Spacer(minLength: 4)
@@ -184,13 +184,13 @@ struct SpieleWidgetAnsicht: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .widgetHintergrund(Farbe.brand)
+        .widgetHintergrund(Farbe.surf)
     }
 
     private func mittel(_ zeilen: [SpielZeile], geladen: Bool) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("Meine nächsten Spiele").widgetKicker(Farbe.onBrand.opacity(0.85))
+                Text("Meine nächsten Spiele").widgetKicker(Farbe.muted)
                 Spacer(minLength: 4)
                 Circle().fill(Farbe.gold).frame(width: 14, height: 14).widgetAccentable()
             }
@@ -200,7 +200,7 @@ struct SpieleWidgetAnsicht: View {
             } else {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(zeilen.enumerated()), id: \.element.id) { i, z in
-                        if i > 0 { Rectangle().fill(Farbe.onBrand.opacity(0.18)).frame(height: 1) }
+                        if i > 0 { Rectangle().fill(Farbe.line).frame(height: 1) }
                         zeile(z).padding(.vertical, 5)
                     }
                 }
@@ -209,7 +209,7 @@ struct SpieleWidgetAnsicht: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .widgetHintergrund(Farbe.brand)
+        .widgetHintergrund(Farbe.surf)
     }
 
     private func zeile(_ z: SpielZeile) -> some View {
@@ -217,17 +217,17 @@ struct SpieleWidgetAnsicht: View {
             Text(z.beginn)
                 .font(Schrift.display(.fett, 24))
                 .monospacedDigit()
-                .foregroundStyle(Farbe.onBrand)
+                .foregroundStyle(Farbe.ink)
                 .widgetAccentable()
                 .frame(width: 62, alignment: .leading)
             VStack(alignment: .leading, spacing: 1) {
                 Text(z.kicker)
                     .font(Schrift.display(.fett, 12))
-                    .foregroundStyle(Farbe.gold)
+                    .foregroundStyle(Farbe.muted)
                     .lineLimit(1)
                 Text([z.platz, z.art, z.mit].filter { !$0.isEmpty }.joined(separator: " · "))
                     .font(Schrift.text(.mittel, 13))
-                    .foregroundStyle(Farbe.onBrand.opacity(0.92))
+                    .foregroundStyle(Farbe.ink2)
                     .lineLimit(1)
             }
         }
@@ -235,11 +235,11 @@ struct SpieleWidgetAnsicht: View {
 
     @ViewBuilder private func leer(geladen: Bool) -> some View {
         Text(geladen ? "Noch nichts geplant" : "Termine konnten nicht geladen werden.")
-            .font(Schrift.text(.fett, 17))
-            .foregroundStyle(Farbe.onBrand)
+            .font(Schrift.display(.halbfett, 17))
+            .foregroundStyle(Farbe.ink)
         Text("Platz buchen ›")
-            .font(Schrift.text(.halbfett, 13))
-            .foregroundStyle(Farbe.gold)
+            .font(Schrift.display(.halbfett, 13))
+            .foregroundStyle(Farbe.blueInk)
             .widgetAccentable()
             .padding(.top, 2)
     }
@@ -273,7 +273,7 @@ struct PlaetzeWidgetAnsicht: View {
                 if let lage {
                     Text(lage.ueberschrift)
                         .font(Schrift.text(.fett, 13))
-                        .foregroundStyle(lage.freiJetzt > 0 ? Farbe.greenInk : Farbe.ink2)
+                        .foregroundStyle(lage.freiJetzt > 0 ? Farbe.blueInk : Farbe.ink2)
                         .widgetAccentable()
                 }
             }
@@ -304,7 +304,7 @@ struct PlaetzeWidgetAnsicht: View {
                 WidgetZeitleiste(belegt: z.belegt, frei: z.frei, markierung: marke)
                 Text(z.status)
                     .font(Schrift.text(.halbfett, 12))
-                    .foregroundStyle(z.freiJetzt ? Farbe.greenInk : Farbe.ink2)
+                    .foregroundStyle(z.freiJetzt ? Farbe.blueInk : Farbe.ink2)
                     .lineLimit(1)
                     .frame(width: 96, alignment: .trailing)
                     .widgetAccentable(z.freiJetzt)
@@ -322,7 +322,7 @@ struct PlaetzeWidgetAnsicht: View {
     }
 }
 
-/// Wie MiniZeitleiste auf Home, dazu die freien Luecken gruen unterlegt.
+/// Der Tag eines Platzes als Leiste: freie Luecken hellblau, Belegtes grau, das eigene Spiel gelb.
 struct WidgetZeitleiste: View {
     let belegt: [TimelineSegment]
     let frei: [LeistenStueck]
@@ -335,7 +335,7 @@ struct WidgetZeitleiste: View {
             ZStack(alignment: .leading) {
                 Capsule().fill(Farbe.surf2)
                 ForEach(Array(frei.enumerated()), id: \.offset) { _, f in
-                    Capsule().fill(Farbe.green.opacity(0.55))
+                    Capsule().fill(Farbe.blue.opacity(0.3))
                         .frame(width: max(0, w * f.width / 100), height: hoehe)
                         .offset(x: w * f.left / 100)
                         .widgetAccentable()
@@ -362,10 +362,11 @@ struct WidgetZeitleiste: View {
 
     private func farbe(_ art: TimelineKind) -> Color {
         switch art {
-        case .belegt: Farbe.blue
+        case .belegt: Farbe.rahmen
+        // Gelb heisst "deins".
         case .eigen: Farbe.gold
-        case .sucht: Farbe.goldLine.opacity(0.6)
-        case .gesperrt, .serie: Farbe.rahmen.opacity(0.55)
+        case .sucht: Farbe.blueInk.opacity(0.55)
+        case .gesperrt, .serie: Farbe.rahmen.opacity(0.5)
         }
     }
 }
@@ -392,12 +393,13 @@ struct VeranstaltungWidgetAnsicht: View {
                 let kachel = Veranstaltungen.eventDatumKachel(e.startsAt)
                 HStack(alignment: .top, spacing: 10) {
                     VStack(spacing: -2) {
-                        Text(kachel.tag).font(Schrift.display(.extrafett, 24)).monospacedDigit()
+                        Text(kachel.tag).font(Schrift.display(.fett, 24)).monospacedDigit()
                         Text(kachel.monat).font(Schrift.display(.fett, 12)).textCase(.uppercase)
                     }
-                    .foregroundStyle(Farbe.onGold)
+                    .foregroundStyle(Farbe.ink)
                     .frame(width: 46, height: 50)
-                    .background(Farbe.gold, in: RoundedRectangle(cornerRadius: Tokens.Radius.klein))
+                    .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 16))
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Farbe.line2, lineWidth: 1))
                     .widgetAccentable()
                     if familie != .systemSmall {
                         titel(e)
@@ -409,14 +411,14 @@ struct VeranstaltungWidgetAnsicht: View {
                 }
                 Spacer(minLength: 0)
                 if let marke = e.marke {
-                    // Wie eventMeineMarke: angemeldet gruen, Warteliste und "Anmelden" gelb
+                    // Gelb heisst "deins": nur die eigene Anmeldung. Warteliste und "Anmelden" hellblau.
                     let dabei = marke.hasPrefix("Angemeldet")
                     Text(marke)
-                        .font(Schrift.text(.fett, 12))
-                        .foregroundStyle(dabei ? Farbe.greenInk : Farbe.goldInk)
+                        .font(Schrift.display(.halbfett, 12))
+                        .foregroundStyle(dabei ? Farbe.onGold : Farbe.blueInk)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .background(dabei ? Farbe.green.opacity(0.15) : Farbe.goldSoft, in: Capsule())
+                        .background(dabei ? Farbe.gold : Farbe.blueSoft, in: Capsule())
                         .widgetAccentable()
                 }
             } else {

@@ -424,20 +424,11 @@ private struct Einwilligungen: View {
                     text: Binding(get: { texte[m.code] ?? m.werte.first?.text ?? "" }, set: { texte[m.code] = $0 }),
                     tastatur: m.art == "number" ? .decimalPad : .default
                 )
-                Button {
+                // Zweitknopf: die Hauptaktion des Blatts bleibt die eine blaue.
+                Knopf("Speichern", gesperrt: laeuft) {
                     let text = texte[m.code] ?? m.werte.first?.text ?? ""
                     ausfuehren { await daten.setzeMerkmal(code: m.code, text: text) }
-                } label: {
-                    Text("Speichern")
-                        .font(Schrift.text(.fett, 15))
-                        .foregroundStyle(Farbe.onBrand)
-                        .padding(.horizontal, 16)
-                        .frame(minHeight: 50)
-                        .background(Farbe.blue, in: RoundedRectangle(cornerRadius: Tokens.Radius.knopf))
                 }
-                .buttonStyle(.plain)
-                .disabled(laeuft)
-                .opacity(laeuft ? 0.5 : 1)
             }
         }
     }
@@ -650,7 +641,11 @@ private struct KuendigungFormular: View {
                         .foregroundStyle(Farbe.ink)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, Tokens.Abstand.s)
-                    LeiserKnopf(text: laeuft ? "Wird gesendet…" : Kontoloeschung.bestaetigen, rot: true, gesperrt: laeuft, aktion: senden)
+                    // Rot gefuellt nur als Bestaetigung, darunter der neutrale Weg zurueck.
+                    Knopf(
+                        laeuft ? "Wird gesendet…" : Kontoloeschung.bestaetigen, stufe: .gefahr, breit: true,
+                        gesperrt: laeuft, aktion: senden
+                    )
                     LeiserKnopf(text: Kontoloeschung.abbrechen, gesperrt: laeuft) { rueckfrage = false }
                 } else {
                     LeiserKnopf(text: Kontoloeschung.absenden, rot: true) {

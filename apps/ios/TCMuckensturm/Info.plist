@@ -67,7 +67,7 @@
 	<dict>
 		<!-- Derselbe Grund wie der Splash der Expo-App (app.json) -->
 		<key>UIColorName</key>
-		<string>Markenblau</string>
+		<string>Startgrund</string>
 	</dict>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>

@@ -197,7 +197,7 @@ struct OnboardingRahmen<Inhalt: View>: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(kicker).kicker()
                     Text(titel)
-                        .font(Schrift.text(.extrafett, 30, relativeTo: .largeTitle))
+                        .font(Schrift.display(.fett, 30, relativeTo: .largeTitle))
                         .tracking(Tokens.Schrift.laufweiteTitel)
                         .foregroundStyle(Farbe.ink)
                         .fixedSize(horizontal: false, vertical: true)
@@ -206,7 +206,7 @@ struct OnboardingRahmen<Inhalt: View>: View {
                         HStack(spacing: 4) {
                             ForEach(Array(fortschritt.enumerated()), id: \.offset) { _, f in
                                 Capsule()
-                                    .fill(f == .jetzt ? Farbe.blue : f == .erledigt ? Farbe.green : Farbe.surf3)
+                                    .fill(f == .jetzt ? Farbe.blue : f == .erledigt ? Farbe.blueInk.opacity(0.35) : Farbe.surf3)
                                     .frame(height: 5)
                             }
                         }
@@ -322,7 +322,7 @@ struct OnboardingSchalter: View {
                 }
             }
         }
-        .tint(Farbe.green)
+        .tint(Farbe.blue)
         .disabled(gesperrt)
         .padding(.horizontal, 16)
         .padding(.vertical, 12)

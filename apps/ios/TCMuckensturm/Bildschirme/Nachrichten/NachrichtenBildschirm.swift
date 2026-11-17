@@ -24,7 +24,7 @@ struct NachrichtenBildschirm: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
                 Text("Neuigkeiten")
-                    .font(Schrift.text(.extrafett, Tokens.Schrift.seitentitel, relativeTo: .largeTitle))
+                    .font(Schrift.display(.fett, Tokens.Schrift.seitentitel, relativeTo: .largeTitle))
                     .tracking(Tokens.Schrift.laufweiteTitel)
                     .foregroundStyle(Farbe.ink)
                     .accessibilityAddTraits(.isHeader)

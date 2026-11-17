@@ -96,9 +96,9 @@ struct StartAnsicht: View {
             case .laden:
                 // Derselbe Grund wie der Startbildschirm, damit nichts aufblitzt.
                 ProgressView()
-                    .tint(Farbe.gold)
+                    .tint(Farbe.muted)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color("Markenblau"))
+                    .background(Color("Startgrund"))
                     .ignoresSafeArea()
             case .anmelden:
                 AnmeldenBildschirm()
@@ -119,7 +119,7 @@ private struct KonfigurationFehlt: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Konfiguration fehlt")
-                .font(Schrift.text(.extrafett, 28, relativeTo: .title))
+                .font(Schrift.display(.fett, 28, relativeTo: .title))
             Text(beschreibung)
                 .font(Schrift.text(.normal, 16))
             Text("Für „Lokal“: apps/ios/scripts/lokal-konfigurieren.sh ausführen und neu bauen (siehe apps/ios/README.md).")

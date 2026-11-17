@@ -2,8 +2,8 @@ import XCTest
 
 /**
  * Geht den Tab Plaetze gegen den lokalen Stack durch und legt Bildschirmfotos
- * hell und dunkel ab (README, Abschnitt Plaetze): Freie Zeiten, Raster,
- * Buchungsblatt, offenes Spiel und eigene Buchung. Gebucht wird dabei nichts.
+ * hell und dunkel ab (README, Abschnitt Plaetze): Belegungsplan, offenes
+ * Spiel, eigene Buchung, Auswahl und Buchungsblatt. Gebucht wird dabei nichts.
  *
  * Erwartet die Testbuchungen aus dem README (Platz 3 sucht morgen um 17:00
  * Mitspieler, eigene Buchung morgen 18:00 auf Platz 1). Ziel der Bilder:
@@ -16,8 +16,6 @@ final class PlaetzeUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        // Ansicht nicht aus dem letzten Lauf uebernehmen: wie beim ersten Start mit Freie Zeiten.
-        app.launchArguments += ["-tcm-plaetze-ansicht", "freie-zeiten"]
     }
 
     /// Hell oder dunkel stellt der Aufruf ein (`xcrun simctl ui <geraet> appearance`), TCM_DARSTELLUNG benennt die Bilder.
@@ -27,46 +25,23 @@ final class PlaetzeUITests: XCTestCase {
         try anmelden()
 
         app.tabBars.buttons["Plätze"].tap()
-        let folgetag = app.buttons["Folgetag"]
-        XCTAssertTrue(folgetag.waitForExistence(timeout: 20), "Plätze erscheint nicht")
+        // Die Tagesleiste: Pillen mit "Montag, 16. November"; die zweite ist morgen.
+        let tage = app.buttons.matching(NSPredicate(format: "label MATCHES %@", "^[A-Za-z]+, [0-9]{2}\\. .+$"))
+        XCTAssertTrue(tage.element(boundBy: 1).waitForExistence(timeout: 20), "Plätze erscheint nicht")
+        tage.element(boundBy: 1).tap()
 
-        // Freie Zeiten von morgen, eine Zeile aufgeklappt
-        folgetag.tap()
-        // Erst wenn der Folgetag steht - sonst greift die Suche noch die Zeile von heute.
-        let morgen = app.buttons.matching(NSPredicate(format: "label ENDSWITH 'Tag wählen'")).firstMatch
-        XCTAssertTrue(morgen.waitForExistence(timeout: 10))
-        let tageszeile = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Morgen'")).firstMatch
-        XCTAssertTrue(tageszeile.waitForExistence(timeout: 10), "Folgetag erscheint nicht")
-        Thread.sleep(forTimeInterval: 1.5)
-        let zeile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH '17:00 Uhr'")).firstMatch
-        XCTAssertTrue(zeile.waitForExistence(timeout: 20), "Zeile 17:00 fehlt")
-        foto("plaetze-freie-zeiten-\(suffix)")
-        zeile.tap()
-        let mitspielen = app.buttons.matching(NSPredicate(format: "label CONTAINS 'mitspielen'")).firstMatch
-        XCTAssertTrue(mitspielen.waitForExistence(timeout: 5))
-        foto("plaetze-freie-zeiten-offen-\(suffix)")
-
-        // Buchungsblatt fuer einen freien Platz
-        app.buttons.matching(NSPredicate(format: "label ENDSWITH 'um 17:00 Uhr buchen'")).firstMatch.tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Wer spielt mit?'")).firstMatch.waitForExistence(timeout: 5))
-        foto("plaetze-buchen-\(suffix)")
-        app.buttons["Schließen"].tap()
+        // Belegungsplan von morgen mit allen Arten
+        let eigene = app.buttons.matching(NSPredicate(format: "label CONTAINS 'deine Buchung'")).firstMatch
+        XCTAssertTrue(eigene.waitForExistence(timeout: 20), "eigene Buchung fehlt im Plan")
+        foto("plaetze-raster-\(suffix)")
 
         // Offenes Spiel: Mitspielen
-        XCTAssertTrue(mitspielen.waitForExistence(timeout: 5))
-        mitspielen.tap()
+        let offen = app.buttons.matching(NSPredicate(format: "label CONTAINS 'sucht noch'")).firstMatch
+        XCTAssertTrue(offen.waitForExistence(timeout: 5), "offenes Spiel fehlt im Plan")
+        offen.tap()
         XCTAssertTrue(app.buttons["Mitspielen"].waitForExistence(timeout: 5))
         foto("plaetze-mitspielen-\(suffix)")
         app.buttons["Schließen"].tap()
-
-        // Raster mit allen Arten
-        app.buttons["Übersicht"].tap()
-        let eigene = app.buttons.matching(NSPredicate(format: "label CONTAINS 'deine Buchung'")).firstMatch
-        XCTAssertTrue(eigene.waitForExistence(timeout: 10), "eigene Buchung fehlt im Raster")
-        // An einem kommenden Tag steht das Raster auf der Oeffnung: zum Nachmittag wischen.
-        let flaeche = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Platz 4, frei von'")).firstMatch
-        for _ in 0..<3 where flaeche.exists { flaeche.swipeLeft() }
-        foto("plaetze-raster-\(suffix)")
 
         // Eigene Buchung: Mitspieler und Stornieren
         eigene.tap()
@@ -79,12 +54,17 @@ final class PlaetzeUITests: XCTestCase {
         app.buttons["Abbrechen"].tap()
         app.buttons["Schließen"].tap()
 
-        // Eine freie Flaeche im Raster waehlen: die Leiste unten bietet "Buchen" an
+        // Eine freie Flaeche waehlen: die Leiste unten bietet "Buchen" an, das Blatt folgt
         let frei = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Platz 2, frei von'")).firstMatch
-        if frei.waitForExistence(timeout: 5) {
-            frei.tap()
-            if app.buttons["Buchen"].waitForExistence(timeout: 5) { foto("plaetze-raster-auswahl-\(suffix)") }
-        }
+        XCTAssertTrue(frei.waitForExistence(timeout: 5), "Platz 2 ist nicht frei")
+        frei.tap()
+        let buchen = app.buttons.matching(NSPredicate(format: "label ENDSWITH 'Uhr buchen'")).firstMatch
+        XCTAssertTrue(buchen.waitForExistence(timeout: 5), "Leiste „Buchen“ fehlt")
+        foto("plaetze-raster-auswahl-\(suffix)")
+        buchen.tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Wer spielt mit?'")).firstMatch.waitForExistence(timeout: 5))
+        foto("plaetze-buchen-\(suffix)")
+        app.buttons["Schließen"].tap()
     }
 
     /// Wie LokalAnmeldenUITests: mit dem Seed-Konto, falls noch keine Sitzung im Schluesselbund liegt.

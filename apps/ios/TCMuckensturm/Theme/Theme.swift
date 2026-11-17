@@ -4,9 +4,7 @@
  * Die Werte kommen aus packages/ui/generated/Tokens.swift (erzeugt aus
  * packages/ui/src/tokens.ts, in project.yml als Quelle eingebunden).
  * `Farbe.ink` usw. ist die dynamische Farbe aus `Tokens.farben`: hell oder
- * dunkel je nach Erscheinungsbild der Umgebung. Die Anmeldeseiten setzen
- * dafuer `.environment(\.colorScheme, .dark)` - sie sind immer dunkel wie in
- * der Expo-App (ImmerDunkel).
+ * dunkel je nach Erscheinungsbild der Umgebung - auch auf den Anmeldeseiten.
  */
 
 import SwiftUI
