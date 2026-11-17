@@ -210,7 +210,7 @@ a.avatar:hover { text-decoration: none; }
    daneben (SperrGrund). */
 .knopf.haupt:disabled,
 .knopf.haupt[aria-disabled="true"],
-.auth.immer-dunkel .sheet .knopf.block:not(.leise):disabled {
+.auth .sheet .knopf.block:not(.leise):disabled {
   background: var(--surf-3); color: var(--muted); opacity: 1; border-color: transparent;
 }
 .sperrgrund { margin: 8px 0 0; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
@@ -270,11 +270,12 @@ input:focus, select:focus, textarea:focus {
 body :is(
   .segtoggle button[aria-pressed="true"],
   .segtoggle a[aria-current="page"],
-  .telefon-ansicht button[aria-checked="true"],
   .segtoggle.bereich-segmente a[aria-current="page"],
   .segment:has(input:checked)
 ) {
-  box-shadow: inset 0 0 0 1.5px var(--seg-aktiv-rand);
+  /* Ausgewählt ist hellblau mit blauer Schrift (docs/design/stitch). */
+  background: var(--blue-soft); color: var(--blue-ink);
+  box-shadow: inset 0 0 0 1.5px var(--blue);
 }
 
 .marke-klein {
@@ -323,7 +324,7 @@ body :is(
   bottom: calc(26px + 64px + 14px + env(safe-area-inset-bottom));
   display: flex; justify-content: center; pointer-events: none;
 }
-body:has(.eintragen-leiste, .auswahl-leiste) .toast-ort {
+body:has(.eintragen-leiste) .toast-ort {
   bottom: calc(26px + 64px + 14px + 68px + 10px + env(safe-area-inset-bottom));
 }
 .hinweis.toast {
@@ -346,7 +347,7 @@ body:has(.eintragen-leiste, .auswahl-leiste) .toast-ort {
 
 /* Was die letzte Aktion betroffen hat, ist ein paar Sekunden hervorgehoben (U16) */
 .markiert { outline: 3px solid var(--blue); outline-offset: 1px; }
-.fz-zeile.markiert, .zuletzt li.markiert { outline: 0; background: var(--blue-soft); }
+.zuletzt li.markiert { outline: 0; background: var(--blue-soft); }
 
 /* Ein Ladefehler (components/Fehlerzustand.tsx): nicht wie "nichts da",
    sondern mit Grund und "Erneut versuchen". */
@@ -554,9 +555,6 @@ table.liste .zahl {
 
   .pagetitle { font-size: 42px; }
 
-  /* Der Belegungsplan hat hier Platz für das volle Raster. */
-  .plan-listen { display: none; }
-  .plan-raster { display: block; }
 }
 
 /* ---------------------------------------------------------------------------
@@ -928,9 +926,10 @@ a.heute-karte:hover { text-decoration: none; border-color: var(--line-2); }
 /* ---------------------------------------------------------------------------
    Plätze: Belegungsplan und Spiele (docs/design/clubhaus, WebPlan)
 
-   Zwei Darstellungen derselben Daten, umgeschaltet über die Breite:
-     < 768px  Übersicht (Raster zum Wischen) und Freie Zeiten, wie in der App
-     >= 768px Raster mit Blöcken über die ganze Dauer einer Belegung
+   Eine Darstellung für alle Breiten (docs/design/stitch, Entwurf "Plätze
+   (Belegungsplan Final)"): das Raster, Plätze als Spalten, Zeit nach unten.
+     < 768px  schmale Spalten, 88 px je Stunde, Blöcke nur mit "Du" oder "+"
+     >= 768px 44 px je Stunde, Blöcke mit Zeit und Namen
    --------------------------------------------------------------------------- */
 .plan-kopf {
   display: flex; justify-content: space-between; align-items: flex-end;
@@ -944,16 +943,16 @@ a.heute-karte:hover { text-decoration: none; border-color: var(--line-2); }
 }
 .datums-kacheln::-webkit-scrollbar { display: none; }
 .datums-kacheln a {
-  flex: 0 0 auto; width: 58px; height: 70px; border-radius: 18px; scroll-snap-align: start;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  background: var(--surf-2); color: var(--ink-2); text-decoration: none;
+  flex: 0 0 auto; width: 56px; height: 66px; border-radius: 99px; scroll-snap-align: start;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  background: var(--surf); border: 1px solid var(--line-2); color: var(--ink-2); text-decoration: none;
 }
 /* Haelt den sr-only-Text in der Kachel; sonst ragt er aus der Scrollleiste und die Seite wird breiter. */
 .datums-kacheln a { position: relative; }
-.datums-kacheln a:hover { text-decoration: none; background: var(--surf-3); }
-.datums-kacheln a[aria-current="date"] { background: var(--blue); color: var(--on-brand); }
+.datums-kacheln a:hover { text-decoration: none; background: var(--blue-soft); border-color: transparent; }
+.datums-kacheln a[aria-current="date"] { background: var(--blue); border-color: transparent; color: var(--on-brand); }
 .datums-kacheln small { font-size: 11px; font-weight: 700; letter-spacing: .08em; }
-.datums-kacheln b { font-size: 26px; line-height: 1; }
+.datums-kacheln b { font-family: var(--font-display); font-size: 19px; font-weight: 600; line-height: 1; }
 
 /* Segment-Schalter aus Links: Belegung | Meine & offene Spiele */
 .segtoggle a {
@@ -968,179 +967,9 @@ a.heute-karte:hover { text-decoration: none; border-color: var(--line-2); }
 
 /* Vergangene Zeit trägt den Seitengrund: in beiden Themes dunkler als die
    Rasterfläche, also zurückgenommen statt frei. */
-.plan-raster { display: none; --vorbei: var(--bg); }
-/* Freie Zeit, überall dieselbe Fläche: grün über der Rasterfläche getönt,
-   der grüne Rand hält 3:1 zum Grund (HANDOFF §2). */
-.plan-raster, .plan-listen { --frei-flaeche: color-mix(in srgb, var(--green) 13%, var(--surf)); }
-.plan-listen { display: flex; flex-direction: column; gap: 12px; }
+.plan-raster { --vorbei: var(--surf-2); --std: 88px; --zeitspalte: 44px; }
 
-/* --- Übersicht und Freie Zeiten (Telefon, docs/design/clubhaus/plaetze) ---- */
-/* Klein und rechtsbündig mit Symbol wie in der App (U34) - keine zweite volle
-   Segmentleiste unter "Belegung | Meine & offene Spiele". */
-.telefon-ansicht {
-  align-self: flex-end; display: flex; gap: 2px; padding: 3px;
-  background: var(--surf-2); border-radius: calc(var(--radius-knopf) - 2px);
-}
-.telefon-ansicht button {
-  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px;
-  border: 0; border-radius: calc(var(--radius-knopf) - 5px); background: transparent; cursor: pointer;
-  font-family: var(--font-text); font-size: 14px; font-weight: 600; color: var(--ink-2);
-}
-.telefon-ansicht svg {
-  width: 16px; height: 16px; flex: 0 0 auto;
-  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
-}
-.telefon-ansicht button[aria-checked="true"] {
-  background: var(--seg-aktiv); color: var(--ink); font-weight: 700; box-shadow: var(--shadow-sm);
-}
-.telefon-ansicht button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
-
-/* Raster: feste Platzspalte, Stunden waagerecht wischbar, 88 px je Stunde -
-   eine halbe Stunde ist so 44 px breit, gross genug fuer einen Finger (U18) */
-.tr {
-  display: flex; background: var(--surf); border: 1px solid var(--line);
-  border-radius: 22px; overflow: hidden;
-}
-.tr-spalte { width: 46px; flex: 0 0 auto; border-right: 1px solid var(--line); }
-.tr-ecke { height: 34px; border-bottom: 1px solid var(--line); }
-.tr-platz {
-  height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
-}
-.tr-platz small { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; color: var(--muted); }
-.tr-platz b { font-size: 20px; font-weight: 700; line-height: 1; }
-.tr-wisch { flex: 1 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.tr-wisch::-webkit-scrollbar { display: none; }
-.tr-wisch:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
-.tr-kopf { position: relative; height: 34px; border-bottom: 1px solid var(--line); }
-.tr-kopf span { position: absolute; top: 10px; font-size: 12px; font-weight: 700; color: var(--ink-2); }
-.tr-koerper {
-  position: relative;
-  background: repeating-linear-gradient(to right, color-mix(in srgb, var(--ink) 7%, transparent) 0 1px, transparent 1px 88px);
-}
-.tr-zeile {
-  position: absolute; left: 0; right: 0; height: 52px;
-  border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
-}
-/* Frei ist eine grüne Fläche mit Rand, wie im Raster ab Tablet (U66) */
-.tr-frei {
-  position: absolute; top: 4px; bottom: 3px; padding: 0; cursor: pointer;
-  border: 1px solid var(--green); border-radius: 10px; background: var(--frei-flaeche);
-}
-.tr-frei:focus-visible { outline: 2px solid var(--blue); outline-offset: -3px; border-radius: 10px; }
-.tr-block {
-  /* Unten 3 statt 4: die Linie der Zeile nimmt 1 px, so bleiben 44 px (U18) */
-  position: absolute; top: 4px; bottom: 3px; z-index: 1; overflow: hidden;
-  display: flex; flex-direction: column; justify-content: center;
-  padding: 4px 8px; border: 0; border-radius: 10px; text-align: left;
-  font: inherit; font-size: 12px; line-height: 1.25; white-space: nowrap;
-}
-.tr-block b, .tr-block span { overflow: hidden; text-overflow: ellipsis; }
-.tr-block span { opacity: .85; }
-button.tr-block { cursor: pointer; }
-button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; z-index: 3; }
-.tr-block.eigen { background: var(--gold); color: var(--on-gold); }
-.tr-block.belegt { background: var(--blue-soft); color: var(--blue-ink); border: 1px solid var(--blue); }
-.tr-block.sucht { background: var(--blue-soft); border: 1.5px dashed var(--blue); color: var(--blue-ink); }
-.tr-block.serie {
-  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 10%, transparent) 0 5px, transparent 5px 10px), var(--surf-3);
-  color: var(--ink-2); border: 1px solid var(--rahmen);
-}
-.tr-block.gesperrt { background: var(--surf-3); color: var(--muted); border: 1px solid var(--rahmen); }
-.tr-block.wahl {
-  z-index: 2; pointer-events: none; background: var(--blue-soft); color: var(--blue-ink);
-  border: 2px solid var(--blue);
-}
-.tr-jetzt { position: absolute; top: 0; bottom: 0; width: 2px; z-index: 4; background: var(--red); pointer-events: none; }
-
-.telefon-legende { gap: 6px 14px; }
-.telefon-legende i { width: 16px; height: 10px; border-radius: 3px; }
-.telefon-legende.kaestchen { gap: 6px 16px; }
-.telefon-legende.kaestchen i { width: 10px; height: 14px; }
-.telefon-legende.kaestchen i.frei { background: var(--green); border-color: var(--green); }
-
-/* Die Leiste über der schwebenden Navigation, sobald eine Stelle gewählt ist */
-.auswahl-leiste {
-  position: fixed; z-index: 21; left: 16px; right: 16px;
-  bottom: calc(26px + 64px + 14px + env(safe-area-inset-bottom));
-  height: 64px; padding: 0 8px 0 18px; border-radius: 22px;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  background: var(--ink); color: var(--bg); box-shadow: var(--shadow-float);
-}
-.auswahl-leiste > div { display: grid; min-width: 0; }
-.auswahl-leiste b { font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.auswahl-leiste small { font-size: 12.5px; opacity: .7; }
-.auswahl-leiste button {
-  flex: 0 0 auto; height: 48px; padding: 0 22px; border: 0; border-radius: 16px; cursor: pointer;
-  background: var(--blue); color: var(--on-brand); font: inherit; font-size: 15.5px; font-weight: 800;
-}
-.auswahl-leiste button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-/* Luft unter der Legende, damit die Leiste sie nicht verdeckt */
-.plan-listen:has(.auswahl-leiste) { padding-bottom: 76px; }
-
-/* Freie Zeiten: eine Zeile je Startzeit, ein Kästchen je Platz */
-.fz { background: var(--surf); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; }
-.fz-kopf {
-  display: flex; align-items: center; height: 40px; padding: 0 12px 0 16px;
-  border-bottom: 1px solid var(--line);
-  font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--muted);
-}
-.fz-beginn { width: 64px; flex: 0 0 auto; }
-.fz-nummern { display: flex; gap: 4px; letter-spacing: 0; }
-.fz-nummern span { width: 18px; text-align: center; }
-.fz-platz { margin-left: auto; margin-right: 22px; }
-.fz-zeile { border-bottom: 1px solid var(--line); }
-.fz-zeile:last-child { border-bottom: 0; }
-.fz-zeile.offen { background: var(--surf-2); }
-.fz-knopf {
-  display: flex; align-items: center; width: 100%; height: 60px; padding: 0 12px 0 16px;
-  border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer;
-}
-.fz-knopf:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
-.fz-zeit { width: 64px; flex: 0 0 auto; font-size: 22px; font-weight: 700; }
-.fz-kaestchen { display: flex; gap: 4px; }
-/* Nach der Statustabelle (HANDOFF §2): frei die volle grüne Fläche, belegt
-   blau, nicht buchbar grau - jedes mit Rand, wo die Fläche allein unter 3:1
-   zum Grund läge. */
-.fz-kaestchen i {
-  width: 18px; height: 24px; border-radius: 5px; box-sizing: border-box;
-  background: var(--surf-3); border: 1px solid var(--rahmen);
-}
-.fz-kaestchen i.frei { background: var(--green); border-color: var(--green); }
-.fz-kaestchen i.belegt { background: var(--blue-soft); border-color: var(--blue); }
-.fz-kaestchen i.eigen { background: var(--gold); border-color: var(--gold-line); }
-.fz-kaestchen i.sucht { background: var(--blue-soft); border: 1.5px dashed var(--blue); }
-.fz-zahl { margin-left: auto; font-size: 14px; font-weight: 700; white-space: nowrap; }
-.fz-zahl.viele { color: var(--green-ink); }
-.fz-zahl.wenige { color: var(--ink); }
-.fz-zahl.keine { color: var(--muted); }
-.fz-pfeil { width: 16px; height: 16px; margin-left: 6px; flex: 0 0 auto; color: var(--muted); transition: transform .15s ease; }
-.fz-zeile.offen .fz-pfeil { transform: rotate(90deg); }
-.fz-auf { padding: 0 16px 16px; }
-.fz-auf > p { margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
-.fz-plaetze { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.fz-plaetze button {
-  height: 48px; border: 0; border-radius: 14px; cursor: pointer;
-  /* green-ink statt green: bg auf green hielt hell nur 3,1:1 (U15) */
-  background: var(--green-ink); color: var(--bg); font: inherit; font-size: 15px; font-weight: 800;
-}
-.fz-plaetze button:focus-visible, .fz-sucht:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-.fz-sucht {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
-  margin-top: 8px; height: 48px; padding: 0 14px; border-radius: 14px; cursor: pointer;
-  border: 1.5px dashed var(--blue); background: var(--blue-soft); color: var(--blue-ink);
-  font: inherit; font-size: 14.5px; font-weight: 700; text-align: left;
-}
-.fz-gesperrt {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
-  margin-top: 8px; min-height: 48px; padding: 8px 14px; border: 0; border-radius: 14px; cursor: pointer;
-  background: var(--surf-3); color: var(--ink-2); font: inherit; font-size: 14.5px; font-weight: 700; text-align: left;
-}
-.fz-gesperrt span:last-child { color: var(--ink); }
-.fz-gesperrt:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .sperre-bearbeiten { display: grid; gap: 16px; }
-.fz-eigen { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font-size: 13px; color: var(--ink-2); }
-.fz-eigen i { width: 10px; height: 10px; border-radius: 3px; background: var(--gold); }
 
 .status-frei { color: var(--green-ink); }
 .status-eigen { color: var(--gold-ink); }
@@ -1158,16 +987,16 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
 /* Jedes Kaestchen mit Rand: blue-soft, surf-3 und gold-soft allein liegen
    unter 3:1 zum Grund (U29). */
 .legende i { width: 18px; height: 10px; border-radius: 4px; box-sizing: border-box; border: 1.5px solid var(--rahmen); }
-.legende i.frei { background: var(--frei-flaeche); border: 1px solid var(--green); }
+.legende i.frei { background: var(--surf); }
 .legende i.eigen { background: var(--gold); }
-.legende i.belegt { background: var(--blue-soft); border: 1px solid var(--blue); }
-.legende i.sucht { background: var(--blue-soft); border: 1.5px dashed var(--blue-ink); }
+.legende i.belegt { background: var(--belegt); }
+.legende i.sucht { background: var(--blue-soft); border: 1.5px solid var(--blue); }
 .legende i.serie, .beleg.serie {
   background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 12%, transparent) 0 3px, transparent 3px 6px), var(--surf-3);
 }
 .legende i.gesperrt { background: var(--surf-3); }
 
-/* --- Raster (ab 768 px) ---------------------------------------------------- */
+/* --- Raster ---------------------------------------------------------------- */
 .raster-oben {
   display: flex; justify-content: space-between; align-items: center;
   gap: 12px 24px; flex-wrap: wrap; margin-bottom: 14px;
@@ -1183,42 +1012,49 @@ button.tr-block:focus-visible { outline: 2px solid var(--blue); outline-offset: 
   box-shadow: var(--shadow); overflow: hidden;
 }
 .raster-kopf { display: grid; border-bottom: 1px solid var(--line); background: var(--surf-2); }
-.spalten-kopf { padding: 12px 10px; border-left: 1px solid var(--line); min-width: 0; }
-.spalten-kopf b { display: block; font-size: 17px; }
+.spalten-kopf { padding: 10px 2px; border-left: 1px solid var(--line); min-width: 0; text-align: center; }
+.spalten-kopf b { display: block; font-size: 16px; }
+.spalten-kopf b.lang { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .spalten-kopf small {
-  display: block; font-size: 12px; font-weight: 600; margin-top: 1px;
+  display: none; font-size: 12px; font-weight: 600; margin-top: 1px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .raster-koerper { display: grid; position: relative; }
 .raster-zeiten { position: relative; }
 .raster-zeiten .stunde {
-  position: absolute; right: 10px; margin-top: 4px;
-  font-size: 12px; font-weight: 600; color: var(--muted);
+  position: absolute; right: 6px; margin-top: 4px;
+  font-size: 11px; font-weight: 600; color: var(--muted);
 }
 /* Unter der roten Jetzt-Marke: nur die Marke zeigt die Zeit (U67) */
 .raster-zeiten .stunde.verdeckt { visibility: hidden; }
 .spalte {
   position: relative; border-left: 1px solid var(--line); min-width: 0;
-  background: repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px 44px);
+  background: repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px calc(var(--std) / 2));
 }
 
 /* Belegungen als Blöcke über ihre ganze Dauer, Farben nach der Statustabelle.
    Klasse .beleg, nicht .block - .block ist die Breite-Hilfsklasse der Knöpfe. */
+.plan-raster { --belegt: color-mix(in srgb, var(--ink-2) 22%, var(--surf)); }
 .beleg {
-  position: absolute; left: 5px; right: 5px; z-index: 2;
-  display: flex; flex-direction: column; overflow: hidden;
-  border: 0; border-radius: 11px; padding: 5px 9px; text-align: left;
+  position: absolute; left: 2px; right: 2px; z-index: 2;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden;
+  border: 0; border-radius: 6px; padding: 0; text-align: left;
   font: inherit; font-size: 12.5px; line-height: 1.25;
 }
+/* Am Telefon ist eine Spalte rund 40 px breit: der Text bleibt für
+   Vorlesegeräte da, zu sehen sind nur "Du" und "+". */
+.beleg > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.beleg.eigen::after { content: "Du"; font-family: var(--font-display); font-weight: 700; font-size: 13px; }
+.beleg.sucht::after { content: "+"; font-family: var(--font-display); font-weight: 700; font-size: 18px; }
 /* Zeilen nicht zusammenquetschen - was nicht passt, schneidet der Block ab. */
 .beleg > * { flex-shrink: 0; }
 .beleg .zeit { font-weight: 700; font-variant-numeric: tabular-nums; }
 .beleg .wer { font-weight: 600; opacity: .9; }
 .beleg .mit { font-size: 11.5px; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .beleg .wer, .beleg .zeit { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.beleg.belegt { background: var(--blue-soft); color: var(--blue-ink); border: 1px solid var(--blue); }
+.beleg.belegt { background: var(--belegt); color: var(--ink); }
 .beleg.eigen { background: var(--gold); color: var(--on-gold); }
-.beleg.sucht { background: var(--blue-soft); border: 1.5px dashed var(--blue); color: var(--blue-ink); }
+.beleg.sucht { background: var(--blue-soft); border: 1.5px solid var(--blue); color: var(--blue-ink); }
 .beleg.serie { color: var(--ink-2); border: 1px solid var(--rahmen); }
 .beleg.gesperrt { background: var(--surf-3); color: var(--muted); border: 1px solid var(--rahmen); }
 button.beleg { cursor: pointer; }
@@ -1234,22 +1070,14 @@ button.beleg:hover, button.beleg:focus-visible {
    unter Spalten und Blöcken. Kantig und ohne Schraffur, damit sie weder wie Training
    noch wie eine Sperrung aussieht. */
 .vorbei-flaeche {
-  position: absolute; left: 64px; right: 0; top: 0; z-index: 0; pointer-events: none;
+  position: absolute; left: var(--zeitspalte); right: 0; top: 0; z-index: 0; pointer-events: none;
   background: var(--vorbei); border-bottom: 1px solid var(--line-2);
 }
 
-/* Freie Zeit: eine grüne Fläche über die ganze Lücke, wie am Telefon (U66).
-   Statt über hundert gleich gewichteter Plus-Zeichen (U41) zeigt sie, wo und
-   bis wann frei ist. Kein Plus im Ruhezustand; der Block "+ HH:MM buchen"
-   erscheint beim Überfahren, beim Tastatur-Fokus und beim Antippen. */
-.frei-flaeche {
-  position: absolute; left: 5px; right: 5px; z-index: 1; pointer-events: none; overflow: hidden;
-  border: 1px solid var(--green); border-radius: 11px; background: var(--frei-flaeche);
-}
-.frei-flaeche span {
-  display: block; padding: 5px 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  font-size: 12px; font-weight: 600; color: var(--green-ink);
-}
+/* Freie Zeit ist weiß - die Rasterfläche selbst (Entwurf). Der Block
+   "+ HH:MM buchen" erscheint beim Überfahren, beim Tastatur-Fokus und beim
+   Antippen. */
+.frei-flaeche { display: none; }
 /* Die Knöpfe je Startzeit liegen unsichtbar über der Fläche. */
 .frei-slot {
   position: absolute; left: 0; right: 0; z-index: 1;
@@ -1258,10 +1086,10 @@ button.beleg:hover, button.beleg:focus-visible {
 }
 .frei-slot:focus-visible { outline: none; }
 .frei-slot .vorschau {
-  position: absolute; left: 5px; right: 5px; top: 2px;
-  display: none; align-items: flex-start; padding: 6px 9px; border-radius: 11px;
-  /* Wie die Platzknöpfe unter "Freie Zeiten": green-ink mit Seitengrund */
-  background: var(--green-ink); color: var(--bg); font-size: 12.5px; font-weight: 700;
+  position: absolute; left: 2px; right: 2px; top: 2px;
+  display: none; align-items: flex-start; justify-content: center; padding: 6px 2px; border-radius: 6px;
+  overflow: hidden; white-space: nowrap;
+  background: var(--blue); color: var(--on-brand); font-size: 0; font-weight: 700;
   box-shadow: var(--shadow-sm); pointer-events: none;
 }
 .frei-slot:hover, .frei-slot:focus-visible { z-index: 4; }
@@ -1273,12 +1101,13 @@ button.beleg:hover, button.beleg:focus-visible {
   .frei-slot:active .vorschau { display: flex; }
 }
 
+.frei-slot .vorschau::before { content: "+"; font-family: var(--font-display); font-size: 18px; line-height: 1; }
 .jetzt-linie {
-  position: absolute; left: 58px; right: 0; height: 2px; z-index: 5;
+  position: absolute; left: calc(var(--zeitspalte) - 6px); right: 0; height: 2px; z-index: 5;
   background: var(--red); pointer-events: none;
 }
 .jetzt-linie span {
-  position: absolute; left: -50px; top: -9px; height: 20px; padding: 0 6px;
+  position: absolute; left: -36px; top: -9px; height: 20px; padding: 0 6px;
   border-radius: 10px; background: var(--red); color: var(--on-brand);
   font-size: 11px; font-weight: 700; display: inline-flex; align-items: center;
 }
@@ -1439,96 +1268,85 @@ fieldset.suchfilter legend { padding: 0; margin-bottom: 8px; font-size: 15px; fo
 @keyframes blatt-rein { from { transform: translateY(100%); } to { transform: none; } }
 
 @media (min-width: 768px) {
-  /* Ab Tablet das Raster statt der Liste */
-  .plan-listen { display: none; }
-  .plan-raster { display: block; }
+  /* Ab Tablet: flachere Stunden, dafür Zeit und Namen in den Blöcken */
+  .plan-raster { --std: 44px; --zeitspalte: 64px; }
   .plan-hinweis { display: block; }
+  .spalten-kopf { padding: 12px 10px; text-align: left; }
+  .spalten-kopf b { font-size: 17px; }
+  .spalten-kopf b.lang { position: static; width: auto; height: auto; clip-path: none; }
+  .spalten-kopf b.kurz { display: none; }
+  .spalten-kopf small { display: block; }
+  .raster-zeiten .stunde { right: 10px; font-size: 12px; }
+  .beleg { left: 5px; right: 5px; border-radius: 11px; padding: 5px 9px; align-items: stretch; justify-content: flex-start; }
+  .beleg > span:not(.sr-only) { position: static; width: auto; height: auto; clip-path: none; }
+  .beleg.eigen::after, .beleg.sucht::after { content: none; }
+  .frei-slot .vorschau { left: 5px; right: 5px; padding: 6px 9px; border-radius: 11px; font-size: 12.5px; justify-content: flex-start; }
+  .frei-slot .vorschau::before { content: none; }
+  .jetzt-linie span { left: -50px; }
 
-  .datums-kacheln a { width: 54px; height: 62px; border-radius: 16px; background: var(--surf); border: 1px solid var(--line); }
-  .datums-kacheln a[aria-current="date"] { border-color: transparent; }
-  .datums-kacheln b { font-size: 23px; }
   .plan-segmente { max-width: 420px; }
 }
 
 /* ---------------------------------------------------------------------------
-   Anmeldeseiten (docs/design/clubhaus, AppLogin) - immer dunkel
+   Anmeldeseiten (docs/design/stitch, Entwurf "Anmelden"): weißer Grund,
+   Kicker, Titel, Formular - im gewählten Theme
    --------------------------------------------------------------------------- */
-.auth.immer-dunkel { background: var(--bg); color: var(--ink); }
+.auth { background: var(--bg); color: var(--ink); }
 .auth .buehne {
-  position: relative; height: 360px; flex: 0 0 auto; overflow: hidden;
-  background: var(--brand); color: var(--on-brand);
+  flex: 0 0 auto; width: 100%; max-width: 480px; margin: 0 auto; box-sizing: border-box;
+  padding: max(56px, 9vh) 24px 20px;
 }
-.auth .buehne .platz {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  fill: none; stroke: color-mix(in srgb, var(--on-brand) 22%, transparent); stroke-width: 2.5;
-}
-.auth .buehne .platz .netz { stroke: color-mix(in srgb, var(--on-brand) 40%, transparent); stroke-dasharray: 3 5; }
-.auth .buehne .ball {
-  position: absolute; right: max(54px, calc(50% - 141px)); top: 96px; width: 38px; height: 38px;
-  border-radius: 19px; background: var(--gold); box-shadow: 0 10px 24px rgba(0,0,0,.25);
-}
-/* Unten laeuft die Buehne in den Grund aus */
-.auth .buehne::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 160px;
-  background: linear-gradient(180deg, transparent, var(--bg));
-}
-.auth .buehne-inhalt {
-  position: relative; z-index: 1; height: 100%; max-width: 480px; margin: 0 auto;
-  padding: 60px 24px 22px; display: flex; flex-direction: column; justify-content: space-between;
-}
-.auth .buehne-inhalt img { height: 36px; width: auto; display: block; align-self: flex-start; }
+.auth.antragsseite .buehne { max-width: 680px; }
 .auth .buehne h1 {
-  margin: 0; font-size: 36px; font-weight: 800; letter-spacing: -.7px; line-height: 1.02; text-wrap: balance;
+  margin: 8px 0 0; font-family: var(--font-display); font-size: 30px; font-weight: 700;
+  letter-spacing: -.5px; line-height: 1.12; text-wrap: balance;
 }
-.auth .buehne p { margin: 8px 0 0; font-size: 15px; color: var(--ink-2); }
-.auth.immer-dunkel .sheet {
+.auth .buehne p { margin: 10px 0 0; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
+.auth .sheet {
   margin-top: 0; border-radius: 0; background: var(--bg); padding: 8px 24px 36px;
   width: 100%; max-width: 480px; margin-inline: auto;
 }
 /* Antrag, Danke, Datenschutz, Impressum: Inhalt auf surf, max. 680 breit, Fliesstext 16 */
-.auth.immer-dunkel.antragsseite .sheet {
+.auth.antragsseite .sheet {
   max-width: 680px; box-sizing: border-box; width: calc(100% - 32px);
   margin: 0 auto 40px; padding: 26px 24px 28px;
   background: var(--surf); border: 1px solid var(--line); border-radius: var(--radius-kartegross);
   flex: 0 0 auto;
 }
-.auth.antragsseite .buehne-inhalt { max-width: 680px; }
-.auth.immer-dunkel.antragsseite .sheet :is(p, li, .beschreibung, .unterzeile) { font-size: 16px; line-height: 1.55; }
-.auth.immer-dunkel.antragsseite .sheet input:not([type="checkbox"]):not([type="radio"]),
-.auth.immer-dunkel.antragsseite .sheet select,
-.auth.immer-dunkel.antragsseite .sheet textarea { background: var(--surf-2); }
-.auth.immer-dunkel .sheet.rechtstext { max-width: 680px; }
-.auth.immer-dunkel .sheet.rechtstext h2 { font-size: 19px; margin: 26px 0 8px; }
-.auth.immer-dunkel .sheet.rechtstext h2:first-of-type { margin-top: 14px; }
-.auth.immer-dunkel .sheet form { max-width: none; display: flex; flex-direction: column; gap: 14px; }
-.auth.immer-dunkel .sheet label { margin-bottom: 0; }
-.auth.immer-dunkel .sheet label > span { font-size: 15px; color: var(--ink-2); margin-bottom: 8px; }
-.auth.immer-dunkel .sheet input:not([type="checkbox"]):not([type="radio"]),
-.auth.immer-dunkel .sheet select {
-  min-height: 54px; border-radius: 16px; font-size: 16px;
-  border-color: var(--rahmen); background: var(--surf);
+.auth.antragsseite .sheet :is(p, li, .beschreibung, .unterzeile) { font-size: 16px; line-height: 1.55; }
+.auth.antragsseite .sheet input:not([type="checkbox"]):not([type="radio"]),
+.auth.antragsseite .sheet select,
+.auth.antragsseite .sheet textarea { background: var(--surf-2); }
+.auth .sheet.rechtstext { max-width: 680px; }
+.auth .sheet.rechtstext h2 { font-size: 19px; margin: 26px 0 8px; }
+.auth .sheet.rechtstext h2:first-of-type { margin-top: 14px; }
+.auth .sheet form { max-width: none; display: flex; flex-direction: column; gap: 14px; }
+.auth .sheet label { margin-bottom: 0; }
+.auth .sheet label:not(.schalter) > span { font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.auth .sheet input:not([type="checkbox"]):not([type="radio"]),
+.auth .sheet select {
+  min-height: 54px; border-radius: var(--radius-feld); font-size: 16px; padding-inline: 18px;
+  border-color: var(--rahmen); background: var(--surf-2);
 }
 /* Der Rand oben setzt rahmen und überdeckte den roten Fehlerrand (U70). */
-.auth.immer-dunkel .sheet :is(input, select, textarea)[aria-invalid="true"] { border-color: var(--red); }
-.auth.immer-dunkel .sheet a { color: var(--ink-2); font-weight: 600; }
+.auth .sheet :is(input, select, textarea)[aria-invalid="true"] { border-color: var(--red); }
+.auth .sheet a { color: var(--blue-ink); font-weight: 600; }
 /* Ohne Schatten: im Dunkeln traegt die Flaeche, ein Goldschein waere Deko. */
-.auth.immer-dunkel .sheet .knopf.block:not(.leise) {
+.auth .sheet .knopf.block:not(.leise) {
   background: var(--blue); color: var(--on-brand); border-color: transparent;
   min-height: 56px;
 }
-.auth.immer-dunkel .sheet .knopf.block.leise { min-height: 52px; }
-.auth.immer-dunkel .sheet .schalter > span { margin: 0; font-size: 14px; font-weight: 500; color: var(--ink-2); }
+.auth .sheet .knopf.block.leise { min-height: 52px; }
+.auth .sheet .schalter > span { margin: 0; font-size: 14px; font-weight: 500; color: var(--ink-2); }
 .auth .vergessen { margin: -4px 0 0; text-align: right; font-size: 14px; }
 .auth .antrag-hinweis { margin: 4px 0 0; text-align: center; font-size: 14px; color: var(--muted); }
-.auth.immer-dunkel .antrag-hinweis a { color: var(--blue-ink); font-weight: 700; }
+.auth .antrag-hinweis a { color: var(--blue-ink); font-weight: 700; }
 /* Kein Zugang mehr (B22): ein Satz, dann die beiden Wege */
 .auth .kein-zugang { display: flex; flex-direction: column; gap: 14px; }
 .auth .kein-zugang p { margin: 0 0 10px; font-size: 16px; line-height: 1.5; color: var(--ink-2); max-width: 60ch; }
 .auth .rechtliches { margin: 16px 0 0; text-align: center; font-size: 13px; color: var(--muted); }
-.auth.immer-dunkel .rechtliches a { color: var(--muted); font-weight: 500; }
+.auth .rechtliches a { color: var(--muted); font-weight: 500; }
 @media (min-width: 768px) {
-  .auth .buehne { height: 400px; }
-  .auth .buehne .platz { left: 50%; width: 780px; transform: translateX(-50%); }
 }
 
 /* ---------------------------------------------------------------------------

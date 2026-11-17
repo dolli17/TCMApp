@@ -157,15 +157,11 @@ test.describe("Anmeldung", () => {
 
   test("Mitglied kann sich anmelden und sieht die Plätze", async ({ page }) => {
     await anmelden(page, NUTZER.mitglied);
-    // Morgen: am Abend ist heute nichts mehr buchbar, und "Freie Zeiten"
-    // zeigt dann statt der Kästchen nur einen Satz.
     await page.goto(`/plan?tag=${tagIn(1)}`);
     await expect(page.getByRole("heading", { level: 1, name: "Plätze", exact: true })).toBeVisible();
     await expect(page.locator(".plan-raster .raster")).toBeVisible();
     // Acht Plaetze, jeder mit eigenem Spaltenkopf
     await expect(page.locator(".raster .spalten-kopf")).toHaveCount(8);
-    // Am Telefon zeigt dieselbe Seite zuerst die freien Zeiten, je Platz ein Kästchen
-    await expect(page.locator(".plan-listen .fz-nummern span")).toHaveCount(8);
   });
 });
 
