@@ -48,8 +48,11 @@ Fließtext. Beide liegen auf dem eigenen Server.
       Statusmarken und die großen Karten der Verwaltung ohne Gelb und ohne
       dunkelblaue Flächen
 - [x] iOS und Android: Schriftdateien (DM Sans, Space Grotesk)
-- [ ] iOS und Android: Rollen der Farben, Startseite, Screens
-      (Branches `feature/design-stitch-ios`, `feature/design-stitch-android`)
+- [x] iOS und Android: Rollen der Farben, zentrale Knöpfe, Startseite,
+      Belegungsplan als einzige Plätze-Übersicht, übrige Screens, Widgets
+- [ ] Nachsehen im Gerät: iOS Verwaltung, Onboarding, Veranstaltungsdetail,
+      Widgets; Android im Emulator. iOS `PlaetzeUITests/testRundgang` braucht
+      die Testbuchungen aus dem README und ist im neuen Ablauf ungeprüft.
 
 ## Entwürfe im Repo
 
