@@ -37,7 +37,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,7 +45,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,11 +62,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import de.tcmuckensturm.app.bildschirme.Avatar
 import de.tcmuckensturm.app.bildschirme.Fehlerzeile
 import de.tcmuckensturm.app.bildschirme.GrosserKopf
 import de.tcmuckensturm.app.bildschirme.Hauptknopf
@@ -78,9 +73,7 @@ import de.tcmuckensturm.app.bildschirme.konto.KontoGruppe
 import de.tcmuckensturm.app.bildschirme.konto.KontoLinie
 import de.tcmuckensturm.app.bildschirme.konto.KontoSegmente
 import de.tcmuckensturm.app.bildschirme.nachrichten.Glocke
-import de.tcmuckensturm.app.bildschirme.plaetze.PlaetzeLogik
 import de.tcmuckensturm.app.bildschirme.verein.LocalZuVerein
-import de.tcmuckensturm.app.bildschirme.verein.VereinZiel
 import de.tcmuckensturm.app.daten.Serie
 import de.tcmuckensturm.app.daten.VerwalteterPlatz
 import de.tcmuckensturm.app.daten.VerwaltungsStand
@@ -218,7 +211,7 @@ fun VerwaltungGruppenkopf(titel: String, neben: String? = null) {
     Row(Modifier.fillMaxWidth().padding(top = Abstand.s), verticalAlignment = Alignment.Bottom) {
         Text(
             titel,
-            style = TcmSchrift.text(Schrift.gewichtFett, Schrift.titel, (-0.2).sp),
+            style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.titel, (-0.2).sp),
             color = f.ink,
             modifier = Modifier.weight(1f).semantics { heading() },
         )
@@ -303,7 +296,7 @@ fun VerwaltungZeile(
     val farbe = when (ton) {
         HinweisTon.LEISE -> f.muted
         HinweisTon.ROT -> f.redInk
-        HinweisTon.GOLD -> f.goldInk
+        HinweisTon.GOLD -> f.blueInk
         HinweisTon.GRUEN -> f.greenInk
     }
     Row(
@@ -323,20 +316,20 @@ fun VerwaltungZeile(
     ) {
         // Das Kuerzel steht auch im Titel; TalkBack liest es nicht doppelt.
         Box(
-            Modifier.size(40.dp).background(f.surf2, RoundedCornerShape(12.dp)).clearAndSetSemantics {},
+            Modifier.size(40.dp).background(if (symbolGold) f.blueSoft else f.surf2, CircleShape).clearAndSetSemantics {},
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 symbol,
                 style = TcmSchrift.display(Schrift.gewichtExtrafett, if (symbolGold) 14.sp else 15.sp),
-                color = if (symbolGold) f.goldInk else f.ink,
+                color = if (symbolGold) f.blueInk else f.ink,
                 maxLines = 1,
             )
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(
                 titel,
-                style = TcmSchrift.text(Schrift.gewichtFett, 16.sp),
+                style = TcmSchrift.display(Schrift.gewichtHalbfett, 16.sp),
                 color = f.ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -397,7 +390,7 @@ private fun WebHinweis(admin: Boolean, link: String?, oeffnen: (String) -> Unit)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(VerwaltungLogik.webTitel(admin), style = TcmSchrift.text(Schrift.gewichtFett, 15.sp), color = f.ink)
+        Text(VerwaltungLogik.webTitel(admin), style = TcmSchrift.display(Schrift.gewichtHalbfett, 15.sp), color = f.ink)
         Text(
             VerwaltungLogik.webText(admin),
             style = TcmSchrift.text(Schrift.gewichtNormal, 14.sp).copy(lineHeight = 20.sp),
@@ -406,7 +399,7 @@ private fun WebHinweis(admin: Boolean, link: String?, oeffnen: (String) -> Unit)
         if (link != null) {
             Text(
                 "Im Browser öffnen ›",
-                style = TcmSchrift.text(Schrift.gewichtFett, 14.5.sp),
+                style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.5.sp),
                 color = f.blueInk,
                 modifier = Modifier.padding(top = 4.dp),
             )

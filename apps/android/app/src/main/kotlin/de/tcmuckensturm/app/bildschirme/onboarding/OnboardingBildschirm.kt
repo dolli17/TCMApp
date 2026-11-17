@@ -378,7 +378,7 @@ fun OnboardingRahmen(
             Kicker(kicker)
             Text(
                 titel,
-                style = TcmSchrift.text(Schrift.gewichtExtrafett, 30.sp, Schrift.laufweiteTitel).copy(lineHeight = 34.sp),
+                style = TcmSchrift.display(Schrift.gewichtFett, 30.sp, Schrift.laufweiteTitel).copy(lineHeight = 34.sp),
                 color = f.ink,
                 modifier = Modifier.semantics { heading() },
             )
@@ -390,7 +390,7 @@ fun OnboardingRahmen(
                     for (s in fortschritt) {
                         val farbe = when (s) {
                             OnboardingLogik.Fortschritt.JETZT -> f.blue
-                            OnboardingLogik.Fortschritt.ERLEDIGT -> f.green
+                            OnboardingLogik.Fortschritt.ERLEDIGT -> f.blue.copy(alpha = 0.45f)
                             OnboardingLogik.Fortschritt.OFFEN -> f.surf3
                         }
                         Box(Modifier.weight(1f).height(5.dp).background(farbe, Kapsel))
@@ -501,7 +501,7 @@ fun OnboardingSchalter(
             checked = an,
             onCheckedChange = null,
             enabled = !gesperrt,
-            colors = SwitchDefaults.colors(checkedTrackColor = f.green, checkedBorderColor = f.green),
+            colors = SwitchDefaults.colors(checkedTrackColor = f.blue, checkedBorderColor = f.blue),
         )
     }
 }

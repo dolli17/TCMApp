@@ -11,15 +11,17 @@
 package de.tcmuckensturm.app.bildschirme.verein
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,10 +29,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -40,12 +38,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
@@ -56,10 +54,7 @@ import androidx.compose.ui.unit.sp
 import de.tcmuckensturm.app.bildschirme.Avatar
 import de.tcmuckensturm.app.bildschirme.GedeckelteSchrift
 import de.tcmuckensturm.app.bildschirme.GrosserKopf
-import de.tcmuckensturm.app.bildschirme.home.HomeLogik
-import de.tcmuckensturm.app.bildschirme.leise
 import de.tcmuckensturm.app.daten.MeinName
-import de.tcmuckensturm.app.navigation.HauptTab
 import de.tcmuckensturm.app.navigation.LocalZuTab
 import de.tcmuckensturm.app.theme.TcmSchrift
 import de.tcmuckensturm.app.theme.TcmTheme
@@ -82,25 +77,34 @@ fun VereinKopf(reiter: VereinReiter, name: MeinName?, wechsle: (VereinReiter) ->
     GrosserKopf("Verein", name = name, glocke = glocke)
     // Segmente wachsen nur bis 120 % mit (wie der Picker in iOS), sonst bricht "Veranstaltungen" im Wort.
     GedeckelteSchrift {
-        SingleChoiceSegmentedButtonRow(
-            Modifier.fillMaxWidth().padding(bottom = Abstand.xs).semantics { contentDescription = "Bereich" },
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(bottom = Abstand.xs)
+                .clip(CircleShape)
+                .background(f.surf2)
+                .padding(4.dp)
+                .selectableGroup()
+                .semantics { contentDescription = "Bereich" },
         ) {
-            VereinReiter.entries.forEachIndexed { i, r ->
-                SegmentedButton(
-                    selected = r == reiter,
-                    onClick = { wechsle(r) },
-                    shape = SegmentedButtonDefaults.itemShape(i, VereinReiter.entries.size),
-                    icon = {},
-                    colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = f.segAktiv,
-                        activeContentColor = f.ink,
-                        activeBorderColor = f.segAktivRand,
-                        inactiveContainerColor = f.surf2,
-                        inactiveContentColor = f.ink2,
-                        inactiveBorderColor = f.line,
-                    ),
+            for (r in VereinReiter.entries) {
+                val aktiv = r == reiter
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .heightIn(min = 44.dp)
+                        .clip(CircleShape)
+                        .then(if (aktiv) Modifier.background(f.segAktiv).border(1.dp, f.line2, CircleShape) else Modifier)
+                        .selectable(selected = aktiv, role = Role.Tab) { wechsle(r) }
+                        .padding(horizontal = 8.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Text(r.label, style = TcmSchrift.text(Schrift.gewichtHalbfett, 15.sp), maxLines = 1)
+                    Text(
+                        r.label,
+                        style = TcmSchrift.display(if (aktiv) Schrift.gewichtHalbfett else Schrift.gewichtNormal, 15.sp),
+                        color = if (aktiv) f.ink else f.muted,
+                        maxLines = 1,
+                    )
                 }
             }
         }
@@ -114,7 +118,7 @@ fun VereinKopf(reiter: VereinReiter, name: MeinName?, wechsle: (VereinReiter) ->
 fun Abschnitt(titel: String, modifier: Modifier = Modifier) {
     Text(
         titel,
-        style = TcmSchrift.text(Schrift.gewichtFett, Schrift.titel, (-0.2).sp),
+        style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.titel, (-0.2).sp),
         color = TcmTheme.farben.ink,
         modifier = modifier.semantics { heading() },
     )
@@ -126,7 +130,8 @@ fun MarkeKlein(text: String, ton: EventTon) {
     val f = TcmTheme.farben
     val (grund, tinte) = when (ton) {
         EventTon.BLAU -> f.blueSoft to f.blueInk
-        EventTon.GELB -> f.goldSoft to f.goldInk
+        // Gelb ist "deins" vorbehalten; die Art einer Veranstaltung bleibt neutral.
+        EventTon.GELB -> f.chip to f.ink2
         EventTon.GRUEN -> f.green.copy(alpha = 0.16f) to f.greenInk
         EventTon.GRAU -> f.chip to f.ink2
         EventTon.ROT -> f.red.copy(alpha = 0.14f) to f.redInk
@@ -153,20 +158,21 @@ private val MinusSymbol: ImageVector by lazy {
 
 /** Runder Plus-/Minus-Knopf mit 44 dp (Rundknopf.tsx) - Getraenke und Begleitpersonen. */
 @Composable
-fun Zaehlknopf(plus: Boolean, beschriftung: String, gelb: Boolean = false, aus: Boolean = false, aktion: () -> Unit) {
+fun Zaehlknopf(plus: Boolean, beschriftung: String, betont: Boolean = false, aus: Boolean = false, aktion: () -> Unit) {
     val f = TcmTheme.farben
     Surface(
         onClick = aktion,
         enabled = !aus,
         shape = CircleShape,
-        color = if (gelb) f.gold else f.surf2,
+        color = if (betont) f.blueSoft else f.surf2,
+        border = if (betont) BorderStroke(1.dp, f.blue.copy(alpha = 0.22f)) else null,
         modifier = Modifier.size(44.dp).alpha(if (aus) 0.4f else 1f).semantics { contentDescription = beschriftung },
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 if (plus) Icons.Filled.Add else MinusSymbol,
                 contentDescription = null,
-                tint = if (gelb) f.onGold else f.ink,
+                tint = if (betont) f.blueInk else f.ink,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -189,7 +195,7 @@ fun Zaehlerstand(wert: Int, label: String) {
 @Composable
 fun Textknopf(text: String, modifier: Modifier = Modifier, aktion: () -> Unit) {
     TextButton(onClick = aktion, modifier = modifier.heightIn(min = 44.dp)) {
-        Text(text, style = TcmSchrift.text(Schrift.gewichtHalbfett, 14.sp), color = TcmTheme.farben.blueInk)
+        Text(text, style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp), color = TcmTheme.farben.blueInk)
     }
 }
 
@@ -214,23 +220,5 @@ fun Meldungsleiste(meldung: Meldungstext, schliessen: () -> Unit) {
         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
     ) {
         Text(meldung.text, style = TcmSchrift.text(Schrift.gewichtHalbfett, 15.sp))
-    }
-}
-
-// ---- Platzlinien ---------------------------------------------------------------
-
-/** Platzlinien in Perspektive, dezent - auf brand (Monatskarte, Kopf im Detail). */
-@Composable
-fun Platzlinien(modifier: Modifier = Modifier) {
-    val farbe = TcmTheme.farben.onBrand.copy(alpha = 0.12f)
-    Canvas(modifier) {
-        // Wie das SVG der Expo-App: 350 x 150 rechts oben (in dp)
-        val e = density
-        val x0 = size.width - 350 * e
-        fun p(x: Float, y: Float) = Offset(x0 + x * e, y * e)
-        val breite = 2 * e
-        drawLine(farbe, p(200f, 150f), p(250f, 0f), breite)
-        drawLine(farbe, p(350f, 40f), p(260f, 150f), breite)
-        drawLine(farbe, p(230f, 80f), p(350f, 80f), breite)
     }
 }

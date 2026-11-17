@@ -10,7 +10,7 @@
  * geht. Der Betrag kommt aus der eigenen Forderung (meine_forderung_* in
  * events_fuer_mitglied) - so steht hier dasselbe wie im Konto.
  *
- * Oben eine feste Leiste in brand mit Zurueck-Pfeil (die Zurueck-Geste geht
+ * Oben eine feste, helle Leiste mit Zurueck-Pfeil (die Zurueck-Geste geht
  * ueber den NavHost). Ist der grosse Titel hinausgescrollt, steht er klein in
  * der Leiste (useKompakterTitel in der Expo-App).
  */
@@ -30,8 +30,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -40,10 +41,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -62,7 +65,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
@@ -79,6 +81,7 @@ import de.tcmuckensturm.app.bildschirme.Hauptknopf
 import de.tcmuckensturm.app.bildschirme.Hinweis
 import de.tcmuckensturm.app.bildschirme.Leise
 import de.tcmuckensturm.app.bildschirme.LeiserKnopf
+import de.tcmuckensturm.app.bildschirme.Zweitknopf
 import de.tcmuckensturm.app.bildschirme.grosseSchrift
 import de.tcmuckensturm.app.bildschirme.karte
 import de.tcmuckensturm.app.daten.Meldung
@@ -198,23 +201,27 @@ fun VeranstaltungSeite(stand: VeranstaltungStand, jetzt: Instant, aktionen: Vera
     val titel = stand.detail?.event?.title
 
     Column(Modifier.fillMaxSize().background(f.bg)) {
-        // Die Leiste: brand bis unter die Statusleiste, Zurueck weiss auf brand (5,9:1).
+        // Die Leiste: hell wie die Seite, Zurueck als runder Knopf; der Titel erscheint beim Rollen.
         Row(
             Modifier
                 .fillMaxWidth()
-                .background(f.brand)
+                .background(f.bg)
                 .statusBarsPadding()
-                .height(56.dp)
-                .padding(horizontal = 4.dp),
+                .height(60.dp)
+                .padding(horizontal = Abstand.rand - 4.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            IconButton(onClick = aktionen.zurueck) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück", tint = f.onBrand)
+            IconButton(
+                onClick = aktionen.zurueck,
+                colors = IconButtonDefaults.iconButtonColors(containerColor = f.surf2),
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück", tint = f.ink)
             }
             Text(
                 titel ?: "",
-                style = TcmSchrift.display(Schrift.gewichtFett, 18.sp),
-                color = f.onBrand,
+                style = TcmSchrift.display(Schrift.gewichtHalbfett, 18.sp),
+                color = f.ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f).padding(end = 16.dp).alpha(titelSichtbar),
@@ -227,7 +234,7 @@ fun VeranstaltungSeite(stand: VeranstaltungStand, jetzt: Instant, aktionen: Vera
                 Column(
                     Modifier
                         .padding(horizontal = Abstand.rand)
-                        .padding(top = Abstand.rand, bottom = Abstand.abschnitt * 2),
+                        .padding(top = Abstand.s, bottom = Abstand.abschnitt * 2),
                     verticalArrangement = Arrangement.spacedBy(Abstand.m),
                 ) {
                     val d = stand.detail
@@ -246,23 +253,19 @@ fun VeranstaltungSeite(stand: VeranstaltungStand, jetzt: Instant, aktionen: Vera
     }
 }
 
-/** Der blaue Kopf unter der Leiste, die ebenfalls blau ist. */
+/** Der Titel der Veranstaltung, gross unter der Leiste. */
 @Composable
 private fun Kopf(titel: String?, modifier: Modifier) {
-    val f = TcmTheme.farben
-    Box(modifier.fillMaxWidth().background(f.brand)) {
-        Platzlinien(Modifier.matchParentSize())
-        Text(
-            titel ?: " ",
-            style = TcmSchrift.display(Schrift.gewichtFett, 28.sp),
-            color = f.onBrand,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = Abstand.rand)
-                .padding(top = 6.dp, bottom = 18.dp)
-                .semantics { heading() },
-        )
-    }
+    Text(
+        titel ?: " ",
+        style = TcmSchrift.display(Schrift.gewichtFett, 28.sp, (-0.4).sp),
+        color = TcmTheme.farben.ink,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = Abstand.rand)
+            .padding(top = 6.dp, bottom = 4.dp)
+            .semantics { heading() },
+    )
 }
 
 @Composable
@@ -333,7 +336,7 @@ private fun Eckdaten(e: MitgliedEvent) {
                             .clip(CircleShape)
                             .background(f.surf2),
                     ) {
-                        Box(Modifier.fillMaxWidth(anteil.toFloat()).height(8.dp).clip(CircleShape).background(f.green))
+                        Box(Modifier.fillMaxWidth(anteil.toFloat()).height(8.dp).clip(CircleShape).background(f.blue))
                     }
                 }
             }
@@ -347,7 +350,7 @@ private fun Eckdatum(label: String, wert: String, klein: String? = null, zusatz:
     // Bei grosser Schrift steht das Label ueber dem Wert.
     val gross = grosseSchrift(1.5f)
     val werte: @Composable () -> Unit = {
-        Text(wert, style = TcmSchrift.text(Schrift.gewichtFett, Schrift.normal), color = f.ink)
+        Text(wert, style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.normal), color = f.ink)
         klein?.let {
             Text(it, style = TcmSchrift.text(Schrift.gewichtNormal, 13.sp).copy(lineHeight = 17.sp), color = f.muted)
         }
@@ -458,12 +461,20 @@ private fun DabeiKarte(
         Modifier
             .fillMaxWidth()
             .clip(form)
-            .background(if (wartet) f.goldSoft else f.green.copy(alpha = if (TcmTheme.dunkel) 0.16f else 0.1f))
-            .border(1.dp, if (wartet) f.goldLine else f.green.copy(alpha = 0.35f), form)
-            .padding(16.dp),
+            .background(f.blueSoft)
+            .border(1.dp, f.blue.copy(alpha = 0.22f), form)
+            .padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(Abstand.s),
     ) {
-        Abschnitt(if (wartet) "Du stehst auf der Warteliste" else "Du bist angemeldet")
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Gelb heisst "deins": der Haken an der eigenen Anmeldung.
+            if (!wartet) {
+                Box(Modifier.size(32.dp).background(f.gold, CircleShape), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.Check, contentDescription = null, tint = f.onGold, modifier = Modifier.size(18.dp))
+                }
+            }
+            Abschnitt(if (wartet) "Du stehst auf der Warteliste" else "Du bist angemeldet")
+        }
         hinweis()
         if (bearbeiten) {
             formular()
@@ -471,7 +482,7 @@ private fun DabeiKarte(
         }
         Text(
             Veranstaltungen.eventPersonenText(e.meineBegleitpersonen ?: 0),
-            style = TcmSchrift.text(Schrift.gewichtFett, Schrift.normal),
+            style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.normal),
             color = f.ink,
         )
         val cents = e.meineForderungCents
@@ -498,10 +509,10 @@ private fun DabeiKarte(
                     style = TcmSchrift.text(Schrift.gewichtHalbfett, Schrift.normal),
                     color = f.ink,
                 )
-                Hauptknopf("Ja, abmelden", rot = true, kompakt = true, gesperrt = laeuft, aktion = abmelden)
+                Hauptknopf("Ja, abmelden", rot = true, gesperrt = laeuft, aktion = abmelden)
                 LeiserKnopf("Nein") { fragen(false) }
             } else {
-                if (Veranstaltungen.eventAenderbar(e, jetzt)) LeiserKnopf("Anmeldung ändern", aktion = aendern)
+                if (Veranstaltungen.eventAenderbar(e, jetzt)) Zweitknopf("Anmeldung ändern", aktion = aendern)
                 if (Veranstaltungen.eventAbmeldbar(e, jetzt)) {
                     LeiserKnopf(Veranstaltungen.eventAbmeldenKnopf(e, jetzt), rot = true) { fragen(true) }
                 }
@@ -529,7 +540,7 @@ private fun Formular(
         if (e.companionsAllowed == true) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Begleitpersonen", style = TcmSchrift.text(Schrift.gewichtFett, Schrift.normal), color = f.ink)
+                    Text("Begleitpersonen", style = TcmSchrift.display(Schrift.gewichtHalbfett, Schrift.normal), color = f.ink)
                     Leise(VereinLogik.begleitHinweis(e))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -540,7 +551,7 @@ private fun Formular(
                     Zaehlknopf(
                         plus = true,
                         beschriftung = "Eine Begleitperson mehr",
-                        gelb = begleitung > 0,
+                        betont = true,
                         aus = begleitung >= MAX_BEGLEITUNG,
                     ) { begleitungAendern(minOf(MAX_BEGLEITUNG, begleitung + 1)) }
                 }
@@ -558,7 +569,7 @@ private fun Formular(
                 focusedContainerColor = f.surf,
                 unfocusedContainerColor = f.surf,
                 focusedBorderColor = f.blue,
-                unfocusedBorderColor = f.rahmen,
+                unfocusedBorderColor = f.line2,
                 focusedLabelColor = f.blueInk,
                 unfocusedLabelColor = f.ink2,
                 focusedTextColor = f.ink,
@@ -576,7 +587,6 @@ private fun Formular(
             } else {
                 Veranstaltungen.eventAnmeldenKnopf(e, begleitung)
             },
-            kompakt = true,
             gesperrt = laeuft,
             aktion = absenden,
         )

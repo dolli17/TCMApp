@@ -17,14 +17,12 @@ package de.tcmuckensturm.app.bildschirme.verwaltung
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -43,17 +41,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.tcmuckensturm.app.bildschirme.konto.BlattKopf
@@ -157,17 +150,17 @@ private fun Chips(
 @Composable
 private fun Folgen(text: String, zeilen: List<String> = emptyList()) {
     val f = TcmTheme.farben
-    val form = RoundedCornerShape(14.dp)
+    val form = RoundedCornerShape(Radius.karte)
     Column(
         Modifier
             .fillMaxWidth()
-            .background(f.goldSoft, form)
-            .border(1.dp, f.goldLine, form)
+            .background(f.surf2, form)
+            .border(1.dp, f.line2, form)
             .padding(14.dp)
             .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(text, style = TcmSchrift.text(Schrift.gewichtFett, 14.sp), color = f.ink)
+        Text(text, style = TcmSchrift.display(Schrift.gewichtHalbfett, 14.sp), color = f.ink)
         for (z in zeilen) {
             Text(z, style = TcmSchrift.text(Schrift.gewichtNormal, 13.5.sp).copy(fontFeatureSettings = "tnum"), color = f.ink)
         }

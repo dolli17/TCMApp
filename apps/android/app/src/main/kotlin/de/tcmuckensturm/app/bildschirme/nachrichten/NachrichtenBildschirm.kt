@@ -141,7 +141,7 @@ fun NachrichtenInhalt(
             }
             Text(
                 "Neuigkeiten",
-                style = TcmSchrift.text(Schrift.gewichtExtrafett, Schrift.seitentitel, Schrift.laufweiteTitel),
+                style = TcmSchrift.display(Schrift.gewichtFett, Schrift.seitentitel, Schrift.laufweiteTitel),
                 color = f.ink,
                 modifier = Modifier
                     .padding(bottom = Abstand.s)
