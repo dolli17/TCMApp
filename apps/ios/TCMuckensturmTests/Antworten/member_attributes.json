@@ -1,0 +1,112 @@
+[
+ {
+  "code": "foto",
+  "name": "Fotos und Veröffentlichung",
+  "description": "Darf die Person auf Fotos der Website, in Aushängen und in der Presse erscheinen? Bei Minderjährigen erteilen die Erziehungsberechtigten die Einwilligung.",
+  "value_kind": "boolean",
+  "multiple": false,
+  "self_editable": true,
+  "darf_ich": true,
+  "option_value": null,
+  "option_label": null,
+  "text_value": null,
+  "set_at": "2026-11-10T17:00:52.233164+00:00",
+  "optionen": []
+ },
+ {
+  "code": "newsletter",
+  "name": "Vereinsnachrichten per E-Mail",
+  "description": "Rundmails zu Veranstaltungen und Neuigkeiten. Pflichtinformationen zu Beitrag und Lastschrift gehen unabhängig davon heraus.",
+  "value_kind": "boolean",
+  "multiple": false,
+  "self_editable": true,
+  "darf_ich": true,
+  "option_value": null,
+  "option_label": null,
+  "text_value": null,
+  "set_at": null,
+  "optionen": []
+ },
+ {
+  "code": "booking_mail",
+  "name": "E-Mails zu Buchungen",
+  "description": "Ob Änderungen an deinen Platzbuchungen zusätzlich per E-Mail kommen. In der App siehst du sie in jedem Fall.",
+  "value_kind": "list",
+  "multiple": false,
+  "self_editable": true,
+  "darf_ich": true,
+  "option_value": "wichtige",
+  "option_label": "Nur Wichtiges",
+  "text_value": null,
+  "set_at": "2026-11-10T17:00:52.233164+00:00",
+  "optionen": [
+   {
+    "label": "Alle Benachrichtigungen",
+    "value": "alle"
+   },
+   {
+    "label": "Nur Wichtiges",
+    "value": "wichtige"
+   },
+   {
+    "label": "Keine E-Mails",
+    "value": "keine"
+   }
+  ]
+ },
+ {
+  "code": "whatsapp",
+  "name": "Messenger-Gruppen",
+  "description": "Aufnahme in die Gruppen des Vereins. Eigene Einwilligung, weil die Telefonnummer dabei an einen Dritten gelangt.",
+  "value_kind": "boolean",
+  "multiple": false,
+  "self_editable": true,
+  "darf_ich": true,
+  "option_value": null,
+  "option_label": null,
+  "text_value": null,
+  "set_at": null,
+  "optionen": []
+ },
+ {
+  "code": "mannschaft_interesse",
+  "name": "Interesse an einer Mannschaft",
+  "description": "Die Person möchte in einer Mannschaft spielen. Der Sportwart meldet sich.",
+  "value_kind": "boolean",
+  "multiple": false,
+  "self_editable": true,
+  "darf_ich": true,
+  "option_value": null,
+  "option_label": null,
+  "text_value": null,
+  "set_at": null,
+  "optionen": []
+ },
+ {
+  "code": "ehrung",
+  "name": "Ehrungen",
+  "description": "Vom Verein verliehene Auszeichnungen, etwa für langjährige Mitgliedschaft.",
+  "value_kind": "list",
+  "multiple": true,
+  "self_editable": false,
+  "darf_ich": false,
+  "option_value": null,
+  "option_label": null,
+  "text_value": null,
+  "set_at": null,
+  "optionen": [
+   {
+    "label": "Silberne Ehrennadel",
+    "value": "silberne_nadel"
+   },
+   {
+    "label": "Goldene Ehrennadel",
+    "value": "goldene_nadel"
+   },
+   {
+    "label": "Ehrenmitgliedschaft",
+    "value": "ehrenmitglied"
+   }
+  ]
+ }
+]

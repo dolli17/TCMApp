@@ -1,0 +1,72 @@
+[
+ {
+  "id": "25c31169-2299-a28e-c06a-d4d6555fdcd6",
+  "first_name": "Christian",
+  "last_name": "Bauer"
+ },
+ {
+  "id": "4186ddd9-ab11-969c-b195-648f14051b8e",
+  "first_name": "Jan",
+  "last_name": "Bauer"
+ },
+ {
+  "id": "bfdfdb16-4bc5-71bd-1d32-7160ad22eb8e",
+  "first_name": "Johanna",
+  "last_name": "Bauer"
+ },
+ {
+  "id": "1b8c965f-bae7-5029-608f-c405e935c894",
+  "first_name": "Wolfgang",
+  "last_name": "Bauer"
+ },
+ {
+  "id": "b09db4b6-3248-2ca0-187d-a2b9318ad51c",
+  "first_name": "Wolfgang",
+  "last_name": "Berger"
+ },
+ {
+  "id": "40532d34-4272-cb59-59e4-17a8555cf342",
+  "first_name": "Christian",
+  "last_name": "Brandt"
+ },
+ {
+  "id": "645b8771-41af-c758-ce80-5d72e9ac4c6e",
+  "first_name": "Erik",
+  "last_name": "Brandt"
+ },
+ {
+  "id": "ef558d6b-c60e-68e8-9318-f4e4aee196d4",
+  "first_name": "Leon",
+  "last_name": "Brandt"
+ },
+ {
+  "id": "e2e00000-0000-4000-8000-000000000002",
+  "first_name": "Noah",
+  "last_name": "Brandt"
+ },
+ {
+  "id": "05835ad6-ddaf-ad37-0bf2-51f25d4a2a6c",
+  "first_name": "Christian",
+  "last_name": "Braun"
+ },
+ {
+  "id": "bae24b89-5cb1-0166-0d56-233405b68a55",
+  "first_name": "Daniel",
+  "last_name": "Braun"
+ },
+ {
+  "id": "f31b3dfa-39b1-13d4-3720-08be05d38ea0",
+  "first_name": "Franziska",
+  "last_name": "Dietrich"
+ },
+ {
+  "id": "0dba9e31-9b0d-4cda-0d1d-90324cca1ea7",
+  "first_name": "Wolfgang",
+  "last_name": "Dietrich"
+ },
+ {
+  "id": "7075eb2a-5142-9cab-38b5-be0989b3f66e",
+  "first_name": "Anja",
+  "last_name": "Engel"
+ }
+]

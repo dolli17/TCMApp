@@ -1,0 +1,35 @@
+[
+ {
+  "id": "10954929-b364-40bb-a663-3fbd4ca70beb",
+  "member_name": "Noah Brandt",
+  "kind": "event",
+  "period_label": null,
+  "amount_cents": 1250,
+  "description": "Sommerfest am 07.12.2026",
+  "status": "open",
+  "due_date": null,
+  "is_for_other": false
+ },
+ {
+  "id": "561d8983-d20a-4385-ac3a-cbbaa23185f9",
+  "member_name": "Noah Brandt",
+  "kind": "fee",
+  "period_label": "2026",
+  "amount_cents": 18000,
+  "description": "Jahresbeitrag Erwachsene",
+  "status": "notified",
+  "due_date": "2026-12-01",
+  "is_for_other": false
+ },
+ {
+  "id": "efc15867-3376-4248-80fc-81f14f7b9522",
+  "member_name": "Mia Brandt",
+  "kind": "fee",
+  "period_label": "2026",
+  "amount_cents": 6000,
+  "description": "Jahresbeitrag Jugend",
+  "status": "paid",
+  "due_date": "2026-03-01",
+  "is_for_other": true
+ }
+]

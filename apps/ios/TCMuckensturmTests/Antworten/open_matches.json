@@ -1,0 +1,39 @@
+[
+ {
+  "booking_id": "b0000000-0000-4000-8000-000000000021",
+  "starts_at": "2026-11-18T17:00:00+00:00",
+  "ends_at": "2026-11-18T18:00:00+00:00",
+  "court_name": "Platz 2",
+  "type_code": "doppel",
+  "type_name": "Doppel",
+  "owner_member_id": "4186ddd9-ab11-969c-b195-648f14051b8e",
+  "owner_name": "Julia Stein",
+  "players": [
+   "Julia Stein",
+   "Jan Bauer"
+  ],
+  "frei": 2,
+  "bin_dabei": false,
+  "lk_von": 10.0,
+  "lk_bis": 15.0,
+  "fuer": "alle"
+ },
+ {
+  "booking_id": "b0000000-0000-4000-8000-000000000011",
+  "starts_at": "2026-11-18T16:00:00+00:00",
+  "ends_at": "2026-11-18T17:00:00+00:00",
+  "court_name": "Platz 3",
+  "type_code": "einzel",
+  "type_name": "Einzel",
+  "owner_member_id": "e2e00000-0000-4000-8000-000000000002",
+  "owner_name": "Noah Brandt",
+  "players": [
+   "Noah Brandt"
+  ],
+  "frei": 1,
+  "bin_dabei": true,
+  "lk_von": null,
+  "lk_bis": null,
+  "fuer": null
+ }
+]

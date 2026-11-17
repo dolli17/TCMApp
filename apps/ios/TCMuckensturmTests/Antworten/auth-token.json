@@ -1,0 +1,47 @@
+{
+ "access_token": "eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAiZTJlMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMTAyIiwgInJvbGUiOiAiYXV0aGVudGljYXRlZCIsICJleHAiOiA0MTAyNDQ0ODAwfQ.attrappe",
+ "token_type": "bearer",
+ "expires_in": 3600,
+ "expires_at": 4102444800,
+ "refresh_token": "attrappe-refresh",
+ "user": {
+  "id": "e2e00000-0000-4000-8000-000000000102",
+  "aud": "authenticated",
+  "role": "authenticated",
+  "email": "mitglied@tcm.local",
+  "email_confirmed_at": "2026-11-10T17:00:52.233164Z",
+  "phone": "",
+  "confirmed_at": "2026-11-10T17:00:52.233164Z",
+  "last_sign_in_at": "2026-11-17T16:14:46.494679588Z",
+  "app_metadata": {
+   "provider": "email",
+   "providers": [
+    "email"
+   ]
+  },
+  "user_metadata": {
+   "member_id": "e2e00000-0000-4000-8000-000000000002"
+  },
+  "identities": [
+   {
+    "identity_id": "f39b0e9e-01a4-4b92-9744-eb5c23ca2e48",
+    "id": "e2e00000-0000-4000-8000-000000000102",
+    "user_id": "e2e00000-0000-4000-8000-000000000102",
+    "identity_data": {
+     "email": "mitglied@tcm.local",
+     "email_verified": true,
+     "sub": "e2e00000-0000-4000-8000-000000000102"
+    },
+    "provider": "email",
+    "last_sign_in_at": "2026-11-10T17:00:52.233164Z",
+    "created_at": "2026-11-10T17:00:52.233164Z",
+    "updated_at": "2026-11-10T17:00:52.233164Z",
+    "email": "mitglied@tcm.local"
+   }
+  ],
+  "created_at": "2026-11-10T17:00:52.233164Z",
+  "updated_at": "2026-11-17T16:14:46.536583Z",
+  "is_anonymous": false
+ },
+ "weak_password": null
+}

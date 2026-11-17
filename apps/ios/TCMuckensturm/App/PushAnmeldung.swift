@@ -22,6 +22,28 @@ import Observation
 import UIKit
 import UserNotifications
 
+/**
+ * Was die Zentrale vom Geraet braucht: Erlaubnis, die Bitte um die Marke und
+ * den Geraetenamen. Als Naht, damit die Tests ohne Systemdialog und ohne
+ * APNs auskommen; die App nimmt immer `.echt`.
+ */
+struct PushGeraet: Sendable {
+    var status: @Sendable () async -> UNAuthorizationStatus
+    var erlaubnisErbitten: @Sendable () async -> Bool
+    /// Stoesst die Registrierung an; die Marke kommt ueber `markeAngekommen`.
+    var markeAnfordern: @MainActor @Sendable () -> Void
+    var name: @MainActor @Sendable () -> String
+
+    static let echt = PushGeraet(
+        status: { await UNUserNotificationCenter.current().notificationSettings().authorizationStatus },
+        erlaubnisErbitten: {
+            (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound])) ?? false
+        },
+        markeAnfordern: { UIApplication.shared.registerForRemoteNotifications() },
+        name: { UIDevice.current.name }
+    )
+}
+
 @MainActor
 @Observable
 final class PushZentrale {
@@ -32,15 +54,23 @@ final class PushZentrale {
 
     /// Laenger wartet niemand auf die Marke von APNs.
     static let frist = Duration.seconds(15)
+    @ObservationIgnored private let geraet: PushGeraet
+    @ObservationIgnored private let speicher: UserDefaults
+    @ObservationIgnored private let frist: Duration
     static let markeSchluessel = "tcm-push-marke"
 
     @ObservationIgnored private var wartende: [CheckedContinuation<Data?, Never>] = []
 
-    private init() {}
+    /// Die App benutzt nur `shared`; die Parameter sind fuer Tests.
+    init(geraet: PushGeraet = .echt, speicher: UserDefaults = .standard, frist: Duration = PushZentrale.frist) {
+        self.geraet = geraet
+        self.speicher = speicher
+        self.frist = frist
+    }
 
     private var gespeicherteMarke: String? {
-        get { UserDefaults.standard.string(forKey: Self.markeSchluessel) }
-        set { UserDefaults.standard.set(newValue, forKey: Self.markeSchluessel) }
+        get { speicher.string(forKey: Self.markeSchluessel) }
+        set { speicher.set(newValue, forKey: Self.markeSchluessel) }
     }
 
     // MARK: - An- und Abmelden
@@ -49,7 +79,7 @@ final class PushZentrale {
     func anmelden(_ daten: Pushdaten) async -> Ergebnis {
         guard await erlaubnisHolen() else { return .fehler("Ohne Erlaubnis des Geräts geht es nicht.") }
         guard let marke = await markeHolen() else { return .fehler("Das Gerät hat keine Kennung geliefert.") }
-        let r = await daten.anmelden(marke: marke, geraet: UIDevice.current.name)
+        let r = await daten.anmelden(marke: marke, geraet: geraet.name())
         if r.ok { gespeicherteMarke = marke }
         return r
     }
@@ -68,17 +98,15 @@ final class PushZentrale {
     /// Ist auf diesem Geraet gerade ein Empfang angemeldet - und erlaubt das Geraet ihn noch?
     func istAngemeldet(_ daten: Pushdaten) async -> Bool {
         guard let marke = gespeicherteMarke else { return false }
-        let einstellungen = await UNUserNotificationCenter.current().notificationSettings()
-        guard Self.erlaubt(einstellungen.authorizationStatus) else { return false }
+        guard Self.erlaubt(await geraet.status()) else { return false }
         return await daten.aktiv(marke: marke)
     }
 
     /// War Push an und hat APNs inzwischen eine andere Marke vergeben, wird die neue angemeldet.
     func auffrischen(_ daten: Pushdaten) async {
         guard let alt = gespeicherteMarke else { return }
-        let einstellungen = await UNUserNotificationCenter.current().notificationSettings()
-        guard Self.erlaubt(einstellungen.authorizationStatus), let neu = await markeHolen(), neu != alt else { return }
-        if await daten.anmelden(marke: neu, geraet: UIDevice.current.name).ok {
+        guard Self.erlaubt(await geraet.status()), let neu = await markeHolen(), neu != alt else { return }
+        if await daten.anmelden(marke: neu, geraet: geraet.name()).ok {
             gespeicherteMarke = neu
             _ = await daten.abmelden(marke: alt)
         }
@@ -89,20 +117,19 @@ final class PushZentrale {
     }
 
     private func erlaubnisHolen() async -> Bool {
-        let zentrale = UNUserNotificationCenter.current()
-        let status = await zentrale.notificationSettings().authorizationStatus
+        let status = await geraet.status()
         if Self.erlaubt(status) { return true }
         guard status == .notDetermined else { return false }
-        return (try? await zentrale.requestAuthorization(options: [.alert, .badge, .sound])) ?? false
+        return await geraet.erlaubnisErbitten()
     }
 
     /// Bittet APNs um die Marke und wartet auf den App-Delegate - hoechstens `frist`.
     private func markeHolen() async -> String? {
         let daten: Data? = await withCheckedContinuation { fortsetzung in
             wartende.append(fortsetzung)
-            UIApplication.shared.registerForRemoteNotifications()
-            Task { [weak self] in
-                try? await Task.sleep(for: Self.frist)
+            geraet.markeAnfordern()
+            Task { [weak self, frist] in
+                try? await Task.sleep(for: frist)
                 self?.markeAngekommen(nil)
             }
         }

@@ -1,0 +1,20 @@
+[
+ {
+  "code": "einzel",
+  "name": "Einzel",
+  "duration_minutes": 60,
+  "requires_partner": true,
+  "min_players": 2,
+  "max_players": 2,
+  "sort_order": 1
+ },
+ {
+  "code": "doppel",
+  "name": "Doppel",
+  "duration_minutes": 60,
+  "requires_partner": true,
+  "min_players": 3,
+  "max_players": 4,
+  "sort_order": 2
+ }
+]

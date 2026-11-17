@@ -1,0 +1,42 @@
+[
+ {
+  "id": "f0134b25-6036-45e0-bc5d-62a3758bbf65",
+  "item_name": "Apfelschorle",
+  "quantity": 2,
+  "unit_price_cents": 250,
+  "total_cents": 500,
+  "source": "app",
+  "created_at": "2026-11-17T10:00:00+00:00",
+  "voided_at": null
+ },
+ {
+  "id": "bdfbcf05-dc1c-4318-9529-183513bf3e5d",
+  "item_name": "Wasser still",
+  "quantity": 1,
+  "unit_price_cents": 150,
+  "total_cents": 150,
+  "source": "app",
+  "created_at": "2026-11-16T15:59:53.397477+00:00",
+  "voided_at": "2026-11-16T15:59:53.75274+00:00"
+ },
+ {
+  "id": "1b5a9124-a89c-46ba-afc0-08a26c7e6c68",
+  "item_name": "Wasser still",
+  "quantity": 1,
+  "unit_price_cents": 150,
+  "total_cents": 150,
+  "source": "app",
+  "created_at": "2026-11-12T17:10:00+00:00",
+  "voided_at": null
+ },
+ {
+  "id": "e3106b48-2586-4141-b337-2fd28887d101",
+  "item_name": "Wasser still",
+  "quantity": 1,
+  "unit_price_cents": 150,
+  "total_cents": 150,
+  "source": "kiosk",
+  "created_at": "2026-11-03T17:10:00+00:00",
+  "voided_at": null
+ }
+]
