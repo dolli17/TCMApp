@@ -267,7 +267,6 @@ function BuchenInhalt(props: Props & { fenster: Extract<Fenster, { modus: "buche
   const maxWeitere = Math.max((gewaehlt?.max_players ?? 2) - 1, 0);
   const anzahl = mitglieder.length + gaeste.length;
   const nochPlatz = anzahl < maxWeitere;
-  const ich = props.verzeichnis.find((m) => m.id === props.meineId);
 
   // Ueber berlinTime, nicht ueber new Date(...): der Konstruktor rechnet in
   // der Zeitzone des Geraets. Ein Rechner, der auf London steht, haette hier
