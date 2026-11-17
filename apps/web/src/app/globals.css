@@ -367,12 +367,18 @@ body:has(.eintragen-leiste) .toast-ort {
 /* Ein Ladefehler (components/Fehlerzustand.tsx): nicht wie "nichts da",
    sondern mit Grund und "Erneut versuchen". */
 .fehlerzustand {
-  margin: var(--space-l) auto; max-width: 520px; padding: 20px;
-  border-radius: var(--radius-karte); background: var(--surf);
-  border: 1.5px solid color-mix(in srgb, var(--red) 35%, var(--line));
-  text-align: center; color: var(--ink-2);
+  margin: 12vh auto var(--space-l); max-width: 520px; padding: 20px;
+  display: grid; justify-items: center; text-align: center; color: var(--ink-2);
 }
+.fehlerzustand .symbolkreis { width: 60px; height: 60px; border-radius: 30px; margin-bottom: 18px; background: var(--chip); color: var(--ink-2); }
+.fehlerzustand .symbolkreis svg { width: 28px; height: 28px; }
 .fehlerzustand p { margin: 0 0 12px; }
+.fehlerzustand .knopf { margin-top: 12px; min-width: 220px; }
+.fehlerzustand.kompakt {
+  display: block; border-radius: var(--radius-karte); background: var(--surf);
+  border: 1.5px solid color-mix(in srgb, var(--red) 35%, var(--line));
+}
+.fehlerzustand.kompakt .knopf { margin-top: 0; min-width: 0; }
 .fehlerzustand .titel { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--ink); }
 .fehlerzustand.kompakt { margin: 12px 0; max-width: none; padding: 14px 16px; text-align: left; }
 .fehlerzustand.kompakt .titel { font-size: 16px; margin-bottom: 4px; }
@@ -475,7 +481,7 @@ table.liste .zahl {
 .nachrichtenliste li + li { border-top: 1px solid var(--line); }
 .nachrichtenliste li.neu { background: var(--blue-soft); }
 .nachrichtenliste .symbol {
-  width: 40px; height: 40px; border-radius: 12px; flex: 0 0 auto;
+  width: 40px; height: 40px; border-radius: 20px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--surf-2); color: var(--ink-2);
 }
@@ -483,7 +489,18 @@ table.liste .zahl {
 .nachrichtenliste .symbol svg { width: 20px; height: 20px; }
 .nachrichtenliste .text { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .nachrichtenliste .titelzeile { display: flex; justify-content: space-between; gap: 8px; }
-.nachrichtenliste strong { font-size: 15px; }
+.nachrichtenliste strong { font-family: var(--font-display); font-size: 15.5px; font-weight: 600; }
+/* Ungelesen: ein Punkt vor dem Titel, zusätzlich zur hellblauen Zeile */
+.nachrichtenliste li.neu strong::before {
+  content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 4px; margin-right: 8px;
+  background: var(--blue); vertical-align: 2px;
+}
+.nachrichtengruppe > .kicker { font-size: 11px; }
+.blatt.nachrichten .fenster-kopf > .textknopf { margin-left: auto; align-self: center; white-space: nowrap; }
+.blatt.nachrichten .fenster-kopf > .textknopf + .fenster-zu { margin-left: 0; }
+.blatt.nachrichten .fenster-kopf h2 { font-size: 26px; overflow-wrap: anywhere; }
+.blatt.nachrichten .fenster-inhalt { display: block; }
+@media (max-width: 767px) { dialog.fenster.blatt.nachrichten { min-height: 72dvh; } }
 .nachrichtenliste small { flex: 0 0 auto; font-size: 12px; color: var(--muted); }
 .nachrichtenliste .body { font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
 .fenster-kopf > .knopf { align-self: center; margin-left: auto; white-space: nowrap; }
@@ -2677,59 +2694,86 @@ dialog.fenster:not(.blatt) > .fenster-rueckfrage { margin: 8px 22px 0; }
    --------------------------------------------------------------------------- */
 .event-monat { margin-bottom: 20px; }
 .event-monat-titel {
-  margin: 0 0 8px; font-size: 13px; font-weight: 700; letter-spacing: .06em;
-  text-transform: uppercase; color: var(--muted);
+  margin: 0 0 8px; font-family: var(--font-display); font-size: var(--font-size-kicker); font-weight: 700;
+  letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted);
 }
-.event-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.event-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 .event-karte {
-  display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px;
+  display: flex; gap: 16px; align-items: center; padding: 18px 20px;
   border-radius: var(--radius-karte, 18px); background: var(--surf); border: 1px solid var(--line);
   color: var(--ink); text-decoration: none; min-width: 0;
 }
 .event-karte:hover { text-decoration: none; border-color: color-mix(in srgb, var(--blue) 35%, var(--line)); }
+/* Datum als weiße Kachel mit Linie (Entwurf "Veranstaltungen"), nicht als Farbfläche */
 .event-karte > .datum-kachel {
-  flex: 0 0 auto; width: 52px; height: 56px; align-content: center; border-radius: 14px;
-  background: var(--blue-soft); color: var(--blue-ink);
+  flex: 0 0 auto; width: 56px; height: 64px; align-content: center; border-radius: 16px;
+  background: var(--surf-2); border: 1px solid var(--line); color: var(--ink);
 }
+.event-karte > .datum-kachel small { color: var(--muted); }
+.event-karte .event-marken { justify-content: space-between; }
+.event-karte .event-marken .marke-klein { font-size: 12px; padding: 3px 10px; }
+.event-karte .event-marken .marke-klein:first-child { background: var(--chip); color: var(--ink-2); }
+/* Die eigene Anmeldung ist gelb - "deins" */
+.event-karte .event-marken .marke-klein.gruen { background: var(--gold); color: var(--on-gold); }
 .event-karte > .datum-kachel.vorbei { background: var(--surf-2); color: var(--ink-2); }
-.event-karte-text { display: grid; gap: 3px; min-width: 0; }
-.event-karte-text .titel { font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
-.event-karte-text small { color: var(--muted); font-size: 13.5px; }
-.event-karte-text .zeile { font-size: 13.5px; font-weight: 700; }
+.event-karte-text { flex: 1; display: grid; gap: 3px; min-width: 0; }
+.event-karte-text .titel { font-family: var(--font-display); font-size: 18px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; margin-top: 2px; }
+.event-karte-text small { color: var(--ink-2); font-size: 15px; }
+.event-karte-text .zeile { font-size: 13.5px; color: var(--muted); }
 .event-karte.vorbei .titel { color: var(--ink-2); }
 .event-marken { display: flex; flex-wrap: wrap; gap: 6px; }
 .event-vergangen-link { margin: 4px 0 0; text-align: center; font-weight: 600; }
 
-.event-kopf {
-  position: relative; overflow: hidden; margin: 0 0 16px; padding: 18px 20px 22px;
-  border-radius: var(--radius-kartegross); background: var(--blue-soft); color: var(--ink);
+.event-kopf { margin: 0 0 18px; }
+.rueck-kreis {
+  width: 44px; height: 44px; border-radius: 22px; margin-bottom: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surf-2); border: 1px solid var(--line); color: var(--ink);
 }
-.event-kopf > :not(.platzlinien) { position: relative; }
-.event-kopf .platzlinien {
-  position: absolute; right: 0; top: 0; width: 350px; height: 150px;
-  fill: none; stroke: color-mix(in srgb, var(--blue) 14%, transparent); stroke-width: 2;
-}
-.event-kopf .zurueck { color: var(--blue-ink); display: inline-block; margin-bottom: 10px; }
-.event-kopf .pagetitle { color: var(--ink); margin: 8px 0 4px; overflow-wrap: anywhere; }
-.event-kopf p { margin: 0; color: var(--ink-2); }
+.rueck-kreis:hover { background: var(--chip); text-decoration: none; }
+.rueck-kreis svg { width: 20px; height: 20px; }
+.event-kopf .event-marken .marke-klein:first-child { background: var(--chip); color: var(--ink-2); font-size: 12px; padding: 3px 10px; }
+.event-kopf .pagetitle { margin: 10px 0 4px; overflow-wrap: anywhere; }
+.event-kopf p { margin: 0; color: var(--ink-2); font-size: 15px; }
 
 .event-raster { display: grid; gap: 16px; }
 .event-haupt, .event-seite { display: grid; gap: 16px; align-content: start; min-width: 0; }
-.eckdaten dl { margin: 0; display: grid; gap: 14px; }
-.eckdaten dl > div { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; }
-.eckdaten dt { color: var(--muted); font-size: 13.5px; }
-.eckdaten dd { margin: 0; display: grid; gap: 4px; min-width: 0; }
-.eckdaten dd small { color: var(--muted); font-size: 13px; line-height: 1.45; }
-.eckdaten .balken { display: block; height: 8px; border-radius: 4px; background: var(--surf-2); overflow: hidden; }
-.eckdaten .balken i { display: block; height: 100%; border-radius: 4px; background: var(--blue); }
+/* Eckdaten als Tabelle: Kicker links, Wert rechts, Linie dazwischen */
+.karte.eckdaten { padding: 0; box-shadow: none; overflow: hidden; }
+.eckdaten dl { margin: 0; }
+.eckdaten dl > div {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 4px 16px;
+  padding: 16px 20px;
+}
+.eckdaten dl > div + div { border-top: 1px solid var(--line); }
+.eckdaten dt {
+  font-family: var(--font-display); font-size: var(--font-size-kicker); font-weight: 700;
+  letter-spacing: var(--tracking-kicker); text-transform: uppercase; color: var(--muted);
+}
+.eckdaten dd { margin: 0; display: grid; gap: 4px; min-width: 0; text-align: right; font-weight: 600; }
+.eckdaten dd small { color: var(--muted); font-size: 13px; font-weight: 400; line-height: 1.45; }
+.eckdaten dd.balken { grid-column: 1 / -1; display: block; height: 6px; margin-top: 6px; border-radius: 3px; background: var(--surf-3); overflow: hidden; }
+.eckdaten .balken i { display: block; height: 100%; border-radius: 3px; background: var(--blue); }
+.event-text { padding: 2px 4px; }
+.event-text p { margin: 0; white-space: pre-line; line-height: 1.55; color: var(--ink-2); }
 .karte.beschreibung p { margin: 0; white-space: pre-line; line-height: 1.55; }
 
 .event-mein h2, .event-anmelden h2 { margin: 0 0 12px; font-size: 20px; }
-.event-mein.angemeldet {
-  background: color-mix(in srgb, var(--green) 10%, var(--surf));
-  border-color: color-mix(in srgb, var(--green) 35%, transparent);
+.event-mein, .event-anmelden { box-shadow: none; padding: 22px; }
+.event-mein .kopf { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+.event-mein .kopf h2 { margin: 0; }
+/* Die eigene Anmeldung: hellblaue Karte, der Haken gelb ("deins") */
+.event-mein .haken {
+  width: 44px; height: 44px; border-radius: 22px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center; background: var(--gold); color: var(--on-gold);
 }
-.event-mein.wartet { background: var(--gold-soft); border-color: var(--gold-line); }
+.event-mein .haken svg { width: 22px; height: 22px; }
+.event-mein.angemeldet {
+  background: var(--blue-soft); border-color: color-mix(in srgb, var(--blue) 22%, transparent);
+}
+.event-mein.angemeldet .knopf:not(.haupt):not(.gefahr) { background: var(--surf); }
+.event-mein.wartet { background: var(--surf-2); }
+.event-knoepfe { align-items: center; }
 .event-mein p { margin: 0 0 8px; }
 .event-mein .betrag b { font-size: 20px; }
 .event-knoepfe, .event-abmelden-frage { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
