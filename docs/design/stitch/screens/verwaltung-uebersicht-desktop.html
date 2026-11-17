@@ -1,0 +1,552 @@
+<!DOCTYPE html><html class="h-full bg-white" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>TC Muckensturm - Verwaltung - Übersicht</title>
+<!-- Google Fonts: Space Grotesk & DM Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,400&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS v3 with Forms & Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-tint": "#0761a3",
+            "surface-dim": "#dad9e3",
+            "secondary-container": "#a1dcfe",
+            "on-primary-container": "#cde2ff",
+            "inverse-surface": "#2f3038",
+            "on-error": "#ffffff",
+            "error": "#ba1a1a",
+            "on-error-container": "#93000a",
+            "surface-container": "#eeedf7",
+            "tertiary-fixed-dim": "#ffb77c",
+            "on-secondary-fixed": "#001e2c",
+            "on-background": "#1a1b22",
+            "tertiary": "#743d00",
+            "tertiary-container": "#975100",
+            "outline-variant": "#c1c7d2",
+            "error-container": "#ffdad6",
+            "on-secondary": "#ffffff",
+            "primary": "#004e85",
+            "outline": "#717781",
+            "inverse-on-surface": "#f1effa",
+            "surface-container-low": "#f4f2fd",
+            "on-primary-fixed-variant": "#00497d",
+            "on-primary": "#ffffff",
+            "primary-fixed": "#d1e4ff",
+            "surface": "#fbf8ff",
+            "primary-container": "#1466a8",
+            "on-tertiary-container": "#ffd9bd",
+            "on-surface-variant": "#414750",
+            "surface-bright": "#fbf8ff",
+            "on-secondary-fixed-variant": "#004d67",
+            "background": "#ffffff",
+            "secondary": "#246582",
+            "on-primary-fixed": "#001d36",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "on-secondary-container": "#20627f",
+            "surface-container-highest": "#e3e1ec",
+            "secondary-fixed": "#c2e8ff",
+            "surface-container-high": "#e8e7f1",
+            "tertiary-fixed": "#ffdcc3",
+            "on-surface": "#0a1624",
+            "surface-container-lowest": "#ffffff",
+            "inverse-primary": "#9fcaff",
+            "secondary-fixed-dim": "#93ceef",
+            "on-tertiary": "#ffffff",
+            "on-tertiary-fixed": "#2f1500",
+            "primary-fixed-dim": "#9fcaff",
+            "surface-variant": "#e3e1ec"
+          },
+          borderRadius: {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "space-md": "1rem",
+            "space-sm": "0.5rem",
+            "gutter": "1rem",
+            "margin": "1rem",
+            "margin-desktop": "2rem",
+            "space-xl": "2.5rem",
+            "space-xs": "0.25rem",
+            "space-lg": "1.5rem",
+            "gutter-desktop": "1.5rem"
+          },
+          fontFamily: {
+            "body-lg": ["DM Sans", "sans-serif"],
+            "display-score": ["Space Grotesk", "sans-serif"],
+            "body-sm": ["DM Sans", "sans-serif"],
+            "numeric-data": ["Space Grotesk", "monospace", "sans-serif"],
+            "display-score-mobile": ["Space Grotesk", "sans-serif"],
+            "headline-sm": ["Space Grotesk", "sans-serif"],
+            "headline-lg": ["Space Grotesk", "sans-serif"],
+            "headline-lg-mobile": ["Space Grotesk", "sans-serif"],
+            "label-caps": ["Space Grotesk", "sans-serif"]
+          },
+          fontSize: {
+            "body-lg": ["1rem", { lineHeight: "1.5rem", letterSpacing: "0em", fontWeight: "400" }],
+            "display-score": ["4rem", { lineHeight: "4rem", letterSpacing: "-0.04em", fontWeight: "700" }],
+            "body-sm": ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "0.01em", fontWeight: "400" }],
+            "numeric-data": ["1.125rem", { lineHeight: "1.25rem", letterSpacing: "-0.01em", fontWeight: "500" }],
+            "display-score-mobile": ["2.75rem", { lineHeight: "3rem", letterSpacing: "-0.03em", fontWeight: "700" }],
+            "headline-sm": ["1.125rem", { lineHeight: "1.5rem", letterSpacing: "0em", fontWeight: "600" }],
+            "headline-lg": ["2rem", { lineHeight: "2.25rem", letterSpacing: "-0.02em", fontWeight: "600" }],
+            "headline-lg-mobile": ["1.5rem", { lineHeight: "1.75rem", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "label-caps": ["0.6875rem", { lineHeight: "0.875rem", letterSpacing: "0.08em", fontWeight: "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 20px;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .material-symbols-outlined.icon-fill {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    .hatch-pattern {
+      background-color: #f1f5f9;
+      background-image: repeating-linear-gradient(
+        -45deg,
+        #e2e8f0,
+        #e2e8f0 5px,
+        #f1f5f9 5px,
+        #f1f5f9 10px
+      );
+    }
+    /* Tabular numeric rendering */
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body class="bg-white text-[#0A1624] font-body-lg antialiased selection:bg-[#E8F1F8] selection:text-[#1466A8] min-h-screen">
+<div class="flex min-h-screen w-full max-w-[1440px] mx-auto bg-white">
+<!-- SEITENLEISTE (240px breit, weißer Hintergrund #ffffff, rechte Begrenzung border-r border-slate-200) -->
+<aside class="w-[240px] shrink-0 h-screen sticky top-0 flex flex-col justify-between border-r border-slate-200 bg-white p-5 overflow-y-auto">
+<div>
+<!-- Wortmarke -->
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-[#1466A8]" data-icon="sports_tennis">sports_tennis</span>
+<span class="font-headline-sm text-label-caps uppercase tracking-wider font-bold text-slate-500">TC Muckensturm</span>
+</div>
+<!-- Button Platz buchen -->
+<button class="w-full bg-[#E8F1F8] text-[#1466A8] border border-[#C9DFEF] font-headline-sm font-semibold flex items-center justify-center gap-1.5 h-[44px] px-4 rounded-full mb-6 text-[15px] hover:bg-[#dbeaf8] active:scale-[0.98] transition-all shadow-sm">
+<span class="material-symbols-outlined text-lg text-[#1466A8]" data-icon="add">add</span>
+<span>Platz buchen</span>
+</button>
+<!-- Hauptnavigation (Shared Components Content Anchors) -->
+<nav class="space-y-1 mb-6">
+<a class="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 rounded-full hover:bg-slate-100 hover:text-[#0A1624] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-body-lg text-sm">Start</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 rounded-full hover:bg-slate-100 hover:text-[#0A1624] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="sports_tennis">sports_tennis</span>
+<span class="font-body-lg text-sm">Plätze</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 rounded-full hover:bg-slate-100 hover:text-[#0A1624] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-body-lg text-sm">Verein</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 rounded-full hover:bg-slate-100 hover:text-[#0A1624] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-body-lg text-sm">Konto</span>
+</a>
+</nav>
+<!-- Abschnittslabel VERWALTUNG -->
+<div class="px-3 mb-2">
+<span class="text-[11px] font-headline-sm font-bold text-slate-500 tracking-wider uppercase block">Verwaltung</span>
+</div>
+<!-- Menü Verwaltung -->
+<nav class="space-y-1">
+<!-- Übersicht (AKTIV) -->
+<a class="flex items-center gap-3 px-3 py-2 text-sm font-semibold rounded-full bg-[#E8F1F8] text-[#1466A8] transition-colors" href="#">
+<span class="material-symbols-outlined text-[#1466A8]" data-icon="dashboard">dashboard</span>
+<span class="font-body-lg text-sm font-semibold">Übersicht</span>
+</a>
+<!-- Mitglieder mit Badge 3 -->
+<a class="flex items-center justify-between px-3 py-2 text-sm text-slate-600 rounded-full hover:bg-slate-100 hover:text-[#0A1624] transition-colors" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-body-lg text-sm">Mitglieder</span>
+</div>
+<span class="bg-[#C4433A] text-white text-[11px] font-headline-sm font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none">3</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 rounded-full hover:bg-slate-100 hover:text-[#0A1624] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="font-body-lg text-sm">Veranstaltungen</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 rounded-full hover:bg-slate-100 hover:text-[#0A1624] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="construction">construction</span>
+<span class="font-body-lg text-sm">Arbeitsdienst</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 rounded-full hover:bg-slate-100 hover:text-[#0A1624] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-body-lg text-sm">Kasse</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 rounded-full hover:bg-slate-100 hover:text-[#0A1624] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span class="font-body-lg text-sm">Plätze &amp; Serien</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 rounded-full hover:bg-slate-100 hover:text-[#0A1624] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="local_bar">local_bar</span>
+<span class="font-body-lg text-sm">Getränke</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 rounded-full hover:bg-slate-100 hover:text-[#0A1624] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-lg text-sm">System</span>
+</a>
+</nav>
+</div>
+<!-- Unten: Nutzerkarte -->
+<div class="pt-4 border-t border-slate-200 mt-4 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-[#E8F1F8] text-[#1466A8] border border-[#C9DFEF] flex items-center justify-center font-headline-sm font-semibold text-xs tracking-tight">
+AB
+</div>
+<div>
+<div class="font-headline-sm text-xs font-semibold text-[#0A1624] leading-tight">Anna Berger</div>
+<div class="font-body-sm text-[11px] text-slate-500">Vorstand</div>
+</div>
+</div>
+<button class="font-headline-sm text-[11px] text-slate-400 hover:text-slate-700 transition-colors">
+          Abmelden
+        </button>
+</div>
+</aside>
+<!-- HAUPTINHALTSBEREICH (p-8 oder p-10, max-w-6xl) -->
+<main class="flex-1 p-8 lg:p-10 max-w-6xl overflow-y-auto">
+<!-- Top Header Row -->
+<div class="flex items-start justify-between mb-8 pb-4 border-b border-slate-100">
+<div>
+<span class="text-[11px] font-headline-sm font-bold text-slate-500 tracking-wider uppercase block mb-1">Verwaltung</span>
+<h1 class="text-[32px] font-headline-lg font-bold text-[#0A1624] leading-tight tracking-tight">Verwaltung</h1>
+<p class="font-body-sm text-slate-500 mt-1">Statusübersicht, anstehende Aufgaben und Belegung des Spielbetriebs.</p>
+</div>
+<!-- Rechts oben Icons/Aktionen -->
+<div class="flex items-center gap-3">
+<!-- Glocke Icon Karte mit gelbem Badge -->
+<div class="relative">
+<button class="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<span class="absolute -top-1 -right-1 bg-[#FFD21F] text-[#0A1624] font-headline-sm font-bold text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white tabular-nums">
+              2
+            </span>
+</div>
+<!-- Avatar AB -->
+<div class="w-10 h-10 rounded-full bg-[#E8F1F8] text-[#1466A8] border border-[#C9DFEF] flex items-center justify-center font-headline-sm font-bold text-sm shadow-sm">
+AB
+</div>
+</div>
+</div>
+<!-- ABSCHNITT: Heute zu tun -->
+<section class="mb-8">
+<div class="flex items-center gap-2.5 mb-4">
+<h2 class="text-[18px] font-headline-sm font-semibold text-[#0A1624]">Heute zu tun</h2>
+<span class="bg-slate-100 text-slate-600 text-xs px-2.5 py-0.5 rounded-full font-headline-sm font-medium">3 offen</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+<!-- Große prominente Karte (2 Spalten breit) -->
+<div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between hover:border-slate-300 transition-colors">
+<div>
+<span class="bg-[#F1F5F9] text-[#334155] text-[11px] font-headline-sm font-bold px-2 py-0.5 rounded-full inline-block mb-3">ZUERST</span>
+<h3 class="text-xl font-headline-sm font-bold text-[#0A1624] mb-1">3 Mitgliedsanträge</h3>
+<p class="font-body-sm text-slate-500">Der älteste wartet seit vier Tagen.</p>
+</div>
+<div class="mt-6">
+<button class="bg-[#1466A8] text-white rounded-full px-5 h-[44px] text-[15px] font-headline-sm font-semibold hover:bg-[#0f548c] active:scale-[0.98] transition-all inline-flex items-center gap-2">
+<span>Anträge prüfen</span>
+<span class="material-symbols-outlined text-base" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Rechts daneben gestapelte kleinere Karten -->
+<div class="space-y-4">
+<!-- Karte Getränkeabrechnung -->
+<div class="bg-white border border-slate-200 rounded-2xl p-5 hover:border-slate-300 transition-colors">
+<div class="flex items-start justify-between mb-1">
+<h4 class="font-headline-sm font-semibold text-base text-[#0A1624]">Getränkemonat Oktober abschließen</h4>
+</div>
+<p class="font-body-sm text-slate-500 text-xs mb-3">12 offene Posten zur Abrechnung</p>
+<button class="inline-flex items-center justify-center rounded-full bg-[#E8F1F8] text-[#1466A8] border border-[#C9DFEF] px-5 h-[44px] text-[15px] font-headline-sm font-semibold hover:bg-[#dbeaf8] transition-colors whitespace-nowrap">
+Zur Getränkeabrechnung
+</button>
+</div>
+<!-- Karte Rückläufer -->
+<div class="bg-white border border-slate-200 rounded-2xl p-5 hover:border-slate-300 transition-colors">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2 h-2 rounded-full bg-[#C4433A]"></span>
+<h4 class="font-headline-sm font-semibold text-base text-[#0A1624]">1 Rückläufer offen</h4>
+</div>
+<p class="font-body-sm text-slate-500 text-xs mb-3">SEPA-Lastschrift fehlgeschlagen</p>
+<button class="inline-flex items-center justify-center rounded-full bg-[#E8F1F8] text-[#1466A8] border border-[#C9DFEF] px-5 h-[44px] text-[15px] font-headline-sm font-semibold hover:bg-[#dbeaf8] transition-colors whitespace-nowrap">
+Rückläufer ansehen
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- KARTE: Einzug · November -->
+<section class="mb-8">
+<div class="bg-white border border-slate-200 rounded-2xl p-6">
+<div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+<h3 class="font-headline-sm font-semibold text-base text-[#0A1624]">Einzug · November</h3>
+<span class="font-headline-sm text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">Stand 2 von 4</span>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 mb-5">
+<div class="font-headline-sm font-bold text-lg text-[#0A1624] tracking-tight">4.812,50 € · 214 Mitglieder</div>
+<div class="font-body-sm text-sm text-slate-500">Als Nächstes: Bankdatei einreichen</div>
+</div>
+<!-- Vierteiliger horizontaler Fortschritts-/Schrittbalken -->
+<div class="grid grid-cols-4 gap-3">
+<!-- Schritt 1: Angekündigt (Erledigt) -->
+<div>
+<div class="h-2 w-full rounded-full bg-[#1466A8] mb-2"></div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[#1466A8] text-sm" data-icon="check_circle">check_circle</span>
+<span class="font-headline-sm text-xs font-semibold text-[#1466A8]">Angekündigt</span>
+</div>
+</div>
+<!-- Schritt 2: Bankdatei erzeugt (Erledigt) -->
+<div>
+<div class="h-2 w-full rounded-full bg-[#1466A8] mb-2"></div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[#1466A8] text-sm" data-icon="check_circle">check_circle</span>
+<span class="font-headline-sm text-xs font-semibold text-[#1466A8]">Bankdatei erzeugt</span>
+</div>
+</div>
+<!-- Schritt 3: Eingereicht (Offen) -->
+<div>
+<div class="h-2 w-full rounded-full bg-slate-200 mb-2"></div>
+<div class="flex items-center gap-1">
+<span class="w-3.5 h-3.5 rounded-full border border-slate-300 inline-block"></span>
+<span class="font-headline-sm text-xs font-medium text-slate-400">Eingereicht</span>
+</div>
+</div>
+<!-- Schritt 4: Abgeschlossen (Offen) -->
+<div>
+<div class="h-2 w-full rounded-full bg-slate-200 mb-2"></div>
+<div class="flex items-center gap-1">
+<span class="w-3.5 h-3.5 rounded-full border border-slate-300 inline-block"></span>
+<span class="font-headline-sm text-xs font-medium text-slate-400">Abgeschlossen</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- REIHE: Auf einen Blick (4 Kennzahl-Karten nebeneinander) -->
+<section class="mb-8">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<!-- Karte 1: Mitglieder -->
+<div class="bg-white border border-slate-200 rounded-2xl p-5">
+<span class="text-[11px] font-headline-sm font-bold text-slate-500 tracking-wider uppercase block mb-1">Mitglieder</span>
+<div class="text-[44px] font-headline-lg font-bold text-[#0A1624] leading-none mb-2 tabular-nums">312</div>
+<div class="font-body-sm text-xs text-slate-500">+4 im letzten Monat</div>
+</div>
+<!-- Karte 2: Heute gebucht -->
+<div class="bg-white border border-slate-200 rounded-2xl p-5">
+<span class="text-[11px] font-headline-sm font-bold text-slate-500 tracking-wider uppercase block mb-1">Heute gebucht</span>
+<div class="text-[44px] font-headline-lg font-bold text-[#0A1624] leading-none mb-2 tabular-nums">27</div>
+<div class="font-body-sm text-xs text-slate-500">von 48 Stunden gesamt</div>
+</div>
+<!-- Karte 3: Offen -->
+<div class="bg-white border border-slate-200 rounded-2xl p-5">
+<span class="text-[11px] font-headline-sm font-bold text-slate-500 tracking-wider uppercase block mb-1">Offen</span>
+<div class="text-[34px] xl:text-[40px] font-headline-lg font-bold text-[#0A1624] leading-none mb-2 tabular-nums tracking-tight">1.240 €</div>
+<div class="font-body-sm text-xs text-slate-500">Beiträge &amp; Getränke</div>
+</div>
+<!-- Karte 4: Anträge -->
+<div class="bg-white border border-slate-200 rounded-2xl p-5">
+<span class="text-[11px] font-headline-sm font-bold text-slate-500 tracking-wider uppercase block mb-1">Anträge</span>
+<div class="text-[44px] font-headline-lg font-bold text-[#0A1624] leading-none mb-2 tabular-nums">3</div>
+<div class="font-body-sm text-xs text-slate-500">Warten auf Prüfung</div>
+</div>
+</div>
+</section>
+<!-- ABSCHNITT: Heute auf der Anlage -->
+<section class="mb-12">
+<div class="flex flex-col sm:flex-row sm:items-baseline justify-between mb-4">
+<div>
+<h2 class="text-[18px] font-headline-sm font-semibold text-[#0A1624]">Heute auf der Anlage</h2>
+<p class="font-body-sm text-slate-500 text-xs">Montag, 16. November · Belegung aller Plätze</p>
+</div>
+<div class="text-xs font-headline-sm font-semibold text-[#1466A8] mt-1 sm:mt-0 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="tune">tune</span>
+<span>Alle 8 Freiplätze (Sand)</span>
+</div>
+</div>
+<!-- Interaktiver Zeitstrahl / Belegungsplan (08:00 bis 21:00) -->
+<div class="bg-white border border-slate-200 rounded-2xl p-4 overflow-x-auto">
+<div class="min-w-[780px]">
+<!-- Zeitachsen-Header -->
+<div class="grid grid-cols-[80px_repeat(13,1fr)] items-center border-b border-slate-200 pb-2 mb-1 text-[11px] font-headline-sm font-semibold text-slate-400 text-center">
+<div class="text-left font-bold text-slate-500 px-2 uppercase tracking-wider">Platz</div>
+<div>08:00</div>
+<div>09:00</div>
+<div>10:00</div>
+<div>11:00</div>
+<div>12:00</div>
+<div>13:00</div>
+<div>14:00</div>
+<div>15:00</div>
+<div>16:00</div>
+<div>17:00</div>
+<div>18:00</div>
+<div>19:00</div>
+<div>20:00</div>
+</div>
+<!-- Rasterbereich mit Zeilen 1 bis 8 und NOW-Indicator -->
+<div class="relative">
+<!-- Vertikale blaue Linie bei 16:00 (Stunde 8 von 13 = 80px + (8/13)*100%) -->
+<!-- 13 Intervalle: 08-09 (0), 09-10 (1), 10-11 (2), 11-12 (3), 12-13 (4), 13-14 (5), 14-15 (6), 15-16 (7), 16-17 (8) -> 16:00 ist bei 8/13 = 61.538% -->
+<div class="absolute top-0 bottom-0 pointer-events-none z-20 flex flex-col items-center" style="left: calc(80px + (100% - 80px) * (8 / 13));">
+<span class="bg-[#E8F1F8] text-[#1466A8] border border-[#C9DFEF] text-[10px] font-headline-sm font-bold px-2 py-0.5 rounded-full shadow-sm -translate-y-2 whitespace-nowrap">
+16:00 Jetzt
+</span>
+<div class="w-[2px] h-full bg-[#1466A8]"></div>
+</div>
+<!-- Zeile 1: Platz 1 -->
+<div class="grid grid-cols-[80px_repeat(13,1fr)] items-center h-10 border-b border-slate-100 relative text-xs">
+<div class="font-headline-sm font-bold text-xs text-[#0A1624] px-2">Platz 1</div>
+<!-- Belegung: 09:00-11:00 (Col 2 & 3) -->
+<div class="col-start-3 col-span-2 mx-0.5 h-7 rounded-md bg-slate-200 border border-slate-300 text-slate-800 text-[11px] font-medium flex items-center px-2 truncate">
+                  Weber / Keller
+                </div>
+<!-- Belegung: 14:00-16:00 Herren Serie -->
+<div class="col-start-7 col-span-2 mx-0.5 h-7 rounded-md bg-[#E8F1F8] border border-[#1466A8]/40 text-[#1466A8] text-[11px] font-headline-sm font-semibold flex items-center px-2 truncate">
+                  Herren Serie
+                </div>
+<!-- Belegung: 17:00-19:00 Training -->
+<div class="col-start-10 col-span-2 mx-0.5 h-7 rounded-md bg-slate-200 border border-slate-300 text-slate-800 text-[11px] font-medium flex items-center px-2 truncate">
+                  Damen 40 Training
+                </div>
+</div>
+<!-- Zeile 2: Platz 2 -->
+<div class="grid grid-cols-[80px_repeat(13,1fr)] items-center h-10 border-b border-slate-100 relative text-xs">
+<div class="font-headline-sm font-bold text-xs text-[#0A1624] px-2">Platz 2</div>
+<!-- Belegung: 10:00-12:00 -->
+<div class="col-start-4 col-span-2 mx-0.5 h-7 rounded-md bg-slate-200 border border-slate-300 text-slate-800 text-[11px] font-medium flex items-center px-2 truncate">
+                  Bauer / Klein
+                </div>
+<!-- Belegung: 15:00-17:00 -->
+<div class="col-start-9 col-span-2 mx-0.5 h-7 rounded-md bg-slate-200 border border-slate-300 text-slate-800 text-[11px] font-medium flex items-center px-2 truncate">
+                  M. Sommer (Gast)
+                </div>
+</div>
+<!-- Zeile 3: Platz 3 -->
+<div class="grid grid-cols-[80px_repeat(13,1fr)] items-center h-10 border-b border-slate-100 relative text-xs">
+<div class="font-headline-sm font-bold text-xs text-[#0A1624] px-2">Platz 3</div>
+<!-- Belegung: 08:00-10:00 Frühsport -->
+<div class="col-start-2 col-span-2 mx-0.5 h-7 rounded-md bg-slate-200 border border-slate-300 text-slate-800 text-[11px] font-medium flex items-center px-2 truncate">
+                  Schmidt / Graf
+                </div>
+<!-- Belegung: 16:00-18:00 Serie -->
+<div class="col-start-10 col-span-2 mx-0.5 h-7 rounded-md bg-[#E8F1F8] border border-[#1466A8]/40 text-[#1466A8] text-[11px] font-headline-sm font-semibold flex items-center px-2 truncate">
+                  Herren Serie
+                </div>
+</div>
+<!-- Zeile 4: Platz 4 -->
+<div class="grid grid-cols-[80px_repeat(13,1fr)] items-center h-10 border-b border-slate-100 relative text-xs">
+<div class="font-headline-sm font-bold text-xs text-[#0A1624] px-2">Platz 4</div>
+<!-- Gesperrt: 12:00-15:00 -->
+<div class="col-start-6 col-span-3 mx-0.5 h-7 rounded-md hatch-pattern border border-slate-300 text-slate-600 text-[11px] font-headline-sm font-medium flex items-center px-2 truncate">
+                  Gesperrt: Platzpflege
+                </div>
+<!-- Belegung: 18:00-20:00 -->
+<div class="col-start-12 col-span-2 mx-0.5 h-7 rounded-md bg-slate-200 border border-slate-300 text-slate-800 text-[11px] font-medium flex items-center px-2 truncate">
+                  Einzel Meisterschaft
+                </div>
+</div>
+<!-- Zeile 5: Platz 5 -->
+<div class="grid grid-cols-[80px_repeat(13,1fr)] items-center h-10 border-b border-slate-100 relative text-xs">
+<div class="font-headline-sm font-bold text-xs text-[#0A1624] px-2">Platz 5</div>
+<!-- Belegung: 11:00-13:00 -->
+<div class="col-start-5 col-span-2 mx-0.5 h-7 rounded-md bg-slate-200 border border-slate-300 text-slate-800 text-[11px] font-medium flex items-center px-2 truncate">
+                  Hofmann / Wolf
+                </div>
+<!-- Belegung: 15:00-17:00 -->
+<div class="col-start-9 col-span-2 mx-0.5 h-7 rounded-md bg-slate-200 border border-slate-300 text-slate-800 text-[11px] font-medium flex items-center px-2 truncate">
+                  Jugend U15
+                </div>
+</div>
+<!-- Zeile 6: Platz 6 -->
+<div class="grid grid-cols-[80px_repeat(13,1fr)] items-center h-10 border-b border-slate-100 relative text-xs">
+<div class="font-headline-sm font-bold text-xs text-[#0A1624] px-2">Platz 6</div>
+<!-- Belegung: 14:00-16:00 Serie -->
+<div class="col-start-8 col-span-2 mx-0.5 h-7 rounded-md bg-[#E8F1F8] border border-[#1466A8]/40 text-[#1466A8] text-[11px] font-headline-sm font-semibold flex items-center px-2 truncate">
+                  Herren Serie
+                </div>
+<!-- Belegung: 17:00-19:00 -->
+<div class="col-start-11 col-span-2 mx-0.5 h-7 rounded-md bg-slate-200 border border-slate-300 text-slate-800 text-[11px] font-medium flex items-center px-2 truncate">
+                  Freies Spiel
+                </div>
+</div>
+<!-- Zeile 7: Platz 7 -->
+<div class="grid grid-cols-[80px_repeat(13,1fr)] items-center h-10 border-b border-slate-100 relative text-xs">
+<div class="font-headline-sm font-bold text-xs text-[#0A1624] px-2">Platz 7</div>
+<!-- Gesperrt: 08:00-12:00 Walzen -->
+<div class="col-start-2 col-span-4 mx-0.5 h-7 rounded-md hatch-pattern border border-slate-300 text-slate-600 text-[11px] font-headline-sm font-medium flex items-center px-2 truncate">
+                  Gesperrt: Platzpflege
+                </div>
+<!-- Belegung: 16:00-18:00 -->
+<div class="col-start-10 col-span-2 mx-0.5 h-7 rounded-md bg-slate-200 border border-slate-300 text-slate-800 text-[11px] font-medium flex items-center px-2 truncate">
+                  Richter / Becker
+                </div>
+</div>
+<!-- Zeile 8: Platz 8 -->
+<div class="grid grid-cols-[80px_repeat(13,1fr)] items-center h-10 relative text-xs">
+<div class="font-headline-sm font-bold text-xs text-[#0A1624] px-2">Platz 8</div>
+<!-- Belegung: 13:00-15:00 -->
+<div class="col-start-7 col-span-2 mx-0.5 h-7 rounded-md bg-slate-200 border border-slate-300 text-slate-800 text-[11px] font-medium flex items-center px-2 truncate">
+                  Trainerlehrgang
+                </div>
+<!-- Belegung: 18:00-20:00 -->
+<div class="col-start-12 col-span-2 mx-0.5 h-7 rounded-md bg-slate-200 border border-slate-300 text-slate-800 text-[11px] font-medium flex items-center px-2 truncate">
+                  Doppel Mixed
+                </div>
+</div>
+</div>
+</div>
+<!-- Legende darunter -->
+<div class="flex items-center gap-6 pt-4 border-t border-slate-200 mt-2 text-xs text-slate-600 font-headline-sm">
+<div class="flex items-center gap-2">
+<span class="w-3.5 h-3.5 rounded bg-slate-200 border border-slate-300 inline-block"></span>
+<span>Belegt (Mitglieder/Gäste)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3.5 h-3.5 rounded hatch-pattern border border-slate-300 inline-block"></span>
+<span>Gesperrt (Platzpflege)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3.5 h-3.5 rounded bg-[#E8F1F8] border border-[#1466A8]/40 inline-block"></span>
+<span class="text-[#1466A8] font-semibold">Serie / Vereinstraining</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-0.5 bg-[#1466A8] inline-block"></span>
+<span class="text-[#0A1624] font-semibold">Jetzt (Aktuelle Uhrzeit)</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+
+
+</body></html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html><html lang="de"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=393, height=852, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TC Muckensturm - Bankverbindung &amp; Mandat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            club: '#1466A8',
+            primaryText: '#0A1624',
+          },
+          fontFamily: {
+            title: ['"Space Grotesk"', 'sans-serif'],
+            body: ['"DM Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: #ffffff;
+      color: #0A1624;
+      -webkit-font-smoothing: antialiased;
+    }
+    .font-title {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+  </style>
+</head>
+<body class="w-[393px] h-[852px] bg-white mx-auto flex flex-col justify-between overflow-hidden select-none relative">
+
+  <!-- Main Scrollable Area -->
+  <div class="flex-1 overflow-y-auto px-[20px] pb-10">
+
+    <!-- iOS Status Bar -->
+    <div class="pt-3 pb-2 flex items-center justify-between text-black font-semibold text-[15px] tracking-tight">
+      <span class="pl-2">9:41</span>
+      <div class="flex items-center gap-1.5 pr-2">
+        <!-- Cellular Icon -->
+        <svg class="w-4 h-3.5 fill-current" viewBox="0 0 17 12">
+          <rect x="0" y="8" width="3" height="4" rx="0.5"></rect>
+          <rect x="4.5" y="6" width="3" height="6" rx="0.5"></rect>
+          <rect x="9" y="3" width="3" height="9" rx="0.5"></rect>
+          <rect x="13.5" y="0" width="3" height="12" rx="0.5"></rect>
+        </svg>
+        <!-- Wifi Icon -->
+        <svg class="w-4 h-3.5 fill-current" viewBox="0 0 16 12">
+          <path d="M8 2.8C5.2 2.8 2.7 3.9 0.8 5.7L0 4.8C2.1 2.8 5 1.5 8 1.5C11 1.5 13.9 2.8 16 4.8L15.2 5.7C13.3 3.9 10.8 2.8 8 2.8ZM8 6.4C6.2 6.4 4.5 7.2 3.3 8.4L2.5 7.6C4 6.1 5.9 5.2 8 5.2C10.1 5.2 12 6.1 13.5 7.6L12.7 8.4C11.5 7.2 9.8 6.4 8 6.4ZM8 9.9C7.1 9.9 6.2 10.3 5.6 10.9L8 13.5L10.4 10.9C9.8 10.3 8.9 9.9 8 9.9Z" fill-rule="evenodd"></path>
+        </svg>
+        <!-- Battery Icon -->
+        <svg class="w-6 h-3 fill-current" viewBox="0 0 25 12">
+          <rect x="0.5" y="0.5" width="21" height="11" rx="2.5" fill="none" stroke="currentColor"></rect>
+          <rect x="2" y="2" width="18" height="8" rx="1.5"></rect>
+          <path d="M23 4C23.8 4 24.5 4.7 24.5 5.5V6.5C24.5 7.3 23.8 8 23 8V4Z" fill="currentColor"></path>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Back Navigation Link -->
+    <div class="mt-2 mb-4">
+      <a href="#" class="inline-flex items-center text-[#1466A8] font-body text-[14px] font-semibold hover:opacity-80 transition-opacity"><span class="material-symbols-outlined text-[20px] -ml-1 mr-0.5" style="font-variation-settings: 'wght' 600;">chevron_left</span>Konto</a>
+    </div>
+
+    <!-- Screen Title -->
+    <h1 class="font-title text-[24px] leading-tight font-bold text-[#0A1624] tracking-tight mb-6">
+      Bankverbindung &amp; Mandat
+    </h1>
+
+    <!-- Card with Details -->
+    <div class="bg-white rounded-[20px] border border-slate-200 overflow-hidden">
+      <!-- Card Header / Status Badge -->
+      <div class="px-5 pt-4 pb-3 flex items-center justify-between border-b border-slate-200/80 bg-slate-50/40">
+        <span class="font-title text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          SEPA-Lastschrift
+        </span>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#E8F1F8] text-[#1466A8] text-[12px] font-title font-semibold"><span class="w-1.5 h-1.5 rounded-full bg-[#1466A8]"></span>Mandat aktiv</span>
+      </div>
+
+      <!-- Rows separated by hairlines -->
+      <div class="divide-y divide-slate-200">
+        <!-- Row 1: Kontoinhaber -->
+        <div class="px-5 py-3.5 flex items-center justify-between gap-4">
+          <span class="font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 shrink-0">
+            KONTOINHABER
+          </span>
+          <span class="font-body text-[15px] font-medium text-[#0A1624] text-right">
+            Anna Berger
+          </span>
+        </div>
+
+        <!-- Row 2: IBAN -->
+        <div class="px-5 py-3.5 flex items-center justify-between gap-4">
+          <span class="font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 shrink-0">
+            IBAN
+          </span>
+          <span class="font-title text-[15px] font-semibold text-[#0A1624] tracking-wide text-right">
+            •••• 1234
+          </span>
+        </div>
+
+        <!-- Row 3: Bank -->
+        <div class="px-5 py-3.5 flex items-center justify-between gap-4">
+          <span class="font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 shrink-0">
+            BANK
+          </span>
+          <span class="font-body text-[15px] font-medium text-[#0A1624] text-right">
+            Sparkasse Rhein Neckar Nord
+          </span>
+        </div>
+
+        <!-- Row 4: Mandatsreferenz -->
+        <div class="px-5 py-3.5 flex items-center justify-between gap-4">
+          <span class="font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 shrink-0">
+            MANDATSREFERENZ
+          </span>
+          <span class="font-title text-[15px] font-semibold text-[#0A1624] text-right">
+            TCM-1042-01
+          </span>
+        </div>
+
+        <!-- Row 5: Online erteilt am -->
+        <div class="px-5 py-3.5 flex items-center justify-between gap-4">
+          <span class="font-title text-[11px] font-bold uppercase tracking-wider text-slate-500 shrink-0">
+            ONLINE ERTEILT AM
+          </span>
+          <span class="font-title text-[15px] font-medium text-[#0A1624] text-right">
+            03.04.2024
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Explanatory note & Contact Link -->
+    <div class="mt-6 px-1">
+      <p class="font-body text-[14px] leading-relaxed text-slate-500 mb-2">
+        Ändern kann die Bankverbindung nur der Vorstand.
+      </p>
+      <a href="#" class="inline-flex items-center text-[#1466A8] font-body text-[14px] font-semibold hover:underline">So erreichst du den Vorstand<span class="material-symbols-outlined text-[16px] ml-0.5">arrow_forward</span></a>
+    </div>
+
+  </div>
+
+  <!-- iOS Home Indicator -->
+  <div class="w-full flex justify-center pb-2 pt-1">
+    <div class="w-[134px] h-[5px] bg-[#0A1624]/20 rounded-full"></div>
+  </div>
+
+
+
+
+
+</body></html>

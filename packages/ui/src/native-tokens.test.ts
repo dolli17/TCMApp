@@ -52,8 +52,8 @@ describe("Inhalt", () => {
 
   it("nennt beide Schriftfamilien", () => {
     for (const datei of [swift, kotlin]) {
-      expect(datei).toContain('"Barlow"');
-      expect(datei).toContain('"Barlow Semi Condensed"');
+      expect(datei).toContain('"DM Sans"');
+      expect(datei).toContain('"Space Grotesk"');
     }
   });
 });

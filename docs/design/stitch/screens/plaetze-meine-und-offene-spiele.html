@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TC Muckensturm - Plätze (Meine & offene Spiele)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            club: {
+              DEFAULT: '#1466A8',
+              hover: '#0f5287',
+              light: '#E8F1F8',
+            },
+            court: {
+              yellow: '#FFD21F',
+              text: '#0A1624',
+              red: '#C4433A'
+            }
+          },
+          fontFamily: {
+            title: ['"Space Grotesk"', 'sans-serif'],
+            sans: ['"DM Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'DM Sans', sans-serif;
+      color: #0A1624;
+      background-color: #FFFFFF;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-title {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .material-symbols-outlined.filled {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Hide scrollbar for clean UI */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="h-full bg-white text-[#0A1624] flex justify-center items-start antialiased selection:bg-[#E8F1F8] selection:text-[#1466A8]">
+  <div class="w-full max-w-[393px] min-h-screen bg-white relative flex flex-col pb-28 border-x border-slate-100 shadow-sm">
+    
+    <!-- iOS Status Bar (9:41) -->
+    <header class="pt-3 px-6 pb-2 flex justify-between items-center text-xs font-semibold tracking-tight text-[#0A1624] select-none">
+      <span class="text-sm font-title font-bold tracking-tight">9:41</span>
+      <div class="flex items-center space-x-2 text-[#0A1624]">
+        <svg class="w-4 h-3.5 fill-current" viewBox="0 0 16 12">
+          <path d="M1 9.5a1.5 1.5 0 0 1 1.5-1.5h1a1.5 1.5 0 0 1 1.5 1.5v1A1.5 1.5 0 0 1 3.5 12h-1A1.5 1.5 0 0 1 1 10.5v-1zm4.5-3a1.5 1.5 0 0 1 1.5-1.5h1A1.5 1.5 0 0 1 9.5 8v2.5a1.5 1.5 0 0 1-1.5 1.5h-1A1.5 1.5 0 0 1 5.5 10.5v-4zm4.5-3a1.5 1.5 0 0 1 1.5-1.5h1A1.5 1.5 0 0 1 13.5 5v5.5a1.5 1.5 0 0 1-1.5 1.5h-1A1.5 1.5 0 0 1 10 10.5V3.5z"/>
+        </svg>
+        <svg class="w-4 h-3.5 fill-current" viewBox="0 0 16 12">
+          <path d="M8 2.5c2.3 0 4.4.9 6 2.4l1.2-1.2C13.4 1.8 10.8.8 8 .8 5.2.8 2.6 1.8.8 3.7L2 4.9C3.6 3.4 5.7 2.5 8 2.5zm0 3.8c1.3 0 2.5.5 3.4 1.4l1.2-1.2C11.4 5.3 9.8 4.6 8 4.6s-3.4.7-4.6 1.9L4.6 7.7c.9-.9 2.1-1.4 3.4-1.4zm0 3.8c.7 0 1.3.3 1.8.8l1.2-1.2C10.2 8.9 9.1 8.4 8 8.4s-2.2.5-3 1.5L6.2 11c.5-.5 1.1-.9 1.8-.9z"/>
+        </svg>
+        <svg class="w-6 h-3 fill-current" viewBox="0 0 24 12">
+          <rect x="1" y="1" width="19" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+          <rect x="3" y="3" width="13" height="6" rx="1.5" fill="currentColor"/>
+          <path d="M21 4.5v3a1.5 1.5 0 0 0 1.5-1.5 1.5 1.5 0 0 0-1.5-1.5z" fill="currentColor"/>
+        </svg>
+      </div>
+    </header>
+
+    <!-- Header Section -->
+    <div class="px-5 pt-3 pb-1">
+      <div class="text-[11px] font-title font-bold tracking-wider text-slate-500 uppercase">TC MUCKENSTURM</div>
+      <h1 class="text-[28px] font-title font-bold tracking-tight text-[#0A1624] leading-tight mt-0.5">Plätze</h1>
+      <div class="text-[13px] text-slate-500 mt-0.5">8 Plätze · 08 bis 21 Uhr</div>
+    </div>
+
+    <!-- Day Picker (Horizontale Pillen) -->
+    <div class="px-5 mt-4">
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+        <!-- MO 16 (Aktiv) -->
+        <button class="flex flex-col items-center justify-center min-w-[46px] h-[64px] rounded-full bg-[#1466A8] text-white shadow-sm flex-shrink-0 transition-transform active:scale-95">
+          <span class="text-[11px] font-title font-bold tracking-wide leading-none uppercase">MO</span>
+          <span class="text-[18px] font-title font-bold leading-tight mt-1">16</span>
+        </button>
+
+        <!-- DI 17 -->
+        <button class="flex flex-col items-center justify-center min-w-[46px] h-[64px] rounded-full bg-white border border-slate-200 text-[#0A1624] flex-shrink-0 hover:bg-slate-50 transition-transform active:scale-95">
+          <span class="text-[11px] font-title font-bold tracking-wide text-slate-500 leading-none uppercase">DI</span>
+          <span class="text-[18px] font-title font-bold leading-tight mt-1">17</span>
+        </button>
+
+        <!-- MI 18 -->
+        <button class="flex flex-col items-center justify-center min-w-[46px] h-[64px] rounded-full bg-white border border-slate-200 text-[#0A1624] flex-shrink-0 hover:bg-slate-50 transition-transform active:scale-95">
+          <span class="text-[11px] font-title font-bold tracking-wide text-slate-500 leading-none uppercase">MI</span>
+          <span class="text-[18px] font-title font-bold leading-tight mt-1">18</span>
+        </button>
+
+        <!-- DO 19 -->
+        <button class="flex flex-col items-center justify-center min-w-[46px] h-[64px] rounded-full bg-white border border-slate-200 text-[#0A1624] flex-shrink-0 hover:bg-slate-50 transition-transform active:scale-95">
+          <span class="text-[11px] font-title font-bold tracking-wide text-slate-500 leading-none uppercase">DO</span>
+          <span class="text-[18px] font-title font-bold leading-tight mt-1">19</span>
+        </button>
+
+        <!-- FR 20 -->
+        <button class="flex flex-col items-center justify-center min-w-[46px] h-[64px] rounded-full bg-white border border-slate-200 text-[#0A1624] flex-shrink-0 hover:bg-slate-50 transition-transform active:scale-95">
+          <span class="text-[11px] font-title font-bold tracking-wide text-slate-500 leading-none uppercase">FR</span>
+          <span class="text-[18px] font-title font-bold leading-tight mt-1">20</span>
+        </button>
+
+        <!-- SA 21 -->
+        <button class="flex flex-col items-center justify-center min-w-[46px] h-[64px] rounded-full bg-white border border-slate-200 text-[#0A1624] flex-shrink-0 hover:bg-slate-50 transition-transform active:scale-95">
+          <span class="text-[11px] font-title font-bold tracking-wide text-slate-500 leading-none uppercase">SA</span>
+          <span class="text-[18px] font-title font-bold leading-tight mt-1">21</span>
+        </button>
+
+        <!-- SO 22 -->
+        <button class="flex flex-col items-center justify-center min-w-[46px] h-[64px] rounded-full bg-white border border-slate-200 text-[#0A1624] flex-shrink-0 hover:bg-slate-50 transition-transform active:scale-95">
+          <span class="text-[11px] font-title font-bold tracking-wide text-slate-500 leading-none uppercase">SO</span>
+          <span class="text-[18px] font-title font-bold leading-tight mt-1">22</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Segment Switcher: Belegung vs. Meine & offene Spiele (hier aktiv) -->
+    <div class="px-5 mt-4">
+      <div class="bg-slate-100 p-1 rounded-full flex items-center">
+        <button class="flex-1 py-2 text-center text-[13px] font-medium text-slate-600 rounded-full transition-all">
+          Belegung
+        </button>
+        <button class="flex-1 py-2 text-center text-[13px] font-title font-bold text-[#0A1624] bg-white rounded-full shadow-sm transition-all">
+          Meine & offene Spiele
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content Flow -->
+    <div class="px-5 mt-6 space-y-7">
+
+      <!-- SECTION: Deine Termine -->
+      <section>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-[18px] font-title font-semibold text-[#0A1624] tracking-tight">Deine Termine</h2>
+          <span class="text-[12px] font-medium text-slate-500">2 Buchungen</span>
+        </div>
+
+        <div class="space-y-3">
+          <!-- Termin Karte 1: Heute 18:00 - 19:00 (mit Stornieren Button) -->
+          <div class="bg-white rounded-[22px] p-5 border border-slate-200 shadow-[0_2px_8px_rgba(10,22,36,0.03)] hover:border-slate-300 transition-colors">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-[26px] font-title font-bold text-[#0A1624] tracking-tight leading-none block">
+                  18:00 – 19:00
+                </span>
+                <div class="text-[13px] text-slate-500 mt-1.5 flex items-center space-x-1.5">
+                  <span class="font-medium text-[#0A1624]">Heute</span>
+                  <span>·</span>
+                  <span>Platz 3</span>
+                  <span>·</span>
+                  <span>mit Jonas Weber</span>
+                </div>
+              </div>
+              <span class="bg-[#FFD21F] text-[#0A1624] text-[12px] font-title font-bold px-3 py-1 rounded-full whitespace-nowrap shadow-xs">
+                Dein Spiel
+              </span>
+            </div>
+
+            <!-- Action Area / Stornieren Button -->
+            <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-[11px] text-slate-400">Stornieren bis 18:00 möglich</span>
+              <button class="text-[#C4433A] hover:text-red-700 text-[13px] font-medium px-2 py-1 -mr-2 rounded-lg transition-colors active:opacity-75">
+                Stornieren
+              </button>
+            </div>
+          </div>
+
+          <!-- Termin Karte 2: Donnerstag 10:00 - 11:00 -->
+          <div class="bg-white rounded-[22px] p-5 border border-slate-200 shadow-[0_2px_8px_rgba(10,22,36,0.03)] hover:border-slate-300 transition-colors">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-[26px] font-title font-bold text-[#0A1624] tracking-tight leading-none block">
+                  10:00 – 11:00
+                </span>
+                <div class="text-[13px] text-slate-500 mt-1.5 flex items-center space-x-1.5">
+                  <span class="font-medium text-[#0A1624]">Donnerstag</span>
+                  <span>·</span>
+                  <span>Platz 5</span>
+                  <span>·</span>
+                  <span class="text-slate-500">Du hast gebucht</span>
+                </div>
+              </div>
+              <span class="bg-[#FFD21F] text-[#0A1624] text-[12px] font-title font-bold px-3 py-1 rounded-full whitespace-nowrap shadow-xs">
+                Dein Spiel
+              </span>
+            </div>
+
+            <!-- Action Area / Stornieren Button -->
+            <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-[11px] text-slate-400">Stornieren bis Donnerstag 10:00</span>
+              <button class="text-[#C4433A] hover:text-red-700 text-[13px] font-medium px-2 py-1 -mr-2 rounded-lg transition-colors active:opacity-75">
+                Stornieren
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: Offene Spiele -->
+      <section>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-[18px] font-title font-semibold text-[#0A1624] tracking-tight">Offene Spiele</h2>
+          <span class="text-[11px] font-title font-bold uppercase tracking-wider text-slate-500">Mitspieler gesucht</span>
+        </div>
+
+        <!-- Einheitliche Karte mit getrennten Zeilen -->
+        <div class="bg-white rounded-[22px] border border-slate-200 shadow-[0_2px_8px_rgba(10,22,36,0.03)] overflow-hidden divide-y divide-slate-100">
+          
+          <!-- Offenes Spiel 1: Morgen 10:00, Doppel, Platz 4 · Martin Keller, Button "Mitspielen" -->
+          <div class="p-4 flex items-center justify-between gap-3 hover:bg-slate-50/50 transition-colors">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[15px] font-title font-bold text-[#0A1624]">Morgen, 10:00</span>
+                <span class="bg-[#E8F1F8] text-[#1466A8] text-[11px] font-medium px-2.5 py-0.5 rounded-full">
+                  Doppel
+                </span>
+              </div>
+              <div class="text-[13px] text-slate-500 truncate">
+                Platz 4 · Martin Keller
+              </div>
+            </div>
+
+            <!-- Zweitbutton hellblau mit blauem Text -->
+            <button class="bg-[#E8F1F8] hover:bg-[#d8e8f5] text-[#1466A8] text-[13px] font-title font-semibold px-4 py-2 rounded-full transition-all flex-shrink-0 active:scale-95">
+              Mitspielen
+            </button>
+          </div>
+
+          <!-- Offenes Spiel 2: Mittwoch 18:30, Einzel, Platz 1 · Sabine Roth, Marke "Du bist dabei", Button "Austragen" -->
+          <div class="p-4 flex items-center justify-between gap-3 hover:bg-slate-50/50 transition-colors">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <span class="text-[15px] font-title font-bold text-[#0A1624]">Mittwoch, 18:30</span>
+                <span class="bg-[#E8F1F8] text-[#1466A8] text-[11px] font-medium px-2.5 py-0.5 rounded-full">
+                  Einzel
+                </span>
+                <!-- Marke "Du bist dabei" in Hellblau -->
+                <span class="bg-[#E8F1F8] text-[#1466A8] text-[11px] font-title font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#1466A8]"></span>
+                  Du bist dabei
+                </span>
+              </div>
+              <div class="text-[13px] text-slate-500 truncate">
+                Platz 1 · Sabine Roth
+              </div>
+            </div>
+
+            <!-- Ruhiger Textbutton Austragen -->
+            <button class="text-slate-500 hover:text-[#C4433A] text-[13px] font-medium px-2 py-1.5 rounded-lg transition-colors flex-shrink-0 active:opacity-75">
+              Austragen
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Floating Pill Bottom Navigation (exakt wie Home und Belegungsplan) -->
+    <nav class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-[361px] bg-white/95 backdrop-blur-md rounded-full border border-slate-200 shadow-[0_8px_20px_rgba(10,22,36,0.08)] p-1.5 flex items-center justify-between">
+      
+      <!-- Tab 1: Start -->
+      <a href="#" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-slate-600 transition-colors">
+        <span class="material-symbols-outlined text-[20px] leading-none">home</span>
+        <span class="text-[10px] font-title font-bold tracking-wider uppercase mt-1">Start</span>
+      </a>
+
+      <!-- Tab 2: Plätze (AKTIV) -->
+      <a href="#" class="flex flex-col items-center justify-center flex-1 py-1 rounded-full bg-[#E8F1F8] text-[#1466A8] transition-all">
+        <span class="material-symbols-outlined filled text-[20px] leading-none text-[#1466A8]">sports_tennis</span>
+        <span class="text-[10px] font-title font-bold tracking-wider uppercase mt-1 text-[#1466A8]">Plätze</span>
+      </a>
+
+      <!-- Tab 3: Verein -->
+      <a href="#" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-slate-600 transition-colors">
+        <span class="material-symbols-outlined text-[20px] leading-none">groups</span>
+        <span class="text-[10px] font-title font-bold tracking-wider uppercase mt-1">Verein</span>
+      </a>
+
+      <!-- Tab 4: Konto -->
+      <a href="#" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-slate-600 transition-colors">
+        <span class="material-symbols-outlined text-[20px] leading-none">person</span>
+        <span class="text-[10px] font-title font-bold tracking-wider uppercase mt-1">Konto</span>
+      </a>
+
+    </nav>
+
+    <!-- iOS Home Indicator -->
+    <div class="fixed bottom-1 left-1/2 -translate-x-1/2 w-32 h-1 bg-slate-300 rounded-full pointer-events-none z-50"></div>
+
+  </div>
+</body>
+</html>
+

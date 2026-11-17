@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-white" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TC Muckensturm - Kasse</title>
+<!-- Google Fonts: Space Grotesk & DM Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-primary-fixed": "#001d36",
+            "surface-tint": "#0761a3",
+            "on-secondary-fixed": "#001e2c",
+            "surface-container-highest": "#e3e1ec",
+            "error": "#ba1a1a",
+            "surface-bright": "#fbf8ff",
+            "on-error": "#ffffff",
+            "on-tertiary-container": "#ffd9bd",
+            "tertiary": "#743d00",
+            "on-tertiary": "#ffffff",
+            "on-surface": "#1a1b22",
+            "error-container": "#ffdad6",
+            "primary-container": "#1466a8",
+            "on-background": "#1a1b22",
+            "primary": "#004e85",
+            "tertiary-fixed-dim": "#ffb77c",
+            "inverse-on-surface": "#f1effa",
+            "on-primary-fixed-variant": "#00497d",
+            "outline": "#717781",
+            "secondary-fixed": "#c2e8ff",
+            "on-primary-container": "#cde2ff",
+            "inverse-primary": "#9fcaff",
+            "tertiary-container": "#975100",
+            "surface": "#ffffff",
+            "inverse-surface": "#2f3038",
+            "tertiary-fixed": "#ffdcc3",
+            "surface-container-lowest": "#ffffff",
+            "secondary-fixed-dim": "#93ceef",
+            "on-secondary-fixed-variant": "#004d67",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "on-secondary-container": "#20627f",
+            "on-primary": "#ffffff",
+            "secondary-container": "#a1dcfe",
+            "surface-container-low": "#f4f2fd",
+            "on-tertiary-fixed": "#2f1500",
+            "surface-variant": "#e3e1ec",
+            "on-secondary": "#ffffff",
+            "outline-variant": "#c1c7d2",
+            "background": "#ffffff",
+            "secondary": "#246582",
+            "surface-container": "#eeedf7",
+            "primary-fixed": "#d1e4ff",
+            "primary-fixed-dim": "#9fcaff",
+            "on-error-container": "#93000a",
+            "surface-dim": "#dad9e3",
+            "on-surface-variant": "#414750",
+            "surface-container-high": "#e8e7f1"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "margin": "1rem",
+            "gutter-desktop": "1.5rem",
+            "space-lg": "1.5rem",
+            "margin-desktop": "2rem",
+            "space-md": "1rem",
+            "gutter": "1rem",
+            "space-xl": "2.5rem"
+          },
+          "fontFamily": {
+            "body-sm": ["DM Sans", "sans-serif"],
+            "headline-sm": ["Space Grotesk", "sans-serif"],
+            "display-score": ["Space Grotesk", "sans-serif"],
+            "headline-lg": ["Space Grotesk", "sans-serif"],
+            "numeric-data": ["Space Grotesk", "monospace"],
+            "label-caps": ["Space Grotesk", "sans-serif"],
+            "headline-lg-mobile": ["Space Grotesk", "sans-serif"],
+            "body-lg": ["DM Sans", "sans-serif"],
+            "display-score-mobile": ["Space Grotesk", "sans-serif"]
+          },
+          "fontSize": {
+            "body-sm": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "headline-sm": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "600" }],
+            "display-score": ["4rem", { "lineHeight": "4rem", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+            "headline-lg": ["2rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "numeric-data": ["1.125rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "label-caps": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "headline-lg-mobile": ["1.5rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-lg": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "400" }],
+            "display-score-mobile": ["2.75rem", { "lineHeight": "3rem", "letterSpacing": "-0.03em", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      font-size: 20px;
+      line-height: 1;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body class="bg-white text-[#0A1624] font-body-lg text-body-lg min-h-screen flex antialiased selection:bg-[#E8F1F8] selection:text-[#1466A8]">
+<!-- 1. LINKS FESTE SEITENLEISTE (240px) -->
+<aside class="w-[240px] shrink-0 bg-white border-r border-slate-200 flex flex-col justify-between p-6 h-screen sticky top-0 overflow-y-auto">
+<!-- Oberer Bereich -->
+<div>
+<!-- Wortmarke -->
+<div class="mb-6">
+<span class="block text-[11px] font-bold text-slate-400 font-label-caps uppercase tracking-wider">TENNISCLUB</span>
+<span class="block text-base font-bold text-[#0A1624] font-headline-sm tracking-tight">TC MUCKENSTURM</span>
+</div>
+<!-- Primärer Aktionsknopf Platz buchen -->
+<button class="w-full bg-[#FFD21F] text-[#0A1624] font-headline-sm font-semibold text-sm py-3 px-4 rounded-full flex items-center justify-center gap-2 hover:brightness-95 active:scale-98 transition-all mb-7 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>+ Platz buchen</span>
+</button>
+<!-- Hauptmenü Destinationen -->
+<nav class="space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-full hover:bg-slate-50 transition-colors" href="#">
+<span class="material-symbols-outlined text-slate-400">home</span>
+<span class="font-headline-sm text-sm">Start</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-full hover:bg-slate-50 transition-colors" href="#">
+<span class="material-symbols-outlined text-slate-400">sports_tennis</span>
+<span class="font-headline-sm text-sm">Plätze</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-full hover:bg-slate-50 transition-colors" href="#">
+<span class="material-symbols-outlined text-slate-400">groups</span>
+<span class="font-headline-sm text-sm">Verein</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-full hover:bg-slate-50 transition-colors" href="#">
+<span class="material-symbols-outlined text-slate-400">person</span>
+<span class="font-headline-sm text-sm">Konto</span>
+</a>
+</nav>
+<!-- Abschnittslabel VERWALTUNG -->
+<div class="mt-7">
+<h3 class="text-xs uppercase tracking-wider text-slate-400 font-label-caps font-bold px-3 mb-2">VERWALTUNG</h3>
+<nav class="space-y-0.5">
+<a class="flex items-center px-3 py-1.5 text-sm text-slate-600 font-medium rounded-full hover:bg-slate-50 transition-colors" href="#">
+<span>Übersicht</span>
+</a>
+<a class="flex items-center px-3 py-1.5 text-sm text-slate-600 font-medium rounded-full hover:bg-slate-50 transition-colors" href="#">
+<span>Mitglieder</span>
+</a>
+<a class="flex items-center px-3 py-1.5 text-sm text-slate-600 font-medium rounded-full hover:bg-slate-50 transition-colors" href="#">
+<span>Veranstaltungen</span>
+</a>
+<a class="flex items-center px-3 py-1.5 text-sm text-slate-600 font-medium rounded-full hover:bg-slate-50 transition-colors" href="#">
+<span>Arbeitsdienst</span>
+</a>
+<!-- Kasse (AKTIV) -->
+<a class="flex items-center px-3 py-1.5 text-sm font-semibold rounded-full bg-[#E8F1F8] text-[#1466A8] transition-colors" href="#">
+<span>Kasse</span>
+</a>
+<a class="flex items-center px-3 py-1.5 text-sm text-slate-600 font-medium rounded-full hover:bg-slate-50 transition-colors" href="#">
+<span>Plätze &amp; Serien</span>
+</a>
+<a class="flex items-center px-3 py-1.5 text-sm text-slate-600 font-medium rounded-full hover:bg-slate-50 transition-colors" href="#">
+<span>Getränke</span>
+</a>
+<a class="flex items-center px-3 py-1.5 text-sm text-slate-600 font-medium rounded-full hover:bg-slate-50 transition-colors" href="#">
+<span>System</span>
+</a>
+</nav>
+</div>
+</div>
+<!-- Nutzerkarte unten -->
+<div class="pt-4 border-t border-slate-200 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-headline-sm font-semibold text-xs text-[#0A1624]">
+          AB
+        </div>
+<div class="leading-tight">
+<p class="text-sm font-semibold text-[#0A1624] font-headline-sm leading-none">Anna Berger</p>
+<span class="text-xs text-slate-500 font-body-sm">Vorstand</span>
+</div>
+</div>
+<button class="text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-full hover:bg-slate-50" title="Abmelden">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+</button>
+</div>
+</aside>
+<!-- 2. HAUPTBEREICH RECHTS -->
+<main class="flex-1 p-10 bg-white min-h-screen overflow-y-auto max-w-[1040px]">
+<!-- Kopfbereich -->
+<header class="flex items-start justify-between pb-8">
+<div>
+<span class="text-[11px] font-bold text-slate-400 font-label-caps uppercase tracking-wider block mb-1">VERWALTUNG</span>
+<h1 class="text-[32px] leading-tight font-bold text-[#0A1624] font-headline-lg tracking-tight">Kasse</h1>
+<p class="text-slate-500 text-[15px] font-body-sm mt-1">Abrechnen, ankündigen, einziehen.</p>
+</div>
+<div>
+<button class="bg-[#1466A8] text-white rounded-full px-6 py-2.5 font-headline-sm font-medium text-sm hover:bg-[#0f5289] active:scale-98 transition-all shadow-sm">
+          Einzug vorbereiten
+        </button>
+</div>
+</header>
+<!-- 3 Kennzahl-Karten -->
+<section class="grid grid-cols-3 gap-6">
+<!-- Karte 1 -->
+<div class="rounded-2xl border border-slate-200 p-6 bg-white shadow-none">
+<span class="text-sm font-medium text-slate-500 font-body-sm">Noch nicht eingezogen</span>
+<div class="text-[44px] leading-none font-bold text-[#0A1624] font-numeric-data tabular-nums tracking-tight mt-3">
+          1.240,00 €
+        </div>
+</div>
+<!-- Karte 2 -->
+<div class="rounded-2xl border border-slate-200 p-6 bg-white shadow-none">
+<span class="text-sm font-medium text-slate-500 font-body-sm">In laufenden Einzügen</span>
+<div class="text-[44px] leading-none font-bold text-[#0A1624] font-numeric-data tabular-nums tracking-tight mt-3">
+          4.812,50 €
+        </div>
+</div>
+<!-- Karte 3 -->
+<div class="rounded-2xl border border-slate-200 p-6 bg-white shadow-none">
+<span class="text-sm font-medium text-slate-500 font-body-sm">Rückläufer offen</span>
+<div class="text-[44px] leading-none font-bold text-[#C4433A] font-numeric-data tabular-nums tracking-tight mt-3">
+          48,00 €
+        </div>
+</div>
+</section>
+<!-- Erklärkarte „So läuft das Geld“ -->
+<section class="rounded-2xl border border-slate-200 p-6 bg-white mt-8 shadow-none">
+<h2 class="text-[18px] font-semibold text-[#0A1624] font-headline-sm mb-6">So läuft das Geld</h2>
+<!-- 4 nummerierte Schritte mit horizontaler Verbindungslinie -->
+<div class="relative">
+<!-- Haarlinie hinter den Ziffernkreisen -->
+<div class="absolute top-3.5 left-4 right-4 h-[1px] bg-slate-200 -z-0"></div>
+<div class="grid grid-cols-4 gap-6 relative z-10">
+<!-- Schritt 1 -->
+<div>
+<div class="w-7 h-7 rounded-full bg-[#1466A8] text-white flex items-center justify-center font-bold text-xs font-headline-sm mb-3">
+              1
+            </div>
+<h3 class="font-semibold text-sm text-[#0A1624] font-headline-sm">1 · Forderung</h3>
+<p class="text-xs text-slate-500 font-body-sm mt-1 leading-relaxed">Entsteht durch Beitrag, Verzehr oder Fest.</p>
+</div>
+<!-- Schritt 2 -->
+<div>
+<div class="w-7 h-7 rounded-full bg-[#1466A8] text-white flex items-center justify-center font-bold text-xs font-headline-sm mb-3">
+              2
+            </div>
+<h3 class="font-semibold text-sm text-[#0A1624] font-headline-sm">2 · Einzug vorbereiten</h3>
+<p class="text-xs text-slate-500 font-body-sm mt-1 leading-relaxed">Prüfen, zusammenfassen und Mitglieder vorwarnen.</p>
+</div>
+<!-- Schritt 3 -->
+<div>
+<div class="w-7 h-7 rounded-full bg-[#1466A8] text-white flex items-center justify-center font-bold text-xs font-headline-sm mb-3">
+              3
+            </div>
+<h3 class="font-semibold text-sm text-[#0A1624] font-headline-sm">3 · Datei einreichen</h3>
+<p class="text-xs text-slate-500 font-body-sm mt-1 leading-relaxed">XML bei der Bank hochladen, Beträge verbuchen.</p>
+</div>
+<!-- Schritt 4 -->
+<div>
+<div class="w-7 h-7 rounded-full bg-[#1466A8] text-white flex items-center justify-center font-bold text-xs font-headline-sm mb-3">
+              4
+            </div>
+<h3 class="font-semibold text-sm text-[#0A1624] font-headline-sm">4 · Rückläufer</h3>
+<p class="text-xs text-slate-500 font-body-sm mt-1 leading-relaxed">Fehlgeschlagene Lastschriften klären oder mahnen.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Reiterleiste als Pillen -->
+<nav class="flex items-center gap-2 mt-8 mb-6">
+<button class="bg-[#1466A8] text-white font-headline-sm font-medium px-4 py-2 rounded-full text-sm">
+        Forderungen
+      </button>
+<button class="bg-slate-100 text-slate-600 hover:bg-slate-200 font-headline-sm px-4 py-2 rounded-full text-sm transition-colors">
+        Lastschriften
+      </button>
+<button class="bg-slate-100 text-slate-600 hover:bg-slate-200 font-headline-sm px-4 py-2 rounded-full text-sm transition-colors">
+        Getränkemonate
+      </button>
+<button class="bg-slate-100 text-slate-600 hover:bg-slate-200 font-headline-sm px-4 py-2 rounded-full text-sm transition-colors">
+        Jahresbeiträge
+      </button>
+<button class="bg-slate-100 text-slate-600 hover:bg-slate-200 font-headline-sm px-4 py-2 rounded-full text-sm transition-colors">
+        Beitragsarten
+      </button>
+<button class="bg-slate-100 text-slate-600 hover:bg-slate-200 font-headline-sm px-4 py-2 rounded-full text-sm transition-colors">
+        Regeln
+      </button>
+</nav>
+<!-- Abschnitt „Wer schuldet was“ -->
+<section>
+<!-- Obere Kontrollzeile -->
+<div class="flex items-center justify-between gap-4">
+<!-- Links: Filterchips -->
+<div class="flex items-center gap-1.5 flex-wrap">
+<button class="bg-[#E8F1F8] text-[#1466A8] border border-[#1466A8]/30 rounded-full px-3 py-1.5 text-xs font-headline-sm font-semibold">
+            Alle Arten
+          </button>
+<button class="bg-white text-slate-600 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1.5 text-xs font-headline-sm font-medium transition-colors">
+            Beitrag
+          </button>
+<button class="bg-white text-slate-600 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1.5 text-xs font-headline-sm font-medium transition-colors">
+            Getränke
+          </button>
+<button class="bg-white text-slate-600 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1.5 text-xs font-headline-sm font-medium transition-colors">
+            Arbeitsdienst
+          </button>
+<button class="bg-white text-slate-600 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1.5 text-xs font-headline-sm font-medium transition-colors">
+            Veranstaltung
+          </button>
+<button class="bg-white text-slate-600 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1.5 text-xs font-headline-sm font-medium transition-colors">
+            Gastgebühr
+          </button>
+</div>
+<!-- Rechts: Stand-Filter + Button Forderung anlegen -->
+<div class="flex items-center gap-3">
+<div class="relative">
+<select class="appearance-none border border-slate-200 rounded-full pl-3 pr-8 py-1.5 text-xs font-headline-sm text-slate-600 bg-white focus:outline-none focus:border-[#1466A8] cursor-pointer">
+<option>Stand: Alle</option>
+<option>Stand: Offen</option>
+<option>Stand: Angekündigt</option>
+<option>Stand: Im Einzug</option>
+<option>Stand: Rückläufer</option>
+<option>Stand: Bezahlt</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[16px]">
+              expand_more
+            </span>
+</div>
+<button class="border border-[#1466A8] text-[#1466A8] hover:bg-slate-50 rounded-full px-4 py-1.5 text-xs font-headline-sm font-semibold transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">add</span>
+<span>Forderung anlegen</span>
+</button>
+</div>
+</div>
+<!-- Tabelle als weiße Karte -->
+<div class="rounded-2xl border border-slate-200 overflow-hidden mt-4 bg-white">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-slate-50 border-b border-slate-200 text-xs font-label-caps uppercase text-slate-400 font-semibold tracking-wider">
+<th class="py-3 px-6">Mitglied</th>
+<th class="py-3 px-6">Art</th>
+<th class="py-3 px-6">Zeitraum</th>
+<th class="py-3 px-6">Stand</th>
+<th class="py-3 px-6 text-right">Betrag</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-200 text-sm font-body-sm text-[#0A1624]">
+<!-- Zeile 1: Berger, Anna -->
+<tr class="hover:bg-slate-50/60 transition-colors">
+<td class="py-4 px-6 font-medium text-[#0A1624]">Berger, Anna</td>
+<td class="py-4 px-6 text-slate-600">Beitrag</td>
+<td class="py-4 px-6 text-slate-600">2026</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center bg-blue-50 text-blue-700 rounded-full px-2.5 py-0.5 text-xs font-medium font-headline-sm">
+                  angekündigt
+                </span>
+</td>
+<td class="py-4 px-6 text-right font-numeric-data tabular-nums font-semibold text-[#0A1624]">
+                180,00 €
+              </td>
+</tr>
+<!-- Zeile 2: Keller, Martin -->
+<tr class="hover:bg-slate-50/60 transition-colors">
+<td class="py-4 px-6 font-medium text-[#0A1624]">Keller, Martin</td>
+<td class="py-4 px-6 text-slate-600">Getränke</td>
+<td class="py-4 px-6 text-slate-600">Oktober</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center bg-red-50 text-[#C4433A] rounded-full px-2.5 py-0.5 text-xs font-medium font-headline-sm">
+                  zurückgebucht
+                </span>
+</td>
+<td class="py-4 px-6 text-right font-numeric-data tabular-nums font-semibold text-[#C4433A]">
+                48,00 €
+              </td>
+</tr>
+<!-- Zeile 3: Roth, Sabine -->
+<tr class="hover:bg-slate-50/60 transition-colors">
+<td class="py-4 px-6 font-medium text-[#0A1624]">Roth, Sabine</td>
+<td class="py-4 px-6 text-slate-600">Veranstaltung</td>
+<td class="py-4 px-6 text-slate-600">Herbstfest</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center bg-amber-50 text-amber-700 rounded-full px-2.5 py-0.5 text-xs font-medium font-headline-sm">
+                  offen
+                </span>
+</td>
+<td class="py-4 px-6 text-right font-numeric-data tabular-nums font-semibold text-[#0A1624]">
+                36,00 €
+              </td>
+</tr>
+<!-- Zeile 4: Weber, Jonas -->
+<tr class="hover:bg-slate-50/60 transition-colors">
+<td class="py-4 px-6 font-medium text-[#0A1624]">Weber, Jonas</td>
+<td class="py-4 px-6 text-slate-600">Gastgebühr</td>
+<td class="py-4 px-6 text-slate-600">November</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center bg-[#E8F1F8] text-[#1466A8] rounded-full px-2.5 py-0.5 text-xs font-medium font-headline-sm">
+                  im Einzug
+                </span>
+</td>
+<td class="py-4 px-6 text-right font-numeric-data tabular-nums font-semibold text-[#0A1624]">
+                10,00 €
+              </td>
+</tr>
+<!-- Zeile 5: Lang, Petra -->
+<tr class="hover:bg-slate-50/60 transition-colors">
+<td class="py-4 px-6 font-medium text-[#0A1624]">Lang, Petra</td>
+<td class="py-4 px-6 text-slate-600">Beitrag</td>
+<td class="py-4 px-6 text-slate-600">2026</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center bg-slate-100 text-slate-600 rounded-full px-2.5 py-0.5 text-xs font-medium font-headline-sm">
+                  bezahlt
+                </span>
+</td>
+<td class="py-4 px-6 text-right font-numeric-data tabular-nums font-semibold text-slate-400">
+                180,00 €
+              </td>
+</tr>
+<!-- Zeile 6: Wirth, Claudia -->
+<tr class="hover:bg-slate-50/60 transition-colors">
+<td class="py-4 px-6 font-medium text-[#0A1624]">Wirth, Claudia</td>
+<td class="py-4 px-6 text-slate-600">Arbeitsdienst</td>
+<td class="py-4 px-6 text-slate-600">2025</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center bg-slate-100 text-slate-600 rounded-full px-2.5 py-0.5 text-xs font-medium font-headline-sm">
+                  erlassen
+                </span>
+</td>
+<td class="py-4 px-6 text-right font-numeric-data tabular-nums font-semibold text-slate-400">
+                60,00 €
+              </td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+</body></html>

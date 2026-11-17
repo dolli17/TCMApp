@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TC Muckensturm - Passwort festlegen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..600;1,9..40,400&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            club: '#1466A8',
+            dark: '#0A1624',
+          },
+          fontFamily: {
+            heading: ['"Space Grotesk"', 'sans-serif'],
+            body: ['"DM Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'DM Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .font-space {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-[#F2F4F7] flex items-center justify-center min-h-screen p-0 m-0">
+
+  <!-- iPhone Frame 393 x 852 -->
+  <div class="w-[393px] h-[852px] bg-white relative flex flex-col justify-between overflow-hidden shadow-2xl">
+    
+    <!-- Top Section (Status bar + Back button + Content) -->
+    <div>
+      <!-- iOS Status Bar -->
+      <div class="pt-3 px-7 flex justify-between items-center text-dark text-[15px] font-semibold tracking-tight">
+        <span>9:41</span>
+        <div class="flex items-center space-x-1.5">
+          <svg class="w-4 h-3.5 fill-current" viewBox="0 0 17 12">
+            <path d="M12.5 1.5h1.8a.7.7 0 0 1 .7.7v7.6a.7.7 0 0 1-.7.7h-1.8a.7.7 0 0 1-.7-.7V2.2a.7.7 0 0 1 .7-.7zm-4 2.5h1.8a.7.7 0 0 1 .7.7v5.1a.7.7 0 0 1-.7.7H8.5a.7.7 0 0 1-.7-.7V4.7a.7.7 0 0 1 .7-.7zm-4 2.5h1.8a.7.7 0 0 1 .7.7v2.6a.7.7 0 0 1-.7.7H4.5a.7.7 0 0 1-.7-.7V7.2a.7.7 0 0 1 .7-.7zm-4 2.5h1.8a.7.7 0 0 1 .7.7v.1a.7.7 0 0 1-.7.7H.5a.7.7 0 0 1-.7-.7v-.1a.7.7 0 0 1 .7-.7z"/>
+          </svg>
+          <svg class="w-4 h-3.5 fill-current" viewBox="0 0 16 12">
+            <path d="M8 2.8c2.4 0 4.6.9 6.2 2.5l1.4-1.4C13.7 1.9 11 1 8 1 5 1 2.3 1.9.4 3.9l1.4 1.4C3.4 3.7 5.6 2.8 8 2.8zm0 3.7c1.4 0 2.7.6 3.7 1.5l1.4-1.4c-1.4-1.3-3.2-2-5.1-2s-3.7.7-5.1 2l1.4 1.4c1-.9 2.3-1.5 3.7-1.5zm0 3.8c-.8 0-1.5.3-2 .9l2 2 2-2c-.5-.6-1.2-.9-2-.9z"/>
+          </svg>
+          <svg class="w-6 h-3 text-dark" viewBox="0 0 27 13" fill="none">
+            <rect x="0.5" y="0.5" width="22" height="12" rx="3.5" stroke="currentColor"/>
+            <rect x="2" y="2" width="16" height="9" rx="2" fill="currentColor"/>
+            <path d="M24 4.5v4a1.5 1.5 0 0 0 1.5-1.5v-1A1.5 1.5 0 0 0 24 4.5z" fill="currentColor"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Navigation Bar (Back Arrow) -->
+      <div class="px-5 pt-4 pb-2">
+        <button class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-dark active:scale-95 transition-transform" aria-label="Zurück">
+          <svg class="w-5 h-5 text-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Main Form Header & Inputs -->
+      <div class="px-5 pt-3">
+        <!-- Kicker -->
+        <div class="font-space font-bold text-[11px] uppercase tracking-wider text-slate-500 mb-1">
+          TC MUCKENSTURM
+        </div>
+
+        <!-- Headline -->
+        <h1 class="font-space font-bold text-[24px] text-dark leading-tight mb-1.5">
+          Passwort festlegen
+        </h1>
+
+        <!-- Subtitle -->
+        <p class="text-slate-500 text-[15px] leading-snug mb-8">
+          Damit meldest du dich künftig an.
+        </p>
+
+        <!-- Form fields -->
+        <div class="space-y-5">
+          <!-- Field 1: Neues Passwort -->
+          <div>
+            <label class="block font-space font-bold text-[11px] uppercase tracking-wider text-slate-500 mb-2">
+              NEUES PASSWORT
+            </label>
+            <div class="relative">
+              <input 
+                type="password" 
+                placeholder="••••••••" 
+                class="w-full h-12 bg-slate-50 border border-slate-200 rounded-[16px] px-4 pr-24 text-[15px] text-dark placeholder:text-slate-400 focus:outline-none focus:border-club focus:bg-white transition-all font-sans"
+              />
+              <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 font-space text-[13px] font-semibold text-club hover:opacity-80 active:scale-95 transition-all">
+                Anzeigen
+              </button>
+            </div>
+            <p class="text-[12px] text-slate-500 mt-1.5 px-1">
+              Mindestens acht Zeichen.
+            </p>
+          </div>
+
+          <!-- Field 2: Noch einmal -->
+          <div>
+            <label class="block font-space font-bold text-[11px] uppercase tracking-wider text-slate-500 mb-2">
+              NOCH EINMAL
+            </label>
+            <div class="relative">
+              <input 
+                type="password" 
+                placeholder="••••••••" 
+                class="w-full h-12 bg-slate-50 border border-slate-200 rounded-[16px] px-4 text-[15px] text-dark placeholder:text-slate-400 focus:outline-none focus:border-club focus:bg-white transition-all font-sans"
+              />
+            </div>
+          </div>
+
+          <!-- CTA Button -->
+          <div class="pt-4">
+            <button class="w-full h-12 bg-club text-white rounded-full font-space text-[15px] font-semibold shadow-sm hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center">
+              Passwort speichern
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Bottom Footer Links + Home Indicator -->
+    <div class="pb-2">
+      <div class="flex justify-center space-x-3 text-[12px] text-slate-400 mb-4">
+        <a href="#" class="hover:underline">Datenschutz</a>
+        <span>·</span>
+        <a href="#" class="hover:underline">Impressum</a>
+      </div>
+
+      <!-- iOS Home Indicator -->
+      <div class="flex justify-center pb-2">
+        <div class="w-32 h-1 bg-slate-300 rounded-full"></div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
+

@@ -177,22 +177,22 @@ data class Schattenstufen(val normal: Schatten, val klein: Schatten, val schwebe
 // Schrift
 
 object Schrift {
-    /** Fliesstext und - in 800 - grosse Titel */
-    const val FAMILIE_TEXT = "Barlow"
-    /** Uhrzeiten, Zahlen und Kicker */
-    const val FAMILIE_DISPLAY = "Barlow Semi Condensed"
+    /** Fliesstext */
+    const val FAMILIE_TEXT = "DM Sans"
+    /** Titel, Uhrzeiten, Zahlen, Kicker und Knoepfe */
+    const val FAMILIE_DISPLAY = "Space Grotesk"
 
     /** Dateinamen unter res/font (Google Fonts, kleingeschrieben) */
-    const val DATEI_TEXT_NORMAL = "barlow_regular"
-    const val DATEI_TEXT_MITTEL = "barlow_medium"
-    const val DATEI_TEXT_HALBFETT = "barlow_semibold"
-    const val DATEI_TEXT_FETT = "barlow_bold"
-    const val DATEI_TEXT_EXTRAFETT = "barlow_extrabold"
-    const val DATEI_DISPLAY_NORMAL = "barlowsemicondensed_regular"
-    const val DATEI_DISPLAY_MITTEL = "barlowsemicondensed_medium"
-    const val DATEI_DISPLAY_HALBFETT = "barlowsemicondensed_semibold"
-    const val DATEI_DISPLAY_FETT = "barlowsemicondensed_bold"
-    const val DATEI_DISPLAY_EXTRAFETT = "barlowsemicondensed_extrabold"
+    const val DATEI_TEXT_NORMAL = "dmsans_regular"
+    const val DATEI_TEXT_MITTEL = "dmsans_medium"
+    const val DATEI_TEXT_HALBFETT = "dmsans_semibold"
+    const val DATEI_TEXT_FETT = "dmsans_bold"
+    const val DATEI_TEXT_EXTRAFETT = "dmsans_extrabold"
+    const val DATEI_DISPLAY_NORMAL = "spacegrotesk_regular"
+    const val DATEI_DISPLAY_MITTEL = "spacegrotesk_medium"
+    const val DATEI_DISPLAY_HALBFETT = "spacegrotesk_semibold"
+    const val DATEI_DISPLAY_FETT = "spacegrotesk_bold"
+    const val DATEI_DISPLAY_EXTRAFETT = "spacegrotesk_bold"
 
     val kicker: TextUnit = 12.sp
     val klein: TextUnit = 13.sp

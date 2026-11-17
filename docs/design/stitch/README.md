@@ -46,3 +46,11 @@ Fließtext. Beide liegen auf dem eigenen Server.
       Verein, Konto, Anmeldung, Verwaltung, Kiosk)
 - [ ] iOS und Android: Rollen der Farben (dort ist Gelb noch Hauptaktion),
       Schriftdateien, Screens
+
+## Entwürfe im Repo
+
+`screens/` enthält die Entwürfe aus Stitch (Stand 17.11.2026) als HTML und als
+gerendertes Bild (`.jpg`). Maßgeblich sind die Regeln oben: Wo ein Entwurf ihnen
+widerspricht (zu viel Gelb, dunkelblaue Flächen, abweichende Knöpfe), gelten
+die Regeln. Die Startseite ist `screens/start`, die Plätze sind
+`screens/plaetze-belegungsplan` – es gibt keine zweite Darstellung der Plätze.

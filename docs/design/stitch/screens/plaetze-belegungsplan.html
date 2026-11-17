@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-white text-on-surface antialiased" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>TC Muckensturm - Plätze</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Script -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "primary-container": "#1466a8",
+            "outline": "#717781",
+            "on-surface": "#0A1624",
+            "on-surface-variant": "#475569"
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .striped-pattern {
+      background: repeating-linear-gradient(45deg, #cbd5e1, #cbd5e1 4px, #f1f5f9 4px, #f1f5f9 8px);
+    }
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-white min-h-screen flex flex-col font-body-lg text-on-surface relative pb-24 selection:bg-[#1466A8] selection:text-white">
+<!-- iOS Status Bar Simulation -->
+<header class="w-full pt-3 pb-1 px-7 flex items-center justify-between z-30 select-none bg-white/95 backdrop-blur-md sticky top-0">
+<span class="font-label-caps text-xs tracking-tight font-bold text-on-surface">9:41</span>
+<div class="flex items-center space-x-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[15px] leading-none" data-icon="signal_cellular_alt">signal_cellular_alt</span>
+<span class="material-symbols-outlined text-[15px] leading-none" data-icon="wifi">wifi</span>
+<span class="material-symbols-outlined text-[17px] leading-none" data-icon="battery_full">battery_full</span>
+</div>
+</header>
+<!-- Main Container -->
+<main class="w-full max-w-md mx-auto px-4 flex flex-col space-y-3 pt-1">
+<!-- 1. Header Section (Cleaned, icon buttons removed) -->
+<section class="flex items-center justify-between">
+<div class="space-y-0.5">
+<span class="font-label-caps text-[11px] uppercase tracking-wider text-slate-500 font-bold block">TC Muckensturm</span>
+<h1 class="font-headline-lg-mobile text-2xl text-slate-900 font-bold tracking-tight">Plätze</h1>
+<p class="font-body-sm text-xs text-slate-500 flex items-center gap-1.5 pt-0.5">
+<span>8 Plätze</span>
+<span class="inline-block w-1 h-1 rounded-full bg-slate-300"></span>
+<span>08 bis 21 Uhr</span>
+</p>
+</div>
+</section>
+<!-- 2. Day Picker (Horizontal Scroll) -->
+<section>
+<div class="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1 -mx-4 px-4">
+<!-- MO 16 (Today Active) -->
+<button class="flex flex-col items-center justify-center w-14 py-2.5 rounded-full bg-[#1466A8] text-white shrink-0 shadow-sm transition-transform active:scale-95">
+<span class="font-label-caps text-[11px] font-bold opacity-90">MO</span>
+<span class="font-numeric-data text-base font-bold mt-0.5">16</span>
+</button>
+<!-- DI 17 -->
+<button class="flex flex-col items-center justify-center w-14 py-2.5 rounded-full bg-white border border-slate-200 text-slate-800 shrink-0 hover:border-slate-400 active:scale-95 transition-all shadow-2xs">
+<span class="font-label-caps text-[11px] text-slate-400 font-medium">DI</span>
+<span class="font-numeric-data text-base font-semibold mt-0.5 text-slate-700">17</span>
+</button>
+<!-- MI 18 -->
+<button class="flex flex-col items-center justify-center w-14 py-2.5 rounded-full bg-white border border-slate-200 text-slate-800 shrink-0 hover:border-slate-400 active:scale-95 transition-all shadow-2xs">
+<span class="font-label-caps text-[11px] text-slate-400 font-medium">MI</span>
+<span class="font-numeric-data text-base font-semibold mt-0.5 text-slate-700">18</span>
+</button>
+<!-- DO 19 -->
+<button class="flex flex-col items-center justify-center w-14 py-2.5 rounded-full bg-white border border-slate-200 text-slate-800 shrink-0 hover:border-slate-400 active:scale-95 transition-all shadow-2xs">
+<span class="font-label-caps text-[11px] text-slate-400 font-medium">DO</span>
+<span class="font-numeric-data text-base font-semibold mt-0.5 text-slate-700">19</span>
+</button>
+<!-- FR 20 -->
+<button class="flex flex-col items-center justify-center w-14 py-2.5 rounded-full bg-white border border-slate-200 text-slate-800 shrink-0 hover:border-slate-400 active:scale-95 transition-all shadow-2xs">
+<span class="font-label-caps text-[11px] text-slate-400 font-medium">FR</span>
+<span class="font-numeric-data text-base font-semibold mt-0.5 text-slate-700">20</span>
+</button>
+<!-- SA 21 -->
+<button class="flex flex-col items-center justify-center w-14 py-2.5 rounded-full bg-white border border-slate-200 text-slate-800 shrink-0 hover:border-slate-400 active:scale-95 transition-all shadow-2xs">
+<span class="font-label-caps text-[11px] text-slate-400 font-medium">SA</span>
+<span class="font-numeric-data text-base font-semibold mt-0.5 text-slate-700">21</span>
+</button>
+<!-- SO 22 -->
+<button class="flex flex-col items-center justify-center w-14 py-2.5 rounded-full bg-white border border-slate-200 text-slate-800 shrink-0 hover:border-slate-400 active:scale-95 transition-all shadow-2xs">
+<span class="font-label-caps text-[11px] text-slate-400 font-medium">SO</span>
+<span class="font-numeric-data text-base font-semibold mt-0.5 text-slate-700">22</span>
+</button>
+<!-- MO 23 -->
+<button class="flex flex-col items-center justify-center w-14 py-2.5 rounded-full bg-white border border-slate-200 text-slate-800 shrink-0 hover:border-slate-400 active:scale-95 transition-all shadow-2xs">
+<span class="font-label-caps text-[11px] text-slate-400 font-medium">MO</span>
+<span class="font-numeric-data text-base font-semibold mt-0.5 text-slate-700">23</span>
+</button>
+</div>
+</section>
+<!-- 3. Segmented Switch -->
+<section>
+<div class="bg-slate-100 p-1 rounded-full flex items-center border border-slate-200/80">
+<button class="flex-1 py-2 text-center rounded-full bg-white text-slate-900 font-headline-sm text-sm font-semibold shadow-sm transition-all">
+          Belegung
+        </button>
+<button class="flex-1 py-2 text-center rounded-full text-slate-500 font-headline-sm text-sm font-medium hover:text-slate-900 transition-all">
+          Meine &amp; offene Spiele
+        </button>
+</div>
+</section>
+<!-- 4. Legend Line (Larger text, distinct clear swatches) -->
+<section class="flex items-center justify-between text-[11px] font-medium text-slate-600 px-0.5 py-1 overflow-x-auto no-scrollbar whitespace-nowrap gap-2">
+<div class="flex items-center space-x-1 shrink-0">
+<span class="w-3.5 h-3.5 rounded-[3px] bg-white border border-slate-300 shadow-2xs inline-block"></span>
+<span>frei</span>
+</div>
+<div class="flex items-center space-x-1 shrink-0">
+<span class="w-3.5 h-3.5 rounded-[3px] bg-slate-300 border border-slate-400/40 inline-block"></span>
+<span>belegt</span>
+</div>
+<div class="flex items-center space-x-1 shrink-0">
+<span class="w-3.5 h-3.5 rounded-[3px] bg-[#FFD21F] border border-amber-400 inline-block"></span>
+<span>dein Spiel</span>
+</div>
+<div class="flex items-center space-x-1 shrink-0">
+<span class="w-3.5 h-3.5 rounded-[3px] bg-[#bae6fd] border border-sky-300 inline-flex items-center justify-center text-[10px] font-bold text-[#0284c7] leading-none">+</span>
+<span>Mitspieler gesucht</span>
+</div>
+<div class="flex items-center space-x-1 shrink-0">
+<span class="w-3.5 h-3.5 rounded-[3px] striped-pattern border border-slate-300 inline-block"></span>
+<span>gesperrt</span>
+</div>
+</section>
+<!-- 5. 8-Court Time Grid -->
+<section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+<!-- Sticky Header Row for Courts 1-8 (Blank corner cell, Court 1-8 directly above columns) -->
+<div class="bg-slate-50 border-b border-slate-200 flex items-center h-8 z-20 relative rounded-t-2xl">
+<div class="w-11 shrink-0 border-r border-slate-200 h-full"></div>
+<div class="flex-1 grid grid-cols-8 text-center divide-x divide-slate-200 h-full items-center">
+<span class="font-label-caps text-xs font-bold text-slate-800">1</span>
+<span class="font-label-caps text-xs font-bold text-slate-800">2</span>
+<span class="font-label-caps text-xs font-bold text-slate-800">3</span>
+<span class="font-label-caps text-xs font-bold text-slate-800">4</span>
+<span class="font-label-caps text-xs font-bold text-slate-800">5</span>
+<span class="font-label-caps text-xs font-bold text-slate-800">6</span>
+<span class="font-label-caps text-xs font-bold text-slate-800">7</span>
+<span class="font-label-caps text-xs font-bold text-slate-800">8</span>
+</div>
+</div>
+<!-- Time Grid Body -->
+<div class="relative bg-white">
+<!-- PAST TIME BLOCK (08:00 to 16:00) with uniform opacity-35 fade -->
+<div class="opacity-35 divide-y divide-slate-100">
+<!-- 08:00 - 09:00 (Merged 60 min blocks) -->
+<div class="flex h-14 relative">
+<div class="w-11 shrink-0 flex flex-col justify-between py-1 text-[10px] font-numeric-data font-medium text-slate-400 border-r border-slate-200 text-center">
+<span>08:00</span>
+<span class="opacity-60">08:30</span>
+</div>
+<div class="flex-1 grid grid-cols-8 divide-x divide-slate-200 p-0.5 gap-0.5 bg-white">
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+</div>
+</div>
+<!-- 09:00 - 10:00 -->
+<div class="flex h-14 relative">
+<div class="w-11 shrink-0 flex flex-col justify-between py-1 text-[10px] font-numeric-data font-medium text-slate-400 border-r border-slate-200 text-center">
+<span>09:00</span>
+<span class="opacity-60">09:30</span>
+</div>
+<div class="flex-1 grid grid-cols-8 divide-x divide-slate-200 p-0.5 gap-0.5 bg-white">
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+</div>
+</div>
+<!-- 10:00 - 11:00 -->
+<div class="flex h-14 relative">
+<div class="w-11 shrink-0 flex flex-col justify-between py-1 text-[10px] font-numeric-data font-medium text-slate-400 border-r border-slate-200 text-center">
+<span>10:00</span>
+<span class="opacity-60">10:30</span>
+</div>
+<div class="flex-1 grid grid-cols-8 divide-x divide-slate-200 p-0.5 gap-0.5 bg-white">
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="striped-pattern rounded-sm border border-slate-300"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+</div>
+</div>
+<!-- 11:00 - 12:00 -->
+<div class="flex h-14 relative">
+<div class="w-11 shrink-0 flex flex-col justify-between py-1 text-[10px] font-numeric-data font-medium text-slate-400 border-r border-slate-200 text-center">
+<span>11:00</span>
+<span class="opacity-60">11:30</span>
+</div>
+<div class="flex-1 grid grid-cols-8 divide-x divide-slate-200 p-0.5 gap-0.5 bg-white">
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+</div>
+</div>
+<!-- 12:00 - 13:00 -->
+<div class="flex h-14 relative">
+<div class="w-11 shrink-0 flex flex-col justify-between py-1 text-[10px] font-numeric-data font-medium text-slate-400 border-r border-slate-200 text-center">
+<span>12:00</span>
+<span class="opacity-60">12:30</span>
+</div>
+<div class="flex-1 grid grid-cols-8 divide-x divide-slate-200 p-0.5 gap-0.5 bg-white">
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+</div>
+</div>
+<!-- 13:00 - 14:00 -->
+<div class="flex h-14 relative">
+<div class="w-11 shrink-0 flex flex-col justify-between py-1 text-[10px] font-numeric-data font-medium text-slate-400 border-r border-slate-200 text-center">
+<span>13:00</span>
+<span class="opacity-60">13:30</span>
+</div>
+<div class="flex-1 grid grid-cols-8 divide-x divide-slate-200 p-0.5 gap-0.5 bg-white">
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+</div>
+</div>
+<!-- 14:00 - 15:00 -->
+<div class="flex h-14 relative">
+<div class="w-11 shrink-0 flex flex-col justify-between py-1 text-[10px] font-numeric-data font-medium text-slate-400 border-r border-slate-200 text-center">
+<span>14:00</span>
+<span class="opacity-60">14:30</span>
+</div>
+<div class="flex-1 grid grid-cols-8 divide-x divide-slate-200 p-0.5 gap-0.5 bg-white">
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+</div>
+</div>
+<!-- 15:00 - 16:00 -->
+<div class="flex h-14 relative">
+<div class="w-11 shrink-0 flex flex-col justify-between py-1 text-[10px] font-numeric-data font-medium text-slate-400 border-r border-slate-200 text-center">
+<span>15:00</span>
+<span class="opacity-60">15:30</span>
+</div>
+<div class="flex-1 grid grid-cols-8 divide-x divide-slate-200 p-0.5 gap-0.5 bg-white">
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-white rounded-sm border border-slate-200/60"></div>
+<div class="bg-slate-300 rounded-sm"></div>
+</div>
+</div>
+</div>
+<!-- CURRENT TIME INDICATOR LINE AT 16:00 -->
+<div class="relative z-10">
+<div class="absolute inset-x-0 -top-[1px] flex items-center pointer-events-none">
+<div class="w-11 flex justify-end pr-1">
+<span class="bg-[#1466A8] text-white text-[9px] font-label-caps font-bold px-1 py-0.5 rounded shadow-sm tracking-tight">16:00</span>
+</div>
+<div class="flex-1 h-[2px] bg-[#1466A8]"></div>
+</div>
+</div>
+<!-- ACTIVE / FUTURE SLOTS (Merged 60-Minute Continuous Blocks with rounded corners) -->
+<div class="divide-y divide-slate-100 bg-white">
+<!-- 16:00 - 17:00 (60-minute merged block row) -->
+<div class="flex h-14 relative">
+<div class="w-11 shrink-0 flex flex-col justify-between py-1 text-[10px] font-numeric-data font-bold text-[#1466A8] border-r border-slate-200 text-center bg-blue-50/50">
+<span>16:00</span>
+<span class="font-medium text-slate-400">16:30</span>
+</div>
+<div class="flex-1 grid grid-cols-8 divide-x divide-slate-200 p-0.5 gap-0.5 bg-white">
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P1 -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P2 -->
+<div class="bg-slate-300 rounded-sm"></div><!-- P3: 60-min booked block -->
+<div class="bg-slate-300 rounded-sm"></div><!-- P4: 60-min booked block -->
+<div class="striped-pattern rounded-sm border border-slate-300"></div><!-- P5: 60-min blocked/training -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P6 -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P7 -->
+<!-- P8: 16:00-16:30 free, 16:30-17:00 training -->
+<div class="flex flex-col gap-0.5 h-full">
+<div class="flex-1 bg-white rounded-sm border border-slate-200/60"></div>
+<div class="flex-1 striped-pattern rounded-sm border border-slate-300"></div>
+</div>
+</div>
+</div>
+<!-- 17:00 - 18:00 (60-minute merged block row) -->
+<div class="flex h-14 relative">
+<div class="w-11 shrink-0 flex flex-col justify-between py-1 text-[10px] font-numeric-data font-medium text-slate-500 border-r border-slate-200 text-center">
+<span>17:00</span>
+<span class="opacity-70">17:30</span>
+</div>
+<div class="flex-1 grid grid-cols-8 divide-x divide-slate-200 p-0.5 gap-0.5 bg-white">
+<div class="bg-slate-300 rounded-sm"></div><!-- P1: 60 min booked -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P2 -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P3: free -->
+<div class="bg-slate-300 rounded-sm"></div><!-- P4: booked -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P5 -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P6 -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P7 -->
+<div class="striped-pattern rounded-sm border border-slate-300"></div><!-- P8: training (cont. 17:00-18:00) -->
+</div>
+</div>
+<!-- 18:00 - 19:00 (60-minute merged block row including 'Du' on Platz 3) -->
+<div class="flex h-14 relative">
+<div class="w-11 shrink-0 flex flex-col justify-between py-1 text-[10px] font-numeric-data font-medium text-slate-500 border-r border-slate-200 text-center">
+<span>18:00</span>
+<span class="opacity-70">18:30</span>
+</div>
+<div class="flex-1 grid grid-cols-8 divide-x divide-slate-200 p-0.5 gap-0.5 bg-white">
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P1 -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P2: free -->
+<!-- Platz 3 at 18:00-19:00: Single merged block spanning both half-hour slots in #FFD21F yellow, Du centered -->
+<div class="bg-[#FFD21F] rounded-sm flex items-center justify-center font-label-caps text-xs font-bold text-[#0A1624] shadow-xs select-none border border-amber-400/50">Du</div>
+<div class="bg-slate-300 rounded-sm"></div><!-- P4: booked 60 min -->
+<div class="bg-slate-300 rounded-sm"></div><!-- P5: booked 60 min -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P6 -->
+<div class="bg-slate-300 rounded-sm"></div><!-- P7: booked 60 min -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P8: free -->
+</div>
+</div>
+<!-- 19:00 - 20:00 (60-minute merged block row including Platz 1 light blue '+') -->
+<div class="flex h-14 relative">
+<div class="w-11 shrink-0 flex flex-col justify-between py-1 text-[10px] font-numeric-data font-medium text-slate-500 border-r border-slate-200 text-center">
+<span>19:00</span>
+<span class="opacity-70">19:30</span>
+</div>
+<div class="flex-1 grid grid-cols-8 divide-x divide-slate-200 p-0.5 gap-0.5 bg-white">
+<!-- Platz 1 at 19:00-20:00: Single merged block spanning both slots in light blue with centered '+' icon -->
+<div class="bg-[#bae6fd] border border-sky-300 rounded-sm flex items-center justify-center text-[#0284c7] font-bold text-sm leading-none shadow-xs select-none">+</div>
+<div class="bg-slate-300 rounded-sm"></div><!-- P2: booked 60 min -->
+<div class="bg-slate-300 rounded-sm"></div><!-- P3: booked 60 min -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P4: free -->
+<div class="bg-slate-300 rounded-sm"></div><!-- P5: booked 60 min -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P6: free -->
+<div class="flex flex-col gap-0.5 h-full">
+<div class="flex-1 bg-slate-300 rounded-sm"></div>
+<div class="flex-1 bg-white rounded-sm border border-slate-200/60"></div>
+</div><!-- P7 -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P8 -->
+</div>
+</div>
+<!-- 20:00 - 21:00 (60-minute merged block row) -->
+<div class="flex h-14 relative">
+<div class="w-11 shrink-0 flex flex-col justify-between py-1 text-[10px] font-numeric-data font-medium text-slate-500 border-r border-slate-200 text-center">
+<span>20:00</span>
+<span class="opacity-70">20:30</span>
+</div>
+<div class="flex-1 grid grid-cols-8 divide-x divide-slate-200 p-0.5 gap-0.5 bg-white">
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P1 -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P2 -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P3 -->
+<div class="bg-slate-300 rounded-sm"></div><!-- P4 -->
+<div class="bg-white rounded-sm border border-slate-200/60"></div><!-- P5 -->
+<div class="flex flex-col gap-0.5 h-full">
+<div class="flex-1 bg-white rounded-sm border border-slate-200/60"></div>
+<div class="flex-1 bg-slate-300 rounded-sm"></div>
+</div><!-- P6 -->
+<div class="bg-slate-300 rounded-sm"></div><!-- P7 -->
+<div class="bg-slate-300 rounded-sm"></div><!-- P8 -->
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- 6. Floating Bottom Navigation (Pure white, shadow, clean border) -->
+<nav aria-label="Hauptnavigation" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between gap-1 p-1.5 max-w-sm w-[calc(100%-2rem)] mx-auto bg-white/95 backdrop-blur-xl border border-slate-200 rounded-full shadow-lg">
+<!-- Item 1: Start (Inactive) -->
+<a class="flex flex-col items-center justify-center text-slate-400 px-3 py-1.5 transition-all duration-200 hover:text-primary active:scale-98" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="home">home</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider mt-0.5">Start</span>
+</a>
+<!-- Item 2: Plätze (ACTIVE TAB) -->
+<a aria-current="page" class="flex flex-col items-center justify-center bg-slate-100 text-[#1466A8] rounded-full px-4 py-1.5 transition-all duration-200 active:scale-98" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="sports_tennis" style="font-variation-settings: 'FILL' 1;">sports_tennis</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider mt-0.5 font-bold">Plätze</span>
+</a>
+<!-- Item 3: Verein (Inactive) -->
+<a class="flex flex-col items-center justify-center text-slate-400 px-3 py-1.5 transition-all duration-200 hover:text-primary active:scale-98" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="groups">groups</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider mt-0.5">Verein</span>
+</a>
+<!-- Item 4: Konto (Inactive) -->
+<a class="flex flex-col items-center justify-center text-slate-400 px-3 py-1.5 transition-all duration-200 hover:text-primary active:scale-98" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="person">person</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider mt-0.5">Konto</span>
+</a>
+</nav>
+</body></html>

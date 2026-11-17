@@ -1,0 +1,212 @@
+<!DOCTYPE html><html class="h-full bg-white" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>TC Muckensturm - SEPA-Lastschriftmandat (Schritt 6 von 9)</title>
+<!-- Google Fonts: Space Grotesk & DM Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,400&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-primary": "#ffffff",
+            "inverse-primary": "#9fcaff",
+            "tertiary-fixed": "#ffdcc3",
+            "on-surface-variant": "#414750",
+            "tertiary-fixed-dim": "#ffb77c",
+            "surface-bright": "#fbf8ff",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "surface-container": "#eeedf7",
+            "tertiary": "#743d00",
+            "on-tertiary-container": "#ffd9bd",
+            "surface-container-highest": "#e3e1ec",
+            "surface-container-high": "#e8e7f1",
+            "primary-container": "#1466a8",
+            "on-tertiary-fixed": "#2f1500",
+            "on-secondary": "#ffffff",
+            "on-error": "#ffffff",
+            "on-primary-fixed-variant": "#00497d",
+            "inverse-on-surface": "#f1effa",
+            "secondary-fixed": "#c2e8ff",
+            "surface-tint": "#0761a3",
+            "on-surface": "#1a1b22",
+            "on-secondary-fixed-variant": "#004d67",
+            "surface-container-lowest": "#ffffff",
+            "primary-fixed": "#d1e4ff",
+            "on-secondary-fixed": "#001e2c",
+            "inverse-surface": "#2f3038",
+            "on-secondary-container": "#20627f",
+            "error": "#ba1a1a",
+            "on-tertiary": "#ffffff",
+            "on-primary-fixed": "#001d36",
+            "surface": "#fbf8ff",
+            "secondary-fixed-dim": "#93ceef",
+            "secondary": "#246582",
+            "on-background": "#1a1b22",
+            "outline-variant": "#c1c7d2",
+            "on-primary-container": "#cde2ff",
+            "tertiary-container": "#975100",
+            "error-container": "#ffdad6",
+            "secondary-container": "#a1dcfe",
+            "surface-dim": "#dad9e3",
+            "on-error-container": "#93000a",
+            "primary": "#004e85",
+            "primary-fixed-dim": "#9fcaff",
+            "surface-container-low": "#f4f2fd",
+            "surface-variant": "#e3e1ec",
+            "background": "#fbf8ff",
+            "outline": "#717781"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter": "1rem",
+            "margin": "1rem",
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2.5rem",
+            "margin-desktop": "2rem",
+            "gutter-desktop": "1.5rem"
+          },
+          "fontFamily": {
+            "numeric-data": ["Space Grotesk"],
+            "display-score-mobile": ["Space Grotesk"],
+            "body-sm": ["DM Sans"],
+            "headline-lg": ["Space Grotesk"],
+            "headline-sm": ["Space Grotesk"],
+            "body-lg": ["DM Sans"],
+            "display-score": ["Space Grotesk"],
+            "label-caps": ["Space Grotesk"],
+            "headline-lg-mobile": ["Space Grotesk"]
+          },
+          "fontSize": {
+            "numeric-data": ["1.125rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "display-score-mobile": ["2.75rem", { "lineHeight": "3rem", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "body-sm": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "headline-lg": ["2rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-sm": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "600" }],
+            "body-lg": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "400" }],
+            "display-score": ["4rem", { "lineHeight": "4rem", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+            "label-caps": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "headline-lg-mobile": ["1.5rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-white text-[#0A1624] font-body-lg text-body-lg antialiased flex flex-col justify-center items-center min-h-screen">
+<!-- Mobile Viewport Frame (iPhone 393px reference) -->
+<main class="w-full max-w-[393px] min-h-screen bg-white relative flex flex-col shadow-2xl border-x border-slate-100 selection:bg-primary-container selection:text-white">
+<!-- 1. iOS Status Bar -->
+<header class="w-full pt-3 px-5 flex items-center justify-between text-[#0A1624] select-none z-30">
+<span class="font-numeric-data text-sm font-semibold tracking-tight">9:41</span>
+<div class="flex items-center gap-1.5 text-slate-800">
+<span class="material-symbols-outlined text-base leading-none" data-icon="signal_cellular_alt">signal_cellular_alt</span>
+<span class="material-symbols-outlined text-base leading-none" data-icon="wifi">wifi</span>
+<span class="material-symbols-outlined text-base leading-none" data-icon="battery_full">battery_full</span>
+</div>
+</header>
+<!-- Header Navigation & Kicker -->
+<div class="px-5 pt-4 pb-3 flex items-center justify-between">
+<span class="font-label-caps text-[11px] leading-tight font-bold tracking-wider text-slate-500">
+        KONTO EINRICHTEN · SCHRITT 6 VON 9
+      </span>
+<button class="font-body-sm text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors duration-150" type="button">
+        Abmelden
+      </button>
+</div>
+<!-- Progress Bar (Exactly 66.6% filled) -->
+<div class="w-full h-[2px] bg-slate-100 relative">
+<div class="h-full bg-primary-container w-[66.6%] transition-all duration-300"></div>
+</div>
+<!-- Scrollable Content Canvas -->
+<div class="flex-1 px-5 pb-36 pt-1 flex flex-col overflow-y-auto">
+<!-- Page Title -->
+<h1 class="font-headline-lg text-[24px] leading-tight font-bold text-[#0A1624] tracking-tight mt-6 mb-6 font-['Space_Grotesk']">SEPA-Lastschriftmandat</h1>
+<!-- 2. Contribution Type Card -->
+<section class="rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm mb-6">
+<p class="font-label-caps text-[11px] leading-none uppercase font-bold text-slate-500 tracking-wider mb-2">
+          DEINE BEITRAGSART
+        </p>
+<div class="flex items-baseline justify-between pt-0.5">
+<span class="font-body-lg text-base font-semibold text-[#0A1624]">
+            Erwachsener
+          </span>
+<div class="text-right">
+<div class="font-numeric-data text-xl font-bold text-[#0A1624] tracking-tight">
+              180,00 €
+            </div>
+<span class="font-body-sm text-xs text-slate-500 font-normal">
+              pro Jahr
+            </span>
+</div>
+</div>
+</section>
+<!-- 3. Form Fields -->
+<div class="space-y-4 mb-5">
+<!-- Field 1: KONTOINHABER -->
+<div>
+<label class="block font-label-caps text-[11px] uppercase font-bold text-slate-500 tracking-wider mb-2" for="acc-holder">
+            KONTOINHABER
+          </label>
+<div class="relative">
+<input class="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3.5 text-[#0A1624] font-body-lg text-base font-medium focus:bg-white focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all outline-none" id="acc-holder" type="text" value="Anna Berger">
+</div>
+</div>
+<!-- Field 2: IBAN -->
+<div>
+<label class="block font-label-caps text-[11px] uppercase font-bold text-slate-500 tracking-wider mb-2" for="acc-iban">
+            IBAN
+          </label>
+<div class="relative">
+<input class="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3.5 text-[#0A1624] font-['DM_Sans'] text-base font-medium tracking-wide placeholder:text-slate-400 placeholder:font-['DM_Sans'] focus:bg-white focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all outline-none" id="acc-iban" placeholder="DE00 0000 0000 0000 0000 00" type="text">
+</div>
+</div>
+</div>
+<!-- 4. Mandate Text Card -->
+<section class="rounded-[16px] bg-slate-50 border border-slate-200 p-4 mb-5">
+<p class="font-body-sm text-xs leading-relaxed text-slate-600 font-normal">
+          Ich ermächtige den TC Muckensturm e. V., Zahlungen von meinem Konto mittels Lastschrift einzuziehen. Zugleich weise ich mein Kreditinstitut an, die Lastschriften einzulösen.
+        </p>
+</section>
+<!-- 5. Consent Checkbox Row -->
+<label class="flex items-center gap-3 cursor-pointer group py-1 select-none">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-5 h-5 rounded-md bg-primary-container flex items-center justify-center text-white peer-focus:ring-2 peer-focus:ring-primary-container/30 transition-transform active:scale-95 flex-shrink-0">
+<span class="material-symbols-outlined text-base font-bold leading-none" data-icon="check" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="font-body-sm text-sm font-medium text-[#0A1624] leading-normal">
+          Ich erteile dieses SEPA-Lastschriftmandat.
+        </span>
+</label>
+</div>
+<!-- Fixed Bottom Action Container -->
+<footer class="fixed bottom-0 left-0 right-0 max-w-[393px] mx-auto bg-white/95 backdrop-blur-md border-t border-slate-100 px-5 pt-3.5 pb-8 z-40">
+<button class="w-full h-[56px] rounded-full bg-[#1466A8] text-white font-['Space_Grotesk'] font-semibold text-[16px] whitespace-nowrap flex items-center justify-center transition-all duration-150 active:scale-[0.98] hover:bg-primary shadow-sm" type="button">Mandat erteilen und Konto freischalten</button>
+<!-- iOS Home Indicator -->
+<div class="w-32 h-1 bg-slate-300 rounded-full mx-auto mt-4"></div>
+</footer>
+</main>
+
+
+</body></html>

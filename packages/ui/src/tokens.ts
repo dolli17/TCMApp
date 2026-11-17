@@ -235,10 +235,9 @@ export const schattenRn = {
 } as const;
 
 /**
- * Im Web: DM Sans für Fließtext, Space Grotesk für Titel, Uhrzeiten, Zahlen,
- * Kicker und Knöpfe. Space Grotesk gibt es nur bis 700 - Titel sind fett,
- * nicht extrafett. Die nativen Apps setzen noch Barlow (scripts/native-tokens.ts)
- * und ziehen mit ihren Screens nach.
+ * DM Sans für Fließtext, Space Grotesk für Titel, Uhrzeiten, Zahlen, Kicker
+ * und Knöpfe. Space Grotesk gibt es nur bis 700 - Titel sind fett, nicht
+ * extrafett.
  */
 export const schrift = {
   text: "'DM Sans', system-ui, sans-serif",

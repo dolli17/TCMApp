@@ -1,0 +1,315 @@
+<!DOCTYPE html><html lang="de" class="h-full"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TC Muckensturm - Getränke an der Theke</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,400&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            title: ['Space Grotesk', 'sans-serif'],
+            sans: ['DM Sans', 'sans-serif'],
+          },
+          colors: {
+            club: {
+              DEFAULT: '#1466A8',
+              hover: '#0f5288',
+              active: '#0b3f69',
+              light: '#E8F1F8',
+              border: '#B9D5EC',
+            },
+            textMain: '#0A1624',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'DM Sans', sans-serif;
+      color: #0A1624;
+      background-color: #ffffff;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .font-space {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+</head>
+<body class="bg-white text-textMain min-h-screen flex flex-col justify-between p-8 antialiased selection:bg-club-light">
+
+  <!-- Tablet Shell / Frame 1180x820 container -->
+  <div class="max-w-[1180px] w-full mx-auto flex flex-col flex-1 gap-6">
+
+    <!-- Top Header -->
+    <header class="flex items-center justify-between border-b border-slate-200 pb-5">
+      <div>
+        <span class="block font-space text-[11px] font-bold tracking-[0.14em] uppercase text-slate-500 mb-1">
+          TC Muckensturm
+        </span>
+        <h1 class="font-space text-3xl font-bold tracking-tight text-textMain">
+          Getränke an der Theke
+        </h1>
+      </div>
+
+      <!-- Action: Von vorn -->
+      <button type="button" class="h-11 px-5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 text-[#0F172A] font-space font-medium text-sm inline-flex items-center gap-2 transition-all shadow-sm"><span class="material-symbols-outlined text-slate-500 text-[18px]">refresh</span><span>Von vorn</span></button>
+    </header>
+
+    <!-- 3-Column Kiosk Layout -->
+    <main class="grid grid-cols-12 gap-6 flex-1 items-start">
+
+      <!-- SPALTE 1: Wer nimmt etwas? (Col span 3.5 -> 3 cols / 12) -->
+      <section class="col-span-3 flex flex-col gap-4">
+        <!-- Section Header with Number -->
+        <div class="flex items-baseline gap-2">
+          <span class="font-space text-2xl font-bold text-slate-300">1</span>
+          <span class="text-slate-300 font-medium">·</span>
+          <h2 class="font-space text-lg font-bold text-textMain tracking-tight">
+            Wer nimmt etwas?
+          </h2>
+        </div>
+
+        <!-- Search Input Field (56px) -->
+        <div class="relative w-full">
+          <span class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
+            <span class="material-symbols-outlined text-2xl">search</span>
+          </span>
+          <input type="text" placeholder="Name eingeben…" class="w-full h-[52px] pl-12 pr-4 bg-[#F8FAFC] border border-slate-200 rounded-[26px] text-base text-textMain placeholder-slate-400 focus:outline-none focus:border-club focus:ring-1 focus:ring-club transition-all shadow-sm">
+        </div>
+
+        <!-- Kicker Label -->
+        <div class="pt-2">
+          <span class="font-space text-[11px] font-bold tracking-wider uppercase text-slate-500 block mb-2.5">
+            Zuletzt an der Theke
+          </span>
+
+          <!-- Members List / Tiles -->
+          <div class="flex flex-col gap-2.5">
+
+            <!-- Item: Anna Berger (Selected) -->
+            <button type="button" class="w-full min-h-[58px] p-2.5 pr-4 rounded-2xl bg-[#E8F1F8] border border-[#1466A8] text-left flex items-center justify-between shadow-sm transition-all"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-[#E8F1F8] border border-[#1466A8]/30 text-[#1466A8] flex items-center justify-center font-space font-bold text-sm tracking-tight">AB</div><div class="flex flex-col"><span class="font-space font-bold text-base text-[#1466A8] leading-snug">Anna Berger</span><span class="text-xs text-[#1466A8]/80 font-medium">Damen 40</span></div></div><span class="material-symbols-outlined text-[#1466A8] text-xl font-bold">check</span></button>
+
+            <!-- Item: Jonas Weber -->
+            <button type="button" class="w-full min-h-[58px] p-2.5 pr-4 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-left flex items-center justify-between shadow-sm transition-all">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-space font-semibold text-sm">
+                  JW
+                </div>
+                <div class="flex flex-col">
+                  <span class="font-space font-medium text-base text-textMain leading-snug">Jonas Weber</span>
+                  <span class="text-xs text-slate-500">Herren</span>
+                </div>
+              </div>
+            </button>
+
+            <!-- Item: Martin Keller -->
+            <button type="button" class="w-full min-h-[58px] p-2.5 pr-4 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-left flex items-center justify-between shadow-sm transition-all">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-space font-semibold text-sm">
+                  MK
+                </div>
+                <div class="flex flex-col">
+                  <span class="font-space font-medium text-base text-textMain leading-snug">Martin Keller</span>
+                  <span class="text-xs text-slate-500">Herren 40</span>
+                </div>
+              </div>
+            </button>
+
+            <!-- Item: Sabine Roth -->
+            <button type="button" class="w-full min-h-[58px] p-2.5 pr-4 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-left flex items-center justify-between shadow-sm transition-all">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-space font-semibold text-sm">
+                  SR
+                </div>
+                <div class="flex flex-col">
+                  <span class="font-space font-medium text-base text-textMain leading-snug">Sabine Roth</span>
+                  <span class="text-xs text-slate-500">Damen 40</span>
+                </div>
+              </div>
+            </button>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- SPALTE 2: Was? (Breiteste Spalte: Col span 5 / 12) -->
+      <section class="col-span-5 flex flex-col gap-4">
+        <!-- Section Header with Number -->
+        <div class="flex items-baseline gap-2">
+          <span class="font-space text-2xl font-bold text-slate-300">2</span>
+          <span class="text-slate-300 font-medium">·</span>
+          <h2 class="font-space text-lg font-bold text-textMain tracking-tight">
+            Was?
+          </h2>
+        </div>
+
+        <!-- Raster großer Artikelkacheln -->
+        <div class="grid grid-cols-2 gap-3.5">
+
+          <!-- Kachel: Wasser still -->
+          <button type="button" class="min-h-[104px] p-4 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 active:bg-slate-100 text-left flex flex-col justify-between shadow-sm transition-all group">
+            <div class="flex items-start justify-between w-full">
+              <span class="font-space text-lg font-bold text-textMain group-hover:text-club transition-colors leading-snug">Wasser still</span>
+              <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-club group-hover:text-white transition-colors">
+                <span class="material-symbols-outlined text-lg">add</span>
+              </span>
+            </div>
+            <div class="text-sm font-medium text-slate-500">
+              0,5 l · 1,50 €
+            </div>
+          </button>
+
+          <!-- Kachel: Wasser spritzig -->
+          <button type="button" class="min-h-[104px] p-4 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 active:bg-slate-100 text-left flex flex-col justify-between shadow-sm transition-all group">
+            <div class="flex items-start justify-between w-full">
+              <span class="font-space text-lg font-bold text-textMain group-hover:text-club transition-colors leading-snug">Wasser spritzig</span>
+              <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-club group-hover:text-white transition-colors">
+                <span class="material-symbols-outlined text-lg">add</span>
+              </span>
+            </div>
+            <div class="text-sm font-medium text-slate-500">
+              0,5 l · 1,50 €
+            </div>
+          </button>
+
+          <!-- Kachel: Apfelschorle (Ausgewählt: hellblau, blaues Zähler-Badge "2", runder Minus-Knopf) -->
+          <div class="min-h-[104px] p-4 rounded-2xl bg-[#E8F1F8] border border-[#1466A8] text-left flex flex-col justify-between shadow-sm relative"><div class="flex items-start justify-between w-full"><div class="flex flex-col"><span class="font-space text-lg font-bold text-[#1466A8] leading-snug">Apfelschorle</span><span class="text-sm font-semibold text-[#1466A8]/80">0,5 l · 1,80 €</span></div><span class="w-8 h-8 rounded-full bg-white border border-[#1466A8]/40 text-[#1466A8] flex items-center justify-center font-space font-bold text-sm shadow-xs">2</span></div><div class="flex items-center justify-between pt-2 border-t border-[#1466A8]/20 mt-1"><span class="text-xs font-semibold text-[#1466A8] font-space">2 Flaschen = 3,60 €</span><div class="flex items-center gap-1.5"><button type="button" title="Eine abziehen" class="w-8 h-8 rounded-full bg-white border border-[#1466A8]/30 text-[#1466A8] hover:bg-slate-50 active:scale-95 flex items-center justify-center shadow-xs transition-transform"><span class="material-symbols-outlined text-base font-bold">remove</span></button><button type="button" title="Eine hinzufügen" class="w-8 h-8 rounded-full bg-white border border-[#1466A8] text-[#1466A8] hover:bg-[#1466A8]/10 active:scale-95 flex items-center justify-center shadow-xs transition-transform"><span class="material-symbols-outlined text-base font-bold">add</span></button></div></div></div>
+
+          <!-- Kachel: Cola -->
+          <button type="button" class="min-h-[104px] p-4 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 active:bg-slate-100 text-left flex flex-col justify-between shadow-sm transition-all group">
+            <div class="flex items-start justify-between w-full">
+              <span class="font-space text-lg font-bold text-textMain group-hover:text-club transition-colors leading-snug">Cola</span>
+              <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-club group-hover:text-white transition-colors">
+                <span class="material-symbols-outlined text-lg">add</span>
+              </span>
+            </div>
+            <div class="text-sm font-medium text-slate-500">
+              0,33 l · 2,00 €
+            </div>
+          </button>
+
+          <!-- Kachel: Bier -->
+          <button type="button" class="min-h-[104px] p-4 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 active:bg-slate-100 text-left flex flex-col justify-between shadow-sm transition-all group">
+            <div class="flex items-start justify-between w-full">
+              <span class="font-space text-lg font-bold text-textMain group-hover:text-club transition-colors leading-snug">Bier</span>
+              <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-club group-hover:text-white transition-colors">
+                <span class="material-symbols-outlined text-lg">add</span>
+              </span>
+            </div>
+            <div class="text-sm font-medium text-slate-500">
+              0,33 l · 2,50 €
+            </div>
+          </button>
+
+          <!-- Kachel: Kaffee -->
+          <button type="button" class="min-h-[104px] p-4 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 active:bg-slate-100 text-left flex flex-col justify-between shadow-sm transition-all group">
+            <div class="flex items-start justify-between w-full">
+              <span class="font-space text-lg font-bold text-textMain group-hover:text-club transition-colors leading-snug">Kaffee</span>
+              <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-club group-hover:text-white transition-colors">
+                <span class="material-symbols-outlined text-lg">add</span>
+              </span>
+            </div>
+            <div class="text-sm font-medium text-slate-500">
+              Tasse · 1,50 €
+            </div>
+          </button>
+
+          <!-- Kachel: Brezel (spans full width or single cell) -->
+          <button type="button" class="min-h-[104px] p-4 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 active:bg-slate-100 text-left flex flex-col justify-between shadow-sm transition-all group">
+            <div class="flex items-start justify-between w-full">
+              <span class="font-space text-lg font-bold text-textMain group-hover:text-club transition-colors leading-snug">Brezel</span>
+              <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-club group-hover:text-white transition-colors">
+                <span class="material-symbols-outlined text-lg">add</span>
+              </span>
+            </div>
+            <div class="text-sm font-medium text-slate-500">
+              1,20 €
+            </div>
+          </button>
+
+        </div>
+      </section>
+
+      <!-- SPALTE 3: Eintragen (Col span 4 / 12) -->
+      <section class="col-span-4 flex flex-col gap-4">
+        <!-- Section Header with Number -->
+        <div class="flex items-baseline gap-2">
+          <span class="font-space text-2xl font-bold text-slate-300">3</span>
+          <span class="text-slate-300 font-medium">·</span>
+          <h2 class="font-space text-lg font-bold text-textMain tracking-tight">
+            Eintragen
+          </h2>
+        </div>
+
+        <!-- Receipt / Confirmation Summary Card (20px border radius) -->
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between min-h-[460px]">
+
+          <div>
+            <!-- Member Header in Card -->
+            <div class="flex items-center gap-3 pb-5 border-b border-slate-200">
+              <div class="w-12 h-12 rounded-full bg-[#E8F1F8] border border-[#1466A8]/30 text-[#1466A8] flex items-center justify-center font-space font-bold text-base shadow-xs">AB</div>
+              <div class="flex flex-col">
+                <span class="font-space text-xs font-bold uppercase tracking-wider text-slate-400">Buchung für</span>
+                <span class="font-space text-xl font-bold text-textMain leading-tight">Anna Berger</span>
+              </div>
+            </div>
+
+            <!-- Position List -->
+            <div class="py-5 flex flex-col gap-3">
+              <div class="flex items-center justify-between text-base">
+                <div class="flex items-center gap-2">
+                  <span class="w-6 h-6 rounded-md bg-club-light text-club font-space font-bold text-xs flex items-center justify-center">2×</span>
+                  <span class="font-medium text-textMain">Apfelschorle</span>
+                  <span class="text-xs text-slate-400 font-medium">0,5 l</span>
+                </div>
+                <span class="font-space font-bold text-textMain text-base">3,60 €</span>
+              </div>
+            </div>
+
+            <!-- Haarlinie -->
+            <div class="h-px w-full bg-slate-200 my-1"></div>
+
+            <!-- Zeile Zusammen mit großem Betrag (44px bold) -->
+            <div class="pt-5 pb-2 flex flex-col gap-1">
+              <span class="font-space text-xs font-bold uppercase tracking-wider text-slate-500">
+                Zusammen
+              </span>
+              <div class="font-space text-[44px] font-bold tracking-tight text-textMain leading-none">
+                3,60 €
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Area -->
+          <div class="flex flex-col gap-3 pt-6">
+            <!-- Breiter blauer Hauptbutton (mind. 56px hoch) -->
+            <button type="button" class="w-full h-14 rounded-full bg-[#1466A8] hover:bg-[#0f5288] active:bg-[#0b3f69] text-white font-space font-semibold text-base flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.99]"><span>Für Anna eintragen</span><span class="material-symbols-outlined text-[20px]">arrow_forward</span></button>
+
+            <!-- Graue Fußnote -->
+            <p class="text-center text-xs text-slate-500 font-normal leading-relaxed">
+              Wird mit der Monatsabrechnung eingezogen.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+
+
+
+
+</body></html>

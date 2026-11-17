@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-white" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TC Muckensturm - Einzug November (Desktop)</title>
+<!-- Google Fonts: Space Grotesk & DM Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with Forms and Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-bright": "#ffffff",
+            "outline": "#717781",
+            "on-primary-fixed": "#001d36",
+            "on-error": "#ffffff",
+            "on-secondary-fixed": "#001e2c",
+            "on-secondary": "#ffffff",
+            "error": "#ba1a1a",
+            "secondary": "#246582",
+            "on-secondary-fixed-variant": "#004d67",
+            "on-background": "#0a1624",
+            "secondary-fixed": "#c2e8ff",
+            "secondary-fixed-dim": "#93ceef",
+            "surface": "#ffffff",
+            "surface-container-highest": "#e2e8f0",
+            "background": "#ffffff",
+            "on-primary-container": "#cde2ff",
+            "primary": "#004e85",
+            "outline-variant": "#c1c7d2",
+            "on-primary-fixed-variant": "#00497d",
+            "inverse-on-surface": "#f1effa",
+            "primary-fixed-dim": "#9fcaff",
+            "error-container": "#ffdad6",
+            "on-surface-variant": "#64748b",
+            "on-primary": "#ffffff",
+            "on-tertiary": "#ffffff",
+            "surface-container": "#f8fafc",
+            "tertiary": "#743d00",
+            "surface-container-low": "#f8fafc",
+            "secondary-container": "#a1dcfe",
+            "tertiary-container": "#975100",
+            "on-error-container": "#93000a",
+            "surface-tint": "#1466a8",
+            "surface-container-high": "#f1f5f9",
+            "tertiary-fixed": "#ffdcc3",
+            "inverse-primary": "#9fcaff",
+            "primary-container": "#1466a8",
+            "on-tertiary-container": "#ffd9bd",
+            "primary-fixed": "#d1e4ff",
+            "on-surface": "#0a1624",
+            "on-tertiary-fixed": "#2f1500",
+            "inverse-surface": "#2f3038",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "on-secondary-container": "#20627f",
+            "tertiary-fixed-dim": "#ffb77c",
+            "surface-dim": "#dad9e3",
+            "surface-variant": "#f1f5f9"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter-desktop": "1.5rem",
+            "margin": "1rem",
+            "space-md": "1rem",
+            "gutter": "1rem",
+            "space-xl": "2.5rem",
+            "space-lg": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "margin-desktop": "2rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Space Grotesk", "sans-serif"],
+            "body-lg": ["DM Sans", "sans-serif"],
+            "body-sm": ["DM Sans", "sans-serif"],
+            "display-score": ["Space Grotesk", "sans-serif"],
+            "label-caps": ["Space Grotesk", "sans-serif"],
+            "numeric-data": ["Space Grotesk", "sans-serif"],
+            "headline-lg": ["Space Grotesk", "sans-serif"],
+            "headline-lg-mobile": ["Space Grotesk", "sans-serif"],
+            "display-score-mobile": ["Space Grotesk", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-sm": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "600" }],
+            "body-lg": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "400" }],
+            "body-sm": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "display-score": ["4rem", { "lineHeight": "4rem", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+            "label-caps": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "numeric-data": ["1.125rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "headline-lg": ["2rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-lg-mobile": ["1.5rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "display-score-mobile": ["2.75rem", { "lineHeight": "3rem", "letterSpacing": "-0.03em", "fontWeight": "700" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-fill {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+</head>
+<body class="bg-white text-[#0A1624] font-body-lg text-body-lg antialiased selection:bg-[#E8F1F8] selection:text-[#1466A8] min-h-screen">
+<div class="mx-auto w-[1280px] min-h-screen flex bg-white border-x border-slate-200">
+<!-- LEFT SIDEBAR -->
+<aside class="w-[240px] shrink-0 min-h-screen bg-white border-r border-slate-200 flex flex-col justify-between p-4 sticky top-0 h-screen overflow-y-auto">
+<div class="flex flex-col gap-5">
+<!-- Brand Wordmark -->
+<div class="pt-2 px-2">
+<p class="text-[11px] font-bold tracking-widest text-[#64748B] font-label-caps uppercase leading-none mb-1">TENNISCLUB</p>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#1466A8] text-xl" data-icon="sports_tennis">sports_tennis</span>
+<span class="font-headline-sm text-headline-sm font-semibold tracking-tight text-[#0A1624]">TC Muckensturm</span>
+</div>
+</div>
+<!-- Yellow Action Button: Platz buchen -->
+<div class="px-1">
+<button class="w-full flex items-center justify-center gap-2 bg-[#FFD21F] hover:bg-[#fed012] text-[#0A1624] font-semibold text-sm rounded-full py-2.5 px-4 shadow-none active:scale-[0.98] transition duration-150" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="add">add</span>
+<span class="font-headline-sm text-sm">Platz buchen</span>
+</button>
+</div>
+<!-- Navigation Top Block: JSON Anchor aligned -->
+<nav class="flex flex-col gap-0.5">
+<a class="flex items-center gap-3 px-3 py-2 rounded-full text-sm font-medium text-[#64748B] hover:text-[#0A1624] hover:bg-slate-50 transition duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="home">home</span>
+<span class="font-body-sm text-body-sm">Start</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-full text-sm font-medium text-[#64748B] hover:text-[#0A1624] hover:bg-slate-50 transition duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="sports_tennis">sports_tennis</span>
+<span class="font-body-sm text-body-sm">Plätze</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-full text-sm font-medium text-[#64748B] hover:text-[#0A1624] hover:bg-slate-50 transition duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="groups">groups</span>
+<span class="font-body-sm text-body-sm">Verein</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-full text-sm font-medium text-[#64748B] hover:text-[#0A1624] hover:bg-slate-50 transition duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="person">person</span>
+<span class="font-body-sm text-body-sm">Konto</span>
+</a>
+</nav>
+<!-- Divider & Kicker: Verwaltung -->
+<div class="px-3 pt-2">
+<div class="h-px bg-slate-200 mb-4"></div>
+<p class="text-[11px] font-bold tracking-widest text-[#64748B] font-label-caps uppercase">VERWALTUNG</p>
+</div>
+<!-- Navigation Block: Verwaltung -->
+<nav class="flex flex-col gap-0.5">
+<a class="flex items-center gap-3 px-3 py-1.5 rounded-full text-sm font-medium text-[#64748B] hover:text-[#0A1624] hover:bg-slate-50 transition duration-150" href="#">
+<span class="material-symbols-outlined text-[19px]" data-icon="dashboard">dashboard</span>
+<span class="font-body-sm text-body-sm">Übersicht</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-1.5 rounded-full text-sm font-medium text-[#64748B] hover:text-[#0A1624] hover:bg-slate-50 transition duration-150" href="#">
+<span class="material-symbols-outlined text-[19px]" data-icon="badge">badge</span>
+<span class="font-body-sm text-body-sm">Mitglieder</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-1.5 rounded-full text-sm font-medium text-[#64748B] hover:text-[#0A1624] hover:bg-slate-50 transition duration-150" href="#">
+<span class="material-symbols-outlined text-[19px]" data-icon="event">event</span>
+<span class="font-body-sm text-body-sm">Veranstaltungen</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-1.5 rounded-full text-sm font-medium text-[#64748B] hover:text-[#0A1624] hover:bg-slate-50 transition duration-150" href="#">
+<span class="material-symbols-outlined text-[19px]" data-icon="construction">construction</span>
+<span class="font-body-sm text-body-sm">Arbeitsdienst</span>
+</a>
+<!-- AKTIVER MENÜPUNKT: KASSE -->
+<a class="flex items-center gap-3 px-3 py-1.5 rounded-full text-sm font-semibold bg-[#E8F1F8] text-[#1466A8] transition duration-150" href="#">
+<span class="material-symbols-outlined text-[19px]" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-body-sm text-body-sm font-semibold">Kasse</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-1.5 rounded-full text-sm font-medium text-[#64748B] hover:text-[#0A1624] hover:bg-slate-50 transition duration-150" href="#">
+<span class="material-symbols-outlined text-[19px]" data-icon="grid_view">grid_view</span>
+<span class="font-body-sm text-body-sm">Plätze &amp; Serien</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-1.5 rounded-full text-sm font-medium text-[#64748B] hover:text-[#0A1624] hover:bg-slate-50 transition duration-150" href="#">
+<span class="material-symbols-outlined text-[19px]" data-icon="local_bar">local_bar</span>
+<span class="font-body-sm text-body-sm">Getränke</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-1.5 rounded-full text-sm font-medium text-[#64748B] hover:text-[#0A1624] hover:bg-slate-50 transition duration-150" href="#">
+<span class="material-symbols-outlined text-[19px]" data-icon="settings">settings</span>
+<span class="font-body-sm text-body-sm">System</span>
+</a>
+</nav>
+</div>
+<!-- User Card Bottom -->
+<div class="pt-4 border-t border-slate-200 mt-6 px-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-semibold text-[#1466A8] font-numeric-data">
+              AB
+            </div>
+<div>
+<p class="text-sm font-semibold text-[#0A1624] leading-tight font-headline-sm">Anna Berger</p>
+<p class="text-[11px] text-[#64748B] font-body-sm">Vorstand</p>
+</div>
+</div>
+<button class="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-50 transition duration-150" title="Abmelden" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="logout">logout</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- MAIN CONTENT AREA -->
+<main class="flex-1 bg-white p-10 max-w-5xl">
+<!-- 1. Header / Breadcrumb / Title -->
+<header class="mb-8">
+<div class="flex items-center gap-1.5 text-xs text-[#64748B] mb-2 font-body-sm">
+<a class="inline-flex items-center gap-0.5 text-[#1466A8] hover:underline font-medium" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_left">chevron_left</span>
+            Kasse
+          </a>
+<span class="text-slate-300">/</span>
+<span class="text-[11px] font-bold tracking-widest text-[#64748B] font-label-caps uppercase">VERWALTUNG · KASSE</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<h1 class="text-[32px] font-bold text-[#0A1624] tracking-tight font-headline-lg">Einzug November</h1>
+<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#E8F1F8] text-[#1466A8] font-label-caps uppercase tracking-wider">
+              Bankdatei erzeugt
+            </span>
+</div>
+<div class="text-xs text-[#64748B] font-body-sm">
+            Referenz: <span class="font-numeric-data font-medium text-[#0A1624]">EZ-2026-11-SEPA</span>
+</div>
+</div>
+</header>
+<!-- 2. Step Progress Bar -->
+<section class="mb-8 bg-white border border-slate-200 rounded-2xl p-6">
+<div class="relative flex items-center justify-between">
+<!-- Background Line Track -->
+<div class="absolute top-1/2 left-8 right-8 -translate-y-1/2 h-[2px] bg-slate-200 -z-0"></div>
+<!-- Active Line Track Segment (Step 1 to Step 2) -->
+<div class="absolute top-1/2 left-8 w-[33%] -translate-y-1/2 h-[2px] bg-[#1466A8] -z-0"></div>
+<!-- Step 1: Angekündigt (Erledigt) -->
+<div class="relative z-10 flex flex-col items-center bg-white px-2">
+<div class="w-8 h-8 rounded-full bg-[#1466A8] text-white flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-base font-bold" data-icon="check">check</span>
+</div>
+<span class="text-xs font-medium text-[#0A1624] font-body-sm">Angekündigt</span>
+<span class="text-[10px] text-[#64748B] font-numeric-data mt-0.5">10. Nov</span>
+</div>
+<!-- Step 2: Bankdatei erzeugt (Aktuell) -->
+<div class="relative z-10 flex flex-col items-center bg-white px-2">
+<div class="w-8 h-8 rounded-full bg-[#1466A8] text-white flex items-center justify-center ring-4 ring-[#E8F1F8] mb-2">
+<span class="w-2.5 h-2.5 rounded-full bg-white"></span>
+</div>
+<span class="text-xs font-bold text-[#0A1624] font-headline-sm">Bankdatei erzeugt</span>
+<span class="text-[10px] text-[#1466A8] font-semibold font-numeric-data mt-0.5">Aktueller Schritt</span>
+</div>
+<!-- Step 3: Eingereicht (Offen) -->
+<div class="relative z-10 flex flex-col items-center bg-white px-2">
+<div class="w-8 h-8 rounded-full bg-white border-2 border-slate-300 text-slate-400 flex items-center justify-center mb-2">
+<span class="text-xs font-semibold font-numeric-data text-slate-400">3</span>
+</div>
+<span class="text-xs font-normal text-slate-400 font-body-sm">Eingereicht</span>
+<span class="text-[10px] text-slate-400 font-numeric-data mt-0.5">Ausstehend</span>
+</div>
+<!-- Step 4: Abgeschlossen (Offen) -->
+<div class="relative z-10 flex flex-col items-center bg-white px-2">
+<div class="w-8 h-8 rounded-full bg-white border-2 border-slate-300 text-slate-400 flex items-center justify-center mb-2">
+<span class="text-xs font-semibold font-numeric-data text-slate-400">4</span>
+</div>
+<span class="text-xs font-normal text-slate-400 font-body-sm">Abgeschlossen</span>
+<span class="text-[10px] text-slate-400 font-numeric-data mt-0.5">01. Dez</span>
+</div>
+</div>
+</section>
+<!-- 3. Two-Column Cards: Nächster Schritt & Stand -->
+<section class="grid grid-cols-2 gap-6 mb-10">
+<!-- Left Card: Nächster Schritt -->
+<div class="border border-slate-200 rounded-2xl p-6 bg-white flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-[#1466A8] text-xl" data-icon="pending_actions">pending_actions</span>
+<h2 class="text-[18px] font-semibold text-[#0A1624] font-headline-sm">Im Onlinebanking einreichen</h2>
+</div>
+<p class="text-slate-600 text-sm leading-relaxed font-body-sm mb-6">
+              Lade die Bankdatei herunter und reiche sie bei deiner Bank ein. Danach hier bestätigen.
+            </p>
+</div>
+<div class="flex flex-col gap-2.5 pt-2">
+<button class="w-full flex items-center justify-center gap-2 border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-[#0A1624] font-medium text-sm rounded-full py-2.5 px-4 transition duration-150" type="button">
+<span class="material-symbols-outlined text-lg text-slate-600" data-icon="download">download</span>
+<span class="font-headline-sm text-sm">Bankdatei herunterladen (XML)</span>
+</button>
+<button class="w-full flex items-center justify-center gap-2 bg-[#1466A8] hover:bg-[#004e85] text-white font-medium text-sm rounded-full py-2.5 px-4 transition duration-150 active:scale-[0.99]" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="task_alt">task_alt</span>
+<span class="font-headline-sm text-sm">Im Onlinebanking eingereicht</span>
+</button>
+</div>
+</div>
+<!-- Right Card: Stand & Kennzahlen -->
+<div class="border border-slate-200 rounded-2xl p-6 bg-white flex flex-col justify-between">
+<div class="space-y-2.5">
+<div class="flex items-center justify-between text-xs pb-1 border-b border-slate-100">
+<span class="text-[11px] font-bold tracking-wider text-[#64748B] font-label-caps uppercase">INFORMIERT</span>
+<span class="font-numeric-data font-medium text-[#0A1624]">10.11.2026</span>
+</div>
+<div class="flex items-center justify-between text-xs pb-1 border-b border-slate-100">
+<span class="text-[11px] font-bold tracking-wider text-[#64748B] font-label-caps uppercase">FRÜHESTENS ABBUCHBAR</span>
+<span class="font-numeric-data font-medium text-[#0A1624]">24.11.2026</span>
+</div>
+<div class="flex items-center justify-between text-xs pb-1 border-b border-slate-100">
+<span class="text-[11px] font-bold tracking-wider text-[#64748B] font-label-caps uppercase">ABBUCHUNG</span>
+<span class="font-numeric-data font-medium text-[#0A1624]">01.12.2026</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-[11px] font-bold tracking-wider text-[#64748B] font-label-caps uppercase">RÜCKLÄUFER MÖGLICH BIS</span>
+<span class="font-numeric-data font-medium text-[#0A1624]">26.01.2027</span>
+</div>
+</div>
+<div class="pt-4 border-t border-slate-200 mt-4 flex items-end justify-between">
+<div>
+<p class="text-[11px] font-bold tracking-wider text-[#64748B] font-label-caps uppercase mb-0.5">GESAMTSUMME</p>
+<div class="text-[44px] font-bold text-[#0A1624] tracking-tight leading-none font-headline-lg">
+                4.812,50 €
+              </div>
+</div>
+<div class="text-right">
+<span class="inline-flex items-center gap-1 text-sm text-[#64748B] font-body-sm">
+<span class="material-symbols-outlined text-base" data-icon="groups">groups</span>
+                214 Mitglieder
+              </span>
+</div>
+</div>
+</div>
+</section>
+<!-- 4. Section: Je Mitglied (Table Card) -->
+<section>
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<h2 class="text-[18px] font-semibold text-[#0A1624] font-headline-sm">Je Mitglied</h2>
+<span class="text-xs text-[#64748B] font-numeric-data bg-slate-100 rounded-full px-2 py-0.5">4 Vorgänge gelistet</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-xs text-[#64748B] hover:text-[#0A1624] flex items-center gap-1 font-body-sm" type="button">
+<span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span>
+              Filter
+            </button>
+<span class="text-slate-200">|</span>
+<button class="text-xs text-[#1466A8] hover:underline font-medium font-body-sm" type="button">
+              Alle 214 anzeigen
+            </button>
+</div>
+</div>
+<!-- Table Container Card with hairline borders -->
+<div class="border border-slate-200 rounded-2xl overflow-hidden bg-white">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold tracking-wider text-[#64748B] font-label-caps uppercase">
+<th class="py-3 px-5" scope="col">MITGLIED</th>
+<th class="py-3 px-5" scope="col">POSTEN</th>
+<th class="py-3 px-5" scope="col">STATUS</th>
+<th class="py-3 px-5 text-right" scope="col">BETRAG</th>
+<th class="py-3 px-4 text-center w-12" scope="col">AKTION</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-200 text-sm">
+<!-- Row 1: Bauer, Thomas -->
+<tr class="hover:bg-slate-50/70 transition duration-100">
+<td class="py-3.5 px-5">
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[11px] font-semibold text-[#0A1624] font-numeric-data">
+                      TB
+                    </div>
+<span class="font-medium text-[#0A1624] font-body-sm">Bauer, Thomas</span>
+</div>
+</td>
+<td class="py-3.5 px-5 text-[#64748B] font-body-sm">
+                  Beitrag 2026, Getränke Oktober
+                </td>
+<td class="py-3.5 px-5">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 font-body-sm">
+                    Lastschrift
+                  </span>
+</td>
+<td class="py-3.5 px-5 text-right font-numeric-data font-semibold text-[#0A1624] tabular-nums">
+                  203,40 €
+                </td>
+<td class="py-3.5 px-4 text-center">
+<button class="text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100 transition" title="Optionen" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2: Berger, Anna -->
+<tr class="hover:bg-slate-50/70 transition duration-100">
+<td class="py-3.5 px-5">
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[11px] font-semibold text-[#0A1624] font-numeric-data">
+                      AB
+                    </div>
+<span class="font-medium text-[#0A1624] font-body-sm">Berger, Anna</span>
+</div>
+</td>
+<td class="py-3.5 px-5 text-[#64748B] font-body-sm">
+                  Beitrag 2026
+                </td>
+<td class="py-3.5 px-5">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 font-body-sm">
+                    Lastschrift
+                  </span>
+</td>
+<td class="py-3.5 px-5 text-right font-numeric-data font-semibold text-[#0A1624] tabular-nums">
+                  180,00 €
+                </td>
+<td class="py-3.5 px-4 text-center">
+<button class="text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100 transition" title="Optionen" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3: Keller, Martin (zurückgebucht - ROT) -->
+<tr class="hover:bg-slate-50/70 transition duration-100">
+<td class="py-3.5 px-5">
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[11px] font-semibold text-[#0A1624] font-numeric-data">
+                      MK
+                    </div>
+<span class="font-medium text-[#0A1624] font-body-sm">Keller, Martin</span>
+</div>
+</td>
+<td class="py-3.5 px-5 text-[#64748B] font-body-sm">
+                  Getränke Oktober
+                </td>
+<td class="py-3.5 px-5">
+<!-- Roter Pillen-Chip ausschließlich für zurückgebucht -->
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#FDF2F2] text-[#C4433A] font-body-sm border border-[#F9D7D7]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#C4433A]"></span>
+                    zurückgebucht
+                  </span>
+</td>
+<td class="py-3.5 px-5 text-right font-numeric-data font-semibold text-[#C4433A] tabular-nums">
+                  48,00 €
+                </td>
+<td class="py-3.5 px-4 text-center">
+<button class="text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100 transition" title="Optionen" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4: Roth, Sabine (eingezogen - BLAU) -->
+<tr class="hover:bg-slate-50/70 transition duration-100">
+<td class="py-3.5 px-5">
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[11px] font-semibold text-[#0A1624] font-numeric-data">
+                      SR
+                    </div>
+<span class="font-medium text-[#0A1624] font-body-sm">Roth, Sabine</span>
+</div>
+</td>
+<td class="py-3.5 px-5 text-[#64748B] font-body-sm">
+                  Herbstfest
+                </td>
+<td class="py-3.5 px-5">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#E8F1F8] text-[#1466A8] font-body-sm">
+                    eingezogen
+                  </span>
+</td>
+<td class="py-3.5 px-5 text-right font-numeric-data font-semibold text-[#0A1624] tabular-nums">
+                  36,00 €
+                </td>
+<td class="py-3.5 px-4 text-center">
+<button class="text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100 transition" title="Optionen" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- Card Footer for Table -->
+<div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-[#64748B] font-body-sm">
+<span>SEPA-Lastschriftdatei: <code class="font-mono text-[#0A1624] bg-white px-1.5 py-0.5 rounded border border-slate-200">SEPA_202611_MUCKENSTURM.XML</code></span>
+<div class="flex items-center gap-4">
+<span>Zwischensumme Auszug: <strong class="font-numeric-data text-[#0A1624]">467,40 €</strong></span>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+</body></html>

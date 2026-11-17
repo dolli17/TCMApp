@@ -1,0 +1,234 @@
+<!DOCTYPE html><html lang="de"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=393, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TC Muckensturm - Verwaltung (Plätze &amp; Serien)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..600;1,9..40,400..600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            club: '#1466A8',
+            'club-light': '#E8F1F8',
+            'ink-dark': '#0A1624',
+            'slate-sub': '#64748B',
+            'slate-line': '#E2E8F0',
+            'slate-chip': '#F1F5F9',
+            'slate-chip-text': '#475569',
+          },
+          fontFamily: {
+            sans: ['"DM Sans"', 'sans-serif'],
+            display: ['"Space Grotesk"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: "DM Sans", sans-serif;
+      color: #0A1624;
+      background-color: #FFFFFF;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-space {
+      font-family: "Space Grotesk", sans-serif;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .material-symbols-outlined.filled {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Diagonal striped pattern for locked/gesperrt chip */
+    .striped-chip {
+      background-color: #F1F5F9;
+      background-image: repeating-linear-gradient(
+        -45deg,
+        #E2E8F0,
+        #E2E8F0 4px,
+        #F1F5F9 4px,
+        #F1F5F9 8px
+      );
+    }
+  </style>
+</head>
+<body class="w-[393px] min-h-[852px] mx-auto bg-white relative flex flex-col justify-between antialiased selection:bg-club/10 selection:text-club pb-36">
+
+  <!-- Top / iOS Status Bar & Content Container -->
+  <div class="w-full">
+    <!-- iOS Status Bar (9:41) -->
+    <div class="w-full h-11 px-6 pt-3 flex items-center justify-between text-ink-dark font-semibold text-[15px] select-none tracking-tight">
+      <span class="font-space">9:41</span>
+      <div class="flex items-center gap-1.5 text-ink-dark">
+        <svg class="w-4 h-3.5 fill-current" viewBox="0 0 16 12">
+          <path d="M1 10h2v2H1v-2zm4-3h2v5H5V7zm4-4h2v9H9V3zm4-3h2v12h-2V0z"></path>
+        </svg>
+        <svg class="w-4 h-3.5 fill-current" viewBox="0 0 16 12">
+          <path d="M8 2.5C5.1 2.5 2.6 3.7.8 5.7L0 4.8C2.1 2.5 4.9 1 8 1s5.9 1.5 8 3.8l-.8.9C13.4 3.7 10.9 2.5 8 2.5zM3.4 8.2C4.7 7.1 6.3 6.5 8 6.5s3.3.6 4.6 1.7l-.8.9C10.7 8.2 9.4 7.7 8 7.7s-2.7.5-3.8 1.4l-.8-.9zM8 10.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"></path>
+        </svg>
+        <div class="w-6 h-3 border border-ink-dark rounded-[3px] p-[1px] relative flex items-center">
+          <div class="h-full w-4 bg-ink-dark rounded-[1px]"></div>
+          <div class="w-[1.5px] h-1.5 bg-ink-dark absolute -right-[3px] top-[2px] rounded-r-sm"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Header Section -->
+    <header class="px-5 pt-3 pb-4">
+      <div class="flex items-start justify-between">
+        <div>
+          <!-- Kicker: TC MUCKENSTURM 11px uppercase gray -->
+          <p class="font-space text-[11px] font-semibold tracking-wider text-slate-sub uppercase">TC Muckensturm</p>
+          <!-- Title: Plätze & Serien 24px bold -->
+          <h1 class="font-space text-[24px] font-bold text-ink-dark leading-tight mt-0.5 tracking-tight">Plätze &amp; Serien</h1>
+        </div>
+        <!-- Blue pill button "Plätze sperren" -->
+        <button class="h-11 px-5 bg-club text-white font-space font-semibold text-[14px] rounded-full hover:bg-club/90 active:scale-95 transition-all shadow-sm flex items-center justify-center">
+          Plätze sperren
+        </button>
+      </div>
+
+      <!-- Segmented Control: "Plätze | Serien", Plätze active -->
+      <div class="mt-4 p-1 bg-slate-chip rounded-full flex items-center border border-slate-line/70">
+        <button class="flex-1 py-1.5 text-center text-[13px] font-space font-semibold text-ink-dark bg-white rounded-full border border-slate-line shadow-sm">
+          Plätze
+        </button>
+        <button class="flex-1 py-1.5 text-center text-[13px] font-space font-medium text-slate-sub hover:text-ink-dark transition-colors">
+          Serien
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="px-5">
+      <!-- Section Label: JETZT 11px uppercase -->
+      <div class="flex items-center justify-between mb-2 px-1">
+        <h2 class="font-space text-[11px] font-semibold tracking-wider text-slate-sub uppercase">Jetzt</h2>
+        <span class="text-[12px] text-slate-sub">8 Plätze aktiv</span>
+      </div>
+
+      <!-- Court Status Card (8 rows separated by hairlines) -->
+      <div class="bg-white rounded-2xl border border-slate-line overflow-hidden shadow-[0_1px_3px_rgba(10,22,36,0.02)]">
+        
+        <!-- Row 1: Platz 1 (frei - grau) -->
+        <div class="px-4 py-3.5 flex items-center justify-between border-b border-slate-line">
+          <span class="font-space font-medium text-[15px] text-ink-dark">Platz 1</span>
+          <span class="px-2.5 py-1 text-[12px] font-medium font-sans text-slate-sub bg-slate-chip rounded-full">
+            frei
+          </span>
+        </div>
+
+        <!-- Row 2: Platz 2 (frei - grau) -->
+        <div class="px-4 py-3.5 flex items-center justify-between border-b border-slate-line">
+          <span class="font-space font-medium text-[15px] text-ink-dark">Platz 2</span>
+          <span class="px-2.5 py-1 text-[12px] font-medium font-sans text-slate-sub bg-slate-chip rounded-full">
+            frei
+          </span>
+        </div>
+
+        <!-- Row 3: Platz 3 (belegt bis 19:00 - Slate-300 / dezent gefüllt) -->
+        <div class="px-4 py-3.5 flex items-center justify-between border-b border-slate-line">
+          <span class="font-space font-medium text-[15px] text-ink-dark">Platz 3</span>
+          <span class="px-2.5 py-1 text-[12px] font-medium font-sans text-slate-700 bg-slate-chip border border-slate-line rounded-full">
+            belegt bis 19:00
+          </span>
+        </div>
+
+        <!-- Row 4: Platz 4 (frei - grau) -->
+        <div class="px-4 py-3.5 flex items-center justify-between border-b border-slate-line">
+          <span class="font-space font-medium text-[15px] text-ink-dark">Platz 4</span>
+          <span class="px-2.5 py-1 text-[12px] font-medium font-sans text-slate-sub bg-slate-chip rounded-full">
+            frei
+          </span>
+        </div>
+
+        <!-- Row 5: Platz 5 (gesperrt bis 18:00 - diagonal gestreift) -->
+        <div class="px-4 py-3.5 flex items-center justify-between border-b border-slate-line">
+          <span class="font-space font-medium text-[15px] text-ink-dark">Platz 5</span>
+          <span class="striped-chip px-2.5 py-1 text-[12px] font-medium font-sans text-slate-700 border border-slate-line rounded-full">
+            gesperrt bis 18:00
+          </span>
+        </div>
+
+        <!-- Row 6: Platz 6 (frei - grau) -->
+        <div class="px-4 py-3.5 flex items-center justify-between border-b border-slate-line">
+          <span class="font-space font-medium text-[15px] text-ink-dark">Platz 6</span>
+          <span class="px-2.5 py-1 text-[12px] font-medium font-sans text-slate-sub bg-slate-chip rounded-full">
+            frei
+          </span>
+        </div>
+
+        <!-- Row 7: Platz 7 (Serie bis 17:00 - hellblau) -->
+        <div class="px-4 py-3.5 flex items-center justify-between border-b border-slate-line">
+          <span class="font-space font-medium text-[15px] text-ink-dark">Platz 7</span>
+          <span class="px-2.5 py-1 text-[12px] font-medium font-sans text-club bg-club-light rounded-full border border-club/20">
+            Serie bis 17:00
+          </span>
+        </div>
+
+        <!-- Row 8: Platz 8 (stillgelegt - blass, durchgestrichen wirkend) -->
+        <div class="px-4 py-3.5 flex items-center justify-between">
+          <span class="font-space font-medium text-[15px] text-slate-400">Platz 8</span>
+          <span class="px-2.5 py-1 text-[12px] font-medium font-sans text-slate-400 bg-slate-100 rounded-full line-through decoration-slate-400">
+            stillgelegt
+          </span>
+        </div>
+
+      </div>
+
+      <!-- Action Row: "Alles Weitere: Im Browser öffnen ›" -->
+      <a href="#" class="mt-4 px-3 py-2 flex items-center justify-between text-club hover:text-club/80 transition-colors group">
+        <span class="font-space text-[14px] font-semibold group-hover:underline">Alles Weitere: Im Browser öffnen</span>
+        <span class="font-space text-[15px] font-semibold text-club group-hover:translate-x-0.5 transition-transform">›</span>
+      </a>
+    </main>
+  </div>
+
+  <!-- Floating Pill Bottom Navigation Dock (5 Tabs: Start · Plätze · Verein · Konto · Verwaltung) -->
+  <nav class="fixed bottom-5 left-1/2 -translate-x-1/2 w-[353px] z-50 bg-white/95 backdrop-blur-md rounded-full border border-slate-line shadow-[0_8px_24px_rgba(10,22,36,0.08)] px-1.5 py-1.5 flex items-center justify-between">
+    
+    <!-- Tab 1: Start -->
+    <a href="#" class="flex flex-col items-center justify-center py-1 px-2.5 text-slate-sub hover:text-ink-dark transition-colors">
+      <span class="material-symbols-outlined text-[20px] leading-none mb-0.5">home</span>
+      <span class="font-space text-[9.5px] font-semibold tracking-wider uppercase">Start</span>
+    </a>
+
+    <!-- Tab 2: Plätze -->
+    <a href="#" class="flex flex-col items-center justify-center py-1 px-2.5 text-slate-sub hover:text-ink-dark transition-colors">
+      <span class="material-symbols-outlined text-[20px] leading-none mb-0.5">sports_tennis</span>
+      <span class="font-space text-[9.5px] font-semibold tracking-wider uppercase">Plätze</span>
+    </a>
+
+    <!-- Tab 3: Verein -->
+    <a href="#" class="flex flex-col items-center justify-center py-1 px-2.5 text-slate-sub hover:text-ink-dark transition-colors">
+      <span class="material-symbols-outlined text-[20px] leading-none mb-0.5">groups</span>
+      <span class="font-space text-[9.5px] font-semibold tracking-wider uppercase">Verein</span>
+    </a>
+
+    <!-- Tab 4: Konto -->
+    <a href="#" class="flex flex-col items-center justify-center py-1 px-2.5 text-slate-sub hover:text-ink-dark transition-colors">
+      <span class="material-symbols-outlined text-[20px] leading-none mb-0.5">person</span>
+      <span class="font-space text-[9.5px] font-semibold tracking-wider uppercase">Konto</span>
+    </a>
+
+    <!-- Tab 5: Verwaltung (AKTIV: blau auf heller Pille) -->
+    <a href="#" class="flex flex-col items-center justify-center py-1 px-3 bg-club-light text-club rounded-full transition-all">
+      <span class="material-symbols-outlined filled text-[20px] leading-none mb-0.5">admin_panel_settings</span>
+      <span class="font-space text-[9.5px] font-bold tracking-wider uppercase text-club">Verwaltung</span>
+    </a>
+
+  </nav>
+
+  <!-- iOS Home Indicator -->
+  <div class="fixed bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 bg-ink-dark/20 rounded-full pointer-events-none z-50"></div>
+
+
+
+
+
+</body></html>

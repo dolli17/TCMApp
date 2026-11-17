@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TC Muckensturm - Buchung stornieren bestätigen</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Space Grotesk"', 'sans-serif'],
+          },
+          colors: {
+            club: {
+              blue: '#1466A8',
+              'blue-light': '#F0F6FB',
+              'blue-border': '#BCD7ED',
+              yellow: '#FFD21F',
+              dark: '#0A1624',
+              red: '#C4433A',
+              'red-light': '#FDF2F2',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .custom-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 flex justify-center items-center min-h-screen p-0 m-0">
+<!-- Mobile Device Container (iPhone dimensions 393 x 852) -->
+<div class="relative w-[393px] h-[852px] bg-white overflow-hidden shadow-2xl flex flex-col justify-end">
+<!-- BACKGROUND: Dimmed Court Schedule (Plätze Belegungsplan) -->
+<div class="absolute inset-0 z-0 bg-white select-none pointer-events-none filter brightness-[0.78]">
+<!-- iOS Status Bar -->
+<div class="h-11 px-7 flex justify-between items-center text-slate-800 text-sm font-semibold pt-1">
+<span>9:41</span>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[17px]">signal_cellular_alt</span>
+<span class="material-symbols-outlined text-[17px]">wifi</span>
+<span class="material-symbols-outlined text-[20px]">battery_full</span>
+</div>
+</div>
+<!-- Schedule Top Header -->
+<div class="px-5 pt-1 pb-3">
+<span class="text-[11px] font-bold text-slate-500 tracking-wider uppercase">TC Muckensturm</span>
+<div class="flex items-baseline justify-between mt-0.5">
+<h1 class="text-2xl font-bold text-slate-900">Plätze</h1>
+<span class="text-xs text-slate-500 font-medium">8 Plätze · 08 bis 21 Uhr</span>
+</div>
+<!-- Day Selector Pills -->
+<div class="flex gap-2.5 mt-3 overflow-hidden">
+<div class="w-12 h-14 rounded-full bg-[#1466A8] text-white flex flex-col items-center justify-center shadow-sm">
+<span class="text-[10px] font-bold uppercase tracking-wider">MO</span>
+<span class="text-base font-bold leading-tight">16</span>
+</div>
+<div class="w-12 h-14 rounded-full border border-slate-200 bg-white text-slate-700 flex flex-col items-center justify-center">
+<span class="text-[10px] font-medium text-slate-400 uppercase">DI</span>
+<span class="text-base font-bold leading-tight">17</span>
+</div>
+<div class="w-12 h-14 rounded-full border border-slate-200 bg-white text-slate-700 flex flex-col items-center justify-center">
+<span class="text-[10px] font-medium text-slate-400 uppercase">MI</span>
+<span class="text-base font-bold leading-tight">18</span>
+</div>
+<div class="w-12 h-14 rounded-full border border-slate-200 bg-white text-slate-700 flex flex-col items-center justify-center">
+<span class="text-[10px] font-medium text-slate-400 uppercase">DO</span>
+<span class="text-base font-bold leading-tight">19</span>
+</div>
+<div class="w-12 h-14 rounded-full border border-slate-200 bg-white text-slate-700 flex flex-col items-center justify-center">
+<span class="text-[10px] font-medium text-slate-400 uppercase">FR</span>
+<span class="text-base font-bold leading-tight">20</span>
+</div>
+<div class="w-12 h-14 rounded-full border border-slate-200 bg-white text-slate-700 flex flex-col items-center justify-center">
+<span class="text-[10px] font-medium text-slate-400 uppercase">SA</span>
+<span class="text-base font-bold leading-tight">21</span>
+</div>
+</div>
+<!-- Segmented Tab Control -->
+<div class="mt-3 bg-slate-100 p-1 rounded-full flex text-xs font-semibold">
+<div class="flex-1 py-1.5 text-center bg-white rounded-full shadow-sm text-slate-900">Belegung</div>
+<div class="flex-1 py-1.5 text-center text-slate-500">Meine &amp; offene Spiele</div>
+</div>
+</div>
+<!-- Schedule Grid Preview Behind -->
+<div class="px-3 opacity-70">
+<div class="border border-slate-200 rounded-xl overflow-hidden bg-white p-2">
+<!-- Court numbers -->
+<div class="grid grid-cols-9 text-center text-xs font-bold text-slate-700 pb-1 border-b border-slate-100">
+<span class="text-slate-400 font-normal">Zeit</span>
+<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span>
+</div>
+<!-- Rows mock -->
+<div class="space-y-1 pt-1 text-[10px] text-slate-400">
+<div class="grid grid-cols-9 h-5 items-center">
+<span>17:00</span>
+<div class="bg-slate-200 rounded-sm h-4 col-span-1 mx-0.5"></div>
+<div class="border border-slate-100 h-4 col-span-1 mx-0.5"></div>
+<div class="border border-slate-100 h-4 col-span-1 mx-0.5"></div>
+<div class="bg-slate-200 rounded-sm h-4 col-span-1 mx-0.5"></div>
+<div class="bg-slate-100 rounded-sm h-4 col-span-1 mx-0.5"></div>
+<div class="border border-slate-100 h-4 col-span-1 mx-0.5"></div>
+<div class="border border-slate-100 h-4 col-span-1 mx-0.5"></div>
+<div class="border border-slate-100 h-4 col-span-1 mx-0.5"></div>
+</div>
+<!-- 18:00 Highlighted Own Booking cell (Platz 3) -->
+<div class="grid grid-cols-9 h-6 items-center">
+<span>18:00</span>
+<div class="border border-slate-100 h-5 col-span-1 mx-0.5"></div>
+<div class="border border-slate-100 h-5 col-span-1 mx-0.5"></div>
+<div class="bg-[#FFD21F] text-[#0A1624] font-bold rounded-sm h-5 col-span-1 mx-0.5 flex items-center justify-center text-[10px] ring-2 ring-amber-400">Du</div>
+<div class="bg-slate-200 rounded-sm h-5 col-span-1 mx-0.5"></div>
+<div class="border border-slate-100 h-5 col-span-1 mx-0.5"></div>
+<div class="border border-slate-100 h-5 col-span-1 mx-0.5"></div>
+<div class="bg-slate-200 rounded-sm h-5 col-span-1 mx-0.5"></div>
+<div class="border border-slate-100 h-5 col-span-1 mx-0.5"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- SEMI-TRANSPARENT BACKDROP OVERLAY (Dimmed schedule behind) -->
+<div class="absolute inset-0 z-10 bg-slate-900/35 pointer-events-none"></div>
+<!-- BOTTOM SHEET CONTAINER -->
+<div class="relative z-20 w-full bg-white rounded-t-[32px] shadow-2xl flex flex-col max-h-[760px] overflow-hidden">
+<!-- Top Drag Handle & Close Button -->
+<div class="pt-3 px-6 pb-2 flex items-center justify-between relative">
+<div class="absolute left-1/2 -translate-x-1/2 top-2.5 w-10 h-1 bg-slate-300 rounded-full"></div>
+<div class="h-4"></div>
+<!-- Close Button in light grey circle -->
+<button class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- SHEET CONTENT: Scrollable Body -->
+<div class="px-6 overflow-y-auto custom-scrollbar flex-1 space-y-6 pb-6">
+<!-- 1. Heading & Chip -->
+<div>
+<div class="flex items-center gap-3">
+<h2 class="text-[32px] font-bold text-slate-900 tracking-tight leading-none">18:00 – 19:00</h2>
+<!-- Yellow chip "Dein Spiel" (#FFD21F, dark text #0A1624) -->
+<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#FFD21F] text-[#0A1624] tracking-tight shadow-sm">
+              Dein Spiel
+            </span>
+</div>
+<p class="text-sm font-medium text-slate-500 mt-1.5">Platz 3 · Montag, 16. November</p>
+</div>
+<!-- 2. "Wer spielt mit?" -->
+<div>
+<label class="block text-[11px] font-bold tracking-wider uppercase text-slate-400 mb-2.5">
+            Wer spielt mit?
+          </label>
+<!-- Member Rows: "Du" & "Jonas Weber" -->
+<div class="space-y-2 mb-3">
+<!-- Row 1: "Du" -->
+<div class="flex items-center justify-between px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-2xl"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-[#1466A8]/10 text-[#1466A8] font-bold flex items-center justify-center text-xs">Du</div><span class="text-sm font-semibold text-slate-800">Du</span></div></div>
+<!-- Row 2: "Jonas Weber" (can be removed) -->
+<div class="flex items-center justify-between px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-2xl"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs">JW</div><span class="text-sm font-semibold text-slate-800">Jonas Weber</span></div><button class="w-7 h-7 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors" title="Entfernen"><span class="material-symbols-outlined text-[17px]">close</span></button></div>
+</div>
+<!-- Search field & Gast hinzufügen -->
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+<input class="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#1466A8] transition-colors" placeholder="Namen tippen…" type="text"/>
+</div>
+<button class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1466A8] mt-2.5 hover:underline pl-0.5">
+<span class="material-symbols-outlined text-[15px]">add</span>
+            Gast hinzufügen
+          </button>
+</div>
+<!-- 3. Switch "Mitspieler gesucht" (off) -->
+<div class="pt-1">
+<div class="flex items-center justify-between">
+<span class="text-sm font-bold text-slate-900">Mitspieler gesucht</span>
+<!-- Toggle Switch (Off) -->
+<div class="w-12 h-7 bg-slate-200 rounded-full p-0.5 transition-colors cursor-pointer flex items-center">
+<div class="w-6 h-6 bg-white rounded-full shadow-md transition-transform"></div>
+</div>
+</div>
+<p class="text-xs text-slate-500 mt-1 leading-relaxed">
+            Dein Spiel erscheint unter „Offene Spiele“. Wer mag, trägt sich selbst ein.
+          </p>
+</div>
+<!-- 4. Secondary Action "Umsetzen" -->
+<div class="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-[#1466A8]/10 text-[#1466A8] flex items-center justify-center"><span class="material-symbols-outlined text-[19px]">event_repeat</span></div><div><span class="text-sm font-bold text-slate-800 block">Umsetzen</span><span class="text-xs text-slate-400">Anderer Platz oder andere Zeit</span></div></div><span class="material-symbols-outlined text-slate-400 text-[20px]">chevron_right</span></div>
+</div>
+<!-- 5. SECOND VERSION FIXED BOTTOM AREA: Stornierung bestätigen -->
+<div class="px-6 pt-3 pb-8 bg-white border-t border-slate-100 flex flex-col items-center">
+<!-- Two buttons side-by-side: "Wirklich stornieren" (solid red) & "Doch nicht" (outline/neutral pill) -->
+<div class="w-full flex items-center gap-3">
+<!-- Solid red button "Wirklich stornieren" (#C4433A, white text) -->
+<button class="flex-[3] h-13 py-3.5 rounded-full bg-[#C4433A] hover:bg-[#b03a32] text-white font-semibold text-base shadow-sm transition-all text-center">
+            Wirklich stornieren
+          </button>
+<!-- Button "Doch nicht" -->
+<button class="flex-[2] h-13 py-3.5 rounded-full border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold text-base transition-colors text-center">
+            Doch nicht
+          </button>
+</div>
+<!-- Small disclaimer text -->
+<span class="text-xs text-slate-400 mt-3 font-medium">
+          Stornieren geht bis Spielbeginn
+        </span>
+<!-- iOS Home Indicator -->
+<div class="w-32 h-1 bg-slate-900 rounded-full mt-4"></div>
+</div>
+</div>
+</div>
+</body>
+</html>
+

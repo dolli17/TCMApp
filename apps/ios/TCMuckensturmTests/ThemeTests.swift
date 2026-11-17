@@ -39,7 +39,7 @@ final class ThemeTests: XCTestCase {
     }
 
     /// Die Schriften sind im Bundle registriert (UIAppFonts).
-    func testBarlowIstGeladen() {
+    func testSchriftenSindGeladen() {
         for name in [Tokens.Schrift.textNormal, Tokens.Schrift.textExtrafett, Tokens.Schrift.displayFett] {
             XCTAssertNotNil(UIFont(name: name, size: 16), name)
         }

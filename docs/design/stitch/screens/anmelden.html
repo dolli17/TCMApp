@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-white" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>Anmelden — TC Muckensturm</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary-fixed": "#ffdcc3",
+            "on-primary-fixed-variant": "#00497d",
+            "on-error": "#ffffff",
+            "tertiary-fixed-dim": "#ffb77c",
+            "primary": "#004e85",
+            "outline": "#717781",
+            "surface-dim": "#dad9e3",
+            "error": "#ba1a1a",
+            "on-tertiary-fixed": "#2f1500",
+            "on-secondary-fixed-variant": "#004d67",
+            "on-primary-container": "#cde2ff",
+            "on-primary-fixed": "#001d36",
+            "tertiary-container": "#975100",
+            "background": "#ffffff",
+            "surface-bright": "#fbf8ff",
+            "on-tertiary": "#ffffff",
+            "surface-variant": "#e3e1ec",
+            "primary-container": "#1466a8",
+            "inverse-surface": "#2f3038",
+            "secondary": "#246582",
+            "surface-container-highest": "#e3e1ec",
+            "tertiary": "#743d00",
+            "surface-container-low": "#f4f2fd",
+            "on-background": "#1a1b22",
+            "surface-container": "#eeedf7",
+            "on-secondary": "#ffffff",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "error-container": "#ffdad6",
+            "primary-fixed-dim": "#9fcaff",
+            "on-surface-variant": "#414750",
+            "surface": "#ffffff",
+            "inverse-primary": "#9fcaff",
+            "secondary-container": "#a1dcfe",
+            "primary-fixed": "#d1e4ff",
+            "on-primary": "#ffffff",
+            "secondary-fixed-dim": "#93ceef",
+            "outline-variant": "#c1c7d2",
+            "surface-tint": "#0761a3",
+            "inverse-on-surface": "#f1effa",
+            "on-secondary-container": "#20627f",
+            "surface-container-high": "#e8e7f1",
+            "on-surface": "#1a1b22",
+            "secondary-fixed": "#c2e8ff",
+            "on-tertiary-container": "#ffd9bd",
+            "surface-container-lowest": "#ffffff",
+            "on-error-container": "#93000a",
+            "on-secondary-fixed": "#001e2c"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter": "1rem",
+            "gutter-desktop": "1.5rem",
+            "margin": "1rem",
+            "margin-desktop": "2rem",
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-lg": "1.5rem",
+            "space-md": "1rem",
+            "space-xl": "2.5rem"
+          },
+          "fontFamily": {
+            "display-score-mobile": ["Space Grotesk"],
+            "headline-lg-mobile": ["Space Grotesk"],
+            "body-lg": ["DM Sans"],
+            "label-caps": ["Space Grotesk"],
+            "body-sm": ["DM Sans"],
+            "headline-lg": ["Space Grotesk"],
+            "numeric-data": ["Space Grotesk"],
+            "headline-sm": ["Space Grotesk"],
+            "display-score": ["Space Grotesk"]
+          },
+          "fontSize": {
+            "display-score-mobile": ["2.75rem", { "lineHeight": "3rem", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "headline-lg-mobile": ["1.5rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-lg": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "400" }],
+            "label-caps": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "body-sm": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "headline-lg": ["2rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "numeric-data": ["1.125rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "headline-sm": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "600" }],
+            "display-score": ["4rem", { "lineHeight": "4rem", "letterSpacing": "-0.04em", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="h-full bg-white text-on-surface antialiased flex flex-col justify-between selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Mobile Viewport Shell (Simulated iPhone canvas centered for desktop view, full bleed on mobile) -->
+<div class="relative w-full max-w-md mx-auto min-h-screen bg-white flex flex-col justify-between overflow-x-hidden">
+<!-- Top Section: Status Bar + Back link/Header -->
+<div>
+<!-- iOS Native Status Bar (44px) -->
+<div class="w-full h-11 px-6 flex items-center justify-between text-on-surface select-none pt-1">
+<span class="font-numeric-data text-[15px] font-semibold tracking-tight text-on-surface">9:41</span>
+<div class="flex items-center space-x-2 text-on-surface">
+<!-- Cell Signal -->
+<svg class="w-4 h-3.5 fill-current" viewbox="0 0 17 12">
+<rect height="4" rx="0.5" width="3" x="0" y="8"></rect>
+<rect height="6.5" rx="0.5" width="3" x="4.5" y="5.5"></rect>
+<rect height="9" rx="0.5" width="3" x="9" y="3"></rect>
+<rect height="12" rx="0.5" width="3" x="13.5" y="0"></rect>
+</svg>
+<!-- Wifi -->
+<svg class="w-4 h-3.5 fill-current" viewbox="0 0 16 12">
+<path d="M8 12a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm-4.24-4.24a6 6 0 0 1 8.48 0 .75.75 0 0 0 1.06-1.06 7.5 7.5 0 0 0-10.6 0 .75.75 0 1 0 1.06 1.06zm-2.83-2.83a10 10 0 0 1 14.14 0 .75.75 0 1 0 1.06-1.06 11.5 11.5 0 0 0-16.26 0 .75.75 0 0 0 1.06 1.06z"></path>
+</svg>
+<!-- Battery -->
+<div class="relative w-6 h-3 border border-on-surface rounded-sm p-0.5 flex items-center">
+<div class="h-full w-4 bg-on-surface rounded-2xs"></div>
+<div class="absolute -right-1 top-1 w-0.5 h-1 bg-on-surface rounded-r"></div>
+</div>
+</div>
+</div>
+<!-- Main Canvas Content -->
+<main class="px-6 pt-10 pb-8 flex flex-col">
+<!-- Brand Kicker -->
+<div class="mb-3">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-slate-500 font-bold block">
+            TC MUCKENSTURM
+          </span>
+</div>
+<!-- Headline -->
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold tracking-tight text-on-surface leading-tight mb-10 max-w-[15ch]">
+          Willkommen zurück auf dem Platz.
+        </h1>
+<!-- Form Elements -->
+<form class="space-y-5" onsubmit="event.preventDefault();">
+<!-- E-Mail Field -->
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-slate-500 font-bold block" for="email">
+              E-MAIL
+            </label>
+<div class="relative">
+<input autocomplete="email" class="w-full h-12 px-4 rounded-2xl bg-slate-50 border border-slate-200 text-on-surface placeholder:text-outline-variant font-body-lg text-body-lg focus:outline-none focus:ring-0 focus:border-primary-container focus:bg-white transition-all duration-150" id="email" name="email" placeholder="deine.adresse@beispiel.de" type="email"/>
+</div>
+</div>
+<!-- Passwort Field -->
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-slate-500 font-bold block" for="password">
+              PASSWORT
+            </label>
+<div class="relative flex items-center">
+<input autocomplete="current-password" class="w-full h-12 pl-4 pr-24 rounded-2xl bg-slate-50 border border-slate-200 text-on-surface placeholder:text-outline-variant font-body-lg text-body-lg focus:outline-none focus:ring-0 focus:border-primary-container focus:bg-white transition-all duration-150" id="password" name="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-4 text-primary-container font-headline-sm text-sm font-semibold tracking-tight active:opacity-75 transition-opacity" id="togglePassword" type="button">
+                Anzeigen
+              </button>
+</div>
+</div>
+<!-- Passwort vergessen? -->
+<div class="flex justify-end pt-0.5">
+<a class="text-primary-container font-body-sm text-body-sm font-semibold hover:underline" href="#">
+              Passwort vergessen?
+            </a>
+</div>
+<!-- Action Button: 48px Height, Pill Shape, Club Blue #1466A8 -->
+<div class="pt-4">
+<button class="w-full h-12 rounded-full bg-primary-container text-white font-headline-sm text-headline-sm font-semibold flex items-center justify-center tracking-tight active:scale-98 hover:opacity-95 transition-all duration-150" type="submit">
+              Anmelden
+            </button>
+</div>
+<!-- Membership CTA -->
+<div class="text-center pt-5">
+<p class="font-body-sm text-body-sm text-slate-500">
+              Noch kein Mitglied? 
+              <a class="text-primary-container font-semibold hover:underline ml-1" href="#">
+                Antrag stellen
+              </a>
+</p>
+</div>
+</form>
+</main>
+</div>
+<!-- Bottom Anchor: Legal + iOS Home Indicator -->
+<footer class="w-full px-6 pb-2 pt-6 flex flex-col items-center">
+<div class="mb-4">
+<p class="font-body-sm text-xs text-slate-400 tracking-tight select-none">
+<a class="hover:text-slate-600 transition-colors" href="#">Datenschutz</a>
+<span class="mx-1.5 opacity-60">·</span>
+<a class="hover:text-slate-600 transition-colors" href="#">Impressum</a>
+</p>
+</div>
+<!-- iOS Home Indicator Bar -->
+<div class="w-32 h-1 bg-on-surface/20 rounded-full mb-1"></div>
+</footer>
+</div>
+<!-- Micro-Interactions (Show/Hide Password toggle) -->
+<script>
+    const passwordInput = document.getElementById('password');
+    const toggleButton = document.getElementById('togglePassword');
+
+    if (toggleButton && passwordInput) {
+      toggleButton.addEventListener('click', () => {
+        const isPassword = passwordInput.getAttribute('type') === 'password';
+        passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+        toggleButton.textContent = isPassword ? 'Verbergen' : 'Anzeigen';
+      });
+    }
+  </script>
+</body></html>

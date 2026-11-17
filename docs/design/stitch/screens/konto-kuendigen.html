@@ -1,0 +1,132 @@
+<!DOCTYPE html><html lang="de" class="h-full"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TC Muckensturm - Mitgliedschaft kündigen beantragen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            title: ['"Space Grotesk"', 'sans-serif'],
+            sans: ['"DM Sans"', 'sans-serif'],
+          },
+          colors: {
+            club: {
+              DEFAULT: '#1466A8',
+              hover: '#0f5287',
+              light: '#f0f6fc',
+            },
+            danger: {
+              DEFAULT: '#C4433A',
+              hover: '#a8372f',
+              light: '#fdf2f2',
+            },
+            brand: {
+              text: '#0A1624',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'DM Sans', sans-serif;
+      color: #0A1624;
+      -webkit-font-smoothing: antialiased;
+    }
+    .font-title {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-white min-h-full flex flex-col justify-between selection:bg-club/10 selection:text-club antialiased">
+  <!-- iPhone Container: 393px width, full height layout -->
+  <div class="w-full max-w-[393px] mx-auto min-h-screen bg-white flex flex-col justify-between relative shadow-sm">
+    
+    <!-- Top Area: Status Bar & Header & Content -->
+    <div class="flex-1 flex flex-col">
+      <!-- iOS Status Bar (9:41) -->
+      <div class="w-full h-11 pt-3 px-6 flex justify-between items-center text-sm font-semibold tracking-tight text-slate-900 select-none z-20">
+        <span class="text-[15px] font-medium tracking-tight">9:41</span>
+        <div class="flex items-center gap-2">
+          <!-- Signal Icon -->
+          <svg class="w-4 h-3.5 fill-current" viewBox="0 0 17 12">
+            <rect x="0" y="9" width="3" height="3" rx="0.5"></rect>
+            <rect x="4.5" y="6" width="3" height="6" rx="0.5"></rect>
+            <rect x="9" y="3" width="3" height="9" rx="0.5"></rect>
+            <rect x="13.5" y="0" width="3" height="12" rx="0.5"></rect>
+          </svg>
+          <!-- Wifi Icon -->
+          <svg class="w-4 h-3 fill-current" viewBox="0 0 16 12">
+            <path d="M8 2.5C10.6 2.5 13 3.6 14.8 5.4L16 4.1C13.8 2 11 0.7 8 0.7C5 0.7 2.2 2 0 4.1L1.2 5.4C3 3.6 5.4 2.5 8 2.5ZM8 6C9.7 6 11.3 6.7 12.5 7.9L13.7 6.6C12.2 5.1 10.2 4.2 8 4.2C5.8 4.2 3.8 5.1 2.3 6.6L3.5 7.9C4.7 6.7 6.3 6 8 6ZM8 9.5C6.9 9.5 6 10.4 6 11.5C6 11.8 6.1 12 6.2 12.2L8 14L9.8 12.2C9.9 12 10 11.8 10 11.5C10 10.4 9.1 9.5 8 9.5Z"></path>
+          </svg>
+          <!-- Battery Icon -->
+          <div class="w-6 h-3 border border-slate-900 rounded-[4px] p-0.5 flex items-center">
+            <div class="h-full w-full bg-slate-900 rounded-[2px]"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Scrollable/Content Area with 20px padding -->
+      <div class="px-5 pt-3 pb-8 flex-1 flex flex-col">
+        <!-- Back Link "‹ Konto" in Club Blue (#1466A8) -->
+        <div class="mb-4">
+          <a href="#" class="inline-flex items-center font-title text-[#1466A8] font-semibold text-[14px] hover:opacity-80 active:opacity-60 transition-opacity"><span class="text-lg leading-none mr-1 font-semibold">‹</span><span>Konto</span></a>
+        </div>
+
+        <!-- Page Title: Space Grotesk, 24px bold -->
+        <h1 class="font-title font-bold text-[24px] leading-tight text-[#0A1624] tracking-tight mb-3">
+          Mitgliedschaft kündigen beantragen
+        </h1>
+
+        <!-- Explanatory Paragraph -->
+        <p class="text-[14px] leading-relaxed text-slate-600 mb-6 font-normal">
+          Du stellst hier einen Antrag. Der Vorstand prüft ihn und meldet sich bei dir. Bis dahin bleibt alles, wie es ist.
+        </p>
+
+        <!-- Information Card: Slate-50 background, Slate-200 border, 16px radius -->
+        <div class="bg-slate-50 border border-slate-200 rounded-[16px] p-4 mb-6">
+          <ul class="space-y-2.5">
+            <li class="flex items-start text-[14px] text-[#0A1624] leading-snug">
+              <span class="inline-block w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 mr-3 shrink-0"></span>
+              <span>Die Kündigung gilt zum Jahresende.</span>
+            </li>
+            <li class="flex items-start text-[14px] text-[#0A1624] leading-snug">
+              <span class="inline-block w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 mr-3 shrink-0"></span>
+              <span>Offene Beträge werden noch eingezogen.</span>
+            </li>
+            <li class="flex items-start text-[14px] text-[#0A1624] leading-snug">
+              <span class="inline-block w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 mr-3 shrink-0"></span>
+              <span>Deine Buchungen bleiben bis dahin bestehen.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Multi-line input section -->
+        <div class="space-y-2 mb-6">
+          <!-- Field Label: Space Grotesk, 11px bold, uppercase, Slate-500 -->
+          <label for="nachricht" class="block font-title font-bold text-[11px] uppercase tracking-wider text-slate-500">
+            NACHRICHT AN DEN VORSTAND (FREIWILLIG)
+          </label>
+          <div class="relative">
+            <textarea id="nachricht" rows="4" placeholder="z. B. Umzug oder persönliches Feedback..." class="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-[16px] p-3.5 text-[15px] text-[#0A1624] placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-club focus:border-club transition-all resize-none font-sans"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fixed Bottom Action Area (without bottom nav, with safe spacing) -->
+    <div class="px-5 pt-3 pb-8 bg-white border-t border-slate-100 flex flex-col items-center gap-3"><button type="button" class="w-full h-[56px] bg-white border border-[#C4433A] text-[#C4433A] hover:bg-[#C4433A]/5 active:scale-[0.99] font-title font-semibold text-[16px] rounded-full transition-all duration-150 flex items-center justify-center">Kündigung beantragen</button><button type="button" class="w-full h-[52px] bg-white border border-[#E2E8F0] hover:bg-slate-50 active:scale-[0.99] text-[#0F172A] font-title font-medium text-[15px] rounded-full transition-all duration-150 flex items-center justify-center">Abbrechen</button><div class="w-32 h-1 bg-slate-900/20 rounded-full mt-2"></div></div>
+
+  </div>
+
+
+
+
+</body></html>

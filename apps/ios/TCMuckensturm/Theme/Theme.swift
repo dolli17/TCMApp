@@ -19,8 +19,8 @@ enum Farbe {
 }
 
 /**
- * Barlow fuer Fliesstext und - in 800 - fuer grosse Titel, Barlow Semi
- * Condensed fuer Uhrzeiten, Zahlen und Kicker. Die Dateien liegen unter
+ * DM Sans fuer Fliesstext, Space Grotesk fuer Titel, Uhrzeiten, Zahlen, Kicker
+ * und Knoepfe (docs/design/stitch). Die Dateien liegen unter
  * Ressourcen/Schriften (OFL, siehe OFL.txt) und stehen in UIAppFonts.
  * Die Groessen wachsen mit der eingestellten Textgroesse (Dynamic Type).
  */
@@ -30,11 +30,12 @@ enum Schrift {
     }
 
     static func text(_ gewicht: Gewicht, _ groesse: CGFloat, relativeTo stil: Font.TextStyle = .body) -> Font {
-        .custom("Barlow-\(gewicht.rawValue)", size: groesse, relativeTo: stil)
+        .custom("DMSans-\(gewicht.rawValue)", size: groesse, relativeTo: stil)
     }
 
-    /// Nur halbfett, fett und extrafett liegen bei (wie in der Expo-App).
+    /// Space Grotesk gibt es nur bis 700: extrafett faellt auf fett zurueck.
     static func display(_ gewicht: Gewicht, _ groesse: CGFloat, relativeTo stil: Font.TextStyle = .body) -> Font {
-        .custom("BarlowSemiCondensed-\(gewicht.rawValue)", size: groesse, relativeTo: stil)
+        let schnitt = gewicht == .extrafett ? Gewicht.fett : gewicht
+        return .custom("SpaceGrotesk-\(schnitt.rawValue)", size: groesse, relativeTo: stil)
     }
 }

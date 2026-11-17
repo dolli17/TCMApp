@@ -217,22 +217,22 @@ public enum Tokens {
     // MARK: Schrift
 
     public enum Schrift {
-        /// Fliesstext und - in 800 - grosse Titel
-        public static let familieText = "Barlow"
-        /// Uhrzeiten, Zahlen und Kicker
-        public static let familieDisplay = "Barlow Semi Condensed"
+        /// Fliesstext
+        public static let familieText = "DM Sans"
+        /// Titel, Uhrzeiten, Zahlen, Kicker und Knoepfe
+        public static let familieDisplay = "Space Grotesk"
 
         /// PostScript-Namen fuer Font.custom
-        public static let textNormal = "Barlow-Regular"
-        public static let textMittel = "Barlow-Medium"
-        public static let textHalbfett = "Barlow-SemiBold"
-        public static let textFett = "Barlow-Bold"
-        public static let textExtrafett = "Barlow-ExtraBold"
-        public static let displayNormal = "BarlowSemiCondensed-Regular"
-        public static let displayMittel = "BarlowSemiCondensed-Medium"
-        public static let displayHalbfett = "BarlowSemiCondensed-SemiBold"
-        public static let displayFett = "BarlowSemiCondensed-Bold"
-        public static let displayExtrafett = "BarlowSemiCondensed-ExtraBold"
+        public static let textNormal = "DMSans-Regular"
+        public static let textMittel = "DMSans-Medium"
+        public static let textHalbfett = "DMSans-SemiBold"
+        public static let textFett = "DMSans-Bold"
+        public static let textExtrafett = "DMSans-ExtraBold"
+        public static let displayNormal = "SpaceGrotesk-Regular"
+        public static let displayMittel = "SpaceGrotesk-Medium"
+        public static let displayHalbfett = "SpaceGrotesk-SemiBold"
+        public static let displayFett = "SpaceGrotesk-Bold"
+        public static let displayExtrafett = "SpaceGrotesk-Bold"
 
         public static let kicker: CGFloat = 12
         public static let klein: CGFloat = 13

@@ -313,7 +313,7 @@ Für parallele Spuren gilt:
 - **Theme:** Farben, Abstände, Radien und Schrift aus `packages/ui/generated/Tokens.kt` (als
   Quellverzeichnis eingebunden, nicht kopiert), Hell/Dunkel/System in einem DataStore
   (`erscheinungsbild`), Barlow und Barlow Semi Condensed unter `res/font` (Lizenz:
-  `assets/lizenzen/OFL-Barlow.txt`).
+  `assets/lizenzen/OFL-Schriften.txt`).
 - **Home** (`bildschirme/home`, `bildschirme/nachrichten`, `daten/Startdaten.kt`) wie iOS: Kopf mit
   Name, Glocke (Zähler, Blatt, gelesen markieren) und Avatar, „Als Nächstes“, Schnellaktionen,
   „Jetzt frei“ mit Zeitleiste, offene Spiele, „Dein Stand“ (Getränke, Arbeitsdienst), „Demnächst im
