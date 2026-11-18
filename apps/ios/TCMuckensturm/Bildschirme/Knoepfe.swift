@@ -182,59 +182,6 @@ extension View {
     }
 }
 
-/**
- * Umschalter aus zwei oder mehr Segmenten ("Belegung | Meine & offene Spiele"):
- * Schiene in surf2, das gewaehlte Segment als weisse Pille.
- */
-struct SegmentLeiste<Wert: Hashable>: View {
-    let beschriftung: String
-    let optionen: [(wert: Wert, label: String)]
-    let gewaehlt: Wert?
-    var untereinander = false
-    var gesperrt = false
-    let wahl: (Wert) -> Void
-
-    var body: some View {
-        let knoepfe = ForEach(optionen, id: \.wert) { o in
-            let aktiv = o.wert == gewaehlt
-            Button { wahl(o.wert) } label: {
-                Text(o.label)
-                    .font(Schrift.display(aktiv ? .halbfett : .mittel, 15))
-                    .foregroundStyle(aktiv ? Farbe.ink : Farbe.muted)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-                    .frame(maxWidth: .infinity, minHeight: 40)
-                    .padding(.horizontal, 6)
-                    .background {
-                        if aktiv {
-                            RoundedRectangle(cornerRadius: 22)
-                                .fill(Farbe.segAktiv)
-                                .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Farbe.line, lineWidth: 1))
-                        }
-                    }
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(gesperrt)
-            .accessibilityAddTraits(aktiv ? .isSelected : [])
-        }
-        Group {
-            if untereinander {
-                VStack(spacing: 4) { knoepfe }
-            } else {
-                HStack(spacing: 4) { knoepfe }
-            }
-        }
-        .padding(4)
-        .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 26))
-        .overlay(RoundedRectangle(cornerRadius: 26).strokeBorder(Farbe.line, lineWidth: 1))
-        .opacity(gesperrt ? 0.6 : 1)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(beschriftung)
-    }
-}
-
 /// Rundes Schliessen-Kreuz oben rechts in einem Blatt.
 struct SchliessenKnopf: View {
     let aktion: () -> Void
@@ -252,25 +199,3 @@ struct SchliessenKnopf: View {
     }
 }
 
-/// Die eine Hauptaktion eines Bildschirms oder Blatts: blau gefuellt, volle Breite.
-struct Hauptknopf: View {
-    let text: String
-    var gesperrt = false
-    let aktion: () -> Void
-
-    var body: some View {
-        Knopf(text, stufe: .haupt, breit: true, gesperrt: gesperrt, aktion: aktion)
-    }
-}
-
-/// Neutraler Knopf mit Linie in voller Breite; rot als Weg zu etwas Zerstoerendem.
-struct LeiserKnopf: View {
-    let text: String
-    var rot = false
-    var gesperrt = false
-    let aktion: () -> Void
-
-    var body: some View {
-        Knopf(text, stufe: rot ? .gefahrLeise : .leise, breit: true, gesperrt: gesperrt, aktion: aktion)
-    }
-}
