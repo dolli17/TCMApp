@@ -10,11 +10,11 @@ final class VerwaltungBildschirmTests: BildschirmTestfall {
         return a
     }
 
-    private func verwaltung(_ a: Attrappe, admin: Bool? = true) -> some View {
+    private func verwaltung(_ a: Attrappe, admin: Bool? = true, start: VerwaltungAnsicht = .plaetze) -> some View {
         let zugang = VerwaltungZugang()
         zugang.sichtbar = true
         zugang.admin = admin
-        return VerwaltungBildschirm().environment(zugang).environment(a.sitzung())
+        return VerwaltungBildschirm(start: start).environment(zugang).environment(a.sitzung())
     }
 
     func testPlaetze() async {
@@ -27,11 +27,10 @@ final class VerwaltungBildschirmTests: BildschirmTestfall {
 
     func testSerien() async {
         let a = attrappe()
-        await pruefe("verwaltung-serien", erwartet: ["Verwaltung", "Serien"], danach: { b in
-            XCTAssertTrue(b.tippe("Serien"))
-            let fehlt = await b.warteAuf(["Jugendtraining", "Herren 30"])
-            XCTAssertEqual(fehlt, [])
-        }) { verwaltung(a) }
+        // Das Segment ist ein UISegmentedControl; der Test oeffnet gleich bei den Serien.
+        await pruefe("verwaltung-serien", erwartet: ["Verwaltung", "Serien", "Jugendtraining", "Herren 30"]) {
+            verwaltung(a, start: .serien)
+        }
     }
 
     func testOhneAdminRechte() async {
@@ -75,7 +74,7 @@ final class VerwaltungBildschirmTests: BildschirmTestfall {
 
     func testBlattSperren() async {
         let m = await modell(attrappe())
-        await pruefe("verwaltung-sperren", erwartet: ["Plätze sperren", "Alle Plätze wählen", "Plätze 1", "Plätze 8", "Kategorie", "Training", "Sperren"]) {
+        await pruefe("verwaltung-sperren", erwartet: ["Plätze sperren", "Alle Plätze wählen", "Plätze 1", "Plätze 8", "Sperren"]) {
             VerwaltungBlattInhalt(modell: m, blatt: .sperren)
         }
     }

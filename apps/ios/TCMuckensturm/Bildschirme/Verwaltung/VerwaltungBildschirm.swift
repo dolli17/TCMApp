@@ -3,8 +3,8 @@
  *
  * Verwaltet wird am PC (Web unter /admin). Am Handy bleibt, was kurzfristig
  * an den Plaetzen passiert: Plaetze sperren und Serien pflegen. Zwei
- * Segmente; der gelbe Knopf passt zum Segment (Plaetze sperren / Serie
- * anlegen). Die Plaetze stehen nur zum Lesen da, mit dem, was gerade auf
+ * Segmente; der Knopf oben rechts in der Leiste passt zum Segment (Plaetze
+ * sperren / Serie anlegen). Die Plaetze stehen nur zum Lesen da, mit dem, was gerade auf
  * ihnen liegt - eine Sperrung fuehrt in den Tab Plaetze, wo sie bearbeitet
  * und aufgehoben wird. Unten verweist eine Karte ins Web: Admins auf
  * /admin, den Platzwart auf /admin/plaetze.
@@ -104,9 +104,17 @@ final class VerwaltungModell {
 
 struct VerwaltungBildschirm: View {
     @Environment(Sitzung.self) private var sitzung
+    /// Das Segment beim Oeffnen (Tests und Bildschirmfotos).
+    var start: VerwaltungAnsicht = .plaetze
 
     var body: some View {
-        VerwaltungInhalt(modell: VerwaltungModell(client: sitzung.client))
+        NavigationStack {
+            VerwaltungInhalt(modell: {
+                let m = VerwaltungModell(client: sitzung.client)
+                m.ansicht = start
+                return m
+            }())
+        }
     }
 }
 
@@ -117,57 +125,59 @@ private struct VerwaltungInhalt: View {
 
     var body: some View {
         let m = modell
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: Tokens.Abstand.m, pinnedViews: [.sectionHeaders]) {
-                // Kopf mit der einen Hauptaktion rechts (Entwurf "Verwaltung Plaetze mobil").
-                HStack(alignment: .center, spacing: Tokens.Abstand.m) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("TC Muckensturm").kicker()
-                        Text("Verwaltung")
-                            .font(Schrift.display(.fett, Tokens.Schrift.seitentitel, relativeTo: .largeTitle))
-                            .tracking(Tokens.Schrift.laufweiteTitel)
-                            .foregroundStyle(Farbe.ink)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                            .accessibilityAddTraits(.isHeader)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    if m.stand != nil {
-                        let serien = m.ansicht == .serien
-                        Knopf(serien ? "Serie anlegen" : "Plätze sperren", stufe: .haupt, groesse: .klein) {
-                            m.blatt = serien ? .serieAnlegen : .sperren
-                        }
-                    }
+        let serien = m.ansicht == .serien
+        List {
+            Section {
+                Picker("Plätze und Serien", selection: Binding(get: { m.ansicht }, set: { m.ansicht = $0 })) {
+                    ForEach(VerwaltungAnsicht.allCases, id: \.self) { Text($0.label).tag($0) }
                 }
-                .padding(.top, 16)
-                .padding(.bottom, Tokens.Abstand.xs)
-                if let f = m.fehler {
-                    Fehlerzeile(text: f, laeuft: m.aktualisiert) { Task { await m.laden(nachladen: true) } }
-                }
-                if m.laedt && m.stand == nil {
-                    ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)
-                } else if let s = m.stand {
-                    Section {
-                        inhalt(s)
-                    } header: {
-                        // Klebt beim Scrollen oben wie in Plaetze und Verein (U74).
-                        SegmentLeiste(
-                            beschriftung: "Plätze und Serien",
-                            optionen: VerwaltungAnsicht.allCases.map { ($0, $0.label) },
-                            gewaehlt: m.ansicht
-                        ) { m.ansicht = $0 }
-                        .padding(.vertical, Tokens.Abstand.s)
-                        .background(Farbe.bg)
-                    }
+                .pickerStyle(.segmented)
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            if let f = m.fehler {
+                Section {
+                    FehlerZeile(text: f, erneut: Erneut(laeuft: m.aktualisiert) { Task { await m.laden(nachladen: true) } })
+                        .gruppenZeile()
                 }
             }
-            .padding(.horizontal, Tokens.Abstand.rand)
-            .padding(.bottom, Tokens.Abstand.abschnitt * 2)
+            if m.laedt && m.stand == nil {
+                Section { ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.vertical, 24) }
+                    .listRowBackground(Color.clear)
+            } else if let s = m.stand {
+                if let e = m.meldung {
+                    Section {
+                        Label(e.meldung, systemImage: e.ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                            .foregroundStyle(e.ok ? Farbe.greenInk : Farbe.redInk)
+                            .gruppenZeile()
+                    }
+                }
+                if serien {
+                    SerienListe(serien: s.serien) { m.blatt = .serie($0) }
+                } else {
+                    PlatzListe(plaetze: s.plaetze, zustand: s.zustand)
+                }
+                if let admin = zugang.admin {
+                    WebHinweis(admin: admin)
+                }
+            }
         }
-        .background(Farbe.bg)
-        // Was nach oben scrollt, laeuft nicht unter die Uhr der Statusleiste.
-        .overlay(alignment: .top) { Farbe.bg.frame(height: 0).ignoresSafeArea(edges: .top) }
+        .gruppenListe()
+        .listSectionSpacing(20)
+        .navigationTitle("Verwaltung")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            if m.stand != nil {
+                ToolbarItem(placement: .primaryAction) {
+                    Button { m.blatt = serien ? .serieAnlegen : .sperren } label: {
+                        Image(systemName: serien ? "plus" : "lock")
+                    }
+                    .accessibilityLabel(serien ? "Serie anlegen" : "Plätze sperren")
+                }
+            }
+        }
         .refreshable { await m.laden(nachladen: true) }
+        .sensoryFeedback(trigger: m.meldung?.meldung) { _, neu in neu == nil ? nil : .success }
         .sheet(item: Binding(get: { m.blatt }, set: { m.blatt = $0 })) { b in
             VerwaltungBlattInhalt(modell: m, blatt: b)
         }
@@ -176,7 +186,7 @@ private struct VerwaltungInhalt: View {
             await m.laden()
             await name
             #if DEBUG
-            // Fuer Bildschirmfotos per simctl (README): `-TCMVerwaltung serien|sperren|serie-anlegen`.
+            // Fuer Bildschirmfotos per simctl (README): `-TCMVerwaltung serien|sperren|serie-anlegen|serie`.
             let argumente = ProcessInfo.processInfo.arguments
             if let i = argumente.firstIndex(of: "-TCMVerwaltung"), i + 1 < argumente.count {
                 switch argumente[i + 1] {
@@ -185,6 +195,9 @@ private struct VerwaltungInhalt: View {
                 case "serie-anlegen":
                     m.ansicht = .serien
                     m.blatt = .serieAnlegen
+                case "serie":
+                    m.ansicht = .serien
+                    if let s = m.stand?.serien.first { m.blatt = .serie(s) }
                 default: break
                 }
             }
@@ -194,45 +207,9 @@ private struct VerwaltungInhalt: View {
             if neu == .active { Task { await m.laden() } }
         }
     }
-
-    @ViewBuilder private func inhalt(_ s: VerwaltungsStand) -> some View {
-        let m = modell
-        let serien = m.ansicht == .serien
-        if let e = m.meldung {
-            KontoHinweis(text: e.meldung, ok: e.ok)
-        }
-        if serien {
-            VerwaltungGruppenkopf(titel: "Laufend", neben: "\(s.serien.count) Serien")
-            SerienListe(serien: s.serien) { m.blatt = .serie($0) }
-        } else {
-            VerwaltungGruppenkopf(titel: "Jetzt", neben: "\(s.plaetze.filter(\.aktiv).count) Plätze aktiv")
-            PlatzListe(plaetze: s.plaetze, zustand: s.zustand)
-        }
-        if let admin = zugang.admin {
-            WebHinweis(admin: admin)
-        }
-    }
 }
 
 // MARK: - Listen
-
-/// Gruppenkopf ueber einer Liste, rechts optional eine Zahl (Gruppenkopf in Liste.tsx).
-struct VerwaltungGruppenkopf: View {
-    let titel: String
-    var neben: String?
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(titel).kicker().accessibilityAddTraits(.isHeader)
-            Spacer(minLength: Tokens.Abstand.s)
-            if let neben {
-                Text(neben).leise()
-            }
-        }
-        .padding(.horizontal, 4)
-        .padding(.top, Tokens.Abstand.xs)
-    }
-}
 
 /// Die Plaetze mit dem, was jetzt auf ihnen liegt; nur eine Sperrung ist tippbar.
 private struct PlatzListe: View {
@@ -241,28 +218,33 @@ private struct PlatzListe: View {
     let zustand: [String: PlatzJetzt]
 
     var body: some View {
-        KontoGruppe {
-            ForEach(Array(plaetze.enumerated()), id: \.element.id) { i, p in
-                if i > 0 { KontoLinie() }
+        Section {
+            ForEach(plaetze) { p in
                 let jetzt = p.aktiv ? zustand[p.id] : nil
                 let hinweis = VerwaltungLogik.platzHinweis(aktiv: p.aktiv, jetzt: jetzt)
+                let fuehrt = VerwaltungLogik.fuehrtZuPlaetzen(jetzt)
                 let zeile = VerwaltungZeile(
-                    symbol: nil,
+                    symbol: .platz(p.shortName ?? p.name ?? "", gesperrt: hinweis.ton == .rot, aktiv: p.aktiv),
                     titel: p.name ?? "",
                     kontext: p.subline,
                     hinweis: hinweis.text,
                     ton: hinweis.ton,
-                    pfeil: VerwaltungLogik.fuehrtZuPlaetzen(jetzt)
+                    pfeil: fuehrt
                 )
-                if VerwaltungLogik.fuehrtZuPlaetzen(jetzt) {
-                    // Bearbeitet und aufgehoben wird eine Sperrung im Platzplan.
-                    Button { zuTab(.plaetze) } label: { zeile }
-                        .buttonStyle(ZeilenDruck())
-                        .accessibilityHint("Öffnet den Platzplan")
-                } else {
-                    zeile.accessibilityElement(children: .combine)
+                Group {
+                    if fuehrt {
+                        // Bearbeitet und aufgehoben wird eine Sperrung im Platzplan.
+                        Button { zuTab(.plaetze) } label: { zeile }
+                            .buttonStyle(.plain)
+                            .accessibilityHint("Öffnet den Platzplan")
+                    } else {
+                        zeile.accessibilityElement(children: .combine)
+                    }
                 }
+                .gruppenZeile()
             }
+        } header: {
+            GruppenKopf(titel: "Jetzt", zusatz: "\(plaetze.filter(\.aktiv).count) Plätze aktiv")
         }
     }
 }
@@ -273,19 +255,14 @@ private struct SerienListe: View {
     let oeffnen: (Serie) -> Void
 
     var body: some View {
-        KontoGruppe {
+        Section {
             if serien.isEmpty {
-                Text("Noch keine Serien angelegt.")
-                    .leise()
-                    .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
-                    .padding(.horizontal, 16)
+                Text("Noch keine Serien angelegt.").foregroundStyle(Farbe.muted).gruppenZeile()
             }
-            ForEach(Array(serien.enumerated()), id: \.element.id) { i, s in
-                if i > 0 { KontoLinie() }
+            ForEach(serien) { s in
                 Button { oeffnen(s) } label: {
                     VerwaltungZeile(
-                        symbol: VerwaltungLogik.kurzeWochentage[(s.weekday ?? 0) % 7],
-                        symbolGold: true,
+                        symbol: .tag(VerwaltungLogik.kurzeWochentage[(s.weekday ?? 0) % 7]),
                         titel: s.title ?? "",
                         zeit: VerwaltungLogik.serienZeit(weekday: s.weekday, start: s.startTime, ende: s.endTime),
                         kontext: VerwaltungLogik.serienKontext(typ: s.typeName, platz: s.courtName, bis: s.validTo),
@@ -294,17 +271,25 @@ private struct SerienListe: View {
                         pfeil: true
                     )
                 }
-                .buttonStyle(ZeilenDruck())
+                .buttonStyle(.plain)
+                .gruppenZeile()
             }
+        } header: {
+            GruppenKopf(titel: "Laufend", zusatz: "\(serien.count) Serien")
         }
     }
 }
 
-/// Eine Zeile der Verwaltung (Listenzeile in Liste.tsx): Kachel, Titel, Kontext, Hinweis rechts.
+/// Eine Zeile der Verwaltung: Kachel, Titel, Kontext, rechts der Stand.
 struct VerwaltungZeile: View {
-    /// Kachel vor dem Titel (Wochentag einer Serie); die Plaetze stehen ohne.
-    let symbol: String?
-    var symbolGold = false
+    enum Kachel {
+        /// Platz-Kuerzel; rot, wenn gerade gesperrt
+        case platz(String, gesperrt: Bool, aktiv: Bool)
+        /// Wochentag einer Serie
+        case tag(String)
+    }
+
+    let symbol: Kachel
     let titel: String
     var zeit: String?
     var kontext: String?
@@ -314,59 +299,49 @@ struct VerwaltungZeile: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            if let symbol {
-                Text(symbol)
-                    .font(Schrift.display(.fett, symbolGold ? 14 : 15))
-                    .foregroundStyle(symbolGold ? Farbe.blueInk : Farbe.ink)
-                    .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                    .frame(width: 40, height: 40)
-                    .background(symbolGold ? Farbe.blueSoft : Farbe.surf2, in: Circle())
-                    .accessibilityHidden(true)
-            }
+            kachel
             VStack(alignment: .leading, spacing: 1) {
-                Text(titel)
-                    .font(Schrift.text(.normal, 17))
-                    .foregroundStyle(Farbe.ink)
-                    .lineLimit(1)
+                Text(titel).foregroundStyle(Farbe.ink).lineLimit(1)
                 if let zeit {
-                    Text(zeit)
-                        .font(Schrift.text(.halbfett, 13))
-                        .monospacedDigit()
-                        .foregroundStyle(Farbe.ink2)
+                    Text(zeit).font(.subheadline.weight(.medium)).monospacedDigit().foregroundStyle(Farbe.ink2)
                 }
                 if let kontext, !kontext.isEmpty {
-                    Text(kontext)
-                        .font(Schrift.text(.normal, 13))
-                        .foregroundStyle(Farbe.muted)
-                        .fixedSize(horizontal: false, vertical: true)
+                    Text(kontext).font(.footnote).foregroundStyle(Farbe.muted).fixedSize(horizontal: false, vertical: true)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if let hinweis {
-                // Der Stand als Marke rechts: grau, hellblau fuer Serien, rot fuer Gesperrtes.
                 Text(hinweis)
-                    .font(Schrift.text(.halbfett, 13))
+                    .font(.subheadline)
                     .foregroundStyle(farbe)
                     .multilineTextAlignment(.trailing)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(grund, in: Capsule())
-                    .overlay(Capsule().strokeBorder(Farbe.line, lineWidth: ton == .leise || ton == .gruen ? 1 : 0))
             }
-            if pfeil { Pfeil() }
+            if pfeil { ZeilenPfeil() }
         }
-        .padding(.vertical, 10)
-        .padding(.leading, 20)
-        .padding(.trailing, 14)
-        .frame(minHeight: 60)
+        .padding(.vertical, 2)
         .contentShape(Rectangle())
     }
 
-    private var grund: Color {
-        switch ton {
-        case .leise, .gruen: Farbe.chip
-        case .rot: Farbe.red.opacity(0.12)
-        case .gold: Farbe.blueSoft
+    @ViewBuilder private var kachel: some View {
+        switch symbol {
+        case let .platz(kurz, gesperrt, aktiv):
+            Text(VerwaltungLogik.platzChip(kurz))
+                .font(.subheadline.weight(.bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .foregroundStyle(.white)
+                .frame(width: 29, height: 29)
+                .background(gesperrt ? Farbe.red : aktiv ? Farbe.blue : Farbe.muted, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .dynamicTypeSize(...DynamicTypeSize.xLarge)
+                .accessibilityHidden(true)
+        case let .tag(kurz):
+            Text(kurz)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Farbe.blueInk)
+                .frame(width: 36, height: 36)
+                .background(Farbe.blueSoft, in: Circle())
+                .dynamicTypeSize(...DynamicTypeSize.xLarge)
+                .accessibilityHidden(true)
         }
     }
 
@@ -376,8 +351,8 @@ struct VerwaltungZeile: View {
         case .rot: Farbe.redInk
         // "gold" im Kern meint einen Stand, kein "deins": blau.
         case .gold: Farbe.blueInk
-        // "frei" ist der Normalfall und bleibt grau wie im Entwurf.
-        case .gruen: Farbe.ink2
+        // "frei" ist der Normalfall und bleibt grau.
+        case .gruen: Farbe.muted
         }
     }
 }
@@ -395,37 +370,28 @@ private struct WebHinweis: View {
 
     var body: some View {
         let link = sitzung.umgebung.webLink(VerwaltungLogik.webPfad(admin: admin))
-        if let link {
-            Button { oeffnen(link) } label: { karte(link: true) }
+        Section {
+            if let link {
+                Button { oeffnen(link) } label: {
+                    HStack(spacing: 12) {
+                        IconKachel(symbol: "safari.fill")
+                        Text(VerwaltungLogik.webTitel(admin: admin)).foregroundStyle(Farbe.ink)
+                        Spacer()
+                        Image(systemName: "arrow.up.right").font(.footnote.weight(.semibold)).foregroundStyle(Farbe.muted)
+                    }
+                    .contentShape(Rectangle())
+                }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(.isLink)
                 .accessibilityHint("Öffnet die Verwaltung im Browser")
-                .padding(.top, Tokens.Abstand.s)
-        } else {
-            karte(link: false)
-                .accessibilityElement(children: .combine)
-                .padding(.top, Tokens.Abstand.s)
-        }
-    }
-
-    private func karte(link: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(VerwaltungLogik.webTitel(admin: admin))
-                .font(Schrift.text(.fett, 15))
-                .foregroundStyle(Farbe.ink)
-            Text(VerwaltungLogik.webText(admin: admin))
-                .font(Schrift.text(.normal, 14))
-                .foregroundStyle(Farbe.ink2)
-                .lineSpacing(2)
-                .fixedSize(horizontal: false, vertical: true)
-            if link {
-                Text("Im Browser öffnen ›")
-                    .font(Schrift.text(.fett, 14.5))
-                    .foregroundStyle(Farbe.blueInk)
-                    .padding(.top, 4)
+                .gruppenZeile()
+            } else {
+                Label(VerwaltungLogik.webTitel(admin: admin), systemImage: "desktopcomputer")
+                    .foregroundStyle(Farbe.ink)
+                    .gruppenZeile()
             }
+        } footer: {
+            Text(VerwaltungLogik.webText(admin: admin)).foregroundStyle(Farbe.muted)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .karte(padding: 16)
     }
 }
