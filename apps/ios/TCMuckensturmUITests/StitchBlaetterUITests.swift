@@ -38,20 +38,22 @@ final class StitchBlaetterUITests: XCTestCase {
         XCTAssertTrue(buchen.waitForExistence(timeout: 5))
         foto("blatt-platz-buchen")
 
-        // Mit Platzrechten: stattdessen sperren
+        // Mit Platzrechten: stattdessen sperren - eine eigene Seite im Blatt
         let sperren = app.buttons["Stattdessen sperren"]
         if sperren.exists {
             sperren.tap()
             XCTAssertTrue(app.buttons["Sperren"].waitForExistence(timeout: 5))
             foto("blatt-sperren")
-            app.buttons["Doch nicht"].tap()
+            zurueck()
         }
 
         let schalter = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Mitspieler gesucht'")).firstMatch
         XCTAssertTrue(schalter.waitForExistence(timeout: 5))
         schalter.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-        XCTAssertTrue(app.buttons["Herren"].waitForExistence(timeout: 5), "Nur für … fehlt")
-        app.buttons["Herren"].swipeUp(velocity: .slow)
+        // "Nur für …" steht unter dem Schalter; die Liste legt es erst beim Rollen an.
+        let herren = app.buttons["Herren"]
+        for _ in 0..<5 where !herren.exists || !herren.isHittable { schalter.swipeUp(velocity: .slow) }
+        XCTAssertTrue(herren.waitForExistence(timeout: 5), "Nur für … fehlt")
         foto("blatt-platz-buchen-gesucht")
 
         guard umgebung["TCM_BUCHEN"] == "1" else { return }
@@ -67,28 +69,40 @@ final class StitchBlaetterUITests: XCTestCase {
         app.buttons["Belegung"].tap()
 
         // Eigenes Spiel
-        let eigene = app.buttons.matching(NSPredicate(format: "label CONTAINS 'deine Buchung'")).firstMatch
+        // Genau die eben gebuchte - es kann weitere eigene Buchungen geben
+        let eigene = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Platz 2, 17:00' AND label CONTAINS 'deine Buchung'")).firstMatch
         XCTAssertTrue(eigene.waitForExistence(timeout: 10), "eigene Buchung fehlt im Plan")
         eigene.tap()
+        // Die Karte oeffnet halbhoch; Stornieren steht unten und entsteht erst beim Rollen.
+        XCTAssertTrue(app.staticTexts["Dein Spiel"].waitForExistence(timeout: 5), "Karte erscheint nicht")
         let storno = app.buttons["Buchung stornieren"]
-        XCTAssertTrue(storno.waitForExistence(timeout: 5))
+        ganzeHoehe()
+        for _ in 0..<5 where !storno.exists || !storno.isHittable { app.staticTexts["Dein Spiel"].swipeUp(velocity: .slow) }
+        XCTAssertTrue(storno.waitForExistence(timeout: 5), "Stornieren fehlt")
         foto("blatt-eigenes-spiel")
 
         let umsetzen = app.buttons["Umsetzen"]
         if umsetzen.exists {
             umsetzen.tap()
-            XCTAssertTrue(app.buttons["Doch nicht"].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.buttons["Hierhin umsetzen"].waitForExistence(timeout: 5))
             foto("blatt-umsetzen")
-            app.buttons["Doch nicht"].tap()
+            zurueck()
         }
 
-        // Stornieren, zweistufig - und damit aufraeumen
+        // Stornieren fragt per Action Sheet nach - und raeumt damit auf
         storno.tap()
-        let wirklich = app.buttons["Wirklich stornieren"]
+        let wirklich = app.sheets.buttons["Buchung stornieren"].firstMatch
         XCTAssertTrue(wirklich.waitForExistence(timeout: 5))
         foto("blatt-stornieren-bestaetigen")
         wirklich.tap()
-        XCTAssertTrue(wirklich.waitForNonExistence(timeout: 10), "Stornieren hat nicht geklappt")
+        XCTAssertTrue(storno.waitForNonExistence(timeout: 10), "Stornieren hat nicht geklappt")
+    }
+
+    /// Unterseiten im Blatt (Sperren, Umsetzen) verlaesst man ueber den Zurueck-Knopf der Leiste.
+    private func zurueck() {
+        let knopf = app.navigationBars.buttons["BackButton"].firstMatch
+        XCTAssertTrue(knopf.waitForExistence(timeout: 5), "Zurück fehlt")
+        knopf.tap()
     }
 
     /// Tippt im Belegungsplan auf die freie Flaeche eines Platzes, genau bei `minute`.
@@ -131,6 +145,14 @@ final class StitchBlaetterUITests: XCTestCase {
         geheim.typeText(umgebung["TCM_PASSWORT"] ?? "tcm-lokal-2026")
         app.buttons["Anmelden"].firstMatch.tap()
         XCTAssertTrue(tabs.waitForExistence(timeout: 30), "Tabs erscheinen nicht")
+    }
+
+    /// Die Karte einer Buchung oeffnet halbhoch: am Griff auf volle Hoehe ziehen.
+    private func ganzeHoehe() {
+        let griff = app.buttons["Aufzeichnungsblatt"].firstMatch
+        guard griff.waitForExistence(timeout: 3) else { return }
+        griff.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05)))
     }
 
     private func foto(_ name: String) {

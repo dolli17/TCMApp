@@ -45,13 +45,25 @@ final class PlaetzeUITests: XCTestCase {
 
         // Eigene Buchung: Mitspieler und Stornieren
         eigene.tap()
+        // Die Karte oeffnet halbhoch; Stornieren steht unten und entsteht erst beim Rollen.
+        let karte = app.staticTexts["Dein Spiel"]
+        XCTAssertTrue(karte.waitForExistence(timeout: 5), "Karte erscheint nicht")
+        let griff = app.buttons["Aufzeichnungsblatt"].firstMatch
+        if griff.waitForExistence(timeout: 3) {
+            griff.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+                .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05)))
+        }
         let storno = app.buttons["Buchung stornieren"]
-        XCTAssertTrue(storno.waitForExistence(timeout: 5))
+        for _ in 0..<5 where !storno.exists || !storno.isHittable { karte.swipeUp(velocity: .slow) }
+        XCTAssertTrue(storno.waitForExistence(timeout: 5), "Stornieren fehlt")
         foto("plaetze-eigene-buchung-\(suffix)")
+        // Stornieren fragt per Action Sheet nach; hier nur ansehen, nicht stornieren
         storno.tap()
-        XCTAssertTrue(app.buttons["Wirklich stornieren"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.sheets.buttons["Buchung stornieren"].firstMatch.waitForExistence(timeout: 5))
         foto("plaetze-stornieren-\(suffix)")
-        app.buttons["Abbrechen"].tap()
+        // Ab iOS 26 ist das Menue eine Einblendung ohne "Abbrechen": daneben tippen schliesst sie.
+        let abbrechen = app.sheets.buttons["Abbrechen"].firstMatch
+        if abbrechen.exists { abbrechen.tap() } else { app.otherElements["PopoverDismissRegion"].firstMatch.tap() }
         app.buttons["Schließen"].tap()
 
         // Eine freie Flaeche waehlen: die Leiste unten bietet "Buchen" an, das Blatt folgt
@@ -62,9 +74,10 @@ final class PlaetzeUITests: XCTestCase {
         XCTAssertTrue(buchen.waitForExistence(timeout: 5), "Leiste „Buchen“ fehlt")
         foto("plaetze-raster-auswahl-\(suffix)")
         buchen.tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Wer spielt mit?'")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Spieler"].firstMatch.waitForExistence(timeout: 5))
         foto("plaetze-buchen-\(suffix)")
-        app.buttons["Schließen"].tap()
+        // Die neue Buchung schliesst das X oben links ("Abbrechen")
+        app.buttons["Abbrechen"].firstMatch.tap()
     }
 
     /// Wie LokalAnmeldenUITests: mit dem Seed-Konto, falls noch keine Sitzung im Schluesselbund liegt.

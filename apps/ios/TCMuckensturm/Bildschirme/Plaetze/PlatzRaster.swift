@@ -18,65 +18,132 @@ private enum Mass {
     static let kopf: CGFloat = 38
     static let zeit: CGFloat = 48
     /// Schmaler wird eine Platzspalte nicht; passen nicht alle, wischt man waagerecht.
-    static let spalteMin: CGFloat = 38
+    static let spalteMin: CGFloat = 34
     static let rand: CGFloat = 1.5
     static let ecke: CGFloat = 5
 
     static func px(_ minuten: Int) -> CGFloat { CGFloat(minuten) / 60 * stunde }
+
+    /// Breite einer Platzspalte bei gegebener Rasterbreite.
+    static func spalte(breite: CGFloat, anzahl: Int) -> CGFloat {
+        max(spalteMin, ((breite - zeit - 1) / CGFloat(max(1, anzahl))).rounded(.down))
+    }
+
+    /// Passen alle Spalten nebeneinander? Dann steht der Kopf fest oben, sonst wischt er mit.
+    static func passt(breite: CGFloat, anzahl: Int) -> Bool {
+        breite > 0 && zeit + 1 + spalteMin * CGFloat(max(1, anzahl)) <= breite
+    }
+}
+
+/// Fester Kopf des Rasters mit den Platznummern - bleibt beim Scrollen oben stehen wie in der Kalender-App.
+struct PlatzRasterKopf: View {
+    let modell: PlaetzeModell
+    let breite: CGFloat
+
+    var body: some View {
+        let spalte = Mass.spalte(breite: breite, anzahl: modell.plaetze.count)
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                Color.clear.frame(width: Mass.zeit + 1)
+                PlatzRaster.kopf(modell, spalte: spalte)
+            }
+            Farbe.line.frame(height: 1)
+        }
+        .background(Farbe.surf)
+        .clipShape(UnevenRoundedRectangle(topLeadingRadius: Tokens.Radius.karte, topTrailingRadius: Tokens.Radius.karte))
+        .overlay(
+            UnevenRoundedRectangle(topLeadingRadius: Tokens.Radius.karte, topTrailingRadius: Tokens.Radius.karte)
+                .strokeBorder(Farbe.line, lineWidth: 1)
+        )
+    }
 }
 
 struct PlatzRaster: View {
     let modell: PlaetzeModell
+    /// Breite des Rasters (vom Bildschirm gemessen)
+    let breite: CGFloat
 
     var body: some View {
         let m = modell
         let hoehe = Mass.px(m.schluss - m.oeffnung)
+        let spalte = Mass.spalte(breite: breite, anzahl: m.plaetze.count)
+        // Passen alle Plaetze, steht der Kopf fest darueber (PlatzRasterKopf); sonst wischt er hier mit.
+        let fest = Mass.passt(breite: breite, anzahl: m.plaetze.count)
+        let form = fest
+            ? UnevenRoundedRectangle(bottomLeadingRadius: Tokens.Radius.karte, bottomTrailingRadius: Tokens.Radius.karte)
+            : UnevenRoundedRectangle(
+                topLeadingRadius: Tokens.Radius.karte, bottomLeadingRadius: Tokens.Radius.karte,
+                bottomTrailingRadius: Tokens.Radius.karte, topTrailingRadius: Tokens.Radius.karte
+            )
         // Jede Minute neu: die Linie fuer jetzt und die freien Flaechen ruecken mit der Uhr.
         TimelineView(.everyMinute) { kontext in
             let jetzt = kontext.date
             let jetztMin = m.datum == Zeit.berlinDay(jetzt) ? Zeit.localMinutes(jetzt) : nil
-            GeometryReader { geo in
-                let anzahl = max(1, m.plaetze.count)
-                let spalte = max(Mass.spalteMin, ((geo.size.width - Mass.zeit - 1) / CGFloat(anzahl)).rounded(.down))
+            let spalten = VStack(alignment: .leading, spacing: 0) {
+                if !fest {
+                    Self.kopf(m, spalte: spalte)
+                    Farbe.line.frame(height: 1)
+                }
                 HStack(alignment: .top, spacing: 0) {
-                    zeitSpalte(m, hoehe: hoehe)
-                    Farbe.line.frame(width: 1)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        VStack(alignment: .leading, spacing: 0) {
-                            kopf(m, spalte: spalte)
-                            Farbe.line.frame(height: 1)
-                            HStack(alignment: .top, spacing: 0) {
-                                ForEach(m.plaetze) { p in
-                                    platzSpalte(m, platz: p, breite: spalte, hoehe: hoehe, jetzt: jetzt)
-                                }
-                            }
-                            .background(alignment: .topLeading) { stundenlinien(m) }
-                            .overlay(alignment: .topLeading) {
-                                if let jetztMin, jetztMin >= m.oeffnung, jetztMin <= m.schluss {
-                                    Farbe.ink.frame(height: 2)
-                                        .offset(y: Mass.px(jetztMin - m.oeffnung) - 1)
-                                        .allowsHitTesting(false)
-                                        .accessibilityHidden(true)
-                                }
-                            }
-                        }
+                    ForEach(m.plaetze) { p in
+                        platzSpalte(m, platz: p, breite: spalte, hoehe: hoehe, jetzt: jetzt)
                     }
-                    .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-                    .accessibilityLabel("Belegung nach Plätzen und Uhrzeit")
+                }
+                .background(alignment: .topLeading) { stundenlinien(m) }
+                .overlay(alignment: .topLeading) {
+                    if let jetztMin, jetztMin >= m.oeffnung, jetztMin <= m.schluss {
+                        // Rot wie die Jetzt-Linie der Kalender-App, links ein Punkt.
+                        Farbe.red.frame(height: 1.5)
+                            .overlay(alignment: .leading) { Circle().fill(Farbe.red).frame(width: 7, height: 7).offset(x: -3.5) }
+                            .offset(y: Mass.px(jetztMin - m.oeffnung) - 0.75)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
                 }
             }
-            .frame(height: Mass.kopf + 1 + hoehe)
+            HStack(alignment: .top, spacing: 0) {
+                zeitSpalte(m, hoehe: hoehe, mitKopf: !fest)
+                Farbe.line.frame(width: 1)
+                Group {
+                    if fest {
+                        spalten
+                    } else {
+                        ScrollView(.horizontal, showsIndicators: false) { spalten }
+                            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+                    }
+                }
+                // Ein benannter Container: ohne .contain erbte jeder Eintrag das Label.
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Belegung nach Plätzen und Uhrzeit")
+            }
+            .frame(height: (fest ? 0 : Mass.kopf + 1) + hoehe, alignment: .top)
             .background(Farbe.surf2)
-            .clipShape(RoundedRectangle(cornerRadius: Tokens.Radius.karte))
-            .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.karte).strokeBorder(Farbe.line, lineWidth: 1))
+            .clipShape(form)
+            .overlay(form.strokeBorder(Farbe.line, lineWidth: 1))
+            // Sprungmarke eine Stunde vor jetzt: dahin rollt die Belegung beim Oeffnen.
+            .overlay(alignment: .topLeading) {
+                if let jetztMin, jetztMin - 60 > m.oeffnung {
+                    VStack(spacing: 0) {
+                        Color.clear.frame(height: (fest ? 0 : Mass.kopf + 1) + Mass.px(jetztMin - 60 - m.oeffnung))
+                        Color.clear.frame(width: 1, height: 1).id(PlatzRaster.jetztMarke)
+                    }
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                }
+            }
         }
     }
 
+    static let jetztMarke = "raster-jetzt"
+
+    /// Steht der Kopf fest ueber dem Raster (PlatzRasterKopf)? Nur wenn alle Plaetze nebeneinander passen.
+    static func kopfFest(breite: CGFloat, anzahl: Int) -> Bool { Mass.passt(breite: breite, anzahl: anzahl) }
+
     /// Volle und halbe Stunden links, die vollen kraeftiger.
-    private func zeitSpalte(_ m: PlaetzeModell, hoehe: CGFloat) -> some View {
+    private func zeitSpalte(_ m: PlaetzeModell, hoehe: CGFloat, mitKopf: Bool) -> some View {
         let marken = Array(stride(from: Int((Double(m.oeffnung) / 30).rounded(.up)) * 30, to: m.schluss, by: 30))
         return VStack(spacing: 0) {
-            Color.clear.frame(height: Mass.kopf + 1)
+            if mitKopf { Color.clear.frame(height: Mass.kopf + 1) }
             ZStack(alignment: .topLeading) {
                 ForEach(marken, id: \.self) { s in
                     Text(Zeit.minutesToTime(s))
@@ -94,7 +161,7 @@ struct PlatzRaster: View {
         .accessibilityHidden(true)
     }
 
-    private func kopf(_ m: PlaetzeModell, spalte: CGFloat) -> some View {
+    static func kopf(_ m: PlaetzeModell, spalte: CGFloat) -> some View {
         HStack(spacing: 0) {
             ForEach(m.plaetze) { p in
                 Text(PlaetzeLogik.platzNummer(name: p.name, kurz: p.shortName))
@@ -190,7 +257,7 @@ private struct FreieFlaeche: View {
             ForEach(zellen, id: \.0) { von, bis in
                 RoundedRectangle(cornerRadius: Mass.ecke)
                     .fill(Farbe.surf)
-                    .overlay(RoundedRectangle(cornerRadius: Mass.ecke).strokeBorder(Farbe.line2, lineWidth: 1))
+                    .overlay(RoundedRectangle(cornerRadius: Mass.ecke).strokeBorder(Farbe.line, lineWidth: 1))
                     .frame(width: breite, height: max(Mass.px(bis - von) - 2 * Mass.rand, 4))
                     .offset(y: Mass.px(von - luecke.from) + Mass.rand)
             }
@@ -247,9 +314,10 @@ private struct Block: View {
 }
 
 /**
- * Farben einer Belegung (docs/design/stitch): eigen gelb ("deins"), belegt
- * grau, Mitspieler gesucht hellblau, Training grau mit Rand, gesperrt
- * schraffiert.
+ * Farben einer Belegung wie Termine in der Kalender-App: eine getoente
+ * Flaeche mit kraeftigem Streifen links. Eigen gelb ("deins"), fremd
+ * hellblau, Mitspieler gesucht hellblau mit gestricheltem Rand und "+",
+ * Training grau, gesperrt schraffiert.
  */
 struct BelegungsStil {
     let art: TimelineKind
@@ -258,9 +326,8 @@ struct BelegungsStil {
 
     var text: Color {
         switch art {
-        case .eigen: Farbe.onGold
-        case .belegt: Farbe.ink2
-        case .sucht: Farbe.blueInk
+        case .eigen: Farbe.ink
+        case .belegt, .sucht: Farbe.blueInk
         case .serie: Farbe.ink2
         case .gesperrt: Farbe.muted
         }
@@ -275,16 +342,33 @@ struct BelegungsStil {
         }
     }
 
-    @ViewBuilder func flaeche(_ form: RoundedRectangle) -> some View {
+    /// Der Streifen links
+    private var streifen: Color {
         switch art {
-        case .eigen: form.fill(Farbe.gold)
-        case .belegt: form.fill(Farbe.line2)
-        case .sucht: form.fill(Farbe.blueSoft).overlay(form.strokeBorder(Farbe.blueInk.opacity(0.55), lineWidth: 1))
-        case .serie: form.fill(Farbe.surf3).overlay(form.strokeBorder(Farbe.rahmen, lineWidth: 1))
-        case .gesperrt:
-            form.fill(Farbe.surf3)
-                .overlay(Schraegstriche().stroke(Farbe.rahmen.opacity(0.55), lineWidth: 1.5).clipShape(form))
+        case .eigen: Farbe.gold
+        case .belegt: Farbe.blue.opacity(0.55)
+        case .sucht: Farbe.blue
+        case .serie: Farbe.ink2.opacity(0.6)
+        case .gesperrt: Farbe.rahmen
         }
+    }
+
+    @ViewBuilder func flaeche(_ form: RoundedRectangle) -> some View {
+        Group {
+            switch art {
+            case .eigen: form.fill(Farbe.gold.opacity(0.32))
+            case .belegt: form.fill(Farbe.blueSoft)
+            case .sucht:
+                form.fill(Farbe.blueSoft)
+                    .overlay(form.strokeBorder(Farbe.blue.opacity(0.6), style: StrokeStyle(lineWidth: 1, dash: [3, 2])))
+            case .serie: form.fill(Farbe.surf3)
+            case .gesperrt:
+                form.fill(Farbe.surf3)
+                    .overlay(Schraegstriche().stroke(Farbe.rahmen.opacity(0.55), lineWidth: 1.5).clipShape(form))
+            }
+        }
+        .overlay(alignment: .leading) { streifen.frame(width: 3) }
+        .clipShape(form)
     }
 }
 

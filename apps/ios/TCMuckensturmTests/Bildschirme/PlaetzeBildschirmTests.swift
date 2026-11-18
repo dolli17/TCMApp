@@ -20,8 +20,8 @@ final class PlaetzeBildschirmTests: BildschirmTestfall {
         }
         XCTAssertEqual(
             Set(a.rpcs),
-            ["courts_aktiv", "day_schedule", "my_booking_quota", "booking_settings", "booking_types_aktiv", "member_directory", "ich",
-             "my_unread_notification_count"]
+            // Die Glocke steht nur auf Home: ohne my_unread_notification_count.
+            ["courts_aktiv", "day_schedule", "my_booking_quota", "booking_settings", "booking_types_aktiv", "member_directory", "ich"]
         )
         XCTAssertEqual(a.letzte("member_directory")?["p_query"] as? String, "")
         XCTAssertEqual(Set(a.aufrufe("booking_types_aktiv").compactMap { $0.text("p_applies_to") }), ["booking", "blocking"])
@@ -57,7 +57,7 @@ final class PlaetzeBildschirmTests: BildschirmTestfall {
     func testSpiele() async {
         let a = Attrappe()
         await pruefe("plaetze-spiele", erwartet: ["Plätze", "Platz 3", "Platz 5", "Julia Stein", "Mitspielen"]) { plaetze(a, .spiele) }
-        XCTAssertEqual(Set(a.rpcs), ["ich", "my_bookings", "open_matches", "my_unread_notification_count"])
+        XCTAssertEqual(Set(a.rpcs), ["ich", "my_bookings", "open_matches"])
     }
 
     func testSpieleOffeneZuerst() async {
@@ -97,9 +97,10 @@ final class PlaetzeBildschirmTests: BildschirmTestfall {
     }
 
     private func blatt(
-        _ name: String, _ m: PlaetzeModell, _ fenster: Fenster, erwartet: [String], schemata: [Schema] = Schema.allCases
+        _ name: String, _ m: PlaetzeModell, _ fenster: Fenster, erwartet: [String], nicht: [String] = [],
+        schemata: [Schema] = Schema.allCases
     ) async {
-        await pruefe(name, schemata: schemata, erwartet: erwartet) { Buchungsblatt(modell: m, fenster: fenster) }
+        await pruefe(name, schemata: schemata, erwartet: erwartet, nicht: nicht) { Buchungsblatt(modell: m, fenster: fenster) }
     }
 
     func testBlattBuchen() async throws {
@@ -129,7 +130,9 @@ final class PlaetzeBildschirmTests: BildschirmTestfall {
     func testBlattEigeneBuchung() async throws {
         let m = await modell(Attrappe())
         let b = try belegung(m, "0001")
-        await blatt("plaetze-eigene-buchung", m, .verwalten(belegung: b, platzName: "Platz 1", tag: m.datum), erwartet: ["Platz 1", "Dein Spiel", "Christian Bauer", "Buchung stornieren"])
+        await blatt("plaetze-eigene-buchung", m, .verwalten(belegung: b, platzName: "Platz 1", tag: m.datum), erwartet: ["Platz 1", "Dein Spiel", "Erika Sommer", "Bearbeiten", "Buchung stornieren"],
+            // Der Bucher steht als "Du" oben, nicht noch einmal unter den Mitspielern.
+            nicht: ["Noah Brandt"])
     }
 
     /// Fremdes Spiel, das Mitspieler sucht.
