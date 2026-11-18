@@ -2,7 +2,7 @@
  * Die Benachrichtigungen (NachrichtenListe.tsx)
  *
  * Nach Tagen gruppiert (groupNotifications), je Art ein Symbol
- * (notificationSymbol), relative Zeit, ungelesene auf blueSoft. Dieselbe
+ * (notificationSymbol) als Kachel, relative Zeit, ungelesene mit blauem Punkt. Dieselbe
  * Liste steht im Blatt hinter der Glocke und auf dem Bildschirm Neuigkeiten.
  *
  * Nennt eine Nachricht eine Veranstaltung, fuehrt ein Tippen dorthin;
@@ -17,29 +17,15 @@ import SwiftUI
 /// SF Symbol je Art der Nachricht
 func symbolName(_ symbol: NotificationSymbol) -> String {
     switch symbol {
-    case .platz: "square.grid.2x2"
-    case .storno: "xmark"
-    case .geld: "banknote"
-    case .person: "person"
-    case .glocke: "bell"
+    case .platz: "tennis.racket"
+    case .storno: "xmark.circle.fill"
+    case .geld: "eurosign"
+    case .person: "person.fill"
+    case .glocke: "bell.fill"
     }
 }
 
-/// "Alle als gelesen" - erscheint nur, solange etwas hervorgehoben ist.
-struct AlleGelesenKnopf: View {
-    let aktion: () -> Void
-
-    var body: some View {
-        Button(action: aktion) {
-            Text("Alle als gelesen")
-                .font(Schrift.display(.halbfett, 14))
-                .foregroundStyle(Farbe.blueInk)
-                .frame(minHeight: 44)
-        }
-        .buttonStyle(.plain)
-    }
-}
-
+/// Die Nachrichten als Abschnitte einer gruppierten Liste, je Tag einer - wie die Mitteilungen in Mail.
 struct NachrichtenListe: View {
     let liste: [Benachrichtigung]
     let alleGesehen: Bool
@@ -50,99 +36,98 @@ struct NachrichtenListe: View {
         let jetzt = Date()
         if liste.isEmpty {
             // Derselbe Satz wie auf Start und im Web (U76).
-            Leerzustand(text: "Keine Neuigkeiten.")
+            Section {
+                VStack(spacing: 8) {
+                    Image(systemName: "bell.slash").font(.largeTitle).foregroundStyle(Farbe.muted)
+                    Text("Keine Neuigkeiten.").foregroundStyle(Farbe.muted)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 32)
+            }
+            .listRowBackground(Color.clear)
         } else {
-            VStack(alignment: .leading, spacing: 18) {
-                ForEach(Startseite.groupNotifications(liste, now: jetzt), id: \.label) { gruppe in
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(gruppe.label).kicker().accessibilityAddTraits(.isHeader)
-                        VStack(spacing: 0) {
-                            ForEach(Array(gruppe.items.enumerated()), id: \.element.id) { i, n in
-                                if i > 0 { Rectangle().fill(Farbe.line).frame(height: 1) }
-                                NachrichtZeile(
-                                    n: n, neu: n.readAt == nil && !alleGesehen, jetzt: jetzt,
-                                    hervorheben: true, zuVeranstaltung: zuVeranstaltung
-                                )
-                            }
-                        }
-                        .karte(padding: 0)
+            ForEach(Startseite.groupNotifications(liste, now: jetzt), id: \.label) { gruppe in
+                Section {
+                    ForEach(gruppe.items) { n in
+                        NachrichtZeile(n: n, neu: n.readAt == nil && !alleGesehen, jetzt: jetzt, zuVeranstaltung: zuVeranstaltung)
                     }
+                } header: {
+                    GruppenKopf(titel: gruppe.label)
                 }
             }
         }
     }
 }
 
-/// Eine Nachricht: Symbol, Titel, Zeit, Text, ggf. "Zur Veranstaltung ›".
+/// Eine Nachricht: blauer Punkt fuer ungelesen, Symbol-Kachel, Titel und Zeit, darunter der Text.
 struct NachrichtZeile: View {
     @Environment(\.zuMannschaft) private var zuMannschaft
     let n: Benachrichtigung
     let neu: Bool
     let jetzt: Date
-    /// Auf der Liste liegt Neues auf blueSoft; auf Home nur das Symbol.
-    var hervorheben = true
-    var zeilen: Int?
     var zuVeranstaltung: (String) -> Void
 
     var body: some View {
         let ziel = Startseite.notificationZiel(eventId: n.eventId)
         // Einladungen, Antworten und Austritte fuehren zur Mannschaft im Konto.
         let mannschaft = ziel == nil && MannschaftLogik.istMannschaftsNachricht(n.kind)
-        let inhalt = HStack(alignment: .top, spacing: 12) {
-            Image(systemName: symbolName(hervorheben ? Startseite.notificationSymbol(n.kind ?? "") : .glocke))
-                .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(neu ? Farbe.ink : Farbe.ink2)
-                .frame(width: 40, height: 40)
-                .background(hervorheben ? (neu ? Farbe.surf : Farbe.surf2) : (neu ? Farbe.blueSoft : Farbe.surf2), in: Circle())
+        let symbol = Startseite.notificationSymbol(n.kind ?? "")
+        let inhalt = HStack(alignment: .top, spacing: 10) {
+            Circle()
+                .fill(neu ? Farbe.blue : Color.clear)
+                .frame(width: 9, height: 9)
+                .padding(.top, 11)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
+            IconKachel(symbol: symbolName(symbol), farbe: farbe(symbol))
+                .padding(.top, 2)
+            VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    // Ungelesen: der blaue Punkt vor dem Titel.
-                    if neu {
-                        Circle().fill(Farbe.blue).frame(width: 8, height: 8).alignmentGuide(.firstTextBaseline) { $0[.bottom] + 3 }
-                    }
                     Text(n.title ?? "")
-                        .font(Schrift.display(.halbfett, 16))
+                        .font(.headline.weight(neu ? .semibold : .regular))
                         .foregroundStyle(Farbe.ink)
-                        .lineLimit(zeilen.map { _ in 2 })
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text(Startseite.relativeTimeLabel(n.createdAt, now: jetzt))
-                        .font(Schrift.text(.normal, Tokens.Schrift.klein))
+                        .font(.footnote)
                         .foregroundStyle(Farbe.muted)
+                    if ziel != nil || mannschaft { ZeilenPfeil() }
                 }
                 Text(n.body ?? "")
-                    .font(Schrift.text(.normal, 14.5))
+                    .font(.subheadline)
                     .foregroundStyle(Farbe.ink2)
-                    .lineSpacing(2)
-                    .lineLimit(zeilen)
                     .fixedSize(horizontal: false, vertical: true)
-                if ziel != nil || mannschaft {
-                    Text(ziel != nil ? "Zur Veranstaltung ›" : "Zur Mannschaft ›")
-                        .font(Schrift.text(.halbfett, 13.5))
-                        .foregroundStyle(Farbe.blueInk)
-                        .padding(.top, 2)
-                }
             }
         }
-        .padding(.vertical, 16)
-        .padding(.horizontal, 16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(hervorheben && neu ? Farbe.blueSoft : Color.clear)
+        .padding(.vertical, 4)
+        .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(HomeLogik.nachrichtLabel(n, neu: neu, jetzt: jetzt))
 
-        if let ziel {
-            Button { zuVeranstaltung(ziel.eventId) } label: { inhalt }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(.isLink)
-                .accessibilityHint("Öffnet die Veranstaltung")
-        } else if mannschaft {
-            Button { zuMannschaft() } label: { inhalt }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(.isLink)
-                .accessibilityHint("Öffnet die Mannschaft")
-        } else {
-            inhalt
+        Group {
+            if let ziel {
+                Button { zuVeranstaltung(ziel.eventId) } label: { inhalt }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(.isLink)
+                    .accessibilityHint("Öffnet die Veranstaltung")
+            } else if mannschaft {
+                Button { zuMannschaft() } label: { inhalt }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(.isLink)
+                    .accessibilityHint("Öffnet die Mannschaft")
+            } else {
+                inhalt
+            }
+        }
+        .gruppenZeile()
+    }
+
+    /// Je Art eine Farbe wie in Einstellungen: Plaetze blau, Storno rot, Geld gelb, Personen und Allgemeines grau-blau.
+    private func farbe(_ s: NotificationSymbol) -> Color {
+        switch s {
+        case .platz: Farbe.blue
+        case .storno: Farbe.red
+        case .geld: Farbe.gold
+        case .person: Farbe.blueInk
+        case .glocke: Farbe.muted
         }
     }
 }
