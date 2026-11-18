@@ -10,40 +10,46 @@ import SwiftUI
 
 struct PasswortVergessenBildschirm: View {
     @Environment(Sitzung.self) private var sitzung
+    /// Vorbelegt mit dem, was auf der Anmeldung schon steht.
+    var email = ""
     /// "Zurueck zur Anmeldung"
     let zurueck: () -> Void
 
-    @State private var email = ""
+    @State private var eingabe: String?
     @State private var meldung: String?
     @State private var fehler: String?
     @State private var laeuft = false
 
+    private var adresse: Binding<String> {
+        Binding(get: { eingabe ?? email }, set: { eingabe = $0 })
+    }
+
     var body: some View {
         AnmeldeSeite(titel: PasswortTexte.vergessenTitel, unterzeile: PasswortTexte.vergessenUnterzeile) {
-            AnmeldeFeld(
-                beschriftung: "E-Mail",
-                text: $email,
-                inhaltsTyp: .emailAddress,
-                tastatur: .emailAddress,
-                absenden: .send,
-                beimAbsenden: absenden
-            )
-
-            // Die Meldung ist dieselbe, ob es die Adresse gibt oder nicht.
-            if let meldung {
-                AnmeldeHinweis(text: "\(meldung) \(PasswortTexte.spam)", ok: true)
+            Section {
+                AnmeldeFeld(
+                    beschriftung: "E-Mail",
+                    text: adresse,
+                    inhaltsTyp: .emailAddress,
+                    tastatur: .emailAddress,
+                    absenden: .send,
+                    beimAbsenden: absenden
+                )
+                // Die Meldung ist dieselbe, ob es die Adresse gibt oder nicht.
+                if let meldung {
+                    AnmeldeHinweis(text: "\(meldung) \(PasswortTexte.spam)", ok: true)
+                }
+                if let fehler {
+                    AnmeldeHinweis(text: fehler)
+                }
             }
-            if let fehler {
-                AnmeldeHinweis(text: fehler)
-            }
-
-            VStack(spacing: 6) {
-                Hauptknopf(text: laeuft ? "Wird gesendet…" : "Link anfordern", gesperrt: laeuft, aktion: absenden)
+            KnopfZeile {
+                BreiterKnopf(text: "Link anfordern", laeuft: laeuft, aktion: absenden)
                 LeiserVerweis(text: "Zurück zur Anmeldung", aktion: zurueck)
             }
-            .padding(.top, Tokens.Abstand.abschnitt)
         }
         .toolbar(.hidden, for: .navigationBar)
+        .sensoryFeedback(.success, trigger: meldung) { _, neu in neu != nil }
     }
 
     private func absenden() {
@@ -52,7 +58,7 @@ struct PasswortVergessenBildschirm: View {
         fehler = nil
         laeuft = true
         Task {
-            let stoerung = await sitzung.passwortLinkAnfordern(email: email)
+            let stoerung = await sitzung.passwortLinkAnfordern(email: adresse.wrappedValue)
             laeuft = false
             if let stoerung {
                 fehler = stoerung

@@ -12,26 +12,30 @@ struct KeinZugangBildschirm: View {
     let grund: ZugangsGrund
 
     var body: some View {
-        AnmeldeSeite(titel: KeinZugang.titel, unterzeile: KeinZugang.text(grund)) {
-            Text("\(KeinZugang.kontakt) Du bist abgemeldet.")
-                .font(Schrift.text(.normal, 16))
-                .lineSpacing(8)
-                .foregroundStyle(Farbe.ink2)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            // Zwei Knoepfe untereinander: blau der Kontakt, neutral der Weg zu einem anderen Konto.
-            VStack(spacing: 12) {
+        AnmeldeSeite(titel: KeinZugang.titel, unterzeile: KeinZugang.text(grund), symbol: "person.crop.circle.badge.xmark") {
+            Section {
+                Label {
+                    Text("\(KeinZugang.kontakt) Du bist abgemeldet.").foregroundStyle(Farbe.ink)
+                } icon: {
+                    Image(systemName: "info.circle.fill").foregroundStyle(Farbe.blue)
+                }
+                .gruppenZeile()
+            }
+            // Blau der Kontakt, leise der Weg zu einem anderen Konto.
+            KnopfZeile {
                 // Der Kontakt steht im Impressum; ohne Adresse (lokal) fuehrt der Knopf zur Anmeldung.
                 if let kontakt = sitzung.umgebung.webLink("/impressum#kontakt") {
                     Link(destination: kontakt) {
-                        KnopfFlaeche(stufe: .haupt, breit: true) { Text("Vorstand kontaktieren") }
+                        Text("Vorstand kontaktieren").font(.headline).frame(maxWidth: .infinity, minHeight: 50)
                     }
-                    LeiserKnopf(text: "Mit einem anderen Konto anmelden") { sitzung.zurAnmeldung() }
+                    .buttonStyle(.borderedProminent)
+                    .buttonBorderShape(.capsule)
+                    .tint(Farbe.blue)
+                    LeiserVerweis(text: "Mit einem anderen Konto anmelden") { sitzung.zurAnmeldung() }
                 } else {
-                    Hauptknopf(text: "Zur Anmeldung") { sitzung.zurAnmeldung() }
+                    BreiterKnopf(text: "Zur Anmeldung") { sitzung.zurAnmeldung() }
                 }
             }
-            .padding(.top, Tokens.Abstand.abschnitt)
         }
     }
 }

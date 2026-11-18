@@ -23,7 +23,7 @@ struct PasswortSetzenBildschirm: View {
 
     var body: some View {
         NavigationStack {
-            AnmeldeSeite(titel: PasswortTexte.setzenTitel, unterzeile: PasswortTexte.setzenUnterzeile) {
+            AnmeldeSeite(titel: PasswortTexte.setzenTitel, unterzeile: PasswortTexte.setzenUnterzeile, symbol: "lock.fill") {
                 inhalt
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -44,45 +44,44 @@ struct PasswortSetzenBildschirm: View {
     @ViewBuilder private var inhalt: some View {
         switch zustand {
         case .rueckfrage, .laden:
-            ProgressView()
-                .tint(Farbe.muted)
-                .frame(maxWidth: .infinity, minHeight: 120)
+            Section {
+                ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity, minHeight: 80)
+            }
+            .listRowBackground(Color.clear)
         case let .fehler(text):
-            AnmeldeHinweis(text: text)
-            VStack(spacing: 6) {
-                Hauptknopf(text: "Neuen Link anfordern") { vergessenOffen = true }
+            Section { AnmeldeHinweis(text: text) }
+            KnopfZeile {
+                BreiterKnopf(text: "Neuen Link anfordern") { vergessenOffen = true }
                 LeiserVerweis(text: "Zurück zur Anmeldung", aktion: sitzung.passwortSchliessen)
             }
-            .padding(.top, Tokens.Abstand.abschnitt)
         case let .bereit(konto):
-            if let konto {
-                Text("Für das Konto \(Text(konto).font(Schrift.text(.fett, 15)).foregroundStyle(Farbe.ink))")
-                    .font(Schrift.text(.normal, 15))
-                    .foregroundStyle(Farbe.ink2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            Section {
+                if let konto {
+                    // Wie im Web: fuer welches Konto das Passwort gilt.
+                    LabeledContent("Konto", value: konto).gruppenZeile()
+                }
+                AnmeldeFeld(
+                    beschriftung: "Neues Passwort",
+                    text: $passwort,
+                    passwort: true,
+                    inhaltsTyp: .newPassword
+                )
+                AnmeldeFeld(
+                    beschriftung: "Noch einmal",
+                    bedienName: "Passwort wiederholen",
+                    text: $wiederholung,
+                    passwort: true,
+                    inhaltsTyp: .newPassword,
+                    absenden: .go,
+                    beimAbsenden: speichern
+                )
+                if let fehler {
+                    AnmeldeHinweis(text: fehler)
+                }
             }
-            AnmeldeFeld(
-                beschriftung: "Neues Passwort",
-                text: $passwort,
-                passwort: true,
-                inhaltsTyp: .newPassword
-            )
-            AnmeldeFeld(
-                beschriftung: "Noch einmal",
-                bedienName: "Passwort wiederholen",
-                text: $wiederholung,
-                passwort: true,
-                inhaltsTyp: .newPassword,
-                absenden: .go,
-                beimAbsenden: speichern
-            )
-
-            if let fehler {
-                AnmeldeHinweis(text: fehler)
+            KnopfZeile {
+                BreiterKnopf(text: "Speichern", laeuft: laeuft, aktion: speichern)
             }
-
-            Hauptknopf(text: laeuft ? "Wird gespeichert…" : "Speichern", gesperrt: laeuft, aktion: speichern)
-                .padding(.top, Tokens.Abstand.abschnitt)
         }
     }
 

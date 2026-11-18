@@ -1,12 +1,13 @@
 /**
- * Der Rahmen der Anmeldeseiten (docs/design/stitch, "Anmelden")
+ * Der Rahmen der Anmeldeseiten
  *
- * Weisser Grund wie der Rest der App: oben der Kicker "TC Muckensturm" und
- * der Titel, darunter das Formular. Hell oder dunkel folgt dem
- * Erscheinungsbild; es gibt keine blaue Buehne mehr.
+ * Gestaltet wie die Anmeldung in den iOS-Einstellungen: oben das Vereinslogo
+ * (dunkel in Weiss) oder ein Symbol als App-Kachel, grosser Titel und Erklaerung mittig, darunter die Felder als
+ * gruppierte Liste, die eine Hauptaktion als breiter Knopf und leise Verweise.
+ * Hell oder dunkel folgt dem Erscheinungsbild.
  *
- * Dazu die Bausteine aller Anmeldeseiten: Eingabefeld (56 hoch), leiser
- * Verweis, Hinweis. Die Knoepfe kommen aus Knoepfe.swift.
+ * Dazu die Bausteine aller Anmeldeseiten: Eingabezeile, Hinweiszeile, breiter
+ * Knopf. Der Inhalt besteht aus Sections.
  */
 
 import SwiftUI
@@ -14,60 +15,81 @@ import SwiftUI
 struct AnmeldeSeite<Inhalt: View>: View {
     let titel: String
     var unterzeile: String?
+    /// Ohne Symbol steht oben das Vereinslogo (Anmelden, Passwort vergessen).
+    var symbol: String?
     @ViewBuilder let inhalt: Inhalt
 
     @Environment(Sitzung.self) private var sitzung
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                VStack(alignment: .leading, spacing: Tokens.Abstand.s) {
-                    Text("TC Muckensturm").kicker()
+        List {
+            Section {
+                VStack(spacing: 12) {
+                    if let symbol {
+                        Image(systemName: symbol)
+                            .font(.system(size: 38, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 76, height: 76)
+                            .background(Farbe.blue.gradient, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+                            .accessibilityHidden(true)
+                        Text("TC Muckensturm")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Farbe.muted)
+                    } else {
+                        Image("Logo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 230)
+                            .padding(.bottom, 8)
+                            .accessibilityLabel("TC Muckensturm")
+                    }
                     Text(titel)
-                        .font(Schrift.display(.fett, 32, relativeTo: .largeTitle))
-                        .tracking(Tokens.Schrift.laufweiteTitel)
+                        .font(.title.weight(.bold))
                         .foregroundStyle(Farbe.ink)
+                        .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
                     if let unterzeile {
                         Text(unterzeile)
-                            .font(Schrift.text(.normal, 16))
-                            .lineSpacing(4)
+                            .font(.body)
                             .foregroundStyle(Farbe.ink2)
+                            .multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
-                            .padding(.top, 2)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 56)
-                .padding(.bottom, Tokens.Abstand.abschnitt)
-                VStack(spacing: Tokens.Abstand.l) { inhalt }
-                // Unten leise Datenschutz und Impressum (liegen im Web; lokal ohne Adresse fehlen sie).
-                if let datenschutz = sitzung.umgebung.webLink("/datenschutz"), let impressum = sitzung.umgebung.webLink("/impressum") {
+                .frame(maxWidth: .infinity)
+                .padding(.top, 24)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
+            }
+            inhalt
+            // Unten leise Datenschutz und Impressum (liegen im Web; lokal ohne Adresse fehlen sie).
+            if let datenschutz = sitzung.umgebung.webLink("/datenschutz"), let impressum = sitzung.umgebung.webLink("/impressum") {
+                Section {
                     HStack(spacing: 8) {
                         Link("Datenschutz", destination: datenschutz)
                         Text("·").accessibilityHidden(true)
                         Link("Impressum", destination: impressum)
                     }
-                    .font(Schrift.text(.normal, Tokens.Schrift.klein))
+                    .font(.footnote)
                     .tint(Farbe.muted)
                     .foregroundStyle(Farbe.muted)
                     .frame(maxWidth: .infinity, minHeight: 44)
-                    .padding(.top, Tokens.Abstand.abschnitt)
+                    .listRowBackground(Color.clear)
                 }
             }
-            .frame(maxWidth: 420)
-            .padding(.horizontal, 24)
-            .padding(.bottom, 36)
-            .frame(maxWidth: .infinity)
         }
+        .gruppenListe()
+        .listSectionSpacing(20)
         .scrollDismissesKeyboard(.interactively)
-        .background(Farbe.bg)
+        .frame(maxWidth: 520)
+        .frame(maxWidth: .infinity)
+        .background(GruppenGrund())
     }
 }
 
-/// Eingabefeld der Anmeldeseiten: Beschriftung als Kicker darueber, 56 hoch, grauer Grund mit Linie.
-/// Mit `passwort` verdeckt es die Eingabe und traegt rechts den Schalter "Anzeigen".
+/// Eingabezeile der Anmeldeseiten: die Beschriftung steht als Platzhalter im Feld.
+/// Mit `passwort` verdeckt es die Eingabe und traegt rechts ein Auge zum Anzeigen.
 struct AnmeldeFeld: View {
     let beschriftung: String
     /// Fuer VoiceOver, wenn die Beschriftung allein nicht reicht ("Noch einmal").
@@ -82,46 +104,32 @@ struct AnmeldeFeld: View {
     @State private var sichtbar = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Tokens.Abstand.s) {
-            Text(beschriftung)
-                .kicker()
-                .accessibilityHidden(true)
-            HStack(spacing: 0) {
-                Group {
-                    if passwort && !sichtbar {
-                        SecureField("", text: $text)
-                    } else {
-                        TextField("", text: $text)
-                    }
-                }
-                .textContentType(inhaltsTyp)
-                .keyboardType(tastatur)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .submitLabel(absenden)
-                .onSubmit(beimAbsenden)
-                .font(Schrift.text(.normal, 16))
-                .foregroundStyle(Farbe.ink)
-                .accessibilityLabel(bedienName ?? beschriftung)
-                .padding(.leading, 20)
-                .padding(.trailing, passwort ? 0 : 20)
-                .frame(minHeight: 56)
-
-                if passwort {
-                    PasswortSchalter(sichtbar: $sichtbar)
-                        .padding(.trailing, 10)
+        HStack(spacing: 8) {
+            Group {
+                if passwort && !sichtbar {
+                    SecureField("", text: $text, prompt: Text(beschriftung).foregroundStyle(Farbe.muted))
+                } else {
+                    TextField("", text: $text, prompt: Text(beschriftung).foregroundStyle(Farbe.muted))
                 }
             }
-            .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
-            .overlay(
-                RoundedRectangle(cornerRadius: Tokens.Radius.feld)
-                    .strokeBorder(Farbe.line2, lineWidth: 1)
-            )
+            .textContentType(inhaltsTyp)
+            .keyboardType(tastatur)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .submitLabel(absenden)
+            .onSubmit(beimAbsenden)
+            .foregroundStyle(Farbe.ink)
+            .accessibilityLabel(bedienName ?? beschriftung)
+            .frame(minHeight: 32)
+            if passwort {
+                PasswortSchalter(sichtbar: $sichtbar)
+            }
         }
+        .gruppenZeile()
     }
 }
 
-/// "Anzeigen" am Passwortfeld (U31). Die Beschriftung sagt, was ein Tippen tut.
+/// Das Auge am Passwortfeld (U31). Die Beschriftung sagt, was ein Tippen tut.
 struct PasswortSchalter: View {
     @Binding var sichtbar: Bool
 
@@ -129,55 +137,85 @@ struct PasswortSchalter: View {
         Button {
             sichtbar.toggle()
         } label: {
-            Text(sichtbar ? "Verbergen" : "Anzeigen")
-                .font(Schrift.display(.halbfett, 14))
-                .foregroundStyle(Farbe.blueInk)
-                .padding(.horizontal, 10)
+            Image(systemName: sichtbar ? "eye.slash" : "eye")
+                .foregroundStyle(Farbe.muted)
                 .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
         }
+        .buttonStyle(.borderless)
         .accessibilityLabel("Passwort anzeigen")
         .accessibilityValue(sichtbar ? "Ein" : "Aus")
         .accessibilityAddTraits(.isToggle)
     }
 }
 
-/// Leiser Verweis in blueInk, etwa "Passwort vergessen?"
+/// Leiser Verweis in Blau, etwa "Passwort vergessen?" - als Zeile ohne Grund.
 struct LeiserVerweis: View {
     let text: String
     var rechts = false
     let aktion: () -> Void
 
     var body: some View {
-        Button(action: aktion) {
-            Text(text)
-                .font(Schrift.display(.halbfett, 14.5))
-                .foregroundStyle(Farbe.blueInk)
-                .frame(minHeight: 44)
-        }
-        .frame(maxWidth: .infinity, alignment: rechts ? .trailing : .center)
+        Button(text, action: aktion)
+            .buttonStyle(.borderless)
+            .font(.subheadline.weight(.medium))
+            .tint(Farbe.blueInk)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: rechts ? .trailing : .center)
+            .listRowBackground(Color.clear)
     }
 }
 
-/// Hinweis: Fehler in redInk auf roter Toenung, Erfolg in greenInk.
+/// Hinweis als Zeile: Fehler rot mit Warnsymbol, Erfolg gruen mit Haken.
 struct AnmeldeHinweis: View {
     let text: String
     var ok = false
 
     var body: some View {
-        Text(text)
-            .font(Schrift.text(.normal, 16))
+        Label(text, systemImage: ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
             .foregroundStyle(ok ? Farbe.greenInk : Farbe.redInk)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 14)
-            .background(
-                (ok ? Farbe.green : Farbe.red).opacity(0.12),
-                in: RoundedRectangle(cornerRadius: Tokens.Radius.feld)
-            )
+            .fixedSize(horizontal: false, vertical: true)
+            .gruppenZeile()
+            .onAppear { UIAccessibility.post(notification: .announcement, argument: text) }
     }
 }
 
-/// "Noch kein Mitglied? Antrag stellen" - Text in muted, der Verweis in blueInk.
+/// Die eine Hauptaktion: breit, gefuellt, Kapsel - wie "Anmelden" im Event.
+struct BreiterKnopf: View {
+    let text: String
+    var laeuft = false
+    var gesperrt = false
+    var rolle: ButtonRole?
+    let aktion: () -> Void
+
+    var body: some View {
+        Button(role: rolle, action: aktion) {
+            HStack(spacing: 8) {
+                if laeuft { ProgressView().tint(.white) }
+                Text(text).font(.headline)
+            }
+            .frame(maxWidth: .infinity, minHeight: 50)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .tint(rolle == .destructive ? Farbe.red : Farbe.blue)
+        .disabled(gesperrt || laeuft)
+    }
+}
+
+/// Der breite Knopf als Zeile ohne Grund am Ende der Liste.
+struct KnopfZeile<Inhalt: View>: View {
+    @ViewBuilder let inhalt: Inhalt
+
+    var body: some View {
+        Section {
+            VStack(spacing: 4) { inhalt }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+        }
+    }
+}
+
+/// "Noch kein Mitglied? Antrag stellen" - Text leise, der Verweis in Blau.
 struct AnmeldeFusszeile: View {
     let text: String
     let verweis: String
@@ -186,14 +224,11 @@ struct AnmeldeFusszeile: View {
     var body: some View {
         HStack(spacing: 4) {
             Text(text).foregroundStyle(Farbe.muted)
-            Link(destination: ziel) {
-                Text(verweis)
-                    .font(Schrift.display(.halbfett, 14.5))
-                    .foregroundStyle(Farbe.blueInk)
-                    .frame(minHeight: 44)
-            }
+            Link(verweis, destination: ziel)
+                .fontWeight(.semibold)
+                .tint(Farbe.blueInk)
         }
-        .font(Schrift.text(.normal, 14))
-        .frame(maxWidth: .infinity)
+        .font(.subheadline)
+        .frame(maxWidth: .infinity, minHeight: 44)
     }
 }
