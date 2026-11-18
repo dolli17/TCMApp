@@ -513,7 +513,7 @@ ASC_KEY_PATH=~/Documents/Apple/AuthKey_<id>.p8 ASC_KEY_ID=<id> ASC_ISSUER_ID=<is
   scripts/testflight.sh <buildnummer> [version]
 ```
 
-Baut die Konfiguration Prod (Bundle `de.tcmuckensturm.app`, dieselbe App wie die früheren Expo-Builds bis 16) gegen das Dev-Projekt (`Konfiguration/TestFlight.xcconfig`), und lädt sie zu App Store Connect hoch. Die Buildnummer muss höher sein als jede bisherige.
+Baut die Konfiguration Prod (Bundle `de.tcmuckensturm.app`, dieselbe App wie die früheren Expo-Builds bis 16) gegen das Dev-Projekt (`Konfiguration/TestFlight.xcconfig`), und lädt sie zu App Store Connect hoch. Die Buildnummer muss höher sein als jede bisherige. Die Version (`MARKETING_VERSION` in `project.yml`, oder als zweites Argument) darf nicht unter der letzten in TestFlight liegen: TestFlight bietet als Update immer die höchste Version an, ein Build mit niedrigerer Version erscheint nur unter den älteren.
 
 - **Signieren:** Ein Apple-Konto des Teams muss in Xcode unter Settings → Accounts angemeldet sein. Xcode legt dann Zertifikat und Profile an und meldet App Group, Associated Domains und Push an. Der API-Schlüssel allein reicht dafür nicht (App Groups gibt es in der API nicht, das automatische Signieren lehnt ihn ab).
 - **Hochladen:** mit dem API-Schlüssel von App Store Connect, über die Umgebung, nicht im Repo.
