@@ -56,52 +56,51 @@ struct GetraenkeAnsicht: View {
     var body: some View {
         let buchungen = inhalt?.buchungen ?? []
         let summe = zustand.korbSumme
-        ScrollViewReader { leser in
-        ScrollView {
-            VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                VereinKopf()
-                if let fehler {
-                    // Ohne Inhalt der ganze Fehlerzustand, sonst die Zeile ueber dem alten Stand.
-                    if inhalt == nil {
-                        Fehlerzustand(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
-                    } else {
-                        Fehlerzeile(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
-                    }
+        List {
+            VereinKopf()
+            if let fehler {
+                Section {
+                    FehlerZeile(text: fehler, erneut: Erneut(laeuft: aktualisiert) { Task { await laden(.nachladen) } })
+                        .gruppenZeile()
                 }
-                if laedt && inhalt == nil {
-                    ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)
-                } else if let inhalt {
-                    Monatskarte(buchungen: buchungen, jetzt: jetzt)
-
-                    KontoAbschnitt(titel: "Was nimmst du?")
-                    Text("Mit + sammelst du. Gebucht ist erst, was du unten einträgst.")
-                        .leise().padding(.top, -4)
-                    karte(inhalt.karte)
-
-                    KontoAbschnitt(titel: "Zuletzt").id("zuletzt")
-                    Text(VereinLogik.stornoHinweis(inhalt.stornoFenster)).leise().padding(.top, -4)
-                    if buchungen.isEmpty {
-                        Leerzustand(text: "Noch nichts entnommen.")
-                    } else {
-                        zuletzt(buchungen, fenster: inhalt.stornoFenster)
+            }
+            if laedt && inhalt == nil {
+                Section {
+                    ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.vertical, 24)
+                }
+                .listRowBackground(Color.clear)
+            } else if let inhalt {
+                Section {
+                    NavigationLink {
+                        ZuletztSeite(
+                            buchungen: buchungen, fenster: inhalt.stornoFenster, jetzt: jetzt,
+                            laeuft: laeuft, markiert: markiert
+                        ) { id in Task { await zuruecknehmen(id) } }
+                    } label: {
+                        Monatszeile(buchungen: buchungen, jetzt: jetzt)
+                    }
+                    .gruppenZeile()
+                } header: {
+                    GruppenKopf(titel: "Dein Monat")
+                } footer: {
+                    Text("Wird mit der Monatsabrechnung eingezogen.").foregroundStyle(Farbe.muted)
+                }
+                ForEach(Self.abschnitte(inhalt.karte), id: \.titel) { g in
+                    Section {
+                        ForEach(g.artikel) { zeile($0) }
+                    } header: {
+                        GruppenKopf(titel: g.titel)
+                    } footer: {
+                        if g.titel == Self.abschnitte(inhalt.karte).last?.titel {
+                            Text("Mit + sammelst du. Gebucht ist erst, was du unten einträgst.")
+                                .foregroundStyle(Farbe.muted)
+                        }
                     }
                 }
             }
-            .padding(.horizontal, Tokens.Abstand.rand)
-            .padding(.bottom, Tokens.Abstand.abschnitt * 2)
         }
-        #if DEBUG
-        // Fuer Bildschirmfotos per simctl (README): `-TCMVereinRollen zuletzt` rollt nach dem Laden dorthin.
-        .task(id: inhalt == nil) {
-            let argumente = ProcessInfo.processInfo.arguments
-            if inhalt != nil, let i = argumente.firstIndex(of: "-TCMVereinRollen"), i + 1 < argumente.count {
-                try? await Task.sleep(for: .milliseconds(300))
-                leser.scrollTo(argumente[i + 1], anchor: .top)
-            }
-        }
-        #endif
-        }
-        .background(Farbe.bg)
+        .gruppenListe()
+        .listSectionSpacing(20)
         .refreshable { await laden(.nachladen) }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 8) {
@@ -145,110 +144,79 @@ struct GetraenkeAnsicht: View {
 
     // MARK: - Die Karte
 
-    /// Eine Liste in einer Karte; was im Korb liegt, ist hellblau hinterlegt.
-    private func karte(_ karte: [Getraenk]) -> some View {
-        VStack(spacing: 0) {
-            ForEach(Array(karte.enumerated()), id: \.element.id) { i, a in
-                if i > 0 { KontoLinie() }
-                zeile(a)
+    private struct Gruppe { let titel: String; let artikel: [Getraenk] }
+
+    /// Nach Kategorie in der Reihenfolge der Karte; ohne Kategorien ein Abschnitt "Getränkekarte".
+    /// Die Kategorien der Karte (drink_items.category) auf Deutsch.
+    private static let kategorie = ["drink": "Getränke", "food": "Essen & Snacks"]
+
+    private static func abschnitte(_ karte: [Getraenk]) -> [Gruppe] {
+        var gruppen: [Gruppe] = []
+        for a in karte {
+            let titel = Self.kategorie[a.category ?? ""] ?? Platzplan.nichtLeer(a.category) ?? "Weiteres"
+            if let i = gruppen.firstIndex(where: { $0.titel == titel }) {
+                gruppen[i] = Gruppe(titel: titel, artikel: gruppen[i].artikel + [a])
+            } else {
+                gruppen.append(Gruppe(titel: titel, artikel: [a]))
             }
         }
-        .karte(padding: 0)
+        if gruppen.count <= 1 { return karte.isEmpty ? [] : [Gruppe(titel: "Getränkekarte", artikel: karte)] }
+        return gruppen
     }
 
     private func zeile(_ a: Getraenk) -> some View {
         let menge = zustand.korb[a.id] ?? 0
         let name = a.name ?? ""
-        // Bei grosser Schrift stehen die Knoepfe unter dem Namen.
-        let layout = textgroesse >= .xxLarge
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
-            : AnyLayout(HStackLayout(spacing: 12))
-        return layout {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(name)
-                    .font(Schrift.display(.halbfett, 17))
-                    .foregroundStyle(menge > 0 ? Farbe.blueInk : Farbe.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(VereinLogik.artikelZeile(a))
-                    .font(Schrift.text(.normal, 14))
-                    .foregroundStyle(menge > 0 ? Farbe.blueInk : Farbe.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            HStack(spacing: 4) {
-                if menge > 0 {
-                    Zaehlknopf(zeichen: .minus, beschriftung: "\(name): eins weniger", aus: laeuft) { aendern(a.id, -1) }
-                    Zaehlerstand(wert: menge, label: "\(menge) gewählt, noch nicht eingetragen")
-                }
-                // Betont erst, wenn schon etwas gesammelt ist (U43).
-                Zaehlknopf(
-                    zeichen: .plus, betont: menge > 0, beschriftung: "\(name): eins mehr",
-                    aus: laeuft || menge >= Getraenke.maxMenge
-                ) { aendern(a.id, 1) }
-            }
-            // Gesammeltes: Minus, Zahl und Plus in einer weissen Kapsel (Entwurf "Getraenke Auswahl").
-            .padding(menge > 0 ? 3 : 0)
-            .background { if menge > 0 { Capsule().fill(Farbe.surf).overlay(Capsule().strokeBorder(Farbe.line2, lineWidth: 1)) } }
-        }
-        .padding(.vertical, 12)
-        .padding(.leading, 20)
-        .padding(.trailing, 14)
-        .frame(minHeight: 76)
-        .background(menge > 0 ? Farbe.blueSoft : Color.clear)
-        .animation(.easeOut(duration: 0.15), value: menge > 0)
-    }
-
-    // MARK: - Zuletzt
-
-    private func zuletzt(_ buchungen: [EigenesGetraenk], fenster: Int) -> some View {
-        VStack(spacing: 0) {
-            ForEach(Array(buchungen.enumerated()), id: \.element.id) { i, b in
-                if i > 0 { KontoLinie() }
-                entnahme(b, fenster: fenster)
-            }
-        }
-        .karte(padding: 0)
-    }
-
-    private func entnahme(_ b: EigenesGetraenk, fenster: Int) -> some View {
-        let zurueck = b.voidedAt != nil
-        let stornierbar = Getraenke.canVoidSelf(createdAt: b.createdAt, voidedAt: b.voidedAt, fensterMinuten: fenster, now: jetzt)
         return HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(VereinLogik.entnahmeTitel(b))
-                    .font(Schrift.display(.halbfett, 15.5))
-                    .foregroundStyle(Farbe.ink)
-                    .strikethrough(zurueck)
-                Text(VereinLogik.entnahmeZeile(b))
-                    .font(Schrift.text(.normal, Tokens.Schrift.klein))
-                    .foregroundStyle(Farbe.muted)
+                Text(name).font(.body.weight(menge > 0 ? .semibold : .regular)).foregroundStyle(Farbe.ink)
+                Text(VereinLogik.artikelZeile(a)).font(.subheadline).foregroundStyle(Farbe.muted)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            if stornierbar {
-                Button { Task { await zuruecknehmen(b.id) } } label: {
-                    Text("Zurücknehmen")
-                        .font(Schrift.display(.halbfett, 14))
+            if menge > 0 {
+                // Gesammeltes: Minus, Zahl und Plus in einer Kapsel wie die Mengenwahl im Apple Store.
+                HStack(spacing: 0) {
+                    mengenKnopf("minus", "\(name): eins weniger", aus: laeuft) { aendern(a.id, -1) }
+                    Text("\(menge)")
+                        .font(.body.weight(.semibold))
+                        .monospacedDigit()
                         .foregroundStyle(Farbe.blueInk)
-                        .padding(.horizontal, 4)
-                        .frame(minHeight: 44)
+                        .frame(minWidth: 22)
+                        .accessibilityLabel("\(menge) gewählt, noch nicht eingetragen")
+                    mengenKnopf("plus", "\(name): eins mehr", aus: laeuft || menge >= Getraenke.maxMenge) { aendern(a.id, 1) }
+                }
+                .background(Farbe.blueSoft, in: Capsule())
+                .transition(.scale(scale: 0.8).combined(with: .opacity))
+            } else {
+                Button { aendern(a.id, 1) } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title2)
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(Farbe.blue)
+                        .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.borderless)
                 .disabled(laeuft)
-                .opacity(laeuft ? 0.5 : 1)
-                .accessibilityLabel("\(b.itemName ?? "") zurücknehmen")
+                .accessibilityLabel("\(name): eins mehr")
             }
-            Text(Geld.formatCents(b.totalCents ?? 0))
-                .font(Schrift.display(.fett, 17))
-                .monospacedDigit()
-                .foregroundStyle(Farbe.ink)
-                .strikethrough(zurueck)
         }
-        .padding(.vertical, 14)
-        .padding(.horizontal, 20)
-        .opacity(zurueck ? 0.55 : 1)
-        .background(markiert?.trifft(b.id) == true ? Farbe.blueSoft : Color.clear)
-        .animation(.easeOut, value: markiert)
+        .gruppenZeile()
+        .animation(.snappy(duration: 0.2), value: menge > 0)
+    }
+
+    private func mengenKnopf(_ symbol: String, _ label: String, aus: Bool, aktion: @escaping () -> Void) -> some View {
+        Button(action: aktion) {
+            Image(systemName: symbol)
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(Farbe.blueInk)
+                .frame(width: 40, height: 36)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .disabled(aus)
+        .opacity(aus ? 0.4 : 1)
+        .accessibilityLabel(label)
     }
 
     // MARK: - Handlungen
@@ -326,35 +294,85 @@ struct GetraenkeAnsicht: View {
 
 // MARK: - Der laufende Monat
 
-private struct Monatskarte: View {
+/// Eine Zeile wie die Abrechnung im Konto: Summe gross, Entnahmen klein; fuehrt zu "Zuletzt".
+private struct Monatszeile: View {
     let buchungen: [EigenesGetraenk]
     let jetzt: Date
 
     var body: some View {
         let summe = Geld.formatCents(Startseite.sumOpenDrinks(buchungen))
         let aktive = buchungen.filter { $0.voidedAt == nil }.count
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 8) {
-                Circle().fill(Farbe.blue).frame(width: 8, height: 8).accessibilityHidden(true)
-                Text(VereinLogik.monatKicker(jetzt)).kicker()
+        HStack(spacing: 12) {
+            IconKachel(symbol: "cup.and.saucer.fill")
+            VStack(alignment: .leading, spacing: 2) {
+                Text(VereinLogik.monatKicker(jetzt)).foregroundStyle(Farbe.ink)
+                Text(aktive == 1 ? "1 Entnahme" : "\(aktive) Entnahmen").font(.subheadline).foregroundStyle(Farbe.muted)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             Text(summe)
-                .font(Schrift.display(.fett, Tokens.Schrift.hero, relativeTo: .largeTitle))
-                .tracking(-1)
+                .font(.title2.weight(.bold))
                 .monospacedDigit()
                 .foregroundStyle(Farbe.ink)
-                .padding(.top, 6)
-                .accessibilityLabel("Summe diesen Monat: \(summe)")
-            Text(VereinLogik.entnahmenText(aktive))
-                .font(Schrift.text(.normal, 15))
-                .foregroundStyle(Farbe.ink2)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 6)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 22)
-        .padding(.vertical, 20)
-        .karte(radius: Tokens.Radius.karteGross, padding: nil)
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Summe diesen Monat: \(summe), \(VereinLogik.entnahmenText(aktive))")
+    }
+}
+
+/// Die Entnahmen des Monats; zuruecknehmen geht nur im Stornofenster.
+private struct ZuletztSeite: View {
+    let buchungen: [EigenesGetraenk]
+    let fenster: Int
+    let jetzt: Date
+    let laeuft: Bool
+    let markiert: Hervorhebung?
+    let zuruecknehmen: (String) -> Void
+
+    var body: some View {
+        List {
+            Section {
+                if buchungen.isEmpty {
+                    Text("Noch nichts entnommen.").foregroundStyle(Farbe.muted).gruppenZeile()
+                }
+                ForEach(buchungen) { zeile($0) }
+            } header: {
+                GruppenKopf(titel: "Zuletzt")
+            } footer: {
+                Text(VereinLogik.stornoHinweis(fenster)).foregroundStyle(Farbe.muted)
+            }
+        }
+        .gruppenListe()
+        .navigationTitle(Zeit.monatLang(jetzt))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func zeile(_ b: EigenesGetraenk) -> some View {
+        let zurueck = b.voidedAt != nil
+        let stornierbar = Getraenke.canVoidSelf(createdAt: b.createdAt, voidedAt: b.voidedAt, fensterMinuten: fenster, now: jetzt)
+        return HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(VereinLogik.entnahmeTitel(b)).foregroundStyle(Farbe.ink).strikethrough(zurueck)
+                Text(VereinLogik.entnahmeZeile(b)).font(.footnote).foregroundStyle(Farbe.muted)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if stornierbar {
+                Button("Zurücknehmen") { zuruecknehmen(b.id) }
+                    .buttonStyle(.borderless)
+                    .font(.subheadline.weight(.semibold))
+                    .tint(Farbe.blueInk)
+                    .disabled(laeuft)
+                    .accessibilityLabel("\(b.itemName ?? "") zurücknehmen")
+            }
+            Text(Geld.formatCents(b.totalCents ?? 0))
+                .font(.body.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(Farbe.ink)
+                .strikethrough(zurueck)
+        }
+        .opacity(zurueck ? 0.55 : 1)
+        .listRowBackground(markiert?.trifft(b.id) == true ? Farbe.blueSoft : Farbe.surf)
+        .listRowSeparatorTint(Farbe.line2)
     }
 }
 
@@ -371,10 +389,10 @@ private struct Korbleiste: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(VereinLogik.korbZeile(stueck: stueck, betrag: betrag))
-                    .font(Schrift.display(.fett, 15.5))
+                    .font(.headline)
                     .monospacedDigit()
                     .foregroundStyle(Farbe.ink)
-                Text("Noch nicht eingetragen").kicker()
+                Text("Noch nicht eingetragen").font(.footnote).foregroundStyle(Farbe.muted)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
@@ -385,8 +403,8 @@ private struct Korbleiste: View {
         .padding(.trailing, 8)
         .padding(.vertical, 8)
         .frame(minHeight: 68)
-        .background(Farbe.surf, in: RoundedRectangle(cornerRadius: 34))
-        .overlay(RoundedRectangle(cornerRadius: 34).strokeBorder(Farbe.line2, lineWidth: 1))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 34))
+        .overlay(RoundedRectangle(cornerRadius: 34).strokeBorder(Farbe.line2, lineWidth: 0.5))
         .shadow(color: .black.opacity(0.14), radius: 12, y: 8)
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }

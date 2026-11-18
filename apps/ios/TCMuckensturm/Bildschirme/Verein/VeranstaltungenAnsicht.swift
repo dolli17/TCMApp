@@ -20,57 +20,56 @@ struct VeranstaltungenAnsicht: View {
 
     var body: some View {
         let jetzt = Date()
-        let gruppen = Veranstaltungen.eventMonatsGruppen(events ?? [], now: jetzt, vergangen: vergangen)
-        ScrollView {
-            VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                VereinKopf()
-                if let fehler {
-                    // Ohne Inhalt der ganze Fehlerzustand, sonst die Zeile ueber dem alten Stand.
-                    if events == nil {
-                        Fehlerzustand(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
-                    } else {
-                        Fehlerzeile(text: fehler, laeuft: aktualisiert) { Task { await laden(.nachladen) } }
-                    }
-                }
-                if laedt && events == nil {
-                    ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)
-                } else if events != nil {
-                    if vergangen {
-                        Text("Vergangene Veranstaltungen")
-                            .font(Schrift.display(.halbfett, Tokens.Schrift.titel, relativeTo: .title2))
-                            .tracking(-0.2)
-                            .foregroundStyle(Farbe.ink)
-                            .accessibilityAddTraits(.isHeader)
-                    }
-                    if gruppen.isEmpty {
-                        Leerzustand(text: vergangen ? "Noch keine vergangenen Veranstaltungen." : "Gerade ist nichts geplant.")
-                    }
-                    ForEach(gruppen, id: \.schluessel) { g in
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(g.titel)
-                                .kicker()
-                                .accessibilityAddTraits(.isHeader)
-                            ForEach(g.events) { e in
-                                EventKarte(e: e, jetzt: jetzt) { zustand.pfad.append(e.id) }
-                            }
-                        }
-                        .padding(.bottom, Tokens.Abstand.s)
-                    }
-                    Button { vergangen.toggle() } label: {
-                        Text(vergangen ? "Kommende Veranstaltungen" : "Vergangene Veranstaltungen")
-                            .font(Schrift.display(.halbfett, 14))
-                            .foregroundStyle(Farbe.blueInk)
-                            .padding(.horizontal, 12)
-                            .frame(minHeight: 44)
-                    }
-                    .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity)
+        // Arbeitsdienste haben ihren eigenen Reiter.
+        let liste = (events ?? []).filter { $0.kind != "arbeitsdienst" }
+        let gruppen = Veranstaltungen.eventMonatsGruppen(liste, now: jetzt, vergangen: vergangen)
+        List {
+            VereinKopf()
+            if let fehler {
+                Section {
+                    FehlerZeile(text: fehler, erneut: Erneut(laeuft: aktualisiert) { Task { await laden(.nachladen) } })
+                        .gruppenZeile()
                 }
             }
-            .padding(.horizontal, Tokens.Abstand.rand)
-            .padding(.bottom, Tokens.Abstand.abschnitt * 2)
+            if laedt && events == nil {
+                Section {
+                    ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.vertical, 24)
+                }
+                .listRowBackground(Color.clear)
+            } else if events != nil {
+                if gruppen.isEmpty {
+                    Section {
+                        Text(vergangen ? "Noch keine vergangenen Veranstaltungen." : "Gerade ist nichts geplant.")
+                            .foregroundStyle(Farbe.muted)
+                            .gruppenZeile()
+                    }
+                }
+                ForEach(gruppen, id: \.schluessel) { g in
+                    Section {
+                        ForEach(g.events) { e in
+                            EventZeile(e: e, jetzt: jetzt) { zustand.pfad.append(e.id) }
+                        }
+                    } header: {
+                        GruppenKopf(titel: g.titel)
+                    }
+                }
+                Section {
+                    Button { vergangen.toggle() } label: {
+                        HStack {
+                            Text(vergangen ? "Kommende Veranstaltungen" : "Vergangene Veranstaltungen")
+                                .foregroundStyle(Farbe.blueInk)
+                            Spacer()
+                            ZeilenPfeil()
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .gruppenZeile()
+                }
+            }
         }
-        .background(Farbe.bg)
+        .gruppenListe()
+        .listSectionSpacing(20)
         .refreshable { await laden(.nachladen) }
         .task { await laden(.erstes) }
         // Zurueck aus dem Detail oder auf den Tab: still nachladen.

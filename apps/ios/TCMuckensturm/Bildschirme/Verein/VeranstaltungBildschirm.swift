@@ -1,19 +1,20 @@
 /**
  * Eine Veranstaltung (apps/mobile/app/(tabs)/verein/veranstaltung/[id].tsx)
  *
- * Weisser Grund (docs/design/stitch): Titel, Eckdaten mit Belegung als Zahl (keine Namen),
- * Beschreibung und darunter die eigene Anmeldung: mit Begleitpersonen und
- * Bemerkung anmelden, aendern, abmelden, Stand auf der Warteliste.
+ * Gestaltet wie Apples App Einladungen: oben gross Titel und Datum, darunter
+ * "Zum Kalender" und "Teilen", dann die Eckdaten als Zeilen mit Symbolen,
+ * die Beschreibung und der eigene Stand. Angemeldet wird ueber den Knopf
+ * unten; er oeffnet die Anmeldekarte (AnmeldeKarte) mit ✕ und ✓. Wer schon
+ * dabei ist, sieht oben gelb seinen Stand ("deins"), kann die Anmeldung
+ * aendern oder sich ueber ein Action Sheet abmelden.
  *
  * Ob es klappt, entscheiden die RPCs; die Knoepfe zeigen nur, was gerade
  * geht. Der Betrag kommt aus der eigenen Forderung (meine_forderung_* in
  * events_fuer_mitglied) - so steht hier dasselbe wie im Konto.
- *
- * Ist der grosse Titel im Kopf hinausgescrollt, steht er klein in der
- * Navigationsleiste (useKompakterTitel in der Expo-App). Die Leiste ist
- * neutral wie der Grund, der Zurueck-Knopf in blueInk.
  */
 
+import EventKit
+import EventKitUI
 import SwiftUI
 
 struct VeranstaltungBildschirm: View {
@@ -23,124 +24,229 @@ struct VeranstaltungBildschirm: View {
     @State private var fehler: String?
     @State private var laedt = true
     @State private var aktualisiert = false
-    /// Hier statt in der Anmeldung: die baut sich nach einer Aenderung neu auf, die Meldung bleibt.
     @State private var meldung: Ergebnis?
-    /// Der grosse Titel ist hinausgescrollt: dann steht er klein in der Leiste.
-    @State private var kompakt = false
-    /// Eingaben der Anmeldung; hier, weil die Hauptaktion unten fest steht und das Formular im Inhalt.
-    @State private var form = AnmeldeForm()
+    /// Die Anmeldekarte: neu anmelden oder die bestehende Anmeldung aendern.
+    @State private var karte: AnmeldeKarte.Art?
+    @State private var abmeldeFrage = false
+    @State private var laeuft = false
+    @State private var kalender = false
 
     var body: some View {
         let jetzt = Date()
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                Kopf(
-                    titel: detail?.event.title,
-                    marken: detail.map { VereinLogik.marken($0.event, now: jetzt) } ?? [],
-                    kompakt: $kompakt
-                )
-                VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                    if let fehler {
-                        Fehlerzeile(text: fehler, laeuft: aktualisiert) { Task { await laden(nachladen: true) } }
-                    }
-                    if laedt && detail == nil {
-                        ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)
-                    } else if let d = detail {
-                        inhalt(d, jetzt: jetzt)
-                    } else if fehler == nil {
-                        Text("Diese Veranstaltung gibt es nicht (mehr).").leise()
-                    }
+        List {
+            if let fehler {
+                Section {
+                    FehlerZeile(text: fehler, erneut: Erneut(laeuft: aktualisiert) { Task { await laden(nachladen: true) } })
+                        .gruppenZeile()
                 }
-                .padding(.horizontal, Tokens.Abstand.rand)
-                .padding(.top, Tokens.Abstand.rand)
-                .padding(.bottom, Tokens.Abstand.abschnitt * 2)
-                .tint(Farbe.blue)
+            }
+            if laedt && detail == nil {
+                Section {
+                    ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.vertical, 24)
+                }
+                .listRowBackground(Color.clear)
+            } else if let d = detail {
+                inhalt(d, jetzt: jetzt)
+            } else if fehler == nil {
+                Section {
+                    Text("Diese Veranstaltung gibt es nicht (mehr).").foregroundStyle(Farbe.muted).gruppenZeile()
+                }
             }
         }
-        .background(Farbe.bg)
+        .gruppenListe()
+        .listSectionSpacing(20)
         .refreshable { await laden(nachladen: true) }
-        // Die eine Hauptaktion steht unten fest (Entwurf "Veranstaltung Detail"); die Tab-Leiste weicht ihr.
+        // Die eine Hauptaktion steht unten fest; die Tab-Leiste weicht ihr.
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if let e = detail?.event, let text = hauptaktion(e, jetzt: jetzt) {
-                VStack(spacing: 10) {
-                    Hauptknopf(text: text, gesperrt: form.laeuft) { absenden(e) }
-                    if form.bearbeiten {
-                        LeiserKnopf(text: "Abbrechen") { form.bearbeiten = false }
-                    }
+            if let e = detail?.event, !VereinLogik.dabei(e), Veranstaltungen.eventAnmeldbar(e, now: jetzt) {
+                Button { meldung = nil; karte = .neu } label: {
+                    Text(Veranstaltungen.eventNurWarteliste(e, begleitpersonen: 0) ? "Auf die Warteliste" : "Anmelden")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, minHeight: 50)
                 }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .tint(Farbe.blue)
                 .padding(.horizontal, Tokens.Abstand.rand)
-                .padding(.top, 12)
+                .padding(.top, 10)
                 .padding(.bottom, 8)
-                .background(Farbe.bg)
-                .overlay(alignment: .top) { Farbe.line.frame(height: 1) }
+                .background(.bar)
             }
         }
         .toolbar(.hidden, for: .tabBar)
+        .navigationTitle(detail?.event.title ?? "")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            // Klein in der Leiste erst, wenn der grosse Titel hinausgescrollt ist.
-            ToolbarItem(placement: .principal) {
-                Text(detail?.event.title ?? "")
-                    .font(Schrift.display(.fett, 18))
-                    .foregroundStyle(Farbe.ink)
-                    .lineLimit(1)
-                    .opacity(kompakt ? 1 : 0)
-                    .accessibilityHidden(!kompakt)
-                    // Die Leiste misst den Titel nur beim Anlegen; ohne neue id bliebe er leer (Laden) bzw. versteckt.
-                    .id("\(detail?.event.title ?? "")-\(kompakt)")
+        .sheet(item: $karte) { art in
+            if let e = detail?.event {
+                AnmeldeKarte(e: e, art: art) { r in
+                    meldung = r
+                    Task { await laden(nachladen: false) }
+                }
             }
         }
-        .tint(Farbe.blueInk)
-        .toolbarBackground(Farbe.bg, for: .navigationBar)
+        .sheet(isPresented: $kalender) {
+            if let e = detail?.event { KalenderBlatt(e: e).ignoresSafeArea() }
+        }
+        .confirmationDialog(
+            detail.map { VereinLogik.abmeldenFrage($0.event, now: jetzt) } ?? "",
+            isPresented: $abmeldeFrage,
+            titleVisibility: .visible
+        ) {
+            if let e = detail?.event {
+                Button(Veranstaltungen.eventAbmeldenKnopf(e, now: jetzt), role: .destructive) { abmelden(e.id) }
+            }
+            Button("Abbrechen", role: .cancel) {}
+        }
+        .sensoryFeedback(trigger: meldung) { _, neu in
+            guard let neu else { return nil }
+            return neu.ok ? .success : .error
+        }
         .task { await laden(nachladen: false) }
+        #if DEBUG
+        // Fuer Bildschirmfotos per simctl (README): `-TCMAnmeldeKarte` oeffnet die Karte nach dem Laden.
+        .task(id: detail == nil) {
+            if detail != nil, ProcessInfo.processInfo.arguments.contains("-TCMAnmeldeKarte") {
+                try? await Task.sleep(for: .milliseconds(400))
+                karte = VereinLogik.dabei(detail!.event) ? .aendern : .neu
+            }
+        }
+        #endif
     }
 
     @ViewBuilder private func inhalt(_ d: VeranstaltungDetail, jetzt: Date) -> some View {
         let e = d.event
-        Eckdaten(e: e)
+        let dabei = VereinLogik.dabei(e)
+        Section {
+            Kopf(e: e, jetzt: jetzt)
+        }
+        .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+        .listRowBackground(Color.clear)
 
-        if let text = e.description, !text.isEmpty {
-            Text(text)
-                .font(Schrift.text(.normal, Tokens.Schrift.normal))
-                .foregroundStyle(Farbe.ink2)
-                .lineSpacing(5)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 2)
-                .padding(.vertical, 6)
+        Section {
+            HStack(spacing: 10) {
+                AktionsKachel(titel: "Zum Kalender", symbol: "calendar.badge.plus") { kalender = true }
+                ShareLink(item: VereinLogik.teilenText(e)) {
+                    AktionsKachelInhalt(titel: "Teilen", symbol: "square.and.arrow.up")
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .listRowInsets(EdgeInsets())
+        .listRowBackground(Color.clear)
+
+        if let meldung {
+            Section {
+                Label(meldung.meldung, systemImage: meldung.ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .foregroundStyle(meldung.ok ? Farbe.greenInk : Farbe.redInk)
+                    .gruppenZeile()
+                    .onAppear { UIAccessibility.post(notification: .announcement, argument: meldung.meldung) }
+            }
         }
 
-        AnmeldungKarte(detail: d, form: form, meldung: $meldung, tue: tue)
-    }
-
-    /// Text der Hauptaktion unten - nil, wenn es gerade nichts abzuschicken gibt.
-    private func hauptaktion(_ e: MitgliedEvent, jetzt: Date) -> String? {
-        if VereinLogik.dabei(e) {
-            return form.bearbeiten ? VereinLogik.aenderungKnopf(e, begleitpersonen: form.begleitung) : nil
+        if dabei {
+            meinStand(d, jetzt: jetzt)
         }
-        return Veranstaltungen.eventAnmeldbar(e, now: jetzt)
-            ? Veranstaltungen.eventAnmeldenKnopf(e, begleitpersonen: form.begleitung) : nil
+
+        Section {
+            Eckdaten(e: e)
+        } header: {
+            GruppenKopf(titel: "Details")
+        }
+
+        if let text = Platzplan.nichtLeer(e.description) {
+            Section {
+                Text(text)
+                    .foregroundStyle(Farbe.ink2)
+                    .lineSpacing(3)
+                    .padding(.vertical, 4)
+                    .gruppenZeile()
+            } header: {
+                GruppenKopf(titel: "Beschreibung")
+            }
+        }
+
+        if !dabei && !Veranstaltungen.eventAnmeldbar(e, now: jetzt) {
+            Section {
+                Text(VereinLogik.nichtsZuTun(e, now: jetzt)).foregroundStyle(Farbe.muted).gruppenZeile()
+            }
+        } else if !dabei, let gebuehr = Veranstaltungen.eventGebuehrHinweis(e) {
+            Section {} footer: { Text(gebuehr).foregroundStyle(Farbe.muted) }
+        }
     }
 
-    private func absenden(_ e: MitgliedEvent) {
-        let (b, text, aendern) = (form.begleitung, form.bemerkung, form.bearbeiten)
-        tue({ aendern
-            ? await $0.aendereAnmeldung(e.id, begleitpersonen: b, bemerkung: text)
-            : await $0.meldeAn(e.id, begleitpersonen: b, bemerkung: text)
-        }) {}
+    // MARK: - Der eigene Stand
+
+    @ViewBuilder private func meinStand(_ d: VeranstaltungDetail, jetzt: Date) -> some View {
+        let e = d.event
+        let wartet = e.meinStatus == "waitlisted"
+        let aendern = Veranstaltungen.eventAenderbar(e, now: jetzt)
+        let abmelden = Veranstaltungen.eventAbmeldbar(e, now: jetzt)
+        Section {
+            HStack(spacing: 12) {
+                Image(systemName: wartet ? "hourglass" : "checkmark")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(wartet ? Farbe.ink2 : Farbe.onGold)
+                    .frame(width: 32, height: 32)
+                    // Gelb heisst "deins": die eigene Anmeldung.
+                    .background(wartet ? Farbe.surf3 : Farbe.gold, in: Circle())
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(wartet ? "Du stehst auf der Warteliste" : "Du bist angemeldet")
+                        .font(.headline)
+                        .foregroundStyle(Farbe.ink)
+                    Text(standText(e, wartet: wartet)).font(.subheadline).foregroundStyle(Farbe.ink2)
+                }
+            }
+            .padding(.vertical, 4)
+            .gruppenZeile()
+            .accessibilityElement(children: .combine)
+            if wartet {
+                Text(Veranstaltungen.eventWartelisteText(platz: d.wartePlatz, laenge: e.warteliste ?? 0))
+                    .font(.subheadline)
+                    .foregroundStyle(Farbe.muted)
+                    .gruppenZeile()
+            }
+            if let b = Platzplan.nichtLeer(e.meineBemerkung) {
+                LabeledContent("Bemerkung") { Text(b).foregroundStyle(Farbe.ink2) }
+                    .gruppenZeile()
+            }
+            if aendern {
+                Button("Anmeldung ändern") { meldung = nil; karte = .aendern }
+                    .foregroundStyle(Farbe.blueInk)
+                    .gruppenZeile()
+            }
+            if abmelden {
+                Button(role: .destructive) { abmeldeFrage = true } label: {
+                    HStack {
+                        Text(Veranstaltungen.eventAbmeldenKnopf(e, now: jetzt))
+                        if laeuft { Spacer(); ProgressView() }
+                    }
+                }
+                .disabled(laeuft)
+                .gruppenZeile()
+            }
+        } header: {
+            GruppenKopf(titel: "Deine Anmeldung")
+        }
     }
 
-    private func tue(_ arbeit: @escaping (Vereinsdaten) async -> Ergebnis, danach: @escaping () -> Void) {
+    /// "Du + 1 Begleitperson · 36,00 € offen"
+    private func standText(_ e: MitgliedEvent, wartet: Bool) -> String {
+        let personen = Veranstaltungen.eventPersonenText(e.meineBegleitpersonen ?? 0)
+        guard !wartet, let cents = e.meineForderungCents else { return personen }
+        return "\(personen) · \(Geld.formatCents(cents)) \(VereinLogik.forderungText(status: e.meineForderungStatus))"
+    }
+
+    // MARK: - Handlungen
+
+    private func abmelden(_ id: String) {
         let daten = Vereinsdaten(client: sitzung.client)
         Task {
-            form.laeuft = true
-            let r = await arbeit(daten)
-            form.laeuft = false
+            laeuft = true
+            let r = await daten.meldeAb(id)
+            laeuft = false
             meldung = r
-            if r.ok {
-                danach()
-                await laden(nachladen: false)
-            }
+            if r.ok { await laden(nachladen: false) }
         }
     }
 
@@ -149,8 +255,6 @@ struct VeranstaltungBildschirm: View {
         do {
             detail = try await Vereinsdaten(client: sitzung.client).veranstaltung(id)
             fehler = nil
-            // Aendert sich der eigene Stand, startet das Formular mit dem neuen Stand.
-            if let e = detail?.event { form.uebernimm(e) }
         } catch {
             fehler = Meldung.aus(error).text
         }
@@ -161,385 +265,372 @@ struct VeranstaltungBildschirm: View {
 
 // MARK: - Kopf
 
-/// Der grosse Titel unter der Navigationsleiste.
+/// Gross Titel und Datum wie in Einladungen; darueber klein die Art, bei Absage rot.
 private struct Kopf: View {
-    let titel: String?
-    var marken: [MeineMarke] = []
-    @Binding var kompakt: Bool
-    /// Wo der Titel ohne Scrollen steht - Bezug fuer `kompakt`.
-    @State private var basis: CGFloat?
+    let e: MitgliedEvent
+    let jetzt: Date
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // Die Art steht als Marke ueber dem Titel.
-            if !marken.isEmpty {
-                HStack(spacing: 6) {
-                    ForEach(marken, id: \.text) { MarkeKlein(text: $0.text, ton: $0.ton) }
+        let abgesagt = e.status == "cancelled"
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Text(Veranstaltungen.kindLabel[e.kind ?? ""] ?? "Veranstaltung")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Farbe.blueInk)
+                if abgesagt {
+                    Text("· Abgesagt").font(.subheadline.weight(.semibold)).foregroundStyle(Farbe.redInk)
+                } else if Veranstaltungen.eventVorbei(e, now: jetzt) {
+                    Text("· Vorbei").font(.subheadline.weight(.semibold)).foregroundStyle(Farbe.muted)
                 }
             }
-            Text(titel ?? " ")
-                .font(Schrift.display(.fett, 30, relativeTo: .largeTitle))
-                .tracking(Tokens.Schrift.laufweiteTitel)
+            Text(e.title ?? "")
+                .font(.largeTitle.weight(.bold))
                 .foregroundStyle(Farbe.ink)
+                .strikethrough(abgesagt)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
+            Text(Veranstaltungen.eventZeitText(startsAt: e.startsAt, endsAt: e.endsAt))
+                .font(.title3)
+                .foregroundStyle(Farbe.ink2)
         }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, Tokens.Abstand.rand)
-            .padding(.top, 6)
-            .padding(.bottom, 4)
-            .onGeometryChange(for: CGRect.self) { $0.frame(in: .scrollView) } action: { rahmen in
-                let start = basis ?? rahmen.minY
-                if basis == nil { basis = start }
-                // Kompakt, sobald der Kopf zu zwei Dritteln unter der Leiste liegt.
-                kompakt = start - rahmen.minY > rahmen.height * 2 / 3
-            }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Zwei gleich breite Kacheln unter dem Kopf, wie die Aktionsreihe der Buchungskarte.
+private struct AktionsKachel: View {
+    let titel: String
+    let symbol: String
+    let aktion: () -> Void
+
+    var body: some View {
+        Button(action: aktion) { AktionsKachelInhalt(titel: titel, symbol: symbol) }
+            .buttonStyle(.plain)
+    }
+}
+
+private struct AktionsKachelInhalt: View {
+    let titel: String
+    let symbol: String
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Image(systemName: symbol).font(.title3).frame(height: 26)
+            Text(titel).font(.footnote.weight(.semibold))
+        }
+        .foregroundStyle(Farbe.blueInk)
+        .frame(maxWidth: .infinity, minHeight: 64)
+        .background(Farbe.surf, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .contentShape(Rectangle())
     }
 }
 
 // MARK: - Eckdaten
 
-/// Die Eckdaten als Zeilen mit Linie: links das Etikett, rechts der Wert (Entwurf "Veranstaltung Detail").
+/// Die Eckdaten als Zeilen mit Symbol-Kachel, wie in Einladungen und Kalender.
 private struct Eckdaten: View {
     let e: MitgliedEvent
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Eckdatum(label: "Wann", wert: Veranstaltungen.eventZeitText(startsAt: e.startsAt, endsAt: e.endsAt), fett: true)
-            if let ort = e.location, !ort.isEmpty {
-                KontoLinie()
-                Eckdatum(label: "Ort", wert: ort)
-            }
-            if let fee = e.feeCents, fee != 0 {
-                KontoLinie()
-                Eckdatum(label: "Preis", wert: "\(Geld.formatCents(fee)) pro Person", klein: VereinLogik.preisHinweis(e), fett: true)
-            }
-            if e.kind == "arbeitsdienst", let h = e.workHours {
-                KontoLinie()
-                Eckdatum(
-                    label: "Stunden",
-                    wert: "\(Veranstaltungen.stundenText(h)) Std. Arbeitsdienst",
-                    klein: "Werden nach dem Termin für alle Anwesenden gutgeschrieben."
-                )
-            }
-            if e.registrationEnabled == true {
-                KontoLinie()
-                Eckdatum(
-                    label: "Anmeldeschluss",
-                    wert: Veranstaltungen.eventTagKurz(Veranstaltungen.eventSchluss(e)),
-                    klein: (e.feeCents ?? 0) != 0 ? "Wer sich danach abmeldet, zahlt trotzdem." : nil
-                )
-                KontoLinie()
-                Eckdatum(label: "Belegung", wert: Veranstaltungen.eventBelegungText(e), fett: true) {
-                    if let anteil = Veranstaltungen.eventBelegungAnteil(e) {
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                Capsule().fill(Farbe.surf2)
-                                Capsule().fill(Farbe.blue).frame(width: geo.size.width * anteil)
-                            }
-                        }
-                        .frame(height: 6)
-                        .padding(.top, 12)
-                        .accessibilityHidden(true)
+        if let ort = Platzplan.nichtLeer(e.location) {
+            let url = URL(string: "maps://?q=\(ort.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")
+            if let url {
+                Link(destination: url) {
+                    HStack {
+                        Zeile.inhalt(symbol: "map.fill", farbe: Farbe.blue, titel: ort, zusatz: "In Karten öffnen")
+                        ZeilenPfeil()
                     }
                 }
+                .buttonStyle(.plain)
+                .gruppenZeile()
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .karte(padding: 0)
+        if let fee = e.feeCents, fee != 0 {
+            Zeile(symbol: "eurosign", farbe: Farbe.gold, titel: "\(Geld.formatCents(fee)) pro Person", zusatz: VereinLogik.preisHinweis(e))
+        }
+        if e.kind == "arbeitsdienst", let h = e.workHours {
+            Zeile(
+                symbol: "wrench.and.screwdriver.fill", farbe: Farbe.blue,
+                titel: "\(Veranstaltungen.stundenText(h)) h Arbeitsdienst",
+                zusatz: "Werden nach dem Termin für alle Anwesenden gutgeschrieben."
+            )
+        }
+        if e.registrationEnabled == true {
+            Zeile(
+                symbol: "hourglass", farbe: Farbe.muted,
+                titel: "Anmeldung bis \(Veranstaltungen.eventTagKurz(Veranstaltungen.eventSchluss(e)))",
+                zusatz: (e.feeCents ?? 0) != 0 ? "Wer sich danach abmeldet, zahlt trotzdem." : nil
+            )
+            VStack(alignment: .leading, spacing: 8) {
+                Zeile.inhalt(symbol: "person.2.fill", farbe: Farbe.blue, titel: Veranstaltungen.eventBelegungText(e), zusatz: nil)
+                if let anteil = Veranstaltungen.eventBelegungAnteil(e) {
+                    ProgressView(value: anteil).tint(Farbe.blue).padding(.leading, 41).accessibilityHidden(true)
+                }
+            }
+            .gruppenZeile()
+        }
+    }
+
+    private struct Zeile: View {
+        let symbol: String
+        let farbe: Color
+        let titel: String
+        var zusatz: String?
+
+        var body: some View {
+            Self.inhalt(symbol: symbol, farbe: farbe, titel: titel, zusatz: zusatz).gruppenZeile()
+        }
+
+        static func inhalt(symbol: String, farbe: Color, titel: String, zusatz: String?) -> some View {
+            HStack(spacing: 12) {
+                IconKachel(symbol: symbol, farbe: farbe)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(titel).foregroundStyle(Farbe.ink).fixedSize(horizontal: false, vertical: true)
+                    if let zusatz {
+                        Text(zusatz).font(.footnote).foregroundStyle(Farbe.muted).fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.vertical, 2)
+            .accessibilityElement(children: .combine)
+        }
     }
 }
 
-private struct Eckdatum<Zusatz: View>: View {
-    @Environment(\.dynamicTypeSize) private var textgroesse
-    let label: String
-    let wert: String
-    var klein: String?
-    var fett = false
-    @ViewBuilder var zusatz: Zusatz
+// MARK: - Die Anmeldekarte
+
+/**
+ * Anmelden oder die Anmeldung aendern - eine Karte wie die Buchungskarte:
+ * ✕ links schliesst, ✓ rechts schickt ab. Begleitpersonen als Kapsel
+ * "− n +", die Bemerkung als Feld. Schlaegt es fehl, bleibt die Karte offen
+ * und zeigt den Grund; klappt es, schliesst sie und die Seite zeigt die Meldung.
+ */
+struct AnmeldeKarte: View {
+    enum Art: String, Identifiable {
+        case neu, aendern
+        var id: String { rawValue }
+    }
+
+    @Environment(Sitzung.self) private var sitzung
+    @Environment(\.dismiss) private var schliessen
+    let e: MitgliedEvent
+    let art: Art
+    let fertig: (Ergebnis) -> Void
+
+    @State private var begleitung = 0
+    @State private var bemerkung = ""
+    @State private var fehler: String?
+    @State private var laeuft = false
+    @State private var verwerfen = false
+    @FocusState private var feld: Bool
+
+    static let maxBegleitung = 20
+
+    private var geaendert: Bool {
+        art == .neu
+            ? begleitung != 0 || !bemerkung.isEmpty
+            : begleitung != (e.meineBegleitpersonen ?? 0) || bemerkung != (e.meineBemerkung ?? "")
+    }
 
     var body: some View {
-        // Bei grosser Schrift steht das Etikett ueber dem Wert.
-        let gross = textgroesse >= .xxLarge
-        let layout = gross
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
-            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 16))
-        VStack(alignment: .leading, spacing: 0) {
-            layout {
-                Text(label).kicker()
-                VStack(alignment: gross ? .leading : .trailing, spacing: 3) {
-                    Text(wert)
-                        .font(Schrift.text(fett ? .fett : .normal, Tokens.Schrift.normal))
-                        .foregroundStyle(Farbe.ink)
-                        .multilineTextAlignment(gross ? .leading : .trailing)
-                        .fixedSize(horizontal: false, vertical: true)
-                    if let klein {
-                        Text(klein)
-                            .font(Schrift.text(.normal, 13))
-                            .foregroundStyle(Farbe.muted)
-                            .multilineTextAlignment(gross ? .leading : .trailing)
-                            .lineSpacing(3)
-                            .fixedSize(horizontal: false, vertical: true)
+        NavigationStack {
+            List {
+                Section {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(e.title ?? "").font(.title2.weight(.bold)).foregroundStyle(Farbe.ink)
+                        Text(Veranstaltungen.eventZeitText(startsAt: e.startsAt, endsAt: e.endsAt))
+                            .font(.subheadline)
+                            .foregroundStyle(Farbe.ink2)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
+                .listRowBackground(Color.clear)
+
+                if let fehler {
+                    Section {
+                        Label(fehler, systemImage: "exclamationmark.triangle.fill").foregroundStyle(Farbe.redInk).gruppenZeile()
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: gross ? .leading : .trailing)
+
+                Section {
+                    PersonZeile(text: "Du", zusatz: "meldest dich an")
+                    if e.companionsAllowed == true {
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Begleitpersonen").foregroundStyle(Farbe.ink)
+                                Text(VereinLogik.begleitHinweis(e)).font(.footnote).foregroundStyle(Farbe.muted)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            HStack(spacing: 0) {
+                                knopf("minus", "Eine Begleitperson weniger", aus: begleitung <= 0) { begleitung -= 1 }
+                                Text("\(begleitung)")
+                                    .font(.body.weight(.semibold))
+                                    .monospacedDigit()
+                                    .foregroundStyle(Farbe.blueInk)
+                                    .frame(minWidth: 22)
+                                    .accessibilityLabel("\(begleitung) \(begleitung == 1 ? "Begleitperson" : "Begleitpersonen")")
+                                knopf("plus", "Eine Begleitperson mehr", aus: begleitung >= Self.maxBegleitung) { begleitung += 1 }
+                            }
+                            .background(Farbe.blueSoft, in: Capsule())
+                        }
+                        .gruppenZeile()
+                        .sensoryFeedback(.selection, trigger: begleitung)
+                    }
+                } header: {
+                    GruppenKopf(titel: "Wer kommt")
+                } footer: {
+                    if art == .neu && Veranstaltungen.eventNurWarteliste(e, begleitpersonen: begleitung) {
+                        Text(VereinLogik.wartelisteVorab(begleitpersonen: begleitung)).foregroundStyle(Farbe.muted)
+                    }
+                }
+
+                Section {
+                    TextField("z. B. vegetarisch", text: $bemerkung, axis: .vertical)
+                        .lineLimit(1...4)
+                        .focused($feld)
+                        .foregroundStyle(Farbe.ink)
+                        .accessibilityLabel("Bemerkung")
+                        .gruppenZeile()
+                        .onChange(of: bemerkung) { _, neu in
+                            if neu.count > 500 { bemerkung = String(neu.prefix(500)) }
+                        }
+                } header: {
+                    GruppenKopf(titel: "Bemerkung")
+                } footer: {
+                    if let fee = e.feeCents, fee != 0 {
+                        let summe = Geld.formatCents(Veranstaltungen.eventGebuehrCents(fee, begleitpersonen: begleitung))
+                        Text("\(summe) für \(begleitung + 1) \(begleitung == 0 ? "Person" : "Personen"). "
+                            + (Veranstaltungen.eventGebuehrHinweis(e) ?? ""))
+                            .foregroundStyle(Farbe.muted)
+                    }
+                }
             }
-            zusatz
+            .gruppenListe()
+            .listSectionSpacing(20)
+            .navigationTitle(art == .neu ? "Anmelden" : "Anmeldung ändern")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { geaendert ? (verwerfen = true) : schliessen() } label: { Image(systemName: "xmark") }
+                        .accessibilityLabel("Schließen")
+                        .confirmationDialog("Änderungen verwerfen?", isPresented: $verwerfen, titleVisibility: .visible) {
+                            Button("Verwerfen", role: .destructive) { schliessen() }
+                            Button("Weiter bearbeiten", role: .cancel) {}
+                        }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    if laeuft {
+                        ProgressView()
+                    } else {
+                        Button { absenden() } label: { Image(systemName: "checkmark") }
+                            .disabled(art == .aendern && !geaendert)
+                            .accessibilityLabel(
+                                art == .neu ? Veranstaltungen.eventAnmeldenKnopf(e, begleitpersonen: begleitung) : "Änderung speichern"
+                            )
+                    }
+                }
+            }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .tint(Farbe.blue)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .interactiveDismissDisabled(geaendert || laeuft)
+        .onAppear {
+            if art == .aendern {
+                begleitung = e.meineBegleitpersonen ?? 0
+                bemerkung = e.meineBemerkung ?? ""
+            }
+        }
+    }
+
+    private func knopf(_ symbol: String, _ label: String, aus: Bool, aktion: @escaping () -> Void) -> some View {
+        Button(action: aktion) {
+            Image(systemName: symbol)
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(Farbe.blueInk)
+                .frame(width: 40, height: 36)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .disabled(aus)
+        .opacity(aus ? 0.4 : 1)
+        .accessibilityLabel(label)
+    }
+
+    private func absenden() {
+        let daten = Vereinsdaten(client: sitzung.client)
+        let (b, text, id) = (begleitung, bemerkung, e.id)
+        feld = false
+        Task {
+            laeuft = true
+            let r = art == .neu
+                ? await daten.meldeAn(id, begleitpersonen: b, bemerkung: text)
+                : await daten.aendereAnmeldung(id, begleitpersonen: b, bemerkung: text)
+            laeuft = false
+            if r.ok {
+                fertig(r)
+                schliessen()
+            } else {
+                fehler = r.meldung
+            }
+        }
+    }
+}
+
+/// "Du · meldest dich an" mit Initialen-Kreis in Gelb ("deins").
+private struct PersonZeile: View {
+    let text: String
+    let zusatz: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "person.fill")
+                .font(.subheadline)
+                .foregroundStyle(Farbe.onGold)
+                .frame(width: 32, height: 32)
+                .background(Farbe.gold, in: Circle())
+                .accessibilityHidden(true)
+            Text(text).foregroundStyle(Farbe.ink)
+            Spacer()
+            Text(zusatz).font(.subheadline).foregroundStyle(Farbe.muted)
+        }
+        .gruppenZeile()
         .accessibilityElement(children: .combine)
     }
 }
 
-extension Eckdatum where Zusatz == EmptyView {
-    init(label: String, wert: String, klein: String? = nil, fett: Bool = false) {
-        self.init(label: label, wert: wert, klein: klein, fett: fett) { EmptyView() }
-    }
-}
+// MARK: - Kalender
 
-// MARK: - Die eigene Anmeldung
+/// Apples Fenster "Neues Ereignis", vorausgefuellt. Braucht keinen Kalenderzugriff:
+/// das Fenster laeuft ausserhalb der App, gespeichert wird erst, wenn man "Hinzufügen" tippt.
+private struct KalenderBlatt: UIViewControllerRepresentable {
+    let e: MitgliedEvent
 
-/// Die Eingaben der Anmeldung. Das Formular steht im Inhalt, die Hauptaktion unten fest - beide teilen sich das.
-@MainActor @Observable
-final class AnmeldeForm {
-    var begleitung = 0
-    var bemerkung = ""
-    var bearbeiten = false
-    var frage = false
-    var laeuft = false
-    private var stand: String?
-
-    /// Setzt die Eingaben zurueck, sobald sich der eigene Stand geaendert hat.
-    func uebernimm(_ e: MitgliedEvent) {
-        let neu = "\(e.meinStatus ?? "")-\(e.meineBegleitpersonen ?? 0)-\(e.meineBemerkung ?? "")-\(e.status ?? "")"
-        guard neu != stand else { return }
-        stand = neu
-        let dabei = VereinLogik.dabei(e)
-        begleitung = dabei ? e.meineBegleitpersonen ?? 0 : 0
-        bemerkung = dabei ? e.meineBemerkung ?? "" : ""
-        bearbeiten = false
-        frage = false
-    }
-}
-
-private struct AnmeldungKarte: View {
-    let detail: VeranstaltungDetail
-    @Bindable var form: AnmeldeForm
-    @Binding var meldung: Ergebnis?
-    let tue: (@escaping (Vereinsdaten) async -> Ergebnis, @escaping () -> Void) -> Void
-
-    static let maxBegleitung = 20
-
-    private var e: MitgliedEvent { detail.event }
-
-    var body: some View {
-        let jetzt = Date()
-        if VereinLogik.dabei(e) {
-            dabeiKarte(jetzt: jetzt)
-        } else if Veranstaltungen.eventAnmeldbar(e, now: jetzt) {
-            VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                titel("Anmelden")
-                hinweis
-                formular(aendern: false)
-                if let gebuehr = Veranstaltungen.eventGebuehrHinweis(e) {
-                    Text(gebuehr)
-                        .font(Schrift.text(.normal, 13))
-                        .foregroundStyle(Farbe.muted)
-                        .lineSpacing(4)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 4)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .karte(padding: 20)
-        } else {
-            VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                hinweis
-                Text(VereinLogik.nichtsZuTun(e, now: jetzt)).leise()
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .karte(padding: 20)
-        }
+    func makeUIViewController(context: Context) -> EKEventEditViewController {
+        let store = EKEventStore()
+        let ereignis = EKEvent(eventStore: store)
+        ereignis.title = e.title
+        ereignis.location = e.location
+        ereignis.notes = e.description
+        let beginn = Zeit.datum(e.startsAt) ?? Date()
+        ereignis.startDate = beginn
+        ereignis.endDate = e.endsAt.flatMap(Zeit.datum) ?? beginn.addingTimeInterval(2 * 3600)
+        let vc = EKEventEditViewController()
+        vc.eventStore = store
+        vc.event = ereignis
+        vc.editViewDelegate = context.coordinator
+        return vc
     }
 
-    // MARK: Schon dabei
+    func updateUIViewController(_ vc: EKEventEditViewController, context: Context) {}
 
-    private func dabeiKarte(jetzt: Date) -> some View {
-        let wartet = e.meinStatus == "waitlisted"
-        let aendern = Veranstaltungen.eventAenderbar(e, now: jetzt)
-        let abmelden = Veranstaltungen.eventAbmeldbar(e, now: jetzt)
-        return VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .center, spacing: 14) {
-                if !wartet {
-                    // Gelb heisst "deins": die eigene Anmeldung.
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(Farbe.onGold)
-                        .frame(width: 40, height: 40)
-                        .background(Farbe.gold, in: Circle())
-                        .accessibilityHidden(true)
-                }
-                VStack(alignment: .leading, spacing: 3) {
-                    titel(wartet ? "Du stehst auf der Warteliste" : "Du bist angemeldet")
-                    if !form.bearbeiten {
-                        Text(stand(wartet: wartet))
-                            .font(Schrift.text(.fett, Tokens.Schrift.normal))
-                            .foregroundStyle(Farbe.ink)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-            hinweis
-            if form.bearbeiten {
-                formular(aendern: true)
-            } else {
-                if wartet {
-                    Text(Veranstaltungen.eventWartelisteText(platz: detail.wartePlatz, laenge: e.warteliste ?? 0))
-                        .leise()
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                if let b = e.meineBemerkung, !b.isEmpty {
-                    Farbe.line2.frame(height: 1)
-                    Text("Bemerkung: \(b)").leise().fixedSize(horizontal: false, vertical: true)
-                }
-                if form.frage {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(VereinLogik.abmeldenFrage(e, now: jetzt))
-                            .font(Schrift.text(.halbfett, Tokens.Schrift.normal))
-                            .foregroundStyle(Farbe.ink)
-                            .fixedSize(horizontal: false, vertical: true)
-                        // Rot gefuellt nur als Bestaetigung, daneben der neutrale Weg zurueck.
-                        HStack(spacing: 10) {
-                            Knopf("Ja, abmelden", stufe: .gefahr, breit: true, eng: true, gesperrt: form.laeuft) {
-                                tue({ [id = e.id] in await $0.meldeAb(id) }) { form.frage = false }
-                            }
-                            Knopf("Nein", stufe: .leise, eng: true) { form.frage = false }
-                        }
-                    }
-                } else if aendern || abmelden {
-                    // Aendern als Pille, Abmelden als roter Verweis daneben.
-                    let knoepfe = Group {
-                        if aendern {
-                            Knopf("Anmeldung ändern") {
-                                meldung = nil
-                                form.bearbeiten = true
-                            }
-                        }
-                        if abmelden {
-                            Button { form.frage = true } label: {
-                                Text(Veranstaltungen.eventAbmeldenKnopf(e, now: jetzt))
-                                    .font(Schrift.display(.halbfett, 16))
-                                    .foregroundStyle(Farbe.redInk)
-                                    .multilineTextAlignment(.leading)
-                                    .padding(.horizontal, 8)
-                                    .frame(minHeight: 44)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    ViewThatFits(in: .horizontal) {
-                        HStack(spacing: 12) { knoepfe }
-                        VStack(alignment: .leading, spacing: 6) { knoepfe }
-                    }
-                    .padding(.top, 2)
-                }
-            }
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(wartet ? Farbe.surf2 : Farbe.blueSoft, in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
-        .overlay(
-            RoundedRectangle(cornerRadius: Tokens.Radius.karte)
-                .strokeBorder(wartet ? Farbe.line2 : Farbe.blue.opacity(0.22), lineWidth: 1)
-        )
-    }
+    func makeCoordinator() -> Koordinator { Koordinator() }
 
-    /// "2 Personen · 36,00 € offen" - unter dem Titel der Karte
-    private func stand(wartet: Bool) -> String {
-        let personen = Veranstaltungen.eventPersonenText(e.meineBegleitpersonen ?? 0)
-        guard !wartet, let cents = e.meineForderungCents else { return personen }
-        return "\(personen) · \(Geld.formatCents(cents)) \(VereinLogik.forderungText(status: e.meineForderungStatus))"
-    }
-
-    // MARK: Formular
-
-    /// Begleitpersonen und Bemerkung; abgeschickt wird mit der Hauptaktion unten am Bildschirm.
-    private func formular(aendern: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 18) {
-            if e.companionsAllowed == true {
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Begleitpersonen")
-                            .font(Schrift.text(.normal, 17))
-                            .foregroundStyle(Farbe.ink)
-                        Text(VereinLogik.begleitHinweis(e)).leise()
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    HStack(spacing: 4) {
-                        Zaehlknopf(zeichen: .minus, beschriftung: "Eine Begleitperson weniger", aus: form.begleitung <= 0) {
-                            form.begleitung = max(0, form.begleitung - 1)
-                        }
-                        Zaehlerstand(
-                            wert: form.begleitung,
-                            label: "\(form.begleitung) \(form.begleitung == 1 ? "Begleitperson" : "Begleitpersonen")"
-                        )
-                        Zaehlknopf(
-                            zeichen: .plus, betont: form.begleitung > 0, beschriftung: "Eine Begleitperson mehr",
-                            aus: form.begleitung >= Self.maxBegleitung
-                        ) {
-                            form.begleitung = min(Self.maxBegleitung, form.begleitung + 1)
-                        }
-                    }
-                }
-            }
-            Bemerkungsfeld(text: $form.bemerkung)
-            if !aendern && Veranstaltungen.eventNurWarteliste(e, begleitpersonen: form.begleitung) {
-                Text(VereinLogik.wartelisteVorab(begleitpersonen: form.begleitung))
-                    .leise()
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-    }
-
-    // MARK: Bausteine
-
-    private func titel(_ text: String) -> some View {
-        Text(text)
-            .font(Schrift.display(.fett, Tokens.Schrift.titel, relativeTo: .title2))
-            .tracking(-0.2)
-            .foregroundStyle(Farbe.ink)
-            .fixedSize(horizontal: false, vertical: true)
-            .accessibilityAddTraits(.isHeader)
-    }
-
-    @ViewBuilder private var hinweis: some View {
-        if let meldung {
-            KontoHinweis(text: meldung.meldung, ok: meldung.ok)
-                .onAppear { UIAccessibility.post(notification: .announcement, argument: meldung.meldung) }
-        }
-    }
-}
-
-/// Die Bemerkung zur Anmeldung (stil.feldLabel, stil.feld), hoechstens 500 Zeichen.
-private struct Bemerkungsfeld: View {
-    @Binding var text: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text("Bemerkung").kicker().accessibilityHidden(true)
-            TextField("", text: $text, prompt: Text("z. B. vegetarisch").foregroundStyle(Farbe.muted))
-                .font(Schrift.text(.normal, Tokens.Schrift.normal))
-                .foregroundStyle(Farbe.ink)
-                .padding(.horizontal, 20)
-                .frame(minHeight: 52)
-                .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
-                .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.feld).strokeBorder(Farbe.line2, lineWidth: 1))
-                .accessibilityLabel("Bemerkung")
-                .onChange(of: text) { _, neu in
-                    if neu.count > 500 { text = String(neu.prefix(500)) }
-                }
+    final class Koordinator: NSObject, EKEventEditViewDelegate {
+        func eventEditViewController(_ controller: EKEventEditViewController, didCompleteWith action: EKEventEditViewAction) {
+            controller.dismiss(animated: true)
         }
     }
 }

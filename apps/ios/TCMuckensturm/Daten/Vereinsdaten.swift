@@ -33,6 +33,22 @@ struct Getraenk: Decodable, Equatable, Identifiable, Sendable, Korbartikel {
     }
 }
 
+/// Eine Zeile aus my_work_duty_entries: geleistete Stunden, bestaetigt oder noch offen.
+struct ArbeitsdienstEintrag: Decodable, Equatable, Identifiable, Sendable {
+    let id: String
+    let hours: Double?
+    let workedOn: String?
+    let description: String?
+    let bestaetigt: Bool?
+    let erfasstVon: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, hours, description, bestaetigt
+        case workedOn = "worked_on"
+        case erfasstVon = "erfasst_von"
+    }
+}
+
 /// Eine Veranstaltung im Detail mit dem eigenen Platz auf der Warteliste.
 struct VeranstaltungDetail: Equatable, Sendable {
     let event: MitgliedEvent
@@ -101,6 +117,17 @@ struct Vereinsdaten: Sendable {
                 .execute()
             return "Zurückgenommen."
         }
+    }
+
+    // MARK: Arbeitsdienst
+
+    /// Die eigenen Eintraege eines Jahres, die neuesten zuerst.
+    func arbeitsdienstEintraege(jahr: Int) async throws -> [ArbeitsdienstEintrag] {
+        try await uebersetzt { try await client.rpc("my_work_duty_entries", params: ["p_year": jahr]).execute().value }
+    }
+
+    func arbeitsdienst() async throws -> Arbeitsdienst? {
+        try await Startdaten(client: client).arbeitsdienst()
     }
 
     // MARK: Veranstaltungen

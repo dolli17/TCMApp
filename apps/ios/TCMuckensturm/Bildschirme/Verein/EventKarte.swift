@@ -4,64 +4,91 @@
 
 import SwiftUI
 
-/// Eine Veranstaltung als Karte (EventKarte.tsx)
-struct EventKarte: View {
+/**
+ * Eine Veranstaltung als Listenzeile (statt EventKarte.tsx): links das Datum
+ * wie das Kalender-Symbol, daneben Titel, Zeit und Ort, darunter Plaetze oder
+ * Frist. Rechts der eigene Stand - gelb heisst "deins" - oder bei
+ * Arbeitsdiensten die Stunden, die es gibt.
+ */
+struct EventZeile: View {
     let e: MitgliedEvent
     let jetzt: Date
-    var aufforderung = false
     let aktion: () -> Void
 
     var body: some View {
-        let k = Veranstaltungen.eventDatumKachel(e.startsAt)
         let vorbei = Veranstaltungen.eventVorbei(e, now: jetzt) || e.status == "cancelled"
-        let marke = Veranstaltungen.eventMeineMarke(e, now: jetzt, aufforderung: aufforderung)
-        let art = e.kind ?? ""
+        let marke = Veranstaltungen.eventMeineMarke(e, now: jetzt)
+        let zeile = Veranstaltungen.eventKartenZeile(e, now: jetzt)
         Button(action: aktion) {
-            HStack(alignment: .center, spacing: 16) {
-                VStack(spacing: 0) {
-                    Text(k.tag).font(Schrift.display(.fett, 22)).foregroundStyle(vorbei ? Farbe.muted : Farbe.ink)
-                    Text(k.monat).font(Schrift.display(.fett, Tokens.Schrift.kicker)).tracking(0.6).textCase(.uppercase)
-                        .foregroundStyle(Farbe.muted)
-                }
-                .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                .frame(width: 56, height: 58)
-                .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: 18))
-                .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Farbe.line, lineWidth: 1))
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
-                        MarkeKlein(text: Veranstaltungen.kindLabel[art] ?? art, ton: Veranstaltungen.kindTon[art] ?? .grau)
-                        Spacer(minLength: 0)
-                        if let marke {
-                            // Gelb heisst "deins": die eigene Anmeldung.
-                            if e.meinStatus == "registered" { DeinMarker(marke.text) } else { MarkeKlein(text: marke.text, ton: marke.ton) }
-                        }
-                    }
+            HStack(spacing: 14) {
+                DatumsKachel(startsAt: e.startsAt, leise: vorbei)
+                VStack(alignment: .leading, spacing: 2) {
                     Text(e.title ?? "")
-                        .font(Schrift.display(.fett, 19, relativeTo: .title3))
+                        .font(.headline)
                         .foregroundStyle(vorbei ? Farbe.ink2 : Farbe.ink)
                         .multilineTextAlignment(.leading)
-                        .padding(.top, 2)
-                    Text(Veranstaltungen.eventKartenZeit(e)).font(Schrift.text(.normal, 15)).foregroundStyle(Farbe.ink2)
-                    HStack(alignment: .center, spacing: 8) {
-                        Text(Veranstaltungen.eventKartenZeile(e, now: jetzt))
-                            .font(Schrift.text(.normal, 13.5))
-                            .foregroundStyle(Farbe.muted)
-                            .multilineTextAlignment(.leading)
-                        Spacer(minLength: 0)
-                        // Wer noch nicht angemeldet ist, sieht den Weg dorthin; die Karte selbst oeffnet die Veranstaltung.
-                        if e.meinStatus == nil && Veranstaltungen.eventAnmeldbar(e, now: jetzt) {
-                            KnopfFlaeche(stufe: .zweit, groesse: .klein) { Text("Anmelden") }
-                        }
+                    Text(Veranstaltungen.eventKartenZeit(e))
+                        .font(.subheadline)
+                        .foregroundStyle(Farbe.ink2)
+                    if !zeile.isEmpty {
+                        Text(zeile).font(.footnote).foregroundStyle(Farbe.muted)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                if e.meinStatus == "registered", let marke {
+                    DeinMarker(marke.text)
+                } else if let marke {
+                    Text(marke.text).font(.footnote.weight(.semibold)).foregroundStyle(Farbe.muted)
+                } else if e.kind == "arbeitsdienst", let h = e.workHours, h > 0, !vorbei {
+                    Text("+\(Veranstaltungen.stundenText(h)) h")
+                        .font(.footnote.weight(.bold))
+                        .monospacedDigit()
+                        .foregroundStyle(Farbe.blueInk)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Farbe.blueSoft, in: Capsule())
+                }
+                ZeilenPfeil()
             }
-            .karte(radius: Tokens.Radius.karte, padding: 18)
+            .padding(.vertical, 4)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .gruppenZeile()
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(e.title ?? ""), \(Veranstaltungen.eventKartenZeit(e))\(marke.map { ", \($0.text)" } ?? "")")
+        .accessibilityLabel(
+            "\(e.title ?? ""), \(Veranstaltungen.eventKartenZeit(e))\(marke.map { ", \($0.text)" } ?? "")"
+        )
         .accessibilityAddTraits(.isButton)
+    }
+}
+
+/// Das Datum wie das Kalender-Symbol: oben der Monat auf Blau, darunter gross der Tag.
+struct DatumsKachel: View {
+    let startsAt: String
+    var leise = false
+
+    var body: some View {
+        let k = Veranstaltungen.eventDatumKachel(startsAt)
+        VStack(spacing: 0) {
+            Text(k.monat)
+                .font(.caption2.weight(.bold))
+                .textCase(.uppercase)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, minHeight: 16)
+                .background(leise ? Farbe.muted : Farbe.blue)
+            Text(k.tag)
+                .font(.title3.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(leise ? Farbe.muted : Farbe.ink)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .dynamicTypeSize(...DynamicTypeSize.xLarge)
+        .frame(width: 46, height: 50)
+        .background(Farbe.surf)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Farbe.line2, lineWidth: 1))
+        .accessibilityHidden(true)
     }
 }
 
