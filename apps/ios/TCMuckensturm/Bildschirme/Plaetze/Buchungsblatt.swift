@@ -34,11 +34,12 @@ struct Buchungsblatt: View {
                     modell: modell, courtId: courtId, platzName: platzName, tag: tag, stunde: stunde,
                     startzeiten: startzeiten, vorgabe: start, kicker: kicker
                 )
+                .presentationDetents([.large])
             case let .verwalten(b, _, tag):
+                // Die Karte waehlt ihre Hoehen selbst (halb und ganz, wie in Karten).
                 VerwaltenInhalt(modell: modell, b: b, tag: tag, kicker: kicker)
             }
         }
-        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(Tokens.Radius.blatt)
         .presentationBackground(Farbe.surf)
@@ -97,57 +98,6 @@ struct BlattGeruest<Kopf: View, Inhalt: View, Fuss: View>: View {
 
 // MARK: - Bausteine
 
-/// Die Zeit gross als Titel, daneben eine Marke, darunter Platz und Tag, rechts das X.
-private struct PlatzBlattKopf: View {
-    enum Marke: Equatable {
-        case keine
-        /// Gelb heisst "deins": das eigene Spiel.
-        case dein
-        /// Hellblau: hier wird noch jemand gesucht.
-        case sucht
-    }
-
-    @Environment(\.blattSchliessen) private var schliessen
-    let kicker: String
-    let titel: String
-    var marke: Marke = .keine
-
-    var body: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 6) {
-                ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .center, spacing: 12) { zeit; marker }
-                    VStack(alignment: .leading, spacing: 6) { zeit; marker }
-                }
-                Text(kicker)
-                    .font(Schrift.text(.normal, 16))
-                    .foregroundStyle(Farbe.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 8)
-            SchliessenKnopf(aktion: schliessen)
-        }
-    }
-
-    private var zeit: some View {
-        Text(titel)
-            .font(Schrift.display(.fett, 32, relativeTo: .title))
-            .tracking(-0.8)
-            .monospacedDigit()
-            .foregroundStyle(Farbe.ink)
-            .lineLimit(1)
-            .accessibilityAddTraits(.isHeader)
-    }
-
-    @ViewBuilder private var marker: some View {
-        switch marke {
-        case .keine: EmptyView()
-        case .dein: DeinMarker("Dein Spiel")
-        case .sucht: BlaueMarke("Mitspieler gesucht")
-        }
-    }
-}
-
 private struct Feldname: View {
     let text: String
     var zusatz: String?
@@ -159,74 +109,6 @@ private struct Feldname: View {
             .foregroundStyle(Farbe.muted)
             .padding(.bottom, 10)
             .accessibilityLabel(text + (zusatz.map { ", \($0)" } ?? ""))
-    }
-}
-
-/**
- * Die eine Hauptaktion des Blatts: blau, volle Breite. Gesperrt ist sie
- * neutral statt blassblau (U26). Mit `beiGesperrt` nimmt der gesperrte Knopf
- * das Tippen noch an und fuehrt zum naechsten Schritt.
- */
-private struct BlattHauptknopf: View {
-    let text: String
-    var gesperrt = false
-    var grund: String?
-    var beiGesperrt: (() -> Void)?
-    let aktion: () -> Void
-
-    var body: some View {
-        Button { gesperrt ? beiGesperrt?() : aktion() } label: {
-            KnopfFlaeche(stufe: .haupt, groesse: .gross, breit: true) { Text(text) }
-                .environment(\.isEnabled, !gesperrt)
-        }
-        .buttonStyle(.plain)
-        .disabled(gesperrt && beiGesperrt == nil)
-        .accessibilityHint(gesperrt ? (grund ?? "") : "")
-    }
-}
-
-/// Zwei Knoepfe im Fuss nebeneinander: die Aktion nimmt den Platz, der Weg zurueck steht neutral daneben.
-private struct FussPaar: View {
-    let text: String
-    var stufe: KnopfStufe = .haupt
-    var gesperrt = false
-    let aktion: () -> Void
-    let zurueckText: String
-    var zurueckGesperrt = false
-    let zurueck: () -> Void
-
-    var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 10) {
-                Knopf(text, stufe: stufe, groesse: .gross, breit: true, gesperrt: gesperrt, aktion: aktion)
-                Knopf(zurueckText, stufe: .leise, groesse: .gross, gesperrt: zurueckGesperrt, aktion: zurueck)
-                    .fixedSize()
-            }
-            VStack(spacing: 10) {
-                Knopf(text, stufe: stufe, groesse: .gross, breit: true, gesperrt: gesperrt, aktion: aktion)
-                Knopf(zurueckText, stufe: .leise, groesse: .gross, breit: true, gesperrt: zurueckGesperrt, aktion: zurueck)
-            }
-        }
-    }
-}
-
-/// Zerstoerendes als roter Textverweis mit Kreuz im Kreis ("Buchung stornieren") - der Weg zur Bestaetigung.
-private struct GefahrVerweis: View {
-    let text: String
-    var gesperrt = false
-    let aktion: () -> Void
-
-    var body: some View {
-        Button(action: aktion) {
-            Label(text, systemImage: "xmark.circle")
-                .font(Schrift.display(.halbfett, 16))
-                .foregroundStyle(Farbe.redInk)
-                .frame(maxWidth: .infinity, minHeight: 48)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(gesperrt)
-        .opacity(gesperrt ? 0.5 : 1)
     }
 }
 
@@ -246,56 +128,6 @@ private struct FehlerText: View {
     }
 }
 
-private struct Fussnote: View {
-    let text: String
-
-    var body: some View {
-        Text(text)
-            .font(Schrift.text(.normal, Tokens.Schrift.klein))
-            .foregroundStyle(Farbe.muted)
-            .frame(maxWidth: .infinity)
-    }
-}
-
-/// Was zum Buchen noch fehlt - neutral, es ist kein Fehler.
-private struct Besetzungshinweis: View {
-    let text: String
-
-    var body: some View {
-        Text(text)
-            .font(Schrift.text(.normal, 14))
-            .foregroundStyle(Farbe.ink2)
-            .lineSpacing(2)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .multilineTextAlignment(.center)
-    }
-}
-
-/// Was im Weg liegt, bevor verdraengt wird: rot getoent mit Ausrufezeichen.
-private struct Warnhinweis: View {
-    let text: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "exclamationmark.circle")
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(Farbe.redInk)
-                .accessibilityHidden(true)
-            Text(text)
-                .font(Schrift.text(.normal, 15))
-                .foregroundStyle(Farbe.redInk)
-                .lineSpacing(2)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Farbe.red.opacity(0.08), in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
-        .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.karte).strokeBorder(Farbe.red.opacity(0.35), lineWidth: 1))
-    }
-}
-
 /// Ein Eingabefeld: surf2 mit feiner Linie, Radius des Felds.
 private struct Eingabe: View {
     let platzhalter: String
@@ -311,49 +143,6 @@ private struct Eingabe: View {
             .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
             .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.feld).strokeBorder(Farbe.line2, lineWidth: 1))
             .accessibilityLabel(bedienName)
-    }
-}
-
-/// Eine Auswahl als Feld mit Pfeil (Kategorie, Uhrzeit): tippen oeffnet die Liste.
-private struct Auswahlfeld: View {
-    let name: String
-    let optionen: [(wert: String, label: String)]
-    let wert: String
-    /// Mittig und in Zahlenschrift fuer Uhrzeiten
-    var zahl = false
-    let wahl: (String) -> Void
-
-    var body: some View {
-        let label = optionen.first { $0.wert == wert }?.label ?? ""
-        Menu {
-            ForEach(optionen, id: \.wert) { o in
-                Button { wahl(o.wert) } label: {
-                    if o.wert == wert { Label(o.label, systemImage: "checkmark") } else { Text(o.label) }
-                }
-            }
-        } label: {
-            HStack(spacing: 8) {
-                Text(label)
-                    .font(zahl ? Schrift.display(.halbfett, 16) : Schrift.text(.mittel, 16))
-                    .monospacedDigit()
-                    .foregroundStyle(Farbe.ink)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: zahl ? .center : .leading)
-                if !zahl {
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Farbe.muted)
-                        .accessibilityHidden(true)
-                }
-            }
-            .padding(.horizontal, zahl ? 10 : 20)
-            .frame(minHeight: 52)
-            .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
-            .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.feld).strokeBorder(Farbe.line2, lineWidth: 1))
-            .contentShape(Rectangle())
-        }
-        .accessibilityLabel(name)
-        .accessibilityValue(label)
     }
 }
 
@@ -399,81 +188,6 @@ private struct Segmente<Wert: Hashable>: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(beschriftung)
-    }
-}
-
-/// Eine Zeile, die in eine andere Ansicht des Blatts fuehrt ("Umsetzen"): Symbol im Kreis, Titel, Pfeil.
-private struct AktionsZeile: View {
-    let symbol: String
-    let titel: String
-    var unterzeile: String?
-    let aktion: () -> Void
-
-    var body: some View {
-        Button(action: aktion) {
-            HStack(spacing: 14) {
-                Image(systemName: symbol)
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(Farbe.blueInk)
-                    .frame(width: 40, height: 40)
-                    .background(Farbe.blueSoft, in: Circle())
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(titel).font(Schrift.display(.halbfett, 16)).foregroundStyle(Farbe.ink)
-                    if let unterzeile {
-                        Text(unterzeile).font(Schrift.text(.normal, 14)).foregroundStyle(Farbe.muted)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Farbe.muted)
-                    .accessibilityHidden(true)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .frame(minHeight: 68)
-            .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
-            .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.karte).strokeBorder(Farbe.line, lineWidth: 1))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(titel)
-    }
-}
-
-/**
- * "Mitspieler gesucht" als Zeile mit Schalter, die Erklaerung darunter - ohne
- * sie raet man, was das bewirkt. Ist die Suche an und `filter` gesetzt, folgt
- * die Karte "Nur für …". `speichern` gibt es nur an einer bestehenden
- * Buchung, wenn der Filter geaendert wurde.
- */
-private struct GesuchtZeile: View {
-    let an: Bool
-    var deaktiviert = false
-    var filter: Binding<Suchfilter>?
-    var speichern: (() -> Void)?
-    let wechsel: (Bool) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Toggle(isOn: Binding(get: { an }, set: wechsel)) {
-                Text("Mitspieler gesucht").font(Schrift.display(.halbfett, 17)).foregroundStyle(Farbe.ink)
-            }
-            .tint(Farbe.blue)
-            .frame(minHeight: 44)
-            Text("Dein Spiel erscheint unter „Offene Spiele“. Wer mag, trägt sich selbst ein.")
-                .font(Schrift.text(.normal, 14.5))
-                .foregroundStyle(Farbe.muted)
-                .lineSpacing(3)
-                .fixedSize(horizontal: false, vertical: true)
-            if an, let filter {
-                NurFuer(filter: filter, speichern: speichern).padding(.top, 10)
-            }
-        }
-        .disabled(deaktiviert)
-        .padding(.top, 14)
-        .overlay(alignment: .top) { Farbe.line.frame(height: 1) }
     }
 }
 
@@ -828,6 +542,9 @@ private struct BuchenInhalt: View {
     @State private var filter = Suchfilter.offen
     @State private var suchen = false
     @State private var sperrenOffen = false
+    @State private var suche = ""
+    @FocusState private var suchfokus: Bool
+    @Environment(\.blattSchliessen) private var schliessen
 
     init(modell: PlaetzeModell, courtId: String, platzName: String, tag: String, stunde: Int, startzeiten: [Int], vorgabe: Int, kicker: String) {
         self.modell = modell
@@ -842,15 +559,14 @@ private struct BuchenInhalt: View {
     }
 
     var body: some View {
-        if sperrenOffen {
-            SperrAnsicht(modell: modell, courtId: courtId, platzName: platzName, tag: tag, stunde: stunde, kicker: kicker) {
-                sperrenOffen = false
-            }
-        } else {
-            buchen
-        }
+        buchen
     }
 
+    /**
+     * Buchen als natives Formular (Apple HIG): Titel "Platz buchen" mit
+     * "Abbrechen" in der Leiste, oben gross die Zeit, darunter gruppierte
+     * Abschnitte. Unten fest die eine Hauptaktion.
+     */
     private var buchen: some View {
         let m = modell
         let gewaehlt = m.arten.first { $0.code == art }
@@ -860,76 +576,267 @@ private struct BuchenInhalt: View {
         let nochPlatz = mitglieder.count + gaeste.count < maxWeitere
         let hinweis = PlaetzeLogik.buchenHinweis(art: info, mitglieder: mitglieder.count, gaeste: gaeste.count, sucht: sucht)
         let haelften = Array(stride(from: stunde, to: stunde + m.anzeige, by: max(m.raster, 1)))
+        let artWahl = Binding(get: { art }, set: { (neu: String) in
+            art = neu
+            let k = PlaetzeLogik.kuerze(
+                mitglieder: mitglieder, gaeste: gaeste, maxPlayers: m.arten.first { $0.code == neu }?.maxPlayers ?? 2
+            )
+            mitglieder = k.mitglieder
+            gaeste = k.gaeste
+        })
 
-        return BlattGeruest {
-            PlatzBlattKopf(kicker: kicker, titel: "\(Zeit.minutesToTime(start)) – \(Zeit.minutesToTime(start + dauer))")
-        } inhalt: {
-            VStack(alignment: .leading, spacing: 0) {
-                Feldname(text: "Beginn")
-                Segmente(
-                    beschriftung: "Beginn",
-                    optionen: haelften.map { ($0, Zeit.minutesToTime($0), !startzeiten.contains($0)) },
-                    wert: $start
+        let gesperrt = m.laeuft || hinweis != nil
+        let buchen = {
+            Task {
+                await m.buchen(
+                    courtId: courtId, tag: tag, start: start, typ: art, mitglieder: mitglieder, gaeste: gaeste,
+                    sucht: sucht, filter: filter
                 )
             }
-            VStack(alignment: .leading, spacing: 0) {
-                Feldname(text: "Spielform")
-                Segmente(
-                    beschriftung: "Spielform",
-                    optionen: m.arten.map { ($0.code, $0.name ?? $0.code, false) },
-                    wert: Binding(get: { art }, set: { neu in
-                        art = neu
-                        let k = PlaetzeLogik.kuerze(
-                            mitglieder: mitglieder, gaeste: gaeste, maxPlayers: m.arten.first { $0.code == neu }?.maxPlayers ?? 2
-                        )
-                        mitglieder = k.mitglieder
-                        gaeste = k.gaeste
-                    }),
-                    spalten: min(max(m.arten.count, 2), 3)
-                )
-            }
-            // Sich selbst mitzunehmen weist die Datenbank ab - der Bucher zaehlt ohnehin mit.
-            if maxWeitere > 0 {
-                Mitspieler(
-                    verzeichnis: m.verzeichnis.filter { $0.id != m.meineId },
-                    mitglieder: $mitglieder, gaeste: $gaeste, maxWeitere: maxWeitere,
-                    umfang: info.map(Platzplan.otherPlayersLabel) ?? "",
-                    gastgebuehrCents: m.gastgebuehr, suchen: $suchen
-                )
-            }
-            if nochPlatz { GesuchtZeile(an: sucht, filter: $filter) { sucht = $0 } }
-            // Sperren ist die Ausnahme, nicht der Regelfall: abgesetzt am Ende.
-            if m.darfPlaetze {
-                AktionsZeile(symbol: "lock", titel: "Stattdessen sperren") {
-                    m.fensterFehler = nil
-                    sperrenOffen = true
-                }
-            }
-        } fuss: {
-            FehlerText(text: m.fensterFehler)
-            if let hinweis, !m.laeuft { Besetzungshinweis(text: hinweis) }
-            BlattHauptknopf(
-                text: m.laeuft ? "Wird gebucht …" : "\(platzName) buchen",
-                gesperrt: m.laeuft || hinweis != nil,
-                grund: hinweis,
-                beiGesperrt: m.laeuft || maxWeitere == 0 ? nil : { suchen = true }
-            ) {
-                Task {
-                    await m.buchen(
-                        courtId: courtId, tag: tag, start: start, typ: art, mitglieder: mitglieder, gaeste: gaeste,
-                        sucht: sucht, filter: filter
-                    )
-                }
-            }
-            Fussnote(text: "Stornieren geht bis Spielbeginn")
         }
+
+        return NavigationStack {
+            List {
+
+                // Kopf wie an der Karte einer bestehenden Buchung: die Zeit gross, darunter Platz und Tag.
+                Section {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("\(Zeit.minutesToTime(start)) – \(Zeit.minutesToTime(start + dauer))")
+                            .font(.largeTitle.weight(.bold))
+                            .monospacedDigit()
+                            .foregroundStyle(Farbe.ink)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .accessibilityAddTraits(.isHeader)
+                        Text(kicker).font(.subheadline).foregroundStyle(Farbe.muted)
+                        Label("\(gewaehlt?.name ?? "Spiel") · Stornieren geht bis Spielbeginn", systemImage: "tennis.racket")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Farbe.ink2)
+                    }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 4, trailing: 4))
+                    .listRowBackground(Color.clear)
+                }
+
+                Section {
+                    Segmente(
+                        beschriftung: "Beginn",
+                        optionen: haelften.map { ($0, Zeit.minutesToTime($0), !startzeiten.contains($0)) },
+                        wert: $start,
+                        hoehe: 40
+                    )
+                    .padding(.vertical, 4)
+                    .gruppenZeile()
+                } header: {
+                    GruppenKopf(titel: "Beginn")
+                }
+
+                Section {
+                    if m.arten.count <= 3 {
+                        Picker("Spielform", selection: artWahl) {
+                            ForEach(m.arten, id: \.code) { Text($0.name ?? $0.code).tag($0.code) }
+                        }
+                        .pickerStyle(.segmented)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                    } else {
+                        Picker("Spielform", selection: artWahl) {
+                            ForEach(m.arten, id: \.code) { Text($0.name ?? $0.code).tag($0.code) }
+                        }
+                        .pickerStyle(.menu)
+                        .gruppenZeile()
+                    }
+                } header: {
+                    GruppenKopf(titel: "Spielform")
+                }
+
+                mitspielerAbschnitt(
+                    m, maxWeitere: maxWeitere, umfang: info.map(Platzplan.otherPlayersLabel) ?? "",
+                    hinweis: m.laeuft ? nil : hinweis
+                )
+
+                if nochPlatz {
+                    Section {
+                        Toggle("Mitspieler gesucht", isOn: $sucht)
+                            .tint(Farbe.blue)
+                            .gruppenZeile()
+                    } header: {
+                        GruppenKopf(titel: "Details")
+                    } footer: {
+                        Text("Dein Spiel erscheint unter „Offene Spiele“. Wer mag, trägt sich selbst ein.")
+                            .foregroundStyle(Farbe.muted)
+                    }
+                    if sucht {
+                        Section {
+                            NurFuer(filter: $filter, speichern: nil)
+                                .listRowInsets(EdgeInsets())
+                                .listRowBackground(Color.clear)
+                        }
+                    }
+                }
+
+                // Sperren ist die Ausnahme, nicht der Regelfall: abgesetzt am Ende.
+                if m.darfPlaetze {
+                    Section {
+                        Button {
+                            m.fensterFehler = nil
+                            sperrenOffen = true
+                        } label: {
+                            HStack(spacing: 14) {
+                                IconKachel(symbol: "lock.fill", farbe: Farbe.muted)
+                                Text("Stattdessen sperren").foregroundStyle(Farbe.ink)
+                                Spacer()
+                                ZeilenPfeil()
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .gruppenZeile()
+                    }
+                }
+            }
+            .gruppenListe()
+            .listSectionSpacing(20)
+            .scrollDismissesKeyboard(.interactively)
+            // Fehler unten statt oben in der Liste: die Aktion sitzt oben im ✓, gerollt ist oft weit nach unten.
+            .bestaetigung(Binding(get: { m.fensterFehler }, set: { m.fensterFehler = $0 }), ok: false)
+            .navigationTitle("Neue Buchung")
+            .navigationBarTitleDisplayMode(.inline)
+            // Sperren als Unterseite mit "‹ Zurück", wie Umsetzen in der Buchungskarte.
+            .navigationDestination(isPresented: $sperrenOffen) {
+                SperrAnsicht(modell: m, courtId: courtId, platzName: platzName, tag: tag, stunde: stunde, kicker: kicker)
+            }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { schliessen() } label: { Image(systemName: "xmark") }
+                        .accessibilityLabel("Abbrechen")
+                }
+                // ✓ bucht - wie "Hinzufügen" bei einem neuen Termin in Kalender.
+                ToolbarItem(placement: .confirmationAction) {
+                    if m.laeuft {
+                        ProgressView()
+                    } else {
+                        Button { buchen() } label: { Image(systemName: "checkmark") }
+                            .tint(Farbe.blue)
+                            .disabled(gesperrt)
+                            .accessibilityLabel("\(platzName) buchen")
+                            .accessibilityHint(hinweis ?? "")
+                    }
+                }
+            }
+        }
+    }
+
+    /// "Wer spielt mit?": Gewaehlte als Zeilen (wischen oder X entfernt), darunter das Suchfeld und "Gast hinzufügen".
+    private func mitspielerAbschnitt(_ m: PlaetzeModell, maxWeitere: Int, umfang: String, hinweis: String?) -> some View {
+        let verzeichnis = m.verzeichnis.filter { $0.id != m.meineId }
+        let voll = mitglieder.count + gaeste.count >= maxWeitere
+        let gefunden = suche.trimmingCharacters(in: .whitespaces).isEmpty
+            ? [] : PlaetzeLogik.treffer(suche, in: verzeichnis, ohne: mitglieder)
+        return Section {
+            PersonZeile(kuerzel: "Du", name: "Du", zusatz: "bucht")
+            ForEach(mitglieder, id: \.self) { id in
+                if let mg = verzeichnis.first(where: { $0.id == id }) {
+                    personZeile(PlaetzeLogik.initialen(mg.firstName, mg.lastName), mg.name, label: "\(mg.name) entfernen") {
+                        mitglieder.removeAll { $0 == id }
+                    }
+                }
+            }
+            ForEach(Array(gaeste.enumerated()), id: \.offset) { i, g in
+                personZeile("G", g, label: "Gast \(i + 1) entfernen") { gaeste.remove(at: i) }
+            }
+            if maxWeitere > 0 && !voll {
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass").foregroundStyle(Farbe.muted).accessibilityHidden(true)
+                    TextField("Mitspieler hinzufügen …", text: $suche)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled()
+                        .focused($suchfokus)
+                        .accessibilityLabel("Mitspieler suchen")
+                }
+                .gruppenZeile()
+                if !suche.trimmingCharacters(in: .whitespaces).isEmpty && gefunden.isEmpty {
+                    Text("Niemand gefunden.").foregroundStyle(Farbe.muted).gruppenZeile()
+                }
+                ForEach(gefunden, id: \.id) { mg in
+                    Button {
+                        mitglieder.append(mg.id)
+                        suche = ""
+                    } label: {
+                        HStack {
+                            Text("\(mg.lastName ?? ""), \(mg.firstName ?? "")").foregroundStyle(Farbe.ink)
+                            Spacer()
+                            Image(systemName: "plus.circle.fill").foregroundStyle(Farbe.blue).accessibilityHidden(true)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .gruppenZeile()
+                }
+                Button { gaeste.append(gast) } label: {
+                    Label(PlaetzeLogik.gastText(gebuehrCents: m.gastgebuehr), systemImage: "plus.circle.fill")
+                        .foregroundStyle(Farbe.blueInk)
+                }
+                .buttonStyle(.borderless)
+                .gruppenZeile()
+                .accessibilityLabel(m.gastgebuehr > 0 ? "Gast hinzufügen, \(Geld.formatCents(m.gastgebuehr))" : "Gast hinzufügen")
+            }
+        } header: {
+            GruppenKopf(titel: "Spieler", zusatz: umfang.isEmpty ? nil : umfang)
+        } footer: {
+            VStack(alignment: .leading, spacing: 4) {
+                // Was zum Buchen noch fehlt - neutral, es ist kein Fehler; solange ist ✓ gesperrt.
+                if let hinweis { Text(hinweis).foregroundStyle(Farbe.ink2) }
+                if !gaeste.isEmpty && m.gastgebuehr > 0 {
+                    Text(PlaetzeLogik.gastHinweis(gebuehrCents: m.gastgebuehr)).foregroundStyle(Farbe.muted)
+                }
+            }
+        }
+    }
+
+    private func personZeile(_ kuerzel: String, _ name: String, label: String, weg: @escaping () -> Void) -> some View {
+        PersonZeile(kuerzel: kuerzel, name: name, weg: weg, wegLabel: label)
+    }
+}
+
+/// Eine Person: Initialen im Kreis, Name; zum Entfernen links ein rotes ⊖ wie in Kontakte.
+private struct PersonZeile: View {
+    let kuerzel: String
+    let name: String
+    var zusatz: String?
+    var weg: (() -> Void)?
+    var wegLabel: String?
+
+    var body: some View {
+        HStack(spacing: 12) {
+            if let weg {
+                Button(action: weg) {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.title3)
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.white, Farbe.red)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(wegLabel ?? "\(name) entfernen")
+            }
+            Text(kuerzel)
+                .font(.footnote.weight(.bold))
+                .dynamicTypeSize(...DynamicTypeSize.xLarge)
+                .foregroundStyle(Farbe.blueInk)
+                .frame(width: 32, height: 32)
+                .background(Farbe.blueSoft, in: Circle())
+                .accessibilityHidden(true)
+            Text(name).foregroundStyle(Farbe.ink).lineLimit(1)
+            Spacer(minLength: 0)
+            if let zusatz { Text(zusatz).font(.subheadline).foregroundStyle(Farbe.muted) }
+        }
+        .gruppenZeile()
     }
 }
 
 /**
- * Sperren statt buchen (docs/design/stitch, "Plaetze sperren"): Kategorie und
- * Grund, gesperrt wird der ganze Anzeigeblock. Zweistufig: liegen Buchungen
- * im Weg, nennt der erste Versuch ihre Zahl, erst der zweite verdraengt sie.
+ * Sperren statt buchen: eine Unterseite des Buchungsfensters. Gesperrt wird
+ * der ganze Anzeigeblock; Kategorie als Menue, Grund als Feld. ✓ sperrt;
+ * liegen Buchungen im Weg, fragt ein Action Sheet, ob sie verdraengt werden.
  */
 private struct SperrAnsicht: View {
     let modell: PlaetzeModell
@@ -938,20 +845,18 @@ private struct SperrAnsicht: View {
     let tag: String
     let stunde: Int
     let kicker: String
-    let zurueck: () -> Void
 
     @State private var grund = ""
     @State private var art: String
     @State private var kollisionen: Int?
 
-    init(modell: PlaetzeModell, courtId: String, platzName: String, tag: String, stunde: Int, kicker: String, zurueck: @escaping () -> Void) {
+    init(modell: PlaetzeModell, courtId: String, platzName: String, tag: String, stunde: Int, kicker: String) {
         self.modell = modell
         self.courtId = courtId
         self.platzName = platzName
         self.tag = tag
         self.stunde = stunde
         self.kicker = kicker
-        self.zurueck = zurueck
         // Vorgabe bleibt die Platzpflege; sonst die erste Kategorie.
         _art = State(initialValue: modell.blockungsarten.first { $0.code == "platzpflege" }?.code
             ?? modell.blockungsarten.first?.code ?? "platzpflege")
@@ -960,42 +865,68 @@ private struct SperrAnsicht: View {
     var body: some View {
         let m = modell
         let bis = stunde + m.anzeige
-        BlattGeruest {
-            PlatzBlattKopf(kicker: kicker, titel: "\(Zeit.minutesToTime(stunde)) – \(Zeit.minutesToTime(bis))")
-        } inhalt: {
-            VStack(alignment: .leading, spacing: 0) {
-                Feldname(text: "Kategorie")
-                Auswahlfeld(name: "Kategorie", optionen: m.blockungsarten.map { ($0.code, $0.name ?? $0.code) }, wert: art) {
-                    art = $0
-                    kollisionen = nil
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("\(Zeit.minutesToTime(stunde)) – \(Zeit.minutesToTime(bis))")
+                        .font(.largeTitle.weight(.bold))
+                        .monospacedDigit()
+                        .foregroundStyle(Farbe.ink)
+                    Text(kicker).font(.subheadline).foregroundStyle(Farbe.ink2)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
+            .listRowBackground(Color.clear)
+            Section {
+                Picker("Kategorie", selection: Binding(get: { art }, set: { art = $0; kollisionen = nil })) {
+                    ForEach(m.blockungsarten, id: \.code) { Text($0.name ?? $0.code).tag($0.code) }
+                }
+                .pickerStyle(.menu)
+                .gruppenZeile()
+                TextField("", text: $grund, prompt: Text("Grund, etwa nach Regen").foregroundStyle(Farbe.muted))
+                    .accessibilityLabel("Grund der Sperrung, freiwillig")
+                    .gruppenZeile()
+            } footer: {
+                Text("Gesperrt wird \(Zeit.minutesToTime(stunde))–\(Zeit.minutesToTime(bis)) Uhr auf \(platzName).")
+                    .foregroundStyle(Farbe.muted)
+            }
+        }
+        .gruppenListe()
+        .listSectionSpacing(20)
+        .scrollDismissesKeyboard(.interactively)
+        // Fehler unten statt oben in der Liste: die Aktion sitzt oben im ✓, gerollt ist oft weit nach unten.
+        .bestaetigung(Binding(get: { m.fensterFehler }, set: { m.fensterFehler = $0 }), ok: false)
+        .navigationTitle("Platz sperren")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                if m.laeuft {
+                    ProgressView()
+                } else {
+                    Button { sperren(verdraengen: false) } label: { Image(systemName: "checkmark") }
+                        .accessibilityLabel("Sperren")
                 }
             }
-            VStack(alignment: .leading, spacing: 0) {
-                Feldname(text: "Grund (freiwillig)")
-                Eingabe(platzhalter: "z. B. nach Regen", bedienName: "Grund der Sperrung, freiwillig", text: $grund)
+        }
+        .confirmationDialog(
+            kollisionen.map(PlaetzeLogik.imWegText) ?? "",
+            isPresented: Binding(get: { kollisionen != nil }, set: { if !$0 { kollisionen = nil } }),
+            titleVisibility: .visible
+        ) {
+            if let n = kollisionen {
+                Button(PlaetzeLogik.verdraengenText(n), role: .destructive) { sperren(verdraengen: true) }
             }
-            Text("Gesperrt wird \(Zeit.minutesToTime(stunde))–\(Zeit.minutesToTime(bis)) Uhr auf \(platzName).").leise()
-            if let n = kollisionen { Warnhinweis(text: PlaetzeLogik.imWegText(n)) }
-        } fuss: {
-            FehlerText(text: m.fensterFehler)
-            // Rot gefuellt nur als Bestaetigung, daneben der neutrale Weg zurueck.
-            FussPaar(
-                text: kollisionen.map(PlaetzeLogik.verdraengenText) ?? "Sperren",
-                stufe: kollisionen != nil ? .gefahr : .haupt,
-                gesperrt: m.laeuft,
-                aktion: {
-                    Task {
-                        kollisionen = await m.sperren(
-                            courtId: courtId, tag: tag, von: stunde, bis: bis, typ: art, grund: grund,
-                            verdraengen: kollisionen != nil
-                        )
-                    }
-                },
-                zurueckText: "Doch nicht",
-                zurueck: {
-                    m.fensterFehler = nil
-                    zurueck()
-                }
+            Button("Abbrechen", role: .cancel) {}
+        }
+        .onDisappear { m.fensterFehler = nil }
+    }
+
+    private func sperren(verdraengen: Bool) {
+        let bis = stunde + modell.anzeige
+        Task {
+            kollisionen = await modell.sperren(
+                courtId: courtId, tag: tag, von: stunde, bis: bis, typ: art, grund: grund, verdraengen: verdraengen
             )
         }
     }
@@ -1003,7 +934,14 @@ private struct SperrAnsicht: View {
 
 // MARK: - Bearbeiten, Mitspielen, Stornieren
 
+/**
+ * Eine bestehende Buchung, Sperrung oder ein Training als Karte - nach dem
+ * Vorbild der Karten-App (Blatt mit halber und ganzer Hoehe, Aktionsreihe)
+ * und der Kontakte-App (Bearbeiten in derselben Ansicht: ✕ verwirft, ✓
+ * speichert). Stornieren fragt per Action Sheet, mit Grund per Alert.
+ */
 private struct VerwaltenInhalt: View {
+    @Environment(\.blattSchliessen) private var schliessen
     let modell: PlaetzeModell
     let b: TagesBelegung
     let tag: String
@@ -1011,13 +949,19 @@ private struct VerwaltenInhalt: View {
 
     @State private var mitglieder: [String]
     @State private var gaeste: [String]
-    @State private var stornoOffen = false
-    @State private var umsetzOffen = false
-    @State private var bearbeitenOffen = false
-    @State private var grund = ""
-    @State private var suchen = false
+    @State private var sucht: Bool
     /// "Nur für …" der Suche, beim Oeffnen aus day_schedule
     @State private var filter: Suchfilter
+    @State private var bearbeiten = false
+    @State private var umsetzOffen = false
+    @State private var sperreOffen = false
+    @State private var stornoFragen = false
+    @State private var grundFragen = false
+    @State private var verwerfenFragen = false
+    @State private var grund = ""
+    @State private var suche = ""
+    @State private var hoehe: PresentationDetent = .medium
+    @FocusState private var suchfokus: Bool
     /// Einmal beim Oeffnen: die Uhr soll nicht unter dem Finger Knoepfe wegnehmen.
     @State private var jetzt = Date()
 
@@ -1028,6 +972,7 @@ private struct VerwaltenInhalt: View {
         self.kicker = kicker
         _mitglieder = State(initialValue: (b.playerMemberIds ?? []).compactMap { $0 })
         _gaeste = State(initialValue: (b.guestNames ?? []).compactMap { $0 })
+        _sucht = State(initialValue: b.partnerWanted == true)
         _filter = State(initialValue: b.suchfilter)
     }
 
@@ -1037,175 +982,416 @@ private struct VerwaltenInhalt: View {
 
     var body: some View {
         let v = Verwalten(b, darfPlaetze: modell.darfPlaetze, jetzt: jetzt)
-        if umsetzOffen && v.kannUmsetzen {
-            UmsetzAnsicht(modell: modell, b: b, planTag: tag, jetzt: jetzt, bisher: "\(kicker), \(zeit)") { umsetzOffen = false }
-        } else if bearbeitenOffen && v.kannSperreAendern {
-            SperreBearbeiten(modell: modell, sperre: b, tag: tag) { bearbeitenOffen = false }
-        } else {
-            uebersicht(v)
+        karte(v)
+        .presentationDetents(umsetzOffen || sperreOffen ? [.large] : [.medium, .large], selection: $hoehe)
+        // Beim Bearbeiten nicht versehentlich wegwischen; ✕ fragt nach, wenn etwas geaendert ist.
+        .interactiveDismissDisabled(bearbeiten)
+        .onChange(of: umsetzOffen || sperreOffen || bearbeiten) { _, gross in
+            if gross { hoehe = .large }
+        }
+        #if DEBUG
+        // Fuer Bildschirmfotos per simctl: `-TCMBearbeiten` oeffnet die Karte gleich zum Bearbeiten.
+        // `-TCMUmsetzen` und `-TCMSperre` oeffnen die Unterseiten (nur mit Platzrechten).
+        .onAppear {
+            let argumente = ProcessInfo.processInfo.arguments
+            if argumente.contains("-TCMBearbeiten") { bearbeiten = true }
+            if argumente.contains("-TCMUmsetzen") { umsetzOffen = true }
+            if argumente.contains("-TCMSperre") { sperreOffen = true }
+        }
+        #endif
+    }
+
+    // MARK: Ableitungen
+
+    private func vorher() -> (mitglieder: [String], gaeste: [String]) {
+        ((b.playerMemberIds ?? []).compactMap { $0 }, (b.guestNames ?? []).compactMap { $0 })
+    }
+
+    private var spielerGeaendert: Bool {
+        let (m, g) = vorher()
+        return mitglieder.sorted() != m.sorted() || gaeste.sorted() != g.sorted()
+    }
+
+    private var sucheGeaendert: Bool {
+        sucht != (b.partnerWanted == true) || (sucht && filter != b.suchfilter)
+    }
+
+    private func verwerfen() {
+        let (m, g) = vorher()
+        mitglieder = m
+        gaeste = g
+        sucht = b.partnerWanted == true
+        filter = b.suchfilter
+        suche = ""
+        bearbeiten = false
+        modell.fensterFehler = nil
+    }
+
+    private func titel(_ v: Verwalten) -> String {
+        v.serientermin ? "Training" : v.nurStorno ? "Sperrung" : "Buchung"
+    }
+
+    // MARK: Karte
+
+    private func karte(_ v: Verwalten) -> some View {
+        let m = modell
+        let eigen = b.isOwn == true
+        let kannBearbeiten = !v.nurStorno && v.darfVerwalten
+        let gesuchtZeile = kannBearbeiten && ((b.frei ?? 0) > 0 || b.partnerWanted == true)
+
+        return NavigationStack {
+            List {
+                kopf(v, eigen: eigen)
+                if !bearbeiten { aktionen(v) }
+                if !v.nurStorno { spieler(v, kannBearbeiten: kannBearbeiten) }
+                if !v.nurStorno { details(v, gesuchtZeile: gesuchtZeile) }
+                if v.darfVerwalten && !bearbeiten {
+                    Section {
+                        Button(role: .destructive) {
+                            m.fensterFehler = nil
+                            if v.grundNoetig || v.serientermin { grundFragen = true } else { stornoFragen = true }
+                        } label: {
+                            Text(v.stornoText(bestaetigen: false))
+                                .foregroundStyle(Farbe.redInk)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .disabled(m.laeuft)
+                        .gruppenZeile()
+                    } footer: {
+                        if eigen && !v.nurStorno && !v.laeuftSchon {
+                            Text("Stornieren geht bis Spielbeginn").foregroundStyle(Farbe.muted).frame(maxWidth: .infinity)
+                        }
+                    }
+                }
+            }
+            .gruppenListe()
+            .listSectionSpacing(20)
+            .scrollDismissesKeyboard(.interactively)
+            .navigationTitle(bearbeiten ? "Bearbeiten" : titel(v))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { leiste(v, kannBearbeiten: kannBearbeiten, gesuchtZeile: gesuchtZeile) }
+            // Umsetzen und Sperrung bearbeiten als Unterseiten der Karte, mit "‹ Zurück" wie in Einstellungen.
+            .navigationDestination(isPresented: Binding(get: { umsetzOffen && v.kannUmsetzen }, set: { umsetzOffen = $0 })) {
+                UmsetzAnsicht(modell: modell, b: b, planTag: tag, jetzt: jetzt, bisher: "\(kicker), \(zeit)")
+            }
+            .navigationDestination(isPresented: Binding(get: { sperreOffen && v.kannSperreAendern }, set: { sperreOffen = $0 })) {
+                SperreBearbeiten(modell: modell, sperre: b, tag: tag)
+            }
+            .safeAreaInset(edge: .bottom) {
+                if m.fensterFehler != nil || (v.kannMitspielen && !bearbeiten) {
+                    VStack(spacing: 8) {
+                        FehlerText(text: m.fensterFehler)
+                        if v.kannMitspielen && !bearbeiten {
+                            Button { Task { await m.beitreten(b.bookingId) } } label: {
+                                Text(m.laeuft ? "Wird eingetragen …" : "Mitspielen")
+                                    .font(.headline)
+                                    .frame(maxWidth: .infinity, minHeight: 30)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .buttonBorderShape(.capsule)
+                            .controlSize(.large)
+                            .tint(Farbe.blue)
+                            .disabled(m.laeuft)
+                        }
+                    }
+                    .padding(.horizontal, Tokens.Abstand.rand)
+                    .padding(.vertical, 10)
+                    .background(.bar)
+                }
+            }
+        }
+        .confirmationDialog(
+            "\(v.stornoText(bestaetigen: false))?", isPresented: $stornoFragen, titleVisibility: .visible
+        ) {
+            Button(v.stornoText(bestaetigen: false), role: .destructive) { ausfuehren(v) }
+        }
+        .alert(v.stornoText(bestaetigen: false), isPresented: $grundFragen) {
+            TextField(v.grundNoetig ? "Grund" : "Grund (freiwillig)", text: $grund)
+            Button(v.stornoText(bestaetigen: false), role: .destructive) {
+                if v.grundNoetig && grund.trimmingCharacters(in: .whitespaces).isEmpty {
+                    m.fensterFehler = "Bitte gib einen Grund an – er steht in der Nachricht an die Betroffenen."
+                } else {
+                    ausfuehren(v)
+                }
+            }
+            Button("Abbrechen", role: .cancel) { grund = "" }
+        } message: {
+            Text(v.serientermin ? "Zum Beispiel „Ferien“." : "Der Grund steht in der Nachricht an die Betroffenen.")
+        }
+        .confirmationDialog("Änderungen verwerfen?", isPresented: $verwerfenFragen, titleVisibility: .visible) {
+            Button("Änderungen verwerfen", role: .destructive) { verwerfen() }
+            Button("Weiter bearbeiten", role: .cancel) {}
         }
     }
 
-    private func uebersicht(_ v: Verwalten) -> some View {
+    private func ausfuehren(_ v: Verwalten) {
         let m = modell
-        let art = m.arten.first { $0.code == b.typeCode }
-        let maxWeitere = max((art?.maxPlayers ?? 4) - 1, 0)
-        let vorher = (b.playerMemberIds ?? []).compactMap { $0 }
-        let vorherGaeste = (b.guestNames ?? []).compactMap { $0 }
-        let geaendert = mitglieder.sorted() != vorher.sorted() || gaeste.sorted() != vorherGaeste.sorted()
-        let eigen = b.isOwn == true
-        let bucher = (kuerzel: eigen ? "Du" : PlaetzeLogik.initialen(name: b.ownerName), name: eigen ? "Du" : (b.ownerName ?? "Bucher"))
-        let sucht = Verwalten.suchtText(b)
-        let gesuchtZeile = !v.nurStorno && v.darfVerwalten && ((b.frei ?? 0) > 0 || b.partnerWanted == true)
-        // Das eigene, noch nicht laufende Spiel: ohne Infokarte, wie im Entwurf "Eigenes Spiel".
-        let schlicht = eigen && !v.nurStorno && !v.laeuftSchon
+        if v.serientermin {
+            Task { await m.terminAbsagen(b.bookingId, grund: grund) }
+        } else if v.nurStorno {
+            Task { await m.sperreAufheben(b.bookingId) }
+        } else {
+            Task { await m.stornieren(b.bookingId, grund: grund) }
+        }
+    }
 
-        return BlattGeruest {
-            // Am eigenen Spiel steht die Spielform im Kicker; wer gebucht hat, sagt der gelbe Marker.
-            PlatzBlattKopf(
-                kicker: schlicht ? [kicker, b.typeName].compactMap { Platzplan.nichtLeer($0) }.joined(separator: " · ") : kicker,
-                titel: zeit,
-                marke: eigen && !v.nurStorno ? .dein : sucht != nil ? .sucht : .keine
-            )
-        } inhalt: {
-            // Was das ist und wer gebucht hat
-            VStack(alignment: .leading, spacing: 8) {
-                if !schlicht {
-                HStack(spacing: 12) {
-                    Image(systemName: v.nurStorno ? "lock" : v.serientermin ? "repeat" : "tennis.racket")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(Farbe.blueInk)
-                        .accessibilityHidden(true)
-                    Text(v.untertitel)
-                        .font(Schrift.display(.halbfett, 16))
+    // MARK: Leiste: ✕ links, rechts "Bearbeiten" bzw. ✓
+
+    @ToolbarContentBuilder
+    private func leiste(_ v: Verwalten, kannBearbeiten: Bool, gesuchtZeile: Bool) -> some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button {
+                if !bearbeiten {
+                    schliessen()
+                } else if spielerGeaendert || sucheGeaendert {
+                    verwerfenFragen = true
+                } else {
+                    verwerfen()
+                }
+            } label: {
+                Image(systemName: "xmark")
+            }
+            .accessibilityLabel(bearbeiten ? "Abbrechen" : "Schließen")
+        }
+        if bearbeiten {
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    let mitspieler = spielerGeaendert ? (mitglieder, gaeste) : nil
+                    let neueSuche = gesuchtZeile && sucheGeaendert ? (sucht, filter) : nil
+                    if mitspieler == nil && neueSuche == nil {
+                        bearbeiten = false
+                    } else {
+                        Task { await modell.bearbeitungSpeichern(b.bookingId, mitspieler: mitspieler, suche: neueSuche) }
+                    }
+                } label: {
+                    Image(systemName: "checkmark")
+                }
+                .tint(Farbe.blue)
+                .disabled(modell.laeuft)
+                .accessibilityLabel("Fertig")
+            }
+        } else if kannBearbeiten || v.kannSperreAendern {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Bearbeiten") {
+                    modell.fensterFehler = nil
+                    if v.kannSperreAendern { sperreOffen = true } else { bearbeiten = true }
+                }
+                .disabled(modell.laeuft)
+            }
+        }
+    }
+
+    // MARK: Kopf
+
+    private func kopf(_ v: Verwalten, eigen: Bool) -> some View {
+        Section {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(zeit)
+                        .font(.largeTitle.weight(.bold))
+                        .monospacedDigit()
                         .foregroundStyle(Farbe.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.horizontal, 18)
-                .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-                .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
-                .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.feld).strokeBorder(Farbe.line, lineWidth: 1))
-                }
-                if v.nurStorno && !v.serientermin, let g = Platzplan.blockingLabel(title: b.title, typeName: b.typeName).grund {
-                    Text(g).leise()
-                }
-                if m.darfPlaetze && !eigen && !v.nurStorno {
-                    Text("Du bearbeitest eine fremde Buchung mit Platzrechten.").leise()
-                }
-                if v.laeuftSchon {
-                    Text("Die Spielzeit läuft bereits – Änderungen nur mit Platzrechten.").leise()
-                }
-            }
-            .fixedSize(horizontal: false, vertical: true)
-
-            if !v.nurStorno && v.darfVerwalten {
-                Mitspieler(
-                    kopf: bucher,
-                    verzeichnis: m.verzeichnis.filter { $0.id != b.ownerMemberId },
-                    mitglieder: $mitglieder, gaeste: $gaeste, maxWeitere: maxWeitere,
-                    umfang: art.map { Platzplan.otherPlayersLabel($0.info) } ?? "",
-                    gastgebuehrCents: m.gastgebuehr, suchen: $suchen
-                )
-            }
-
-            if !v.nurStorno && !v.darfVerwalten {
-                VStack(alignment: .leading, spacing: 0) {
-                    Feldname(text: "Wer spielt mit?")
-                    VStack(spacing: 8) {
-                        SpielerZeile(kuerzel: bucher.kuerzel, name: bucher.name)
-                        ForEach(Array((b.players ?? []).compactMap { $0 }.enumerated()), id: \.offset) { _, p in
-                            SpielerZeile(kuerzel: PlaetzeLogik.initialen(name: p), name: p)
-                        }
-                        ForEach(0..<max(b.frei ?? 0, 0), id: \.self) { _ in
-                            SpielerZeile(kuerzel: "", name: "frei", leer: true)
-                        }
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .accessibilityAddTraits(.isHeader)
+                    Spacer(minLength: 0)
+                    // Gelb heisst "deins"; hellblau: hier wird noch jemand gesucht.
+                    if eigen && !v.nurStorno {
+                        DeinMarker("Dein Spiel")
+                    } else if b.binDabei == true {
+                        DeinMarker("Du bist dabei")
+                    } else if Verwalten.suchtText(b) != nil {
+                        BlaueMarke("Mitspieler gesucht")
                     }
                 }
-            }
-
-            // Mit dem Schalter darunter sagt der Satz nichts Neues.
-            if let sucht, !gesuchtZeile {
-                Label(sucht, systemImage: "info.circle")
-                    .font(Schrift.text(.normal, 14.5))
+                Text(kicker).font(.subheadline).foregroundStyle(Farbe.muted)
+                Label(v.untertitel, systemImage: v.nurStorno && !v.serientermin ? "lock.fill" : v.serientermin ? "repeat" : "tennis.racket")
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(Farbe.ink2)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, -8)
+                if v.nurStorno && !v.serientermin, let g = Platzplan.blockingLabel(title: b.title, typeName: b.typeName).grund {
+                    Text(g).font(.footnote).foregroundStyle(Farbe.muted)
+                }
+                if modell.darfPlaetze && !eigen && !v.nurStorno {
+                    Text("Du bearbeitest eine fremde Buchung mit Platzrechten.").font(.footnote).foregroundStyle(Farbe.muted)
+                }
+                if v.laeuftSchon {
+                    Text("Die Spielzeit läuft bereits – Änderungen nur mit Platzrechten.").font(.footnote).foregroundStyle(Farbe.muted)
+                }
             }
+            .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 4, trailing: 4))
+            .listRowBackground(Color.clear)
+        }
+    }
 
-            if gesuchtZeile {
-                GesuchtZeile(
-                    an: b.partnerWanted == true, deaktiviert: m.laeuft, filter: $filter,
-                    speichern: b.partnerWanted == true && filter != b.suchfilter
-                        ? { Task { await m.filterAendern(b.bookingId, filter: filter) } }
-                        : nil
-                ) { an in
-                    Task { await m.ausschreiben(b.bookingId, gesucht: an, filter: filter) }
-                }
-            }
+    // MARK: Aktionsreihe wie in Karten
 
-            // Umsetzen ist die Ausnahme, wenn ein Platz ausfaellt: eine eigene Ansicht im Blatt.
-            if v.kannUmsetzen {
-                AktionsZeile(symbol: "calendar.badge.clock", titel: "Umsetzen", unterzeile: "Anderer Platz oder andere Zeit") {
-                    m.fensterFehler = nil
-                    stornoOffen = false
-                    umsetzOffen = true
-                }
-            }
-        } fuss: {
-            FehlerText(text: m.fensterFehler)
-
-            if v.kannSperreAendern && !stornoOffen {
-                BlattHauptknopf(text: "Sperrung bearbeiten", gesperrt: m.laeuft) {
-                    m.fensterFehler = nil
-                    bearbeitenOffen = true
-                }
-            }
-            if v.kannMitspielen {
-                BlattHauptknopf(text: m.laeuft ? "Wird eingetragen …" : "Mitspielen", gesperrt: m.laeuft) {
-                    Task { await m.beitreten(b.bookingId) }
-                }
-            }
-            if !v.nurStorno && v.darfVerwalten && geaendert && !stornoOffen {
-                BlattHauptknopf(text: m.laeuft ? "Wird gespeichert …" : "Mitspieler speichern", gesperrt: m.laeuft) {
-                    Task { await m.speichern(b.bookingId, mitglieder: mitglieder, gaeste: gaeste) }
-                }
-            }
-            if v.darfVerwalten {
-                if stornoOffen {
-                    if v.grundFeld {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Feldname(text: v.grundNoetig ? "Grund" : "Grund (freiwillig)")
-                            Eingabe(
-                                platzhalter: v.serientermin ? "z. B. Ferien" : "Steht in der Nachricht an die Betroffenen",
-                                bedienName: "Grund", text: $grund
-                            )
+    @ViewBuilder private func aktionen(_ v: Verwalten) -> some View {
+        let teilen = !v.nurStorno
+        if teilen || v.kannUmsetzen {
+            Section {
+                HStack(spacing: 10) {
+                    if teilen {
+                        ShareLink(item: "Tennis: \(kicker), \(zeit) Uhr") {
+                            aktionsKnopf("Teilen", symbol: "square.and.arrow.up")
                         }
                     }
-                    // Rot gefuellt nur als Bestaetigung, daneben der neutrale Weg zurueck (U76).
-                    FussPaar(
-                        text: v.stornoText(bestaetigen: true), stufe: .gefahr,
-                        gesperrt: m.laeuft || (v.grundNoetig && grund.trimmingCharacters(in: .whitespaces).isEmpty),
-                        aktion: {
-                            if v.serientermin {
-                                Task { await m.terminAbsagen(b.bookingId, grund: grund) }
-                            } else if v.nurStorno {
-                                Task { await m.sperreAufheben(b.bookingId) }
-                            } else {
-                                Task { await m.stornieren(b.bookingId, grund: grund) }
-                            }
-                        },
-                        zurueckText: "Abbrechen", zurueckGesperrt: m.laeuft,
-                        zurueck: {
-                            stornoOffen = false
-                            grund = ""
+                    if v.kannUmsetzen {
+                        Button {
+                            modell.fensterFehler = nil
+                            umsetzOffen = true
+                        } label: {
+                            aktionsKnopf("Umsetzen", symbol: "arrow.left.arrow.right")
                         }
-                    )
-                } else {
-                    GefahrVerweis(text: v.stornoText(bestaetigen: false), gesperrt: m.laeuft) { stornoOffen = true }
+                    }
+                }
+                .buttonStyle(.plain)
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+            }
+        }
+    }
+
+    private func aktionsKnopf(_ text: String, symbol: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: symbol).font(.body.weight(.semibold))
+            Text(text).font(.footnote.weight(.semibold)).lineLimit(1)
+        }
+        .foregroundStyle(Farbe.blueInk)
+        .frame(maxWidth: .infinity, minHeight: 56)
+        .background(Farbe.surf, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .contentShape(Rectangle())
+    }
+
+    // MARK: Spieler
+
+    private func spieler(_ v: Verwalten, kannBearbeiten: Bool) -> some View {
+        let m = modell
+        let eigen = b.isOwn == true
+        let art = m.arten.first { $0.code == b.typeCode }
+        let maxWeitere = max((art?.maxPlayers ?? 4) - 1, 0)
+        let verzeichnis = m.verzeichnis.filter { $0.id != b.ownerMemberId }
+        let voll = mitglieder.count + gaeste.count >= maxWeitere
+        let gefunden = suche.trimmingCharacters(in: .whitespaces).isEmpty
+            ? [] : PlaetzeLogik.treffer(suche, in: verzeichnis, ohne: mitglieder)
+        let umfang = art.map { Platzplan.otherPlayersLabel($0.info) }
+
+        return Section {
+            personZeile(
+                eigen ? "Du" : PlaetzeLogik.initialen(name: b.ownerName),
+                eigen ? "Du" : (b.ownerName ?? "Bucher"),
+                zusatz: "hat gebucht"
+            )
+            if bearbeiten {
+                ForEach(mitglieder, id: \.self) { id in
+                    let name = verzeichnis.first(where: { $0.id == id })?.name ?? "Mitglied"
+                    personZeile(PlaetzeLogik.initialen(name: name), name) { mitglieder.removeAll { $0 == id } }
+                }
+                ForEach(Array(gaeste.enumerated()), id: \.offset) { i, g in
+                    personZeile("G", g) { gaeste.remove(at: i) }
+                }
+                if !voll {
+                    HStack(spacing: 10) {
+                        Image(systemName: "magnifyingglass").foregroundStyle(Farbe.muted).accessibilityHidden(true)
+                        TextField("Mitspieler hinzufügen …", text: $suche)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                            .focused($suchfokus)
+                            .accessibilityLabel("Mitspieler suchen")
+                    }
+                    .gruppenZeile()
+                    if !suche.trimmingCharacters(in: .whitespaces).isEmpty && gefunden.isEmpty {
+                        Text("Niemand gefunden.").foregroundStyle(Farbe.muted).gruppenZeile()
+                    }
+                    ForEach(gefunden, id: \.id) { mg in
+                        Button {
+                            mitglieder.append(mg.id)
+                            suche = ""
+                        } label: {
+                            HStack {
+                                Text("\(mg.lastName ?? ""), \(mg.firstName ?? "")").foregroundStyle(Farbe.ink)
+                                Spacer()
+                                Image(systemName: "plus.circle.fill").foregroundStyle(Farbe.blue).accessibilityHidden(true)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .gruppenZeile()
+                    }
+                    Button { gaeste.append(gast) } label: {
+                        Label(PlaetzeLogik.gastText(gebuehrCents: m.gastgebuehr), systemImage: "plus.circle.fill")
+                            .foregroundStyle(Farbe.blueInk)
+                    }
+                    .buttonStyle(.borderless)
+                    .gruppenZeile()
+                }
+            } else {
+                ForEach(Array((b.players ?? []).compactMap { $0 }.enumerated()), id: \.offset) { _, p in
+                    personZeile(PlaetzeLogik.initialen(name: p), p)
+                }
+                ForEach(0..<max(b.frei ?? 0, 0), id: \.self) { _ in
+                    HStack(spacing: 12) {
+                        Image(systemName: "person.badge.plus")
+                            .font(.footnote.weight(.medium))
+                            .foregroundStyle(Farbe.muted)
+                            .frame(width: 32, height: 32)
+                            .overlay(Circle().strokeBorder(Farbe.line2, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
+                            .accessibilityHidden(true)
+                        Text("frei").italic().foregroundStyle(Farbe.muted)
+                    }
+                    .gruppenZeile()
                 }
             }
-            if eigen && !v.nurStorno && !v.laeuftSchon {
-                Fussnote(text: "Stornieren geht bis Spielbeginn")
+        } header: {
+            GruppenKopf(titel: "Spieler", zusatz: bearbeiten ? umfang : nil)
+        } footer: {
+            if bearbeiten && !gaeste.isEmpty && m.gastgebuehr > 0 {
+                Text(PlaetzeLogik.gastHinweis(gebuehrCents: m.gastgebuehr)).foregroundStyle(Farbe.muted)
+            }
+        }
+    }
+
+    private func personZeile(_ kuerzel: String, _ name: String, zusatz: String? = nil, weg: (() -> Void)? = nil) -> some View {
+        PersonZeile(kuerzel: kuerzel, name: name, zusatz: zusatz, weg: weg)
+    }
+
+    // MARK: Details
+
+    @ViewBuilder private func details(_ v: Verwalten, gesuchtZeile: Bool) -> some View {
+        let sucheText = Verwalten.suchtText(b)
+        Section {
+            HStack {
+                Text("Spielform").foregroundStyle(Farbe.ink)
+                Spacer()
+                Text(b.typeName ?? "–").foregroundStyle(Farbe.muted)
+            }
+            .gruppenZeile()
+            if bearbeiten && gesuchtZeile {
+                Toggle("Mitspieler gesucht", isOn: $sucht)
+                    .tint(Farbe.blue)
+                    .gruppenZeile()
+            } else if gesuchtZeile || b.partnerWanted == true {
+                HStack {
+                    Text("Mitspieler gesucht").foregroundStyle(Farbe.ink)
+                    Spacer()
+                    Text(b.partnerWanted == true ? (b.suchfilter.kurztext ?? "Ja") : "Nein").foregroundStyle(Farbe.muted)
+                }
+                .gruppenZeile()
+            }
+        } header: {
+            GruppenKopf(titel: "Details")
+        } footer: {
+            if bearbeiten && gesuchtZeile {
+                Text("Dein Spiel erscheint unter „Offene Spiele“. Wer mag, trägt sich selbst ein.").foregroundStyle(Farbe.muted)
+            } else if let sucheText {
+                Text(sucheText).foregroundStyle(Farbe.muted)
+            }
+        }
+        if bearbeiten && gesuchtZeile && sucht {
+            Section {
+                NurFuer(filter: $filter, speichern: nil)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
             }
         }
     }
@@ -1214,16 +1400,15 @@ private struct VerwaltenInhalt: View {
 // MARK: - Sperrung bearbeiten
 
 /**
- * Zeit, Plaetze, Kategorie und Grund einer Sperrung (docs/design/stitch,
- * "Plaetze sperren") - wie beim Sperren zweistufig. Der Tag bleibt der des
- * Plans.
+ * Zeit, Plaetze, Kategorie und Grund einer Sperrung - eine Unterseite der
+ * Karte wie in Einstellungen: Plaetze mit Haken, Zeiten und Kategorie als
+ * Menue. ✓ speichert; liegen Buchungen im Weg, fragt ein Action Sheet, ob
+ * sie verdraengt werden sollen. Der Tag bleibt der des Plans.
  */
 private struct SperreBearbeiten: View {
-    @Environment(\.blattSchliessen) private var schliessen
     let modell: PlaetzeModell
     let sperre: TagesBelegung
     let tag: String
-    let zurueck: () -> Void
 
     @State private var plaetze: [String]
     @State private var von: Int
@@ -1232,11 +1417,10 @@ private struct SperreBearbeiten: View {
     @State private var grund: String
     @State private var kollisionen: Int?
 
-    init(modell: PlaetzeModell, sperre: TagesBelegung, tag: String, zurueck: @escaping () -> Void) {
+    init(modell: PlaetzeModell, sperre: TagesBelegung, tag: String) {
         self.modell = modell
         self.sperre = sperre
         self.tag = tag
-        self.zurueck = zurueck
         let zeit = Platzplan.sperrZeit(sperre)
         _plaetze = State(initialValue: [sperre.courtId])
         _von = State(initialValue: zeit.von)
@@ -1253,89 +1437,91 @@ private struct SperreBearbeiten: View {
         if let code = sperre.typeCode, !arten.contains(where: { $0.wert == code }) {
             arten.insert((code, sperre.typeName ?? code), at: 0)
         }
-        let zeiten = { (a: Int, b: Int) in
-            stride(from: a, through: b, by: schritt).map { (wert: String($0), label: Zeit.minutesToTime($0)) }
-        }
-
-        return BlattGeruest {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Sperrung bearbeiten")
-                        .font(Schrift.display(.fett, 28, relativeTo: .title))
-                        .tracking(-0.6)
-                        .foregroundStyle(Farbe.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityAddTraits(.isHeader)
-                    Text(PlaetzeLogik.tagText(tag)).font(Schrift.text(.normal, 16)).foregroundStyle(Farbe.muted)
-                }
-                Spacer(minLength: 8)
-                SchliessenKnopf(aktion: schliessen)
-            }
-        } inhalt: {
-            VStack(alignment: .leading, spacing: 0) {
-                Feldname(text: "Plätze")
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
-                    ForEach(m.plaetze) { p in
-                        let aktiv = plaetze.contains(p.id)
-                        Button {
-                            if aktiv { plaetze.removeAll { $0 == p.id } } else { plaetze.append(p.id) }
-                            kollisionen = nil
-                        } label: {
-                            Text(p.shortName ?? p.name ?? "")
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-                                .frame(maxWidth: .infinity)
-                                .auswahlPille(aktiv, hoehe: 48, rand: 6)
+        return List {
+            Section {
+                ForEach(m.plaetze) { p in
+                    let aktiv = plaetze.contains(p.id)
+                    Button {
+                        if aktiv { plaetze.removeAll { $0 == p.id } } else { plaetze.append(p.id) }
+                        kollisionen = nil
+                    } label: {
+                        HStack {
+                            Text(p.name ?? p.shortName ?? "").foregroundStyle(Farbe.ink)
+                            Spacer()
+                            if aktiv { Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(Farbe.blue) }
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(p.name ?? "")
-                        .accessibilityAddTraits(aktiv ? [.isSelected] : [])
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .gruppenZeile()
+                    .accessibilityAddTraits(aktiv ? [.isSelected] : [])
+                }
+            } header: {
+                GruppenKopf(titel: "Plätze")
+            } footer: {
+                if plaetze.isEmpty { Text("Mindestens einen Platz wählen.").foregroundStyle(Farbe.redInk) }
+            }
+            Section {
+                Picker("Von", selection: Binding(get: { von }, set: { von = $0; kollisionen = nil })) {
+                    ForEach(Array(stride(from: 0, through: bis - schritt, by: schritt)), id: \.self) {
+                        Text(Zeit.minutesToTime($0)).tag($0)
                     }
                 }
-            }
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Feldname(text: "Von")
-                    Auswahlfeld(name: "Von", optionen: zeiten(0, bis - schritt), wert: String(von), zahl: true) {
-                        von = Int($0) ?? von
-                        kollisionen = nil
+                .gruppenZeile()
+                Picker("Bis", selection: Binding(get: { bis }, set: { bis = $0; kollisionen = nil })) {
+                    ForEach(Array(stride(from: von + schritt, through: 24 * 60, by: schritt)), id: \.self) {
+                        Text(Zeit.minutesToTime($0)).tag($0)
                     }
                 }
-                VStack(alignment: .leading, spacing: 0) {
-                    Feldname(text: "Bis")
-                    Auswahlfeld(name: "Bis", optionen: zeiten(von + schritt, 24 * 60), wert: String(bis), zahl: true) {
-                        bis = Int($0) ?? bis
-                        kollisionen = nil
-                    }
-                }
+                .gruppenZeile()
+            } header: {
+                GruppenKopf(titel: "Zeit")
             }
-            VStack(alignment: .leading, spacing: 0) {
-                Feldname(text: "Kategorie")
-                Auswahlfeld(name: "Kategorie", optionen: arten, wert: art) {
-                    art = $0
-                    kollisionen = nil
+            .pickerStyle(.menu)
+            Section {
+                Picker("Kategorie", selection: Binding(get: { art }, set: { art = $0; kollisionen = nil })) {
+                    ForEach(arten, id: \.wert) { Text($0.label).tag($0.wert) }
                 }
+                .pickerStyle(.menu)
+                .gruppenZeile()
+                TextField("", text: $grund, prompt: Text("Grund, etwa nach Regen").foregroundStyle(Farbe.muted))
+                    .accessibilityLabel("Grund der Sperrung, freiwillig")
+                    .gruppenZeile()
+            } header: {
+                GruppenKopf(titel: "Art")
             }
-            VStack(alignment: .leading, spacing: 0) {
-                Feldname(text: "Grund (freiwillig)")
-                Eingabe(platzhalter: "z. B. nach Regen", bedienName: "Grund der Sperrung, freiwillig", text: $grund)
-            }
-            if let n = kollisionen { Warnhinweis(text: PlaetzeLogik.imWegText(n)) }
-        } fuss: {
-            FehlerText(text: m.fensterFehler)
-            // Rot gefuellt nur als Bestaetigung, daneben der neutrale Weg zurueck.
-            FussPaar(
-                text: kollisionen.map(PlaetzeLogik.verdraengenText) ?? (m.laeuft ? "Wird gespeichert …" : "Änderungen speichern"),
-                stufe: kollisionen != nil ? .gefahr : .haupt,
-                gesperrt: m.laeuft || plaetze.isEmpty,
-                aktion: { speichern(verdraengen: kollisionen != nil) },
-                zurueckText: "Doch nicht",
-                zurueck: {
-                    m.fensterFehler = nil
-                    zurueck()
-                }
-            )
         }
+        .gruppenListe()
+        .listSectionSpacing(20)
+        .scrollDismissesKeyboard(.interactively)
+        // Fehler unten statt oben in der Liste: die Aktion sitzt oben im ✓, gerollt ist oft weit nach unten.
+        .bestaetigung(Binding(get: { m.fensterFehler }, set: { m.fensterFehler = $0 }), ok: false)
+        .navigationTitle("Sperrung bearbeiten")
+        .navigationBarTitleDisplayMode(.inline)
+        .titelUnterzeile(PlaetzeLogik.tagText(tag))
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                if m.laeuft {
+                    ProgressView()
+                } else {
+                    Button { speichern(verdraengen: false) } label: { Image(systemName: "checkmark") }
+                        .disabled(plaetze.isEmpty)
+                        .accessibilityLabel("Änderungen speichern")
+                }
+            }
+        }
+        // Buchungen im Weg: verdraengen ist destruktiv, also als Action Sheet mit rotem Knopf oben.
+        .confirmationDialog(
+            kollisionen.map(PlaetzeLogik.imWegText) ?? "",
+            isPresented: Binding(get: { kollisionen != nil }, set: { if !$0 { kollisionen = nil } }),
+            titleVisibility: .visible
+        ) {
+            if let n = kollisionen {
+                Button(PlaetzeLogik.verdraengenText(n), role: .destructive) { speichern(verdraengen: true) }
+            }
+            Button("Abbrechen", role: .cancel) {}
+        }
+        .onDisappear { m.fensterFehler = nil }
     }
 
     private func speichern(verdraengen: Bool) {
@@ -1350,20 +1536,18 @@ private struct SperreBearbeiten: View {
 // MARK: - Umsetzen
 
 /**
- * Wohin mit der Buchung? Tag, Platz und Beginn (docs/design/stitch,
- * "Umsetzen"). Was waehlbar ist, rechnet umsetzZiele aus der Belegung des
- * Zieltags; fuer einen anderen Tag wird day_schedule nachgeladen. Eine
- * laufende Buchung wechselt nur den Platz.
+ * Wohin mit der Buchung? Tag, Platz und Beginn - eine Unterseite der Karte.
+ * Was waehlbar ist, rechnet umsetzZiele aus der Belegung des Zieltags; fuer
+ * einen anderen Tag wird day_schedule nachgeladen. Eine laufende Buchung
+ * wechselt nur den Platz. Belegte Plaetze stehen grau mit "belegt" da.
  */
 private struct UmsetzAnsicht: View {
-    @Environment(\.blattSchliessen) private var schliessen
     let modell: PlaetzeModell
     let b: TagesBelegung
     let planTag: String
     let jetzt: Date
     /// "Platz 3 · Montag, 16.11., 18:00 – 19:00"
     let bisher: String
-    let zurueck: () -> Void
 
     @State private var tag: String
     @State private var andererTag: (tag: String, belegung: [TagesBelegung])?
@@ -1371,14 +1555,14 @@ private struct UmsetzAnsicht: View {
     @State private var platzWahl: String?
     @State private var minuteWahl: Int?
     @State private var grund = ""
+    @FocusState private var grundFokus: Bool
 
-    init(modell: PlaetzeModell, b: TagesBelegung, planTag: String, jetzt: Date, bisher: String, zurueck: @escaping () -> Void) {
+    init(modell: PlaetzeModell, b: TagesBelegung, planTag: String, jetzt: Date, bisher: String) {
         self.modell = modell
         self.b = b
         self.planTag = planTag
         self.jetzt = jetzt
         self.bisher = bisher
-        self.zurueck = zurueck
         _tag = State(initialValue: planTag)
     }
 
@@ -1405,108 +1589,128 @@ private struct UmsetzAnsicht: View {
         // Der Tag der Buchung steht immer zur Wahl.
         let tage = Array(Set([planTag] + m.tage)).filter { $0 >= Zeit.berlinDay(jetzt) }.sorted()
 
-        BlattGeruest {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Umsetzen")
-                        .font(Schrift.display(.fett, 32, relativeTo: .title))
-                        .tracking(-0.8)
-                        .foregroundStyle(Farbe.ink)
-                        .accessibilityAddTraits(.isHeader)
-                    Text("Bisher: \(bisher)")
-                        .font(Schrift.text(.normal, 16))
-                        .foregroundStyle(Farbe.muted)
-                        .fixedSize(horizontal: false, vertical: true)
+        List {
+            Section {
+                LabeledContent("Bisher") { Text(bisher).foregroundStyle(Farbe.ink2).multilineTextAlignment(.trailing) }
+                    .gruppenZeile()
+                if let platz, let minute {
+                    LabeledContent("Neu") {
+                        Text("\(platz.name ?? "") · \(PlaetzeLogik.tagText(tag)), \(Zeit.minutesToTime(minute)) – \(Zeit.minutesToTime(minute + dauer))")
+                            .fontWeight(.semibold)
+                            .foregroundStyle(Farbe.blueInk)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    .gruppenZeile()
                 }
-                Spacer(minLength: 8)
-                SchliessenKnopf(aktion: schliessen)
+            } footer: {
+                Text("Bucher und Mitspieler werden benachrichtigt.").foregroundStyle(Farbe.muted)
             }
-        } inhalt: {
+
             if laeuftSchon {
-                Text("Die Buchung läuft schon – sie kann nur noch den Platz wechseln.").leise()
+                Section {
+                    Label("Die Buchung läuft schon – sie kann nur noch den Platz wechseln.", systemImage: "clock")
+                        .foregroundStyle(Farbe.ink2)
+                        .gruppenZeile()
+                }
             } else {
-                VStack(alignment: .leading, spacing: 0) {
-                    Feldname(text: "Tag")
+                Section {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 6) {
                             ForEach(tage, id: \.self) { t in
-                                TagKachel(tag: t, aktiv: t == tag) { Task { await waehle(t) } }
+                                TagKachel(tag: t, heute: Zeit.berlinDay(jetzt), aktiv: t == tag) { Task { await waehle(t) } }
                             }
                         }
-                        .padding(.horizontal, Tokens.Abstand.rand)
-                        .padding(.vertical, 2)
+                        .padding(.horizontal, 4)
                     }
-                    .padding(.horizontal, -Tokens.Abstand.rand)
+                } header: {
+                    GruppenKopf(titel: "Tag")
                 }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
             }
 
             if let ladeFehler {
-                Text(ladeFehler).font(Schrift.text(.mittel, 14)).foregroundStyle(Farbe.redInk)
+                Section { Text(ladeFehler).foregroundStyle(Farbe.redInk).gruppenZeile() }
             } else if belegung == nil {
-                Text("Belegung wird geladen …").leise()
+                Section { ProgressView().frame(maxWidth: .infinity).gruppenZeile() }
             } else if ziele.isEmpty {
-                Text("An diesem Tag ist kein Platz frei, auf den die Buchung passt.").leise()
+                Section {
+                    Text("An diesem Tag ist kein Platz frei, auf den die Buchung passt.").foregroundStyle(Farbe.muted).gruppenZeile()
+                }
             } else {
-                VStack(alignment: .leading, spacing: 0) {
-                    Feldname(text: "Platz")
-                    Segmente(
-                        beschriftung: "Platz",
-                        optionen: m.plaetze.map { p in (p.id, p.name ?? p.shortName ?? "", !mitZiel.contains(p)) },
-                        wert: Binding(get: { platz?.id ?? "" }, set: { platzWahl = $0 }),
-                        spalten: 4
-                    )
+                Section {
+                    ForEach(m.plaetze) { p in
+                        let frei = mitZiel.contains(p)
+                        let aktiv = p.id == platz?.id
+                        Button { platzWahl = p.id } label: {
+                            HStack {
+                                Text(p.name ?? p.shortName ?? "").foregroundStyle(frei ? Farbe.ink : Farbe.muted)
+                                if p.id == b.courtId {
+                                    Text("bisher").font(.footnote).foregroundStyle(Farbe.muted)
+                                }
+                                Spacer()
+                                if !frei {
+                                    Text("belegt").font(.subheadline).foregroundStyle(Farbe.muted)
+                                } else if aktiv {
+                                    Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(Farbe.blue)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!frei)
+                        .gruppenZeile()
+                        .accessibilityAddTraits(aktiv ? [.isSelected] : [])
+                    }
+                } header: {
+                    GruppenKopf(titel: "Platz")
                 }
-                VStack(alignment: .leading, spacing: 0) {
-                    Feldname(text: "Beginn")
-                    Segmente(
-                        beschriftung: "Beginn",
-                        optionen: zeiten.map { ($0, Zeit.minutesToTime($0), false) },
-                        wert: Binding(get: { minute ?? -1 }, set: { minuteWahl = $0 }),
-                        spalten: 3
-                    )
+                Section {
+                    Picker("Beginn", selection: Binding(get: { minute ?? -1 }, set: { minuteWahl = $0 })) {
+                        ForEach(zeiten, id: \.self) { Text(Zeit.minutesToTime($0)).tag($0) }
+                    }
+                    .pickerStyle(.menu)
+                    .gruppenZeile()
+                } footer: {
+                    Text("Die Dauer bleibt: \(dauer) Minuten.").foregroundStyle(Farbe.muted)
                 }
             }
 
-            VStack(alignment: .leading, spacing: 0) {
-                Feldname(text: grundNoetig ? "Grund" : "Grund (freiwillig)")
-                Eingabe(platzhalter: "z. B. Platz 3 steht unter Wasser", bedienName: "Grund fürs Umsetzen", text: $grund)
+            Section {
+                TextField("", text: $grund, prompt: Text("z. B. Platz 3 steht unter Wasser").foregroundStyle(Farbe.muted), axis: .vertical)
+                    .lineLimit(1...3)
+                    .focused($grundFokus)
+                    .accessibilityLabel("Grund fürs Umsetzen")
+                    .gruppenZeile()
+            } header: {
+                GruppenKopf(titel: grundNoetig ? "Grund" : "Grund (freiwillig)")
+            } footer: {
+                if grundNoetig { Text("Bei fremden Buchungen erfährt der Bucher den Grund.").foregroundStyle(Farbe.muted) }
             }
-
-            if let platz, let minute {
-                HStack(alignment: .top, spacing: 14) {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 17, weight: .medium))
-                        .foregroundStyle(Farbe.blueInk)
-                        .frame(width: 40, height: 40)
-                        .background(Farbe.blueSoft, in: Circle())
-                        .accessibilityHidden(true)
-                    Text("Neu: \(platz.name ?? "") · \(PlaetzeLogik.tagText(tag)) · \(Zeit.minutesToTime(minute))–\(Zeit.minutesToTime(minute + dauer)) Uhr. Bucher und Mitspieler werden benachrichtigt.")
-                        .font(Schrift.text(.mittel, 15))
-                        .foregroundStyle(Farbe.ink)
-                        .lineSpacing(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .padding(16)
-                .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
-                .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.karte).strokeBorder(Farbe.line, lineWidth: 1))
-            }
-        } fuss: {
-            FehlerText(text: m.fensterFehler)
-            FussPaar(
-                text: m.laeuft ? "Wird umgesetzt …" : "Hierhin umsetzen",
-                gesperrt: m.laeuft || !bereit,
-                aktion: {
-                    guard let platz, let minute else { return }
-                    Task { await m.umsetzen(b.bookingId, courtId: platz.id, tag: tag, minute: minute, grund: grund) }
-                },
-                zurueckText: "Doch nicht",
-                zurueck: {
-                    m.fensterFehler = nil
-                    zurueck()
-                }
-            )
         }
+        .gruppenListe()
+        .listSectionSpacing(20)
+        .scrollDismissesKeyboard(.interactively)
+        // Fehler unten statt oben in der Liste: die Aktion sitzt oben im ✓, gerollt ist oft weit nach unten.
+        .bestaetigung(Binding(get: { m.fensterFehler }, set: { m.fensterFehler = $0 }), ok: false)
+        .navigationTitle("Umsetzen")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                if m.laeuft {
+                    ProgressView()
+                } else {
+                    Button {
+                        guard let platz, let minute else { return }
+                        grundFokus = false
+                        Task { await m.umsetzen(b.bookingId, courtId: platz.id, tag: tag, minute: minute, grund: grund) }
+                    } label: { Image(systemName: "checkmark") }
+                    .disabled(!bereit)
+                    .accessibilityLabel("Hierhin umsetzen")
+                }
+            }
+        }
+        .onDisappear { m.fensterFehler = nil }
     }
 
     /// Nur die letzte Anfrage zaehlt, wenn schnell durch die Tage getippt wird.

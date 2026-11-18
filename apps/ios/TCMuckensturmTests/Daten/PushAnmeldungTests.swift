@@ -336,7 +336,7 @@ final class PushNavigationTests: BildschirmTestfall {
     }
 
     func testMannschaft() async {
-        await oeffne(["kind": "team_invited", "ziel": "/nachrichten"], erwartet: ["Kader Herren 30"])
+        await oeffne(["kind": "team_invited", "ziel": "/nachrichten"], erwartet: ["Herren 30", "Mannschaftsführer", "Spieler"])
     }
 
     func testKonto() async {

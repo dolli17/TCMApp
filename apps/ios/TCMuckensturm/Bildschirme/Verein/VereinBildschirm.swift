@@ -45,6 +45,9 @@ final class VereinZustand {
         case .veranstaltungen:
             wechsle(zu: .veranstaltungen)
             pfad = []
+        case .arbeitsdienst:
+            wechsle(zu: .arbeitsdienst)
+            pfad = []
         case let .veranstaltung(id):
             wechsle(zu: .veranstaltungen)
             pfad = [id]
@@ -114,11 +117,15 @@ struct VereinBildschirm: View {
                 switch zustand.reiter {
                 case .getraenke: GetraenkeAnsicht()
                 case .veranstaltungen: VeranstaltungenAnsicht()
+                case .arbeitsdienst: ArbeitsdienstAnsicht()
                 }
             }
-            .toolbar(.hidden, for: .navigationBar)
-            // Beschriftet den Zurueck-Knopf im Detail.
-            .navigationTitle(zustand.reiter.label)
+            // Grosser Titel in der Leiste, die Glocke daneben - wie auf Home.
+            .navigationTitle("Verein")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) { Glocke(schlicht: true) }
+            }
             .navigationDestination(for: String.self) { id in
                 VeranstaltungBildschirm(id: id)
             }
@@ -129,67 +136,32 @@ struct VereinBildschirm: View {
             let argumente = ProcessInfo.processInfo.arguments
             if let i = argumente.firstIndex(of: "-TCMVerein"), i + 1 < argumente.count {
                 let wert = argumente[i + 1]
-                zustand.oeffne(VereinReiter(rawValue: wert).map { $0 == .getraenke ? .getraenke : .veranstaltungen }
-                    ?? .veranstaltung(wert))
+                let ziel: VereinZiel = switch VereinReiter(rawValue: wert) {
+                case .getraenke: .getraenke
+                case .veranstaltungen: .veranstaltungen
+                case .arbeitsdienst: .arbeitsdienst
+                case nil: .veranstaltung(wert)
+                }
+                zustand.oeffne(ziel)
             }
         }
         #endif
     }
 }
 
-/// Kopf und Segment-Schalter, die jeder Reiter oben in seinen Bildschirm setzt.
+/// Der Umschalter der drei Reiter, oben in jeder Liste (der Titel steht in der Leiste).
 struct VereinKopf: View {
     @Environment(VereinZustand.self) private var zustand
 
     var body: some View {
-        GrosserKopf(titel: "Verein")
-        SegmentLeiste(
-            beschriftung: "Bereich",
-            optionen: VereinReiter.allCases.map { ($0, $0.label) },
-            gewaehlt: zustand.reiter
-        ) { zustand.wechsle(zu: $0) }
-        .padding(.bottom, Tokens.Abstand.xs)
-    }
-}
-
-/// Runder Plus-/Minus-Knopf mit 44 Punkten (Rundknopf.tsx) - Getraenke und Begleitpersonen.
-struct Zaehlknopf: View {
-    enum Zeichen { case plus, minus }
-
-    let zeichen: Zeichen
-    /// Hervorgehoben, sobald schon etwas gezaehlt ist: weiss mit blauer Linie.
-    var betont = false
-    let beschriftung: String
-    var aus = false
-    let aktion: () -> Void
-
-    var body: some View {
-        Button(action: aktion) {
-            Image(systemName: zeichen == .plus ? "plus" : "minus")
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(betont || zeichen == .plus ? Farbe.blueInk : Farbe.ink2)
-                .frame(width: 44, height: 44)
-                .background(betont ? Farbe.surf : Farbe.chip, in: Circle())
-                .overlay(Circle().strokeBorder(betont ? Farbe.blue : Color.clear, lineWidth: 1.5))
+        Section {
+            Picker("Bereich", selection: Binding(get: { zustand.reiter }, set: { zustand.wechsle(zu: $0) })) {
+                ForEach(VereinReiter.allCases, id: \.self) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
         }
-        .buttonStyle(.plain)
-        .disabled(aus)
-        .opacity(aus ? 0.4 : 1)
-        .accessibilityLabel(beschriftung)
+        .listRowInsets(EdgeInsets())
+        .listRowBackground(Color.clear)
     }
 }
 
-/// Die Zahl zwischen Minus und Plus.
-struct Zaehlerstand: View {
-    let wert: Int
-    let label: String
-
-    var body: some View {
-        Text("\(wert)")
-            .font(Schrift.display(.fett, 22))
-            .monospacedDigit()
-            .foregroundStyle(Farbe.ink)
-            .frame(minWidth: 28)
-            .accessibilityLabel(label)
-    }
-}

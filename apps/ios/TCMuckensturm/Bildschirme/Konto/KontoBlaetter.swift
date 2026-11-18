@@ -3,11 +3,14 @@
  *
  * Meine Daten und Notfallkontakt (Stammdatenformular.tsx), Tennis (wie der
  * Onboarding-Schritt, TennisLogik; in einer Mannschaft dazu der Schalter
- * fuer die Telefonnummer), Einwilligungen
- * (MerkmaleKarte.tsx), Bankverbindung & Mandat (MandatAnsicht), Passwort
- * aendern und die Kuendigung (KontoloeschungFormular.tsx). Inhaltlich wie
- * in der Expo-App; "Passwort ändern" ist neu und nimmt dieselben Regeln wie
- * "Passwort festlegen" (PasswortRegeln).
+ * fuer die Telefonnummer), Einwilligungen (MerkmaleKarte.tsx),
+ * Bankverbindung & Mandat (MandatAnsicht), Passwort aendern und die
+ * Kuendigung (KontoloeschungFormular.tsx).
+ *
+ * Gestaltet wie die Formulare in Apples Kontakte und Einstellungen: ✕ links
+ * schliesst, ✓ rechts speichert, die Felder stehen in gruppierten
+ * Abschnitten mit dem Etikett links. Ein Fehler mit Feld steht unter dem
+ * Feld, sonst oben. Wer etwas geaendert hat, wird vor dem Verwerfen gefragt.
  */
 
 import SwiftUI
@@ -30,15 +33,15 @@ struct KontoBlattInhalt: View {
             switch art {
             case .daten, .notfall: formular
             case .tennis: tennis
-            case .einwilligungen: rollend { einwilligungen }
-            case .bank: rollend { bank }
+            case .einwilligungen:
+                FormBlatt(titel: titel, zu: zu) { einwilligungen }
+            case .bank:
+                FormBlatt(titel: titel, zu: zu) { bank }
             case .passwort: PasswortAendern(zu: zu, gespeichert: gespeichert)
             case .loeschen: KuendigungFormular(daten: daten, zu: zu)
             }
         }
-        .background(Farbe.bg)
         .presentationDragIndicator(.visible)
-        .presentationCornerRadius(Tokens.Radius.blatt)
     }
 
     private var titel: String {
@@ -53,10 +56,6 @@ struct KontoBlattInhalt: View {
         }
     }
 
-    private func rollend<Inhalt: View>(@ViewBuilder _ inhalt: () -> Inhalt) -> some View {
-        KontoBlattGeruest(titel: titel, zu: zu) { inhalt() }
-    }
-
     // MARK: - Meine Daten und Notfallkontakt
 
     @ViewBuilder private var formular: some View {
@@ -65,16 +64,21 @@ struct KontoBlattInhalt: View {
                 Stammdatenformular(
                     titel: titel,
                     erklaerung: "Änderungen sind sofort für den Verein sichtbar. E-Mail und Geburtsdatum ändert der Vorstand.",
-                    // Vor- und Nachname sowie PLZ und Ort stehen nebeneinander (Entwurf "Meine Daten").
-                    zeilen: [
-                        [.init(name: "first_name", label: "Vorname", inhalt: .givenName, gross: .words),
-                         .init(name: "last_name", label: "Nachname", inhalt: .familyName, gross: .words)],
-                        [.init(name: "title", label: "Titel", inhalt: .namePrefix)],
-                        [.init(name: "phone", label: "Telefon", inhalt: .telephoneNumber, tastatur: .phonePad)],
-                        [.init(name: "mobile", label: "Mobil", inhalt: .telephoneNumber, tastatur: .phonePad)],
-                        [.init(name: "street", label: "Straße", inhalt: .streetAddressLine1, gross: .words)],
-                        [.init(name: "postcode", label: "PLZ", inhalt: .postalCode, tastatur: .numberPad, anteil: 0.36),
-                         .init(name: "city", label: "Ort", inhalt: .addressCity, gross: .words)],
+                    abschnitte: [
+                        ("Name", [
+                            .init(name: "first_name", label: "Vorname", inhalt: .givenName, gross: .words),
+                            .init(name: "last_name", label: "Nachname", inhalt: .familyName, gross: .words),
+                            .init(name: "title", label: "Titel", inhalt: .namePrefix),
+                        ]),
+                        ("Telefon", [
+                            .init(name: "phone", label: "Festnetz", inhalt: .telephoneNumber, tastatur: .phonePad),
+                            .init(name: "mobile", label: "Mobil", inhalt: .telephoneNumber, tastatur: .phonePad),
+                        ]),
+                        ("Adresse", [
+                            .init(name: "street", label: "Straße", inhalt: .streetAddressLine1, gross: .words),
+                            .init(name: "postcode", label: "PLZ", inhalt: .postalCode, tastatur: .numberPad),
+                            .init(name: "city", label: "Ort", inhalt: .addressCity, gross: .words),
+                        ]),
                     ],
                     werte: p.werte,
                     zu: zu,
@@ -85,10 +89,12 @@ struct KontoBlattInhalt: View {
                 Stammdatenformular(
                     titel: titel,
                     erklaerung: "Wen sollen wir anrufen, wenn auf der Anlage etwas passiert?",
-                    zeilen: [
-                        [.init(name: "emergency_contact_name", label: "Name", inhalt: .name, gross: .words)],
-                        [.init(name: "emergency_contact_phone", label: "Telefon", inhalt: .telephoneNumber, tastatur: .phonePad)],
-                        [.init(name: "emergency_contact_relation", label: "Verhältnis")],
+                    abschnitte: [
+                        ("Kontakt", [
+                            .init(name: "emergency_contact_name", label: "Name", inhalt: .name, gross: .words),
+                            .init(name: "emergency_contact_phone", label: "Telefon", inhalt: .telephoneNumber, tastatur: .phonePad),
+                            .init(name: "emergency_contact_relation", label: "Verhältnis", platzhalter: "etwa Mutter, Partner"),
+                        ]),
                     ],
                     werte: p.werte,
                     zu: zu,
@@ -97,11 +103,14 @@ struct KontoBlattInhalt: View {
                 )
             }
         } else {
-            rollend {
-                Fehlerzeile(
-                    text: inhalt?.profil.fehler ?? "Deine Daten konnten nicht geladen werden.",
-                    onErneut: erneut
-                )
+            FormBlatt(titel: titel, zu: zu) {
+                Section {
+                    FehlerZeile(
+                        text: inhalt?.profil.fehler ?? "Deine Daten konnten nicht geladen werden.",
+                        erneut: Erneut(laeuft: false, aktion: erneut)
+                    )
+                    .gruppenZeile()
+                }
             }
         }
     }
@@ -111,7 +120,9 @@ struct KontoBlattInhalt: View {
     /// Erst wenn my_onboarding() geladen ist; sonst wuerde Speichern Leeres schicken.
     @ViewBuilder private var tennis: some View {
         if let f = inhalt?.tennis.fehler {
-            rollend { Fehlerzeile(text: f, onErneut: erneut) }
+            FormBlatt(titel: TennisLogik.titel, zu: zu) {
+                Section { FehlerZeile(text: f, erneut: Erneut(laeuft: false, aktion: erneut)).gruppenZeile() }
+            }
         } else {
             // Nur wer in einer Mannschaft ist, bekommt den Telefon-Schalter (set_team_phone_visible).
             let telefonVorher = (inhalt?.mannschaft.wert ?? nil)?.telefonSichtbar
@@ -135,7 +146,7 @@ struct KontoBlattInhalt: View {
 
     @ViewBuilder private var einwilligungen: some View {
         if let f = inhalt?.merkmale.fehler {
-            Fehlerzeile(text: f, onErneut: erneut)
+            Section { FehlerZeile(text: f, erneut: Erneut(laeuft: false, aktion: erneut)).gruppenZeile() }
         } else {
             Einwilligungen(merkmale: KontoLogik.merkmale(inhalt?.merkmale.wert ?? []), daten: daten, geaendert: geaendert)
         }
@@ -146,42 +157,151 @@ struct KontoBlattInhalt: View {
     /// Nur zum Lesen - geaendert wird es ueber den Vorstand.
     @ViewBuilder private var bank: some View {
         if let f = inhalt?.mandat.fehler {
-            Fehlerzeile(text: f, onErneut: erneut)
+            Section { FehlerZeile(text: f, erneut: Erneut(laeuft: false, aktion: erneut)).gruppenZeile() }
         } else if let m = inhalt?.mandat.wert ?? nil {
-            // Eine Karte mit Zeilen: links das Etikett, rechts der Wert (Entwurf "Bank und Mandat").
-            VStack(spacing: 0) {
-                ForEach(Array(KontoLogik.mandatZeilen(m).enumerated()), id: \.offset) { i, zeile in
-                    if i > 0 { KontoLinie() }
-                    HStack(alignment: .firstTextBaseline, spacing: 16) {
-                        Text(zeile.0).kicker()
-                        Spacer(minLength: 8)
-                        Text(zeile.1)
-                            .font(Schrift.text(.normal, 17))
-                            .monospacedDigit()
-                            .foregroundStyle(Farbe.ink)
-                            .multilineTextAlignment(.trailing)
+            Section {
+                ForEach(Array(KontoLogik.mandatZeilen(m).enumerated()), id: \.offset) { _, zeile in
+                    LabeledContent(zeile.0) {
+                        Text(zeile.1).monospacedDigit().foregroundStyle(Farbe.ink).multilineTextAlignment(.trailing)
                     }
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 20)
-                    .accessibilityElement(children: .combine)
+                    .foregroundStyle(Farbe.muted)
+                    .gruppenZeile()
                 }
+            } header: {
+                GruppenKopf(titel: "SEPA-Lastschriftmandat")
+            } footer: {
+                Text("Die Bankverbindung ändert der Vorstand – schreib ihm, wenn sich etwas geändert hat.")
+                    .foregroundStyle(Farbe.muted)
             }
-            .karte(radius: Tokens.Radius.karte, padding: 0)
-            Text("Die Bankverbindung ändert der Vorstand – schreib ihm, wenn sich etwas geändert hat.").leise()
         } else {
-            Text("Es liegt noch kein SEPA-Mandat vor. Bitte wende dich an den Vorstand.")
-                .font(Schrift.text(.normal, Tokens.Schrift.normal))
+            Section {
+                Label("Es liegt noch kein SEPA-Mandat vor. Bitte wende dich an den Vorstand.", systemImage: "info.circle")
+                    .foregroundStyle(Farbe.ink)
+                    .gruppenZeile()
+            }
+        }
+    }
+}
+
+// MARK: - Geruest der Formulare
+
+/**
+ * NavigationStack mit gruppierter Liste, ✕ links und - wenn es etwas zu
+ * speichern gibt - ✓ rechts. Mit Aenderungen fragt ✕ erst nach, und das
+ * Blatt laesst sich nicht wegwischen.
+ */
+struct FormBlatt<Inhalt: View>: View {
+    let titel: String
+    var geaendert = false
+    var laeuft = false
+    /// nil: nichts zu speichern, nur ✕.
+    var speichern: (() -> Void)?
+    var speichernLabel = "Speichern"
+    var speichernGesperrt = false
+    let zu: () -> Void
+    @ViewBuilder var inhalt: Inhalt
+
+    @State private var verwerfen = false
+
+    var body: some View {
+        NavigationStack {
+            List { inhalt }
+                .gruppenListe()
+                .listSectionSpacing(20)
+                .scrollDismissesKeyboard(.interactively)
+                .navigationTitle(titel)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button { geaendert ? (verwerfen = true) : zu() } label: { Image(systemName: "xmark") }
+                            .accessibilityLabel("Schließen")
+                            .confirmationDialog("Änderungen verwerfen?", isPresented: $verwerfen, titleVisibility: .visible) {
+                                Button("Verwerfen", role: .destructive, action: zu)
+                                Button("Weiter bearbeiten", role: .cancel) {}
+                            }
+                    }
+                    if let speichern {
+                        ToolbarItem(placement: .confirmationAction) {
+                            if laeuft {
+                                ProgressView()
+                            } else {
+                                Button(action: speichern) { Image(systemName: "checkmark") }
+                                    .disabled(speichernGesperrt)
+                                    .accessibilityLabel(speichernLabel)
+                            }
+                        }
+                    }
+                }
+        }
+        .tint(Farbe.blue)
+        .interactiveDismissDisabled(geaendert || laeuft)
+    }
+}
+
+/// Eine Formularzeile wie in Kontakte: links das Etikett, rechts das Feld, darunter rot ein Fehler.
+struct FormFeld: View {
+    let label: String
+    @Binding var text: String
+    var platzhalter: String?
+    var fehler: String?
+    var inhaltsTyp: UITextContentType?
+    var tastatur: UIKeyboardType = .default
+    var gross: TextInputAutocapitalization = .sentences
+    var geheim = false
+    /// Was VoiceOver und UI-Tests als Namen des Felds hoeren, wenn es vom Etikett abweicht.
+    var bedienName: String?
+
+    @Environment(\.dynamicTypeSize) private var textgroesse
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            let layout = textgroesse >= .xxLarge
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+                : AnyLayout(HStackLayout(spacing: 12))
+            layout {
+                Text(label)
+                    .foregroundStyle(Farbe.ink)
+                    .frame(minWidth: 96, alignment: .leading)
+                    .accessibilityHidden(true)
+                Group {
+                    if geheim {
+                        SecureField("", text: $text, prompt: Text(platzhalter ?? "Erforderlich").foregroundStyle(Farbe.muted))
+                    } else {
+                        TextField("", text: $text, prompt: Text(platzhalter ?? label).foregroundStyle(Farbe.muted))
+                    }
+                }
+                .textContentType(inhaltsTyp)
+                .keyboardType(tastatur)
+                .textInputAutocapitalization(gross)
+                .autocorrectionDisabled(inhaltsTyp != nil || geheim)
                 .foregroundStyle(Farbe.ink)
+                .accessibilityLabel(bedienName ?? label)
+            }
+            if let fehler {
+                Text(fehler).font(.footnote).foregroundStyle(Farbe.redInk).fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .gruppenZeile()
+    }
+}
+
+/// Meldung oben im Formular: gruen bei Erfolg, rot bei Fehler.
+private struct FormMeldung: View {
+    let text: String
+    var ok = false
+
+    var body: some View {
+        Section {
+            Label(text, systemImage: ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                .foregroundStyle(ok ? Farbe.greenInk : Farbe.redInk)
+                .gruppenZeile()
+                .onAppear { UIAccessibility.post(notification: .announcement, argument: text) }
         }
     }
 }
 
 // MARK: - Formular
 
-/**
- * Felder untereinander, Speichern angeheftet darunter (U76). Ein Fehler mit
- * Feld steht am Feld, nicht noch einmal oben.
- */
 private struct Stammdatenformular: View {
     struct Feld {
         let name: String
@@ -189,13 +309,12 @@ private struct Stammdatenformular: View {
         var inhalt: UITextContentType?
         var tastatur: UIKeyboardType = .default
         var gross: TextInputAutocapitalization = .sentences
-        /// Anteil an der Zeilenbreite, wenn zwei Felder nebeneinander stehen (PLZ ist schmal).
-        var anteil: CGFloat?
+        var platzhalter: String?
     }
 
     let titel: String
     let erklaerung: String
-    let zeilen: [[Feld]]
+    let abschnitte: [(String, [Feld])]
     let werte: [String: String]
     let zu: () -> Void
     let speichern: ([String: String]) async -> Ergebnis
@@ -205,42 +324,40 @@ private struct Stammdatenformular: View {
     @State private var fehlerFeld: String?
     @State private var meldung: Ergebnis?
     @State private var laeuft = false
+    @State private var bereit = false
 
-    @Environment(\.dynamicTypeSize) private var textgroesse
+    private var geaendert: Bool {
+        bereit && abschnitte.flatMap(\.1).contains { (entwurf[$0.name] ?? "") != (werte[$0.name] ?? "") }
+    }
 
     var body: some View {
-        KontoBlattGeruest(titel: titel, zu: zu) {
+        FormBlatt(titel: titel, geaendert: geaendert, laeuft: laeuft, speichern: absenden, zu: zu) {
             if let meldung, fehlerFeld == nil {
-                KontoHinweis(text: meldung.meldung, ok: meldung.ok)
+                FormMeldung(text: meldung.meldung, ok: meldung.ok)
             }
-            VStack(alignment: .leading, spacing: 18) {
-                ForEach(Array(zeilen.enumerated()), id: \.offset) { _, zeile in
-                    // Bei grosser Schrift stehen auch die Paare untereinander.
-                    if zeile.count > 1 && textgroesse < .xxLarge {
-                        HStack(alignment: .top, spacing: 12) {
-                            ForEach(zeile, id: \.name) { f in
-                                if let anteil = f.anteil {
-                                    feld(f).containerRelativeFrame(.horizontal) { breite, _ in breite * anteil - 20 }
-                                } else {
-                                    feld(f)
-                                }
-                            }
-                        }
-                    } else {
-                        ForEach(zeile, id: \.name) { feld($0) }
+            ForEach(Array(abschnitte.enumerated()), id: \.offset) { i, a in
+                Section {
+                    ForEach(a.1, id: \.name) { feld($0) }
+                } header: {
+                    GruppenKopf(titel: a.0)
+                } footer: {
+                    if i == abschnitte.count - 1 {
+                        Text(erklaerung).foregroundStyle(Farbe.muted)
                     }
                 }
             }
-            Text(erklaerung).leise().fixedSize(horizontal: false, vertical: true)
-        } fuss: {
-            Hauptknopf(text: laeuft ? "Speichert…" : "Speichern", gesperrt: laeuft, aktion: absenden)
         }
+        .sensoryFeedback(.error, trigger: meldung) { _, neu in neu?.ok == false }
         // Der Entwurf startet beim gespeicherten Stand.
-        .onAppear { entwurf = werte }
+        .onAppear {
+            guard !bereit else { return }
+            entwurf = werte
+            bereit = true
+        }
     }
 
     private func feld(_ f: Feld) -> some View {
-        KontoFeld(
+        FormFeld(
             label: f.label,
             text: Binding(
                 get: { entwurf[f.name] ?? "" },
@@ -249,10 +366,11 @@ private struct Stammdatenformular: View {
                     entwurf[f.name] = $0
                 }
             ),
+            platzhalter: f.platzhalter,
             fehler: fehlerFeld == f.name ? meldung?.meldung : nil,
             inhaltsTyp: f.inhalt,
             tastatur: f.tastatur,
-            grossschreibung: f.gross
+            gross: f.gross
         )
     }
 
@@ -274,10 +392,7 @@ private struct Stammdatenformular: View {
 
 // MARK: - Tennis
 
-/**
- * Dieselben Felder wie der Onboarding-Schritt (SchrittTennis), aufgebaut wie
- * das Stammdatenformular: Speichern angeheftet darunter, der Fehler am Feld.
- */
+/// Dieselben Felder wie der Onboarding-Schritt (SchrittTennis); der Fehler steht am Feld.
 private struct TennisFormular: View {
     let stand: OnboardingZustand.Tennis?
     /// nil ohne Mannschaft: dann fehlt der Schalter fuer die Telefonnummer.
@@ -296,97 +411,96 @@ private struct TennisFormular: View {
     @State private var laeuft = false
 
     @Environment(\.zuMannschaft) private var zuMannschaft
-    @Environment(\.dynamicTypeSize) private var textgroesse
+
+    private var geaendert: Bool {
+        guard bereit else { return false }
+        let (l, n, i) = TennisLogik.entwurf(stand)
+        return lk != l || nuliga != n || interesse != i || (telefonSichtbar != nil && telefon != telefonSichtbar)
+    }
 
     var body: some View {
         let gespeicherteLk = TennisLogik.entwurf(stand).0
-        KontoBlattGeruest(titel: TennisLogik.titel, unterzeile: TennisLogik.lkWarum, zu: zu) {
+        FormBlatt(titel: TennisLogik.titel, geaendert: geaendert, laeuft: laeuft, speichern: absenden, zu: zu) {
             if let meldung, meldung.feld == nil {
-                KontoHinweis(text: meldung.meldung, ok: meldung.ok)
+                FormMeldung(text: meldung.meldung, ok: meldung.ok)
             }
-            // Der gespeicherte Stand gross (Entwurf "Tennis").
+            // Der gespeicherte Stand gross, wie eine Kennzahl in Fitness.
             if !gespeicherteLk.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Aktuell").kicker()
-                    Text("LK \(gespeicherteLk)")
-                        .font(Schrift.display(.fett, 40, relativeTo: .largeTitle))
-                        .tracking(-1)
-                        .monospacedDigit()
-                        .foregroundStyle(Farbe.ink)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
+                Section {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Aktuell").foregroundStyle(Farbe.muted)
+                        Spacer()
+                        Text("LK \(gespeicherteLk)")
+                            .font(.largeTitle.weight(.bold))
+                            .monospacedDigit()
+                            .foregroundStyle(Farbe.ink)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                    }
+                    .gruppenZeile()
+                    .accessibilityElement(children: .combine)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .karte(radius: Tokens.Radius.karte, padding: 20)
-                .accessibilityElement(children: .combine)
             }
-            let felder = Group {
-                KontoFeld(
-                    label: LkEingabe.beschriftung,
+            Section {
+                FormFeld(
+                    label: "LK",
                     text: Binding(get: { lk }, set: { lk = $0; feldGeaendert(TennisLogik.feldLk) }),
+                    platzhalter: "etwa 14,5",
                     fehler: fehler(TennisLogik.feldLk),
                     tastatur: .numbersAndPunctuation,
-                    grossschreibung: .characters
+                    gross: .characters,
+                    bedienName: LkEingabe.beschriftung
                 )
-                KontoFeld(
+                FormFeld(
                     label: TennisLogik.nuligaLabel,
                     text: Binding(get: { nuliga }, set: { nuliga = $0; feldGeaendert(TennisLogik.feldNuliga) }),
+                    platzhalter: "freiwillig",
                     fehler: fehler(TennisLogik.feldNuliga),
-                    grossschreibung: .never
+                    gross: .never
                 )
+            } header: {
+                GruppenKopf(titel: "Spielstärke")
+            } footer: {
+                Text("\(TennisLogik.lkWarum) \(LkEingabe.hinweis)").foregroundStyle(Farbe.muted)
             }
-            VStack(alignment: .leading, spacing: 8) {
-                if textgroesse >= .xxLarge {
-                    VStack(alignment: .leading, spacing: 18) { felder }
-                } else {
-                    HStack(alignment: .top, spacing: 12) { felder }
-                }
-                Text(LkEingabe.hinweis)
-                    .font(Schrift.text(.normal, Tokens.Schrift.klein, relativeTo: .footnote))
-                    .foregroundStyle(Farbe.muted)
-                    .fixedSize(horizontal: false, vertical: true)
+            Section {
+                Toggle(TennisLogik.interesseLabel, isOn: $interesse)
+                    .disabled(laeuft)
+                    .gruppenZeile()
             }
-            OnboardingSchalter(label: TennisLogik.interesseLabel, an: $interesse, gesperrt: laeuft)
-                .padding(.horizontal, -16)
             if telefonSichtbar != nil {
-                // Wer in einer Mannschaft ist: Name, Weg dorthin und der Telefon-Schalter in einer Karte.
-                KontoGruppe {
-                    HStack(spacing: 12) {
-                        Text([MannschaftLogik.titel, mannschaft].compactMap { $0 }.joined(separator: ": "))
-                            .font(Schrift.display(.halbfett, 17))
-                            .foregroundStyle(Farbe.ink)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        Button {
-                            zu()
-                            zuMannschaft()
-                        } label: {
-                            Text("Zur Mannschaft")
-                                .font(Schrift.display(.halbfett, 15))
-                                .foregroundStyle(Farbe.blueInk)
-                                .frame(minHeight: 44)
+                Section {
+                    Button {
+                        zu()
+                        zuMannschaft()
+                    } label: {
+                        HStack {
+                            IconKachel(symbol: "person.3.fill")
+                            Text(mannschaft ?? MannschaftLogik.titel).foregroundStyle(Farbe.ink)
+                            Spacer()
+                            Text("Zur Mannschaft").foregroundStyle(Farbe.muted)
+                            ZeilenPfeil()
                         }
-                        .buttonStyle(.plain)
+                        .contentShape(Rectangle())
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 6)
-                    KontoLinie()
-                    OnboardingSchalter(
-                        label: MannschaftLogik.telefonLabel,
-                        beschreibung: MannschaftLogik.telefonBeschreibung,
-                        an: $telefon,
-                        gesperrt: laeuft
-                    )
+                    .buttonStyle(.plain)
+                    .gruppenZeile()
+                    Toggle(MannschaftLogik.telefonLabel, isOn: $telefon)
+                        .disabled(laeuft)
+                        .gruppenZeile()
+                } header: {
+                    GruppenKopf(titel: MannschaftLogik.titel)
+                } footer: {
+                    Text(MannschaftLogik.telefonBeschreibung).foregroundStyle(Farbe.muted)
                 }
             }
-        } fuss: {
-            Hauptknopf(text: laeuft ? "Speichert…" : "Speichern", gesperrt: laeuft, aktion: absenden)
         }
         // Der Entwurf startet beim gespeicherten Stand.
         .onAppear {
             guard !bereit else { return }
-            bereit = true
             (lk, nuliga, interesse) = TennisLogik.entwurf(stand)
             telefon = telefonSichtbar ?? false
+            bereit = true
         }
     }
 
@@ -417,7 +531,8 @@ private struct TennisFormular: View {
 
 /**
  * Nur Merkmale, die das Mitglied selbst setzen darf. Ob es sie aendern darf,
- * entscheidet die Datenbank - darf_ich kommt fertig aus der RPC.
+ * entscheidet die Datenbank - darf_ich kommt fertig aus der RPC. Jede
+ * Aenderung gilt sofort, wie ein Schalter in Einstellungen.
  */
 private struct Einwilligungen: View {
     let merkmale: [Merkmal]
@@ -427,154 +542,97 @@ private struct Einwilligungen: View {
     @State private var laeuft = false
     @State private var meldung: Ergebnis?
     @State private var texte: [String: String] = [:]
-    @Environment(\.dynamicTypeSize) private var textgroesse
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-            Text("Was du hier setzt, kannst du jederzeit wieder zurücknehmen.")
-                .font(Schrift.text(.normal, Tokens.Schrift.normal))
-                .foregroundStyle(Farbe.ink2)
-                .fixedSize(horizontal: false, vertical: true)
-            if let meldung {
-                KontoHinweis(text: meldung.meldung, ok: meldung.ok)
-            }
-            // Je Einwilligung eine Karte (Entwurf "Einwilligungen").
-            ForEach(merkmale) { m in
-                VStack(alignment: .leading, spacing: 10) {
-                    if m.darstellung == .jaNein {
-                        // Ja/Nein steht rechts neben dem Namen; bei wenig Platz darunter.
-                        if textgroesse >= .xxLarge {
-                            VStack(alignment: .leading, spacing: 10) { kopf(m); jaNein(m) }
-                        } else {
-                            HStack(alignment: .center, spacing: 12) {
-                                kopf(m, nurName: true).frame(maxWidth: .infinity, alignment: .leading)
-                                jaNein(m).frame(width: 128)
-                            }
-                            beschreibung(m)
-                        }
-                        if m.gesetzt, let seit = m.werte.first?.seit {
-                            Farbe.line.frame(height: 1)
-                            Text("erteilt am \(KontoLogik.tagDatum(seit))").leise()
-                        }
-                    } else {
-                        kopf(m)
-                        bedienung(m)
+        if let meldung, !meldung.ok {
+            FormMeldung(text: meldung.meldung)
+        }
+        ForEach(Array(merkmale.enumerated()), id: \.element.id) { i, m in
+            Section {
+                bedienung(m)
+            } header: {
+                if m.darstellung != .jaNein { GruppenKopf(titel: m.name) }
+            } footer: {
+                VStack(alignment: .leading, spacing: 4) {
+                    if !m.beschreibung.isEmpty { Text(m.beschreibung) }
+                    if m.darstellung == .jaNein, m.gesetzt, let seit = m.werte.first?.seit {
+                        Text("Erteilt am \(KontoLogik.tagDatum(seit)).")
+                    }
+                    if i == merkmale.count - 1 {
+                        Text("Was du hier setzt, kannst du jederzeit wieder zurücknehmen.").padding(.top, 8)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .karte(radius: Tokens.Radius.karte, padding: 20)
+                .foregroundStyle(Farbe.muted)
             }
         }
-    }
-
-    private func kopf(_ m: Merkmal, nurName: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(m.name)
-                .font(Schrift.display(.halbfett, 17))
-                .foregroundStyle(Farbe.ink)
-                .fixedSize(horizontal: false, vertical: true)
-            if !nurName { beschreibung(m) }
-        }
-    }
-
-    @ViewBuilder private func beschreibung(_ m: Merkmal) -> some View {
-        if !m.beschreibung.isEmpty {
-            Text(m.beschreibung)
-                .font(Schrift.text(.normal, 15))
-                .foregroundStyle(Farbe.muted)
-                .lineSpacing(2)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private func jaNein(_ m: Merkmal) -> some View {
-        SegmentLeiste(beschriftung: m.name, optionen: [(true, "Ja"), (false, "Nein")], gewaehlt: m.gesetzt, gesperrt: laeuft) { ja in
-            guard ja != m.gesetzt else { return }
-            ausfuehren { ja ? await daten.setzeMerkmal(code: m.code, option: "true") : await daten.entferneMerkmal(code: m.code) }
+        .sensoryFeedback(trigger: meldung) { _, neu in
+            guard let neu else { return nil }
+            return neu.ok ? .success : .error
         }
     }
 
     @ViewBuilder private func bedienung(_ m: Merkmal) -> some View {
         switch m.darstellung {
         case .nurLesen:
-            Text(KontoLogik.nurLesenText(m)).leise()
+            LabeledContent(m.name) { Text(KontoLogik.nurLesenText(m)).foregroundStyle(Farbe.muted) }
+                .gruppenZeile()
         case .jaNein:
-            jaNein(m)
+            Toggle(m.name, isOn: Binding(get: { m.gesetzt }, set: { ja in
+                guard ja != m.gesetzt else { return }
+                ausfuehren { ja ? await daten.setzeMerkmal(code: m.code, option: "true") : await daten.entferneMerkmal(code: m.code) }
+            }))
+            .disabled(laeuft)
+            .gruppenZeile()
         case .einzelwahl:
-            SegmentLeiste(
-                beschriftung: m.name,
-                optionen: m.optionen.map { ($0.value, $0.label ?? $0.value) },
-                gewaehlt: m.werte.first?.option,
-                untereinander: true,
-                gesperrt: laeuft
-            ) { wert in
-                guard wert != m.werte.first?.option else { return }
-                ausfuehren { await daten.setzeMerkmal(code: m.code, option: wert) }
-            }
-        case .liste:
-            liste(m)
-        case .eingabe:
-            HStack(alignment: .bottom, spacing: Tokens.Abstand.s) {
-                KontoFeld(
-                    label: m.name,
-                    text: Binding(get: { texte[m.code] ?? m.werte.first?.text ?? "" }, set: { texte[m.code] = $0 }),
-                    tastatur: m.art == "number" ? .decimalPad : .default
-                )
-                // Zweitknopf: die Hauptaktion des Blatts bleibt die eine blaue.
-                Knopf("Speichern", gesperrt: laeuft) {
-                    let text = texte[m.code] ?? m.werte.first?.text ?? ""
-                    ausfuehren { await daten.setzeMerkmal(code: m.code, text: text) }
+            // Wie die Auswahl in Einstellungen: Haken rechts an der gewaehlten Zeile.
+            ForEach(m.optionen, id: \.value) { o in
+                wahlZeile(o.label ?? o.value, an: m.werte.first?.option == o.value) {
+                    guard o.value != m.werte.first?.option else { return }
+                    ausfuehren { await daten.setzeMerkmal(code: m.code, option: o.value) }
                 }
             }
+        case .liste:
+            ForEach(m.optionen, id: \.value) { o in
+                let an = m.werte.contains { $0.option == o.value }
+                wahlZeile(o.label ?? o.value, an: an) {
+                    ausfuehren {
+                        an ? await daten.entferneMerkmal(code: m.code, option: o.value)
+                            : await daten.setzeMerkmal(code: m.code, option: o.value)
+                    }
+                }
+            }
+        case .eingabe:
+            HStack {
+                TextField(
+                    "", text: Binding(get: { texte[m.code] ?? m.werte.first?.text ?? "" }, set: { texte[m.code] = $0 }),
+                    prompt: Text(m.name).foregroundStyle(Farbe.muted)
+                )
+                .keyboardType(m.art == "number" ? .decimalPad : .default)
+                .accessibilityLabel(m.name)
+                if let t = texte[m.code], t != (m.werte.first?.text ?? "") {
+                    Button("Sichern") { ausfuehren { await daten.setzeMerkmal(code: m.code, text: t) } }
+                        .buttonStyle(.borderless)
+                        .font(.body.weight(.semibold))
+                        .disabled(laeuft)
+                }
+            }
+            .gruppenZeile()
         }
     }
 
-    private func liste(_ m: Merkmal) -> some View {
-        let frei = m.optionen.filter { o in !m.werte.contains { $0.option == o.value } }
-        return VStack(alignment: .leading, spacing: 6) {
-            if !m.werte.isEmpty {
-                Umbruch {
-                    ForEach(Array(m.werte.enumerated()), id: \.offset) { _, w in
-                        let label = w.label ?? w.text ?? ""
-                        Button {
-                            ausfuehren { await daten.entferneMerkmal(code: m.code, option: w.option) }
-                        } label: {
-                            HStack(spacing: 6) {
-                                Text(label).font(Schrift.text(.halbfett, 14))
-                                Image(systemName: "xmark").font(.system(size: 11, weight: .bold))
-                            }
-                            .foregroundStyle(Farbe.ink)
-                            .padding(.horizontal, 12)
-                            .frame(minHeight: 36)
-                            .background(Farbe.surf2, in: Capsule())
-                            .overlay(Capsule().strokeBorder(Farbe.line2, lineWidth: 1))
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(laeuft)
-                        .accessibilityLabel("\(label) entfernen")
-                    }
-                }
+    private func wahlZeile(_ text: String, an: Bool, aktion: @escaping () -> Void) -> some View {
+        Button(action: aktion) {
+            HStack {
+                Text(text).foregroundStyle(Farbe.ink)
+                Spacer()
+                if an { Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(Farbe.blue) }
             }
-            if !frei.isEmpty {
-                Umbruch {
-                    ForEach(frei, id: \.value) { o in
-                        Button {
-                            ausfuehren { await daten.setzeMerkmal(code: m.code, option: o.value) }
-                        } label: {
-                            Text("+ \(o.label ?? o.value)")
-                                .font(Schrift.text(.halbfett, 14))
-                                .foregroundStyle(Farbe.ink2)
-                                .padding(.horizontal, 12)
-                                .frame(minHeight: 36)
-                                .overlay(Capsule().strokeBorder(Farbe.line2, lineWidth: 1))
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(laeuft)
-                        .accessibilityLabel("\(o.label ?? o.value) setzen")
-                    }
-                }
-            }
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .disabled(laeuft)
+        .gruppenZeile()
+        .accessibilityAddTraits(an ? .isSelected : [])
     }
 
     private func ausfuehren(_ tun: @escaping () async -> Ergebnis) {
@@ -588,43 +646,6 @@ private struct Einwilligungen: View {
                 texte = [:]
                 geaendert()
             }
-        }
-    }
-}
-
-/// Marken nebeneinander mit Umbruch (flexWrap).
-private struct Umbruch: Layout {
-    var abstand: CGFloat = 6
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let breite = proposal.width ?? .infinity
-        var x: CGFloat = 0, y: CGFloat = 0, zeile: CGFloat = 0, weiteste: CGFloat = 0
-        for s in subviews {
-            let g = s.sizeThatFits(.unspecified)
-            if x > 0 && x + g.width > breite {
-                y += zeile + abstand
-                x = 0
-                zeile = 0
-            }
-            x += g.width + abstand
-            zeile = max(zeile, g.height)
-            weiteste = max(weiteste, x - abstand)
-        }
-        return CGSize(width: min(weiteste, breite), height: y + zeile)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x = bounds.minX, y = bounds.minY, zeile: CGFloat = 0
-        for s in subviews {
-            let g = s.sizeThatFits(.unspecified)
-            if x > bounds.minX && x + g.width > bounds.maxX {
-                y += zeile + abstand
-                x = bounds.minX
-                zeile = 0
-            }
-            s.place(at: CGPoint(x: x, y: y), proposal: .unspecified)
-            x += g.width + abstand
-            zeile = max(zeile, g.height)
         }
     }
 }
@@ -643,28 +664,27 @@ private struct PasswortAendern: View {
     @State private var laeuft = false
 
     var body: some View {
-        KontoBlattGeruest(titel: "Passwort ändern", unterzeile: PasswortTexte.setzenUnterzeile, zu: zu) {
-            if let email = sitzung.client.auth.currentUser?.email {
-                Text("Für das Konto \(Text(email).font(Schrift.text(.fett, 15)))")
-                    .font(Schrift.text(.normal, 15))
-                    .foregroundStyle(Farbe.ink2)
+        FormBlatt(
+            titel: "Passwort ändern", geaendert: !passwort.isEmpty || !wiederholung.isEmpty, laeuft: laeuft,
+            speichern: speichern, speichernGesperrt: passwort.isEmpty || wiederholung.isEmpty, zu: zu
+        ) {
+            if let fehler { FormMeldung(text: fehler) }
+            Section {
+                FormFeld(label: "Neu", text: $passwort, inhaltsTyp: .newPassword, gross: .never, geheim: true, bedienName: "Neues Passwort")
+                FormFeld(
+                    label: "Bestätigen", text: $wiederholung, inhaltsTyp: .newPassword, gross: .never, geheim: true,
+                    bedienName: "Passwort wiederholen"
+                )
+                    .onSubmit(speichern)
+            } header: {
+                if let email = sitzung.client.auth.currentUser?.email {
+                    GruppenKopf(titel: "Für \(email)")
+                }
+            } footer: {
+                Text(PasswortTexte.setzenUnterzeile).foregroundStyle(Farbe.muted)
             }
-            AnmeldeFeld(beschriftung: "Neues Passwort", text: $passwort, passwort: true, inhaltsTyp: .newPassword)
-            AnmeldeFeld(
-                beschriftung: "Noch einmal",
-                bedienName: "Passwort wiederholen",
-                text: $wiederholung,
-                passwort: true,
-                inhaltsTyp: .newPassword,
-                absenden: .go,
-                beimAbsenden: speichern
-            )
-            if let fehler {
-                KontoHinweis(text: fehler)
-            }
-        } fuss: {
-            Hauptknopf(text: laeuft ? "Wird gespeichert…" : "Speichern", gesperrt: laeuft, aktion: speichern)
         }
+        .sensoryFeedback(.error, trigger: fehler) { _, neu in neu != nil }
     }
 
     private func speichern() {
@@ -687,8 +707,8 @@ private struct PasswortAendern: View {
 // MARK: - Kuendigung
 
 /**
- * Erklaerung, freiwillige Nachricht, dann eine Rueckfrage im Blatt selbst.
- * Rot als Schrift und Rahmen, nicht als Flaeche (U44).
+ * Erklaerung, freiwillige Nachricht und unten rot "Kündigung beantragen";
+ * die Rueckfrage kommt als Action Sheet, das Destruktive oben.
  */
 private struct KuendigungFormular: View {
     let daten: Kontodaten
@@ -700,71 +720,63 @@ private struct KuendigungFormular: View {
     @State private var meldung: Ergebnis?
 
     var body: some View {
-        // Erklaerung, Hinweise als Karte, Nachricht; die Aktionen stehen unten fest (Entwurf "Kuendigen").
-        KontoBlattGeruest(titel: Kontoloeschung.titel, zu: zu) {
-            if let erster = Kontoloeschung.erklaerung.first {
-                Text(erster)
-                    .font(Schrift.text(.normal, Tokens.Schrift.normal))
-                    .foregroundStyle(Farbe.ink2)
-                    .lineSpacing(4)
-                    .fixedSize(horizontal: false, vertical: true)
+        FormBlatt(titel: "Kündigen", geaendert: !nachricht.isEmpty && meldung?.ok != true, laeuft: laeuft, zu: zu) {
+            if let meldung {
+                FormMeldung(text: meldung.meldung, ok: meldung.ok)
             }
-            if Kontoloeschung.erklaerung.count > 1 {
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(Kontoloeschung.erklaerung.dropFirst(), id: \.self) { satz in
-                        HStack(alignment: .firstTextBaseline, spacing: 12) {
-                            Circle().fill(Farbe.muted).frame(width: 6, height: 6)
-                                .alignmentGuide(.firstTextBaseline) { $0[.bottom] + 4 }
-                                .accessibilityHidden(true)
-                            Text(satz)
-                                .font(Schrift.text(.normal, Tokens.Schrift.normal))
-                                .foregroundStyle(Farbe.ink)
-                                .lineSpacing(3)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(Kontoloeschung.titel).font(.headline).foregroundStyle(Farbe.ink)
+                    if let erster = Kontoloeschung.erklaerung.first {
+                        Text(erster).font(.subheadline).foregroundStyle(Farbe.ink2)
                     }
                 }
-                .padding(20)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
-                .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.karte).strokeBorder(Farbe.line, lineWidth: 1))
-            }
-            if let meldung {
-                KontoHinweis(text: meldung.meldung, ok: meldung.ok)
+                .padding(.vertical, 4)
+                .gruppenZeile()
+                ForEach(Kontoloeschung.erklaerung.dropFirst(), id: \.self) { satz in
+                    Label { Text(satz).font(.subheadline).foregroundStyle(Farbe.ink2) } icon: {
+                        Image(systemName: "info.circle").foregroundStyle(Farbe.muted)
+                    }
+                    .gruppenZeile()
+                }
             }
             if meldung?.ok != true {
-                KontoFeld(
-                    label: Kontoloeschung.nachrichtLabel,
-                    text: Binding(
-                        get: { nachricht },
-                        set: { nachricht = $0.utf16.count > Kontoloeschung.nachrichtMax ? String($0.prefix(Kontoloeschung.nachrichtMax)) : $0 }
-                    ),
-                    mehrzeilig: true
-                )
-                .disabled(laeuft)
-            }
-        } fuss: {
-            if meldung?.ok == true {
-                LeiserKnopf(text: "Schließen", aktion: zu)
-            } else if rueckfrage {
-                Text(Kontoloeschung.bestaetigungFrage)
-                    .font(Schrift.text(.fett, Tokens.Schrift.normal))
-                    .foregroundStyle(Farbe.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                // Rot gefuellt nur als Bestaetigung, darunter der neutrale Weg zurueck.
-                Knopf(
-                    laeuft ? "Wird gesendet…" : Kontoloeschung.bestaetigen, stufe: .gefahr, breit: true,
-                    gesperrt: laeuft, aktion: senden
-                )
-                LeiserKnopf(text: Kontoloeschung.abbrechen, gesperrt: laeuft) { rueckfrage = false }
-            } else {
-                LeiserKnopf(text: Kontoloeschung.absenden, rot: true) {
-                    meldung = nil
-                    rueckfrage = true
+                Section {
+                    TextField(
+                        "", text: Binding(
+                            get: { nachricht },
+                            set: { nachricht = $0.utf16.count > Kontoloeschung.nachrichtMax ? String($0.prefix(Kontoloeschung.nachrichtMax)) : $0 }
+                        ),
+                        prompt: Text("Freiwillig").foregroundStyle(Farbe.muted),
+                        axis: .vertical
+                    )
+                    .lineLimit(3...8)
+                    .disabled(laeuft)
+                    .accessibilityLabel(Kontoloeschung.nachrichtLabel)
+                    .gruppenZeile()
+                } header: {
+                    GruppenKopf(titel: "Nachricht an den Vorstand")
                 }
-                LeiserKnopf(text: Kontoloeschung.abbrechen, aktion: zu)
+                Section {
+                    Button(role: .destructive) { rueckfrage = true } label: {
+                        HStack {
+                            Spacer()
+                            if laeuft { ProgressView() } else { Text(Kontoloeschung.absenden) }
+                            Spacer()
+                        }
+                    }
+                    .disabled(laeuft)
+                    .gruppenZeile()
+                    .confirmationDialog(Kontoloeschung.bestaetigungFrage, isPresented: $rueckfrage, titleVisibility: .visible) {
+                        Button(Kontoloeschung.bestaetigen, role: .destructive, action: senden)
+                        Button(Kontoloeschung.abbrechen, role: .cancel) {}
+                    }
+                }
             }
+        }
+        .sensoryFeedback(trigger: meldung) { _, neu in
+            guard let neu else { return nil }
+            return neu.ok ? .success : .error
         }
     }
 
@@ -774,7 +786,6 @@ private struct KuendigungFormular: View {
         Task {
             let r = await daten.beantrageKontoloeschung(nachricht)
             laeuft = false
-            rueckfrage = false
             meldung = r
         }
     }

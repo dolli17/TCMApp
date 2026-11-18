@@ -25,14 +25,6 @@ private struct SpieleInhalt: Sendable {
     let offen: Abschnitt<[OffenesSpiel]>
 }
 
-/// Die offene Rueckfrage: welche Buchung und was damit geschehen soll.
-private struct Nachfrage: Identifiable {
-    let buchung: MeineBuchung
-    let aktion: TerminAktion
-    var id: String { buchung.id }
-    var frage: Rueckfrage { SpieleLogik.rueckfrage(aktion) }
-}
-
 struct SpieleBildschirm: View {
     @Environment(Sitzung.self) private var sitzung
     @Environment(PlaetzeZustand.self) private var zustand
@@ -42,45 +34,46 @@ struct SpieleBildschirm: View {
     @State private var aktualisiert = false
     @State private var laeuft = false
     @State private var meldung: ToastMeldung?
-    @State private var nachfrage: Nachfrage?
+    /// Fuer die Karte eines eigenen Spiels: dasselbe Modell wie der Belegungsplan, auf den Tag des Spiels geladen.
+    @State private var karte: PlaetzeModell?
     @State private var jetzt = Date()
 
     private var daten: Platzdaten { Platzdaten(client: sitzung.client) }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
+            List {
+                Section {
                     PlaetzeKopf()
-                    if laedt && inhalt == nil {
-                        ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)
-                    } else if let d = inhalt {
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                if laedt && inhalt == nil {
+                    Section {
+                        ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.vertical, 24)
+                    }
+                    .listRowBackground(Color.clear)
+                } else if let d = inhalt {
                         let erneut = Erneut(laeuft: aktualisiert) { Task { await laden(.nachladen) } }
                         let eigene = SpieleLogik.eigene(d.meine.wert ?? [])
                         ForEach(SpieleLogik.abschnitte(offeneZuerst: zustand.offeneZuerst), id: \.self) { a in
                             switch a {
                             case .meine:
-                                DeineTermine(termine: d.meine, jetzt: jetzt, laeuft: laeuft, erneut: erneut) { b, aktion in
-                                    nachfrage = Nachfrage(buchung: b, aktion: aktion)
-                                }
+                                DeineTermine(termine: d.meine, jetzt: jetzt, erneut: erneut) { oeffneKarte($0) }
                             case .offen:
                                 OffeneSpieleListe(offen: d.offen, eigene: eigene, jetzt: jetzt, laeuft: laeuft, erneut: erneut) { o in
                                     Task { await ausfuehren { await daten.spieleMit(o.bookingId) } }
                                 }
                             }
                         }
-                    } else {
-                        Text("Die Spiele konnten nicht geladen werden.").leise()
-                    }
+                } else {
+                    Section { Text("Die Spiele konnten nicht geladen werden.").foregroundStyle(Farbe.muted).gruppenZeile() }
                 }
-                .padding(.horizontal, Tokens.Abstand.rand)
-                .padding(.bottom, Tokens.Abstand.abschnitt * 2)
             }
-            .background(Farbe.bg)
-            // Was nach oben scrollt, laeuft nicht unter die Uhr der Statusleiste.
-            .overlay(alignment: .top) { Farbe.bg.frame(height: 0).ignoresSafeArea(edges: .top) }
+            .gruppenListe()
+            .listSectionSpacing(20)
             .refreshable { await laden(.nachladen) }
-            .toolbar(.hidden, for: .navigationBar)
+            .plaetzeTitel()
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 8) {
                     if let meldung { Toast(meldung: meldung) { self.meldung = nil } }
@@ -90,23 +83,32 @@ struct SpieleBildschirm: View {
                 .animation(.snappy, value: meldung)
             }
         }
-        .alert(
-            nachfrage?.frage.titel ?? "",
-            isPresented: Binding(get: { nachfrage != nil }, set: { if !$0 { nachfrage = nil } }),
-            presenting: nachfrage
-        ) { n in
-            Button(n.frage.knopf, role: .destructive) {
-                Task { await ausfuehren { await aendern(n) } }
+        // Ein eigenes Spiel oeffnet dieselbe Karte wie im Belegungsplan (Buchungsblatt).
+        .sheet(
+            item: Binding(get: { karte?.fenster }, set: { if $0 == nil { karte?.schliesseFenster() } }),
+            onDismiss: {
+                if let t = karte?.meldung {
+                    meldung = t
+                    karte?.meldung = nil
+                }
+                Task { await laden(.still) }
             }
-            Button("Abbrechen", role: .cancel) {}
-        } message: { n in
-            Text(n.frage.text)
+        ) { f in
+            if let k = karte { Buchungsblatt(modell: k, fenster: f) }
         }
         .sensoryFeedback(trigger: meldung) { _, neu in
             guard let neu else { return nil }
             return neu.ok ? .success : .error
         }
-        .task { await laden(.erstes) }
+        .task {
+            await laden(.erstes)
+            #if DEBUG
+            // Fuer Bildschirmfotos per simctl: `-TCMSpielKarte` oeffnet das erste eigene Spiel als Karte.
+            if ProcessInfo.processInfo.arguments.contains("-TCMSpielKarte"), let t = inhalt?.meine.wert?.first {
+                oeffneKarte(t)
+            }
+            #endif
+        }
         // Zurueck in den Vordergrund: still nachladen, ohne Ladekreis.
         .onChange(of: phase) { _, neu in
             if neu == .active && inhalt != nil { Task { await laden(.still) } }
@@ -143,10 +145,19 @@ struct SpieleBildschirm: View {
         return await SpieleInhalt(name: name.wert ?? nil, meine: meine, offen: offen)
     }
 
-    private func aendern(_ n: Nachfrage) async -> PlatzErgebnis {
-        switch n.aktion {
-        case .stornieren: await daten.storniereBuchung(n.buchung.bookingId, grund: nil)
-        case .austragen: await daten.verlasseBuchung(n.buchung.bookingId)
+    /// Laedt den Tag des Spiels und oeffnet darauf die Buchung als Karte.
+    private func oeffneKarte(_ t: MeineBuchung) {
+        guard let beginn = Zeit.datum(t.startsAt) else { return }
+        let m = karte ?? PlaetzeModell(client: sitzung.client)
+        karte = m
+        Task {
+            m.datum = Zeit.berlinDay(beginn)
+            await m.laden()
+            if let b = m.belegung.first(where: { $0.bookingId == t.bookingId }) {
+                m.oeffne(b)
+            } else {
+                meldung = ToastMeldung(ok: false, text: m.ladeFehler ?? "Das Spiel konnte nicht geöffnet werden.")
+            }
         }
     }
 
@@ -155,7 +166,6 @@ struct SpieleBildschirm: View {
         guard !laeuft else { return }
         laeuft = true
         let r = await arbeit()
-        nachfrage = nil
         meldung = ToastMeldung(ok: r.ok, text: r.meldung)
         if r.ok { await laden(.still) }
         laeuft = false
@@ -168,105 +178,101 @@ private struct DeineTermine: View {
     @Environment(PlaetzeZustand.self) private var zustand
     let termine: Abschnitt<[MeineBuchung]>
     let jetzt: Date
-    let laeuft: Bool
     let erneut: Erneut
-    let fragen: (MeineBuchung, TerminAktion) -> Void
+    let oeffnen: (MeineBuchung) -> Void
 
     var body: some View {
         let liste = SpieleLogik.termine(termine.wert ?? [], jetzt: jetzt)
-        Kopfzeile(titel: "Deine Termine", zaehler: liste.isEmpty ? nil : SpieleLogik.terminZaehler(liste.count))
-            .padding(.top, Tokens.Abstand.s)
-        if let f = termine.fehler {
-            Fehlerzeile(text: f, laeuft: erneut.laeuft, onErneut: erneut.aktion)
-        }
-        if termine.wert != nil && liste.isEmpty {
-            Leerzustand(
-                text: "Für dich steht gerade nichts an. In der Belegung findest du die freien Plätze.",
-                handlung: ("Belegung ansehen", { zustand.wechsle(zu: .belegung) })
-            )
-        }
-        ForEach(liste) { b in
-            TerminKarte(b: b, jetzt: jetzt, laeuft: laeuft, fragen: fragen)
+        Section {
+            if let f = termine.fehler {
+                FehlerZeile(text: f, erneut: erneut).gruppenZeile()
+            }
+            if termine.wert != nil && liste.isEmpty {
+                LeerZeile(
+                    text: "Für dich steht gerade nichts an.",
+                    knopf: "Freie Plätze ansehen"
+                ) { zustand.wechsle(zu: .belegung) }
+            }
+            ForEach(liste) { b in
+                TerminZeile(b: b, jetzt: jetzt) { oeffnen(b) }
+            }
+        } header: {
+            GruppenKopf(titel: "Deine Termine", zusatz: liste.isEmpty ? nil : SpieleLogik.terminZaehler(liste.count))
+        } footer: {
+            if !liste.isEmpty {
+                Text("Tippe auf ein Spiel für Mitspieler, Bearbeiten oder Stornieren.")
+                    .foregroundStyle(Farbe.muted)
+            }
         }
     }
 }
 
-/**
- * Ein eigener Termin (docs/design/stitch, "Meine & offene Spiele"): gross die
- * Uhrzeit, rechts der gelbe Marker, darunter Tag, Platz und Mitspieler; im
- * Fuss der Karte der Weg zum Stornieren bzw. Austragen.
- */
-private struct TerminKarte: View {
-    let b: MeineBuchung
-    let jetzt: Date
-    let laeuft: Bool
-    let fragen: (MeineBuchung, TerminAktion) -> Void
+/// Leerer Abschnitt: ein Satz und ein Weg weiter.
+private struct LeerZeile: View {
+    let text: String
+    let knopf: String
+    let aktion: () -> Void
 
     var body: some View {
-        let aktion = SpieleLogik.aktion(b, jetzt: jetzt)
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 6) {
-                ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .center, spacing: 10) { zeit; Spacer(minLength: 0); marker }
-                    VStack(alignment: .leading, spacing: 6) { zeit; marker }
-                }
-                (Text(Startseite.dayLabel(startsAt: b.startsAt, now: jetzt)).foregroundStyle(Farbe.ink)
-                    + Text(" · \(SpieleLogik.terminTitel(b)) · \(SpieleLogik.terminZeile(b))").foregroundStyle(Farbe.muted))
-                    .font(Schrift.text(.normal, 15.5))
-                    .lineSpacing(2)
-                    .fixedSize(horizontal: false, vertical: true)
+        Text(text).foregroundStyle(Farbe.muted).gruppenZeile()
+        Button(action: aktion) {
+            HStack {
+                Text(knopf).foregroundStyle(Farbe.blueInk)
+                Spacer()
+                ZeilenPfeil()
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(SpieleLogik.terminLabel(b, jetzt: jetzt))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .gruppenZeile()
+    }
+}
 
-            Farbe.line.frame(height: 1).padding(.top, 16)
+/// Ein eigener Termin als Zeile: gross die Uhrzeit, rechts der gelbe Marker ("deins"); ein Tippen oeffnet die Karte.
+private struct TerminZeile: View {
+    let b: MeineBuchung
+    let jetzt: Date
+    let oeffnen: () -> Void
+
+    var body: some View {
+        let laeuftSchon = SpieleLogik.aktion(b, jetzt: jetzt) == nil
+        Button(action: oeffnen) {
             HStack(spacing: 10) {
-                if let aktion {
-                    if aktion == .stornieren {
-                        Text("Stornieren geht bis Spielbeginn")
-                            .font(Schrift.text(.normal, Tokens.Schrift.klein))
-                            .foregroundStyle(Farbe.muted)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Text(HomeLogik.zeitSpanne(b))
+                            .font(.title3.weight(.bold))
+                            .monospacedDigit()
+                            .foregroundStyle(Farbe.ink)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
+                        Spacer(minLength: 0)
+                        if laeuftSchon {
+                            Text("läuft").font(.subheadline).foregroundStyle(Farbe.muted)
+                        } else {
+                            // Gelb heisst "deins": das selbst gebuchte Spiel und das, bei dem man eingetragen ist.
+                            DeinMarker(b.binBucher == true ? "Dein Spiel" : "Du bist dabei")
+                        }
                     }
-                    Spacer(minLength: 0)
-                    Button { fragen(b, aktion) } label: {
-                        Text(SpieleLogik.aktionText(aktion))
-                            .font(Schrift.display(.halbfett, 15))
-                            .foregroundStyle(Farbe.redInk)
-                            .frame(minHeight: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(laeuft)
-                    .opacity(laeuft ? 0.5 : 1)
-                    .accessibilityLabel(SpieleLogik.optionenLabel(b, jetzt: jetzt))
-                } else {
-                    Text("läuft").leise().frame(minHeight: 44)
-                    Spacer(minLength: 0)
+                    Text(Startseite.dayLabel(startsAt: b.startsAt, now: jetzt))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Farbe.ink2)
+                    Text("\(SpieleLogik.terminTitel(b)) · \(SpieleLogik.terminZeile(b))")
+                        .font(.subheadline)
+                        .foregroundStyle(Farbe.muted)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                ZeilenPfeil()
             }
-            .padding(.top, 4)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 20)
-        .padding(.bottom, 6)
-        .karte(radius: Tokens.Radius.karte, padding: nil)
-    }
-
-    private var zeit: some View {
-        Text(HomeLogik.zeitSpanne(b))
-            .font(Schrift.display(.fett, 26, relativeTo: .title))
-            .tracking(-0.6)
-            .monospacedDigit()
-            .foregroundStyle(Farbe.ink)
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-    }
-
-    /// Gelb heisst "deins": das selbst gebuchte Spiel und das, bei dem man eingetragen ist.
-    private var marker: some View {
-        DeinMarker(b.binBucher == true ? "Dein Spiel" : "Du bist dabei")
+        .buttonStyle(.plain)
+        .gruppenZeile()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(SpieleLogik.terminLabel(b, jetzt: jetzt))
+        .accessibilityHint("Öffnet das Spiel")
+        .accessibilityAddTraits(.isButton)
     }
 }
 
@@ -282,32 +288,31 @@ private struct OffeneSpieleListe: View {
     let mitspielen: (OffenesSpiel) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Kopfzeile(titel: "Offene Spiele", zaehler: "Mitspieler gesucht")
-            Text("Hier fehlt noch jemand. Ein Tipp genügt.").leise()
-        }
-        .padding(.top, Tokens.Abstand.m)
-        if let f = offen.fehler {
-            Fehlerzeile(text: f, laeuft: erneut.laeuft, onErneut: erneut.aktion)
-        }
-        if let liste = offen.wert, liste.isEmpty {
-            Leerzustand(
-                text: "Gerade sucht niemand Mitspieler. Wenn du selbst buchst, schalte im Blatt „Mitspieler gesucht“ ein – dann steht dein Spiel hier.",
-                handlung: ("Platz buchen", { zustand.wechsle(zu: .belegung) })
-            )
-        }
-        ForEach(offen.wert ?? []) { o in
-            SpielKarte(o: o, eigene: eigene, jetzt: jetzt, laeuft: laeuft) { mitspielen(o) }
+        Section {
+            if let f = offen.fehler {
+                FehlerZeile(text: f, erneut: erneut).gruppenZeile()
+            }
+            if let liste = offen.wert, liste.isEmpty {
+                LeerZeile(
+                    text: "Gerade sucht niemand Mitspieler. Wenn du selbst buchst, schalte „Mitspieler gesucht“ ein – dann steht dein Spiel hier.",
+                    knopf: "Platz buchen"
+                ) { zustand.wechsle(zu: .belegung) }
+            }
+            ForEach(offen.wert ?? []) { o in
+                OffeneSpielZeile(o: o, eigene: eigene, jetzt: jetzt, laeuft: laeuft) { mitspielen(o) }
+            }
+        } header: {
+            GruppenKopf(titel: "Offene Spiele", zusatz: "Mitspieler gesucht")
+        } footer: {
+            if !(offen.wert ?? []).isEmpty {
+                Text("Hier fehlt noch jemand. Ein Tipp genügt.").foregroundStyle(Farbe.muted)
+            }
         }
     }
 }
 
-/**
- * Ein offenes Spiel wie auf der Startseite: "Morgen, 10:00" mit der Spielform
- * als hellblauer Marke, darunter Platz und wer dabei ist, rechts "Mitspielen"
- * oder der gelbe Marker "Du bist dabei".
- */
-private struct SpielKarte: View {
+/// Ein offenes Spiel wie auf der Startseite: wann, Spielform und Platz, wer dabei ist; rechts "Mitspielen" oder "Du bist dabei".
+private struct OffeneSpielZeile: View {
     let o: OffenesSpiel
     let eigene: Set<String>
     let jetzt: Date
@@ -318,29 +323,31 @@ private struct SpielKarte: View {
         let text = SpieleLogik.offenesSpielText(o, eigene: eigene)
         let wann = HomeLogik.offenesSpielWann(o, jetzt: jetzt)
         HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 8) { wannText(wann); BlaueMarke(o.typeName ?? "") }
-                    VStack(alignment: .leading, spacing: 4) { wannText(wann); BlaueMarke(o.typeName ?? "") }
-                }
-                Text(text.kopf)
-                    .font(Schrift.text(.normal, 14.5))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(wann)
+                    .font(.headline)
+                    .monospacedDigit()
+                    .foregroundStyle(Farbe.ink)
+                    .lineLimit(1)
+                    .accessibilityAddTraits(.isHeader)
+                // Die Besetzung nennt die Spielform schon ("Doppel · 3 von 4 dabei").
+                Text([Platzplan.nichtLeer(o.courtName), SpieleLogik.besetzung(o)].compactMap { $0 }.joined(separator: " · "))
+                    .font(.subheadline)
                     .foregroundStyle(Farbe.ink2)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("\(Platzplan.nichtLeer(o.courtName) ?? "") · \(SpieleLogik.besetzung(o))")
-                    .font(Schrift.text(.normal, 14))
+                Text(text.kopf)
+                    .font(.subheadline)
                     .foregroundStyle(Farbe.muted)
                     .fixedSize(horizontal: false, vertical: true)
                 if let zusatz = SpieleLogik.filterZusatz(o) {
                     Text(zusatz)
-                        .font(Schrift.text(.halbfett, Tokens.Schrift.klein))
+                        .font(.footnote.weight(.semibold))
                         .foregroundStyle(Farbe.blueInk)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityLabel("Nur für \(o.suchfilter.vorleseText)")
                 }
                 if let dabei = text.dabei {
                     Text(dabei)
-                        .font(Schrift.text(.normal, 14))
+                        .font(.footnote)
                         .foregroundStyle(Farbe.muted)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -351,22 +358,16 @@ private struct SpielKarte: View {
                 // Gelb heisst "deins".
                 DeinMarker("Du bist dabei")
             } else if SpieleLogik.darfMitspielen(o, eigene: eigene, jetzt: jetzt) {
-                Knopf("Mitspielen", groesse: .klein, gesperrt: laeuft, aktion: mitspielen)
+                Button("Mitspielen", action: mitspielen)
+                    .font(.subheadline.weight(.semibold))
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
+                    .tint(Farbe.blue)
+                    .disabled(laeuft)
                     .accessibilityLabel(SpieleLogik.mitspielenLabel(o, jetzt: jetzt))
             }
         }
-        .padding(.leading, 20)
-        .padding(.trailing, 16)
-        .padding(.vertical, 16)
-        .karte(radius: Tokens.Radius.karte, padding: nil)
-    }
-
-    private func wannText(_ wann: String) -> some View {
-        Text(wann)
-            .font(Schrift.display(.halbfett, 17))
-            .monospacedDigit()
-            .foregroundStyle(Farbe.ink)
-            .lineLimit(1)
-            .accessibilityAddTraits(.isHeader)
+        .padding(.vertical, 6)
+        .gruppenZeile()
     }
 }

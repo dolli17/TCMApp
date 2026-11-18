@@ -15,6 +15,8 @@ struct PushSchalter: View {
     /// Im Konto mit Symbol links; im Onboarding mit Erklaerung darunter.
     var symbol: String?
     var beschreibung: String?
+    /// In einer gruppierten Liste: blaue Kachel, Systemschrift, die Liste gibt den Rand.
+    var inListe = false
 
     @State private var an = false
     @State private var laeuft = false
@@ -27,10 +29,12 @@ struct PushSchalter: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 12) {
-                if let symbol { Symbolkachel(symbol: symbol) }
+                if let symbol {
+                    if inListe { IconKachel(symbol: symbol) } else { Symbolkachel(symbol: symbol) }
+                }
                 VStack(alignment: .leading, spacing: 3) {
                     Text(Self.titel)
-                        .font(Schrift.text(.normal, 17))
+                        .font(inListe ? .body : Schrift.text(.normal, 17))
                         .foregroundStyle(Farbe.ink)
                     if symbol == nil, let text = meldung ?? beschreibung {
                         Text(text).leise().fixedSize(horizontal: false, vertical: true)
@@ -46,9 +50,9 @@ struct PushSchalter: View {
                 Text(meldung).leise().padding(.leading, 44).fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .frame(minHeight: 56)
+        .padding(.horizontal, inListe ? 0 : 20)
+        .padding(.vertical, inListe ? 0 : 12)
+        .frame(minHeight: inListe ? 0 : 56)
         .accessibilityElement(children: .contain)
         .task { an = await PushZentrale.shared.istAngemeldet(daten) }
     }

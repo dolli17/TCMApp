@@ -19,40 +19,40 @@ struct AnmeldenBildschirm: View {
 
     var body: some View {
         NavigationStack {
-            AnmeldeSeite(titel: "Willkommen zurück auf dem Platz.") {
-                AnmeldeFeld(
-                    beschriftung: "E-Mail",
-                    text: $email,
-                    inhaltsTyp: .username,
-                    tastatur: .emailAddress
-                )
-                AnmeldeFeld(
-                    beschriftung: "Passwort",
-                    text: $passwort,
-                    passwort: true,
-                    inhaltsTyp: .password,
-                    absenden: .go,
-                    beimAbsenden: absenden
-                )
-                LeiserVerweis(text: "Passwort vergessen?", rechts: true) { vergessenOffen = true }
-
-                // Die Meldung verraet bewusst nicht, ob die Adresse existiert.
-                if let fehler {
-                    AnmeldeHinweis(text: fehler)
+            AnmeldeSeite(titel: "Willkommen zurück auf dem Platz.", unterzeile: "Melde dich mit deiner Vereins-E-Mail an.") {
+                Section {
+                    AnmeldeFeld(
+                        beschriftung: "E-Mail",
+                        text: $email,
+                        inhaltsTyp: .username,
+                        tastatur: .emailAddress
+                    )
+                    AnmeldeFeld(
+                        beschriftung: "Passwort",
+                        text: $passwort,
+                        passwort: true,
+                        inhaltsTyp: .password,
+                        absenden: .go,
+                        beimAbsenden: absenden
+                    )
+                    // Die Meldung verraet bewusst nicht, ob die Adresse existiert.
+                    if let fehler {
+                        AnmeldeHinweis(text: fehler)
+                    }
                 }
-
-                VStack(spacing: Tokens.Abstand.l) {
-                    Hauptknopf(text: laeuft ? "Anmelden…" : "Anmelden", gesperrt: laeuft, aktion: absenden)
+                KnopfZeile {
+                    BreiterKnopf(text: "Anmelden", laeuft: laeuft, aktion: absenden)
+                    LeiserVerweis(text: "Passwort vergessen?") { vergessenOffen = true }
                     // Der Mitgliedsantrag liegt im Web; ohne Adresse (lokal) bleibt die Zeile weg.
                     if let antrag = sitzung.umgebung.webLink("/antrag") {
                         AnmeldeFusszeile(text: "Noch kein Mitglied?", verweis: "Antrag stellen", ziel: antrag)
                     }
                 }
-                .padding(.top, Tokens.Abstand.abschnitt)
             }
             .toolbar(.hidden, for: .navigationBar)
+            .sensoryFeedback(.error, trigger: fehler) { _, neu in neu != nil }
             .navigationDestination(isPresented: $vergessenOffen) {
-                PasswortVergessenBildschirm { vergessenOffen = false }
+                PasswortVergessenBildschirm(email: email) { vergessenOffen = false }
             }
         }
         #if DEBUG

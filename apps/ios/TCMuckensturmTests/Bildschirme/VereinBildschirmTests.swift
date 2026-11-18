@@ -59,7 +59,8 @@ final class VereinBildschirmTests: BildschirmTestfall {
     func testVeranstaltungen() async {
         let a = Attrappe()
         let z = liste()
-        await pruefe("verein-veranstaltungen", erwartet: ["Verein", "Sommerfest", "Plätze winterfest machen", "Weihnachtsfeier", "Mitgliederversammlung"]) {
+        // Arbeitsdienste stehen im eigenen Reiter, nicht unter den Veranstaltungen.
+        await pruefe("verein-veranstaltungen", erwartet: ["Verein", "Sommerfest", "Weihnachtsfeier", "Mitgliederversammlung"], nicht: ["Plätze winterfest machen"]) {
             verein(a, z)
         }
         XCTAssertEqual(Set(a.rpcs), ["events_fuer_mitglied", "my_unread_notification_count"])
@@ -97,11 +98,23 @@ final class VereinBildschirmTests: BildschirmTestfall {
     func testVeranstaltungAngemeldet() async {
         let a = Attrappe()
         let id = "e0000000-0000-4000-8000-000000000001"
-        await pruefe("verein-veranstaltung", erwartet: ["Sommerfest", "Clubhaus", "Mit Grill und Musik. Salate bitte mitbringen."]) {
+        // Die Beschreibung steht weiter unten; oben Kalender, Teilen und die eigene Anmeldung.
+        await pruefe("verein-veranstaltung", erwartet: ["Sommerfest", "Clubhaus", "Zum Kalender", "Teilen", "Anmeldung ändern"]) {
             detail(id, a)
         }
         XCTAssertEqual(a.aufrufe("events_fuer_mitglied").last?.abfrage, "id=eq.\(id)")
         XCTAssertEqual(a.letzte("event_mein_wartelistenplatz")?["p_event_id"] as? String, id)
+    }
+
+    /// Der dritte Reiter: eigener Stand und die Einsaetze der Art "arbeitsdienst".
+    func testArbeitsdienst() async {
+        let a = Attrappe()
+        let z = VereinZustand()
+        z.reiter = .arbeitsdienst
+        await pruefe("verein-arbeitsdienst-liste", erwartet: ["Verein", "Arbeitsdienst", "Plätze winterfest machen"], nicht: ["Sommerfest"]) {
+            verein(a, z)
+        }
+        XCTAssertTrue(Set(a.rpcs).isSuperset(of: ["events_fuer_mitglied", "my_work_duty", "my_work_duty_entries"]))
     }
 
     func testVeranstaltungArbeitsdienstAnmelden() async {

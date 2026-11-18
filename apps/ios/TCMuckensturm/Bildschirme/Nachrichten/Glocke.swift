@@ -20,6 +20,8 @@ struct Glocke: View {
     @State private var liste: [Benachrichtigung]?
     @State private var fehler: String?
     @State private var alleGesehen = false
+    /// In der Navigationsleiste: ohne eigenen Kreis, die Leiste gibt den Grund.
+    var schlicht = false
 
     private var daten: Startdaten { Startdaten(client: sitzung.client) }
 
@@ -29,12 +31,12 @@ struct Glocke: View {
                 .font(.system(size: 19, weight: .medium))
                 .foregroundStyle(Farbe.ink)
                 .frame(width: 44, height: 44)
-                .background(Farbe.surf2, in: Circle())
-                .overlay(Circle().strokeBorder(Farbe.line, lineWidth: 1))
+                .background(schlicht ? Color.clear : Farbe.surf2, in: Circle())
+                .overlay(Circle().strokeBorder(schlicht ? Color.clear : Farbe.line, lineWidth: 1))
                 .overlay(alignment: .topTrailing) {
                     if ungelesen > 0 {
                         Text(HomeLogik.glockenZahl(ungelesen))
-                            .font(Schrift.display(.fett, Tokens.Schrift.kicker))
+                            .font(.caption2.weight(.bold))
                             .monospacedDigit()
                             .dynamicTypeSize(...DynamicTypeSize.xLarge)
                             // Gelb heisst "deins": deine ungelesenen Nachrichten.
@@ -59,34 +61,41 @@ struct Glocke: View {
         }
     }
 
+    /// Die Mitteilungen als Blatt: Titel in der Leiste, ✕ links, "Alle gelesen" rechts.
     private var blatt: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                HStack {
-                    Text("Benachrichtigungen")
-                        .font(Schrift.display(.fett, 22, relativeTo: .title2))
-                        .foregroundStyle(Farbe.ink)
-                        .accessibilityAddTraits(.isHeader)
-                    Spacer()
-                    SchliessenKnopf { offen = false }
-                }
-                if HomeLogik.zeigeAlleGelesen(liste, alleGesehen: alleGesehen) {
-                    AlleGelesenKnopf { alleGesehen = true }
-                }
+        NavigationStack {
+            List {
                 if let fehler {
-                    Text(fehler).font(Schrift.text(.halbfett, 16)).foregroundStyle(Farbe.redInk)
+                    Section {
+                        Label(fehler, systemImage: "exclamationmark.triangle.fill").foregroundStyle(Farbe.redInk).gruppenZeile()
+                    }
                 } else if let liste {
                     NachrichtenListe(liste: liste, alleGesehen: alleGesehen) {
                         offen = false
                         zuVerein(.veranstaltung($0))
                     }
                 } else {
-                    ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity)
+                    Section { ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.vertical, 24) }
+                        .listRowBackground(Color.clear)
                 }
             }
-            .padding(Tokens.Abstand.rand)
+            .gruppenListe()
+            .listSectionSpacing(20)
+            .navigationTitle("Benachrichtigungen")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { offen = false } label: { Image(systemName: "xmark") }
+                        .accessibilityLabel("Schließen")
+                }
+                if HomeLogik.zeigeAlleGelesen(liste, alleGesehen: alleGesehen) {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Alle als gelesen") { alleGesehen = true }
+                    }
+                }
+            }
         }
-        .background(Farbe.bg)
+        .tint(Farbe.blue)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }

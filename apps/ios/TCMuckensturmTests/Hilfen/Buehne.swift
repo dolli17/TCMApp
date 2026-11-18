@@ -161,6 +161,20 @@ final class Buehne {
         return false
     }
 
+    /// Rollt die groesste Liste ans Ende (oder zurueck an den Anfang): eine List legt nur an, was sichtbar ist.
+    func rolle(ansEnde: Bool = true) async {
+        func rollen(_ v: UIView) -> [UIScrollView] { ((v as? UIScrollView).map { [$0] } ?? []) + v.subviews.flatMap(rollen) }
+        guard let liste = rollen(fenster).max(by: { $0.contentSize.height < $1.contentSize.height }) else { return }
+        // Mehrmals: beim Rollen legt die Liste neue Zeilen an und waechst.
+        for _ in 0..<(ansEnde ? 5 : 1) {
+            let y = ansEnde
+                ? max(0, liste.contentSize.height - liste.bounds.height + liste.adjustedContentInset.bottom)
+                : -liste.adjustedContentInset.top
+            liste.setContentOffset(CGPoint(x: 0, y: y), animated: false)
+            await atme()
+        }
+    }
+
     // MARK: - Bild
 
     func bild() -> UIImage {

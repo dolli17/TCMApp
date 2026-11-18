@@ -301,6 +301,28 @@ final class PlaetzeModell {
         )
     }
 
+    /**
+     * Bearbeiten im Blatt (✓): erst die Mitspieler, dann die Suche - wie bei
+     * Kontakte ein Speichern fuer alles. Eine Meldung am Ende; schlaegt das
+     * Erste fehl, unterbleibt das Zweite.
+     */
+    func bearbeitungSpeichern(
+        _ id: String, mitspieler: (mitglieder: [String], gaeste: [String])?, suche: (gesucht: Bool, filter: Suchfilter)?
+    ) async {
+        let r = await mitLauf {
+            var letztes = PlatzErgebnis(ok: true, meldung: "Gespeichert.")
+            if let mitspieler {
+                letztes = await daten.aendereMitspieler(bookingId: id, mitglieder: mitspieler.mitglieder, gaeste: mitspieler.gaeste)
+                if !letztes.ok { return letztes }
+            }
+            if let suche {
+                letztes = await daten.sucheMitspieler(id, gesucht: suche.gesucht, filter: suche.filter)
+            }
+            return letztes
+        }
+        await ergebnis(r, ziel: .buchung(id))
+    }
+
     func beitreten(_ id: String) async {
         await ergebnis(await mitLauf { await daten.spieleMit(id) }, ziel: .buchung(id))
     }

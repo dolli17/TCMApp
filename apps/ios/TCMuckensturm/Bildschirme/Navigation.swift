@@ -31,7 +31,7 @@ extension EnvironmentValues {
 
 /// Wohin im Tab Verein.
 enum VereinZiel: Hashable, Sendable {
-    case getraenke, veranstaltungen
+    case getraenke, veranstaltungen, arbeitsdienst
     case veranstaltung(String)
 }
 
@@ -69,6 +69,10 @@ extension EnvironmentValues {
 
 /// Wohin im Tab Konto.
 enum KontoZiel: Hashable, Sendable {
+    /// Persoenliches und Einstellungen, hinter der Profilkarte
+    case profil
+    /// Die offenen Posten im Einzelnen, hinter der Abrechnungszeile
+    case abrechnung
     /// Einladungen, Kader und die Funktionen des Mannschaftsfuehrers
     case mannschaft
 }

@@ -46,42 +46,6 @@ private struct KartenStil: ViewModifier {
 
 // MARK: - Kopf
 
-/**
- * Der grosse Titel-Kopf (docs/design/stitch): Kicker, Titel, optional eine
- * leise Zeile, rechts die Glocke. Der Titel darf zweizeilig werden (U52).
- * Ins Konto fuehrt der Tab; einen Avatar gibt es im Kopf nicht mehr.
- */
-struct GrosserKopf: View {
-    let titel: String
-    var kicker: String? = "TC Muckensturm"
-    /// Leise Zeile unter dem Titel ("8 Plaetze · 08 bis 21 Uhr")
-    var unterzeile: String?
-
-    var body: some View {
-        HStack(alignment: .center, spacing: Tokens.Abstand.m) {
-            VStack(alignment: .leading, spacing: 2) {
-                if let kicker {
-                    Text(kicker).kicker()
-                }
-                Text(titel)
-                    .font(Schrift.display(.fett, Tokens.Schrift.seitentitel, relativeTo: .largeTitle))
-                    .tracking(Tokens.Schrift.laufweiteTitel)
-                    .foregroundStyle(Farbe.ink)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-                    .accessibilityAddTraits(.isHeader)
-                if let unterzeile {
-                    Text(unterzeile).leise().padding(.top, 2)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            Glocke()
-        }
-        .padding(.top, 16)
-        .padding(.bottom, Tokens.Abstand.m)
-    }
-}
-
 /// Abschnittskopf mit optionalem Zaehler ("3 Plaetze") oder Link rechts ("Alle"); label sagt dem
 /// Screenreader, was gemeint ist (U6).
 struct Kopfzeile: View {

@@ -62,45 +62,42 @@ struct KontoBildschirm: View {
         @Bindable var z = zustand
         NavigationStack(path: $z.pfad) {
             ScrollViewReader { leser in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                        // Kopf wie auf den anderen Tabs (Entwurf "Konto"); darunter, wer man ist.
-                        GrosserKopf(titel: "Konto")
-
-                        if laedt && inhalt == nil {
-                            ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)
-                        } else if let d = inhalt {
-                            let erneut = Erneut(laeuft: aktualisiert) { Task { await laden(.nachladen) } }
-                            Profilkopf(profil: d.profil, erneut: erneut)
-                            if let meldung {
-                                KontoHinweis(text: meldung, ok: true)
+                List {
+                    if laedt && inhalt == nil {
+                        Section {
+                            ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.vertical, 24)
+                        }
+                        .listRowBackground(Color.clear)
+                    } else if let d = inhalt {
+                        let erneut = Erneut(laeuft: aktualisiert) { Task { await laden(.nachladen) } }
+                        Profilkopf(profil: d.profil, erneut: erneut) { zustand.pfad.append(.profil) }
+                        AbrechnungKurz(forderungen: d.forderungen, getraenke: d.getraenke, erneut: erneut) {
+                            zustand.pfad.append(.abrechnung)
+                        }
+                        ArbeitsdienstAbschnitt(dienst: d.dienst, erneut: erneut)
+                        rechtliches
+                        // Abgesetzt, damit niemand sie beim Abmelden streift (U44).
+                        Section {
+                            Button(role: .destructive) { blatt = .loeschen } label: {
+                                Text(Kontoloeschung.titel).foregroundStyle(Farbe.redInk)
                             }
-                            Abrechnung(forderungen: d.forderungen, getraenke: d.getraenke, erneut: erneut)
-                            ArbeitsdienstKarte(dienst: d.dienst, erneut: erneut)
-                            einstellungen(d)
-                            rechtliches
-                            // Abgesetzt, damit niemand sie beim Abmelden streift (U44).
-                            KontoGruppe {
-                                KontoVerweis(titel: Kontoloeschung.titel, pfeil: true) { blatt = .loeschen }
-                            }
-                            .padding(.top, Tokens.Abstand.abschnitt - Tokens.Abstand.m)
+                            .gruppenZeile()
                         }
                     }
-                    .padding(.horizontal, Tokens.Abstand.rand)
-                    .padding(.bottom, Tokens.Abstand.abschnitt * 2)
                 }
-                .background(Farbe.bg)
+                .gruppenListe()
                 .refreshable { await laden(.nachladen) }
                 .onChange(of: rollenZu) { _, ziel in
                     if let ziel { leser.scrollTo(ziel, anchor: UnitPoint(x: 0.5, y: 0.12)) }
                 }
             }
-            .toolbar(.hidden, for: .navigationBar)
-            // Beschriftet den Zurueck-Knopf in der Mannschaft.
             .navigationTitle("Konto")
+            .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: KontoZiel.self) { ziel in
                 switch ziel {
                 case .mannschaft: MannschaftBildschirm()
+                case .profil: profilSeite
+                case .abrechnung: abrechnungSeite
                 }
             }
         }
@@ -112,12 +109,18 @@ struct KontoBildschirm: View {
             if let i = argumente.firstIndex(of: "-TCMKontoBlatt"), i + 1 < argumente.count {
                 blatt = KontoBlatt(rawValue: argumente[i + 1])
             }
-            // `-TCMKontoRollen einstellungen` rollt zu den Einstellungen.
+            // `-TCMKontoRollen einstellungen` oeffnet die Einstellungen (hinter der Profilkarte).
             if let i = argumente.firstIndex(of: "-TCMKontoRollen"), i + 1 < argumente.count {
-                rollenZu = argumente[i + 1]
+                switch argumente[i + 1] {
+                case "einstellungen": zustand.pfad.append(.profil)
+                case "abrechnung": zustand.pfad.append(.abrechnung)
+                default: rollenZu = argumente[i + 1]
+                }
             }
             #endif
         }
+        // Ueber jeder Unterseite: gespeichert wird meist aus dem Profil heraus.
+        .bestaetigung($meldung)
         // Zurueck auf den Tab, etwa nach einem Getraenk: die Forderungen stimmen sonst nicht mehr (B19).
         .onAppear { if inhalt != nil { Task { await laden(.still) } } }
         .sheet(item: $blatt) { art in
@@ -140,87 +143,120 @@ struct KontoBildschirm: View {
         }
     }
 
+    // MARK: - Profil (Persoenlich und Einstellungen)
+
+    /// Hinter der Profilkarte, wie die Apple-ID-Seite in den Einstellungen.
+    @ViewBuilder private var profilSeite: some View {
+        List {
+            if let d = inhalt {
+                persoenlich(d)
+                einstellungen(d)
+            }
+        }
+        .gruppenListe()
+        .navigationTitle("Profil")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    // MARK: - Abrechnung im Einzelnen
+
+    @ViewBuilder private var abrechnungSeite: some View {
+        List {
+            if let d = inhalt {
+                let erneut = Erneut(laeuft: aktualisiert) { Task { await laden(.nachladen) } }
+                Abrechnung(forderungen: d.forderungen, getraenke: d.getraenke, erneut: erneut)
+            }
+        }
+        .gruppenListe()
+        .refreshable { await laden(.nachladen) }
+        .navigationTitle("Abrechnung")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    // MARK: - Persoenlich
+
+    @ViewBuilder private func persoenlich(_ d: KontoInhalt) -> some View {
+        Section {
+            Zeile(titel: "Meine Daten", symbol: "person.fill") { blatt = .daten }
+            Zeile(titel: "Notfallkontakt", symbol: "cross.case.fill") { blatt = .notfall }
+            Zeile(
+                titel: TennisLogik.titel,
+                symbol: "tennis.racket",
+                wert: d.tennis.fehler == nil ? TennisLogik.uebersicht(d.tennis.wert ?? nil) : nil
+            ) { blatt = .tennis }
+            if MannschaftLogik.zeigeEintrag(
+                profilTeam: d.profil.wert??.teamName,
+                mannschaft: d.mannschaft.wert ?? nil,
+                einladungen: d.einladungen.wert?.count ?? 0
+            ) {
+                Zeile(
+                    titel: MannschaftLogik.titel,
+                    symbol: "person.3.fill",
+                    wert: MannschaftLogik.uebersicht(
+                        mannschaft: d.mannschaft.wert ?? nil,
+                        profilTeam: d.profil.wert??.teamName,
+                        einladungen: d.einladungen.wert?.count ?? 0
+                    )
+                ) { zustand.pfad.append(.mannschaft) }
+            }
+            Zeile(titel: "Bankverbindung & Mandat", symbol: "creditcard.fill") { blatt = .bank }
+        } header: {
+            GruppenKopf(titel: "Persönlich")
+        }
+    }
+
     // MARK: - Einstellungen
 
     private func einstellungen(_ d: KontoInhalt) -> some View {
-        Group {
-            KontoAbschnitt(titel: "Einstellungen").id("einstellungen")
-            KontoGruppe {
-                KontoEintrag(titel: "Meine Daten") { blatt = .daten }
-                KontoLinie()
-                KontoEintrag(titel: "Notfallkontakt") { blatt = .notfall }
-                KontoLinie()
-                KontoEintrag(
-                    titel: TennisLogik.titel,
-                    unterzeile: d.tennis.fehler == nil ? TennisLogik.uebersicht(d.tennis.wert ?? nil) : nil
-                ) { blatt = .tennis }
-                if MannschaftLogik.zeigeEintrag(
-                    profilTeam: d.profil.wert??.teamName,
-                    mannschaft: d.mannschaft.wert ?? nil,
-                    einladungen: d.einladungen.wert?.count ?? 0
-                ) {
-                    KontoLinie()
-                    KontoEintrag(
-                        titel: MannschaftLogik.titel,
-                        unterzeile: MannschaftLogik.uebersicht(
-                            mannschaft: d.mannschaft.wert ?? nil,
-                            profilTeam: d.profil.wert??.teamName,
-                            einladungen: d.einladungen.wert?.count ?? 0
-                        )
-                    ) { zustand.oeffne(.mannschaft) }
-                }
-                if KontoLogik.zeigeEinwilligungen(d.merkmale.wert) {
-                    KontoLinie()
-                    KontoEintrag(titel: "Einwilligungen") { blatt = .einwilligungen }
-                }
-                KontoLinie()
-                KontoEintrag(titel: "Bankverbindung & Mandat") { blatt = .bank }
-                KontoLinie()
-                PushSchalter()
-                KontoLinie()
-                KontoEintrag(titel: "Passwort ändern") { blatt = .passwort }
-                KontoLinie()
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Erscheinungsbild").kicker()
-                    SegmentLeiste(
-                        beschriftung: "Erscheinungsbild",
-                        optionen: Erscheinungsbild.allCases.map { ($0, $0.label) },
-                        gewaehlt: erscheinungsbild
-                    ) { erscheinungsbild = $0 }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-                .padding(.bottom, 18)
+        Section {
+            PushSchalter(symbol: "bell.fill", inListe: true).gruppenZeile()
+            if KontoLogik.zeigeEinwilligungen(d.merkmale.wert) {
+                Zeile(titel: "Einwilligungen", symbol: "hand.raised.fill") { blatt = .einwilligungen }
             }
+            Zeile(titel: "Passwort ändern", symbol: "key.fill") { blatt = .passwort }
+            Picker(selection: $erscheinungsbild) {
+                ForEach(Erscheinungsbild.allCases, id: \.self) { Text($0.label).tag($0) }
+            } label: {
+                HStack(spacing: 14) {
+                    IconKachel(symbol: "circle.lefthalf.filled")
+                    Text("Erscheinungsbild").foregroundStyle(Farbe.ink)
+                }
+            }
+            .pickerStyle(.menu)
+            .gruppenZeile()
+        } header: {
+            GruppenKopf(titel: "Einstellungen")
         }
     }
 
     // MARK: - Rechtliches und Abmelden
 
     /// Datenschutz und Impressum liegen im Web; ohne Basisadresse (lokal) fehlen die Zeilen.
-    private var rechtliches: some View {
+    @ViewBuilder private var rechtliches: some View {
         let datenschutz = sitzung.umgebung.webLink("/datenschutz")
         let impressum = sitzung.umgebung.webLink("/impressum")
-        return KontoGruppe {
-            if let datenschutz, let impressum {
-                Link(destination: datenschutz) { verweisZeile("Datenschutz") }
-                    .buttonStyle(ZeilenDruck())
-                KontoLinie()
-                Link(destination: impressum) { verweisZeile("Impressum") }
-                    .buttonStyle(ZeilenDruck())
-                KontoLinie()
+        if let datenschutz, let impressum {
+            Section {
+                Link(destination: datenschutz) { linkZeile("Datenschutz", symbol: "lock.fill") }.gruppenZeile()
+                Link(destination: impressum) { linkZeile("Impressum", symbol: "info.circle.fill") }.gruppenZeile()
             }
-            KontoVerweis(titel: "Abmelden", rot: true) { abmeldenFragen = true }
         }
-        .padding(.top, Tokens.Abstand.s)
+        Section {
+            Button("Abmelden") { abmeldenFragen = true }
+                .foregroundStyle(Farbe.redInk)
+                .gruppenZeile()
+        }
     }
 
-    private func verweisZeile(_ titel: String) -> some View {
-        Text(titel)
-            .font(Schrift.text(.halbfett, 15.5))
-            .foregroundStyle(Farbe.ink)
-            .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-            .padding(.horizontal, 20)
+    private func linkZeile(_ titel: String, symbol: String) -> some View {
+        HStack(spacing: 14) {
+            IconKachel(symbol: symbol, farbe: Farbe.muted)
+            Text(titel).foregroundStyle(Farbe.ink).frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "arrow.up.forward")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Farbe.line2)
+                .accessibilityHidden(true)
+        }
     }
 
     // MARK: - Laden
@@ -264,49 +300,148 @@ struct KontoBildschirm: View {
     }
 }
 
+// MARK: - Zeile
+
+/// Eine Einstellungszeile wie in iOS: Kachel, Titel, grauer Stand rechts, Pfeil.
+private struct Zeile: View {
+    let titel: String
+    let symbol: String
+    var wert: String?
+    let aktion: () -> Void
+
+    var body: some View {
+        Button(action: aktion) {
+            HStack(spacing: 14) {
+                IconKachel(symbol: symbol)
+                Text(titel).foregroundStyle(Farbe.ink).lineLimit(1).layoutPriority(1)
+                Spacer(minLength: 8)
+                if let wert, !wert.isEmpty {
+                    Text(wert).foregroundStyle(Farbe.muted).lineLimit(1)
+                }
+                ZeilenPfeil()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .gruppenZeile()
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+    }
+}
+
 // MARK: - Profilkopf
 
+/// Wer man ist, wie die Apple-ID-Zeile oben in den Einstellungen; ein Tippen oeffnet Persoenliches und Einstellungen.
 private struct Profilkopf: View {
     let profil: Abschnitt<MeinProfil?>
     let erneut: Erneut
+    let aktion: () -> Void
 
     var body: some View {
         let p = profil.wert ?? nil
         let vorname = p?.firstName ?? ""
         let nachname = p?.lastName ?? ""
-        VStack(spacing: 0) {
-            Text(KontoLogik.initialen(vorname: vorname, nachname: nachname))
-                .font(Schrift.display(.fett, 30))
-                .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                .foregroundStyle(Farbe.blueInk)
-                .frame(width: 88, height: 88)
-                .background(Farbe.blueSoft, in: Circle())
-                .overlay(Circle().strokeBorder(Farbe.blue.opacity(0.22), lineWidth: 1))
-                .accessibilityHidden(true)
-            Text("\(vorname) \(nachname)")
-                .font(Schrift.display(.fett, 28, relativeTo: .title))
-                .foregroundStyle(Farbe.ink)
-                .multilineTextAlignment(.center)
-                .padding(.top, 14)
-                .accessibilityAddTraits(.isHeader)
-            let marken = KontoLogik.marken(p)
-            if !marken.isEmpty {
-                UmbruchStapel(abstand: 6, zeilenabstand: 6, mittig: true) {
-                    ForEach(marken, id: \.self) { KontoMarke(text: $0, blau: $0 == "Mannschaftsführer") }
+        Section {
+            Button(action: aktion) {
+                HStack(spacing: 14) {
+                    Text(KontoLogik.initialen(vorname: vorname, nachname: nachname))
+                        .font(.title2.weight(.semibold))
+                        .dynamicTypeSize(...DynamicTypeSize.xLarge)
+                        .foregroundStyle(.white)
+                        .frame(width: 60, height: 60)
+                        .background(
+                            LinearGradient(colors: [Farbe.blue.opacity(0.75), Farbe.blue], startPoint: .top, endPoint: .bottom),
+                            in: Circle()
+                        )
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("\(vorname) \(nachname)")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(Farbe.ink)
+                        let marken = KontoLogik.marken(p)
+                        if !marken.isEmpty {
+                            Text(marken.joined(separator: " · "))
+                                .font(.subheadline)
+                                .foregroundStyle(Farbe.muted)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    ZeilenPfeil()
                 }
-                .padding(.top, 10)
+                .padding(.vertical, 6)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .gruppenZeile()
+            .accessibilityElement(children: .combine)
+            .accessibilityHint("Öffnet Persönliches und Einstellungen")
             if let f = profil.fehler {
-                Fehlerzeile(text: f, laeuft: erneut.laeuft, onErneut: erneut.aktion)
-                    .padding(.top, 10)
+                FehlerZeile(text: f, erneut: erneut).gruppenZeile()
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 4)
     }
 }
 
 // MARK: - Abrechnung
+
+/// Im Konto nur der Stand: was zusammen offen ist; ein Tippen zeigt die Posten (Abrechnung).
+private struct AbrechnungKurz: View {
+    let forderungen: Abschnitt<[Forderung]>
+    let getraenke: Abschnitt<[EigenesGetraenk]>
+    let erneut: Erneut
+    let aktion: () -> Void
+
+    var body: some View {
+        let fehler = forderungen.fehler ?? getraenke.fehler
+        let offen = KontoLogik.offen(forderungen.wert ?? [])
+        let zurueck = offen.filter { $0.status == "returned" }.count
+        let laufend = Startseite.sumOpenDrinks(getraenke.wert ?? [])
+        let summe = KontoLogik.summe(offen: offen, getraenkeLaufend: laufend)
+        let posten = offen.count + (laufend > 0 ? 1 : 0)
+
+        Section {
+            if let fehler {
+                FehlerZeile(text: fehler, erneut: erneut).gruppenZeile()
+            }
+            if let text = KontoLogik.zurueckText(zurueck) {
+                Label(text, systemImage: "exclamationmark.circle.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(Farbe.redInk)
+                    .gruppenZeile()
+            }
+            // Nach einem Ladefehler waere "Nichts offen" falsch beruhigend.
+            if fehler == nil || posten > 0 {
+                Button(action: aktion) {
+                    HStack(spacing: 14) {
+                        IconKachel(symbol: "eurosign", farbe: zurueck > 0 ? Farbe.red : Farbe.blue)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(posten == 0 ? "Nichts offen" : "Offen").foregroundStyle(Farbe.ink)
+                            if posten > 0 {
+                                Text(posten == 1 ? "1 Posten" : "\(posten) Posten")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Farbe.muted)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(Geld.formatCents(summe))
+                            .font(.headline)
+                            .monospacedDigit()
+                            .foregroundStyle(Farbe.ink)
+                        ZeilenPfeil()
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .gruppenZeile()
+                .accessibilityElement(children: .combine)
+                .accessibilityHint("Zeigt die einzelnen Posten")
+            }
+        } header: {
+            GruppenKopf(titel: "Abrechnung")
+        }
+    }
+}
 
 /**
  * "Abrechnung" statt "Offene Forderungen" wie im Web: der laufende
@@ -326,18 +461,19 @@ private struct Abrechnung: View {
         let laufend = Startseite.sumOpenDrinks(getraenke.wert ?? [])
         let summe = KontoLogik.summe(offen: offen, getraenkeLaufend: laufend)
 
-        KontoAbschnitt(titel: "Abrechnung")
-        if let fehler {
-            Fehlerzeile(text: fehler, laeuft: erneut.laeuft, onErneut: erneut.aktion)
-        }
-        if let text = KontoLogik.zurueckText(zurueck) {
-            KontoHinweis(text: text)
-        }
-        // Nach einem Ladefehler waere "Nichts offen" falsch beruhigend.
-        if fehler == nil || !offen.isEmpty || laufend > 0 {
-            KontoGruppe {
-                ForEach(Array(offen.enumerated()), id: \.element.id) { i, f in
-                    if i > 0 { KontoLinie() }
+        Section {
+            if let fehler {
+                FehlerZeile(text: fehler, erneut: erneut).gruppenZeile()
+            }
+            if let text = KontoLogik.zurueckText(zurueck) {
+                Label(text, systemImage: "exclamationmark.circle.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(Farbe.redInk)
+                    .gruppenZeile()
+            }
+            // Nach einem Ladefehler waere "Nichts offen" falsch beruhigend.
+            if fehler == nil || !offen.isEmpty || laufend > 0 {
+                ForEach(offen, id: \.id) { f in
                     zeile(
                         titel: KontoLogik.forderungTitel(f),
                         beschreibung: f.description,
@@ -346,7 +482,6 @@ private struct Abrechnung: View {
                     )
                 }
                 if laufend > 0 {
-                    if !offen.isEmpty { KontoLinie() }
                     zeile(
                         titel: KontoLogik.getraenkeTitel(Date()),
                         beschreibung: nil,
@@ -355,94 +490,87 @@ private struct Abrechnung: View {
                     )
                 }
                 if offen.isEmpty && laufend == 0 {
-                    Text("Nichts offen.").leise()
-                        .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-                        .padding(.horizontal, 16)
+                    Text("Nichts offen.").foregroundStyle(Farbe.muted).gruppenZeile()
                 } else {
                     HStack {
-                        Text("Zusammen").font(Schrift.display(.halbfett, 16)).foregroundStyle(Farbe.ink)
+                        Text("Zusammen").font(.headline).foregroundStyle(Farbe.ink)
                         Spacer()
-                        Betrag(text: Geld.formatCents(summe), groesse: 21)
+                        Text(Geld.formatCents(summe)).font(.headline).monospacedDigit().foregroundStyle(Farbe.ink)
                     }
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 20)
-                    .background(Farbe.surf2)
+                    .gruppenZeile()
                     .accessibilityElement(children: .combine)
                 }
             }
+        } header: {
+            GruppenKopf(titel: "Abrechnung")
         }
     }
 
     private func zeile(titel: String, beschreibung: String?, marke: Statusmarke, betrag: Int) -> some View {
         HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                // Titel und Stand in einer Zeile; passt es nicht, steht die Marke darunter.
-                let name = Text(titel)
-                    .font(Schrift.text(.normal, 17))
-                    .foregroundStyle(Farbe.ink)
-                    .lineLimit(1)
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 10) { name.fixedSize(); StatusmarkeAnsicht(marke: marke) }
-                    VStack(alignment: .leading, spacing: 4) { name; StatusmarkeAnsicht(marke: marke) }
-                }
-                if let b = beschreibung, !b.isEmpty {
-                    Text(b).leise().lineLimit(2)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(titel).foregroundStyle(Farbe.ink).lineLimit(1)
+                HStack(spacing: 6) {
+                    StatusmarkeAnsicht(marke: marke).padding(.top, -5)
+                    if let b = beschreibung, !b.isEmpty {
+                        Text(b).font(.footnote).foregroundStyle(Farbe.muted).lineLimit(1)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            Betrag(text: Geld.formatCents(betrag))
+            Text(Geld.formatCents(betrag)).monospacedDigit().foregroundStyle(Farbe.ink)
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 20)
-        .frame(minHeight: 64)
+        .padding(.vertical, 2)
+        .gruppenZeile()
         .accessibilityElement(children: .combine)
     }
 }
 
 // MARK: - Arbeitsdienst
 
-private struct ArbeitsdienstKarte: View {
+/// Der Stand; ein Tipp fuehrt in den Reiter Arbeitsdienst im Verein.
+private struct ArbeitsdienstAbschnitt: View {
     let dienst: Abschnitt<Arbeitsdienst?>
     let erneut: Erneut
+    @Environment(\.zuVerein) private var zuVerein
 
     var body: some View {
         if let f = dienst.fehler {
-            Fehlerzeile(text: "Arbeitsdienst: \(f)", laeuft: erneut.laeuft, onErneut: erneut.aktion)
-        }
-        if let d = dienst.wert ?? nil {
-            let soll = d.requiredHours ?? 0
-            VStack(alignment: .leading, spacing: 0) {
-                // Kicker, darunter gross der Stand (Entwurf "Konto").
-                Text("Arbeitsdienst \(d.year.map(String.init) ?? "")").kicker()
-                Text(KontoLogik.dienstWert(d))
-                    .font(Schrift.display(.fett, 40, relativeTo: .largeTitle))
-                    .tracking(-1)
-                    .monospacedDigit()
-                    .foregroundStyle(Farbe.ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                    .padding(.top, 6)
-                if soll > 0 {
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Farbe.surf2)
-                            Capsule().fill(Farbe.blue).frame(width: geo.size.width * KontoLogik.dienstAnteil(d))
-                        }
-                    }
-                    .frame(height: 6)
-                    .padding(.top, 10)
-                    .accessibilityLabel(
-                        "\(HomeLogik.jsZahl(d.completedHours ?? 0)) von \(HomeLogik.jsZahl(soll)) Stunden geleistet"
-                    )
-                }
-                Text(KontoLogik.dienstText(d))
-                    .leise()
-                    .lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 10)
+            Section {
+                FehlerZeile(text: f, erneut: erneut).gruppenZeile()
+            } header: {
+                GruppenKopf(titel: "Arbeitsdienst")
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .karte(radius: Tokens.Radius.karte, padding: 20)
+        } else if let d = dienst.wert ?? nil {
+            let soll = d.requiredHours ?? 0
+            Section {
+                Button { zuVerein(.arbeitsdienst) } label: {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Stunden \(d.year.map(String.init) ?? "")").foregroundStyle(Farbe.ink)
+                        Spacer()
+                        Text(KontoLogik.dienstWert(d)).monospacedDigit().foregroundStyle(Farbe.muted)
+                        ZeilenPfeil()
+                    }
+                    if soll > 0 {
+                        ProgressView(value: KontoLogik.dienstAnteil(d))
+                            .tint(Farbe.blue)
+                            .accessibilityLabel("Arbeitsdienst")
+                            .accessibilityValue(
+                                "\(HomeLogik.jsZahl(d.completedHours ?? 0)) von \(HomeLogik.jsZahl(soll)) Stunden geleistet"
+                            )
+                    }
+                }
+                .padding(.vertical, 4)
+                .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .gruppenZeile()
+            } header: {
+                GruppenKopf(titel: "Arbeitsdienst")
+            } footer: {
+                Text(KontoLogik.dienstText(d)).foregroundStyle(Farbe.muted)
+            }
         }
     }
 }

@@ -10,12 +10,13 @@
 import Foundation
 
 enum VereinReiter: String, CaseIterable, Sendable {
-    case getraenke, veranstaltungen
+    case getraenke, veranstaltungen, arbeitsdienst
 
     var label: String {
         switch self {
         case .getraenke: "Getränke"
         case .veranstaltungen: "Veranstaltungen"
+        case .arbeitsdienst: "Arbeitsdienst"
         }
     }
 }
@@ -84,6 +85,13 @@ enum VereinLogik {
     // MARK: - Veranstaltung im Detail
 
     /// Abgesagt ist abgesagt: dann zaehlt die Anmeldung nicht mehr, es gibt nur den Hinweis.
+    /// Zum Teilen: "Herbstfest\nFr, 27.11.2026, 18 Uhr\nClubhaus\nTC Muckensturm"
+    static func teilenText(_ e: MitgliedEvent) -> String {
+        [e.title, Veranstaltungen.eventZeitText(startsAt: e.startsAt, endsAt: e.endsAt), Platzplan.nichtLeer(e.location), "TC Muckensturm"]
+            .compactMap { $0 }
+            .joined(separator: "\n")
+    }
+
     static func dabei(_ e: MitgliedEvent) -> Bool {
         e.status != "cancelled" && Veranstaltungen.eventIchDabei(e)
     }

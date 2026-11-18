@@ -21,39 +21,31 @@ struct NachrichtenBildschirm: View {
     @State private var alleGesehen = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                Text("Neuigkeiten")
-                    .font(Schrift.display(.fett, Tokens.Schrift.seitentitel, relativeTo: .largeTitle))
-                    .tracking(Tokens.Schrift.laufweiteTitel)
-                    .foregroundStyle(Farbe.ink)
-                    .accessibilityAddTraits(.isHeader)
-                    .padding(.bottom, Tokens.Abstand.s)
-
-                if laedt {
-                    ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)
-                } else {
-                    if let fehler {
-                        Fehlerzeile(text: fehler, laeuft: aktualisiert) { Task { await laden(nachladen: true) } }
-                    }
-                    if let nachrichten {
-                        NachrichtenListe(liste: nachrichten, alleGesehen: alleGesehen) { zuVerein(.veranstaltung($0)) }
+        List {
+            if laedt {
+                Section { ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.vertical, 24) }
+                    .listRowBackground(Color.clear)
+            } else {
+                if let fehler {
+                    Section {
+                        FehlerZeile(text: fehler, erneut: Erneut(laeuft: aktualisiert) { Task { await laden(nachladen: true) } })
+                            .gruppenZeile()
                     }
                 }
+                if let nachrichten {
+                    NachrichtenListe(liste: nachrichten, alleGesehen: alleGesehen) { zuVerein(.veranstaltung($0)) }
+                }
             }
-            .padding(.horizontal, Tokens.Abstand.rand)
-            .padding(.bottom, Tokens.Abstand.abschnitt)
         }
-        .background(Farbe.bg)
+        .gruppenListe()
+        .listSectionSpacing(20)
         .refreshable { await laden(nachladen: true) }
-        .navigationBarTitleDisplayMode(.inline)
-        // Oben rechts neben dem Zurueck-Knopf, wie im Entwurf "Neuigkeiten".
+        .navigationTitle("Neuigkeiten")
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             if !laedt && HomeLogik.zeigeAlleGelesen(nachrichten, alleGesehen: alleGesehen) {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Alle als gelesen") { alleGesehen = true }
-                        .font(Schrift.display(.halbfett, 15))
-                        .tint(Farbe.blueInk)
                 }
             }
         }

@@ -65,6 +65,13 @@ enum HomeLogik {
         return "Hallo"
     }
 
+    /// Unter dem Titel: "Mittwoch, 18. November · TC Muckensturm" (Berliner Zeit).
+    static func datumszeile(_ jetzt: Date) -> String {
+        var stil = Date.FormatStyle(date: .omitted, time: .omitted, locale: Locale(identifier: "de_DE"), timeZone: TimeZone(identifier: "Europe/Berlin")!)
+        stil = stil.weekday(.wide).day().month(.wide)
+        return "\(jetzt.formatted(stil)) · TC Muckensturm"
+    }
+
     /// Kicker und Marker der Terminkarte: aus "Heute · in 4 Stunden" wird ("Heute", "in 4 Stunden").
     static func terminKicker(_ t: MeineBuchung, jetzt: Date) -> (tag: String, wann: String?) {
         let teile = Startseite.bookingKicker(startsAt: t.startsAt, endsAt: t.endsAt, now: jetzt).components(separatedBy: " · ")

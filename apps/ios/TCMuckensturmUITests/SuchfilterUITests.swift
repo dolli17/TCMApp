@@ -21,8 +21,7 @@ final class SuchfilterUITests: XCTestCase {
     func testBuchungsblattMitFilter() throws {
         let suffix = ProcessInfo.processInfo.environment["TCM_DARSTELLUNG"] ?? "hell"
         try blattMitFilter()
-        // So weit hoch, dass Schalter und Filter zusammen zu sehen sind
-        app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Wer spielt mit?'")).firstMatch.swipeUp(velocity: .slow)
+        // Schalter und Filter stehen nach blattMitFilter() zusammen im Bild.
         foto("plaetze-suchfilter-\(suffix)")
     }
 
@@ -37,30 +36,41 @@ final class SuchfilterUITests: XCTestCase {
         let suffix = umgebung["TCM_DARSTELLUNG"] ?? "hell"
         try blattMitFilter()
 
-        app.buttons["Platz 1 buchen"].tap()
-        let blatt = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Wer spielt mit?'")).firstMatch
-        XCTAssertTrue(blatt.waitForNonExistence(timeout: 10), "Buchen hat nicht geklappt")
+        let buchen = app.buttons["Platz 1 buchen"]
+        buchen.tap()
+        XCTAssertTrue(buchen.waitForNonExistence(timeout: 10), "Buchen hat nicht geklappt")
 
         // Offene Spiele: die eigene Suche mit Zusatz
         app.buttons["Meine & offene Spiele"].tap()
         let zusatz = app.staticTexts.matching(NSPredicate(format: "label == 'Nur für LK 10 bis 16 · Herren'")).firstMatch
         XCTAssertTrue(zusatz.waitForExistence(timeout: 10), "Zusatz fehlt bei den offenen Spielen")
-        zusatz.swipeUp(velocity: .slow)
+        // In der Bildschirmmitte rollen: auf dem Zusatz selbst begaenne die Geste womoeglich
+        // auf der Tab-Leiste und tippte dort "Home".
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)))
         foto("plaetze-spiele-suchfilter-\(suffix)")
 
         // Eigene Buchung: der Filter kommt aus day_schedule zurueck
         app.buttons["Belegung"].tap()
-        let eigene = app.buttons.matching(NSPredicate(format: "label CONTAINS 'deine Buchung'")).firstMatch
+        // Genau die eben gebuchte - es kann weitere eigene Buchungen geben
+        let eigene = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Platz 1, 17:00' AND label CONTAINS 'deine Buchung'")).firstMatch
         XCTAssertTrue(eigene.waitForExistence(timeout: 10), "eigene Buchung fehlt im Raster")
         eigene.tap()
-        let nurFuer = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Nur für, LK 10 bis 16 · Herren'")).firstMatch
+        // Die Karte oeffnet halbhoch; was weiter unten steht, entsteht erst beim Rollen.
+        let karte = app.staticTexts["Dein Spiel"]
+        XCTAssertTrue(karte.waitForExistence(timeout: 5), "Karte erscheint nicht")
+        // Unter "Details" steht der Filter neben "Mitspieler gesucht".
+        let nurFuer = app.staticTexts["LK 10–16 · Herren"]
+        ganzeHoehe()
+        for _ in 0..<5 where !nurFuer.exists { karte.swipeUp(velocity: .slow) }
         XCTAssertTrue(nurFuer.waitForExistence(timeout: 10), "Filter der Buchung fehlt")
 
-        // Aufraeumen
+        // Aufraeumen: Stornieren fragt per Action Sheet nach
         let storno = app.buttons["Buchung stornieren"]
+        for _ in 0..<5 where !storno.isHittable { nurFuer.swipeUp(velocity: .slow) }
         storno.tap()
-        app.buttons["Wirklich stornieren"].tap()
-        XCTAssertTrue(nurFuer.waitForNonExistence(timeout: 10), "Stornieren hat nicht geklappt")
+        app.sheets.buttons["Buchung stornieren"].firstMatch.tap()
+        XCTAssertTrue(karte.waitForNonExistence(timeout: 10), "Stornieren hat nicht geklappt")
     }
 
     /// Buchungsblatt heute 17:00 auf, Mitspieler gesucht, Nur für LK 10–16 · Herren.
@@ -73,14 +83,16 @@ final class SuchfilterUITests: XCTestCase {
         let buchen = app.buttons.matching(NSPredicate(format: "label == 'Platz 1 um 17:00 Uhr buchen'")).firstMatch
         XCTAssertTrue(buchen.waitForExistence(timeout: 5), "Platz 1 um 17:00 ist nicht frei")
         buchen.tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Wer spielt mit?'")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Spieler"].firstMatch.waitForExistence(timeout: 5))
 
         let schalter = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Mitspieler gesucht'")).firstMatch
         XCTAssertTrue(schalter.waitForExistence(timeout: 5))
         schalter.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
 
-        // "Nur für …" steht offen unter dem Schalter: Herren waehlen, LK mit Plus und Minus auf 10 bis 16.
+        // "Nur für …" steht offen unter dem Schalter (erst nach dem Rollen angelegt):
+        // Herren waehlen, LK mit Plus und Minus auf 10 bis 16.
         let herren = app.buttons["Herren"]
+        for _ in 0..<5 where !herren.exists || !herren.isHittable { schalter.swipeUp(velocity: .slow) }
         XCTAssertTrue(herren.waitForExistence(timeout: 5), "Nur für … fehlt")
         herren.tap()
         let vonHoch = app.buttons["LK von erhöhen"]
@@ -136,6 +148,14 @@ final class SuchfilterUITests: XCTestCase {
         geheim.typeText(umgebung["TCM_PASSWORT"] ?? "tcm-lokal-2026")
         app.buttons["Anmelden"].firstMatch.tap()
         XCTAssertTrue(tabs.waitForExistence(timeout: 30), "Tabs erscheinen nicht")
+    }
+
+    /// Die Karte einer Buchung oeffnet halbhoch: am Griff auf volle Hoehe ziehen.
+    private func ganzeHoehe() {
+        let griff = app.buttons["Aufzeichnungsblatt"].firstMatch
+        guard griff.waitForExistence(timeout: 3) else { return }
+        griff.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05)))
     }
 
     private func foto(_ name: String) {

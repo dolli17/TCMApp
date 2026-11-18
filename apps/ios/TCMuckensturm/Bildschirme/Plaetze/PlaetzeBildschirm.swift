@@ -63,34 +63,45 @@ struct PlaetzeBildschirm: View {
     }
 }
 
-/// Grosser Kopf, darunter (in der Belegung) die Tagesleiste, dann der Umschalter - oben in beiden Sichten.
+/// Unter dem grossen Titel (Navigationsleiste): in der Belegung die Wochenleiste, dann der Umschalter - oben in beiden Sichten.
 struct PlaetzeKopf<Tage: View>: View {
     @Environment(PlaetzeZustand.self) private var zustand
-    /// "8 Plätze · 08 bis 21 Uhr"
+    /// "8 Plätze · 08 bis 21 Uhr" - steht als Unterzeile unter dem Titel.
     var unterzeile: String?
     @ViewBuilder var tage: Tage
 
     var body: some View {
-        GrosserKopf(titel: "Plätze", unterzeile: unterzeile)
+        Picker("Ansicht", selection: Binding(get: { zustand.sicht }, set: { zustand.wechsle(zu: $0) })) {
+            ForEach(PlaetzeSicht.allCases, id: \.self) { Text($0.label).tag($0) }
+        }
+        .pickerStyle(.segmented)
         tage
-        SegmentLeiste(
-            beschriftung: "Ansicht",
-            optionen: PlaetzeSicht.allCases.map { ($0, $0.label) },
-            gewaehlt: zustand.sicht
-        ) { zustand.wechsle(zu: $0) }
-        .padding(.bottom, Tokens.Abstand.xs)
+    }
+}
+
+extension View {
+    /// Titel "Plätze" gross in der Navigationsleiste, wie in beiden Sichten.
+    func plaetzeTitel(_ unterzeile: String? = nil) -> some View {
+        navigationTitle("Plätze")
+            .navigationBarTitleDisplayMode(.large)
+            .titelUnterzeile(unterzeile)
     }
 }
 
 private struct PlaetzeInhalt: View {
     @Environment(\.scenePhase) private var phase
     @State var modell: PlaetzeModell
+    /// Breite des Rasters, gemessen - Kopf und Raster rechnen damit dieselben Spalten.
+    @State private var breite: CGFloat = 0
+    /// Fuer welchen Tag schon zur Uhrzeit gerollt wurde
+    @State private var gerolltFuer: String?
 
     var body: some View {
         let m = modell
         NavigationStack {
+            ScrollViewReader { leser in
             ScrollView {
-                VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
+                LazyVStack(alignment: .leading, spacing: Tokens.Abstand.m, pinnedViews: [.sectionHeaders]) {
                     PlaetzeKopf(
                         unterzeile: PlaetzeLogik.kopfzeile(plaetze: m.plaetze.count, oeffnung: m.oeffnung, schluss: m.schluss)
                     ) { Tagesleiste(modell: m) }
@@ -104,17 +115,33 @@ private struct PlaetzeInhalt: View {
                             Text(text).leise().fixedSize(horizontal: false, vertical: true)
                         }
                         RasterLegende()
-                        PlatzRaster(modell: m)
+                        Section {
+                            PlatzRaster(modell: m, breite: breite)
+                                .padding(.top, PlatzRaster.kopfFest(breite: breite, anzahl: m.plaetze.count) ? -Tokens.Abstand.m : 0)
+                        } header: {
+                            if PlatzRaster.kopfFest(breite: breite, anzahl: m.plaetze.count) {
+                                PlatzRasterKopf(modell: m, breite: breite)
+                            }
+                        }
                     }
                 }
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { breite = $0 }
                 .padding(.horizontal, Tokens.Abstand.rand)
                 .padding(.bottom, Tokens.Abstand.abschnitt * 2)
             }
-            .background(Farbe.bg)
-            // Was nach oben scrollt, laeuft nicht unter die Uhr der Statusleiste.
-            .overlay(alignment: .top) { Farbe.bg.frame(height: 0).ignoresSafeArea(edges: .top) }
+            // Heute beim ersten Laden zur Uhrzeit rollen statt vergangene Stunden zu zeigen.
+            .task(id: m.geladenFuer) {
+                guard let tag = m.geladenFuer, tag != gerolltFuer, tag == Zeit.berlinDay(Date()) else { return }
+                // Erst wenn das Raster steht, gibt es die Sprungmarke.
+                try? await Task.sleep(for: .milliseconds(400))
+                guard !Task.isCancelled else { return }
+                gerolltFuer = tag
+                withAnimation(.snappy) { leser.scrollTo(PlatzRaster.jetztMarke, anchor: .top) }
+            }
+            }
+            .background(GruppenGrund())
             .refreshable { await m.vonHand() }
-            .toolbar(.hidden, for: .navigationBar)
+            .plaetzeTitel(PlaetzeLogik.kopfzeile(plaetze: m.plaetze.count, oeffnung: m.oeffnung, schluss: m.schluss))
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 8) {
                     if let t = m.meldung { Toast(meldung: t) { m.meldung = nil } }
@@ -131,7 +158,27 @@ private struct PlaetzeInhalt: View {
             Buchungsblatt(modell: m, fenster: f)
         }
         // Erstes Laden und jeder Tageswechsel; der Kanal plan-<datum> wird je Tag neu aufgebaut.
-        .task(id: m.datum) { await m.laden() }
+        .task(id: m.datum) {
+            await m.laden()
+            #if DEBUG
+            // Fuer Bildschirmfotos per simctl: `-TCMBuchen 17:00` oeffnet das Buchungsblatt auf dem zweiten Platz.
+            let argumente = ProcessInfo.processInfo.arguments
+            if let i = argumente.firstIndex(of: "-TCMBuchen"), i + 1 < argumente.count, m.fenster == nil,
+               let p = m.plaetze.dropFirst().first ?? m.plaetze.first {
+                let t = argumente[i + 1].split(separator: ":").compactMap { Int($0) }
+                if t.count == 2 { m.buchenAuf(p, minute: t[0] * 60 + t[1]) }
+            }
+            // `-TCMBuchung eigen|fremd` oeffnet die eigene bzw. eine fremde Buchung des Tages.
+            if let i = argumente.firstIndex(of: "-TCMBuchung"), i + 1 < argumente.count, m.fenster == nil,
+               let b = m.belegung.first(where: {
+                   argumente[i + 1] == "sperre" ? $0.kind == "blocking"
+                       : $0.kind == "booking" && ($0.isOwn == true) == (argumente[i + 1] == "eigen")
+                       && (argumente[i + 1] != "fremd" || (Zeit.datum($0.endsAt) ?? .distantPast) > Date())
+               }) {
+                m.oeffne(b)
+            }
+            #endif
+        }
         .task(id: m.datum) { await m.beobachte(tag: m.datum) }
         // Was waehrend des Schlafs passiert ist, hat der Kanal nicht gesehen.
         .onChange(of: phase) { _, neu in
@@ -161,7 +208,7 @@ private struct Tagesleiste: View {
         let m = modell
         ScrollViewReader { leser in
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: 4) {
                     ForEach(m.tage, id: \.self) { t in
                         TagKachel(tag: t, heute: m.heute, aktiv: t == m.datum) { m.waehleTag(t) }
                             .id(t)
@@ -178,7 +225,7 @@ private struct Tagesleiste: View {
     }
 }
 
-/// Eine Datumspille "MO / 16"; der gewaehlte Tag in Vereinsblau - auch beim Umsetzen.
+/// Ein Tag wie in der Kalender-App: oben der Wochentag, darunter die Zahl im Kreis. Gewaehlt blau gefuellt, heute blaue Zahl.
 struct TagKachel: View {
     let tag: String
     var heute: String?
@@ -186,27 +233,27 @@ struct TagKachel: View {
     let aktion: () -> Void
 
     var body: some View {
-        let k = PlaetzeLogik.kachel(tag, heute: heute)
+        let k = PlaetzeLogik.kachel(tag)
+        let istHeute = tag == heute
         Button(action: aktion) {
-            VStack(spacing: 2) {
+            VStack(spacing: 6) {
                 Text(k.wochentag)
-                    .font(Schrift.display(.fett, 11))
-                    .tracking(0.6)
-                    .foregroundStyle(aktiv ? Farbe.onBrand.opacity(0.9) : Farbe.muted)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(istHeute ? Farbe.blueInk : Farbe.muted)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
                 Text("\(k.tag)")
-                    .font(Schrift.display(.fett, 20))
+                    .font(.title3.weight(aktiv || istHeute ? .semibold : .regular))
                     .monospacedDigit()
-                    .foregroundStyle(aktiv ? Farbe.onBrand : Farbe.ink)
+                    .foregroundStyle(aktiv ? Farbe.onBrand : istHeute ? Farbe.blueInk : Farbe.ink)
+                    .frame(width: 38, height: 38)
+                    .background(aktiv ? Farbe.blue : Color.clear, in: Circle())
             }
             .dynamicTypeSize(...DynamicTypeSize.xLarge)
-            .frame(width: 54, height: 64)
-            .background(aktiv ? Farbe.blue : Farbe.surf, in: Capsule())
-            .overlay(Capsule().strokeBorder(aktiv ? Color.clear : Farbe.line2, lineWidth: 1))
+            .frame(minWidth: 44)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(PlaetzeLogik.lesbar(tag))
+        .accessibilityLabel(PlaetzeLogik.lesbar(tag) + (istHeute ? ", heute" : ""))
         .accessibilityAddTraits(aktiv ? [.isSelected] : [])
     }
 }

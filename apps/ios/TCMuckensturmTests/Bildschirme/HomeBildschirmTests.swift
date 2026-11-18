@@ -12,8 +12,14 @@ final class HomeBildschirmTests: BildschirmTestfall {
         let a = Attrappe()
         await pruefe("home", erwartet: [
             "Hallo, Noah", "Benachrichtigungen, 2 ungelesen", "Dein Termin: Morgen", "Platz buchen", "Getränk eintragen",
-            "Jetzt frei", "Offene Spiele", "Platz 2 · Julia Stein", "Plätze winterfest machen",
-        ]) { home(a) }
+            "Jetzt frei", "Offene Spiele", "Platz 2 · Julia Stein",
+        ], danach: { b in
+            // Die naechste Veranstaltung steht ganz unten in der Liste.
+            await b.rolle()
+            let fehlt = await b.warteAuf(["Demnächst im Verein", "Plätze winterfest machen"])
+            XCTAssertEqual(fehlt, [])
+            await b.rolle(ansEnde: false)
+        }) { home(a) }
         // Alle Abschnitte laden ueber ihre RPCs - und nichts sonst.
         XCTAssertEqual(
             Set(a.rpcs),

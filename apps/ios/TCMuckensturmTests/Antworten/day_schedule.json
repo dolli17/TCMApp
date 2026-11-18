@@ -34,14 +34,8 @@
   "owner_name": "Noah Brandt",
   "owner_member_id": "e2e00000-0000-4000-8000-000000000002",
   "is_own": true,
-  "players": [
-   "Noah Brandt",
-   "Erika Sommer"
-  ],
-  "player_member_ids": [
-   "e2e00000-0000-4000-8000-000000000002",
-   "25c31169-2299-a28e-c06a-d4d6555fdcd6"
-  ],
+  "players": ["Erika Sommer"],
+  "player_member_ids": ["25c31169-2299-a28e-c06a-d4d6555fdcd6"],
   "guest_names": [],
   "partner_wanted": false,
   "frei": 0,

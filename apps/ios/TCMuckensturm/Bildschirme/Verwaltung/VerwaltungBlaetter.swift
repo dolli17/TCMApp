@@ -5,8 +5,10 @@
  * drei zweistufig wie im Web: erst zaehlen bzw. die Vorschau, dann fragen,
  * dann verdraengen. Wer danach etwas aendert, muss neu pruefen - sonst
  * gaelte eine alte Zahl. Scheitert eine Aktion, bleibt das Blatt offen und
- * der Grund der Datenbank steht ueber dem Knopf; klappt sie, schliesst es
- * und die Meldung steht auf der Seite.
+ * der Grund der Datenbank steht im Formular; klappt sie, schliesst es und
+ * die Meldung steht auf der Seite. Gestaltet als native Formulare: ✕ links,
+ * ✓ rechts, Datum und Uhrzeit ueber die System-Picker, Rueckfragen als
+ * Action Sheet.
  */
 
 import SwiftUI
@@ -27,103 +29,99 @@ struct VerwaltungBlattInhalt: View {
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
-        .presentationCornerRadius(Tokens.Radius.blatt)
-        .presentationBackground(Farbe.surf)
     }
 }
 
 // MARK: - Bausteine
 
-/// Rahmen eines Blatts wie bei Buchung und Konto: Kopf fest, Inhalt rollt, Aktionen unten fest.
-private struct BlattRahmen<Inhalt: View, Fuss: View>: View {
+/// Datum und Uhrzeit liegen als Text vor (TT.MM.JJJJ, HH:MM); die Picker arbeiten mit Date.
+enum VerwaltungZeitwahl {
+    private static func format(_ muster: String) -> DateFormatter {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "de_DE")
+        f.timeZone = TimeZone(identifier: "Europe/Berlin")
+        f.dateFormat = muster
+        return f
+    }
+    private static let tagFormat = format("dd.MM.yyyy")
+    private static let zeitFormat = format("HH:mm")
+
+    static func tag(_ text: Binding<String>) -> Binding<Date> {
+        Binding(
+            get: { tagFormat.date(from: text.wrappedValue) ?? Date() },
+            set: { text.wrappedValue = tagFormat.string(from: $0) }
+        )
+    }
+
+    static func zeit(_ text: Binding<String>) -> Binding<Date> {
+        Binding(
+            get: { zeitFormat.date(from: VerwaltungLogik.normZeit(text.wrappedValue) ?? text.wrappedValue) ?? zeitFormat.date(from: "08:00")! },
+            set: { text.wrappedValue = zeitFormat.string(from: $0) }
+        )
+    }
+}
+
+/// Fehler der Datenbank als rote Zeile im Formular.
+private struct BlattFehler: View {
+    let text: String
+
+    var body: some View {
+        Section {
+            Label(text, systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(Farbe.redInk)
+                .gruppenZeile()
+                .onAppear { UIAccessibility.post(notification: .announcement, argument: text) }
+        }
+    }
+}
+
+/// Zeit von/bis mit dem System-Picker (Rad im Popover).
+private struct VonBis: View {
+    @Binding var von: String
+    @Binding var bis: String
+
+    var body: some View {
+        DatePicker("Von", selection: VerwaltungZeitwahl.zeit($von), displayedComponents: .hourAndMinute)
+            .environment(\.locale, Locale(identifier: "de_DE"))
+            .gruppenZeile()
+        DatePicker("Bis", selection: VerwaltungZeitwahl.zeit($bis), displayedComponents: .hourAndMinute)
+            .environment(\.locale, Locale(identifier: "de_DE"))
+            .gruppenZeile()
+    }
+}
+
+/// Eine Zeile mit Haken rechts, wie in den Einstellungen.
+private struct HakenZeile: View {
     let titel: String
-    var unterzeile: String?
-    let zu: () -> Void
-    @ViewBuilder let inhalt: Inhalt
-    @ViewBuilder let fuss: Fuss
-
-    var body: some View {
-        KontoBlattGeruest(titel: titel, unterzeile: unterzeile, zu: zu) { inhalt } fuss: { fuss }
-    }
-}
-
-/// Beschriftung ueber einer Chipwahl.
-private struct Feldname: View {
-    let text: String
-
-    var body: some View {
-        Text(text).kicker().accessibilityAddTraits(.isHeader)
-    }
-}
-
-/// Chips zum Antippen, gewaehlt in Gold (Chipwahl in Formular.tsx).
-private struct Chips<Wert: Hashable>: View {
-    let label: String
-    let optionen: [(wert: Wert, label: String)]
-    let gewaehlt: (Wert) -> Bool
-    let wahl: (Wert) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Feldname(text: label)
-            UmbruchStapel(abstand: 8, zeilenabstand: 8) {
-                ForEach(optionen, id: \.wert) { o in
-                    let aktiv = gewaehlt(o.wert)
-                    Button { wahl(o.wert) } label: {
-                        Text(o.label)
-                            .frame(minWidth: 16)
-                            .auswahlPille(aktiv, hoehe: 40, rand: 14)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(label) \(o.label)")
-                    .accessibilityAddTraits(aktiv ? [.isSelected] : [])
-                }
-            }
-        }
-    }
-}
-
-/// Die Folgen vor dem Bestaetigen: was im Weg liegt (Folgen in Formular.tsx).
-private struct Folgen: View {
-    let text: String
-    var zeilen: [String] = []
-    /// Rot, wenn Buchungen verdraengt wuerden
-    var rot = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(text)
-                .font(Schrift.text(.fett, 14))
-                .foregroundStyle(rot ? Farbe.redInk : Farbe.ink)
-                .fixedSize(horizontal: false, vertical: true)
-            ForEach(zeilen, id: \.self) { z in
-                Text(z).font(Schrift.text(.normal, 13.5)).foregroundStyle(Farbe.ink).monospacedDigit()
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(rot ? Farbe.red.opacity(0.08) : Farbe.surf2, in: RoundedRectangle(cornerRadius: 20))
-        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(rot ? Farbe.red.opacity(0.4) : Farbe.line2, lineWidth: 1))
-        .accessibilityElement(children: .combine)
-    }
-}
-
-/// Rot als Flaeche mit weisser Schrift: Verdraengen und Beenden.
-private struct GefahrKnopf: View {
-    let text: String
-    var gesperrt = false
+    var unter: String?
+    let gewaehlt: Bool
+    var bedienName: String?
     let aktion: () -> Void
 
     var body: some View {
-        Knopf(text, stufe: .gefahr, breit: true, gesperrt: gesperrt, aktion: aktion)
+        Button(action: aktion) {
+            HStack {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(titel).foregroundStyle(Farbe.ink)
+                    if let unter, !unter.isEmpty { Text(unter).font(.footnote).foregroundStyle(Farbe.muted) }
+                }
+                Spacer()
+                if gewaehlt {
+                    Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(Farbe.blue)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .gruppenZeile()
+        .accessibilityLabel(bedienName ?? titel)
+        .accessibilityAddTraits(gewaehlt ? [.isSelected] : [])
     }
 }
 
 // MARK: - Plaetze sperren
 
 private struct SperrenBlatt: View {
-    static let alle = "__alle"
-
     let modell: VerwaltungModell
     let stand: VerwaltungsStand
 
@@ -140,94 +138,73 @@ private struct SperrenBlatt: View {
     var body: some View {
         let plaetze = stand.aktivePlaetze
         let alleGewaehlt = !plaetze.isEmpty && gewaehlt.count == plaetze.count
-        return BlattRahmen(
+        FormBlatt(
             titel: "Plätze sperren",
-            unterzeile: "Regen, Turnier, Platzpflege. Bestehende Buchungen werden erst nach Rückfrage verdrängt.",
+            geaendert: !gewaehlt.isEmpty || !grund.isEmpty,
+            laeuft: laeuft,
+            speichern: { absenden(verdraengen: false) },
+            speichernLabel: "Sperren",
+            speichernGesperrt: gewaehlt.isEmpty,
             zu: { modell.blatt = nil }
         ) {
-            // Plaetze als Raster gleich breiter Pillen, rechts "Alle" und "Keinen" (Entwurf "Plaetze sperren").
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .firstTextBaseline, spacing: 18) {
-                    Feldname(text: "Plätze")
-                    Spacer(minLength: 0)
-                    verweis("Alle", aus: alleGewaehlt) { gewaehlt = plaetze.map(\.id) }
-                    verweis("Keinen", aus: gewaehlt.isEmpty) { gewaehlt = [] }
-                }
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
-                    ForEach(plaetze) { p in
-                        let aktiv = gewaehlt.contains(p.id)
-                        Button {
-                            kollisionen = nil
-                            if aktiv { gewaehlt.removeAll { $0 == p.id } } else { gewaehlt.append(p.id) }
-                        } label: {
-                            Text(VerwaltungLogik.platzChip(p.shortName))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-                                .frame(maxWidth: .infinity)
-                                .auswahlPille(aktiv, hoehe: 48, rand: 6)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Plätze \(VerwaltungLogik.platzChip(p.shortName))")
-                        .accessibilityAddTraits(aktiv ? [.isSelected] : [])
+            if let fehler { BlattFehler(text: fehler) }
+            Section {
+                ForEach(plaetze) { p in
+                    HakenZeile(
+                        titel: p.name ?? VerwaltungLogik.platzChip(p.shortName),
+                        unter: p.subline,
+                        gewaehlt: gewaehlt.contains(p.id),
+                        bedienName: "Plätze \(VerwaltungLogik.platzChip(p.shortName))"
+                    ) {
+                        kollisionen = nil
+                        if gewaehlt.contains(p.id) { gewaehlt.removeAll { $0 == p.id } } else { gewaehlt.append(p.id) }
                     }
                 }
-            }
-            KontoFeld(label: "Tag (TT.MM.JJJJ)", text: geaendert($tag), tastatur: .numbersAndPunctuation)
-            HStack(spacing: 12) {
-                KontoFeld(label: "Von (HH:MM)", text: geaendert($von), tastatur: .numbersAndPunctuation)
-                KontoFeld(label: "Bis (HH:MM)", text: geaendert($bis), tastatur: .numbersAndPunctuation)
-            }
-            // Die Kategorie als Auswahlfeld statt als Chipreihe
-            VStack(alignment: .leading, spacing: 7) {
-                Feldname(text: "Kategorie")
-                Menu {
-                    ForEach(stand.blockungsarten, id: \.code) { a in
-                        Button(a.name ?? a.code) {
-                            art = a.code
-                            kollisionen = nil
-                        }
+            } header: {
+                HStack {
+                    GruppenKopf(titel: "Plätze")
+                    Spacer()
+                    Button(alleGewaehlt ? "Keinen" : "Alle") {
+                        kollisionen = nil
+                        gewaehlt = alleGewaehlt ? [] : plaetze.map(\.id)
                     }
-                } label: {
-                    HStack {
-                        Text(stand.blockungsarten.first { $0.code == art }.map { $0.name ?? $0.code } ?? "")
-                            .font(Schrift.text(.normal, Tokens.Schrift.normal))
-                            .foregroundStyle(Farbe.ink)
-                        Spacer(minLength: 8)
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Farbe.muted)
-                    }
-                    .padding(.horizontal, 20)
-                    .frame(minHeight: 52)
-                    .background(Farbe.surf2, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
-                    .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.feld).strokeBorder(Farbe.line2, lineWidth: 1))
-                    .contentShape(Rectangle())
+                    .font(.subheadline)
+                    .textCase(nil)
+                    .accessibilityLabel(alleGewaehlt ? "Keinen Platz wählen" : "Alle Plätze wählen")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Kategorie")
-                .accessibilityValue(stand.blockungsarten.first { $0.code == art }.map { $0.name ?? $0.code } ?? "")
             }
-            KontoFeld(label: "Grund (freiwillig)", text: $grund)
-
-            if let fehler { KontoHinweis(text: fehler) }
-            // Was im Weg liegt, steht rot ueber den Knoepfen.
-            if let kollisionen { Folgen(text: PlaetzeLogik.imWegText(kollisionen), rot: true) }
-        } fuss: {
-            if let kollisionen {
-                // Rot gefuellt nur als Bestaetigung, daneben der neutrale Weg zurueck.
-                HStack(spacing: 10) {
-                    Knopf(PlaetzeLogik.verdraengenText(kollisionen), stufe: .gefahr, breit: true, eng: true, gesperrt: laeuft) {
-                        absenden(verdraengen: true)
-                    }
-                    Knopf("Doch nicht", stufe: .leise, eng: true) { self.kollisionen = nil }
+            Section {
+                DatePicker("Tag", selection: VerwaltungZeitwahl.tag(geaendert($tag)), displayedComponents: .date)
+                    .environment(\.locale, Locale(identifier: "de_DE"))
+                    .gruppenZeile()
+                VonBis(von: geaendert($von), bis: geaendert($bis))
+            } header: {
+                GruppenKopf(titel: "Zeit")
+            }
+            Section {
+                Picker("Kategorie", selection: geaendert($art)) {
+                    ForEach(stand.blockungsarten, id: \.code) { a in Text(a.name ?? a.code).tag(a.code) }
                 }
-            } else {
-                Hauptknopf(
-                    text: laeuft ? "Wird gesperrt…" : "Sperren",
-                    // Der Grund ist freiwillig; was die Sperrung ist, sagt die Art.
-                    gesperrt: laeuft || gewaehlt.isEmpty || tag.trimmingCharacters(in: .whitespaces).isEmpty
-                ) { absenden(verdraengen: false) }
+                .pickerStyle(.menu)
+                .tint(Farbe.ink2)
+                .gruppenZeile()
+                FormFeld(label: "Grund", text: $grund, platzhalter: "Freiwillig")
+            } header: {
+                GruppenKopf(titel: "Art")
+            } footer: {
+                Text("Regen, Turnier, Platzpflege. Bestehende Buchungen werden erst nach Rückfrage verdrängt.")
+                    .foregroundStyle(Farbe.muted)
             }
+        }
+        .confirmationDialog(
+            kollisionen.map { PlaetzeLogik.imWegText($0) } ?? "",
+            isPresented: Binding(get: { kollisionen != nil }, set: { if !$0 { kollisionen = nil } }),
+            titleVisibility: .visible
+        ) {
+            if let k = kollisionen {
+                Button(PlaetzeLogik.verdraengenText(k), role: .destructive) { absenden(verdraengen: true) }
+            }
+            Button("Doch nicht", role: .cancel) { kollisionen = nil }
         }
         .onAppear {
             // Vorgabe aus den Einstellungen, nicht fest eingetippt.
@@ -235,23 +212,6 @@ private struct SperrenBlatt: View {
             if bis.isEmpty { bis = stand.schluss }
             if art.isEmpty { art = stand.blockungsarten.first?.code ?? "platzpflege" }
         }
-    }
-
-    private func verweis(_ text: String, aus: Bool, aktion: @escaping () -> Void) -> some View {
-        Button {
-            kollisionen = nil
-            aktion()
-        } label: {
-            Text(text)
-                .font(Schrift.display(.halbfett, 15))
-                .foregroundStyle(Farbe.blueInk)
-                .frame(minHeight: 32)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(aus)
-        .opacity(aus ? 0.4 : 1)
-        .accessibilityLabel("\(text) Plätze wählen")
     }
 
     /// Jede Aenderung macht eine alte Kollisionszahl ungueltig.
@@ -296,48 +256,79 @@ private struct SerieAnlegenBlatt: View {
 
     var body: some View {
         let kollisionen = (vorschau ?? []).filter { $0.conflictBookingId != nil }
-        BlattRahmen(titel: "Serie anlegen", zu: { modell.blatt = nil }) {
-            KontoFeld(label: "Titel", text: feld(\.title))
-            Chips(label: "Art", optionen: stand.blockungsarten.map { ($0.code, $0.name ?? $0.code) }, gewaehlt: { $0 == form.bookingTypeCode }) {
-                setze(\.bookingTypeCode, $0)
+        FormBlatt(
+            titel: "Serie anlegen",
+            geaendert: !form.title.isEmpty,
+            laeuft: laeuft,
+            speichern: { vorschau == nil ? pruefen() : anlegen(verdraengen: !kollisionen.isEmpty) },
+            speichernLabel: vorschau == nil ? "Vorschau" : "Anlegen",
+            speichernGesperrt: form.title.trimmingCharacters(in: .whitespaces).isEmpty,
+            zu: { modell.blatt = nil }
+        ) {
+            if let fehler { BlattFehler(text: fehler) }
+            Section {
+                FormFeld(label: "Titel", text: feld(\.title), platzhalter: "etwa Jugendtraining")
+                Picker("Art", selection: feld(\.bookingTypeCode)) {
+                    ForEach(stand.blockungsarten, id: \.code) { Text($0.name ?? $0.code).tag($0.code) }
+                }
+                .pickerStyle(.menu)
+                .tint(Farbe.ink2)
+                .gruppenZeile()
+                Picker("Platz", selection: feld(\.courtId)) {
+                    ForEach(stand.aktivePlaetze) { Text($0.name ?? VerwaltungLogik.platzChip($0.shortName)).tag($0.id) }
+                }
+                .pickerStyle(.menu)
+                .tint(Farbe.ink2)
+                .gruppenZeile()
             }
-            Chips(label: "Wochentag", optionen: VerwaltungLogik.wochentagWahl, gewaehlt: { $0 == form.weekday }) {
-                setze(\.weekday, $0)
-            }
-            HStack(spacing: 12) {
-                KontoFeld(label: "Von (HH:MM)", text: feld(\.startTime), tastatur: .numbersAndPunctuation)
-                KontoFeld(label: "Bis (HH:MM)", text: feld(\.endTime), tastatur: .numbersAndPunctuation)
-            }
-            Chips(
-                label: "Platz",
-                optionen: stand.aktivePlaetze.map { ($0.id, VerwaltungLogik.platzOhneWort($0.name)) },
-                gewaehlt: { $0 == form.courtId }
-            ) { setze(\.courtId, $0) }
-            HStack(spacing: 12) {
-                KontoFeld(label: "Ab (TT.MM.JJJJ)", text: feld(\.validFrom), tastatur: .numbersAndPunctuation)
-                KontoFeld(label: "Bis (TT.MM.JJJJ)", text: feld(\.validTo), tastatur: .numbersAndPunctuation)
-            }
-
-            if let fehler { KontoHinweis(text: fehler) }
-            if let vorschau {
-                Folgen(
-                    text: VerwaltungLogik.vorschauText(termine: vorschau.count, kollisionen: kollisionen.count),
-                    zeilen: kollisionen.map {
-                        VerwaltungLogik.kollisionsZeile(startsAt: $0.startsAt, mitglied: $0.conflictMemberName, art: $0.conflictKind)
+            Section {
+                Picker("Wochentag", selection: feld(\.weekday)) {
+                    ForEach(VerwaltungLogik.wochentagWahl, id: \.wert) { w in
+                        Text(Zeit.wochentageLang[w.wert % 7]).tag(w.wert)
                     }
-                )
+                }
+                .pickerStyle(.menu)
+                .tint(Farbe.ink2)
+                .gruppenZeile()
+                VonBis(von: feld(\.startTime), bis: feld(\.endTime))
+            } header: {
+                GruppenKopf(titel: "Wann")
             }
-        } fuss: {
+            Section {
+                DatePicker("Ab", selection: VerwaltungZeitwahl.tag(feld(\.validFrom)), displayedComponents: .date)
+                    .gruppenZeile()
+                DatePicker("Bis", selection: VerwaltungZeitwahl.tag(feld(\.validTo)), displayedComponents: .date)
+                    .gruppenZeile()
+            } header: {
+                GruppenKopf(titel: "Zeitraum")
+            } footer: {
+                if vorschau == nil {
+                    Text("Mit ✓ kommt erst die Vorschau: wie viele Termine es werden und was im Weg liegt.")
+                        .foregroundStyle(Farbe.muted)
+                }
+            }
+            .environment(\.locale, Locale(identifier: "de_DE"))
             if let vorschau {
-                Hauptknopf(
-                    text: laeuft ? "Wird angelegt…" : VerwaltungLogik.anlegenText(termine: vorschau.count, kollisionen: kollisionen.count),
-                    gesperrt: laeuft
-                ) { anlegen(verdraengen: !kollisionen.isEmpty) }
-            } else {
-                Hauptknopf(
-                    text: laeuft ? "Wird geprüft…" : "Vorschau",
-                    gesperrt: laeuft || form.title.trimmingCharacters(in: .whitespaces).isEmpty
-                ) { pruefen() }
+                Section {
+                    Label(
+                        VerwaltungLogik.vorschauText(termine: vorschau.count, kollisionen: kollisionen.count),
+                        systemImage: kollisionen.isEmpty ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+                    )
+                    .foregroundStyle(kollisionen.isEmpty ? Farbe.greenInk : Farbe.redInk)
+                    .gruppenZeile()
+                    ForEach(kollisionen, id: \.startsAt) { k in
+                        Text(VerwaltungLogik.kollisionsZeile(startsAt: k.startsAt, mitglied: k.conflictMemberName, art: k.conflictKind))
+                            .font(.subheadline)
+                            .monospacedDigit()
+                            .foregroundStyle(Farbe.ink)
+                            .gruppenZeile()
+                    }
+                } header: {
+                    GruppenKopf(titel: "Vorschau")
+                } footer: {
+                    Text("✓ \(VerwaltungLogik.anlegenText(termine: vorschau.count, kollisionen: kollisionen.count)).")
+                        .foregroundStyle(Farbe.muted)
+                }
             }
         }
         .onAppear {
@@ -356,7 +347,7 @@ private struct SerieAnlegenBlatt: View {
         vorschau = nil
     }
 
-    private func feld(_ pfad: WritableKeyPath<SerienEingabe, String>) -> Binding<String> {
+    private func feld<T>(_ pfad: WritableKeyPath<SerienEingabe, T>) -> Binding<T> {
         Binding(get: { form[keyPath: pfad] }, set: { setze(pfad, $0) })
     }
 
@@ -408,64 +399,92 @@ private struct SerieBlatt: View {
     @State private var beendenFrage = false
     @State private var fehler: String?
     @State private var laeuft = false
+    private let anfang: [String]
 
     init(modell: VerwaltungModell, serie: Serie) {
         self.modell = modell
         self.serie = serie
-        _von = State(initialValue: String((serie.startTime ?? "").prefix(5)))
-        _bis = State(initialValue: String((serie.endTime ?? "").prefix(5)))
+        let von = String((serie.startTime ?? "").prefix(5))
+        let bis = String((serie.endTime ?? "").prefix(5))
+        let ende = VerwaltungLogik.isoZuDeutsch(serie.validTo)
+        _von = State(initialValue: von)
+        _bis = State(initialValue: bis)
         _titel = State(initialValue: serie.title ?? "")
-        _ende = State(initialValue: VerwaltungLogik.isoZuDeutsch(serie.validTo))
+        _ende = State(initialValue: ende)
+        anfang = [von, bis, serie.title ?? "", ende]
     }
 
     var body: some View {
         let tag = (0...6).contains(serie.weekday ?? -1) ? Zeit.wochentageLang[serie.weekday!] : ""
-        BlattRahmen(
-            titel: serie.title ?? "Serie",
-            unterzeile: [serie.courtName, tag, serie.typeName].compactMap { $0 }.joined(separator: " · "),
+        let geaendert = [von, bis, titel, ende] != anfang
+        FormBlatt(
+            titel: "Serie",
+            geaendert: geaendert,
+            laeuft: laeuft,
+            speichern: { speichern(verdraengen: false) },
+            speichernLabel: "Änderung speichern",
+            speichernGesperrt: !geaendert || titel.trimmingCharacters(in: .whitespaces).isEmpty,
             zu: { modell.blatt = nil }
         ) {
-            Text("Vergangene Termine bleiben stehen. Geändert wird ab heute: die künftigen werden abgesagt und in der neuen Lage neu angelegt.")
-                .leise()
-                .fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: 12) {
-                KontoFeld(label: "Von (HH:MM)", text: $von, tastatur: .numbersAndPunctuation)
-                KontoFeld(label: "Bis (HH:MM)", text: $bis, tastatur: .numbersAndPunctuation)
-            }
-            KontoFeld(label: "Läuft bis (TT.MM.JJJJ)", text: $ende, tastatur: .numbersAndPunctuation)
-            KontoFeld(label: "Titel", text: $titel)
-
-            if let fehler { KontoHinweis(text: fehler) }
-            if let kollisionen { Folgen(text: PlaetzeLogik.imWegText(kollisionen), rot: true) }
-
-            // Zerstoerendes am Ende, mit Rueckfrage im Blatt (Regel 4).
-            KontoGruppe {
-                if beendenFrage {
-                    HStack(spacing: 8) {
-                        GefahrKnopf(text: "\(serie.kuenftige ?? 0) Termine absagen", gesperrt: laeuft) { beenden() }
-                        LeiserKnopf(text: "Doch nicht") { beendenFrage = false }
-                    }
-                    .padding(12)
-                } else {
-                    KontoVerweis(titel: "Serie beenden", rot: true) { beendenFrage = true }
+            Section {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(serie.title ?? "Serie").font(.title2.weight(.bold)).foregroundStyle(Farbe.ink)
+                    Text([serie.courtName, tag, serie.typeName].compactMap { $0 }.joined(separator: " · "))
+                        .font(.subheadline)
+                        .foregroundStyle(Farbe.muted)
                 }
+                .listRowBackground(Color.clear)
+                .accessibilityElement(children: .combine)
             }
-            .padding(.top, Tokens.Abstand.s)
-        } fuss: {
-            HStack(spacing: 10) {
-                if let kollisionen {
-                    Knopf(PlaetzeLogik.verdraengenText(kollisionen), stufe: .gefahr, breit: true, eng: true, gesperrt: laeuft) {
-                        speichern(verdraengen: true)
-                    }
-                } else {
-                    Knopf(
-                        laeuft ? "Wird gespeichert…" : "Änderung speichern", stufe: .haupt, breit: true, eng: true,
-                        gesperrt: laeuft || titel.trimmingCharacters(in: .whitespaces).isEmpty
-                    ) { speichern(verdraengen: false) }
+            if let fehler { BlattFehler(text: fehler) }
+            Section {
+                FormFeld(label: "Titel", text: $titel)
+                VonBis(von: zuruecksetzend($von), bis: zuruecksetzend($bis))
+                DatePicker("Läuft bis", selection: VerwaltungZeitwahl.tag(zuruecksetzend($ende)), displayedComponents: .date)
+                    .environment(\.locale, Locale(identifier: "de_DE"))
+                    .gruppenZeile()
+            } footer: {
+                Text("Vergangene Termine bleiben stehen. Geändert wird ab heute: die künftigen werden abgesagt und in der neuen Lage neu angelegt.")
+                    .foregroundStyle(Farbe.muted)
+            }
+            Section {
+                LabeledContent("Offene Termine", value: "\(serie.kuenftige ?? 0)").gruppenZeile()
+            }
+            Section {
+                Button(role: .destructive) { beendenFrage = true } label: {
+                    Text("Serie beenden").frame(maxWidth: .infinity)
                 }
-                Knopf("Abbrechen", stufe: .leise, eng: true) { modell.blatt = nil }
+                .disabled(laeuft)
+                .gruppenZeile()
             }
         }
+        .confirmationDialog(
+            "Serie beenden?",
+            isPresented: $beendenFrage,
+            titleVisibility: .visible
+        ) {
+            Button("\(serie.kuenftige ?? 0) Termine absagen", role: .destructive) { beenden() }
+            Button("Doch nicht", role: .cancel) {}
+        } message: {
+            Text("Vergangene Termine bleiben stehen, die künftigen werden abgesagt.")
+        }
+        .confirmationDialog(
+            kollisionen.map { PlaetzeLogik.imWegText($0) } ?? "",
+            isPresented: Binding(get: { kollisionen != nil }, set: { if !$0 { kollisionen = nil } }),
+            titleVisibility: .visible
+        ) {
+            if let k = kollisionen {
+                Button(PlaetzeLogik.verdraengenText(k), role: .destructive) { speichern(verdraengen: true) }
+            }
+            Button("Doch nicht", role: .cancel) { kollisionen = nil }
+        }
+    }
+
+    private func zuruecksetzend(_ wert: Binding<String>) -> Binding<String> {
+        Binding(get: { wert.wrappedValue }, set: {
+            wert.wrappedValue = $0
+            kollisionen = nil
+        })
     }
 
     private func speichern(verdraengen: Bool) {
