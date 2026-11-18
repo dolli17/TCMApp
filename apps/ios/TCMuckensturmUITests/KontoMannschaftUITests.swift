@@ -2,9 +2,10 @@ import XCTest
 
 /**
  * Konto -> Mannschaft aus Sicht des Mannschaftsfuehrers gegen den lokalen
- * Stack: Kader und der Abschnitt "Spieler hinzufügen" stehen da, die Suche zeigt
- * Kandidaten, ein Kandidat wird eingeladen (dann ausgegraut), steht unter
- * "Offene Einladungen" und wird wieder zurueckgezogen. Danach ist der Stand
+ * Stack: Kader mit "Mannschaftsführer" und "Spieler" steht da, die Kachel
+ * "Spieler einladen" oeffnet die Suche als Blatt, ein Kandidat wird eingeladen
+ * (dann ausgegraut), steht nach "Fertig" unter "Eingeladen" und wird wieder
+ * zurueckgezogen. Danach ist der Stand
  * wie vorher (bis auf die Benachrichtigungen an den Eingeladenen).
  *
  * Braucht eine Sitzung (LokalAnmeldenUITests) mit dem Seed-MF
@@ -25,13 +26,14 @@ final class KontoMannschaftUITests: XCTestCase {
         let suffix = ProcessInfo.processInfo.environment["TCM_DARSTELLUNG"] ?? "hell"
         app.launch()
 
-        let hinzufuegen = app.staticTexts["Spieler hinzufügen"]
+        let hinzufuegen = app.buttons["Spieler einladen"]
         XCTAssertTrue(hinzufuegen.waitForExistence(timeout: 30), "Kein MF-Bildschirm (Konto mitglied@tcm.local?)")
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Kader'")).firstMatch.exists, "Kader fehlt")
+        XCTAssertTrue(app.staticTexts["Mannschaftsführer"].firstMatch.exists, "Kader fehlt")
         XCTAssertTrue(app.staticTexts["du"].exists, "Marker am eigenen Eintrag fehlt")
         foto("konto-mannschaft-mf-\(suffix)")
 
-        // Die Suche steht im Bildschirm: der erste, der sich einladen laesst
+        // Die Suche liegt als Blatt darueber: der erste, der sich einladen laesst
+        hinzufuegen.tap()
         let einladen = app.buttons.matching(NSPredicate(format: "label ENDSWITH ' einladen'")).firstMatch
         XCTAssertTrue(einladen.waitForExistence(timeout: 15), "Keine Kandidaten")
         for _ in 0..<6 where !einladen.isHittable { app.swipeUp() }
@@ -39,11 +41,13 @@ final class KontoMannschaftUITests: XCTestCase {
         let name = String(einladen.label.dropLast(" einladen".count))
         einladen.tap()
         XCTAssertTrue(app.staticTexts["\(name) ist eingeladen."].waitForExistence(timeout: 10), "Meldung fehlt")
+        app.buttons["Fertig"].tap()
 
-        // Die Einladung steht darueber unter "Offene Einladungen" und laesst sich zurueckziehen
+        // Die Einladung steht unter dem Kader bei "Eingeladen" und laesst sich zurueckziehen.
+        // Die Liste legt die Zeile erst an, wenn sie ins Bild rollt.
         let zurueck = app.buttons["Einladung an \(name) zurückziehen"]
-        XCTAssertTrue(zurueck.waitForExistence(timeout: 15), "Offene Einladung an \(name) fehlt")
-        for _ in 0..<6 where !zurueck.isHittable { app.swipeDown() }
+        for _ in 0..<6 where !zurueck.waitForExistence(timeout: 2) || !zurueck.isHittable { app.swipeUp() }
+        XCTAssertTrue(zurueck.waitForExistence(timeout: 10), "Offene Einladung an \(name) fehlt")
         zurueck.tap()
         XCTAssertTrue(app.staticTexts["Einladung zurückgezogen."].waitForExistence(timeout: 10), "Meldung fehlt")
         XCTAssertTrue(warteBisWeg(zurueck), "Einladung steht noch da")

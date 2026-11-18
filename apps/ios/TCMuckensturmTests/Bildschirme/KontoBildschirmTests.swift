@@ -4,21 +4,24 @@ import XCTest
 
 /// Konto, seine Blaetter und die Mannschaft (KontoBildfotoTest, MannschaftBildfotoTest in apps/android).
 final class KontoBildschirmTests: BildschirmTestfall {
-    private func konto(_ a: Attrappe) -> some View {
-        KontoBildschirm().environment(KontoZustand()).environment(a.sitzung())
+    /// `pfad` oeffnet gleich eine Unterseite, etwa das Profil hinter der Kopfkarte.
+    private func konto(_ a: Attrappe, pfad: [KontoZiel] = []) -> some View {
+        let zustand = KontoZustand()
+        zustand.pfad = pfad
+        return KontoBildschirm().environment(zustand).environment(a.sitzung())
     }
 
+    /// Die Hauptseite: Profilkarte, Abrechnung, Arbeitsdienst und unten Abmelden und Kuendigen.
     func testKonto() async {
         let a = Attrappe()
         await pruefe("konto", erwartet: [
-            "Konto", "Noah Brandt", "Einstellungen", "Meine Daten", "Notfallkontakt", "Tennis", "Mannschaft", "Einwilligungen",
-            "Bankverbindung & Mandat", PushSchalter.titel, "Passwort ändern", "Erscheinungsbild", "Datenschutz", "Impressum",
-            "Abmelden", Kontoloeschung.titel,
+            "Konto", "Noah Brandt", "Abrechnung", "Arbeitsdienst", "Datenschutz", "Impressum", "Abmelden", Kontoloeschung.titel,
         ]) { konto(a) }
+        // Die Glocke steht nicht im Konto: ohne my_unread_notification_count.
         XCTAssertEqual(
             Set(a.rpcs),
             ["mein_profil", "my_charges", "my_drink_purchases", "my_work_duty", "mein_mandat", "ich", "member_attributes",
-             "my_onboarding", "meine_mannschaft", "meine_mannschaft_einladungen", "my_unread_notification_count"]
+             "my_onboarding", "meine_mannschaft", "meine_mannschaft_einladungen"]
         )
         XCTAssertEqual(a.letzte("member_attributes")?["p_member_id"] as? String, "e2e00000-0000-4000-8000-000000000002")
     }
@@ -28,7 +31,7 @@ final class KontoBildschirmTests: BildschirmTestfall {
         let a = Attrappe()
         a.setze("my_charges", .fehler("P0001", "Die Abrechnung ist gerade gesperrt."))
         a.setze("my_work_duty", .netzfehler(.timedOut))
-        await pruefe("konto-fehler", schemata: [.hell], erwartet: ["Noah Brandt", "Die Abrechnung ist gerade gesperrt.", "Meine Daten", "Abmelden"]) {
+        await pruefe("konto-fehler", schemata: [.hell], erwartet: ["Noah Brandt", "Die Abrechnung ist gerade gesperrt.", "Abmelden"]) {
             konto(a)
         }
     }
@@ -36,7 +39,8 @@ final class KontoBildschirmTests: BildschirmTestfall {
     func testKontoOhneNetz() async {
         let a = Attrappe()
         a.netzAus()
-        await pruefe("konto-ohne-netz", schemata: [.dunkel], erwartet: ["Konto", DbFehler.verbindungsfehlerText, "Abmelden"]) { konto(a) }
+        // Ohne Profil fehlt die Karte samt Abmelden; jeder Abschnitt zeigt seinen Fehler.
+        await pruefe("konto-ohne-netz", schemata: [.dunkel], erwartet: ["Konto", DbFehler.verbindungsfehlerText, "Erneut versuchen"]) { konto(a) }
     }
 
     func testKontoLaedt() async {
@@ -47,7 +51,15 @@ final class KontoBildschirmTests: BildschirmTestfall {
 
     func testKontoGrosseSchrift() async {
         let a = Attrappe()
-        await pruefe("konto-schrift-gross", schemata: [.hell], schrift: .accessibility2, erwartet: ["Noah Brandt", "Meine Daten"]) { konto(a) }
+        await pruefe("konto-schrift-gross", schemata: [.hell], schrift: .accessibility2, erwartet: ["Noah Brandt", "Abrechnung"]) { konto(a) }
+    }
+
+    /// Hinter der Profilkarte: persoenliche Angaben und Einstellungen.
+    func testKontoProfil() async {
+        let a = Attrappe()
+        await pruefe("konto-profil", erwartet: [
+            "Persönlich", "Meine Daten", "Notfallkontakt", "Bankverbindung & Mandat", "Einstellungen", "Passwort ändern",
+        ]) { konto(a, pfad: [.profil]) }
     }
 
     /// "Abmelden" fragt erst nach (U28).
@@ -152,7 +164,7 @@ final class KontoBildschirmTests: BildschirmTestfall {
     func testMannschaftAlsMF() async {
         let a = Attrappe()
         a.setze("meine_mannschaft_einladungen", json: "[]")
-        await pruefe("mannschaft-mf", erwartet: ["Mannschaft", "Herren 30", "Noah Brandt", "Christian Bauer", MannschaftLogik.sucheLabel]) {
+        await pruefe("mannschaft-mf", erwartet: ["Herren 30", "Mannschaftsführer", "Spieler", "Noah Brandt", "Andreas Ziegler"]) {
             mannschaft(a)
         }
     }

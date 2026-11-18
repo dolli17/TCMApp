@@ -32,7 +32,8 @@ final class KontoTennisUITests: XCTestCase {
         eintrag.tap()
         let lk = app.textFields[lkFeld]
         XCTAssertTrue(lk.waitForExistence(timeout: 10), "Blatt Tennis erscheint nicht")
-        XCTAssertTrue(app.staticTexts["Die LK bestimmt, welche Mitspielersuchen du siehst."].exists)
+        // Der Grund steht mit dem Eingabehinweis in der Fusszeile.
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Die LK bestimmt, welche Mitspielersuchen du siehst.'")).firstMatch.exists)
         lk.tap()
         lk.typeText("30")
         app.buttons["Speichern"].firstMatch.tap()

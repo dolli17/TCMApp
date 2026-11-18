@@ -12,6 +12,12 @@
  * mannschaft_kandidaten, eigenes Blatt) und offene Einladungen zurueckziehen.
  * Spieler koennen austreten. Austragen und Austreten fragen vorher nach.
  *
+ * Gestaltet als gruppierte Liste wie Kontakte: oben Kacheln mit dem Ueberblick
+ * (und fuer den MF "Einladen"), dann der Kader getrennt nach MF und Spielern
+ * mit blauen Initialen wie im Konto, LK als Marke und Anrufknopf. Austragen und
+ * Zurueckziehen per Wischen (und lange druecken), Rueckfragen als Action
+ * Sheet. Die Suche nach neuen Spielern liegt als Blatt darueber.
+ *
  * Ein eigener Bildschirm im NavigationStack des Kontos statt eines Blatts:
  * so fuehren Push und Neuigkeiten hin, ohne mit einem offenen Blatt (Glocke)
  * zu kollidieren, und die Suche kann als Blatt darueber liegen.
@@ -32,48 +38,53 @@ struct MannschaftBildschirm: View {
     @State private var telefonSichtbar = false
     @State private var austragenFrage: KaderMitglied?
     @State private var austretenFrage = false
+    @State private var sucheOffen = false
 
     private var daten: Mannschaftsdaten { Mannschaftsdaten(client: sitzung.client) }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-                kopf
-                if let meldung {
-                    KontoHinweis(text: meldung.meldung, ok: meldung.ok)
-                }
-                if laedt && mannschaft == nil {
-                    ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 40)
-                } else {
-                    einladungenAbschnitt
-                    mannschaftAbschnitt
-                }
+        List {
+            if laedt && mannschaft == nil {
+                Section { ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.vertical, 24) }
+                    .listRowBackground(Color.clear)
+            } else {
+                einladungenAbschnitt
+                mannschaftAbschnitt
             }
-            .padding(.horizontal, Tokens.Abstand.rand)
-            .padding(.bottom, Tokens.Abstand.abschnitt * 2)
         }
-        .background(Farbe.bg)
+        .gruppenListe()
+        .listSectionSpacing(20)
         .refreshable { await laden(nachladen: true) }
-        .navigationTitle(MannschaftLogik.titel)
-        .navigationBarTitleDisplayMode(.inline)
-        .tint(Farbe.blueInk)
+        .navigationTitle(aktuell?.name ?? MannschaftLogik.titel)
+        .navigationBarTitleDisplayMode(.large)
+        .sheet(isPresented: $sucheOffen) {
+            KandidatenSuche(daten: daten) { Task { await laden(nachladen: false) } }
+        }
         .task { await laden(nachladen: false) }
-        .alert(
+        // Unten statt oben in der Liste: Zurueckziehen und Austragen stehen weit unten.
+        .bestaetigung(Binding(get: { meldung?.meldung }, set: { if $0 == nil { meldung = nil } }), ok: meldung?.ok ?? true)
+        .sensoryFeedback(trigger: meldung) { _, neu in
+            guard let neu else { return nil }
+            return neu.ok ? .success : .error
+        }
+        // Destruktives als Action Sheet, der rote Knopf oben (HIG).
+        .confirmationDialog(
             austragenFrage.map { MannschaftLogik.austragenFrage($0, team: teamName) } ?? "",
             isPresented: Binding(get: { austragenFrage != nil }, set: { if !$0 { austragenFrage = nil } }),
+            titleVisibility: .visible,
             presenting: austragenFrage
         ) { k in
-            Button("Abbrechen", role: .cancel) {}
             Button("Austragen", role: .destructive) { ausfuehren { await daten.austragen(k) } }
+            Button("Abbrechen", role: .cancel) {}
         } message: { k in
             Text(MannschaftLogik.austragenText(k))
         }
-        .alert(MannschaftLogik.austretenFrage(teamName), isPresented: $austretenFrage) {
-            Button("Abbrechen", role: .cancel) {}
+        .confirmationDialog(MannschaftLogik.austretenFrage(teamName), isPresented: $austretenFrage, titleVisibility: .visible) {
             Button("Austreten", role: .destructive) {
                 let team = teamName
                 ausfuehren { await daten.austreten(team: team) }
             }
+            Button("Abbrechen", role: .cancel) {}
         } message: {
             Text(MannschaftLogik.austretenText)
         }
@@ -81,196 +92,284 @@ struct MannschaftBildschirm: View {
 
     private var aktuell: MeineMannschaft? { mannschaft?.wert ?? nil }
     private var teamName: String { aktuell?.name ?? MannschaftLogik.titel }
-
-    // MARK: - Kopf
-
-    private var kopf: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            // Gross der Titel; die Mannschaft selbst steht ueber dem Kader (Entwurf "Mannschaft").
-            Text(MannschaftLogik.titel)
-                .font(Schrift.display(.fett, Tokens.Schrift.seitentitel, relativeTo: .largeTitle))
-                .tracking(Tokens.Schrift.laufweiteTitel)
-                .foregroundStyle(Farbe.ink)
-                .accessibilityAddTraits(.isHeader)
-        }
-        .padding(.top, Tokens.Abstand.s)
-    }
+    private var erneut: Erneut { Erneut(laeuft: aktualisiert) { Task { await laden(nachladen: true) } } }
 
     // MARK: - Einladungen an mich
 
     @ViewBuilder private var einladungenAbschnitt: some View {
         if let f = einladungen?.fehler {
-            Fehlerzeile(text: "Einladungen: \(f)", laeuft: aktualisiert) { Task { await laden(nachladen: true) } }
+            Section { FehlerZeile(text: "Einladungen: \(f)", erneut: erneut).gruppenZeile() }
         }
-        let liste = einladungen?.wert ?? []
-        if !liste.isEmpty {
-            KontoAbschnitt(titel: liste.count == 1 ? "Einladung" : "Einladungen")
-            ForEach(liste) { e in einladungKarte(e) }
-        }
+        ForEach(einladungen?.wert ?? []) { e in einladung(e) }
     }
 
-    private func einladungKarte(_ e: MannschaftEinladung) -> some View {
+    /// Eine Karte wie eine Einladung in Kalender: Mannschaft, wer einlaedt, zwei Knoepfe.
+    @ViewBuilder private func einladung(_ e: MannschaftEinladung) -> some View {
         let offen = annehmenBei == e.id
         let hinweis = MannschaftLogik.hinweis(e)
-        return VStack(alignment: .leading, spacing: Tokens.Abstand.s) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(e.teamName)
-                    .font(Schrift.text(.fett, 17))
-                    .foregroundStyle(Farbe.ink)
-                let unter = MannschaftLogik.einladungUnterzeile(e)
-                if !unter.isEmpty { Text(unter).leise() }
-            }
-            .accessibilityElement(children: .combine)
-            if !e.annehmenMoeglich {
-                if let hinweis { KontoHinweis(text: hinweis) }
-                LeiserKnopf(text: "Ablehnen", gesperrt: laeuft) { beantworten(e, annehmen: false) }
-            } else if offen {
-                if let hinweis { Hinweiszeile(text: hinweis) }
-                KontoGruppe {
-                    OnboardingSchalter(
-                        label: MannschaftLogik.telefonLabel,
-                        beschreibung: MannschaftLogik.telefonBeschreibung,
-                        an: $telefonSichtbar,
-                        gesperrt: laeuft
-                    )
+        Section {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 12) {
+                    Image(systemName: "person.3.fill")
+                        .font(.title3)
+                        .foregroundStyle(.white)
+                        .frame(width: 48, height: 48)
+                        .background(
+                            LinearGradient(colors: [Farbe.blue.opacity(0.75), Farbe.blue], startPoint: .top, endPoint: .bottom),
+                            in: Circle()
+                        )
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Einladung").font(.footnote.weight(.semibold)).foregroundStyle(Farbe.blueInk)
+                        Text(e.teamName).font(.title3.weight(.bold)).foregroundStyle(Farbe.ink)
+                        let unter = MannschaftLogik.einladungUnterzeile(e)
+                        if !unter.isEmpty {
+                            Text(unter).font(.subheadline).foregroundStyle(Farbe.muted).fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
                 }
-                Hauptknopf(text: laeuft ? "Wird gespeichert…" : "Einladung annehmen", gesperrt: laeuft) {
-                    beantworten(e, annehmen: true)
+                .accessibilityElement(children: .combine)
+                if let hinweis, !e.annehmenMoeglich || offen {
+                    Label(hinweis, systemImage: e.annehmenMoeglich ? "info.circle" : "exclamationmark.triangle.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(e.annehmenMoeglich ? Farbe.ink2 : Farbe.redInk)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                LeiserKnopf(text: "Abbrechen", gesperrt: laeuft) { annehmenBei = nil }
-            } else {
-                // Annehmen links in Blau, Ablehnen neutral daneben (Entwurf "Mannschaft Mitglied").
-                HStack(spacing: Tokens.Abstand.s) {
-                    Knopf("Annehmen", stufe: .haupt, breit: true, gesperrt: laeuft) {
+                if offen {
+                    Toggle(isOn: $telefonSichtbar) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(MannschaftLogik.telefonLabel).font(.subheadline).foregroundStyle(Farbe.ink)
+                            Text(MannschaftLogik.telefonBeschreibung).font(.footnote).foregroundStyle(Farbe.muted)
+                        }
+                    }
+                    .disabled(laeuft)
+                    knoepfe(links: "Abbrechen", rechts: "Einladung annehmen") {
+                        annehmenBei = nil
+                    } rechtsAktion: {
+                        beantworten(e, annehmen: true)
+                    }
+                } else if e.annehmenMoeglich {
+                    knoepfe(links: "Ablehnen", rechts: "Annehmen", linksRot: true) {
+                        beantworten(e, annehmen: false)
+                    } rechtsAktion: {
                         telefonSichtbar = false
                         annehmenBei = e.id
                     }
-                    LeiserKnopf(text: "Ablehnen", gesperrt: laeuft) { beantworten(e, annehmen: false) }
+                } else {
+                    Button(role: .destructive) { beantworten(e, annehmen: false) } label: {
+                        Text("Ablehnen").font(.headline).frame(maxWidth: .infinity, minHeight: 36)
+                    }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
+                    .disabled(laeuft)
                 }
             }
+            .padding(.vertical, 8)
+            .gruppenZeile()
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Farbe.blueSoft, in: RoundedRectangle(cornerRadius: Tokens.Radius.karte))
-        .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.karte).strokeBorder(Farbe.blue.opacity(0.22), lineWidth: 1))
+    }
+
+    private func knoepfe(
+        links: String, rechts: String, linksRot: Bool = false,
+        linksAktion: @escaping () -> Void, rechtsAktion: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: 10) {
+            Button(role: linksRot ? .destructive : nil, action: linksAktion) {
+                Text(links).font(.headline).frame(maxWidth: .infinity, minHeight: 36)
+            }
+            .buttonStyle(.bordered)
+            .tint(linksRot ? Farbe.red : Farbe.ink2)
+            Button(action: rechtsAktion) {
+                Group {
+                    if laeuft { ProgressView().tint(.white) } else { Text(rechts).font(.headline) }
+                }
+                .frame(maxWidth: .infinity, minHeight: 36)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Farbe.blue)
+        }
+        .buttonBorderShape(.capsule)
+        .disabled(laeuft)
     }
 
     // MARK: - Mannschaft
 
     @ViewBuilder private var mannschaftAbschnitt: some View {
         if let f = mannschaft?.fehler {
-            Fehlerzeile(text: f, laeuft: aktualisiert) { Task { await laden(nachladen: true) } }
+            Section { FehlerZeile(text: f, erneut: erneut).gruppenZeile() }
         } else if let m = aktuell {
-            // Erst der Kader, dann die offenen Einladungen, dann das Hinzufuegen.
+            ueberblick(m)
             kader(m)
             if m.ichBinMf {
                 offeneEinladungen(m)
-                KontoAbschnitt(titel: "Spieler hinzufügen")
-                Text(MannschaftLogik.mfErklaerung).leise().fixedSize(horizontal: false, vertical: true)
-                KandidatenSuche(daten: daten) { Task { await laden(nachladen: false) } }
-                Text(MannschaftLogik.mfKannNichtAustreten).leise().fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, Tokens.Abstand.s)
             } else {
-                // Der Weg hinaus ist ein roter Verweis; die Bestaetigung fragt nach.
-                Button { austretenFrage = true } label: {
-                    Text("Aus Mannschaft austreten")
-                        .font(Schrift.display(.halbfett, 16))
-                        .foregroundStyle(Farbe.redInk)
-                        .frame(maxWidth: .infinity, minHeight: 48)
-                        .contentShape(Rectangle())
+                Section {
+                    Button(role: .destructive) { austretenFrage = true } label: {
+                        Text("Aus Mannschaft austreten").frame(maxWidth: .infinity)
+                    }
+                    .disabled(laeuft)
+                    .gruppenZeile()
                 }
-                .buttonStyle(.plain)
-                .disabled(laeuft)
-                .padding(.top, Tokens.Abstand.m)
             }
         } else if (einladungen?.wert ?? []).isEmpty {
-            Leerzustand(text: MannschaftLogik.keineMannschaft)
+            Section {
+                ContentUnavailableView {
+                    Label("Keine Mannschaft", systemImage: "person.3")
+                } description: {
+                    Text(MannschaftLogik.keineMannschaft)
+                }
+            }
+            .listRowBackground(Color.clear)
+        }
+    }
+
+    /// Kacheln ueber dem Kader: wie viele, wer fuehrt, fuer den MF das Einladen.
+    private func ueberblick(_ m: MeineMannschaft) -> some View {
+        let mf = m.kader.first { $0.isTeamCaptain == true }
+        let offen = m.offeneEinladungen?.count ?? 0
+        return Section {
+            HStack(spacing: 10) {
+                Kennzahl(wert: "\(m.kader.count)", titel: m.kader.count == 1 ? "Spieler" : "Spieler")
+                if m.ichBinMf {
+                    Kennzahl(wert: "\(offen)", titel: offen == 1 ? "Einladung offen" : "Einladungen offen")
+                    Button { sucheOffen = true } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: "person.badge.plus").font(.title3)
+                            Text("Einladen").font(.footnote.weight(.semibold))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, minHeight: 64)
+                        .background(Farbe.blue, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Spieler einladen")
+                } else if let mf {
+                    Kennzahl(wert: mf.firstName ?? MannschaftLogik.name(mf.firstName, mf.lastName), titel: "Mannschaftsführer")
+                }
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+        }
+    }
+
+    @ViewBuilder private func kader(_ m: MeineMannschaft) -> some View {
+        let fuehrer = m.kader.filter { $0.isTeamCaptain == true }
+        let spieler = m.kader.filter { $0.isTeamCaptain != true }
+        if !fuehrer.isEmpty {
+            Section {
+                ForEach(fuehrer) { k in kaderZeile(k, m) }
+            } header: {
+                GruppenKopf(titel: "Mannschaftsführer")
+            }
+        }
+        Section {
+            if spieler.isEmpty {
+                Text("Noch niemand im Kader.").foregroundStyle(Farbe.muted).gruppenZeile()
+            }
+            ForEach(spieler) { k in kaderZeile(k, m) }
+        } header: {
+            GruppenKopf(titel: "Spieler", zusatz: spieler.isEmpty ? nil : "\(spieler.count)")
+        } footer: {
+            if m.ichBinMf && !spieler.isEmpty {
+                Text("Zum Austragen nach links wischen. Nummern siehst du nur, wenn Spieler sie freigegeben haben.")
+                    .foregroundStyle(Farbe.muted)
+            }
+        }
+    }
+
+    private func kaderZeile(_ k: KaderMitglied, _ m: MeineMannschaft) -> some View {
+        let name = MannschaftLogik.name(k.firstName, k.lastName)
+        let darf = MannschaftLogik.darfAustragen(k, in: m)
+        let ich = m.ichBinMf && k.isTeamCaptain == true
+        let anruf = m.ichBinMf && !ich ? MannschaftLogik.telefonLink(k.telefon) : nil
+        return HStack(spacing: 12) {
+            Kuerzel(vorname: k.firstName, nachname: k.lastName, schluessel: k.memberId)
+            HStack(spacing: 6) {
+                Text(name).foregroundStyle(Farbe.ink).lineLimit(1)
+                if ich { DeinMarker("du") }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if let lk = MannschaftLogik.lk(k.tennisLk) {
+                Text(lk)
+                    .font(.subheadline.weight(.semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(Farbe.ink2)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Farbe.surf3, in: Capsule())
+                    .accessibilityLabel("LK \(lk)")
+            }
+            if let anruf {
+                Link(destination: anruf) {
+                    Image(systemName: "phone.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(Farbe.blueInk)
+                        .frame(width: 34, height: 34)
+                        .background(Farbe.blueSoft, in: Circle())
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("\(name) anrufen")
+            }
+        }
+        .padding(.vertical, 2)
+        .gruppenZeile()
+        .swipeActions(edge: .trailing) {
+            if darf {
+                Button("Austragen", role: .destructive) { austragenFrage = k }
+            }
+        }
+        .contextMenu {
+            if let anruf {
+                Link(destination: anruf) { Label("Anrufen", systemImage: "phone") }
+            }
+            if darf {
+                Button("Austragen", systemImage: "person.badge.minus", role: .destructive) { austragenFrage = k }
+            }
+        }
+        .accessibilityActions {
+            if darf { Button("\(name) austragen") { austragenFrage = k } }
         }
     }
 
     @ViewBuilder private func offeneEinladungen(_ m: MeineMannschaft) -> some View {
         let liste = m.offeneEinladungen ?? []
         if !liste.isEmpty {
-            KontoAbschnitt(titel: "Offene Einladungen")
-            KontoGruppe {
-                ForEach(Array(liste.enumerated()), id: \.element.id) { i, e in
-                    if i > 0 { KontoLinie() }
-                    HStack(spacing: 14) {
-                        Kuerzel(vorname: e.firstName, nachname: e.lastName)
+            Section {
+                ForEach(liste) { e in
+                    let name = MannschaftLogik.name(e.firstName, e.lastName)
+                    HStack(spacing: 12) {
+                        Image(systemName: "clock")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Farbe.muted)
+                            .frame(width: 36, height: 36)
+                            .background(Farbe.surf3, in: Circle())
+                            .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(MannschaftLogik.name(e.firstName, e.lastName))
-                                .font(Schrift.text(.normal, 17))
-                                .foregroundStyle(Farbe.ink)
-                            Text(MannschaftLogik.offeneUnterzeile(e)).leise()
+                            Text(name).foregroundStyle(Farbe.ink)
+                            Text(MannschaftLogik.offeneUnterzeile(e)).font(.footnote).foregroundStyle(Farbe.muted)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityElement(children: .combine)
-                        RoterVerweis(text: "Zurückziehen", gesperrt: laeuft) {
-                            ausfuehren { await daten.zurueckziehen(e) }
-                        }
-                        .accessibilityLabel("Einladung an \(MannschaftLogik.name(e.firstName, e.lastName)) zurückziehen")
+                        Button("Zurückziehen") { ausfuehren { await daten.zurueckziehen(e) } }
+                            .buttonStyle(.bordered)
+                            .buttonBorderShape(.capsule)
+                            .controlSize(.small)
+                            .tint(Farbe.red)
+                            .disabled(laeuft)
+                            .accessibilityLabel("Einladung an \(name) zurückziehen")
                     }
-                    .padding(.vertical, 12)
-                    .padding(.horizontal, 18)
-                    .frame(minHeight: 68)
+                    .gruppenZeile()
                 }
+            } header: {
+                GruppenKopf(titel: "Eingeladen", zusatz: "\(liste.count)")
+            } footer: {
+                Text(MannschaftLogik.mfKannNichtAustreten).foregroundStyle(Farbe.muted)
+            }
+        } else {
+            Section {} footer: {
+                Text(MannschaftLogik.mfKannNichtAustreten).foregroundStyle(Farbe.muted)
             }
         }
-    }
-
-    private func kader(_ m: MeineMannschaft) -> some View {
-        Group {
-            KontoAbschnitt(titel: "Kader \(m.name)")
-            KontoGruppe {
-                if m.kader.isEmpty {
-                    Text("Noch niemand im Kader.").leise()
-                        .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-                        .padding(.horizontal, 16)
-                }
-                ForEach(Array(m.kader.enumerated()), id: \.element.id) { i, k in
-                    if i > 0 { KontoLinie() }
-                    kaderZeile(k, m)
-                }
-            }
-        }
-    }
-
-    private func kaderZeile(_ k: KaderMitglied, _ m: MeineMannschaft) -> some View {
-        HStack(alignment: .center, spacing: 14) {
-            Kuerzel(vorname: k.firstName, nachname: k.lastName)
-            VStack(alignment: .leading, spacing: 3) {
-                // Name, daneben die Marken: gelb "du" (deins), hellblau die Rolle.
-                UmbruchStapel(abstand: 8, zeilenabstand: 4) {
-                    Text(MannschaftLogik.name(k.firstName, k.lastName))
-                        .font(Schrift.text(.normal, 17))
-                        .foregroundStyle(Farbe.ink)
-                    if m.ichBinMf && k.isTeamCaptain == true { DeinMarker("du") }
-                    if k.isTeamCaptain == true { BlaueMarke("Mannschaftsführer") }
-                }
-                Text(MannschaftLogik.lk(k.tennisLk) ?? "ohne LK").leise()
-                if let telefon = MannschaftLogik.telefonZeile(k, in: m) {
-                    if let link = MannschaftLogik.telefonLink(k.telefon) {
-                        Link(destination: link) {
-                            Label(telefon, systemImage: "phone")
-                                .font(Schrift.text(.halbfett, 14))
-                                .foregroundStyle(Farbe.blueInk)
-                                .frame(minHeight: 32)
-                        }
-                        .accessibilityLabel("\(telefon) anrufen")
-                    } else {
-                        Text(telefon).leise()
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            if MannschaftLogik.darfAustragen(k, in: m) {
-                RoterVerweis(text: "Austragen", gesperrt: laeuft) { austragenFrage = k }
-                    .accessibilityLabel("\(MannschaftLogik.name(k.firstName, k.lastName)) austragen")
-            }
-        }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 18)
-        .frame(minHeight: 68)
     }
 
     // MARK: - Aktionen
@@ -310,16 +409,42 @@ struct MannschaftBildschirm: View {
     }
 }
 
+/// Eine Kachel mit Zahl oder Name gross und Beschriftung klein.
+private struct Kennzahl: View {
+    let wert: String
+    let titel: String
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(wert)
+                .font(.title2.weight(.bold))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .foregroundStyle(Farbe.ink)
+            Text(titel)
+                .font(.footnote)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .foregroundStyle(Farbe.muted)
+        }
+        .frame(maxWidth: .infinity, minHeight: 64)
+        .background(Farbe.surf, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+}
+
 // MARK: - Spieler hinzufuegen
 
 /**
- * Suche ueber mannschaft_kandidaten: Interessenten zuerst (Marke
- * "Interesse"), wer woanders spielt, traegt "spielt in <X>". Schon
- * Eingeladene sind ausgegraut. Gesucht wird kurz nach dem letzten Tippen.
+ * Suche ueber mannschaft_kandidaten als Blatt mit Suchfeld: Interessenten
+ * zuerst (Marke "Interesse"), wer woanders spielt, traegt "spielt in <X>".
+ * Schon Eingeladene sind ausgegraut. Gesucht wird kurz nach dem letzten Tippen.
  */
 private struct KandidatenSuche: View {
+    @Environment(\.dismiss) private var zu
     let daten: Mannschaftsdaten
-    /// Nach einer Einladung: die offenen Einladungen oben neu laden.
+    /// Nach einer Einladung: die offenen Einladungen im Bildschirm neu laden.
     let eingeladen: () -> Void
 
     @State private var suche = ""
@@ -329,75 +454,78 @@ private struct KandidatenSuche: View {
     @State private var laeuft: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Tokens.Abstand.m) {
-            // Das Suchfeld mit Lupe steht gleich im Bildschirm, darunter die Vorschlaege.
-            HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(Farbe.muted)
-                    .accessibilityHidden(true)
-                TextField("", text: $suche, prompt: Text(MannschaftLogik.sucheLabel).foregroundStyle(Farbe.muted))
-                    .textContentType(.name)
-                    .textInputAutocapitalization(.words)
-                    .autocorrectionDisabled()
-                    .font(Schrift.text(.normal, Tokens.Schrift.normal))
-                    .foregroundStyle(Farbe.ink)
-                    .accessibilityLabel(MannschaftLogik.sucheLabel)
-            }
-            .padding(.horizontal, 20)
-            .frame(minHeight: 52)
-            .background(Farbe.surf2, in: Capsule())
-            .overlay(Capsule().strokeBorder(Farbe.line2, lineWidth: 1))
-            if let meldung {
-                KontoHinweis(text: meldung.meldung, ok: meldung.ok)
-            }
-            if let fehler {
-                Fehlerzeile(text: fehler) { Task { await suchen(sofort: true) } }
-            } else if let liste {
-                if liste.isEmpty {
-                    Leerzustand(text: MannschaftLogik.keineKandidaten)
-                } else {
-                    KontoGruppe {
-                        ForEach(Array(liste.enumerated()), id: \.element.id) { i, k in
-                            if i > 0 { KontoLinie() }
-                            zeile(k)
+        NavigationStack {
+            List {
+                Section {
+                    if let fehler {
+                        FehlerZeile(text: fehler, erneut: Erneut(laeuft: false) { Task { await suchen(sofort: true) } }).gruppenZeile()
+                    } else if let liste {
+                        if liste.isEmpty {
+                            Text(MannschaftLogik.keineKandidaten).foregroundStyle(Farbe.muted).gruppenZeile()
                         }
+                        ForEach(liste) { zeile($0) }
+                    } else {
+                        ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).gruppenZeile()
                     }
+                } header: {
+                    GruppenKopf(titel: suche.isEmpty ? "Vorschläge" : "Treffer")
+                } footer: {
+                    Text(MannschaftLogik.mfErklaerung).foregroundStyle(Farbe.muted)
                 }
-            } else {
-                ProgressView().tint(Farbe.muted).frame(maxWidth: .infinity).padding(.top, 24)
             }
+            .gruppenListe()
+            .searchable(text: $suche, placement: .navigationBarDrawer(displayMode: .always), prompt: MannschaftLogik.sucheLabel)
+            .bestaetigung(Binding(get: { meldung?.meldung }, set: { if $0 == nil { meldung = nil } }), ok: meldung?.ok ?? true)
+            .autocorrectionDisabled()
+            .textInputAutocapitalization(.words)
+            .navigationTitle("Spieler hinzufügen")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Fertig") { zu() }
+                }
+            }
+            .task(id: suche) { await suchen(sofort: false) }
+            .sensoryFeedback(.success, trigger: meldung) { _, neu in neu?.ok == true }
         }
-        .task(id: suche) { await suchen(sofort: false) }
+        .presentationDetents([.large])
     }
 
     private func zeile(_ k: MannschaftKandidat) -> some View {
         let frei = MannschaftLogik.kannEinladen(k)
-        return HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                // Name und Marken in einer Zeile: "Interesse" hellblau, der Rest grau.
-                UmbruchStapel(abstand: 8, zeilenabstand: 4) {
-                    Text(MannschaftLogik.name(k.firstName, k.lastName))
-                        .font(Schrift.text(.normal, 17))
-                        .foregroundStyle(Farbe.ink)
+        let name = MannschaftLogik.name(k.firstName, k.lastName)
+        return HStack(spacing: 12) {
+            Kuerzel(vorname: k.firstName, nachname: k.lastName, schluessel: k.memberId)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(name).foregroundStyle(Farbe.ink)
                     ForEach(MannschaftLogik.kandidatMarken(k), id: \.text) { m in
                         MarkeKlein(text: m.text, ton: m.ton == .gruen ? .blau : .grau)
                     }
                 }
-                Text(MannschaftLogik.kandidatUnterzeile(k)).leise()
+                Text(MannschaftLogik.kandidatUnterzeile(k)).font(.footnote).foregroundStyle(Farbe.muted)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
-            KleinerKnopf(
-                text: laeuft == k.memberId ? "Lädt…" : MannschaftLogik.einladenKnopf(k),
-                gesperrt: !frei || laeuft != nil
-            ) { einladen(k) }
-            .accessibilityLabel(frei ? "\(MannschaftLogik.name(k.firstName, k.lastName)) einladen" : "Schon eingeladen")
+            if laeuft == k.memberId {
+                ProgressView()
+            } else if frei {
+                Button("Einladen") { einladen(k) }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
+                    .controlSize(.small)
+                    .tint(Farbe.blue)
+                    .disabled(laeuft != nil)
+                    .accessibilityLabel("\(name) einladen")
+            } else {
+                Label(MannschaftLogik.einladenKnopf(k), systemImage: "checkmark")
+                    .font(.subheadline)
+                    .foregroundStyle(Farbe.muted)
+                    .accessibilityLabel("Schon eingeladen")
+            }
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 18)
-        .frame(minHeight: 68)
-        .opacity(frei ? 1 : 0.5)
+        .gruppenZeile()
+        .opacity(frei ? 1 : 0.6)
     }
 
     private func einladen(_ k: MannschaftKandidat) {
@@ -434,66 +562,22 @@ private struct KandidatenSuche: View {
 
 // MARK: - Bausteine
 
-/// Ein kleiner Knopf rechts in einer Zeile: Zurueckziehen, Austragen, Einladen.
-private struct KleinerKnopf: View {
-    let text: String
-    var rot = false
-    var gesperrt = false
-    let aktion: () -> Void
-
-    var body: some View {
-        Knopf(text, stufe: rot ? .gefahrLeise : .zweit, groesse: .klein, gesperrt: gesperrt, aktion: aktion)
-    }
-}
-
-/// Initialen im hellblauen Kreis vor einem Namen.
+/// Initialen im blauen Kreis mit leichtem Verlauf, wie das eigene Bild im Konto.
 private struct Kuerzel: View {
     let vorname: String?
     let nachname: String?
+    let schluessel: String
 
     var body: some View {
         Text(KontoLogik.initialen(vorname: vorname ?? "", nachname: nachname ?? ""))
-            .font(Schrift.display(.halbfett, 14))
+            .font(.subheadline.weight(.semibold))
             .dynamicTypeSize(...DynamicTypeSize.xLarge)
-            .foregroundStyle(Farbe.blueInk)
-            .frame(width: 40, height: 40)
-            .background(Farbe.blueSoft, in: Circle())
+            .foregroundStyle(.white)
+            .frame(width: 38, height: 38)
+            .background(
+                LinearGradient(colors: [Farbe.blue.opacity(0.75), Farbe.blue], startPoint: .top, endPoint: .bottom),
+                in: Circle()
+            )
             .accessibilityHidden(true)
-    }
-}
-
-/// Roter Textverweis rechts in einer Zeile: Austragen, Zurueckziehen. Bestaetigt wird danach.
-private struct RoterVerweis: View {
-    let text: String
-    var gesperrt = false
-    let aktion: () -> Void
-
-    var body: some View {
-        Button(action: aktion) {
-            Text(text)
-                .font(Schrift.display(.halbfett, 15))
-                .foregroundStyle(Farbe.redInk)
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(gesperrt)
-        .opacity(gesperrt ? 0.5 : 1)
-    }
-}
-
-/// Ein neutraler Satz vor dem Annehmen, etwa der Wechselhinweis.
-private struct Hinweiszeile: View {
-    let text: String
-
-    var body: some View {
-        Text(text)
-            .font(Schrift.text(.halbfett, Tokens.Schrift.normal))
-            .foregroundStyle(Farbe.ink)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 14)
-            .background(Farbe.blueSoft, in: RoundedRectangle(cornerRadius: Tokens.Radius.feld))
     }
 }
