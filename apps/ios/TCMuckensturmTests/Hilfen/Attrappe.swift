@@ -361,17 +361,25 @@ enum Beispiel {
         return tagesformat.string(from: d.addingTimeInterval(Double(tage) * 86400))
     }
 
-    /// Jedes Datum JJJJ-MM-TT im Text um `tage` verschieben; Uhrzeiten (UTC) bleiben.
+    /**
+     * Jedes Datum JJJJ-MM-TT im Text um `tage` verschieben; Uhrzeiten (UTC) bleiben.
+     * Auch in Zeitstempeln ("2026-11-17T09:00:00") - zwischen Tag und "T" liegt keine
+     * Wortgrenze, deshalb ohne \b. Nur Daten nahe am Aufnahmetag wandern mit;
+     * Geburtstage und Eintrittsjahre bleiben, wie sie aufgezeichnet sind.
+     */
     static func verschoben(_ text: String) -> String {
         let tage = verschiebung
         guard tage != 0 else { return text }
-        let muster = try! NSRegularExpression(pattern: #"\b\d{4}-\d{2}-\d{2}\b"#)
+        let muster = try! NSRegularExpression(pattern: #"(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)"#)
+        let aufnahme = tagesformat.date(from: aufnahmetag)!
         let ns = text as NSString
         var ergebnis = ""
         var ende = 0
         for treffer in muster.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+            let datum = ns.substring(with: treffer.range)
             ergebnis += ns.substring(with: NSRange(location: ende, length: treffer.range.location - ende))
-            ergebnis += plus(ns.substring(with: treffer.range), tage)
+            let nah = tagesformat.date(from: datum).map { abs($0.timeIntervalSince(aufnahme)) <= 366 * 86400 } ?? false
+            ergebnis += nah ? plus(datum, tage) : datum
             ende = treffer.range.location + treffer.range.length
         }
         return ergebnis + ns.substring(from: ende)
