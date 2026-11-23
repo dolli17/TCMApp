@@ -23,10 +23,14 @@ function erfolg(page: Page): Locator {
   return page.locator(".hinweis.erfolg");
 }
 
-/** "2026-11-18" als "18.11.2026", wie die Serienliste das Enddatum zeigt. */
+/**
+ * "2026-11-18" als "18.11.2026", wie die Serienliste das Enddatum zeigt
+ * (SerienListe.tsx: Intl.DateTimeFormat("de-DE") ohne Optionen). Also ohne
+ * führende Null: "2026-12-01" ist "1.12.2026". Mit "2-digit" scheiterte der
+ * Test an jedem Tag, dessen übernächste Woche auf den 1. bis 9. fällt.
+ */
 function alsDatum(tag: string): string {
-  return new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" })
-    .format(new Date(`${tag}T12:00:00Z`));
+  return new Intl.DateTimeFormat("de-DE", { timeZone: "UTC" }).format(new Date(`${tag}T12:00:00Z`));
 }
 
 function wochentag(tag: string): string {
