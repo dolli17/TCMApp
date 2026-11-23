@@ -30,28 +30,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Neue Migrationen müssen jünger sein als alles, was im Ziel-Branch schon
-      # liegt - sonst lehnt "supabase db push" sie in Dev/Prod ab, weil sie vor
-      # einer bereits eingespielten Migration einsortiert würden. Passiert,
-      # wenn zwei Branches parallel Migrationen anlegen.
-      # Ausnahme: die Hotfix-Rückführung production -> main. Deren Migrationen
-      # laufen schon in Prod und lassen sich nicht mehr umbenennen.
-      - name: Zeitstempel neuer Migrationen
-        if: github.head_ref != 'production'
-        env:
-          ZIEL: origin/${{ github.base_ref }}
-        run: |
-          LETZTE="$(git ls-tree --name-only "$ZIEL" supabase/migrations/ | sed 's#.*/##' | cut -d_ -f1 | sort | tail -1)"
-          FEHLER=0
-          for f in $(git diff --name-only --diff-filter=A "$ZIEL"...HEAD -- supabase/migrations/); do
-            V="$(basename "$f" | cut -d_ -f1)"
-            if [[ ! "$V" > "$LETZTE" ]]; then
-              echo "::error file=$f::$V ist nicht jünger als die neueste Migration in $ZIEL ($LETZTE). Datei mit aktuellem Zeitstempel umbenennen."
-              FEHLER=1
-            fi
-          done
-          exit $FEHLER
-
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
@@ -65,31 +43,13 @@ jobs:
       - name: Supabase starten
         run: pnpm exec supabase start -x studio,imgproxy,logflare,vector,mailpit,supavisor,edge-runtime
 
-      # Wer eine Migration anlegt und "pnpm db:types" vergisst, bekäme sonst
-      # einen grünen Typecheck gegen veraltete Typen. Die CLI kommt aus dem
-      # Lockfile, lokal und hier erzeugt also dieselbe Version die Datei.
-      - name: database.types.ts passt zu den Migrationen
-        run: |
-          pnpm exec supabase gen types typescript --local > /tmp/database.types.ts
-          if ! diff -u packages/core/src/database.types.ts /tmp/database.types.ts; then
-            echo "::error file=packages/core/src/database.types.ts::Die Typen passen nicht zu den Migrationen. Lokal 'pnpm db:reset && pnpm db:types' ausführen und die Datei einchecken (danach 'pnpm --filter @tcm/core build:app-api')."
-            exit 1
-          fi
-
-      - name: pnpm verify (Typecheck, Lint, Vitest, pgTAP)
-        run: pnpm verify
-
-      # Edge Functions unter Deno, ohne Stack: Deno.serve und fetch sind
-      # abgefangen (supabase/functions/_tests/attrappe.ts).
-      - name: Edge Functions (Deno)
-        run: pnpm test:functions
-
-      - name: Web bauen
-        run: |
-          eval "$(pnpm exec supabase status -o env | grep -E '^(API_URL|ANON_KEY)=')"
-          NEXT_PUBLIC_SUPABASE_URL="$API_URL" \
-          NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" \
-            pnpm --filter @tcm/web build
+      # Alle Prüfungen stehen in scripts/ci-lokal.sh - dasselbe Skript läuft
+      # lokal mit "pnpm verify:ci". Neue Prüfungen dort ergänzen, nicht hier.
+      - name: Prüfungen (scripts/ci-lokal.sh)
+        env:
+          ZIEL: origin/${{ github.base_ref }}
+          QUELLE: ${{ github.head_ref }}
+        run: bash scripts/ci-lokal.sh
 
   # End-to-End gegen den lokalen Stack im Runner (T2). Pflicht-Check wie verify.
   # Anders als in verify laufen hier Edge Runtime (member-login) und Mailpit
@@ -139,7 +99,7 @@ jobs:
 
       - name: Server-Log
         if: failure()
-        run: tail -200 /tmp/tcm-web.log /tmp/tcm-build.log || true
+        run: tail -200 tmp/e2e/web.log tmp/e2e/build.log || true
 
       - name: Bericht und Traces hochladen
         if: failure()

@@ -16,11 +16,13 @@
     "test": "pnpm -r test",
     "test:core": "pnpm --filter @tcm/core test",
     "test:functions": "pnpm dlx deno@2.9.6 test --no-lock --node-modules-dir=none --allow-env --allow-read supabase/functions/_tests",
-    "e2e": "pnpm --filter @tcm/web e2e",
+    "e2e": "bash scripts/e2e.sh",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "dev": "pnpm --filter @tcm/web dev",
-    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm db:test"
+    "verify:schnell": "pnpm typecheck && pnpm lint && pnpm test",
+    "verify": "pnpm verify:schnell && pnpm db:test",
+    "verify:ci": "bash scripts/ci-lokal.sh"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

@@ -7,6 +7,9 @@
 # Server, weil der Build fehlgeschlagen war und der alte Prozess auf Port 3000
 # weiterlief. Die gemeldeten Fehler existierten im aktuellen Stand gar nicht.
 # Bricht der Build ab, laufen hier auch keine Tests.
+#
+#   pnpm e2e                      # alles
+#   pnpm e2e --project=chromium   # Argumente gehen an Playwright weiter
 
 set -euo pipefail
 
@@ -39,26 +42,79 @@ if ! curl -s -o /dev/null "$NEXT_PUBLIC_SUPABASE_URL/auth/v1/health"; then
   exit 1
 fi
 
+# Logs und PID-Datei liegen im eigenen Worktree (tmp/ ist gitignored), nicht
+# unter /tmp: dort ueberschrieben sich parallele Worktrees gegenseitig.
+ABLAGE="$WURZEL/tmp/e2e"
+mkdir -p "$ABLAGE"
+BUILD_LOG="$ABLAGE/build.log"
+WEB_LOG="$ABLAGE/web.log"
+PID_DATEI="$ABLAGE/web.pid"
+
+# Der Port ist fest: die lokale Auth (supabase/config.toml, site_url und
+# additional_redirect_urls) kennt nur localhost:3000, die Links in den
+# Einladungs- und Passwort-Mails zeigen dorthin.
+PORT=3000
+
+echo "== Alten Server beenden =="
+# Nur den Server beenden, den ein frueherer Lauf aus DIESEM Worktree gestartet
+# hat. Frueher stand hier "kill -9" auf alles an Port 3000 - das traf auch den
+# Server einer anderen Sitzung in einem anderen Worktree.
+lauscht() { lsof -ti:"$PORT" -sTCP:LISTEN 2>/dev/null | head -1 || true; }
+
+if [ -f "$PID_DATEI" ]; then
+  ALT="$(cat "$PID_DATEI")"
+  if [ -n "$ALT" ] && [ "$(lauscht)" = "$ALT" ]; then
+    kill "$ALT" 2>/dev/null || true
+    for _ in $(seq 1 10); do
+      [ -z "$(lauscht)" ] && break
+      sleep 0.5
+    done
+    [ "$(lauscht)" = "$ALT" ] && kill -9 "$ALT" 2>/dev/null || true
+  fi
+  rm -f "$PID_DATEI"
+fi
+
+FREMD="$(lauscht)"
+if [ -n "$FREMD" ]; then
+  if [ "${E2E_PORT_FREIMACHEN:-}" = 1 ]; then
+    echo "Port $PORT belegt von PID $FREMD - wird beendet (E2E_PORT_FREIMACHEN=1)."
+    kill -9 "$FREMD" 2>/dev/null || true
+    sleep 1
+  else
+    echo "Abbruch: Port $PORT ist belegt von einem Prozess, den dieser Worktree nicht gestartet hat:" >&2
+    ps -o pid=,command= -p "$FREMD" >&2 || true
+    echo "Den Prozess selbst beenden oder mit E2E_PORT_FREIMACHEN=1 erneut starten." >&2
+    exit 1
+  fi
+fi
+
 echo "== Build =="
-if ! pnpm build > /tmp/tcm-build.log 2>&1; then
-  echo "Build fehlgeschlagen:"
-  tail -25 /tmp/tcm-build.log
+if ! pnpm build > "$BUILD_LOG" 2>&1; then
+  echo "Build fehlgeschlagen ($BUILD_LOG):"
+  tail -25 "$BUILD_LOG"
   exit 1
 fi
 echo "Build ok"
 
-echo "== Server neu starten =="
-lsof -ti:3000 | xargs kill -9 2>/dev/null || true
-sleep 1
-nohup pnpm start > /tmp/tcm-web.log 2>&1 &
+echo "== Server starten =="
+PORT="$PORT" nohup pnpm start > "$WEB_LOG" 2>&1 &
 
+BEREIT=0
 for i in $(seq 1 40); do
-  if curl -s -o /dev/null http://localhost:3000/login; then
+  if curl -s -o /dev/null "http://localhost:$PORT/login"; then
     echo "bereit nach ${i}s"
+    BEREIT=1
     break
   fi
   sleep 1
 done
+if [ "$BEREIT" != 1 ]; then
+  echo "Abbruch: der Server antwortet nach 40 s nicht ($WEB_LOG):" >&2
+  tail -25 "$WEB_LOG" >&2
+  exit 1
+fi
+# Die PID des Prozesses, der wirklich lauscht (next), nicht die von pnpm.
+lauscht > "$PID_DATEI"
 
 echo "== End-to-End =="
 npx playwright test "$@"
