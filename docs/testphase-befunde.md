@@ -4,7 +4,7 @@ Sammelstelle für Fehler, Lücken und Auffälligkeiten aus der Testphase (Start:
 damit sie gebündelt abgearbeitet werden können. Neue Befunde unten in **Offen** ergänzen;
 Erledigtes mit Commit nach **Behoben** verschieben.
 
-Stand: 21.10.2026
+Stand: 23.11.2026
 
 Legende Priorität: **P1** blockiert Tester oder ist ein Sicherheitsthema · **P2** vor externen
 Testern bzw. App Store · **P3** Komfort, Aufräumen.
@@ -61,7 +61,6 @@ Testern bzw. App Store · **P3** Komfort, Aufräumen.
 |---|---|---|---|
 | O19 | P3 | **Testlauf-Rückstände:** Ein früherer E2E-Lauf hat dem lokalen Testmitglied die Admin-Rolle gegeben. Danach schlugen Berechtigungstests fehl, bis `db:reset` lief. | Die betroffenen Verwaltungstests sollen vergebene Rollen wieder entziehen; oder vor jedem Lauf `db:reset`. |
 | O20 | P3 | Die Abläufe „Einladung über den Server“ und „Passwort-vergessen-Link in Tab 2“ sind nur einmalig mit dem lokalen Mail-Postfach (Mailpit) geprüft, nicht als dauerhafte E2E-Tests. | Hilfsfunktion für Mailpit in `apps/web/e2e/hilfen.ts` und dauerhafte Tests daraus machen. |
-| O26 | P3 | **E2E „ein Mitglied mit Historie lässt sich nicht löschen“ (`apps/web/e2e/mitglieder.spec.ts:296`) scheitert nur im Gesamtlauf.** Einzeln auf frischer DB besteht er. Er sucht nach „Bauer“ und nimmt den ersten Treffer; im Gesamtlauf ist das je nach dem, was vorherige Tests angelegt haben, ein anderer Datensatz (beobachtet: der des Admins). Der Test hängt also von der Reihenfolge ab. Gefunden beim Gesamtlauf zu PR #40 am 19.10. | Den Datensatz eindeutig wählen, z. B. über die Mitgliedsnummer oder die ID des Testmitglieds statt über den ersten Treffer der Suche. |
 
 ### Härtung vor dem Go-Live (Audit 20.10.2026)
 
@@ -202,6 +201,7 @@ Verdacht, beim Fix klären: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.1
 
 | Befund | Ursache | Commit |
 |---|---|---|
+| O26: Der E2E-Test „ein Mitglied mit Historie lässt sich nicht löschen“ scheiterte nur im Gesamtlauf. | Er suchte nach „Bauer“ und nahm den ersten Treffer, je nach Vorlauf ein anderer Datensatz (beobachtet: der des Admins). Die Testkonten bekamen bei jedem `db reset` neue UUIDs. Neu: feste UUIDs für die Testkonten (T3), der Test öffnet das Testmitglied direkt über `MITGLIED_ID.mitglied` (`/admin/mitglieder/<id>?teil=austritt`, `mitglieder.spec.ts:342`). Die Historie ist die Getränkebuchung, die `supabase/seed.sql` für dieses Mitglied fest anlegt. | PR #57 |
 | B22: Ausgetretene (Austrittsdatum vorbei), archivierte und gesperrte Mitglieder konnten sich anmelden und sahen danach nur leere Seiten; das Web schickte sie sogar auf die Kiosk-Theke, die App zeigte ein leeres „Hallo“. | Neue RPC `mein_zugang()` (nutzt `private.hat_zugang`, liefert Zugang, Grund und offenes Onboarding in einem Aufruf). Sie ersetzt die `members`-Abfrage der Web-Middleware und der App-Weiche/Tabs. Ohne Zugang: abmelden und Hinweis „Kein Zugang mehr“ mit Grund (Mitgliedschaft beendet / gesperrt / allgemein) und Weg zum Vorstand (`/kein-zugang` im Web, `kein-zugang` in der App) – nach der Anmeldung wie bei einer bestehenden Sitzung. Kiosk und Onboarding bleiben unberührt, ein Austritt in der Zukunft greift erst ab dem Tag danach. pgTAP `40_mein_zugang`, Vitest, E2E `kein-zugang.spec.ts`. | PR #92 |
 | S22: Der globale Deckel von 20 Mitgliedsanträgen pro Stunde ließ sich mit erfundenen Anträgen füllen, danach kam kein echter mehr durch. | Antrag mit Bestätigungsmail: Er wird unbestätigt angelegt (`confirmed_at`), die neue Edge Function `mitgliedsantrag` holt das Token mit dem Dienstschlüssel (`begin_membership_application`) und schickt den Link (Resend, lokal Mailpit). In der Datenbank steht nur der SHA-256 des Tokens. Erst „Antrag bestätigen“ auf `/antrag/bestaetigen` macht ihn für die Verwaltung sichtbar (RLS) und benachrichtigt den Vorstand. Link 24 h gültig, einmal; unbestätigte Anträge löscht der pg_cron-Job `unbestaetigte-antraege` danach. Deckel: 10 je Herkunft und Stunde (auch unbestätigte), global 20 nur bestätigte; dieselbe Adresse bekommt statt eines zweiten Antrags die Mail erneut (10 min Sperrfrist, höchstens 5), Antwort immer gleich. Bestand gilt als bestätigt. | #90 |
 | U79: In der App war „belegt“ noch surf3 mit Rand `rahmen` (Kästchen unter „Freie Zeiten“ und deren Legende) bzw. `blueSoft` ohne Rand (Raster); Training und gesperrt im Raster ohne Rand. Laut Statustabelle (HANDOFF §2) ist belegt `blueSoft` + 1 px `blue`. | App wie das Web (`.fz-kaestchen`, `.tr-block`, `.legende`): Kästchen belegt `blueSoft` + 1 px `blue`, alles nicht Buchbare `surf3` + 1 px `rahmen`, frei/du mit Rand im eigenen Ton. Raster: belegt mit Rand `blue`, Training und gesperrt mit Rand `rahmen`. Legende unter „Freie Zeiten“ um „Training, gesperrt“ ergänzt wie im Web, belegt in beiden Legenden blau. Hell und dunkel. | #91 |
