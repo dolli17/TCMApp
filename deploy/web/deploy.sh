@@ -11,9 +11,14 @@
 # sein. Die eigentliche Arbeit macht deploy/web/server-deploy.sh, das auf dem
 # Server als /usr/local/bin/tcm-deploy liegt - ausgefuehrt als Benutzer deploy,
 # dem die Checkouts gehoeren (sonst verweigert git den Zugriff).
+#
+# Der Server steht nicht im Repo (es ist öffentlich). Vor dem Aufruf setzen,
+# am besten dauerhaft in der eigenen Shell-Konfiguration:
+#
+#   export TCM_SERVER=benutzer@server
 set -euo pipefail
 
-SERVER="${TCM_SERVER:-root@187.124.4.243}"
+SERVER="${TCM_SERVER:?TCM_SERVER ist nicht gesetzt (export TCM_SERVER=benutzer@server)}"
 UMGEBUNG="${1:-}"
 
 case "$UMGEBUNG" in

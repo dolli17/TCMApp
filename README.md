@@ -101,7 +101,7 @@ pnpm test:functions       # Edge Functions unter Deno (lädt Deno per pnpm dlx)
 pnpm dev                  # Web-App
 ```
 
-Das Web läuft als Docker-Container auf dem eigenen Server (187.124.4.243)
+Das Web läuft als Docker-Container auf dem eigenen Server
 unter https://app.tennisclub-muckensturm.de, hinter dem dortigen Traefik.
 Gearbeitet wird über Pull Requests: ein Merge auf `main` deployt Dev, ein
 Merge auf `production` nach Freigabe Prod. Branches, Releases und Hotfixes

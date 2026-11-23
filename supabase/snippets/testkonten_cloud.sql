@@ -45,7 +45,7 @@ create temp table _tester (vorname text, nachname text, mail_mitglied text, mail
 create temp table _einladung (vorname text, nachname text, email text);
 
 insert into _tester values
-  -- ('Lucas', 'Dollmann', 'lucas.dollmann2003+mitglied@gmail.com', 'lucas.dollmann2003+admin@gmail.com'),
+  -- ('Anna', 'Beispiel', 'anna+mitglied@example.com', 'anna+admin@example.com'),
   <<TESTER>>;
 
 -- Optional, sonst diese Zeile leer lassen:

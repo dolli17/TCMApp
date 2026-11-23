@@ -93,7 +93,7 @@ Ein Hotfix möglichst **ohne Migration**. Braucht er doch eine und liegen auf `m
 ## Rückweg
 
 - **Web:** Actions → Deploy → „Run workflow“ öffnen, unter „Use workflow from“ den vorherigen Tag wählen und die Umgebung angeben. Dabei wird nur das Web neu gebaut, Datenbank und Functions bleiben, wie sie sind.
-- **Notfall ohne Actions:** `./deploy/web/deploy.sh prod v1.2.0` vom Mac aus. Auch das baut nur das Web.
+- **Notfall ohne Actions:** `./deploy/web/deploy.sh prod v1.2.0` vom Mac aus (vorher `export TCM_SERVER=benutzer@server`). Auch das baut nur das Web.
 - **Datenbank:** Eine Gegen-Migration als normalen Fix bzw. Hotfix ausrollen. Im Ernstfall aus dem Backup wiederherstellen (`docs/goLive.md`).
 
 ## Einrichtung
@@ -114,10 +114,10 @@ Das Repo ist öffentlich. PRs aus Forks bekommen keine Secrets, und die CI brauc
 |---|---|---|
 | `SUPABASE_PROJECT_REF` | Variable | Projekt-Ref. Fehlt sie, deployt der Workflow nichts. |
 | `WEB_URL` | Variable | `https://…` der Umgebung, für den Smoke-Test |
-| `DEPLOY_HOST` | Variable | `deploy@187.124.4.243` |
+| `DEPLOY_HOST` | Variable | `deploy@<server>` (Adresse des Servers, steht nicht im Repo) |
 | `SUPABASE_ACCESS_TOKEN` | Secret | Supabase-Personal-Access-Token (für `link`, `db push`, `functions deploy`). Ein DB-Passwort ist nicht nötig: die CLI meldet sich damit über eine temporäre Login-Rolle an. |
 | `DEPLOY_SSH_KEY` | Secret | privater SSH-Schlüssel (ed25519), nur für den Forced-Command |
-| `DEPLOY_KNOWN_HOSTS` | Secret | Zeile aus `ssh-keyscan 187.124.4.243` |
+| `DEPLOY_KNOWN_HOSTS` | Secret | Zeile aus `ssh-keyscan <server>` |
 
 ### Server
 
