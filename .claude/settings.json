@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm verify)",
+      "Bash(pnpm verify:schnell)",
+      "Bash(pnpm verify:ci)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm test)",
+      "Bash(pnpm test:core)",
+      "Bash(pnpm test:functions)",
+      "Bash(pnpm db:start)",
+      "Bash(pnpm db:test)",
+      "Bash(pnpm db:types)",
+      "Bash(pnpm e2e *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git fetch *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh pr list *)",
+      "Bash(gh run view *)",
+      "Bash(gh run list *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(**/*.geheim.xcconfig)",
+      "Read(**/*.p8)",
+      "Read(**/*.p12)",
+      "Read(**/*.jks)",
+      "Read(**/*.keystore)",
+      "Read(**/google-services.json)",
+      "Bash(supabase link *)",
+      "Bash(supabase db push *)",
+      "Bash(supabase functions deploy *)",
+      "Bash(supabase secrets *)",
+      "Bash(supabase config push *)",
+      "Bash(pnpm exec supabase link *)",
+      "Bash(pnpm exec supabase db push *)",
+      "Bash(pnpm exec supabase functions deploy *)",
+      "Bash(pnpm exec supabase secrets *)",
+      "Bash(pnpm exec supabase config push *)",
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(gh secret *)",
+      "Bash(gh release *)",
+      "Bash(gh repo edit *)",
+      "Bash(gh repo delete *)",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__deploy_edge_function",
+      "mcp__supabase__create_edge_function_secret",
+      "mcp__supabase__create_branch",
+      "mcp__supabase__delete_branch",
+      "mcp__supabase__merge_branch",
+      "mcp__supabase__rebase_branch",
+      "mcp__supabase__reset_branch"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/scripts/claude/bash-waechter.mjs",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/claude/sitzung-start.sh",
+            "timeout": 300
+          }
+        ]
+      }
+    ]
+  }
+}

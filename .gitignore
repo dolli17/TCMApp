@@ -71,7 +71,9 @@ Thumbs.db
 # Agent-Werkzeuge (lokal installiert, nicht Teil des Projekts)
 # ---------------------------------------------------------------------------
 .agents/
-.claude/skills/
+.claude/skills/supabase
+.claude/skills/supabase-postgres-best-practices
+.claude/settings.local.json
 
 # ---------------------------------------------------------------------------
 # Arbeitsdateien
