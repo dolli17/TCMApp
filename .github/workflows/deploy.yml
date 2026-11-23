@@ -46,7 +46,6 @@ jobs:
       UMGEBUNG: ${{ inputs.umgebung || (github.ref_name == 'main' && 'dev' || 'production') }}
       NUR_WEB: ${{ github.event_name == 'workflow_dispatch' }}
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
     steps:
       - name: Umgebung eingerichtet?
         id: bereit
@@ -71,8 +70,13 @@ jobs:
       - if: steps.bereit.outputs.ja == 'true'
         run: pnpm install --frozen-lockfile
 
+      # Der Supabase-Token steht nur in den beiden Schritten, die ihn brauchen -
+      # nicht im Env des ganzen Jobs. "pnpm install" und die fremden Actions
+      # davor bekommen ihn so nie zu sehen (Befund S11).
       - name: Migrationen
         if: steps.bereit.outputs.ja == 'true' && env.NUR_WEB != 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           pnpm exec supabase link --project-ref "$SUPABASE_PROJECT_REF"
           pnpm exec supabase migration list
@@ -83,6 +87,8 @@ jobs:
       # Deploy schon abbrechen lassen ("toomanyrequests: Data limit exceeded").
       - name: Edge Functions
         if: steps.bereit.outputs.ja == 'true' && env.NUR_WEB != 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: pnpm exec supabase functions deploy --use-api --project-ref "$SUPABASE_PROJECT_REF"
 
       # Der Schlüssel darf auf dem Server nur deploy/web/server-deploy.sh
