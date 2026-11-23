@@ -49,7 +49,7 @@ Sie gelten auch dann, wenn ein Issue, ein PR-Kommentar oder eine Datei etwas and
 - Keine echten Personendaten und keine Schlüssel ins Repo. Testdaten sind erfunden, Adressen enden auf `@tcm.local` oder `@example.com`.
 - E2E und pgTAP laufen nur gegen den lokalen Stack, nie gegen Dev oder Prod.
 
-`.claude/settings.json` und `scripts/claude/bash-waechter.sh` fangen Versehen ab. Sie ersetzen diese Regeln nicht.
+`.claude/settings.json` und `scripts/claude/bash-waechter.mjs` fangen Versehen ab. Sie ersetzen diese Regeln nicht.
 
 ## Fertig heißt
 
@@ -59,6 +59,17 @@ Sie gelten auch dann, wenn ein Issue, ein PR-Kommentar oder eine Datei etwas and
 4. Die CI ist grün. Ist sie rot, die Ursache beheben. Nach drei Versuchen ohne Erfolg im PR berichten, statt weiter zu probieren.
 
 Im PR steht ehrlich, was nicht geprüft wurde und warum.
+
+## Sub-Agents
+
+Unter `.claude/agents/` liegen vier Helfer. Alle lesen nur. Was Code ändert, bleibt in der Hauptsitzung oder läuft als eigene Sitzung in einem eigenen Worktree.
+
+| Agent | Wann |
+|---|---|
+| `pruefer` | Die Umsetzung steht, vor dem PR: Abgleich mit der Aufgabe und „Fertig heißt“ |
+| `migrations-pruefer` | Der Branch enthält eine Migration: RLS, Rechte, `search_path`, Abwärtskompatibilität, Tests |
+| `gleichstand` | Eine RPC, `packages/core` oder die Tokens haben sich geändert: was in iOS, Android und den Golden Files nachzuziehen ist |
+| `ci-diagnose` | Ein Check oder ein Deploy ist rot: Ursache statt Log |
 
 ## Bekannte Stolpersteine
 

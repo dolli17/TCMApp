@@ -17,9 +17,8 @@ Die Aufgabe (Ticket, Issue oder Beschreibung) und den Branch. Fehlt die Aufgabe,
 3. Prüfe jeden verlangten Punkt einzeln: Ist er umgesetzt, und welcher Test belegt ihn?
 4. Prüfe die Regeln des Repos:
    - Geschäftsregeln in der Datenbank (RPC und pgTAP), nicht im Client.
-   - Neue Tabelle mit RLS, Policies und einzeln vergebenen Rechten. Neue Funktion mit `set search_path = ''`.
-   - Migration als neue Datei, abwärtskompatibel, mit `database.types.ts` und `docs/native/app-api.json` auf Stand.
-   - Regel in `packages/core` geändert: Golden Files, iOS und Android mitgezogen oder als offen benannt.
+   - Enthält der Branch eine Migration, ist die Tiefenprüfung Sache des Agenten `migrations-pruefer`. Du prüfst nur, ob es zur neuen Regel einen pgTAP-Test gibt.
+   - Ändert der Branch eine RPC oder `packages/core`, ist der Abgleich mit den Apps Sache des Agenten `gleichstand`. Du prüfst nur, ob der PR benennt, was offen bleibt.
    - Texte der Oberfläche nach `docs/begriffe.md`.
    - Keine echten Personendaten, keine Schlüssel.
    - Nichts außerhalb der Aufgabe geändert, insbesondere nicht `.github/`, `deploy/` oder `supabase/config.toml`.
