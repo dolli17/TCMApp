@@ -26,10 +26,20 @@ Ein eigenes Staging gibt es bewusst nicht: Dev mit den Testern ist die Abnahme, 
 
 Die CI (`.github/workflows/ci.yml`) läuft bei jedem PR auf `main` oder `production`:
 
-- **`verify`** prüft zuerst, ob neue Migrationen jünger sind als die neueste im Ziel-Branch (siehe „Parallel arbeiten“), und ob `packages/core/src/database.types.ts` zu den Migrationen passt (sonst lokal `pnpm db:reset && pnpm db:types`). Dann führt er `pnpm verify` aus (Typecheck, Lint, Vitest, pgTAP gegen einen lokalen Supabase-Stack im Runner), danach `pnpm test:functions` (Deno-Tests der Edge Functions, ohne Stack) und baut das Web mit `next build`.
+- **`verify`** führt `scripts/ci-lokal.sh` aus – dasselbe Skript läuft lokal mit `pnpm verify:ci`. Es prüft zuerst, ob neue Migrationen jünger sind als die neueste im Ziel-Branch (siehe „Parallel arbeiten“), und ob `packages/core/src/database.types.ts` zu den Migrationen passt (sonst lokal `pnpm db:reset && pnpm db:types`). Dann führt es `pnpm verify` aus (Typecheck, Lint, Vitest, pgTAP gegen einen lokalen Supabase-Stack), danach `pnpm test:functions` (Deno-Tests der Edge Functions, ohne Stack) und baut das Web mit `next build`. Neue Prüfungen gehören in das Skript, nicht in die Workflow-Datei.
 - **`e2e`** lässt Playwright (Chromium) gegen einen eigenen lokalen Stack im Runner laufen, mit Edge Runtime und Mailpit. Der Ablauf ist `scripts/e2e.sh` wie lokal (`pnpm e2e`).
 - **`android`** (`./gradlew test`) und **`ios`** (`xcodebuild test`, Unit-Tests im Simulator, macOS-Runner) laufen nur, wenn der PR `apps/android` bzw. `apps/ios`, die Golden Files (`packages/core/golden`), die erzeugten Tokens (`packages/ui/generated`) oder `ci.yml` selbst ändert. Die UI-Tests der iOS-App brauchen den lokalen Stack und laufen weiter nur lokal.
 - **`release-check`** läuft nur bei PRs nach `production`. Er prüft zwei Dinge: Die Quelle ist `main` oder `hotfix/*`, und den Tag `v<version>` gibt es noch nicht.
+
+Lokal gibt es die Prüfungen in drei Stufen:
+
+| Befehl | Prüft | Braucht |
+|---|---|---|
+| `pnpm verify:schnell` | Typecheck, Lint, Vitest | nichts |
+| `pnpm verify` | zusätzlich pgTAP | lokalen Stack (`pnpm db:start`) |
+| `pnpm verify:ci` | alles, was der CI-Job `verify` prüft | lokalen Stack mit frischem Stand (`pnpm db:reset`) |
+
+`pnpm e2e` ruft `scripts/e2e.sh` auf, Argumente gehen an Playwright weiter (`pnpm e2e --project=chromium`). Das Skript beendet nur den Server, den es in diesem Worktree selbst gestartet hat. Ist Port 3000 anders belegt, bricht es ab; `E2E_PORT_FREIMACHEN=1` beendet den fremden Prozess ausdrücklich. Logs liegen unter `tmp/e2e/`.
 
 `verify` und `e2e` sind Pflicht-Checks, `android` und `ios` (noch) nicht: Ein roter Lauf dort ist sichtbar, sperrt den Merge aber nicht.
 
