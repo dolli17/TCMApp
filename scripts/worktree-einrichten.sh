@@ -39,5 +39,5 @@ cat <<'HINWEIS'
 Fertig. Beim parallelen Arbeiten beachten (CONTRIBUTING.md, "Parallel arbeiten"):
   - Die lokale Supabase gibt es nur einmal für alle Worktrees: kein "db reset"
     oder pgTAP/E2E, während ein anderer Worktree die Datenbank nutzt.
-  - Web und Expo brauchen eigene Ports: pnpm dev -- -p 3001, expo start --port 8082
+  - Das Web braucht je Worktree einen eigenen Port: pnpm dev -- -p 3001
 HINWEIS

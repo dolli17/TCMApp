@@ -1,6 +1,6 @@
 # Go-Live: Prod- und Dev-Umgebung
 
-Stand: 11.10.2026 · Status: **geplant, noch nicht umgesetzt**
+Stand: 23.11.2026 · Status: **Dev läuft über den Deploy-Workflow, Prod gibt es noch nicht.** Der Text unten ist der Plan vom 11.10.2026; was davon erledigt ist, steht jeweils dabei.
 
 ## Kontext
 Heute gibt es nur **ein** Cloud-Projekt (`xvjqqjiweogtfpfgeoqz`, Free). Dorthin zeigen Web und die nativen Apps (Dev-Konfiguration und TestFlight-Build). (`scripts/e2e.sh` zeigte bis 20.10.2026 ebenfalls dorthin; seitdem läuft E2E nur noch lokal.) Daneben gibt es nur den lokalen Stack.
@@ -107,7 +107,7 @@ Die Expo-App ist abgelöst (10.11.2026). Die nativen Apps haben Dev und Prod sch
    1. `scripts/prod-migrate.sh v1.x.y` (Migrationen);
    2. `supabase functions deploy` gegen Prod, falls Functions geändert wurden;
    3. `deploy.sh prod v1.x.y`;
-   4. bei App-Änderungen `eas build --profile production` und submit.
+   4. bei App-Änderungen neue Builds der nativen Apps (`apps/ios`, `apps/android`) über TestFlight bzw. die Play Console.
 5. **Rückweg:**
    - Web: `deploy.sh prod <vorheriger Tag>`.
    - Datenbank: neue Gegen-Migration oder Wiederherstellung aus Backup bzw. PITR (PITR kostet extra; vorerst Tagesbackup plus eigener Dump).

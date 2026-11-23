@@ -11,7 +11,7 @@ WORKDIR /repo
 RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
 
 # Erst nur die Manifeste: solange sich keine Abhaengigkeit aendert, bleibt die
-# Installation im Cache. Mobile und Expo werden gar nicht erst geholt.
+# Installation im Cache. Die nativen Apps und Werkzeuge werden gar nicht erst geholt.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json apps/web/
 COPY packages/core/package.json packages/core/

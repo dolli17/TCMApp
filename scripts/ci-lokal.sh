@@ -98,6 +98,12 @@ if ! diff -u packages/core/src/database.types.ts "$TYPEN"; then
 fi
 echo "ok"
 
+# --- Bash-Wächter der Agenten ------------------------------------------------
+# scripts/claude/bash-waechter.mjs hält Agenten von Befehlen gegen Dev und
+# Prod ab. Seine Fälle laufen hier mit, damit er nicht unbemerkt kaputtgeht.
+abschnitt "Bash-Wächter (scripts/claude)"
+node scripts/claude/bash-waechter.test.mjs
+
 # --- 4. Typecheck, Lint, Vitest, pgTAP ---------------------------------------
 abschnitt "pnpm verify (Typecheck, Lint, Vitest, pgTAP)"
 pnpm verify
