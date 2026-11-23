@@ -31,7 +31,8 @@ Nach einer Änderung an Logik, die die Apps nachbauen: `pnpm --filter @tcm/core 
 
 ## Arbeitsweise
 
-- **Git:** Einzelheiten in `CONTRIBUTING.md`. Immer ein Branch `feature/…`, `fix/…` oder `chore/…` von `origin/main`, ein Thema je PR, dann ein PR nach `main`. Nie direkt auf `main` oder `production` pushen.
+- **Git:** Einzelheiten in `CONTRIBUTING.md`. Immer ein Branch `feature/…`, `fix/…` oder `chore/…` von `origin/main`, ein Thema je PR, dann ein PR nach `main`. Nie direkt auf `main` oder `production` pushen. In Cloud-Sitzungen gilt der Branch-Name, den die Sitzung vorgibt (`claude/…`).
+- **Erst nachsehen, dann ändern:** Vor der Arbeit an einem Befund oder Ticket am Code prüfen, ob das Problem noch besteht. `docs/testphase-befunde.md` kann veraltet sein. Ist es schon behoben, nur das Dokument berichtigen und im PR nennen, welcher Commit es behoben hat.
 - **Geschäftsregeln gehören in die Datenbank** (RPC und pgTAP-Test), nicht in den Client. Web und Apps rufen dieselben RPCs auf.
 - **Datenbank:** Schemaänderungen nur als neue Datei in `supabase/migrations/`, abwärtskompatibel. Eine gemergte Migration wird nie geändert. Ausrollen tut der Deploy-Workflow.
 - **Bugfix:** zuerst ein Test, der den Fehler zeigt, dann die Korrektur.
@@ -77,7 +78,7 @@ Unter `.claude/agents/` liegen vier Helfer. Alle lesen nur. Was Code ändert, bl
 - **E2E braucht den Produktions-Build,** nicht `next dev`. `pnpm e2e` baut selbst und bricht ab, wenn Port 3000 von einem fremden Prozess belegt ist.
 - **Zeitzone:** Der Verein rechnet in `Europe/Berlin`. Die Core-Tests setzen das selbst, `scripts/ci-lokal.sh` ebenfalls.
 - **Dev schläft ein:** Das Cloud-Projekt läuft im Free-Plan und antwortet nach längerer Pause zunächst mit HTTP 521.
-- **Cloud-Sitzungen:** Die Edge Runtime startet dort nicht (Limit für offene Dateien). `pnpm verify:ci` läuft, E2E nicht; das E2E-Ergebnis kommt aus der CI.
+- **Cloud-Sitzungen:** Die Edge Runtime startet dort nicht (Limit für offene Dateien), `pnpm db:start` scheitert deshalb. Den Stack startet `bash scripts/claude/stack-cloud.sh`; der Sitzungsstart stößt das im Hintergrund an, derselbe Befehl im Vordergrund wartet darauf und wiederholt einen gescheiterten Start. Danach läuft `pnpm verify:ci`. E2E läuft nicht, das Ergebnis kommt aus der CI.
 
 ## Wenn es nicht weitergeht
 
