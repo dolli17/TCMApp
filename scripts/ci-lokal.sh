@@ -79,7 +79,11 @@ API_URL=""
 ANON_KEY=""
 eval "$(pnpm exec supabase status -o env 2>/dev/null | grep -E '^(API_URL|ANON_KEY)=' || true)"
 if [ -z "$API_URL" ] || [ -z "$ANON_KEY" ]; then
-  echo "Abbruch: der lokale Stack läuft nicht (pnpm db:start)." >&2
+  if [ "${CLAUDE_CODE_REMOTE:-}" = "true" ]; then
+    echo "Abbruch: der lokale Stack läuft nicht (bash scripts/claude/stack-cloud.sh)." >&2
+  else
+    echo "Abbruch: der lokale Stack läuft nicht (pnpm db:start)." >&2
+  fi
   exit 1
 fi
 echo "ok ($API_URL)"

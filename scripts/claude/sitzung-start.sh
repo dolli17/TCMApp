@@ -9,10 +9,11 @@
 # "pnpm verify:ci" braucht:
 #   - Docker-Daemon starten (läuft dort nicht von allein),
 #   - Abhängigkeiten installieren,
-#   - den Supabase-Stack im Hintergrund hochfahren, mit derselben Dienstliste
-#     wie der CI-Job "verify". Die Edge Runtime ist nicht dabei: sie verlangt
-#     mehr offene Dateien, als die Sandbox erlaubt. E2E läuft dort deshalb
-#     nicht, das Ergebnis kommt aus der CI.
+#   - den Supabase-Stack im Hintergrund hochfahren, über
+#     scripts/claude/stack-cloud.sh (ohne Edge Runtime, mit Wiederholung).
+#     Der Hook wartet nicht darauf: Die Images zu laden dauert Minuten. Ob es
+#     geklappt hat, sagt ein zweiter Aufruf desselben Skripts im Vordergrund.
+#     E2E läuft dort nicht, das Ergebnis kommt aus der CI.
 #
 # Was der Hook ausgibt, bekommt Claude als Kontext. Er bricht die Sitzung nie
 # ab: geht etwas schief, steht es in der Ausgabe.
@@ -54,10 +55,10 @@ else
 fi
 
 if docker info >/dev/null 2>&1; then
-  (nohup pnpm exec supabase start \
-    -x studio,imgproxy,logflare,vector,mailpit,supavisor,edge-runtime >> "$LOG" 2>&1 &)
-  echo "- Der Supabase-Stack startet im Hintergrund (ein bis zwei Minuten, ohne Edge Runtime)."
-  echo "  Bereit, sobald 'pnpm exec supabase status' die API-Adresse nennt. Dann läuft 'pnpm verify:ci'."
+  (nohup bash scripts/claude/stack-cloud.sh >> "$LOG" 2>&1 &)
+  echo "- Der Supabase-Stack startet im Hintergrund (mehrere Minuten, ohne Edge Runtime). Ob er läuft, ist noch offen."
+  echo "  Vor 'pnpm verify:ci': 'bash scripts/claude/stack-cloud.sh' ausführen. Das wartet auf den Start und"
+  echo "  wiederholt ihn, falls er gescheitert ist. Nicht 'pnpm db:start' nehmen, das scheitert hier an der Edge Runtime."
 fi
 
 echo "- E2E läuft in Cloud-Sitzungen nicht. Das Ergebnis kommt aus dem CI-Job 'e2e' des PRs."
