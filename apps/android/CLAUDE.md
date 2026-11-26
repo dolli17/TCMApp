@@ -9,7 +9,7 @@ cd apps/android
 export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
 export ANDROID_HOME=$HOME/Library/Android/sdk
 cp lokal.properties.example lokal.properties   # einmalig, Key aus `supabase status`
-./gradlew test lint                            # alle Tests und Lint
+./gradlew test lint                            # alle Tests, Lint für devDebug (lokalDebug: :app:lintLokalDebug)
 ./gradlew :app:recordRoborazziLokalDebug       # Bildschirmfotos unter docs/ neu schreiben
 ```
 
