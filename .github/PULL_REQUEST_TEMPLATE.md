@@ -4,7 +4,10 @@
 
 ## Warum
 
-<!-- Welches Problem löst er? Ticket oder Befund nennen, falls vorhanden. -->
+<!-- Welches Problem löst er? -->
+
+<!-- Ticket in Linear, falls vorhanden: „Fixes TCM-12“ schließt es beim Merge, „Part of TCM-12“ verknüpft nur. Zeile löschen, wenn es keins gibt. -->
+Fixes TCM-
 
 ## Wie geprüft
 

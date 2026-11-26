@@ -22,7 +22,11 @@
       "Bash(gh pr checks *)",
       "Bash(gh pr list *)",
       "Bash(gh run view *)",
-      "Bash(gh run list *)"
+      "Bash(gh run list *)",
+      "mcp__linear__list_*",
+      "mcp__linear__get_*",
+      "mcp__linear__search_documentation",
+      "mcp__linear__whoami"
     ],
     "deny": [
       "Read(./.env)",
