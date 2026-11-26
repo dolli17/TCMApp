@@ -15,7 +15,7 @@ Ein eigenes Staging gibt es bewusst nicht: Dev mit den Testern ist die Abnahme, 
 ## Regeln
 
 1. **Kein direkter Push** auf `main` oder `production`, alles läuft über Pull Requests. Die Rulesets setzen das durch.
-2. **Arbeits-Branches** zweigen von `main` ab und heißen `feature/…`, `fix/…` oder `chore/…`. Sie gehen per **Squash-Merge** zurück nach `main`, der PR-Titel wird zur Commit-Nachricht.
+2. **Arbeits-Branches** zweigen von `main` ab und heißen `feature/…`, `fix/…` oder `chore/…`. Gibt es ein Ticket in Linear, steht seine Nummer im Namen (`fix/tcm-6-kurztitel`) und in der PR-Beschreibung (`Fixes TCM-6`); Linear verknüpft darüber PR und Ticket. Sie gehen per **Squash-Merge** zurück nach `main`, der PR-Titel wird zur Commit-Nachricht.
 3. **Release:** PR `main` → `production` mit **Merge-Commit** (kein Squash, kein Rebase), damit die Branches nicht auseinanderlaufen.
 4. **Fehler, die auf Dev auffallen,** werden mit einem neuen PR auf `main` behoben, nie direkt auf `production`.
 5. **Hotfix:** `hotfix/…` von `production` abzweigen, per PR mit Merge-Commit nach `production`, danach sofort PR `production` → `main` mit Merge-Commit.

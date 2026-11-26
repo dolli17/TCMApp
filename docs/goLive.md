@@ -121,7 +121,7 @@ Die Expo-App ist abgelöst (10.11.2026). Die nativen Apps haben Dev und Prod sch
 2. Schritt 4: Web als Dev auf `dev.` umziehen, Tester-Links umstellen. Einladungen und Mails nennen dann `dev.`.
 3. Schritt 5: Dev-App in TestFlight, Tester wechseln.
 4. Schritt 3: Prod aufsetzen, Leerlauf-Probe mit einem Admin.
-5. Restliche Befunde aus `docs/testphase-befunde.md` abarbeiten, dann eBuSy-Import nach Prod (O17).
+5. Restliche Tickets in Linear (Team `TCM`) abarbeiten, dann eBuSy-Import nach Prod (TCM-22, früher O17).
 6. `app.` zeigt auf Prod, Prod-App in TestFlight bzw. App Store, Mitglieder einladen.
 
 ## Kritische Dateien

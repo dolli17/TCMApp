@@ -1,78 +1,48 @@
-# Testphase – Befunde
+# Testphase – Befunde (Archiv)
 
-Sammelstelle für Fehler, Lücken und Auffälligkeiten aus der Testphase (Start: Oktober 2026),
-damit sie gebündelt abgearbeitet werden können. Neue Befunde unten in **Offen** ergänzen;
-Erledigtes mit Commit nach **Behoben** verschieben.
+**Offene Arbeit steht seit dem 26.11.2026 in Linear** (Team `TCM`, Arbeitsbereich `tcm-member-system`). Dieses Dokument wird nicht mehr fortgeschrieben. Neue Befunde entstehen als Ticket, nicht hier.
 
-Stand: 25.11.2026
+Es bleibt als Archiv der Testphase (Oktober und November 2026): was verworfen wurde, was behoben wurde und womit. „App“ meint in Einträgen vor dem 10.11.2026 die frühere Expo-App (`apps/mobile`, entfernt); die nativen Apps liegen unter `apps/ios` und `apps/android`.
 
 Legende Priorität: **P1** blockiert Tester oder ist ein Sicherheitsthema · **P2** vor externen
 Testern bzw. App Store · **P3** Komfort, Aufräumen.
 
-**Abgleich mit dem Code am 25.11.2026** (Stand `cfcb333`): Unter **Offen** steht nur noch, was wirklich offen ist; jeder dieser Einträge wurde am Code nachgesehen, Einzelheiten stehen jeweils dabei. Alles Erledigte aus den Abschnitten „Offen“ und „Härtung“ steht jetzt unter **Behoben**, im Wortlaut unverändert. Bei den erledigten Einträgen wurde geprüft, ob die genannten Dateien, Funktionen und Tests im Repo vorhanden sind, nicht ihr Verhalten. „App“ meint in Einträgen vor dem 10.11.2026 die frühere Expo-App (`apps/mobile`, entfernt); die nativen Apps liegen unter `apps/ios` und `apps/android`.
-
 ---
 
-## Offen
+## Nach Linear umgezogen
 
-### Sicherheit und Betrieb
+Stand des Umzugs: Abgleich mit dem Code am 25.11.2026 (`cfcb333`). Jedes Ticket trägt die frühere Kennung im Titel und das Ergebnis des Abgleichs in der Beschreibung. Der frühere Wortlaut steht in der Git-Historie dieser Datei.
 
-| # | Prio | Befund | Was zu tun ist |
-|---|---|---|---|
-| O1 | P1 | Der **Resend-API-Key** und der **legacy Service-Role-Key** standen im Klartext im Chatverlauf. | Vor dem Echtbetrieb rotieren: in Resend einen neuen Key erzeugen, in den Supabase-Secrets (`RESEND_API_KEY`) und im Auth-SMTP-Passwort ersetzen. Supabase auf die neuen `sb_secret_…`-Keys umstellen, den Vault-Eintrag `notification_mails_key` ersetzen und den legacy JWT-Key deaktivieren. **Abgleich 25.11.2026:** unverändert offen. Alle vier Edge Functions lesen `SUPABASE_SERVICE_ROLE_KEY`, drei haben `verify_jwt = true`; beides muss vor dem Deaktivieren umgestellt werden (`SUPABASE_SECRET_KEYS`, Schlüssel im Kopf `apikey`, eigene Prüfung statt `verify_jwt`). Laut Supabase-Leitfaden gelten die Legacy-Keys nur noch **bis Ende 2026**. |
-| S13 | P1 | **Löschen und Anonymisieren entfernen die Daten nicht vollständig (DSGVO Art. 17).** Im `change_log` bleiben der ganze Datensatz und alle alten Werte stehen. `anonymize_member` lässt `guardian_*` stehen. Anträge bleiben mit Name, Adresse und Geburtsdatum erhalten. Für `privacy.change_log_days` gibt es keinen Aufräumlauf. | Log-Zeilen schwärzen, `guardian_*` leeren, Antrag schwärzen, pg_cron für die Aufbewahrung *(Migration)*. **Abgleich 25.11.2026:** unverändert offen und am Code bestätigt. Die geltende Fassung von `anonymize_member` (Migration `20261014093203_jeder_zahlt_selbst`, älter als das Audit) leert `guardian_*` nicht. Für `privacy.change_log_days` gibt es keinen Aufräumlauf (unter den vier pg_cron-Jobs ist keiner für `change_log`). Bestätigte Anträge bleiben stehen; gelöscht werden nur unbestätigte (`unbestaetigte-antraege`). |
-| S1 | P1 | **Konto-Übernahme:** `loginAnlegen` in `member-login` übernimmt ein vorhandenes Auth-Konto mit gleicher E-Mail. Wer sich mit der Adresse eines künftigen Mitglieds registrieren kann, bekommt dessen Konto. | Lokal und in Dev erledigt (PR #46: Signup lokal aus; Dev: „Allow new users to sign up“ am 21.10.2026 ausgeschaltet). Die Übernahme bleibt, weil jedes Konto von der Verwaltung stammt; die Mindestlänge des Passworts bleibt bei 6 (abgestimmt). **Offen nur noch Prod,** beim Aufbau des Prod-Projekts (`docs/goLive.md`). |
-| O2 | P2 | Die **Supabase-Cloud läuft im Free-Tier** und schläft nach Inaktivität ein (HTTP 521). | Vor externen TestFlight-Testern und der Beta-Prüfung von Apple auf **Supabase Pro** umstellen, sonst scheitert die Prüfung. |
-| S11 | P2 | Unklar ist, woher der IBAN-Vault-Schlüssel in Prod kommt (siehe O1). Der Token-Teil des Befunds ist erledigt: `SUPABASE_ACCESS_TOKEN` steht in `deploy.yml` nur noch in den Schritten „Migrationen“ und „Edge Functions“ (PR #149). | **Offen:** Runbook für den Schlüssel. **Abgleich 25.11.2026:** `docs/goLive.md` (Schritte 2 und 3) nennt das Erzeugen von `iban_encryption_key` und die Sicherung im Passwortmanager. Die dort geplante Datei `supabase/env/README.md` gibt es noch nicht. |
-| S6 | P3 | `submit_membership_application`: Die Herkunft kommt seit PR #61 aus `x-forwarded-for` (`private.anfrage_ip()`), `p_ip` wird ignoriert. | **Offen:** in Dev prüfen, ob die Edge den Kopf bereinigt. Rest-Risiko: Den ersten `x-forwarded-for`-Eintrag kann ein direkter Aufrufer fälschen; der Deckel je Stunde greift trotzdem. |
-| S20 | P3 | Login-CSRF über das `#access_token`-Fragment in `passwort-setzen` | **Teilweise** (PR #53): Die Mailvorlagen liefern `token_hash`, App und Web lösen ihn mit `verifyOtp` ein. **Offen:** Cloud-Mailvorlagen auf `token_hash` umstellen, danach den Fragment-Zweig entfernen (`docs/goLive.md`, Schritt 1). **Abgleich 25.11.2026:** Der Fragment-Zweig steht noch in `apps/web/src/app/passwort-setzen/page.tsx`, `apps/ios/TCMuckensturm/App/Passwortlink.swift` und `apps/android/…/start/Passwortlink.kt`. |
-| S24 | P3 | Am Kiosk bucht man ohne PIN für jedes Mitglied | Design-Entscheidung festhalten oder Push an das Mitglied |
-| S25 | P3 | **Schema `tests` mit 53 pgTAP-Funktionen liegt auf Dev.** Die Tests liefen also einmal gegen die Cloud. | Bereinigung mit Lucas abstimmen (kein DDL von Claude). Für Prod ausschließen. **Abgleich 25.11.2026:** am 25.11. nachgezählt, das Schema liegt mit 53 Funktionen weiter auf Dev. |
-| S27 | P3 | Kinder erteilen die Elternzustimmung und das SEPA-Mandat selbst | Bestätigung per Mail an die Eltern |
-
-### Apps und Store
-
-| # | Prio | Befund | Was zu tun ist |
-|---|---|---|---|
-| O5 | P1 | **Push-Mitteilungen funktionieren nicht.** Der Versand ist gebaut (`notification-pushes`, direkt über APNs und FCM), in Dev aber nicht eingerichtet. | Im Apple-Developer-Portal unter *Keys* einen APNs-Key anlegen, als Edge-Secrets `APNS_*` setzen (`docs/native-apps.md`, Push), dazu `PUSH_AKTIV=true`, und den Zeitplan einrichten (`supabase/snippets/benachrichtigungs_pushes_zeitplan.sql`). **Abgleich 25.11.2026:** In Dev fehlen der Zeitgeber für Pushes (es laufen nur `benachrichtigungs-mails`, `veranstaltungs-erinnerungen`, `unbestaetigte-antraege`, `alte-benachrichtigungen`) und der Vault-Eintrag `notification_pushes_key`. Ein Gerät ist registriert. Ob die `APNS_*`-Secrets gesetzt sind, lässt sich von außen nicht sehen. |
-| O24 | P1 | **Einladung erneut senden fehlt in der Verwaltung der Apps.** Im Web ist der Befund erledigt (Aktion `einladung_erneut` in `member-login`, Status über `einladung_status`, Statusmarken „Einladung ausstehend“, „abgelaufen“ und „Onboarding offen“; Links gelten 24 Stunden). Ursprünglich beobachtet am 11.10. bei Ladi: eingeladen am 09.10., beide Links abgelaufen, kein Weg zum Neuversand. | **Offen:** dasselbe in der Verwaltung der nativen Apps. **Abgleich 25.11.2026:** iOS und Android rufen `member-login` gar nicht auf (kein Treffer für `einladung_erneut`, `einladung_status` oder `member-login` unter `apps/ios` und `apps/android`); Einladen, erneut Einladen und Sperren gehen nur im Web. Entscheiden, ob die Apps das bekommen oder ob es beim Web bleibt. Die Priorität P1 galt dem ursprünglichen Befund. |
-| O7 | P2 | **TestFlight intern:** Bisher sind nur Lucas und Robin Tester. Moritz' Einladung zu App Store Connect ist noch offen (bis 12.10.). Chris, Wolfgang, Ladi und Maren fehlen. | Apple-IDs der restlichen Tester einsammeln, sie in App Store Connect einladen (Rolle Marketing, nur diese App) und nach Annahme in die Gruppe „Team (Expo)“ eintragen. |
-| O8 | P2 | **App-Icon:** iOS zeigt das Vereinslogo (PR #147). Android zeigt noch das frühere Motiv (`ic_launcher_vordergrund.xml`: Platz, Netz, Ball aus der Expo-Zeit). | Das Vereinslogo auch für Android als adaptives Icon umsetzen (Vordergrund, Hintergrund, einfarbige Fassung). |
-| O10 | P2 | **Store-Eintrag** fehlt: Screenshots, Beschreibung, Altersfreigabe, App-Datenschutzangaben. | Vor der externen Beta bzw. dem App Store anlegen; Alternative: „Nicht gelistet“. |
-| U5 | P2 | Apps: Prüfung bei großer Systemschrift | Für die frühere Expo-App erledigt (PR #65, dazu U52 und U77 unter Behoben). **Abgleich 25.11.2026:** Für die nativen Apps steht eine Prüfung bei größter Schriftstufe aus. Android hat Bildschirmfoto-Tests mit `fontScale` für Start, Konto und Nachrichten; für iOS gibt es keinen entsprechenden Test. |
-
-### Inhalte und Rechtliches
-
-| # | Prio | Befund | Was zu tun ist |
-|---|---|---|---|
-| O12 | P2 | **Datenschutz und Impressum** enthalten noch `[[Platzhalter]]`. | Echte Angaben des Vereins eintragen. Die Datenschutzerklärung muss auch Resend als Mail-Dienstleister und Supabase nennen. **Abgleich 25.11.2026:** `apps/web/src/app/datenschutz/page.tsx` hat 11 Zeilen mit Platzhaltern, `apps/web/src/app/impressum/page.tsx` 8. |
-
-### Testdaten und Testkonten
-
-| # | Prio | Befund | Was zu tun ist |
-|---|---|---|---|
-| O14 | P3 | Jede Testperson steht **zweimal** in der Mitgliederliste (Mitglied und Admin), weil ein Login genau einem Mitglied gehört. Das zählt auch in den Statistiken mit. | Für die Testphase hinnehmen. Beim echten Import bekommt jeder Vorstand **ein** Konto mit Admin-Rolle. Optional ein Merkmal „Testkonto“ zum Filtern. |
-| O15 | P3 | **GMX und T-Online** nehmen Plus-Adressen (`name+zusatz@…`) nicht zuverlässig an. Maren hat deshalb zwei echte Adressen bekommen. | Bei weiteren Testern ohne Gmail zwei echte Adressen nutzen. |
-| O16 | P3 | Beim Aufräumen der 199 Seed-Mitglieder hat der **abgeschlossene Lastschriftlauf „Getränke“** Posten verloren (jetzt 45 Lastschriften, 185,80 €). Die Summen sind neu berechnet, der Lauf passt aber nicht mehr zur damals erzeugten Datei. | Testdaten, unkritisch. Vor dem Echtbetrieb ohnehin den gesamten Testbestand ersetzen. |
-| O17 | P3 | Vor dem Echtbetrieb muss der **gesamte Testbestand** raus: 200 Seed-Mitglieder, Testkonten, Prüferkonto, Testläufe. Danach folgt der Import aus eBuSy. | Eigenes Aufräum-Skript; danach `tools/import` gegen die Cloud. |
-
-### Sonstiges
-
-| # | Prio | Befund | Was zu tun ist |
-|---|---|---|---|
-| U8 | P3 | Durchklick-Protokoll | Screenshots aller Routen (begonnen im Audit) |
-
-Verdacht aus dem Audit vom 20.10.2026, bisher nicht geklärt: Abbuchungstag ist kein Bankarbeitstag (Samstag, 25.12.); Mindestbetrag 5 € je Auswahl. Im Code gibt es keine Prüfung auf Bankarbeitstage.
-
-### Noch nicht live geprüft
-
-| # | Was | Wie prüfen |
+| Früher | Ticket | Thema |
 |---|---|---|
-| L1 | **Benachrichtigungs-Mail** über Resend an einen echten Empfänger, ausgelöst durch den Zeitplan. | Ein Testkonto als Mitspieler buchen. Innerhalb von 5 Minuten sollte eine Mail kommen, und Resend zeigt „Delivered“. |
-| L2 | **„Passwort vergessen“** live mit einem Testkonto. | Auf der Anmeldeseite anfordern, Link öffnen, Passwort setzen. |
-| L3 | **Admin setzt das Passwort zurück** über die Verwaltung (`member-login` → `passwort_zuruecksetzen`, impliziter Link). | Verwaltung → Mitglied → Zugang → Passwort zurücksetzen. |
-| L4 | **Testadressen** in der Verwaltung: Passwort-Reset wird gesperrt, Anlegen und Einladen legen den Login still an (`createUser`, keine Mail). | Bei einem `@example.org`-Mitglied „Passwort zurücksetzen lassen“: Erwartet ist die Meldung „Das ist eine Testadresse“. Ein Mitglied mit `@example.org` anlegen: Erwartet ist „Zugang … eingerichtet“, und in Resend erscheint keine Mail. |
-| L5 | **Buchung umsetzen** (`move_booking`, Mail und Push `booking_moved`). Die Oberfläche gibt es inzwischen im Web (`BuchungsFenster.tsx`) und in beiden Apps (`Platzdaten`); live geprüft ist der Ablauf noch nicht. | Als Platzwart eine fremde Buchung auf einen freien Platz setzen. Bucher und Mitspieler bekommen „Deine Platzbuchung wurde verlegt“ mit altem und neuem Ort. |
+| O1 | TCM-5 | Resend-Key und Service-Role-Key rotieren, auf die neuen Supabase-Keys umstellen |
+| S13 | TCM-6 | Löschen und Anonymisieren entfernen nicht alle Daten (DSGVO Art. 17) |
+| S1 | TCM-7 | Registrierung in Prod abschalten (Konto-Übernahme) |
+| O5 | TCM-8 | Push-Mitteilungen in Dev einrichten |
+| O24 | TCM-9 | Einladung erneut senden fehlt in der Verwaltung der Apps |
+| O2 | TCM-10 | Supabase auf den Pro-Plan umstellen |
+| S11 | TCM-11 | Runbook für den IBAN-Schlüssel und die Einrichtung je Umgebung |
+| O7 | TCM-12 | Restliche Tester zu TestFlight einladen |
+| O8 | TCM-13 | Vereinslogo als App-Icon für Android |
+| O10 | TCM-14 | Store-Eintrag anlegen |
+| U5 | TCM-15 | Native Apps bei größter Systemschrift prüfen |
+| O12 | TCM-16 | Platzhalter in Datenschutz und Impressum ersetzen |
+| S6 | TCM-17 | Prüfen, ob die Edge den Kopf `x-forwarded-for` bereinigt |
+| S20 | TCM-18 | Fragment-Zweig mit `#access_token` in „Passwort setzen“ entfernen |
+| S24 | TCM-19 | Entscheidung zum Kiosk ohne PIN festhalten |
+| S25 | TCM-20 | Schema `tests` aus Dev entfernen |
+| S27 | TCM-21 | Elternzustimmung und SEPA-Mandat bei Kindern von den Eltern bestätigen lassen |
+| O17 | TCM-22 | Testbestand vor dem Echtbetrieb entfernen, Import aus eBuSy |
+| O14 | TCM-23 | Testpersonen stehen doppelt in der Mitgliederliste |
+| O15 | TCM-24 | Plus-Adressen funktionieren bei GMX und T-Online nicht zuverlässig |
+| O16 | TCM-25 | Abgeschlossener Lastschriftlauf „Getränke“ passt nicht mehr zur erzeugten Datei |
+| U8 | TCM-26 | Durchklick-Protokoll mit Screenshots aller Routen |
+| Verdacht | TCM-27 | Abbuchungstag ohne Prüfung auf Bankarbeitstage, Mindestbetrag je Auswahl (hatte keine Kennung) |
+| L1 | TCM-28 | Benachrichtigungs-Mail über Resend live prüfen |
+| L2 | TCM-29 | „Passwort vergessen“ live prüfen |
+| L3 | TCM-30 | Passwort zurücksetzen durch die Verwaltung live prüfen |
+| L4 | TCM-31 | Testadressen in der Verwaltung live prüfen |
+| L5 | TCM-32 | Buchung umsetzen live prüfen |
 
 ## Verworfen oder entfallen
 
