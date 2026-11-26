@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- brand aus packages/ui/src/tokens.ts (Launcher-Icon) -->
+    <!-- brand aus packages/ui/src/tokens.ts (Farbe der Mitteilungen) -->
     <color name="markenblau">#1466A8</color>
+    <!-- Das Blau des Vereinslogos: Flaeche des Launcher-Icons, wie im iOS-Icon -->
+    <color name="logoblau">#2A80B7</color>
     <!-- bg aus den Tokens: der Grund, bis Compose zeichnet (docs/design/stitch: weiss) -->
     <color name="startgrund">#FFFFFF</color>
 </resources>

@@ -393,8 +393,9 @@ Für parallele Spuren gilt:
 - **Release:** R8 mit Ressourcen-Schrumpfen, Regeln für die `@Serializable`-Klassen
   und die fehlenden JVM-Klassen von Ktor (slf4j, `java.lang.management`) in `app/proguard-rules.pro`.
   `assembleProdRelease -Ptcm.prodBackend=dev` ergibt unsigniert rund 5,0 MB. Launcher-Icon
-  adaptiv (`mipmap-anydpi/ic_launcher.xml`: Hintergrund Markenblau, Vordergrund und monochrom als
-  Vektor aus `apps/mobile/assets/adaptive-icon.svg`); PNGs entfallen, da `minSdk` 26.
+  adaptiv (`mipmap-anydpi/ic_launcher.xml`: das Vereinslogo wie auf iOS, Hintergrund im Blau des
+  Logos, Vordergrund und monochrom als Vektor, nachgezeichnet aus dem iOS-Icon); PNGs entfallen,
+  da `minSdk` 26.
 - **Ränder:** Edge-to-Edge mit deckender Fläche unter der Statusleiste (`HauptTabs`), Tastatur über
   `imePadding()` (die Tab-Leiste wird über `consumeWindowInsets` abgezogen).
 
