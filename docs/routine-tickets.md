@@ -30,6 +30,7 @@ In Linear, Team `TCM`, Status „Todo“, Label „Für Claude“. Nicht nehmen:
 
 - Tickets mit „Kein Code“, „Apps“ oder „Wartet auf Lucas“.
 - Ein Ticket, das eine Migration braucht, solange ein PR der Routine mit Migration offen ist. Dann das nächste nehmen.
+- Ein Ticket, das in Linear „blockiert durch“ ein anderes Ticket ist, solange dieses nicht „Done“ ist. Ein offener PR für den Blocker reicht nicht; erst der Merge gibt das Ticket frei.
 
 Reihenfolge: höchste Priorität zuerst („Urgent“ vor „High“ vor „Medium“ vor „Low“, ohne Priorität zuletzt), bei gleicher Priorität das älteste.
 
