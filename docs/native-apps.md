@@ -23,7 +23,7 @@ Die Mitglieder-App war eine Expo-App (React Native) in `apps/mobile`. Sie lief a
 - [`native/app-api.md`](native/app-api.md): Was die App mit Supabase spricht, also 51 RPCs, 9 Tabellenzugriffe, Realtime und Auth, mit Parametern und den Fehlertexten, die die App behandelt. Maschinenlesbar in [`native/app-api.json`](native/app-api.json), erzeugt aus `packages/core/src/database.types.ts`.
 - [`packages/core/golden/`](../packages/core/golden/README.md): Golden Files für die Rechenlogik aus `@tcm/core`, mit Anleitung für XCTest und JUnit.
 - `packages/ui/generated/Tokens.swift` und `Tokens.kt`: Farben (hell, dunkel, System), Abstände, Radien, Schatten und Schrift aus `packages/ui/src/tokens.ts`. Neu erzeugen mit `pnpm --filter @tcm/ui build:native`. Ein Test prüft, dass die eingecheckten Dateien aktuell sind.
-- Design: `docs/design/clubhaus/` (wie für die Expo-App).
+- Design: `docs/design/ios-stil.md` (iOS ist Maßstab für alle Oberflächen; `clubhaus/` ist Archiv).
 
 ## Spuren
 
