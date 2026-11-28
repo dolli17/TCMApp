@@ -45,8 +45,9 @@ Legende, Buchen-Leiste, Pillen-Knöpfe, Marken („Du bist dabei“, „läuft n
 
 **Maße.** Gruppen haben den Radius und die Einzüge von `.insetGrouped`, Zeilen
 mindestens 44 hoch, Abstand zwischen Gruppen 20 (`listSectionSpacing`). Radius
-und Rand der Gruppen setzt das System; die Werte werden vor dem ersten
-Token-PR am Simulator nachgemessen (sie unterscheiden sich je iOS-Version).
+und Rand der Gruppen setzt das System. Gemessen am Foto `apps/ios/docs/konto-hell.png`
+(402 pt breit): Rand 16, Eckradius etwa 25 (iOS rundet „continuous“, im Web und in
+Android reicht ein normaler Radius).
 
 ## 2. Bausteine
 
@@ -125,8 +126,8 @@ liest sie danach ebenfalls aus `Tokens.swift`.
 | Wert | Heute in iOS | Token (Vorschlag) |
 |---|---|---|
 | Grund hell `surf3` 50 % über `bg` | `Gruppenliste.swift` | Farbe `gruppenGrund` (hell/dunkel) |
-| Radius Gruppe (System, nachmessen), Symbol-Kachel 7, Datumskachel 10, Rasterblock 5 | fest bzw. System | `radius.gruppe`, `radius.kachel`, `radius.block` |
-| Abstand zwischen Gruppen 20, Rand (System, nachmessen) | fest bzw. System | `abstand.gruppe`, `abstand.gruppenRand` |
+| Radius Gruppe 25 (gemessen), Symbol-Kachel 7, Datumskachel 10, Rasterblock 5 | fest bzw. System | `radius.gruppe`, `radius.kachel`, `radius.block` |
+| Abstand zwischen Gruppen 20, Rand 16 (gemessen) | fest bzw. System | `abstand.gruppe`, `abstand.gruppenRand` |
 | Zeilenhöhe mindestens 44 | System | `groesse.zeile` |
 | Schriftgrößen der Textstile | System | `schrift.rolle.*` (nur für Android und Web; iOS bleibt bei den Textstilen) |
 | Schatten `black` 12–25 % | fest | bestehende `schatten`-Tokens |
