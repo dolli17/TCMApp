@@ -1,5 +1,7 @@
 # Designkonzept „Clubhaus“ – Übergabe an die Umsetzung
 
+> **Archiv seit 28.11.2026.** Maßstab ist jetzt `docs/design/ios-stil.md`.
+
 Dieses Verzeichnis beschreibt das neue Design der TCM App für alle Oberflächen:
 Mitglieder-App (Expo, iOS/Android), Mitglieder-Web (Next.js), Admin-Dashboard und
 Kiosk-Tablet. Es ersetzt das bisherige Aussehen, **nicht** die Logik.
