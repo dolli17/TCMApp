@@ -34,7 +34,7 @@ fun Platzhalter(titel: String, text: String, mehr: @Composable ColumnScope.() ->
     Column(
         Modifier
             .fillMaxSize()
-            .background(f.bg)
+            .background(f.gruppenGrund)
             .verticalScroll(rememberScrollState())
             .statusBarsPadding()
             .padding(horizontal = Abstand.rand, vertical = Abstand.abschnitt),

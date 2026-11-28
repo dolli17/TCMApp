@@ -74,7 +74,7 @@ fun AnmeldeSeite(titel: String, unterzeile: String? = null, inhalt: @Composable 
     Column(
         Modifier
             .fillMaxSize()
-            .background(f.bg)
+            .background(f.gruppenGrund)
             .imePadding()
             .verticalScroll(rememberScrollState()),
     ) {

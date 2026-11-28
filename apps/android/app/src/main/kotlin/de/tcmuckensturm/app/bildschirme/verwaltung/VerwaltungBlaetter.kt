@@ -91,7 +91,7 @@ fun VerwaltungBlattFenster(m: VerwaltungModell, blatt: VerwaltungBlatt) {
     ModalBottomSheet(
         onDismissRequest = { m.blatt = null },
         sheetState = zustand,
-        containerColor = f.bg,
+        containerColor = f.gruppenGrund,
         shape = RoundedCornerShape(topStart = Radius.blatt, topEnd = Radius.blatt),
         dragHandle = { BottomSheetDefaults.DragHandle(color = f.line2) },
     ) {
@@ -125,7 +125,7 @@ private fun BlattRahmen(
     inhalt: @Composable ColumnScope.() -> Unit,
 ) {
     val f = TcmTheme.farben
-    Column(Modifier.fillMaxWidth().background(f.bg).imePadding().navigationBarsPadding()) {
+    Column(Modifier.fillMaxWidth().background(f.gruppenGrund).imePadding().navigationBarsPadding()) {
         Column(
             Modifier
                 .fillMaxWidth()

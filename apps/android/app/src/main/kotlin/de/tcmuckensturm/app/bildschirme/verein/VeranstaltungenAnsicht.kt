@@ -168,7 +168,7 @@ fun VeranstaltungenSeite(
     PullToRefreshBox(
         isRefreshing = stand.aktualisiert,
         onRefresh = nachladen,
-        modifier = Modifier.fillMaxSize().background(f.bg),
+        modifier = Modifier.fillMaxSize().background(f.gruppenGrund),
     ) {
         Column(
             Modifier

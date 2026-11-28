@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.sp
 import de.tcmuckensturm.app.bildschirme.Avatar
 import de.tcmuckensturm.app.bildschirme.GedeckelteSchrift
 import de.tcmuckensturm.app.bildschirme.GrosserKopf
+import de.tcmuckensturm.app.bildschirme.Segment
 import de.tcmuckensturm.app.daten.MeinName
 import de.tcmuckensturm.app.navigation.LocalZuTab
 import de.tcmuckensturm.app.theme.TcmSchrift
@@ -72,43 +73,15 @@ import de.tcmuckensturm.kern.EventTon
  */
 @Composable
 fun VereinKopf(reiter: VereinReiter, name: MeinName?, wechsle: (VereinReiter) -> Unit, glocke: @Composable () -> Unit) {
-    val f = TcmTheme.farben
-    val zuTab = LocalZuTab.current
     GrosserKopf("Verein", name = name, glocke = glocke)
-    // Segmente wachsen nur bis 120 % mit (wie der Picker in iOS), sonst bricht "Veranstaltungen" im Wort.
-    GedeckelteSchrift {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(bottom = Abstand.xs)
-                .clip(CircleShape)
-                .background(f.surf2)
-                .padding(4.dp)
-                .selectableGroup()
-                .semantics { contentDescription = "Bereich" },
-        ) {
-            for (r in VereinReiter.entries) {
-                val aktiv = r == reiter
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .heightIn(min = 44.dp)
-                        .clip(CircleShape)
-                        .then(if (aktiv) Modifier.background(f.segAktiv).border(1.dp, f.line2, CircleShape) else Modifier)
-                        .selectable(selected = aktiv, role = Role.Tab) { wechsle(r) }
-                        .padding(horizontal = 8.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        r.label,
-                        style = TcmSchrift.display(if (aktiv) Schrift.gewichtHalbfett else Schrift.gewichtNormal, 15.sp),
-                        color = if (aktiv) f.ink else f.muted,
-                        maxLines = 1,
-                    )
-                }
-            }
-        }
-    }
+    // iOS-Stil: der Segment-Schalter von iOS (Segment aus Gruppen.kt), unter dem Titel.
+    Segment(
+        optionen = VereinReiter.entries.map { it to it.label },
+        gewaehlt = reiter,
+        modifier = Modifier.padding(bottom = Abstand.xs),
+        beschriftung = "Bereich",
+        wahl = wechsle,
+    )
 }
 
 // ---- Texte ------------------------------------------------------------

@@ -60,6 +60,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.tcmuckensturm.app.bildschirme.Segment
 import de.tcmuckensturm.app.bildschirme.Hinweis
 import de.tcmuckensturm.app.bildschirme.karte
 import de.tcmuckensturm.app.bildschirme.leise
@@ -289,6 +290,11 @@ fun <W> KontoSegmente(
     gesperrt: Boolean = false,
     wahl: (W) -> Unit,
 ) {
+    if (!untereinander) {
+        // iOS-Stil: der Segment-Schalter von iOS, fuer TalkBack Optionsfelder.
+        Segment(optionen, gewaehlt, modifier, beschriftung, gesperrt, Role.RadioButton, wahl)
+        return
+    }
     val f = TcmTheme.farben
     val knopfForm = RoundedCornerShape(Radius.knopf - 4.dp)
     val knoepfe: @Composable (Modifier) -> Unit = { breite ->

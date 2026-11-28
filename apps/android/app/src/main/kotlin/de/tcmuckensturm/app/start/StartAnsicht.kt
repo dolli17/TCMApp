@@ -63,7 +63,7 @@ fun StartAnsicht(sitzung: Sitzung) {
                     when (aktuell) {
                         // Derselbe Grund wie beim Start (Theme.TCM), damit nichts aufblitzt.
                         StartZiel.Laden -> Box(
-                            Modifier.fillMaxSize().background(TcmTheme.farben.bg),
+                            Modifier.fillMaxSize().background(TcmTheme.farben.gruppenGrund),
                             contentAlignment = Alignment.Center,
                         ) {
                             CircularProgressIndicator(color = TcmTheme.farben.blue)
@@ -90,7 +90,7 @@ fun KonfigurationFehlt(fehler: Throwable?) {
     Column(
         Modifier
             .fillMaxSize()
-            .background(TcmTheme.farben.bg)
+            .background(TcmTheme.farben.gruppenGrund)
             .safeDrawingPadding()
             .padding(Abstand.rand),
         verticalArrangement = Arrangement.spacedBy(Abstand.m, Alignment.CenterVertically),

@@ -306,7 +306,7 @@ fun GetraenkeSeite(
         haptik.performHapticFeedback(if (m.ok) HapticFeedbackType.Confirm else HapticFeedbackType.Reject)
     }
 
-    Box(Modifier.fillMaxSize().background(f.bg)) {
+    Box(Modifier.fillMaxSize().background(f.gruppenGrund)) {
         PullToRefreshBox(isRefreshing = stand.aktualisiert, onRefresh = aktionen.nachladen) {
             Column(
                 Modifier

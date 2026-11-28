@@ -127,7 +127,7 @@ fun NachrichtenInhalt(
         onRefresh = nachladen,
         modifier = Modifier
             .fillMaxSize()
-            .background(f.bg),
+            .background(f.gruppenGrund),
     ) {
         Column(
             Modifier

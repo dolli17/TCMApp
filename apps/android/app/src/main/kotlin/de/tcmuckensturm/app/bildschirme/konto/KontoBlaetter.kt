@@ -168,7 +168,7 @@ fun KontoBlattFenster(
     ModalBottomSheet(
         onDismissRequest = zu,
         sheetState = zustand,
-        containerColor = f.bg,
+        containerColor = f.gruppenGrund,
         shape = RoundedCornerShape(topStart = Radius.blatt, topEnd = Radius.blatt),
         dragHandle = { BottomSheetDefaults.DragHandle(color = f.line2) },
     ) {
@@ -188,7 +188,7 @@ fun KontoBlattInhalt(
     geaendert: () -> Unit,
     erneut: () -> Unit,
 ) {
-    Column(Modifier.fillMaxWidth().background(TcmTheme.farben.bg).imePadding()) {
+    Column(Modifier.fillMaxWidth().background(TcmTheme.farben.gruppenGrund).imePadding()) {
         when (art) {
             KontoBlatt.DATEN, KontoBlatt.NOTFALL -> {
                 val p = inhalt?.profil?.wert

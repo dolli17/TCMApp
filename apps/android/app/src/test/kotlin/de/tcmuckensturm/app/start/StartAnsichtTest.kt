@@ -75,10 +75,10 @@ class StartAnsichtTest {
         test.anmeldungGelingt()
         zeige()
         anmelden()
-        compose.bis("Tabs") { tabDa("HOME") }
+        compose.bis("Tabs") { tabDa("Home") }
         assertEquals(StartZiel.Tabs, test.sitzung.ziel.value)
-        tab("HOME").assertIsSelected()
-        for (titel in listOf("PLÄTZE", "VEREIN", "KONTO", "HOME")) {
+        tab("Home").assertIsSelected()
+        for (titel in listOf("Plätze", "Verein", "Konto", "Home")) {
             tab(titel).performClick()
             compose.bis("Tab $titel gewählt") {
                 compose.onAllNodes(hasText(titel) and SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
@@ -86,7 +86,7 @@ class StartAnsichtTest {
             }
         }
         // Ohne Rolle im Verein gibt es keinen Tab Verwaltung.
-        assertTrue(!tabDa("VERWALTUNG"))
+        assertTrue(!tabDa("Verwaltung"))
     }
 
     /** ich() nennt den Vorstand: der fuenfte Tab erscheint. */
@@ -99,10 +99,10 @@ class StartAnsichtTest {
         )
         zeige()
         anmelden()
-        compose.bis("Tab Verwaltung") { tabDa("VERWALTUNG") }
-        tab("VERWALTUNG").performClick()
+        compose.bis("Tab Verwaltung") { tabDa("Verwaltung") }
+        tab("Verwaltung").performClick()
         compose.bis("Verwaltung gewählt") {
-            compose.onAllNodes(hasText("VERWALTUNG") and SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
+            compose.onAllNodes(hasText("Verwaltung") and SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
                 .fetchSemanticsNodes().isNotEmpty()
         }
     }
@@ -126,7 +126,7 @@ class StartAnsichtTest {
         zeige()
         anmelden()
         compose.bis("Onboarding") { test.sitzung.ziel.value == StartZiel.Onboarding && !compose.zeigt("Willkommen zurück auf dem Platz.") }
-        assertTrue(!tabDa("HOME"))
+        assertTrue(!tabDa("Home"))
         // Das Onboarding liest seinen Stand selbst.
         compose.bis("Onboarding fragt den Server") { test.server.gefragt.any { it != "mein_zugang" } }
     }
