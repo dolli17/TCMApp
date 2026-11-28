@@ -85,6 +85,10 @@ export const farben = {
     // surf3 auf surf2 1,2:1, hell Weiss auf surf2 1,1:1 -, bei Ja/Nein war
     // nicht zu sagen, was gewählt ist (U71). Der Rand hält 6,7:1 auf surf2.
     segAktivRand: "#44566B",
+    // Grund hinter den Gruppen im iOS-Stil (docs/design/ios-stil.md,
+    // Abschnitt 1): surf3 zu 50 % über bg, damit die weissen Gruppen (surf)
+    // sich abheben. Ein Test rechnet die Mischung nach.
+    gruppenGrund: "#F1F4F8",
   },
   dunkel: {
     // Vorher #3A9BE0: Weiss darauf nur 3,0:1, der Hauptknopf fiel durch (U14).
@@ -130,6 +134,8 @@ export const farben = {
     segAktiv: "#1E3249",
     // 8,5:1 auf surf2
     segAktivRand: "#B3C2D2",
+    // Im Dunkeln liegen die Gruppen (surf) direkt auf bg.
+    gruppenGrund: "#07111D",
   },
 } as const;
 
@@ -263,6 +269,35 @@ export const schrift = {
   laufweiteKicker: 0.08,
   /** in px, für den Seitentitel */
   laufweiteTitel: -0.4,
+  /**
+   * Systemschrift des iOS-Stils für das Web (docs/design/ios-stil.md,
+   * Abschnitt 1). Android nimmt Roboto, den Standard von Compose; iOS die
+   * Textstile des Systems.
+   */
+  system: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  /**
+   * Schriftrollen des iOS-Stils, nur für Android und Web. iOS nimmt dafür die
+   * Textstile des Systems (.largeTitle, .footnote, .body ...) und Dynamic Type.
+   * Grösse in px bzw. sp, Gewicht wie in `gewicht`.
+   */
+  rolle: {
+    /** .largeTitle bold, Navigationsleiste */
+    grosserTitel: { groesse: 34, gewicht: 700 },
+    /** .footnote, muted, Grossbuchstaben */
+    abschnittskopf: { groesse: 13, gewicht: 400 },
+    /** .body, ink */
+    zeile: { groesse: 17, gewicht: 400 },
+    /** .headline */
+    wichtigeZeile: { groesse: 17, gewicht: 600 },
+    /** .subheadline, muted oder ink2 */
+    nebentext: { groesse: 15, gewicht: 400 },
+    /** .footnote, muted oder ink2 */
+    nebentextKlein: { groesse: 13, gewicht: 400 },
+    /** .largeTitle bold, Ziffern gleich breit */
+    grosseZahl: { groesse: 34, gewicht: 700 },
+    /** .title2 bold */
+    summe: { groesse: 22, gewicht: 700 },
+  },
 } as const;
 
 /**
@@ -276,6 +311,10 @@ export const abstand = {
   l: 14,
   rand: 20,
   abschnitt: 28,
+  /** iOS-Stil: zwischen zwei Gruppen (listSectionSpacing) */
+  gruppe: 20,
+  /** iOS-Stil: Rand links und rechts der Gruppen, gemessen am iOS-Foto */
+  gruppenRand: 16,
 } as const;
 
 /**
@@ -292,6 +331,20 @@ export const radius = {
   /** Bottom-Sheet, nur die oberen Ecken */
   blatt: 32,
   chip: 99,
+  /** iOS-Stil: Gruppe einer Liste (.insetGrouped), gemessen am iOS-Foto */
+  gruppe: 25,
+  /** iOS-Stil: farbige Symbol-Kachel vor einer Zeile */
+  kachel: 7,
+  /** iOS-Stil: Datumskachel (Tag und Monat) */
+  datumskachel: 10,
+  /** iOS-Stil: Block im Belegungsraster */
+  block: 5,
+} as const;
+
+/** Feste Grössen, in px bzw. pt und dp. */
+export const groesse = {
+  /** iOS-Stil: Mindesthöhe einer Zeile in einer Gruppe */
+  zeile: 44,
 } as const;
 
 export type ThemeName = "hell" | "dunkel";

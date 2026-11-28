@@ -2,7 +2,20 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { alsCssName, avatarFarbe, avatarTon, avatarToene, farben, paletteFuer, schatten, schattenRn } from "./tokens";
+import {
+  abstand,
+  alsCssName,
+  avatarFarbe,
+  avatarTon,
+  avatarToene,
+  farben,
+  groesse,
+  paletteFuer,
+  radius,
+  schatten,
+  schattenRn,
+  schrift,
+} from "./tokens";
 
 const hier = dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(join(hier, "tokens.css"), "utf-8");
@@ -81,6 +94,72 @@ describe("tokens.css stimmt mit tokens.ts überein", () => {
     expect(css).toContain("@media (prefers-color-scheme: dark)");
     // Wer von Hand hell gewaehlt hat, soll nicht vom System ueberstimmt werden
     expect(css).toContain(':root:not([data-theme="hell"])');
+  });
+});
+
+describe("Tokens des iOS-Stils (docs/design/ios-stil.md)", () => {
+  // iOS nutzt diese Werte heute fest im Code. Android und Web übernehmen den
+  // Stil aus den Tokens - weichen die Zahlen ab, sehen die Apps verschieden aus.
+  const root = () => werteAus(":root");
+
+  it("Maße wie in der Vorgabe, Abschnitt 5", () => {
+    expect(radius).toMatchObject({ gruppe: 25, kachel: 7, datumskachel: 10, block: 5 });
+    expect(abstand).toMatchObject({ gruppe: 20, gruppenRand: 16 });
+    expect(groesse.zeile).toBe(44);
+  });
+
+  it("Schriftrollen wie in der Vorgabe, Abschnitt 1", () => {
+    expect(schrift.rolle).toEqual({
+      grosserTitel: { groesse: 34, gewicht: 700 },
+      abschnittskopf: { groesse: 13, gewicht: 400 },
+      zeile: { groesse: 17, gewicht: 400 },
+      wichtigeZeile: { groesse: 17, gewicht: 600 },
+      nebentext: { groesse: 15, gewicht: 400 },
+      nebentextKlein: { groesse: 13, gewicht: 400 },
+      grosseZahl: { groesse: 34, gewicht: 700 },
+      summe: { groesse: 22, gewicht: 700 },
+    });
+    expect(schrift.system).toBe('system-ui, -apple-system, "Segoe UI", Roboto, sans-serif');
+  });
+
+  it("gruppenGrund ist hell surf3 zu 50 % über bg, dunkel bg", () => {
+    const kanaele = (hex: string) => [0, 2, 4].map((i) => parseInt(hex.replace("#", "").slice(i, i + 2), 16));
+    const a = kanaele(farben.hell.surf3);
+    const b = kanaele(farben.hell.bg);
+    const gemischt =
+      "#" + a.map((v, i) => Math.round((v + b[i]!) / 2).toString(16).padStart(2, "0").toUpperCase()).join("");
+    expect(farben.hell.gruppenGrund).toBe(gemischt);
+    expect(farben.dunkel.gruppenGrund).toBe(farben.dunkel.bg);
+  });
+
+  it("die neuen Werte stehen in tokens.css", () => {
+    const css = root();
+    expect(css["--gruppen-grund"]).toBe(farben.hell.gruppenGrund);
+    expect(werteAus(':root[data-theme="dunkel"]')["--gruppen-grund"]).toBe(farben.dunkel.gruppenGrund);
+    expect(css["--radius-gruppe"]).toBe("25px");
+    expect(css["--radius-kachel"]).toBe("7px");
+    expect(css["--radius-datumskachel"]).toBe("10px");
+    expect(css["--radius-block"]).toBe("5px");
+    expect(css["--space-gruppe"]).toBe("20px");
+    expect(css["--space-gruppen-rand"]).toBe("16px");
+    expect(css["--size-zeile"]).toBe("44px");
+    expect(css["--font-system"]).toBe(schrift.system);
+    for (const [name, r] of Object.entries(schrift.rolle)) {
+      const css_ = alsCssName(name).slice(2);
+      expect(css[`--font-size-rolle-${css_}`], name).toBe(`${r.groesse}px`);
+      expect(css[`--font-weight-rolle-${css_}`], name).toBe(String(r.gewicht));
+    }
+  });
+
+  it("bestehende Variablen behalten ihre Namen und Werte", () => {
+    // Web und Apps sollen bis zur Umstellung genau so aussehen wie vorher.
+    const css = root();
+    expect(css["--space-rand"]).toBe("20px");
+    expect(css["--space-abschnitt"]).toBe("28px");
+    expect(css["--radius-karte"]).toBe("24px");
+    expect(css["--radius-karte-gross"]).toBeUndefined();
+    expect(css["--radius-kartegross"]).toBe("32px");
+    expect(css["--font-size-seitentitel"]).toBe("26px");
   });
 });
 

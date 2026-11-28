@@ -12,7 +12,7 @@
  * dieselben Zahlen wie in px - als CGFloat-Punkte bzw. dp.
  */
 
-import { abstand, avatarToene, farben, radius, schattenRn, schrift, type Farbname } from "../src/tokens";
+import { abstand, avatarToene, farben, groesse, radius, schattenRn, schrift, type Farbname } from "../src/tokens";
 
 export interface Rgba {
   r: number;
@@ -223,6 +223,13 @@ ${Object.entries(radius)
   .map(([k, v]) => `        public static let ${k}: CGFloat = ${String(v)}`)
   .join("\n")}
     }
+
+    /// Feste Groessen in Punkt
+    public enum Groesse {
+${Object.entries(groesse)
+  .map(([k, v]) => `        public static let ${k}: CGFloat = ${String(v)}`)
+  .join("\n")}
+    }
 }
 
 extension Color {
@@ -378,7 +385,20 @@ ${Object.entries(SCHNITTE)
     const val LAUFWEITE_KICKER_EM = ${String(schrift.laufweiteKicker)}f
     /** in sp, fuer den Seitentitel */
     val laufweiteTitel: TextUnit = (${String(schrift.laufweiteTitel)}).sp
+
+    /**
+     * Schriftrollen des iOS-Stils in der Systemschrift (Roboto). iOS nimmt
+     * dafuer die Textstile des Systems.
+     */
+    object Rolle {
+${Object.entries(schrift.rolle)
+  .map(([k, r]) => `        val ${k} = Textrolle(groesse = ${String(r.groesse)}.sp, gewicht = FontWeight(${String(r.gewicht)}))`)
+  .join("\n")}
+    }
 }
+
+@Immutable
+data class Textrolle(val groesse: TextUnit, val gewicht: FontWeight)
 
 // Abstand und Radius
 
@@ -390,6 +410,13 @@ ${Object.entries(abstand)
 
 object Radius {
 ${Object.entries(radius)
+  .map(([k, v]) => `    val ${k}: Dp = ${String(v)}.dp`)
+  .join("\n")}
+}
+
+/** Feste Groessen in dp */
+object Groesse {
+${Object.entries(groesse)
   .map(([k, v]) => `    val ${k}: Dp = ${String(v)}.dp`)
   .join("\n")}
 }

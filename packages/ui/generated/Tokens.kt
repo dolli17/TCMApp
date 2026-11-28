@@ -58,6 +58,7 @@ data class Palette(
     val navAktivInk: Color,
     val segAktiv: Color,
     val segAktivRand: Color,
+    val gruppenGrund: Color,
 ) {
     companion object {
         fun fuer(theme: Theme): Palette = if (theme == Theme.HELL) Hell else Dunkel
@@ -99,6 +100,7 @@ val Hell = Palette(
     navAktivInk = Color(0xFF1466A8),
     segAktiv = Color(0xFFFFFFFF),
     segAktivRand = Color(0xFF44566B),
+    gruppenGrund = Color(0xFFF1F4F8),
 )
 
 val Dunkel = Palette(
@@ -136,6 +138,7 @@ val Dunkel = Palette(
     navAktivInk = Color(0xFF8CC6F0),
     segAktiv = Color(0xFF1E3249),
     segAktivRand = Color(0xFFB3C2D2),
+    gruppenGrund = Color(0xFF07111D),
 )
 
 /** Die vier Toene der Avatare, in beiden Themes gleich. Schrift darauf ist onBrand. */
@@ -215,7 +218,25 @@ object Schrift {
     const val LAUFWEITE_KICKER_EM = 0.08f
     /** in sp, fuer den Seitentitel */
     val laufweiteTitel: TextUnit = (-0.4).sp
+
+    /**
+     * Schriftrollen des iOS-Stils in der Systemschrift (Roboto). iOS nimmt
+     * dafuer die Textstile des Systems.
+     */
+    object Rolle {
+        val grosserTitel = Textrolle(groesse = 34.sp, gewicht = FontWeight(700))
+        val abschnittskopf = Textrolle(groesse = 13.sp, gewicht = FontWeight(400))
+        val zeile = Textrolle(groesse = 17.sp, gewicht = FontWeight(400))
+        val wichtigeZeile = Textrolle(groesse = 17.sp, gewicht = FontWeight(600))
+        val nebentext = Textrolle(groesse = 15.sp, gewicht = FontWeight(400))
+        val nebentextKlein = Textrolle(groesse = 13.sp, gewicht = FontWeight(400))
+        val grosseZahl = Textrolle(groesse = 34.sp, gewicht = FontWeight(700))
+        val summe = Textrolle(groesse = 22.sp, gewicht = FontWeight(700))
+    }
 }
+
+@Immutable
+data class Textrolle(val groesse: TextUnit, val gewicht: FontWeight)
 
 // Abstand und Radius
 
@@ -226,6 +247,8 @@ object Abstand {
     val l: Dp = 14.dp
     val rand: Dp = 20.dp
     val abschnitt: Dp = 28.dp
+    val gruppe: Dp = 20.dp
+    val gruppenRand: Dp = 16.dp
 }
 
 object Radius {
@@ -236,4 +259,13 @@ object Radius {
     val karteGross: Dp = 32.dp
     val blatt: Dp = 32.dp
     val chip: Dp = 99.dp
+    val gruppe: Dp = 25.dp
+    val kachel: Dp = 7.dp
+    val datumskachel: Dp = 10.dp
+    val block: Dp = 5.dp
+}
+
+/** Feste Groessen in dp */
+object Groesse {
+    val zeile: Dp = 44.dp
 }

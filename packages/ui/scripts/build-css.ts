@@ -9,7 +9,7 @@
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { abstand, alsCssName, avatarToene, farben, radius, schatten, schrift } from "../src/tokens";
+import { abstand, alsCssName, avatarToene, farben, groesse, radius, schatten, schrift } from "../src/tokens";
 
 const hier = dirname(fileURLToPath(import.meta.url));
 
@@ -45,6 +45,7 @@ ${avatarToene.map((v, i) => `  --avatar-${i}: ${v};`).join("\n")}
 
   --font-text: ${schrift.text};
   --font-display: ${schrift.display};
+  --font-system: ${schrift.system};
   --line-height: ${schrift.zeilenhoehe};
   --tracking: ${schrift.laufweite}px;
   --tracking-kicker: ${schrift.laufweiteKicker}em;
@@ -54,8 +55,19 @@ ${Object.entries(schrift.groesse)
   .map(([k, v]) => `  --font-size-${k}: ${v}px;`)
   .join("\n")}
 
+${Object.entries(schrift.rolle)
+  .map(([k, r]) => {
+    const name = alsCssName(k).slice(2);
+    return `  --font-size-rolle-${name}: ${r.groesse}px;\n  --font-weight-rolle-${name}: ${r.gewicht};`;
+  })
+  .join("\n")}
+
 ${Object.entries(abstand)
-  .map(([k, v]) => `  --space-${k}: ${v}px;`)
+  .map(([k, v]) => `  --space-${alsCssName(k).slice(2)}: ${v}px;`)
+  .join("\n")}
+
+${Object.entries(groesse)
+  .map(([k, v]) => `  --size-${alsCssName(k).slice(2)}: ${v}px;`)
   .join("\n")}
 
 ${Object.entries(radius)

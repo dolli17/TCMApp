@@ -57,6 +57,7 @@ public enum Tokens {
         public let navAktivInk: Color
         public let segAktiv: Color
         public let segAktivRand: Color
+        public let gruppenGrund: Color
 
         public static let hell = Palette(
             blue: Color(rgba: 0x1466A8FF),
@@ -92,7 +93,8 @@ public enum Tokens {
             navAktiv: Color(rgba: 0xE8F1F8FF),
             navAktivInk: Color(rgba: 0x1466A8FF),
             segAktiv: Color(rgba: 0xFFFFFFFF),
-            segAktivRand: Color(rgba: 0x44566BFF)
+            segAktivRand: Color(rgba: 0x44566BFF),
+            gruppenGrund: Color(rgba: 0xF1F4F8FF)
         )
 
         public static let dunkel = Palette(
@@ -129,7 +131,8 @@ public enum Tokens {
             navAktiv: Color(rgba: 0x3A9BE02E),
             navAktivInk: Color(rgba: 0x8CC6F0FF),
             segAktiv: Color(rgba: 0x1E3249FF),
-            segAktivRand: Color(rgba: 0xB3C2D2FF)
+            segAktivRand: Color(rgba: 0xB3C2D2FF),
+            gruppenGrund: Color(rgba: 0x07111DFF)
         )
 
         /// Folgt der Systemeinstellung. Bildschirme mit festem Theme (die
@@ -168,7 +171,8 @@ public enum Tokens {
             navAktiv: Color(hell: 0xE8F1F8FF, dunkel: 0x3A9BE02E),
             navAktivInk: Color(hell: 0x1466A8FF, dunkel: 0x8CC6F0FF),
             segAktiv: Color(hell: 0xFFFFFFFF, dunkel: 0x1E3249FF),
-            segAktivRand: Color(hell: 0x44566BFF, dunkel: 0xB3C2D2FF)
+            segAktivRand: Color(hell: 0x44566BFF, dunkel: 0xB3C2D2FF),
+            gruppenGrund: Color(hell: 0xF1F4F8FF, dunkel: 0x07111DFF)
         )
 
         public static func fuer(_ theme: Theme) -> Palette {
@@ -266,6 +270,8 @@ public enum Tokens {
         public static let l: CGFloat = 14
         public static let rand: CGFloat = 20
         public static let abschnitt: CGFloat = 28
+        public static let gruppe: CGFloat = 20
+        public static let gruppenRand: CGFloat = 16
     }
 
     public enum Radius {
@@ -276,6 +282,15 @@ public enum Tokens {
         public static let karteGross: CGFloat = 32
         public static let blatt: CGFloat = 32
         public static let chip: CGFloat = 99
+        public static let gruppe: CGFloat = 25
+        public static let kachel: CGFloat = 7
+        public static let datumskachel: CGFloat = 10
+        public static let block: CGFloat = 5
+    }
+
+    /// Feste Groessen in Punkt
+    public enum Groesse {
+        public static let zeile: CGFloat = 44
     }
 }
 
