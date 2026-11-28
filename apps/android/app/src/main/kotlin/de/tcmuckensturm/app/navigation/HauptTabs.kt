@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -110,48 +111,38 @@ fun HauptTabsInhalt(
     }
 
     Scaffold(
-        containerColor = f.bg,
+        containerColor = f.gruppenGrund,
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
-            // Eine schwebende Pille; der aktive Tab hellblau mit blauer Schrift (docs/design/stitch).
-            val schatten = TcmTheme.schatten.schwebend
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .background(f.bg)
-                    .navigationBarsPadding()
-                    .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 10.dp),
-            ) {
+            // Tab-Leiste im iOS-Stil (docs/design/ios-stil.md): volle Breite, feine Linie oben,
+            // Symbol ueber der Beschriftung, aktiv in Blau, ohne Pillen-Indikator.
+            Column(Modifier.fillMaxWidth().background(f.surf)) {
+                Box(Modifier.fillMaxWidth().height(0.5.dp).background(f.line2))
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .shadow(schatten.elevation, CircleShape, ambientColor = schatten.farbe, spotColor = schatten.farbe)
-                        .background(f.surf, CircleShape)
-                        .border(1.dp, f.line, CircleShape)
-                        .padding(6.dp)
+                        .navigationBarsPadding()
+                        .padding(horizontal = 4.dp)
                         .selectableGroup(),
                 ) {
                     for (tab in tabs) {
                         val aktiv = ziel?.hierarchy?.any { it.hasRoute(tab.graph::class) } == true
-                        val farbe = if (aktiv) f.navAktivInk else f.muted
+                        val farbe = if (aktiv) f.blue else f.muted
                         Column(
                             Modifier
                                 .weight(1f)
                                 .heightIn(min = 56.dp)
-                                .clip(CircleShape)
-                                .background(if (aktiv) f.navAktiv else Color.Transparent)
                                 .selectable(selected = aktiv, role = Role.Tab) { zuTab(tab) }
-                                .padding(vertical = 6.dp, horizontal = 2.dp),
+                                .padding(top = 7.dp, bottom = 5.dp, start = 2.dp, end = 2.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+                            verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.Top),
                         ) {
-                            Icon(tab.symbol, contentDescription = null, tint = farbe, modifier = Modifier.size(22.dp))
+                            Icon(tab.symbol, contentDescription = null, tint = farbe, modifier = Modifier.size(25.dp))
                             // Feste Flaeche: die Beschriftung waechst nur bis 120 % mit.
                             GedeckelteSchrift {
                                 Text(
-                                    tab.titel.uppercase(),
-                                    // Mit fuenf Tabs (Verwaltung) enger, damit nichts abgeschnitten wird.
-                                    style = TcmSchrift.display(Schrift.gewichtFett, if (tabs.size > 4) 9.5.sp else 10.5.sp, if (tabs.size > 4) 0.em else 0.04.em),
+                                    tab.titel,
+                                    style = TcmSchrift.text(Schrift.gewichtMittel, 10.5.sp),
                                     color = farbe,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -190,7 +181,7 @@ fun HauptTabsInhalt(
                         Modifier
                             .fillMaxWidth()
                             .windowInsetsTopHeight(WindowInsets.statusBars)
-                            .background(f.bg),
+                            .background(f.gruppenGrund),
                     )
                 }
                 // Innerhalb von VereinTab: eine Veranstaltung oeffnet ueber LocalZuVerein ihr Detail.

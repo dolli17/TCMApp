@@ -174,21 +174,15 @@ fun GlockeKnopf(ungelesen: Int, aktion: () -> Unit) {
                 role = Role.Button
             },
     ) {
-        Box(
-            Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(f.surf2)
-                .border(1.dp, f.line, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Outlined.Notifications, contentDescription = null, tint = f.ink, modifier = Modifier.size(22.dp))
+        // iOS-Stil: das Symbol allein, ohne Kreis (docs/design/ios-stil.md).
+        Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+            Icon(Icons.Outlined.Notifications, contentDescription = null, tint = f.ink, modifier = Modifier.size(24.dp))
         }
         if (ungelesen > 0) {
             Box(
                 Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = 3.dp, y = (-3).dp)
+                    .offset(x = (-4).dp, y = 4.dp)
                     .defaultMinSize(minWidth = 18.dp, minHeight = 18.dp)
                     .clip(Kapsel)
                     // Gelb: es sind deine Nachrichten (docs/design/stitch).

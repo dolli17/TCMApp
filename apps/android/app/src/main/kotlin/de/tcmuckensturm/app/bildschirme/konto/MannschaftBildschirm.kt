@@ -251,7 +251,7 @@ fun MannschaftAnsicht(
     PullToRefreshBox(
         isRefreshing = zustand.aktualisiert,
         onRefresh = handlungen.nachladen,
-        modifier = Modifier.fillMaxSize().background(f.bg),
+        modifier = Modifier.fillMaxSize().background(f.gruppenGrund),
     ) {
         Column(
             Modifier
@@ -553,7 +553,7 @@ private fun SpielerHinzufuegenFenster(
     ModalBottomSheet(
         onDismissRequest = zu,
         sheetState = zustand,
-        containerColor = f.bg,
+        containerColor = f.gruppenGrund,
         shape = RoundedCornerShape(topStart = Radius.blatt, topEnd = Radius.blatt),
         dragHandle = { BottomSheetDefaults.DragHandle(color = f.line2) },
     ) {
@@ -584,7 +584,7 @@ fun SpielerSucheInhalt(
     Column(
         Modifier
             .fillMaxWidth()
-            .background(f.bg)
+            .background(f.gruppenGrund)
             .verticalScroll(rememberScrollState())
             .padding(start = Abstand.rand, end = Abstand.rand, bottom = Abstand.rand)
             .navigationBarsPadding()

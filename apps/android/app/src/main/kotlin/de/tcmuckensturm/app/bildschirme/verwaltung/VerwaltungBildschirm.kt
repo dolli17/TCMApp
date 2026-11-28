@@ -127,7 +127,7 @@ fun VerwaltungInhalt(
     val f = TcmTheme.farben
     val zuTab = LocalZuTab.current
     val s = m.stand
-    Box(Modifier.fillMaxSize().background(f.bg)) {
+    Box(Modifier.fillMaxSize().background(f.gruppenGrund)) {
         PullToRefreshBox(isRefreshing = m.aktualisiert, onRefresh = m::vonHand, modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 // Was nach oben rollt, laeuft nicht unter die Statusleiste; das Segment klebt darunter.
@@ -151,7 +151,7 @@ fun VerwaltungInhalt(
                 } else if (s != null) {
                     stickyHeader(key = "segmente") {
                         // Klebt beim Rollen oben wie in Plaetze und Verein (U74).
-                        Box(Modifier.fillMaxWidth().background(f.bg).padding(horizontal = Abstand.rand, vertical = Abstand.s)) {
+                        Box(Modifier.fillMaxWidth().background(f.gruppenGrund).padding(horizontal = Abstand.rand, vertical = Abstand.s)) {
                             KontoSegmente(
                                 optionen = VerwaltungAnsicht.entries.map { it to it.label },
                                 gewaehlt = m.ansicht,

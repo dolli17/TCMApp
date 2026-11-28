@@ -218,12 +218,12 @@ fun VeranstaltungSeite(stand: VeranstaltungStand, jetzt: Instant, aktionen: Vera
         )
     }
 
-    Column(Modifier.fillMaxSize().background(f.bg).imePadding()) {
+    Column(Modifier.fillMaxSize().background(f.gruppenGrund).imePadding()) {
         // Die Leiste: hell wie die Seite, Zurueck als runder Knopf; der Titel erscheint beim Rollen.
         Row(
             Modifier
                 .fillMaxWidth()
-                .background(f.bg)
+                .background(f.gruppenGrund)
                 .statusBarsPadding()
                 .height(60.dp)
                 .padding(horizontal = Abstand.rand - 4.dp),
@@ -302,7 +302,7 @@ private fun AnmeldeFuss(e: MitgliedEvent, jetzt: Instant, stand: VeranstaltungSt
     val begleitung = form.begleitung.intValue
     Box(Modifier.fillMaxWidth().height(1.dp).background(f.line))
     Column(
-        Modifier.fillMaxWidth().background(f.bg).navigationBarsPadding().padding(horizontal = Abstand.rand).padding(top = 14.dp, bottom = 14.dp),
+        Modifier.fillMaxWidth().background(f.gruppenGrund).navigationBarsPadding().padding(horizontal = Abstand.rand).padding(top = 14.dp, bottom = 14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (!aendern && Veranstaltungen.eventNurWarteliste(e, begleitung)) Leise(VereinLogik.wartelisteVorab(begleitung))

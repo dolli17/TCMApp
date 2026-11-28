@@ -275,7 +275,7 @@ fun KontoAnsicht(
     Column(
         Modifier
             .fillMaxSize()
-            .background(f.bg)
+            .background(f.gruppenGrund)
             .verticalScroll(rememberScrollState())
             .statusBarsPadding()
             .padding(start = Abstand.rand, end = Abstand.rand, bottom = Abstand.abschnitt * 2),

@@ -149,7 +149,7 @@ fun PlaetzeInhalt(m: PlaetzeModell, glocke: @Composable () -> Unit = {}) {
         if (ziel > 0) rollen.scrollTo(ziel)
     }
 
-    Box(Modifier.fillMaxSize().background(f.bg)) {
+    Box(Modifier.fillMaxSize().background(f.gruppenGrund)) {
         PullToRefreshBox(isRefreshing = m.aktualisiert, onRefresh = m::vonHand, modifier = Modifier.fillMaxSize()) {
             Column(
                 Modifier

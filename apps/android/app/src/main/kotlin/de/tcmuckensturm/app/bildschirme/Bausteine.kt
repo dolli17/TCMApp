@@ -87,15 +87,21 @@ import de.tcmuckensturm.kern.TimelineSegment
 
 // ---- Karte und Schrift --------------------------------------------------------
 
-/** Karte nach docs/design/stitch: surf mit feiner Linie, ohne Schatten. `gross` bleibt aus alten Aufrufen. */
+/**
+ * Karte im iOS-Stil: surf ohne Rand auf dem grauen Grund (gruppenGrund), Radius
+ * einer Gruppe (docs/design/ios-stil.md). `radius` und `gross` bleiben aus
+ * alten Aufrufen.
+ */
 @Composable
-fun Modifier.karte(radius: Dp = Radius.karte, padding: Dp = 12.dp, @Suppress("UNUSED_PARAMETER") gross: Boolean = false): Modifier {
+fun Modifier.karte(
+    @Suppress("UNUSED_PARAMETER") radius: Dp = Radius.gruppe,
+    padding: Dp = 12.dp,
+    @Suppress("UNUSED_PARAMETER") gross: Boolean = false,
+): Modifier {
     val f = TcmTheme.farben
-    val form = RoundedCornerShape(radius)
     return this
-        .clip(form)
+        .clip(GruppenForm)
         .background(f.surf)
-        .border(1.dp, f.line, form)
         .padding(padding)
 }
 
@@ -133,39 +139,35 @@ fun Modifier.tippbar(beschreibung: String? = null, rolle: Role = Role.Button, ak
 // ---- Kopf ---------------------------------------------------------------------
 
 /**
- * Der grosse Titel-Kopf: Kicker "TC Muckensturm", darunter der Titel, rechts
- * die Glocke - auf jedem Tab gleich (docs/design/stitch). Der Titel darf
- * zweizeilig werden (U52). `glocke` ist in der App `Glocke()` aus
- * `nachrichten`, in den Bildschirmfotos nur ihr Knopf (ohne Netz). Die
- * Initialen neben der Glocke sind entfallen: ins Konto fuehrt der Tab.
+ * Der grosse Titel im iOS-Stil (docs/design/ios-stil.md): oben rechts die
+ * Glocke ohne Kreis, darunter links der Titel gross und fett in der
+ * Systemschrift, optional eine Unterzeile. Kein Kicker "TC Muckensturm" mehr.
+ * Der Titel darf zweizeilig werden (U52). `glocke` ist in der App `Glocke()`
+ * aus `nachrichten`, in den Bildschirmfotos nur ihr Knopf (ohne Netz).
  */
 @Composable
 fun GrosserKopf(
     titel: String,
-    kicker: String? = "TC Muckensturm",
+    @Suppress("UNUSED_PARAMETER") kicker: String? = null,
     @Suppress("UNUSED_PARAMETER") name: MeinName? = null,
+    unterzeile: String? = null,
     glocke: @Composable () -> Unit,
 ) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp, bottom = Abstand.l),
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.spacedBy(Abstand.m),
-    ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            if (kicker != null) Kicker(kicker)
+    Column(Modifier.fillMaxWidth().padding(bottom = Abstand.s)) {
+        Box(Modifier.fillMaxWidth().heightIn(min = 44.dp), contentAlignment = Alignment.CenterEnd) { glocke() }
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 titel,
-                style = TcmSchrift.display(Schrift.gewichtFett, Schrift.seitentitel, Schrift.laufweiteTitel)
-                    .copy(lineHeight = 32.sp),
+                style = TcmSchrift.rolle(Schrift.Rolle.grosserTitel).copy(lineHeight = 40.sp),
                 color = TcmTheme.farben.ink,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.semantics { heading() },
             )
+            if (unterzeile != null) {
+                Text(unterzeile, style = TcmSchrift.rolle(Schrift.Rolle.nebentext), color = TcmTheme.farben.muted)
+            }
         }
-        glocke()
     }
 }
 
@@ -191,40 +193,10 @@ fun Avatar(name: MeinName?) {
 /** Ein Link rechts in der Kopfzeile; `label` sagt dem Screenreader, was gemeint ist (U6). */
 data class KopfLink(val text: String, val label: String? = null, val aktion: () -> Unit)
 
-/** Abschnittskopf mit optionalem Link rechts ("Alle") */
+/** Abschnittskopf mit optionalem Link rechts ("Alle"): im iOS-Stil der Kopf einer Gruppe. */
 @Composable
 fun Kopfzeile(titel: String, link: KopfLink? = null) {
-    val f = TcmTheme.farben
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(top = Abstand.abschnitt - Abstand.m - 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            titel,
-            style = TcmSchrift.display(Schrift.gewichtFett, Schrift.titel, (-0.2).sp),
-            color = f.ink,
-            modifier = Modifier
-                .weight(1f)
-                .semantics { heading() },
-        )
-        if (link != null) {
-            // Kein TextButton: dessen Mindestbreite zentriert kurze Links wie "Alle" und
-            // verschiebt so die rechte Kante gegenüber "Alle Plätze".
-            Text(
-                link.text,
-                style = TcmSchrift.text(Schrift.gewichtHalbfett, 14.sp),
-                color = f.blueInk,
-                modifier = Modifier
-                    .clip(Kapsel)
-                    .tippbar(link.label ?: link.text, aktion = link.aktion)
-                    .heightIn(min = 48.dp)
-                    .wrapContentHeight()
-                    .padding(horizontal = 12.dp),
-            )
-        }
-    }
+    GruppenKopf(titel, link, Modifier.padding(top = 4.dp))
 }
 
 // ---- Leer und Fehler ----------------------------------------------------------
@@ -232,47 +204,33 @@ fun Kopfzeile(titel: String, link: KopfLink? = null) {
 /** Eine Handlung unter einem Text (Leerzustand). */
 data class Handlung(val text: String, val aktion: () -> Unit)
 
-/** Wenn eine Liste leer ist (Leerzustand.tsx, U27) */
+/** Wenn eine Liste leer ist (U27): im iOS-Stil eine Gruppe mit einer grauen Zeile. */
 @Composable
 fun Leerzustand(text: String, titel: String? = null, handlung: Handlung? = null) {
     val f = TcmTheme.farben
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .karte(
-                radius = if (titel != null) Radius.karteGross else Radius.karte,
-                padding = if (titel != null) 20.dp else 16.dp,
-                gross = true,
-            ),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        if (titel != null) {
-            Text(titel, style = TcmSchrift.display(Schrift.gewichtFett, 20.sp), color = f.ink)
+    Gruppe {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 44.dp)
+                .padding(horizontal = Abstand.gruppenRand, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            if (titel != null) {
+                Text(titel, style = TcmSchrift.rolle(Schrift.Rolle.wichtigeZeile), color = f.ink)
+            }
+            Text(text, style = TcmSchrift.rolle(if (titel != null) Schrift.Rolle.nebentext else Schrift.Rolle.zeile), color = f.muted)
         }
-        Text(text, style = leise.copy(lineHeight = 19.sp), color = f.muted)
         if (handlung != null) {
-            LeiserKnopf(handlung.text, Modifier.padding(top = 10.dp), klein = true, aktion = handlung.aktion)
+            GruppenZeile(handlung.text, titelFarbe = f.blueInk, aktion = handlung.aktion)
         }
     }
 }
 
-/** Ein Ladefehler mit dem Weg zurueck (Fehlerzeile.tsx, U3) */
+/** Ein Ladefehler mit dem Weg zurueck (U3): im iOS-Stil Warnsymbol, Text in redInk und "Erneut versuchen". */
 @Composable
 fun Fehlerzeile(text: String, laeuft: Boolean = false, erneut: (() -> Unit)? = null) {
-    val f = TcmTheme.farben
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(Radius.feld))
-            .background(f.red.copy(alpha = if (TcmTheme.dunkel) 0.16f else 0.12f))
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Text(text, style = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal), color = f.redInk)
-        if (erneut != null) {
-            LeiserKnopf(if (laeuft) "Wird geladen…" else "Erneut versuchen", rot = true, klein = true, gesperrt = laeuft, aktion = erneut)
-        }
-    }
+    FehlerGruppe(text, laeuft, erneut)
 }
 
 /**

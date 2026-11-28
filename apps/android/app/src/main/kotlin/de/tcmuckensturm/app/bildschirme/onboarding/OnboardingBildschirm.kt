@@ -297,7 +297,7 @@ fun OnboardingAnsicht(
     val fuss: @Composable () -> Unit = { OnboardingFusszeile(webLink) }
     when (val laden = stand.laden) {
         OnboardingLaden.Laeuft -> Box(
-            Modifier.fillMaxSize().background(TcmTheme.farben.bg),
+            Modifier.fillMaxSize().background(TcmTheme.farben.gruppenGrund),
             contentAlignment = Alignment.Center,
         ) {
             CircularProgressIndicator(color = TcmTheme.farben.blue)
@@ -385,7 +385,7 @@ fun OnboardingRahmen(
     Column(
         Modifier
             .fillMaxSize()
-            .background(f.bg)
+            .background(f.gruppenGrund)
             // Statusleiste, Navigationsleiste und Tastatur (adjustResize, Edge-to-Edge)
             .safeDrawingPadding(),
     ) {

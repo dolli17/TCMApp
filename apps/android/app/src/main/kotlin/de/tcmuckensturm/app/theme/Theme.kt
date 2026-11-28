@@ -42,6 +42,7 @@ import de.tcmuckensturm.app.ui.tokens.Hell
 import de.tcmuckensturm.app.ui.tokens.Palette
 import de.tcmuckensturm.app.ui.tokens.Schattenstufen
 import de.tcmuckensturm.app.ui.tokens.Schrift
+import de.tcmuckensturm.app.ui.tokens.Textrolle
 
 private val LocalFarben = staticCompositionLocalOf { Hell }
 private val LocalSchatten = staticCompositionLocalOf { Schattenstufen.Hell }
@@ -62,14 +63,19 @@ object TcmTheme {
 }
 
 /**
- * DM Sans fuer Fliesstext, Space Grotesk fuer Titel, Uhrzeiten, Zahlen, Kicker
- * und Knoepfe (docs/design/stitch); Space Grotesk gibt es nur bis 700, extrafett
- * faellt auf fett zurueck. Die Dateien liegen unter
- * res/font (OFL, assets/lizenzen/OFL-Schriften.txt); die Namen stehen in
- * Tokens.Schrift.DATEI_*. Groessen in sp wachsen mit der Schriftgroesse des Systems.
+ * Schrift im iOS-Stil (docs/design/ios-stil.md, Abschnitt 1): Fliesstext,
+ * Titel und Listen in der Systemschrift (Roboto), wie iOS in SF Pro. Space
+ * Grotesk bleibt fuer die Stellen, die iOS ausnimmt: Pillen-Knoepfe, Marken,
+ * Belegungsraster, Buchen-Leiste. DM Sans nur noch fuer Statusmarken. Die
+ * Dateien liegen unter res/font (OFL, assets/lizenzen/OFL-Schriften.txt).
+ * Groessen in sp wachsen mit der Schriftgroesse des Systems.
  */
 object TcmSchrift {
-    val text = FontFamily(
+    /** Systemschrift (Roboto) fuer alles, was iOS in SF Pro setzt. */
+    val text: FontFamily = FontFamily.Default
+
+    /** DM Sans, nur fuer Statusmarken (StatusmarkeAnsicht in iOS). */
+    val dmSans = FontFamily(
         Font(R.font.dmsans_regular, Schrift.gewichtNormal),
         Font(R.font.dmsans_medium, Schrift.gewichtMittel),
         Font(R.font.dmsans_semibold, Schrift.gewichtHalbfett),
@@ -93,6 +99,9 @@ object TcmSchrift {
 
     /** Kicker: klein, Versalien, weit gesperrt (Tokens.Schrift.LAUFWEITE_KICKER_EM). */
     val kicker = display(Schrift.gewichtFett, Schrift.kicker, Schrift.LAUFWEITE_KICKER_EM.em)
+
+    /** Eine Schriftrolle des iOS-Stils (Tokens.Schrift.Rolle) in der Systemschrift. */
+    fun rolle(r: Textrolle) = TextStyle(fontFamily = text, fontWeight = r.gewicht, fontSize = r.groesse)
 }
 
 /** Material 3 mit den Vereinsfarben. */
@@ -129,23 +138,24 @@ fun farbschema(p: Palette, dunkel: Boolean): ColorScheme {
 
 private fun typografie(): Typography {
     val t = Typography()
-    fun TextStyle.fliesstext() = copy(fontFamily = TcmSchrift.text)
+    val r = Schrift.Rolle
+    fun TextStyle.system() = copy(fontFamily = TcmSchrift.text)
     return Typography(
-        displayLarge = t.displayLarge.fliesstext(),
-        displayMedium = t.displayMedium.fliesstext(),
-        displaySmall = t.displaySmall.fliesstext(),
-        headlineLarge = TcmSchrift.display(Schrift.gewichtFett, Schrift.seitentitel, Schrift.laufweiteTitel),
-        headlineMedium = t.headlineMedium.copy(fontFamily = TcmSchrift.display, fontWeight = Schrift.gewichtFett),
-        headlineSmall = t.headlineSmall.copy(fontFamily = TcmSchrift.display, fontWeight = Schrift.gewichtFett),
-        titleLarge = TcmSchrift.display(Schrift.gewichtFett, Schrift.titel),
-        titleMedium = t.titleMedium.fliesstext().copy(fontWeight = Schrift.gewichtHalbfett),
-        titleSmall = t.titleSmall.fliesstext().copy(fontWeight = Schrift.gewichtHalbfett),
-        bodyLarge = TcmSchrift.text(Schrift.gewichtNormal, Schrift.normal),
-        bodyMedium = t.bodyMedium.fliesstext(),
-        bodySmall = TcmSchrift.text(Schrift.gewichtNormal, Schrift.klein),
-        labelLarge = t.labelLarge.copy(fontFamily = TcmSchrift.display, fontWeight = Schrift.gewichtHalbfett),
-        labelMedium = t.labelMedium.fliesstext().copy(fontWeight = Schrift.gewichtHalbfett),
-        labelSmall = t.labelSmall.fliesstext().copy(fontWeight = Schrift.gewichtHalbfett, fontSize = 12.sp),
+        displayLarge = t.displayLarge.system(),
+        displayMedium = t.displayMedium.system(),
+        displaySmall = t.displaySmall.system(),
+        headlineLarge = TcmSchrift.rolle(r.grosserTitel),
+        headlineMedium = t.headlineMedium.system().copy(fontWeight = Schrift.gewichtFett),
+        headlineSmall = TcmSchrift.rolle(r.summe),
+        titleLarge = TcmSchrift.rolle(r.wichtigeZeile).copy(fontSize = 20.sp),
+        titleMedium = TcmSchrift.rolle(r.wichtigeZeile),
+        titleSmall = t.titleSmall.system().copy(fontWeight = Schrift.gewichtHalbfett),
+        bodyLarge = TcmSchrift.rolle(r.zeile),
+        bodyMedium = TcmSchrift.rolle(r.nebentext),
+        bodySmall = TcmSchrift.rolle(r.nebentextKlein),
+        labelLarge = t.labelLarge.system().copy(fontWeight = Schrift.gewichtHalbfett),
+        labelMedium = t.labelMedium.system().copy(fontWeight = Schrift.gewichtHalbfett),
+        labelSmall = t.labelSmall.system().copy(fontWeight = Schrift.gewichtHalbfett, fontSize = 12.sp),
     )
 }
 
