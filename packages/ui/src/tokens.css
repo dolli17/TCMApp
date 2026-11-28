@@ -43,6 +43,7 @@
   --nav-aktiv-ink: #1466A8;
   --seg-aktiv: #FFFFFF;
   --seg-aktiv-rand: #44566B;
+  --gruppen-grund: #F1F4F8;
   --shadow: 0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06);
   --shadow-sm: 0 1px 2px rgba(10,22,36,.05);
   --shadow-float: 0 16px 40px rgba(10,22,36,.16);
@@ -54,6 +55,7 @@
 
   --font-text: 'DM Sans', system-ui, sans-serif;
   --font-display: 'Space Grotesk', 'DM Sans', system-ui, sans-serif;
+  --font-system: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --line-height: 1.45;
   --tracking: 0px;
   --tracking-kicker: 0.08em;
@@ -66,12 +68,33 @@
   --font-size-seitentitel: 26px;
   --font-size-hero: 44px;
 
+  --font-size-rolle-grosser-titel: 34px;
+  --font-weight-rolle-grosser-titel: 700;
+  --font-size-rolle-abschnittskopf: 13px;
+  --font-weight-rolle-abschnittskopf: 400;
+  --font-size-rolle-zeile: 17px;
+  --font-weight-rolle-zeile: 400;
+  --font-size-rolle-wichtige-zeile: 17px;
+  --font-weight-rolle-wichtige-zeile: 600;
+  --font-size-rolle-nebentext: 15px;
+  --font-weight-rolle-nebentext: 400;
+  --font-size-rolle-nebentext-klein: 13px;
+  --font-weight-rolle-nebentext-klein: 400;
+  --font-size-rolle-grosse-zahl: 34px;
+  --font-weight-rolle-grosse-zahl: 700;
+  --font-size-rolle-summe: 22px;
+  --font-weight-rolle-summe: 700;
+
   --space-xs: 4px;
   --space-s: 8px;
   --space-m: 12px;
   --space-l: 14px;
   --space-rand: 20px;
   --space-abschnitt: 28px;
+  --space-gruppe: 20px;
+  --space-gruppen-rand: 16px;
+
+  --size-zeile: 44px;
 
   --radius-klein: 12px;
   --radius-feld: 26px;
@@ -80,6 +103,10 @@
   --radius-kartegross: 32px;
   --radius-blatt: 32px;
   --radius-chip: 99px;
+  --radius-gruppe: 25px;
+  --radius-kachel: 7px;
+  --radius-datumskachel: 10px;
+  --radius-block: 5px;
 }
 
 /* Systemeinstellung, solange niemand von Hand umgeschaltet hat */
@@ -119,6 +146,7 @@
     --nav-aktiv-ink: #8CC6F0;
     --seg-aktiv: #1E3249;
     --seg-aktiv-rand: #B3C2D2;
+    --gruppen-grund: #07111D;
     --shadow: none;
     --shadow-sm: none;
     --shadow-float: 0 16px 40px rgba(0,0,0,.5);
@@ -161,6 +189,7 @@
   --nav-aktiv-ink: #8CC6F0;
   --seg-aktiv: #1E3249;
   --seg-aktiv-rand: #B3C2D2;
+  --gruppen-grund: #07111D;
   --shadow: none;
   --shadow-sm: none;
   --shadow-float: 0 16px 40px rgba(0,0,0,.5);
@@ -201,6 +230,7 @@
   --nav-aktiv-ink: #1466A8;
   --seg-aktiv: #FFFFFF;
   --seg-aktiv-rand: #44566B;
+  --gruppen-grund: #F1F4F8;
   --shadow: 0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06);
   --shadow-sm: 0 1px 2px rgba(10,22,36,.05);
   --shadow-float: 0 16px 40px rgba(10,22,36,.16);
@@ -243,6 +273,7 @@
   --nav-aktiv-ink: #8CC6F0;
   --seg-aktiv: #1E3249;
   --seg-aktiv-rand: #B3C2D2;
+  --gruppen-grund: #07111D;
   --shadow: none;
   --shadow-sm: none;
   --shadow-float: 0 16px 40px rgba(0,0,0,.5);
@@ -285,6 +316,7 @@
   --nav-aktiv-ink: #1466A8;
   --seg-aktiv: #FFFFFF;
   --seg-aktiv-rand: #44566B;
+  --gruppen-grund: #F1F4F8;
   --shadow: 0 1px 2px rgba(10,22,36,.05), 0 6px 20px rgba(10,22,36,.06);
   --shadow-sm: 0 1px 2px rgba(10,22,36,.05);
   --shadow-float: 0 16px 40px rgba(10,22,36,.16);

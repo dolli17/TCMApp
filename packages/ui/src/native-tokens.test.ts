@@ -50,6 +50,21 @@ describe("Inhalt", () => {
     expect(kotlin).toContain("glass = Color(0xE0FFFFFF)");
   });
 
+  it("enthält die Maße des iOS-Stils", () => {
+    expect(swift).toContain("public static let gruppe: CGFloat = 25");
+    expect(swift).toContain("public static let gruppenRand: CGFloat = 16");
+    expect(swift).toContain("public enum Groesse {\n        public static let zeile: CGFloat = 44");
+    expect(kotlin).toContain("val gruppe: Dp = 25.dp");
+    expect(kotlin).toContain("val datumskachel: Dp = 10.dp");
+    expect(kotlin).toContain("object Groesse {\n    val zeile: Dp = 44.dp");
+  });
+
+  it("Schriftrollen nur in Kotlin - iOS nimmt die Textstile des Systems", () => {
+    expect(kotlin).toContain("val grosserTitel = Textrolle(groesse = 34.sp, gewicht = FontWeight(700))");
+    expect(kotlin).toContain("val wichtigeZeile = Textrolle(groesse = 17.sp, gewicht = FontWeight(600))");
+    expect(swift).not.toContain("grosserTitel");
+  });
+
   it("nennt beide Schriftfamilien", () => {
     for (const datei of [swift, kotlin]) {
       expect(datei).toContain('"DM Sans"');
